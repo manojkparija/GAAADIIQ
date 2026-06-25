@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -11,6 +11,7 @@ from models.listing import Listing
 from models.test_drive_booking import BookingStatus, TestDriveBooking
 from models.user import User
 from schemas.booking import BookingCreate, BookingOut, BookingStatusUpdate
+from services.notifications import notify_booking_received
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -18,19 +19,37 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 @router.post("", response_model=BookingOut, status_code=status.HTTP_201_CREATED)
 async def create_booking(
     payload: BookingCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    from models.car import Car  # local import avoids circular
+
     listing_result = await db.execute(
-        select(Listing).where(Listing.id == payload.listing_id, Listing.is_active == True)  # noqa: E712
+        select(Listing)
+        .where(Listing.id == payload.listing_id, Listing.is_active == True)  # noqa: E712
+        .options(selectinload(Listing.seller), selectinload(Listing.car))
     )
-    if not listing_result.scalar_one_or_none():
+    listing = listing_result.scalar_one_or_none()
+    if not listing:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found")
 
     booking = TestDriveBooking(user_id=current_user.id, **payload.model_dump())
     db.add(booking)
     await db.commit()
     await db.refresh(booking)
+
+    car = listing.car
+    listing_title = f"{car.year} {car.make} {car.model}" if car else "your listing"
+    background_tasks.add_task(
+        notify_booking_received,
+        db,
+        listing.seller,
+        current_user.full_name,
+        listing_title,
+        listing.id,
+    )
+
     return BookingOut.model_validate(booking)
 
 

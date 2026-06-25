@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -9,9 +9,11 @@ from core.dependencies import get_current_user
 from db.session import get_db
 from models.car import Car
 from models.listing import Listing
+from models.price_alert import PriceAlert
 from models.user import User
 from schemas.listing import ListingCreate, ListingListOut, ListingOut, ListingUpdate
 from services import storage, valuation
+from services.notifications import notify_price_drop
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -128,6 +130,7 @@ async def get_listing(listing_id: uuid.UUID, db: AsyncSession = Depends(get_db))
 async def update_listing(
     listing_id: uuid.UUID,
     payload: ListingUpdate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -140,10 +143,34 @@ async def update_listing(
     if listing.seller_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your listing")
 
-    for field, value in payload.model_dump(exclude_none=True).items():
+    old_price = float(listing.price)
+    update_data = payload.model_dump(exclude_none=True)
+    for field, value in update_data.items():
         setattr(listing, field, value)
 
     await db.commit()
+
+    # Fire price-drop notifications if price decreased
+    new_price = update_data.get("price")
+    if new_price is not None and float(new_price) < old_price:
+        car = listing.car
+        listing_title = f"{car.year} {car.make} {car.model}" if car else "a listing"
+        alerts_result = await db.execute(
+            select(PriceAlert)
+            .where(PriceAlert.listing_id == listing_id)
+            .options(selectinload(PriceAlert.user))
+        )
+        for alert in alerts_result.scalars().all():
+            background_tasks.add_task(
+                notify_price_drop,
+                db,
+                alert.user,
+                listing_title,
+                listing_id,
+                old_price,
+                float(new_price),
+            )
+
     result = await db.execute(
         select(Listing).options(*_LOAD).where(Listing.id == listing_id)
     )

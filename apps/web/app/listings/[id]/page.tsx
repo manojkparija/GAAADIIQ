@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import ValuationButton from "@/components/valuation-button";
 import EMICalculator from "@/components/emi-calculator";
 import LoanInquiryForm from "@/components/loan-inquiry-form";
+import PriceAlertButton from "@/components/price-alert-button";
 import ListingCard from "@/components/listing-card";
 import { Listing } from "@/types/listing";
 
@@ -161,6 +162,9 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
           {/* Loan Inquiry */}
           <LoanInquiryForm listingId={listing.id} listingPrice={listing.price} />
+
+          {/* Price drop alert */}
+          <PriceAlertButton listingId={listing.id} />
 
           {/* Test drive CTA — links to bookings flow (Phase 12) */}
           <Button size="lg" className="w-full" asChild>

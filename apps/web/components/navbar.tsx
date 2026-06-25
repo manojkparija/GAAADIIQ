@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import SearchBar from "@/components/search-bar";
+import NotificationBell from "@/components/notification-bell";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -36,6 +37,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {session ? (
             <>
+              <NotificationBell />
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm">Dashboard</Button>
               </Link>

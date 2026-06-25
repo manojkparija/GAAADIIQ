@@ -34,5 +34,12 @@ class Settings(BaseSettings):
     valuation_model: str = "llama3"
     valuation_timeout_seconds: int = 30
 
+    # SMTP (optional — leave blank to skip emails in dev)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASS: str = ""
+    SMTP_FROM: str = "noreply@gaadiiq.com"
+
 
 settings = Settings()

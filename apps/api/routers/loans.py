@@ -1,9 +1,10 @@
 import math
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.dependencies import get_current_user
 from db.session import get_db
@@ -11,6 +12,7 @@ from models.listing import Listing
 from models.loan_inquiry import LoanInquiry
 from models.user import User
 from schemas.loan import EMIResult, LoanInquiryCreate, LoanInquiryOut
+from services.notifications import notify_loan_inquiry_received
 
 router = APIRouter(prefix="/loans", tags=["loans"])
 
@@ -55,19 +57,35 @@ async def emi_calculator(
 @router.post("/inquiries", response_model=LoanInquiryOut, status_code=status.HTTP_201_CREATED)
 async def create_loan_inquiry(
     payload: LoanInquiryCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     listing_result = await db.execute(
-        select(Listing).where(Listing.id == payload.listing_id, Listing.is_active == True)  # noqa: E712
+        select(Listing)
+        .where(Listing.id == payload.listing_id, Listing.is_active == True)  # noqa: E712
+        .options(selectinload(Listing.seller), selectinload(Listing.car))
     )
-    if not listing_result.scalar_one_or_none():
+    listing = listing_result.scalar_one_or_none()
+    if not listing:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found")
 
     inquiry = LoanInquiry(user_id=current_user.id, **payload.model_dump())
     db.add(inquiry)
     await db.commit()
     await db.refresh(inquiry)
+
+    car = listing.car
+    listing_title = f"{car.year} {car.make} {car.model}" if car else "your listing"
+    background_tasks.add_task(
+        notify_loan_inquiry_received,
+        db,
+        listing.seller,
+        listing_title,
+        listing.id,
+        payload.loan_amount,
+    )
+
     return LoanInquiryOut.model_validate(inquiry)
 
 
