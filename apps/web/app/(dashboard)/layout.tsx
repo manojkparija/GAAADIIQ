@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: "/dashboard/listings", label: "My Listings" },
   { href: "/dashboard/listings/new", label: "Add Listing" },
   { href: "/dashboard/leads", label: "Leads" },
+  { href: "/dashboard/analytics", label: "Analytics" },
 ];
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {

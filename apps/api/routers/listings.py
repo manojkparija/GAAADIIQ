@@ -294,3 +294,5 @@ async def similar_listings(
     )
     result = await db.execute(similar_q)
     return [ListingOut.model_validate(l) for l in result.scalars().all()]
+
+

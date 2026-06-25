@@ -1,12 +1,40 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from pydantic import BaseModel
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependencies import get_current_user
 from db.session import get_db
 from models.dealer import Dealer
+from models.listing import Listing
+from models.loan_inquiry import LoanInquiry
+from models.review import Review
+from models.test_drive_booking import TestDriveBooking
 from models.user import User, UserRole
 from schemas.dealer import DealerOut, DealerRegister, DealerUpdate
+
+
+class ListingAnalytics(BaseModel):
+    listing_id: str
+    title: str
+    price: float
+    views: int
+    bookings: int
+    loan_inquiries: int
+    reviews: int
+    avg_rating: float | None
+    is_active: bool
+
+
+class SellerAnalytics(BaseModel):
+    total_listings: int
+    active_listings: int
+    total_views: int
+    total_bookings: int
+    total_loan_inquiries: int
+    total_reviews: int
+    overall_avg_rating: float | None
+    listings: list[ListingAnalytics]
 
 router = APIRouter(prefix="/dealers", tags=["dealers"])
 
@@ -74,9 +102,6 @@ async def my_listings_summary(
     current_user: User = Depends(get_current_user),
 ):
     """Stats for dashboard overview card."""
-    from sqlalchemy import func
-    from models.listing import Listing
-
     result = await db.execute(
         select(
             func.count(Listing.id).label("total"),
@@ -90,3 +115,92 @@ async def my_listings_summary(
         "active_listings": row.active or 0,
         "total_views": int(row.total_views or 0),
     }
+
+
+@router.get("/me/analytics", response_model=SellerAnalytics)
+async def seller_analytics(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Per-listing breakdown of views, bookings, inquiries, and reviews."""
+    from sqlalchemy.orm import selectinload
+
+    listings_result = await db.execute(
+        select(Listing)
+        .where(Listing.seller_id == current_user.id)
+        .options(selectinload(Listing.car))
+        .order_by(Listing.created_at.desc())
+    )
+    listings = listings_result.scalars().all()
+    listing_ids = [l.id for l in listings]
+
+    # Aggregate bookings per listing
+    booking_counts: dict = {}
+    if listing_ids:
+        bq = await db.execute(
+            select(TestDriveBooking.listing_id, func.count().label("cnt"))
+            .where(TestDriveBooking.listing_id.in_(listing_ids))
+            .group_by(TestDriveBooking.listing_id)
+        )
+        booking_counts = {row.listing_id: row.cnt for row in bq}
+
+    # Aggregate loan inquiries per listing
+    inq_counts: dict = {}
+    if listing_ids:
+        iq = await db.execute(
+            select(LoanInquiry.listing_id, func.count().label("cnt"))
+            .where(LoanInquiry.listing_id.in_(listing_ids))
+            .group_by(LoanInquiry.listing_id)
+        )
+        inq_counts = {row.listing_id: row.cnt for row in iq}
+
+    # Aggregate reviews per listing
+    rev_counts: dict = {}
+    rev_avg: dict = {}
+    if listing_ids:
+        rq = await db.execute(
+            select(
+                Review.listing_id,
+                func.count().label("cnt"),
+                func.avg(Review.rating).label("avg"),
+            )
+            .where(Review.listing_id.in_(listing_ids))
+            .group_by(Review.listing_id)
+        )
+        for row in rq:
+            rev_counts[row.listing_id] = row.cnt
+            rev_avg[row.listing_id] = round(float(row.avg), 2) if row.avg else None
+
+    listing_analytics = []
+    for l in listings:
+        car = l.car
+        title = f"{car.year} {car.make} {car.model}" if car else str(l.id)
+        listing_analytics.append(ListingAnalytics(
+            listing_id=str(l.id),
+            title=title,
+            price=float(l.price),
+            views=int(l.views_count or 0),
+            bookings=booking_counts.get(l.id, 0),
+            loan_inquiries=inq_counts.get(l.id, 0),
+            reviews=rev_counts.get(l.id, 0),
+            avg_rating=rev_avg.get(l.id),
+            is_active=l.is_active,
+        ))
+
+    total_views = sum(a.views for a in listing_analytics)
+    total_bookings = sum(a.bookings for a in listing_analytics)
+    total_inqs = sum(a.loan_inquiries for a in listing_analytics)
+    total_reviews = sum(a.reviews for a in listing_analytics)
+    rated = [a.avg_rating for a in listing_analytics if a.avg_rating is not None]
+    overall_avg = round(sum(rated) / len(rated), 2) if rated else None
+
+    return SellerAnalytics(
+        total_listings=len(listings),
+        active_listings=sum(1 for l in listings if l.is_active),
+        total_views=total_views,
+        total_bookings=total_bookings,
+        total_loan_inquiries=total_inqs,
+        total_reviews=total_reviews,
+        overall_avg_rating=overall_avg,
+        listings=listing_analytics,
+    )
