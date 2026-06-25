@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import ValuationButton from "@/components/valuation-button";
+import EMICalculator from "@/components/emi-calculator";
+import LoanInquiryForm from "@/components/loan-inquiry-form";
 import ListingCard from "@/components/listing-card";
 import { Listing } from "@/types/listing";
 
@@ -154,18 +156,16 @@ export default async function ListingDetailPage({ params }: PageProps) {
             <p className="text-xs text-muted-foreground capitalize">{listing.seller.role}</p>
           </div>
 
-          {/* CTAs */}
-          <div className="flex flex-col gap-3">
-            <Button size="lg" className="w-full">
-              🚗 Book Test Drive
-            </Button>
-            <Button size="lg" variant="outline" className="w-full">
-              🏦 Check Loan Eligibility
-            </Button>
-            <Button size="lg" variant="ghost" className="w-full">
-              📞 Contact Seller
-            </Button>
-          </div>
+          {/* EMI Calculator */}
+          <EMICalculator listingPrice={listing.price} />
+
+          {/* Loan Inquiry */}
+          <LoanInquiryForm listingId={listing.id} listingPrice={listing.price} />
+
+          {/* Test drive CTA — links to bookings flow (Phase 12) */}
+          <Button size="lg" className="w-full" asChild>
+            <Link href={`/listings/${listing.id}/book`}>🚗 Book Test Drive</Link>
+          </Button>
 
           {/* Meta */}
           <p className="text-xs text-muted-foreground text-center">
