@@ -60,7 +60,7 @@ export default function ListingsFilter() {
       {/* Listing type */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-muted-foreground">Type</label>
-        <Select value={get("listing_type")} onValueChange={(v) => update("listing_type", v === "all" ? "" : v)}>
+        <Select value={get("listing_type") ?? ""} onValueChange={(v) => update("listing_type", v === "all" ? "" : v)}>
           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
