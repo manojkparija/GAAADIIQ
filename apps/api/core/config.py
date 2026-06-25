@@ -29,5 +29,10 @@ class Settings(BaseSettings):
     r2_bucket_name: str = "gaadiiq-media"
     r2_public_url: str = "https://media.gaadiiq.com"
 
+    # AI / Ollama (self-hosted on Oracle Cloud)
+    ollama_base_url: str = "http://localhost:11434"
+    valuation_model: str = "llama3"
+    valuation_timeout_seconds: int = 30
+
 
 settings = Settings()

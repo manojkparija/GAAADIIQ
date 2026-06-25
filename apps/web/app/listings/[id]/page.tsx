@@ -4,6 +4,7 @@ import { getListing } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import ValuationButton from "@/components/valuation-button";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -129,20 +130,12 @@ export default async function ListingDetailPage({ params }: PageProps) {
               )}
             </div>
 
-            {listing.ai_valuation && (
-              <p className="text-xs text-muted-foreground mt-1">
-                🤖 AI Fair Value: {formatPrice(listing.ai_valuation)}
-                {listing.ai_valuation < listing.price && (
-                  <span className="text-amber-600 ml-1">(Above market)</span>
-                )}
-                {listing.ai_valuation >= listing.price && (
-                  <span className="text-green-600 ml-1">(Good deal)</span>
-                )}
-              </p>
-            )}
           </div>
 
           <Separator />
+
+          {/* AI Valuation — interactive client component */}
+          <ValuationButton listingId={listing.id} currentValuation={listing.ai_valuation} />
 
           {/* Description */}
           {listing.description && (

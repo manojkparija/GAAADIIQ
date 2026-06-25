@@ -11,7 +11,7 @@ from models.car import Car
 from models.listing import Listing
 from models.user import User
 from schemas.listing import ListingCreate, ListingListOut, ListingOut, ListingUpdate
-from services import storage
+from services import storage, valuation
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -204,6 +204,33 @@ async def upload_image(
     url = storage.upload_image(io.BytesIO(contents), file.content_type)
 
     listing.image_urls = [*listing.image_urls, url]
+    await db.commit()
+
+    result = await db.execute(
+        select(Listing).options(*_LOAD).where(Listing.id == listing_id)
+    )
+    return ListingOut.model_validate(result.scalar_one())
+
+
+@router.post("/{listing_id}/valuate", response_model=ListingOut)
+async def valuate_listing(
+    listing_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """Run AI valuation on a listing and persist the result."""
+    result = await db.execute(
+        select(Listing).options(*_LOAD).where(Listing.id == listing_id)
+    )
+    listing = result.scalar_one_or_none()
+    if not listing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found")
+
+    fair_value, _ = await valuation.estimate_valuation(listing)
+
+    from datetime import datetime, timezone
+    listing.ai_valuation = fair_value
+    listing.ai_valuation_at = datetime.now(timezone.utc)
     await db.commit()
 
     result = await db.execute(
