@@ -237,3 +237,33 @@ async def valuate_listing(
         select(Listing).options(*_LOAD).where(Listing.id == listing_id)
     )
     return ListingOut.model_validate(result.scalar_one())
+
+
+@router.get("/{listing_id}/similar", response_model=list[ListingOut])
+async def similar_listings(
+    listing_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return up to 5 active listings with the same body_type and fuel_type."""
+    ref_result = await db.execute(
+        select(Listing).options(selectinload(Listing.car)).where(Listing.id == listing_id)
+    )
+    ref = ref_result.scalar_one_or_none()
+    if not ref:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found")
+
+    similar_q = (
+        select(Listing)
+        .join(Car, Listing.car_id == Car.id)
+        .options(*_LOAD)
+        .where(
+            Listing.is_active == True,  # noqa: E712
+            Listing.id != listing_id,
+            Car.body_type == ref.car.body_type,
+            Car.fuel_type == ref.car.fuel_type,
+        )
+        .order_by(Listing.created_at.desc())
+        .limit(5)
+    )
+    result = await db.execute(similar_q)
+    return [ListingOut.model_validate(l) for l in result.scalars().all()]

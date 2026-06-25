@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import SearchBar from "@/components/search-bar";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -18,7 +19,7 @@ export default function Navbar() {
         {/* Nav links */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
           <Link href="/listings" className="text-muted-foreground hover:text-foreground transition-colors">
-            Explore Cars
+            Explore
           </Link>
           <Link href="/listings?listing_type=used" className="text-muted-foreground hover:text-foreground transition-colors">
             Used Cars
@@ -27,6 +28,9 @@ export default function Navbar() {
             New Cars
           </Link>
         </nav>
+
+        {/* Search bar — desktop */}
+        <SearchBar className="hidden md:block w-72" placeholder="Search cars…" />
 
         {/* Auth */}
         <div className="flex items-center gap-3">

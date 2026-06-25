@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import ValuationButton from "@/components/valuation-button";
+import ListingCard from "@/components/listing-card";
+import { Listing } from "@/types/listing";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -171,6 +173,33 @@ export default async function ListingDetailPage({ params }: PageProps) {
           </p>
         </div>
       </div>
+
+      {/* Similar cars */}
+      <SimilarListings listingId={id} />
     </main>
+  );
+}
+
+async function SimilarListings({ listingId }: { listingId: string }) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  let similar: Listing[] = [];
+  try {
+    const res = await fetch(`${apiUrl}/listings/${listingId}/similar`, { cache: "no-store" });
+    if (res.ok) similar = await res.json();
+  } catch { /* silent */ }
+
+  if (similar.length === 0) return null;
+
+  return (
+    <section className="mt-12 border-t pt-8">
+      <h2 className="text-xl font-bold mb-6">Similar Cars</h2>
+      <div className="flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory">
+        {similar.map((l) => (
+          <div key={l.id} className="shrink-0 w-72 snap-start">
+            <ListingCard listing={l} />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
