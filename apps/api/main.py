@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
-from routers import auth, bookings, cars, dealers, health, listings, loans, notifications, price_alerts, search
+from routers import auth, bookings, cars, dealers, health, listings, loans, notifications, price_alerts, reviews, search
 
 app = FastAPI(
     title=settings.app_name,
@@ -29,6 +29,7 @@ app.include_router(search.router)
 app.include_router(loans.router)
 app.include_router(notifications.router)
 app.include_router(price_alerts.router)
+app.include_router(reviews.router)
 
 
 @app.get("/")

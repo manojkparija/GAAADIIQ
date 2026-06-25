@@ -8,6 +8,7 @@ import ValuationButton from "@/components/valuation-button";
 import EMICalculator from "@/components/emi-calculator";
 import LoanInquiryForm from "@/components/loan-inquiry-form";
 import PriceAlertButton from "@/components/price-alert-button";
+import ReviewsSection from "@/components/reviews-section";
 import ListingCard from "@/components/listing-card";
 import { Listing } from "@/types/listing";
 
@@ -177,6 +178,9 @@ export default async function ListingDetailPage({ params }: PageProps) {
           </p>
         </div>
       </div>
+
+      {/* Reviews */}
+      <ReviewsSection listingId={listing.id} sellerId={listing.seller.id} />
 
       {/* Similar cars */}
       <SimilarListings listingId={id} />

@@ -4,7 +4,8 @@ from .listing import Listing
 from .loan_inquiry import LoanInquiry
 from .notification import Notification
 from .price_alert import PriceAlert
+from .review import Review
 from .test_drive_booking import TestDriveBooking
 from .user import User
 
-__all__ = ["User", "Dealer", "Car", "Listing", "TestDriveBooking", "LoanInquiry", "Notification", "PriceAlert"]
+__all__ = ["User", "Dealer", "Car", "Listing", "TestDriveBooking", "LoanInquiry", "Notification", "PriceAlert", "Review"]
