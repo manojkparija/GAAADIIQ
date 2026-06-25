@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
-from routers import auth, cars, health, listings
+from routers import auth, bookings, cars, dealers, health, listings
 
 app = FastAPI(
     title=settings.app_name,
@@ -23,6 +23,8 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(cars.router)
 app.include_router(listings.router)
+app.include_router(dealers.router)
+app.include_router(bookings.router)
 
 
 @app.get("/")

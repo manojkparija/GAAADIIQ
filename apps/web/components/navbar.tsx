@@ -32,9 +32,9 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {session ? (
             <>
-              <span className="hidden md:block text-sm text-muted-foreground truncate max-w-[140px]">
-                {session.user?.email}
-              </span>
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm">Dashboard</Button>
+              </Link>
               <Button variant="outline" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>
                 Sign out
               </Button>
