@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carlytics — AI-Powered Car Analytics & Market Intelligence</title>
+  <meta name="description" content="India's smartest car research platform. Compare cars, get AI-powered analytics, market trends, and make the best buying decision." />
+  <meta property="og:title" content="Carlytics — AI-Powered Car Analytics for India" />
+  <meta property="og:description" content="Compare 90+ Indian market cars, get AI insights, total cost of ownership, and market trends. Free to use." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://loremflickr.com/1200/630/car,india,drive?lock=0" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Carlytics — AI-Powered Car Analytics for India" />
+  <meta name="twitter:description" content="Compare 90+ Indian market cars, get AI insights, total cost of ownership, and market trends." />
+  <meta name="twitter:image" content="https://loremflickr.com/1200/630/car,india,drive?lock=0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>🚗</text></svg>" />
+</head>
+<body>
+
+<!-- ── Navbar ──────────────────────────────────────────────── -->
+<nav class="navbar">
+  <div class="nav-brand">Car<span>lytics</span><sub>AI</sub></div>
+  <div class="nav-links">
+    <a class="nav-link" data-page="home" href="#">Home</a>
+    <a class="nav-link" data-page="listings" href="#">Cars</a>
+    <a class="nav-link" data-page="analytics" href="#">Analytics</a>
+    <a class="nav-link" data-page="compare" href="#">Compare</a>
+    <a class="nav-link" data-page="pricing" href="#">Pricing</a>
+  </div>
+  <div class="nav-right">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-input" type="text" placeholder="Search cars…" autocomplete="off" />
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="navigate('pricing')">Get Pro</button>
+  </div>
+</nav>
+
+<!-- ── Mobile Nav ──────────────────────────────────────────── -->
+<div class="mobile-nav">
+  <div class="mobile-nav-links">
+    <div class="mnav-item" onclick="navigate('home')"><span>🏠</span><span>Home</span></div>
+    <div class="mnav-item" onclick="navigate('listings')"><span>🚗</span><span>Cars</span></div>
+    <div class="mnav-item" onclick="navigate('analytics')"><span>📊</span><span>Analytics</span></div>
+    <div class="mnav-item" onclick="navigate('compare')"><span>⚖️</span><span>Compare</span></div>
+    <div class="mnav-item" onclick="navigate('pricing')"><span>💎</span><span>Pricing</span></div>
+  </div>
+</div>
+
+<!-- ── Main ────────────────────────────────────────────────── -->
+<main class="main-wrap">
+
+  <!-- ── HOME PAGE ───────────────────────────────────────── -->
+  <div id="page-home" class="page">
+
+    <section class="hero">
+      <div class="hero-bg-glow"></div>
+      <div class="container">
+        <span class="hero-eyebrow">🚀 AI-Powered Car Intelligence Platform</span>
+        <h1>Find Your Perfect Car<br>with <span>Smart Analytics</span></h1>
+        <p>Real-time market insights, AI-powered recommendations, depreciation analysis, and total cost of ownership — all in one place.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" data-nav="listings">Browse Cars</button>
+          <button class="btn btn-outline" data-nav="analytics">View Analytics</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="stat-value" id="stat-cars">—</div><div class="stat-label">Cars Listed</div></div>
+          <div class="hero-stat"><div class="stat-value" id="stat-reviews">—</div><div class="stat-label">User Reviews</div></div>
+          <div class="hero-stat"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Active Users</div></div>
+          <div class="hero-stat"><div class="stat-value" id="stat-accuracy">—</div><div class="stat-label">Data Accuracy</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <div class="section-title-badge">Featured Picks</div>
+            <h2>Handpicked by our AI Engine</h2>
+          </div>
+          <button class="btn btn-outline btn-sm" data-nav="listings">View All →</button>
+        </div>
+        <div class="car-grid" id="featured-grid"></div>
+      </div>
+    </section>
+
+    <!-- Value Props -->
+    <section class="section" style="background:var(--bg-1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+      <div class="container">
+        <div style="text-align:center;margin-bottom:40px">
+          <div class="section-title-badge">Why Carlytics?</div>
+          <h2>Everything you need to buy smarter</h2>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">
+          <div style="background:var(--bg-2);border-radius:var(--radius);padding:24px;border:1px solid var(--border)">
+            <div style="font-size:1.8rem;margin-bottom:12px">🤖</div>
+            <h4 style="margin-bottom:8px">AI Analytics</h4>
+            <p style="font-size:0.83rem;color:var(--text-secondary)">ML-powered scores based on 50+ market signals per vehicle</p>
+          </div>
+          <div style="background:var(--bg-2);border-radius:var(--radius);padding:24px;border:1px solid var(--border)">
+            <div style="font-size:1.8rem;margin-bottom:12px">📈</div>
+            <h4 style="margin-bottom:8px">Market Trends</h4>
+            <p style="font-size:0.83rem;color:var(--text-secondary)">Live demand index, pricing trends, and best time to buy alerts</p>
+          </div>
+          <div style="background:var(--bg-2);border-radius:var(--radius);padding:24px;border:1px solid var(--border)">
+            <div style="font-size:1.8rem;margin-bottom:12px">💰</div>
+            <h4 style="margin-bottom:8px">Cost Intelligence</h4>
+            <p style="font-size:0.83rem;color:var(--text-secondary)">Full 5-year ownership cost: insurance, maintenance, depreciation</p>
+          </div>
+          <div style="background:var(--bg-2);border-radius:var(--radius);padding:24px;border:1px solid var(--border)">
+            <div style="font-size:1.8rem;margin-bottom:12px">⚖️</div>
+            <h4 style="margin-bottom:8px">Smart Compare</h4>
+            <p style="font-size:0.83rem;color:var(--text-secondary)">Side-by-side comparison with green/red highlights for best values</p>
+          </div>
+          <div style="background:var(--bg-2);border-radius:var(--radius);padding:24px;border:1px solid var(--border)">
+            <div style="font-size:1.8rem;margin-bottom:12px">🔔</div>
+            <h4 style="margin-bottom:8px">Price Alerts</h4>
+            <p style="font-size:0.83rem;color:var(--text-secondary)">Get notified instantly when a car drops below your target price</p>
+          </div>
+          <div style="background:var(--bg-2);border-radius:var(--radius);padding:24px;border:1px solid var(--border)">
+            <div style="font-size:1.8rem;margin-bottom:12px">🏆</div>
+            <h4 style="margin-bottom:8px">Dealer Network</h4>
+            <p style="font-size:0.83rem;color:var(--text-secondary)">Connect with 2,000+ verified dealers for best negotiated prices</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Band -->
+    <section class="section">
+      <div class="container">
+        <div style="background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(139,92,246,0.12));border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-lg);padding:48px;text-align:center">
+          <h2 style="font-size:1.8rem;margin-bottom:12px">Start Your Free Analysis Today</h2>
+          <p style="color:var(--text-secondary);margin-bottom:28px">Join 12,400+ buyers who made smarter decisions with Carlytics</p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-primary" data-nav="listings">Explore Cars — Free</button>
+            <button class="btn btn-outline" data-nav="pricing">View Pro Plans</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /page-home -->
+
+  <!-- ── LISTINGS PAGE ────────────────────────────────────── -->
+  <div id="page-listings" class="page">
+    <div class="container" style="padding-top:32px">
+      <div style="margin-bottom:24px">
+        <h2 style="font-size:1.6rem;margin-bottom:4px">All Cars</h2>
+        <p id="results-count" style="color:var(--text-muted);font-size:0.88rem"></p>
+      </div>
+
+      <div class="filters-bar">
+        <span class="filter-label">Category</span>
+        <div class="filter-group">
+          <button class="filter-btn active" data-group="category" data-value="all">All</button>
+          <button class="filter-btn" data-group="category" data-value="Hatchback">Hatchback</button>
+          <button class="filter-btn" data-group="category" data-value="Sedan">Sedan</button>
+          <button class="filter-btn" data-group="category" data-value="Compact SUV">Compact SUV</button>
+          <button class="filter-btn" data-group="category" data-value="All SUV">All SUVs</button>
+          <button class="filter-btn" data-group="category" data-value="MPV">MPV</button>
+          <button class="filter-btn" data-group="category" data-value="EV">⚡ EV</button>
+          <button class="filter-btn" data-group="category" data-value="Hybrid">🌿 Hybrid</button>
+          <button class="filter-btn" data-group="category" data-value="Luxury">Luxury</button>
+          <button class="filter-btn" data-group="category" data-value="Sports">Sports</button>
+        </div>
+        <span class="filter-label">Fuel</span>
+        <div class="filter-group">
+          <button class="filter-btn active" data-group="fuel" data-value="all">All</button>
+          <button class="filter-btn" data-group="fuel" data-value="Petrol">Petrol</button>
+          <button class="filter-btn" data-group="fuel" data-value="Diesel">Diesel</button>
+          <button class="filter-btn" data-group="fuel" data-value="Electric">Electric</button>
+        </div>
+        <div class="filters-right">
+          <span class="filter-label">Sort</span>
+          <select id="sort-select">
+            <option value="rating">Best Rated</option>
+            <option value="score">Analytics Score</option>
+            <option value="price-asc">Price: Low → High</option>
+            <option value="price-desc">Price: High → Low</option>
+            <option value="mileage">Best Mileage</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="car-grid" id="listings-grid"></div>
+    </div>
+  </div><!-- /page-listings -->
+
+  <!-- ── DETAIL PAGE ──────────────────────────────────────── -->
+  <div id="page-detail" class="page">
+    <div class="container">
+      <div style="padding-top:24px;margin-bottom:8px">
+        <button class="btn btn-ghost btn-sm" onclick="navigate('listings')">← Back to Listings</button>
+      </div>
+      <div id="detail-content"></div>
+    </div>
+  </div><!-- /page-detail -->
+
+  <!-- ── ANALYTICS PAGE ───────────────────────────────────── -->
+  <div id="page-analytics" class="page">
+    <div class="analytics-hero">
+      <div class="container">
+        <div class="section-title-badge">Market Intelligence</div>
+        <h2>India Car Market Analytics</h2>
+        <p>Real-time insights powered by our AI engine — updated monthly from 500K+ data points</p>
+      </div>
+    </div>
+    <div class="container">
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <h3>Monthly Sales Volume 2024</h3>
+          <div id="market-chart"></div>
+        </div>
+        <div class="analytics-card">
+          <h3>Category Search Volume</h3>
+          <div id="category-chart" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"></div>
+        </div>
+        <div class="analytics-card">
+          <h3>Fuel Type Preference</h3>
+          <div id="fuel-chart"></div>
+        </div>
+        <div class="analytics-card">
+          <h3>Top Rated Cars — Analytics Score</h3>
+          <div id="top-cars-list"></div>
+        </div>
+      </div>
+
+      <div class="market-insights" style="margin-bottom:32px">
+        <h3>🔍 Key Market Insights</h3>
+        <div class="insights-list" id="market-insights"></div>
+      </div>
+
+      <div class="analytics-premium">
+        <h2>🔒 Advanced Analytics — Pro Feature</h2>
+        <p>Unlock dealer-level market intelligence, price forecasting, and competitor analysis</p>
+        <div class="premium-features">
+          <span class="pf-item">📍 City-wise Demand Maps</span>
+          <span class="pf-item">📅 Price Forecast (6-month)</span>
+          <span class="pf-item">🏷️ Negotiation Intel</span>
+          <span class="pf-item">🔄 Resale Value Predictor</span>
+          <span class="pf-item">📊 Competitor Cross-Analysis</span>
+          <span class="pf-item">📧 Weekly Report Export</span>
+        </div>
+        <button class="btn btn-primary" onclick="navigate('pricing')">Unlock Pro Analytics — ₹499/mo</button>
+      </div>
+    </div>
+  </div><!-- /page-analytics -->
+
+  <!-- ── COMPARE PAGE ─────────────────────────────────────── -->
+  <div id="page-compare" class="page">
+    <div class="container" style="padding-top:32px">
+      <div class="compare-intro">
+        <h2 style="font-size:1.6rem;margin-bottom:8px">⚖️ Car Comparison</h2>
+        <p style="color:var(--text-muted)">Select 2–3 cars from the listings page. <span style="color:var(--green)">Green</span> = best value in row, <span style="color:var(--red)">Red</span> = worst.</p>
+      </div>
+      <div id="compare-content"></div>
+    </div>
+  </div><!-- /page-compare -->
+
+  <!-- ── PRICING PAGE ─────────────────────────────────────── -->
+  <div id="page-pricing" class="page">
+    <div class="container">
+      <div class="pricing-hero">
+        <h2>Simple, Transparent Pricing</h2>
+        <p>Start free. Upgrade when you need more power. Cancel anytime.</p>
+      </div>
+      <div class="pricing-grid" id="pricing-cards"></div>
+
+      <div class="revenue-section">
+        <h2>💼 Monetization Model</h2>
+        <p style="color:var(--text-secondary)">Carlytics generates revenue through multiple streams</p>
+        <div class="revenue-streams">
+          <div class="rs-item"><div class="rs-icon">💳</div><h4>Subscriptions</h4><p>Pro & Dealer monthly plans</p><div class="rs-revenue">₹40L+ MRR potential</div></div>
+          <div class="rs-item"><div class="rs-icon">🏷️</div><h4>Featured Listings</h4><p>Dealers pay for top placement</p><div class="rs-revenue">₹2,999 per slot/mo</div></div>
+          <div class="rs-item"><div class="rs-icon">🤝</div><h4>Lead Generation</h4><p>Qualified buyer leads to dealers</p><div class="rs-revenue">₹500–2,000 per lead</div></div>
+          <div class="rs-item"><div class="rs-icon">📊</div><h4>Data Licensing</h4><p>Market intelligence for OEMs</p><div class="rs-revenue">₹5L–50L per year</div></div>
+          <div class="rs-item"><div class="rs-icon">🔗</div><h4>Affiliate Finance</h4><p>Car loan & insurance referrals</p><div class="rs-revenue">0.5–1% of loan value</div></div>
+          <div class="rs-item"><div class="rs-icon">📱</div><h4>Display Ads</h4><p>Automotive brand advertising</p><div class="rs-revenue">CPM-based revenue</div></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /page-pricing -->
+
+</main><!-- /main-wrap -->
+
+<!-- ── Compare Floating Bar ──────────────────────────────── -->
+<div class="compare-bar" id="compare-bar">
+  <span class="compare-bar-text" id="compare-bar-count"></span>
+  <button class="btn btn-primary btn-sm" id="go-compare-btn">Compare Now</button>
+  <button class="btn btn-ghost btn-sm" id="clear-compare-btn">✕ Clear</button>
+</div>
+
+<!-- ── Toast Container ───────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ── Footer ────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-brand" style="font-size:1.2rem">Car<span style="color:var(--accent)">lytics</span><sub style="font-size:0.55rem;color:var(--amber);font-weight:600;vertical-align:top;margin-left:2px">AI</sub></div>
+        <p>India's most intelligent car research platform. Powered by AI, driven by data.</p>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <span style="font-size:1.2rem;cursor:pointer">𝕏</span>
+          <span style="font-size:1.2rem;cursor:pointer">in</span>
+          <span style="font-size:1.2rem;cursor:pointer">▶</span>
+        </div>
+      </div>
+      <div>
+        <p class="footer-title">Product</p>
+        <div class="footer-links">
+          <a href="#" onclick="navigate('listings')">Browse Cars</a>
+          <a href="#" onclick="navigate('analytics')">Analytics</a>
+          <a href="#" onclick="navigate('compare')">Compare</a>
+          <a href="#" onclick="navigate('pricing')">Pricing</a>
+        </div>
+      </div>
+      <div>
+        <p class="footer-title">Resources</p>
+        <div class="footer-links">
+          <a href="#">Buying Guide</a>
+          <a href="#">Car News</a>
+          <a href="#">EV Guide</a>
+          <a href="#">EMI Calculator</a>
+        </div>
+      </div>
+      <div>
+        <p class="footer-title">Company</p>
+        <div class="footer-links">
+          <a href="#">About</a>
+          <a href="#">Careers</a>
+          <a href="#">API Access</a>
+          <a href="#">Contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 Carlytics. All rights reserved.</p>
+      <p style="font-size:0.72rem;color:var(--text-muted);margin-top:4px">
+        Car images: <a href="https://www.imagin.studio" target="_blank" rel="noopener" style="color:inherit">imagin.studio</a> (manufacturer-licensed renders) ·
+        Select India-market images: <a href="https://commons.wikimedia.org" target="_blank" rel="noopener" style="color:inherit">Wikimedia Commons</a> contributors / <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" style="color:inherit">CC BY-SA 4.0</a>
+      </p>
+      <div class="footer-badges">
+        <span class="fb">SSL Secured</span>
+        <span class="fb">GDPR Compliant</span>
+        <span class="fb">ISO 27001</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

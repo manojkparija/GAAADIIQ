@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "carlytics",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3456", "carlytics"],
+      "port": 3456
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "apps/web",
+      "port": 3000
+    }
+  ]
+}

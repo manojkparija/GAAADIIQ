@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\mkpar\\\\GAAADIIQ\" -ErrorAction SilentlyContinue; if \\(-not \\(Test-Path \"C:\\\\Users\\\\mkpar\\\\GAAADIIQ\"\\)\\) { New-Item -ItemType Directory -Path \"C:\\\\Users\\\\mkpar\\\\GAAADIIQ\" -Force })",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "WebSearch"
+    ]
+  }
+}
