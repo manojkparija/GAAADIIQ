@@ -71,7 +71,7 @@ export default function BoostListingButton({ listingId, isFeatured, onBoostSucce
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button variant="outline" size="sm" className="text-amber-600 border-amber-300 hover:bg-amber-50">
           ⭐ Boost
         </Button>
