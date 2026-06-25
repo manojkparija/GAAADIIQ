@@ -1,62 +1,136 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import SearchBar from "@/components/search-bar";
 import NotificationBell from "@/components/notification-bell";
 
 export default function Navbar() {
   const { data: session } = useSession();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+    <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
-        <Link href="/" className="font-bold text-xl tracking-tight text-primary">
-          GAADIIQ
+        <Link href="/" className="font-bold text-xl tracking-tight text-primary shrink-0 flex items-center gap-2">
+          <span className="text-amber-500">⬡</span>
+          <span>GAADIIQ</span>
         </Link>
 
-        {/* Nav links */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-          <Link href="/listings" className="text-muted-foreground hover:text-foreground transition-colors">
+        {/* Nav links — desktop */}
+        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+          <Link href="/listings" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             Explore
           </Link>
-          <Link href="/listings?listing_type=used" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/listings?listing_type=used" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             Used Cars
           </Link>
-          <Link href="/listings?listing_type=new" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/listings?listing_type=new" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             New Cars
+          </Link>
+          <Link href="/listings?fuel_type=electric" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            Electric
           </Link>
         </nav>
 
         {/* Search bar — desktop */}
-        <SearchBar className="hidden md:block w-72" placeholder="Search cars…" />
+        <SearchBar className="hidden md:block w-64 lg:w-80" placeholder="Search cars…" />
 
-        {/* Auth */}
-        <div className="flex items-center gap-3">
+        {/* Auth — desktop */}
+        <div className="hidden md:flex items-center gap-2 shrink-0">
           {session ? (
             <>
               <NotificationBell />
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm">Dashboard</Button>
+              <Link href="/dashboard" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                Dashboard
               </Link>
-              <Button variant="outline" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
                 Sign out
-              </Button>
+              </button>
             </>
           ) : (
             <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">Sign in</Button>
+              <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                Sign in
               </Link>
-              <Link href="/register">
-                <Button size="sm">Register</Button>
+              <Link
+                href="/register"
+                className={buttonVariants({ size: "sm" }) + " bg-amber-500 hover:bg-amber-400 text-slate-900"}
+              >
+                Register
               </Link>
             </>
           )}
         </div>
+
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden p-2 rounded-md hover:bg-muted transition-colors"
+          onClick={() => setMobileOpen((v) => !v)}
+          aria-label="Toggle menu"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {mobileOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
+        </button>
       </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t bg-white px-4 py-4 flex flex-col gap-2">
+          <SearchBar className="w-full mb-2" placeholder="Search cars…" />
+          <Link href="/listings" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-muted" onClick={() => setMobileOpen(false)}>
+            Explore All Cars
+          </Link>
+          <Link href="/listings?listing_type=used" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-muted" onClick={() => setMobileOpen(false)}>
+            Used Cars
+          </Link>
+          <Link href="/listings?listing_type=new" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-muted" onClick={() => setMobileOpen(false)}>
+            New Cars
+          </Link>
+          <Link href="/listings?fuel_type=electric" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-muted" onClick={() => setMobileOpen(false)}>
+            Electric Cars
+          </Link>
+          <div className="border-t pt-3 mt-1 flex flex-col gap-2">
+            {session ? (
+              <>
+                <Link href="/dashboard" className={buttonVariants({ variant: "outline", size: "sm" }) + " w-full justify-center"} onClick={() => setMobileOpen(false)}>
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => { signOut({ callbackUrl: "/" }); setMobileOpen(false); }}
+                  className={buttonVariants({ variant: "ghost", size: "sm" }) + " w-full justify-center"}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className={buttonVariants({ variant: "outline", size: "sm" }) + " w-full justify-center"} onClick={() => setMobileOpen(false)}>
+                  Sign in
+                </Link>
+                <Link
+                  href="/register"
+                  className={buttonVariants({ size: "sm" }) + " w-full justify-center bg-amber-500 hover:bg-amber-400 text-slate-900"}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Register Free
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -1,21 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("registered") === "1") {
+      setSuccess("Account created! Please sign in.");
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
 
     const result = await signIn("credentials", {
       email,
@@ -25,61 +35,100 @@ export default function LoginPage() {
 
     setLoading(false);
     if (result?.error) {
-      setError("Invalid email or password.");
+      setError("Invalid email or password. Please try again.");
     } else {
-      router.push("/");
+      router.push("/dashboard");
     }
   }
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-background px-4">
-      <div className="w-full max-w-sm border rounded-xl p-8 bg-card shadow-sm">
-        <h1 className="text-2xl font-bold mb-1">Sign in</h1>
-        <p className="text-sm text-muted-foreground mb-6">Welcome back to GAADIIQ</p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">
+          {success}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="email" className="text-sm font-semibold">
+          Email Address
+        </label>
+        <input
+          id="email"
+          type="email"
+          autoComplete="email"
+          required
+          placeholder="rahul@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className="text-sm font-semibold">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          placeholder="Your password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+        />
+      </div>
+
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className={buttonVariants({ size: "lg" }) + " w-full disabled:opacity-60 disabled:cursor-not-allowed"}
+      >
+        {loading ? (
+          <span className="flex items-center gap-2">
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Signing in…
+          </span>
+        ) : "Sign In"}
+      </button>
+    </form>
+  );
+}
+
+import { Suspense } from "react";
+
+export default function LoginPage() {
+  return (
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-lg border p-8">
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-block font-bold text-2xl text-primary mb-4">
+              <span className="text-amber-500">⬡</span> GAADIIQ
+            </Link>
+            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Sign in to your GAADIIQ account
+            </p>
           </div>
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
+            <LoginForm />
+          </Suspense>
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
-          </Button>
-        </form>
-
-        <p className="text-xs text-muted-foreground text-center mt-6">
+        <p className="text-sm text-muted-foreground text-center mt-6">
           Don&apos;t have an account?{" "}
-          <a href="/register" className="text-primary underline underline-offset-2">
-            Register
-          </a>
+          <Link href="/register" className="text-primary font-semibold hover:underline">
+            Register free
+          </Link>
         </p>
       </div>
     </main>
