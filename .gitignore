@@ -9,11 +9,12 @@ dist/
 build/
 out/
 
-# Environment files
+# Environment files — ignore secrets, keep examples
 .env
 .env.local
 .env.*.local
 .env.production
+!.env.example
 
 # Python
 __pycache__/
