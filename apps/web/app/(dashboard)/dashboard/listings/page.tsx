@@ -1,8 +1,10 @@
 import { auth } from "@/auth";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Listing } from "@/types/listing";
+import DeleteListingButton from "./delete-button";
+import BoostListingButton from "@/components/boost-listing-button";
 
 interface MyListingsResponse {
   items: Listing[];
@@ -33,27 +35,23 @@ export default async function MyListingsPage() {
   const session = await auth();
   const token = (session as { accessToken?: string })?.accessToken ?? "";
   const { items } = await getMyListings(token);
-
-  // Filter to current user's listings client-side is not ideal, but the API
-  // returns all active listings. A proper /listings/mine endpoint is Phase 10.
-  // For now we show all and let the seller see context.
   const listings = items;
 
   return (
     <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold">My Listings</h1>
-        <Button asChild>
-          <Link href="/dashboard/listings/new">+ Add Listing</Link>
-        </Button>
+        <Link href="/dashboard/listings/new" className={buttonVariants()}>
+          + Add Listing
+        </Link>
       </div>
 
       {listings.length === 0 ? (
         <div className="rounded-xl border p-12 text-center text-muted-foreground">
           <p className="text-lg mb-4">No listings yet.</p>
-          <Button asChild>
-            <Link href="/dashboard/listings/new">Create your first listing</Link>
-          </Button>
+          <Link href="/dashboard/listings/new" className={buttonVariants()}>
+            Create your first listing
+          </Link>
         </div>
       ) : (
         <div className="rounded-xl border overflow-hidden">
@@ -89,9 +87,12 @@ export default async function MyListingsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2 flex-wrap">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/listings/${listing.id}`}>View</Link>
-                      </Button>
+                      <Link
+                        href={`/listings/${listing.id}`}
+                        className={buttonVariants({ variant: "ghost", size: "sm" })}
+                      >
+                        View
+                      </Link>
                       <BoostListingButton listingId={listing.id} isFeatured={listing.is_featured} />
                       <DeleteListingButton listingId={listing.id} token={token} />
                     </div>
@@ -105,6 +106,3 @@ export default async function MyListingsPage() {
     </div>
   );
 }
-
-import DeleteListingButton from "./delete-button";
-import BoostListingButton from "@/components/boost-listing-button";

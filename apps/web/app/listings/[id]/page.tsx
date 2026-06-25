@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getListing } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import ValuationButton from "@/components/valuation-button";
 import EMICalculator from "@/components/emi-calculator";
@@ -201,9 +201,12 @@ export default async function ListingDetailPage({ params }: PageProps) {
           <PriceAlertButton listingId={listing.id} />
 
           {/* Test drive CTA — links to bookings flow (Phase 12) */}
-          <Button size="lg" className="w-full" asChild>
-            <Link href={`/listings/${listing.id}/book`}>🚗 Book Test Drive</Link>
-          </Button>
+          <Link
+            href={`/listings/${listing.id}/book`}
+            className={buttonVariants({ size: "lg" }) + " w-full text-center"}
+          >
+            🚗 Book Test Drive
+          </Link>
 
           {/* Meta */}
           <p className="text-xs text-muted-foreground text-center">

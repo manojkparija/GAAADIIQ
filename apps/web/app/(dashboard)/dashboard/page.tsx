@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 interface SummaryData {
   total_listings: number;
@@ -45,9 +45,9 @@ export default async function DashboardPage() {
             Welcome back, {session?.user?.name ?? session?.user?.email}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/listings/new">+ Add Listing</Link>
-        </Button>
+        <Link href="/dashboard/listings/new" className={buttonVariants()}>
+          + Add Listing
+        </Link>
       </div>
 
       {/* Stats */}
@@ -61,15 +61,15 @@ export default async function DashboardPage() {
       <div className="rounded-xl border p-6">
         <h2 className="font-semibold mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/listings">Manage Listings</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/leads">View Leads</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/listings">Browse Marketplace</Link>
-          </Button>
+          <Link href="/dashboard/listings" className={buttonVariants({ variant: "outline" })}>
+            Manage Listings
+          </Link>
+          <Link href="/dashboard/leads" className={buttonVariants({ variant: "outline" })}>
+            View Leads
+          </Link>
+          <Link href="/listings" className={buttonVariants({ variant: "outline" })}>
+            Browse Marketplace
+          </Link>
         </div>
       </div>
     </div>
