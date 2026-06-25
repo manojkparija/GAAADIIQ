@@ -22,5 +22,12 @@ class Settings(BaseSettings):
     # CORS
     allowed_origins: list[str] = ["http://localhost:3000"]
 
+    # Cloudflare R2 (S3-compatible)
+    r2_endpoint_url: str = "https://<account-id>.r2.cloudflarestorage.com"
+    r2_access_key_id: str = "your-r2-access-key"
+    r2_secret_access_key: str = "your-r2-secret-key"
+    r2_bucket_name: str = "gaadiiq-media"
+    r2_public_url: str = "https://media.gaadiiq.com"
+
 
 settings = Settings()

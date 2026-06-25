@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Index, Integer, Numeric, SmallInteger, String, Text
+from sqlalchemy import JSON, Boolean, Enum, ForeignKey, Index, Integer, Numeric, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -68,6 +68,7 @@ class Listing(UUIDMixin, TimestampMixin, Base):
     views_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     ai_valuation: Mapped[float | None] = mapped_column(Numeric(12, 2))
     ai_valuation_at: Mapped[datetime | None] = mapped_column()
+    image_urls: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
 
     # Relationships
     car: Mapped["Car"] = relationship(back_populates="listings")
