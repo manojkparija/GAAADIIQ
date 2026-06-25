@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
@@ -17,10 +18,8 @@ export default function HomePage() {
           dealer intelligence — all in one place.
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
-          <Button size="lg">Explore Cars</Button>
-          <Button size="lg" variant="outline">
-            Get Valuation
-          </Button>
+          <Link href="/listings"><Button size="lg">Explore Cars</Button></Link>
+          <Link href="/listings?listing_type=used"><Button size="lg" variant="outline">Browse Used Cars</Button></Link>
         </div>
       </section>
 
