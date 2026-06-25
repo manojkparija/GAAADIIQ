@@ -42,7 +42,7 @@ export default function HomePage() {
       </section>
 
       <p className="text-xs text-muted-foreground pb-8">
-        Phase 3 scaffold — full features coming soon
+        Trusted by car buyers and sellers across India
       </p>
     </main>
   );
