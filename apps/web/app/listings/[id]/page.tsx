@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getListing } from "@/lib/api";
@@ -14,6 +15,38 @@ import { Listing } from "@/types/listing";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const listing = await getListing(id);
+    const { car } = listing;
+    const title = `${car.year} ${car.make} ${car.model} for Sale in ${listing.city} | GAADIIQ`;
+    const price = listing.price >= 100000
+      ? `₹${(listing.price / 100000).toFixed(2)} Lakh`
+      : `₹${listing.price.toLocaleString()}`;
+    const description = `Buy ${car.year} ${car.make} ${car.model} (${car.fuel_type}, ${car.transmission}) in ${listing.city} for ${price}. ${listing.km_driven ? `${listing.km_driven.toLocaleString()} km driven. ` : ""}Find verified car listings on GAADIIQ.`;
+    const image = listing.image_urls?.[0];
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: "website",
+        ...(image ? { images: [{ url: image, width: 1200, height: 630, alt: `${car.make} ${car.model}` }] } : {}),
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        ...(image ? { images: [image] } : {}),
+      },
+    };
+  } catch {
+    return { title: "Car Listing | GAADIIQ" };
+  }
 }
 
 function formatPrice(price: number) {

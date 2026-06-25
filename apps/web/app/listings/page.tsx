@@ -1,5 +1,16 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getListings } from "@/lib/api";
+
+export const metadata: Metadata = {
+  title: "Browse Used & New Cars for Sale | GAADIIQ",
+  description: "Find verified used and new car listings across India. Filter by brand, model, fuel type, price, and city on GAADIIQ — India's AI-first automotive platform.",
+  openGraph: {
+    title: "Browse Cars for Sale | GAADIIQ",
+    description: "Find verified used and new car listings across India on GAADIIQ.",
+    type: "website",
+  },
+};
 import ListingCard from "@/components/listing-card";
 import ListingsFilter from "@/components/listings-filter";
 import { Skeleton } from "@/components/ui/skeleton";

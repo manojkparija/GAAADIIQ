@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     valuation_model: str = "llama3"
     valuation_timeout_seconds: int = 30
 
+    # Razorpay (optional — leave blank to use dev auto-approve mode)
+    RAZORPAY_KEY_ID: str = ""
+    RAZORPAY_KEY_SECRET: str = ""
+
     # SMTP (optional — leave blank to skip emails in dev)
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587

@@ -88,10 +88,11 @@ export default async function MyListingsPage() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/listings/${listing.id}`}>View</Link>
                       </Button>
+                      <BoostListingButton listingId={listing.id} isFeatured={listing.is_featured} />
                       <DeleteListingButton listingId={listing.id} token={token} />
                     </div>
                   </td>
@@ -105,5 +106,5 @@ export default async function MyListingsPage() {
   );
 }
 
-// Inline client component for the delete action
 import DeleteListingButton from "./delete-button";
+import BoostListingButton from "@/components/boost-listing-button";

@@ -11,8 +11,10 @@ if TYPE_CHECKING:
     from .listing import Listing
     from .loan_inquiry import LoanInquiry
     from .notification import Notification
+    from .payment import Payment
     from .price_alert import PriceAlert
     from .review import Review
+    from .subscription import Subscription
     from .test_drive_booking import TestDriveBooking
 
 
@@ -50,6 +52,10 @@ class User(UUIDMixin, TimestampMixin, Base):
     )
     reviews_received: Mapped[list["Review"]] = relationship(
         foreign_keys="Review.seller_id", back_populates="seller"
+    )
+    payments: Mapped[list["Payment"]] = relationship(back_populates="user")
+    subscription: Mapped["Subscription | None"] = relationship(
+        back_populates="user", uselist=False
     )
 
     def __repr__(self) -> str:
