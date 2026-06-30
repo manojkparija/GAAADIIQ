@@ -1,0 +1,82 @@
+<div class="listings-page">
+  <!-- HEADER BAR -->
+  <div class="listings-header">
+    <div class="container listings-header-inner">
+      <div>
+        <h1>Browse <span class="gradient-text">Cars</span></h1>
+        <p style="color:var(--muted);font-size:0.9rem">{{ filteredCars().length }} listings found</p>
+      </div>
+      <div class="search-bar glass-card">
+        <span>🔍</span>
+        <input type="text" placeholder="Search make, model, city..." [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)">
+      </div>
+      <div class="sort-row">
+        <select [(ngModel)]="sorts[0]" (change)="selectedSort.set($any($event.target).value)">
+          <option *ngFor="let s of sorts">{{ s }}</option>
+        </select>
+        <button class="btn-gradient hide-desktop filter-toggle" (click)="sidebarOpen.set(!sidebarOpen())">⚙️ Filters</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container listings-body">
+    <!-- SIDEBAR -->
+    <aside class="sidebar glass-card" [class.open]="sidebarOpen()">
+      <div class="sidebar-header">
+        <h3>Filters</h3>
+        <button class="hide-desktop" (click)="sidebarOpen.set(false)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem">✕</button>
+      </div>
+
+      <div class="filter-group">
+        <label>Fuel Type</label>
+        <div class="filter-chips">
+          <span
+            *ngFor="let f of fuels"
+            class="chip"
+            [class.active]="selectedFuel() === f"
+            (click)="selectedFuel.set(f)"
+          >{{ f }}</span>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Transmission</label>
+        <div class="filter-chips">
+          <span
+            *ngFor="let t of transmissions"
+            class="chip"
+            [class.active]="selectedTransmission() === t"
+            (click)="selectedTransmission.set(t)"
+          >{{ t }}</span>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Max Budget: <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
+        <input type="range" min="300000" max="5000000" step="100000"
+          [value]="maxPrice()" (input)="maxPrice.set(+$any($event.target).value)"
+          class="price-range"
+        >
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">
+          <span>₹3L</span><span>₹50L</span>
+        </div>
+      </div>
+
+      <button class="btn-gradient" style="width:100%;margin-top:1rem" (click)="sidebarOpen.set(false)">Apply Filters</button>
+    </aside>
+
+    <!-- GRID -->
+    <div class="cars-grid" *ngIf="filteredCars().length > 0; else noResults">
+      <app-car-card *ngFor="let car of filteredCars()" [car]="car"></app-car-card>
+    </div>
+
+    <ng-template #noResults>
+      <div class="no-results glass-card">
+        <div style="font-size:4rem;margin-bottom:1rem">🔍</div>
+        <h3>No cars found</h3>
+        <p style="color:var(--muted)">Try adjusting your filters or search query</p>
+        <button class="btn-gradient" style="margin-top:1.5rem" (click)="selectedFuel.set('All');selectedTransmission.set('All');maxPrice.set(5000000);searchQuery.set('')">Clear All Filters</button>
+      </div>
+    </ng-template>
+  </div>
+</div>

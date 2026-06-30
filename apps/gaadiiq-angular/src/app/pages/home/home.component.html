@@ -1,0 +1,251 @@
+<!-- TICKER BAR -->
+<div class="ticker-bar">
+  <div class="ticker-track">
+    <span *ngFor="let item of tickerItems.concat(tickerItems)">{{ item }} &nbsp;&nbsp;•&nbsp;&nbsp; </span>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="orb orb-purple" style="width:600px;height:600px;top:-100px;left:-150px;opacity:0.5"></div>
+  <div class="orb orb-pink" style="width:400px;height:400px;top:100px;right:-100px;opacity:0.4"></div>
+  <div class="orb orb-teal" style="width:300px;height:300px;bottom:0;left:40%;opacity:0.25"></div>
+
+  <div class="container hero-content">
+    <div class="hero-text">
+      <div class="badge badge-purple mb-4">🤖 India's AI-First Car Platform</div>
+      <h1>
+        Buy &amp; Sell Cars<br>
+        <span class="gradient-text">Intelligently.</span>
+      </h1>
+      <p class="hero-sub">
+        AI-powered valuations, instant loan comparisons, verified listings, and dealer intelligence — all in one stunning platform.
+      </p>
+
+      <!-- SEARCH BAR -->
+      <div class="hero-search glass-card">
+        <div class="search-icon">🔍</div>
+        <input
+          type="text"
+          placeholder='Try "Red SUV under 15L in Mumbai"...'
+          (input)="onSearch($event)"
+          style="background:transparent;border:none;box-shadow:none;padding:0;font-size:1rem"
+        />
+        <button class="btn-gradient search-btn" routerLink="/listings">Search</button>
+      </div>
+
+      <!-- BODY TYPE CHIPS -->
+      <div class="body-chips">
+        <span
+          *ngFor="let type of bodyTypes"
+          class="chip"
+          [class.active]="activeBodyType() === type"
+          (click)="setBodyType(type)"
+        >{{ type }}</span>
+      </div>
+
+      <div class="hero-btns">
+        <button class="btn-gradient btn-lg" routerLink="/listings">Explore Cars 🚗</button>
+        <button class="btn-outline btn-lg">Watch Demo ▶</button>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-car-card glass-card animate-float">
+        <div class="car-img-placeholder">
+          <img src="https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg" alt="Featured Car" style="width:100%;height:100%;object-fit:cover;border-radius:16px">
+        </div>
+        <div class="car-info">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <div style="font-size:0.75rem;color:var(--muted)">FEATURED LISTING</div>
+              <div style="font-weight:700;font-size:1.1rem">Hyundai Creta 2023</div>
+            </div>
+            <span class="badge badge-red">🔥 Hot</span>
+          </div>
+          <div style="font-size:1.5rem;font-weight:800" class="gradient-text">₹14.5L</div>
+          <div style="display:flex;gap:1rem;font-size:0.8rem;color:var(--muted)">
+            <span>⛽ Petrol</span>
+            <span>⚙️ Auto</span>
+            <span>📍 Delhi</span>
+          </div>
+          <div class="ai-badge">
+            <span>🤖 AI Valuation: Fair Price</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="floating-pill glass-card animate-float" style="animation-delay:0.5s;top:10%;right:-20px">
+        <span>⚡</span>
+        <div><div style="font-weight:700;font-size:0.9rem">EV Range</div><div style="color:#43E97B;font-size:0.85rem">500km+</div></div>
+      </div>
+      <div class="floating-pill glass-card animate-float" style="animation-delay:1s;bottom:15%;left:-30px">
+        <span>💰</span>
+        <div><div style="font-weight:700;font-size:0.9rem">EMI from</div><div style="color:#FFD700;font-size:0.85rem">₹12,400/mo</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats-section">
+  <div class="container stats-grid">
+    <div class="stat-item glass-card" *ngFor="let s of stats">
+      <div class="stat-icon">{{ s.icon }}</div>
+      <div class="stat-value gold-text">{{ s.value }}{{ s.suffix }}</div>
+      <div class="stat-label">{{ s.label }}</div>
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS -->
+<section class="brands-section" id="brands">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Popular Brands</span>
+      <h2 class="section-title">Browse by <span class="gradient-text">Brand</span></h2>
+      <p class="section-sub">India's most trusted car manufacturers — all verified listings</p>
+    </div>
+    <div class="brands-grid">
+      <a
+        *ngFor="let make of makes"
+        [routerLink]="['/listings']"
+        [queryParams]="{make: make.name}"
+        class="brand-card glass-card"
+      >
+        <div class="brand-logo" [style.background]="make.color + '22'" [style.borderColor]="make.color + '44'">
+          <span class="brand-short" [style.color]="make.color">{{ make.short }}</span>
+        </div>
+        <span class="brand-name">{{ make.name }}</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED CARS -->
+<section class="cars-section">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">🔥 Hot Picks</span>
+      <h2 class="section-title">Featured <span class="gradient-text">Listings</span></h2>
+      <p class="section-sub">Hand-picked, AI-verified listings with the best value</p>
+    </div>
+    <div class="cars-grid">
+      <app-car-card *ngFor="let car of featuredCars" [car]="car"></app-car-card>
+    </div>
+    <div style="text-align:center;margin-top:3rem">
+      <button class="btn-gradient btn-lg" routerLink="/listings">View All 50,000+ Cars →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features">
+  <div class="container">
+    <div class="section-header center">
+      <span class="section-tag">✨ Why GAADIIQ</span>
+      <h2 class="section-title">Your AI-Powered <span class="gradient-text">Car Co-Pilot</span></h2>
+      <p class="section-sub" style="margin:0 auto">Not just a marketplace — the smartest car-buying experience in India.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card glass-card" *ngFor="let f of features">
+        <div class="feature-icon" [style.background]="f.color + '22'" [style.borderColor]="f.color + '33'">
+          <span>{{ f.icon }}</span>
+        </div>
+        <h3>{{ f.title }}</h3>
+        <p>{{ f.desc }}</p>
+        <div class="feature-arrow">→</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI ADVISOR BANNER -->
+<section class="ai-banner">
+  <div class="orb orb-purple" style="width:400px;height:400px;top:-100px;right:-100px;opacity:0.5"></div>
+  <div class="container ai-banner-inner">
+    <div class="ai-banner-text">
+      <span class="section-tag">🤖 AI Advisor</span>
+      <h2 class="section-title">Tell us what you want.<br>We'll find the <span class="gradient-text">perfect car.</span></h2>
+      <p class="section-sub">Answer 6 quick questions. Our AI matches you to the ideal car from 50,000+ listings — with explainable reasoning.</p>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem">
+        <button class="btn-gradient btn-lg">Start AI Advisor 🤖</button>
+        <button class="btn-outline btn-lg">See How It Works</button>
+      </div>
+    </div>
+    <div class="ai-demo glass-card">
+      <div class="ai-chat">
+        <div class="ai-bubble ai">🤖 What's your budget range?</div>
+        <div class="ai-bubble user">₹10L – ₹20L</div>
+        <div class="ai-bubble ai">🤖 Do you prefer petrol or electric?</div>
+        <div class="ai-bubble user">Electric please!</div>
+        <div class="ai-bubble ai">⚡ Found 12 perfect matches for you!</div>
+        <div class="ai-result glass-card">
+          <div style="font-weight:700">🏆 Top Match: Tata Nexon EV</div>
+          <div style="color:var(--accent);font-size:0.85rem">98% compatibility score</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section">
+  <div class="container">
+    <div class="section-header center">
+      <span class="section-tag">💬 Reviews</span>
+      <h2 class="section-title">Loved by <span class="gradient-text">Car Buyers</span></h2>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card glass-card" *ngFor="let t of testimonials">
+        <div class="stars">{{ '★'.repeat(t.rating) }}</div>
+        <p class="testi-text">"{{ t.text }}"</p>
+        <div class="testi-author">
+          <div class="avatar">{{ t.avatar }}</div>
+          <div>
+            <div style="font-weight:700">{{ t.name }}</div>
+            <div style="color:var(--muted);font-size:0.85rem">📍 {{ t.city }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SELL CTA -->
+<section class="cta-section">
+  <div class="orb orb-pink" style="width:500px;height:500px;bottom:-100px;left:-100px;opacity:0.4"></div>
+  <div class="container cta-inner">
+    <h2 class="section-title">Ready to Sell? <span class="gold-text">Get the Best Price.</span></h2>
+    <p class="section-sub" style="margin:0 auto">List for free. AI valuation included. Reach thousands of verified buyers today.</p>
+    <div class="cta-btns">
+      <button class="btn-gold btn-lg">List Your Car Free 🚀</button>
+      <button class="btn-outline btn-lg">Learn More</button>
+    </div>
+    <div class="cta-perks">
+      <span>✅ Free Listing</span>
+      <span>✅ AI Valuation</span>
+      <span>✅ 50K+ Buyers</span>
+      <span>✅ Zero Commission</span>
+    </div>
+  </div>
+</section>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-bottom-nav hide-desktop">
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
+    <span>🏠</span><span>Home</span>
+  </a>
+  <a routerLink="/listings" routerLinkActive="active">
+    <span>🔍</span><span>Browse</span>
+  </a>
+  <button class="fab-center btn-gradient">
+    <span style="font-size:1.4rem">⚡</span>
+  </button>
+  <a href="#features">
+    <span>🤖</span><span>AI</span>
+  </a>
+  <a href="#account">
+    <span>👤</span><span>Account</span>
+  </a>
+</nav>

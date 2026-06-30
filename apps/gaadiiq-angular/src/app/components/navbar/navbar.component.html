@@ -1,0 +1,34 @@
+<nav class="navbar" [class.scrolled]="scrolled()">
+  <div class="nav-inner container">
+    <a routerLink="/" class="logo">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">GAADIIQ</span>
+    </a>
+
+    <ul class="nav-links hide-mobile">
+      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a></li>
+      <li><a routerLink="/listings" routerLinkActive="active">Browse Cars</a></li>
+      <li><a href="#features">AI Features</a></li>
+      <li><a href="#brands">Brands</a></li>
+    </ul>
+
+    <div class="nav-actions hide-mobile">
+      <button class="btn-outline btn-sm">Sign In</button>
+      <button class="btn-gradient btn-sm">List Your Car ✨</button>
+    </div>
+
+    <button class="hamburger hide-desktop" (click)="toggleMenu()" [class.open]="menuOpen()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="mobile-menu hide-desktop" [class.open]="menuOpen()">
+    <a routerLink="/" (click)="closeMenu()">Home</a>
+    <a routerLink="/listings" (click)="closeMenu()">Browse Cars</a>
+    <a href="#features" (click)="closeMenu()">AI Features</a>
+    <a href="#brands" (click)="closeMenu()">Brands</a>
+    <div class="mobile-btns">
+      <button class="btn-outline" style="width:100%">Sign In</button>
+      <button class="btn-gradient" style="width:100%">List Your Car ✨</button>
+    </div>
+  </div>
+</nav>

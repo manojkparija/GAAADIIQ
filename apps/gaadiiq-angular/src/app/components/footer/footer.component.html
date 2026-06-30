@@ -1,0 +1,52 @@
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <div class="logo">⚡ <span class="gradient-text" style="font-family:'Space Grotesk',sans-serif;font-weight:800">GAADIIQ</span></div>
+      <p>India's AI-first automotive intelligence platform. Smarter car buying and selling for everyone.</p>
+      <div class="socials">
+        <a href="#" class="social-btn">𝕏</a>
+        <a href="#" class="social-btn">in</a>
+        <a href="#" class="social-btn">f</a>
+        <a href="#" class="social-btn">📸</a>
+      </div>
+    </div>
+    <div class="footer-links">
+      <div class="link-group">
+        <h4>Buy</h4>
+        <a routerLink="/listings">All Cars</a>
+        <a routerLink="/listings" [queryParams]="{fuel:'Electric'}">Electric Cars</a>
+        <a routerLink="/listings" [queryParams]="{bodyType:'SUV'}">SUVs</a>
+        <a routerLink="/listings" [queryParams]="{bodyType:'Sedan'}">Sedans</a>
+      </div>
+      <div class="link-group">
+        <h4>Sell</h4>
+        <a href="#">List Your Car</a>
+        <a href="#">AI Valuation</a>
+        <a href="#">Seller Dashboard</a>
+        <a href="#">Pricing Plans</a>
+      </div>
+      <div class="link-group">
+        <h4>Tools</h4>
+        <a href="#">EMI Calculator</a>
+        <a href="#">Loan Comparison</a>
+        <a href="#">AI Car Advisor</a>
+        <a href="#">Price Alerts</a>
+      </div>
+      <div class="link-group">
+        <h4>Company</h4>
+        <a href="#">About Us</a>
+        <a href="#">Blog</a>
+        <a href="#">Careers</a>
+        <a href="mailto:support@gaadiiq.com">Contact</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom container">
+    <p>© {{ year }} GAADIIQ. All rights reserved. Made with ❤️ in India.</p>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Cookie Policy</a>
+    </div>
+  </div>
+</footer>

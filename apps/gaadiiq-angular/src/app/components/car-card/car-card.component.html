@@ -1,0 +1,38 @@
+<div class="car-card glass-card" [routerLink]="['/cars', car.id]">
+  <div class="card-img">
+    <img [src]="car.image" [alt]="car.make + ' ' + car.model" loading="lazy" onerror="this.src='https://via.placeholder.com/400x220/1a1f35/6C63FF?text=🚗'">
+    <div class="card-overlay">
+      <span class="badge" [class]="car.badgeType">{{ car.badge }}</span>
+      <button class="like-btn" (click)="toggleLike($event)" [class.liked]="liked">
+        {{ liked ? '❤️' : '🤍' }}
+      </button>
+    </div>
+    <div class="verified-tag" *ngIf="car.verified">✅ Verified</div>
+  </div>
+  <div class="card-body">
+    <div class="card-header">
+      <div>
+        <h3>{{ car.make }} {{ car.model }}</h3>
+        <div class="year-chip">{{ car.year }}</div>
+      </div>
+      <div class="rating">
+        <span class="star">★</span>
+        <span class="rating-val">{{ car.rating }}</span>
+        <span class="reviews">({{ car.reviews }})</span>
+      </div>
+    </div>
+    <div class="price-row">
+      <span class="price gradient-text">{{ formatPrice(car.price) }}</span>
+      <span class="emi">EMI ₹{{ Math.round(car.price * 0.02 / 1000) }}k/mo</span>
+    </div>
+    <div class="specs">
+      <span>⛽ {{ car.fuel }}</span>
+      <span>⚙️ {{ car.transmission }}</span>
+      <span>🛣️ {{ formatKm(car.km) }}</span>
+    </div>
+    <div class="ai-row">
+      <span class="ai-tag">🤖 AI: Fair Price</span>
+      <button class="btn-gradient card-cta">View Details</button>
+    </div>
+  </div>
+</div>

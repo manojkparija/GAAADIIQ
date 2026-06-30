@@ -1,0 +1,150 @@
+<div class="detail-page">
+  <div class="container">
+    <!-- BREADCRUMB -->
+    <div class="breadcrumb">
+      <a routerLink="/">Home</a> / <a routerLink="/listings">Browse</a> / <span>{{ car.make }} {{ car.model }}</span>
+    </div>
+
+    <div class="detail-grid">
+      <!-- LEFT: IMAGES + DETAILS -->
+      <div class="detail-left">
+        <!-- IMAGE GALLERY -->
+        <div class="gallery glass-card">
+          <div class="main-img">
+            <img [src]="car.images[activeImg()]" [alt]="car.make + ' ' + car.model">
+            <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
+            <button class="like-fab" (click)="liked.set(!liked())" [class.liked]="liked()">
+              {{ liked() ? '❤️' : '🤍' }}
+            </button>
+          </div>
+          <div class="thumbnails">
+            <div
+              *ngFor="let img of car.images; let i = index"
+              class="thumb"
+              [class.active]="activeImg() === i"
+              (click)="activeImg.set(i)"
+            >
+              <img [src]="img" alt="thumb">
+            </div>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs glass-card">
+          <div class="tab-nav">
+            <button [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">Overview</button>
+            <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">Specs</button>
+            <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">Features</button>
+          </div>
+
+          <div class="tab-content" *ngIf="activeTab()==='overview'">
+            <div class="overview-pills">
+              <div class="pill"><span>⛽</span><div><div class="pill-label">Fuel</div><div class="pill-val">{{ car.fuel }}</div></div></div>
+              <div class="pill"><span>⚙️</span><div><div class="pill-label">Gearbox</div><div class="pill-val">{{ car.transmission }}</div></div></div>
+              <div class="pill"><span>🛣️</span><div><div class="pill-label">KM Driven</div><div class="pill-val">{{ car.km.toLocaleString() }}</div></div></div>
+              <div class="pill"><span>👤</span><div><div class="pill-label">Owners</div><div class="pill-val">{{ car.owners }}</div></div></div>
+              <div class="pill"><span>🎨</span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
+              <div class="pill"><span>📍</span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
+            </div>
+          </div>
+
+          <div class="tab-content" *ngIf="activeTab()==='specs'">
+            <div class="specs-grid">
+              <div class="spec-row" *ngFor="let spec of car.specs">
+                <span class="spec-label">{{ spec.label }}</span>
+                <span class="spec-val gradient-text">{{ spec.value }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-content" *ngIf="activeTab()==='features'">
+            <div class="features-list">
+              <div class="feature-item" *ngFor="let f of car.features">
+                <span class="check">✅</span> {{ f }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: PRICE + ACTIONS -->
+      <div class="detail-right">
+        <!-- PRICE CARD -->
+        <div class="price-card glass-card">
+          <div class="badge-row">
+            <span class="badge badge-green">✅ Verified</span>
+            <div class="rating-row"><span>★</span> {{ car.rating }} <span style="color:var(--muted)">({{ car.reviews }} reviews)</span></div>
+          </div>
+          <h1>{{ car.make }} {{ car.model }}</h1>
+          <div style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">{{ car.variant }} · {{ car.year }}</div>
+          <div class="big-price gradient-text">{{ formatPrice(car.price) }}</div>
+          <div style="color:var(--muted);font-size:0.85rem">EMI from ₹{{ loan.emi.toLocaleString() }}/mo · No cost EMI available</div>
+          <div class="action-btns">
+            <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem">📞 Contact Seller</button>
+            <button class="btn-outline" style="width:100%;padding:1rem;font-size:1rem">📅 Book Test Drive</button>
+          </div>
+          <div style="display:flex;justify-content:center;gap:2rem;font-size:0.8rem;color:var(--muted)">
+            <span>🔒 Safe Deal Guarantee</span>
+            <span>📋 Free RC Check</span>
+          </div>
+        </div>
+
+        <!-- AI VALUATION CARD -->
+        <div class="ai-val-card glass-card">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
+            <span style="font-size:1.4rem">🤖</span>
+            <div>
+              <div style="font-weight:700">AI Price Analysis</div>
+              <div style="font-size:0.78rem;color:var(--muted)">{{ car.aiValuation.confidence }}% confidence</div>
+            </div>
+            <span class="badge badge-green" style="margin-left:auto">{{ car.aiValuation.verdict }}</span>
+          </div>
+          <div class="val-bar">
+            <div class="val-range">
+              <span style="font-size:0.8rem;color:var(--muted)">Market Min</span>
+              <span style="font-size:0.8rem;color:var(--muted)">Market Max</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill"></div>
+              <div class="bar-marker"></div>
+            </div>
+            <div class="val-range">
+              <span class="gold-text">{{ formatPrice(car.aiValuation.marketMin) }}</span>
+              <span class="gold-text">{{ formatPrice(car.aiValuation.marketMax) }}</span>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:0.75rem">
+            <span style="font-size:0.85rem;color:var(--muted)">AI Fair Value: </span>
+            <span class="gradient-text" style="font-weight:800;font-size:1.1rem">{{ formatPrice(car.aiValuation.fairPrice) }}</span>
+          </div>
+        </div>
+
+        <!-- EMI CALCULATOR -->
+        <div class="emi-card glass-card">
+          <h3>💳 EMI Calculator</h3>
+          <div class="emi-row">
+            <label>Loan Amount</label>
+            <input type="range" min="100000" max="car.price" step="50000"
+              [value]="loan.amount" (input)="loan.amount=+$any($event.target).value; calcEmi()">
+            <div class="emi-val">{{ formatPrice(loan.amount) }}</div>
+          </div>
+          <div class="emi-row">
+            <label>Interest Rate: {{ loan.rate }}%</label>
+            <input type="range" min="7" max="15" step="0.5"
+              [value]="loan.rate" (input)="loan.rate=+$any($event.target).value; calcEmi()">
+          </div>
+          <div class="emi-row">
+            <label>Tenure: {{ loan.tenure }} months</label>
+            <input type="range" min="12" max="84" step="12"
+              [value]="loan.tenure" (input)="loan.tenure=+$any($event.target).value; calcEmi()">
+          </div>
+          <div class="emi-result">
+            <div style="color:var(--muted);font-size:0.85rem">Monthly EMI</div>
+            <div class="gradient-text" style="font-size:2rem;font-weight:900">₹{{ loan.emi.toLocaleString() }}</div>
+          </div>
+          <button class="btn-gradient" style="width:100%">Apply for Loan →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
