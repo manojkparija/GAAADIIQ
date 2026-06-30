@@ -1,136 +1,74 @@
 import { Component, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-
-interface Car {
-  id: string;
-  name: string;
-  brand: string;
-  price: number;
-  year: number;
-  km: number;
-  fuel: string;
-  bodyType: string;
-  rating: number;
-  image: string;
-  features: string[];
-}
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-ai-advisor',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [RouterLink, CommonModule],
   templateUrl: './ai-advisor.component.html',
-  styleUrls: ['./ai-advisor.component.scss']
+  styleUrl: './ai-advisor.component.scss'
 })
 export class AiAdvisorComponent {
-  currentStep = signal(1);
-  totalSteps = 6;
+  step = signal(0);
+  matching = signal(false);
+  done = signal(false);
 
-  // User selections
-  budget = signal<string>('');
-  bodyType = signal<string>('');
-  fuelType = signal<string>('');
-  usage = signal<string>('');
-  selectedFeatures = signal<string[]>([]);
-  analyzing = signal(false);
-  showResults = signal(false);
-
-  progress = computed(() => ((this.currentStep() - 1) / (this.totalSteps - 1)) * 100);
+  answers = signal<Record<string, string>>({});
 
   steps = [
-    { label: 'Budget', icon: '💰' },
-    { label: 'Body Type', icon: '🚗' },
-    { label: 'Fuel', icon: '⛽' },
-    { label: 'Usage', icon: '🛣️' },
-    { label: 'Features', icon: '✨' },
-    { label: 'Results', icon: '🎯' }
+    {
+      key: 'budget', title: 'What is your budget?', icon: '💰',
+      options: ['Under ₹5L', '₹5L - ₹10L', '₹10L - ₹20L', '₹20L - ₹30L', 'Above ₹30L']
+    },
+    {
+      key: 'fuel', title: 'Preferred fuel type?', icon: '⛽',
+      options: ['Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid', 'Any']
+    },
+    {
+      key: 'usage', title: 'Primary usage?', icon: '🗺',
+      options: ['City commute', 'Long highway trips', 'Mixed city & highway', 'Off-road adventures', 'Family road trips']
+    },
+    {
+      key: 'seating', title: 'How many seats?', icon: '💺',
+      options: ['4 seater', '5 seater', '6-7 seater', '8+ seater']
+    },
+    {
+      key: 'bodyType', title: 'Preferred body type?', icon: '🚗',
+      options: ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Coupe', 'No preference']
+    },
+    {
+      key: 'features', title: 'Must-have features?', icon: '✨',
+      options: ['Sunroof', 'ADAS / Safety', 'Large touchscreen', 'Wireless charging', 'Ventilated seats', 'EV range 400km+']
+    }
   ];
 
-  budgetOptions = [
-    { label: 'Under ₹5L', value: 'under-5l', range: [0, 500000] },
-    { label: '₹5L – ₹10L', value: '5l-10l', range: [500000, 1000000] },
-    { label: '₹10L – ₹20L', value: '10l-20l', range: [1000000, 2000000] },
-    { label: '₹20L – ₹50L', value: '20l-50l', range: [2000000, 5000000] },
-    { label: 'Above ₹50L', value: 'above-50l', range: [5000000, 999999999] },
+  results = [
+    { make: 'Hyundai', model: 'Creta', year: 2024, price: '₹11.5L', match: 98, badge: '🏆 Best Match', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg' },
+    { make: 'Kia', model: 'Seltos', year: 2024, price: '₹10.9L', match: 94, badge: '⭐ Top Pick', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/115025/seltos-exterior-right-front-three-quarter-3.jpeg' },
+    { make: 'Tata', model: 'Nexon', year: 2024, price: '₹8.5L', match: 89, badge: '💰 Best Value', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg' },
   ];
 
-  bodyTypes = ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Coupe', 'Convertible'];
-  fuelTypes = ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'];
-  usageTypes = [
-    { label: 'City Commute', icon: '🏙️', value: 'city' },
-    { label: 'Long Highways', icon: '🛣️', value: 'highway' },
-    { label: 'Family Trips', icon: '👨‍👩‍👧', value: 'family' },
-    { label: 'Off-Road', icon: '⛰️', value: 'offroad' },
-  ];
-  featureOptions = ['Sunroof', 'Apple CarPlay', '360° Camera', 'Ventilated Seats', 'Wireless Charging', 'ADAS', 'Heads-Up Display', 'Premium Audio'];
+  currentStep = computed(() => this.steps[this.step()]);
+  progress = computed(() => ((this.step()) / this.steps.length) * 100);
 
-  featuredCars: Car[] = [
-    { id: '1', name: 'Nexon EV', brand: 'Tata', price: 1450000, year: 2023, km: 12000, fuel: 'Electric', bodyType: 'SUV', rating: 4.7, image: '🚗', features: ['ADAS', 'Sunroof', 'Apple CarPlay'] },
-    { id: '2', name: 'Creta', brand: 'Hyundai', price: 1650000, year: 2023, km: 8000, fuel: 'Petrol', bodyType: 'SUV', rating: 4.6, image: '🚙', features: ['Sunroof', 'Wireless Charging', '360° Camera'] },
-    { id: '3', name: 'Swift', brand: 'Maruti', price: 680000, year: 2022, km: 25000, fuel: 'Petrol', bodyType: 'Hatchback', rating: 4.4, image: '🏎️', features: ['Apple CarPlay', 'Wireless Charging'] },
-    { id: '4', name: 'Seltos', brand: 'Kia', price: 1800000, year: 2023, km: 5000, fuel: 'Diesel', bodyType: 'SUV', rating: 4.5, image: '🚗', features: ['Sunroof', 'ADAS', 'Premium Audio'] },
-    { id: '5', name: 'City', brand: 'Honda', price: 1200000, year: 2022, km: 18000, fuel: 'Petrol', bodyType: 'Sedan', rating: 4.3, image: '🚙', features: ['Apple CarPlay', 'Wireless Charging'] },
-    { id: '6', name: 'XUV 700', brand: 'Mahindra', price: 2200000, year: 2023, km: 6000, fuel: 'Diesel', bodyType: 'SUV', rating: 4.8, image: '🚘', features: ['ADAS', 'Sunroof', 'Heads-Up Display', '360° Camera'] },
-  ];
-
-  recommendations = computed(() => {
-    return this.featuredCars.slice(0, 3);
-  });
-
-  selectBudget(val: string) { this.budget.set(val); }
-  selectBodyType(val: string) { this.bodyType.set(val); }
-  selectFuel(val: string) { this.fuelType.set(val); }
-  selectUsage(val: string) { this.usage.set(val); }
-
-  toggleFeature(feature: string) {
-    this.selectedFeatures.update(features =>
-      features.includes(feature)
-        ? features.filter(f => f !== feature)
-        : [...features, feature]
-    );
-  }
-
-  isFeatureSelected(feature: string) {
-    return this.selectedFeatures().includes(feature);
-  }
-
-  nextStep() {
-    if (this.currentStep() < this.totalSteps) {
-      this.currentStep.update(s => s + 1);
-      if (this.currentStep() === 6) {
-        this.analyzing.set(true);
-        setTimeout(() => {
-          this.analyzing.set(false);
-          this.showResults.set(true);
-        }, 2000);
-      }
+  select(option: string) {
+    this.answers.update(a => ({ ...a, [this.currentStep().key]: option }));
+    if (this.step() < this.steps.length - 1) {
+      this.step.update(v => v + 1);
+    } else {
+      this.matching.set(true);
+      setTimeout(() => {
+        this.matching.set(false);
+        this.done.set(true);
+      }, 3000);
     }
   }
 
-  prevStep() {
-    if (this.currentStep() > 1) {
-      this.currentStep.update(s => s - 1);
-      if (this.currentStep() < 6) {
-        this.showResults.set(false);
-        this.analyzing.set(false);
-      }
-    }
-  }
-
-  reset() {
-    this.currentStep.set(1);
-    this.budget.set('');
-    this.bodyType.set('');
-    this.fuelType.set('');
-    this.usage.set('');
-    this.selectedFeatures.set([]);
-    this.showResults.set(false);
-    this.analyzing.set(false);
-  }
-
-  formatPrice(price: number) {
-    if (price >= 100000) return `₹${(price / 100000).toFixed(1)}L`;
-    return `₹${price.toLocaleString('en-IN')}`;
+  restart() {
+    this.step.set(0);
+    this.answers.set({});
+    this.done.set(false);
+    this.matching.set(false);
   }
 }
