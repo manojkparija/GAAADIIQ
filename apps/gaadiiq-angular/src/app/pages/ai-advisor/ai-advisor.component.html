@@ -1,0 +1,160 @@
+<div class="advisor-page">
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <div class="container advisor-container">
+    <!-- Hero -->
+    <div class="advisor-hero">
+      <div class="ai-badge">🤖 AI-Powered</div>
+      <h1>Find Your <span class="gradient-text">Perfect Car</span></h1>
+      <p>Answer 5 quick questions. Our AI finds your best match in seconds.</p>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="step-bar">
+      <div *ngFor="let step of steps; let i = index"
+           class="step-dot"
+           [class.active]="currentStep() === i + 1"
+           [class.done]="currentStep() > i + 1">
+        <span class="dot-icon">{{ step.icon }}</span>
+        <span class="dot-label">{{ step.label }}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" [style.width.%]="progress()"></div>
+      </div>
+    </div>
+
+    <!-- Steps Container -->
+    <div class="glass-card step-card">
+
+      <!-- Step 1: Budget -->
+      <div *ngIf="currentStep() === 1" class="step-content">
+        <h2>What's your budget?</h2>
+        <p class="step-desc">Select a range that works for you</p>
+        <div class="option-grid">
+          <button *ngFor="let opt of budgetOptions"
+                  class="option-btn"
+                  [class.selected]="budget() === opt.value"
+                  (click)="selectBudget(opt.value)">
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Body Type -->
+      <div *ngIf="currentStep() === 2" class="step-content">
+        <h2>Preferred body type?</h2>
+        <p class="step-desc">What kind of car fits your lifestyle?</p>
+        <div class="option-grid">
+          <button *ngFor="let bt of bodyTypes"
+                  class="option-btn"
+                  [class.selected]="bodyType() === bt"
+                  (click)="selectBodyType(bt)">
+            {{ bt }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Fuel -->
+      <div *ngIf="currentStep() === 3" class="step-content">
+        <h2>Fuel preference?</h2>
+        <p class="step-desc">Choose what powers your drive</p>
+        <div class="option-grid">
+          <button *ngFor="let fuel of fuelTypes"
+                  class="option-btn"
+                  [class.selected]="fuelType() === fuel"
+                  (click)="selectFuel(fuel)">
+            {{ fuel }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 4: Usage -->
+      <div *ngIf="currentStep() === 4" class="step-content">
+        <h2>Primary usage?</h2>
+        <p class="step-desc">How will you use your car most often?</p>
+        <div class="usage-grid">
+          <button *ngFor="let u of usageTypes"
+                  class="usage-btn"
+                  [class.selected]="usage() === u.value"
+                  (click)="selectUsage(u.value)">
+            <span class="usage-icon">{{ u.icon }}</span>
+            <span>{{ u.label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 5: Features -->
+      <div *ngIf="currentStep() === 5" class="step-content">
+        <h2>Must-have features?</h2>
+        <p class="step-desc">Select any that matter to you</p>
+        <div class="feature-grid">
+          <button *ngFor="let f of featureOptions"
+                  class="feature-chip"
+                  [class.selected]="isFeatureSelected(f)"
+                  (click)="toggleFeature(f)">
+            <span *ngIf="isFeatureSelected(f)">✓ </span>{{ f }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 6: Results -->
+      <div *ngIf="currentStep() === 6" class="step-content results-step">
+        <!-- Analyzing state -->
+        <div *ngIf="analyzing()" class="analyzing-state">
+          <div class="ai-spinner">🤖</div>
+          <h2>AI is analyzing your preferences...</h2>
+          <div class="analysis-bars">
+            <div class="abar" *ngFor="let b of [1,2,3,4]">
+              <div class="abar-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div *ngIf="showResults()">
+          <div class="results-header">
+            <h2>Your Top <span class="gradient-text">3 Matches</span></h2>
+            <p class="step-desc">Based on your preferences, our AI recommends:</p>
+          </div>
+          <div class="results-grid">
+            <div *ngFor="let car of recommendations(); let i = index" class="result-card glass-card">
+              <div class="match-badge">
+                <span *ngIf="i === 0">🏆 Best Match</span>
+                <span *ngIf="i === 1">⭐ Great Pick</span>
+                <span *ngIf="i === 2">✨ Also Consider</span>
+              </div>
+              <div class="car-emoji">{{ car.image }}</div>
+              <h3>{{ car.brand }} {{ car.name }}</h3>
+              <div class="car-price">{{ formatPrice(car.price) }}</div>
+              <div class="car-meta">
+                <span>{{ car.year }}</span>
+                <span>{{ car.fuel }}</span>
+                <span>⭐ {{ car.rating }}</span>
+              </div>
+              <div class="car-features">
+                <span *ngFor="let feat of car.features.slice(0,2)" class="feat-tag">{{ feat }}</span>
+              </div>
+              <a [routerLink]="['/cars', car.id]" class="btn-primary view-btn">View Details →</a>
+            </div>
+          </div>
+          <div class="results-actions">
+            <button class="btn-outline" (click)="reset()">Start Over</button>
+            <a routerLink="/listings" class="btn-primary">Browse All Cars →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div *ngIf="currentStep() < 6 || (currentStep() === 6 && !showResults() && !analyzing())" class="step-nav">
+        <button class="btn-outline" (click)="prevStep()" [disabled]="currentStep() === 1">← Back</button>
+        <div class="step-counter">{{ currentStep() }} / {{ totalSteps }}</div>
+        <button class="btn-primary" (click)="nextStep()">
+          {{ currentStep() === 5 ? 'Get Results 🎯' : 'Next →' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

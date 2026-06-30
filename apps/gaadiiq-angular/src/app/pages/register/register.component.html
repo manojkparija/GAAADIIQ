@@ -1,0 +1,134 @@
+<div class="register-page">
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <div class="register-container">
+    <div class="glass-card register-card">
+
+      <!-- Header -->
+      <div class="card-header">
+        <a routerLink="/" class="logo-link">
+          <span class="logo-icon">⚡</span>
+          <span class="logo-text gradient-text">GAADIIQ</span>
+        </a>
+        <h1>Create Account</h1>
+        <p class="subtitle">Join India's smartest car marketplace</p>
+      </div>
+
+      <!-- Progress -->
+      <div class="step-progress">
+        <div class="steps-row">
+          <div *ngFor="let label of stepLabels; let i = index" class="step-item" [class.active]="currentStep() === i + 1" [class.done]="currentStep() > i + 1">
+            <div class="step-circle">
+              <span *ngIf="currentStep() <= i + 1">{{ i + 1 }}</span>
+              <span *ngIf="currentStep() > i + 1">✓</span>
+            </div>
+            <span class="step-label">{{ label }}</span>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progress()"></div>
+        </div>
+      </div>
+
+      <!-- Success -->
+      <div *ngIf="completed()" class="success-state">
+        <div class="success-icon">🎉</div>
+        <h2>Account Created!</h2>
+        <p>Welcome to GAADIIQ, {{ name }}! Your journey begins now.</p>
+        <a routerLink="/login" class="btn-primary">Sign In →</a>
+      </div>
+
+      <!-- Step 1: Personal Info -->
+      <div *ngIf="!completed() && currentStep() === 1" class="step-form">
+        <div class="form-group">
+          <label>Full Name</label>
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <input type="text" [(ngModel)]="name" name="name" placeholder="Rahul Sharma" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <div class="input-wrapper">
+            <span class="input-icon">✉️</span>
+            <input type="email" [(ngModel)]="email" name="email" placeholder="you@example.com" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <div class="input-wrapper">
+            <span class="input-icon">📱</span>
+            <input type="tel" [(ngModel)]="phone" name="phone" placeholder="+91 98765 43210" required />
+          </div>
+        </div>
+        <button class="btn-primary next-btn" (click)="nextStep()" [disabled]="!name || !email || !phone">
+          Continue →
+        </button>
+      </div>
+
+      <!-- Step 2: Password -->
+      <div *ngIf="!completed() && currentStep() === 2" class="step-form">
+        <div class="form-group">
+          <label>Create Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input [type]="showPassword() ? 'text' : 'password'" [(ngModel)]="password" name="password" placeholder="Min. 8 characters" required />
+            <button type="button" class="toggle-pw" (click)="togglePassword()">{{ showPassword() ? '🙈' : '👁️' }}</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input [type]="showPassword() ? 'text' : 'password'" [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="Repeat password" required />
+          </div>
+          <p *ngIf="confirmPassword && password !== confirmPassword" class="field-error">Passwords do not match</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn-outline back-btn" (click)="prevStep()">← Back</button>
+          <button class="btn-primary next-btn" (click)="nextStep()" [disabled]="!password || password !== confirmPassword || password.length < 8">
+            Continue →
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: OTP -->
+      <div *ngIf="!completed() && currentStep() === 3" class="step-form otp-step">
+        <div class="otp-info">
+          <p>We sent a 6-digit OTP to <strong>{{ email }}</strong></p>
+          <p class="otp-hint">Use <code>123456</code> for demo</p>
+        </div>
+
+        <div class="otp-inputs">
+          <input
+            *ngFor="let digit of otp; let i = index"
+            class="otp-input"
+            type="text"
+            maxlength="1"
+            [value]="otp[i]"
+            (input)="onOtpInput(i, $event)"
+            (keydown)="onOtpKeydown(i, $event)"
+          />
+        </div>
+
+        <p *ngIf="otpError()" class="field-error otp-error">{{ otpError() }}</p>
+
+        <button class="btn-primary verify-btn" (click)="verifyOtp()" [class.loading]="loading()" [disabled]="loading() || otp.join('').length < 6">
+          <span *ngIf="!loading()">Verify & Create Account</span>
+          <span *ngIf="loading()">Creating account...</span>
+        </button>
+        <div class="btn-row resend-row">
+          <button class="btn-outline back-btn" (click)="prevStep()">← Back</button>
+          <button class="text-btn" (click)="resendOtp()">Resend OTP</button>
+        </div>
+      </div>
+
+      <p class="login-link">
+        Already have an account? <a routerLink="/login">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>

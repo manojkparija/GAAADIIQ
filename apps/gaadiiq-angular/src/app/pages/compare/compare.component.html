@@ -1,0 +1,77 @@
+<div class="compare-page">
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <div class="container compare-container">
+    <div class="page-hero">
+      <h1>Compare <span class="gradient-text">Cars</span></h1>
+      <p>Select up to 3 cars and see them side by side</p>
+    </div>
+
+    <!-- Car Selector -->
+    <div class="selector-section">
+      <h3 class="section-title">Select cars to compare <span class="count-badge">{{ selectedIds().length }}/3</span></h3>
+      <div class="cars-grid">
+        <div *ngFor="let car of allCars"
+             class="car-selector-card glass-card"
+             [class.selected]="isSelected(car.id)"
+             [class.disabled]="!isSelected(car.id) && !canAddMore()"
+             (click)="toggleCar(car.id)">
+          <div class="car-emoji">{{ car.image }}</div>
+          <div class="car-info">
+            <div class="car-name">{{ car.brand }} {{ car.name }}</div>
+            <div class="car-price">{{ formatPrice(car.price) }}</div>
+          </div>
+          <div class="check-icon" [class.visible]="isSelected(car.id)">✓</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div *ngIf="selectedCars().length > 0" class="comparison-section glass-card">
+      <h3 class="section-title">Side-by-Side Comparison</h3>
+
+      <!-- Car headers -->
+      <div class="compare-table">
+        <div class="table-header-row">
+          <div class="row-label-cell">Spec</div>
+          <div *ngFor="let car of selectedCars()" class="car-header-cell">
+            <div class="car-emoji-lg">{{ car.image }}</div>
+            <div class="car-full-name">{{ car.brand }} {{ car.name }}</div>
+            <div class="car-header-price">{{ formatPrice(car.price) }}</div>
+            <button class="remove-btn" (click)="toggleCar(car.id)">✕</button>
+          </div>
+          <!-- Empty slots -->
+          <div *ngFor="let _ of [].constructor(3 - selectedCars().length)" class="car-header-cell empty-slot">
+            <div class="add-car-icon">+</div>
+            <div class="add-car-label">Add Car</div>
+          </div>
+        </div>
+
+        <!-- Data rows -->
+        <div *ngFor="let row of comparisonRows; let even = even"
+             class="table-data-row"
+             [class.row-even]="even">
+          <div class="row-label-cell">{{ row.label }}</div>
+          <div *ngFor="let car of selectedCars()"
+               class="data-cell"
+               [class.best-value]="row.format ? isBest(car, row.field, row.prefer) : false">
+            <span>{{ row.format ? row.format(car[row.field]) : car[row.field] }}</span>
+            <span *ngIf="isBest(car, row.field, row.prefer)" class="best-badge">Best</span>
+          </div>
+          <!-- Empty slots -->
+          <div *ngFor="let _ of [].constructor(3 - selectedCars().length)" class="data-cell empty"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="selectedCars().length === 0" class="empty-state glass-card">
+      <div class="empty-icon">🔍</div>
+      <h3>Select cars above to start comparing</h3>
+      <p>Choose 2–3 cars to see a detailed side-by-side comparison</p>
+    </div>
+  </div>
+</div>

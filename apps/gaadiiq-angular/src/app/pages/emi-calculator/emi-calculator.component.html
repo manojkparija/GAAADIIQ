@@ -1,0 +1,173 @@
+<div class="emi-page">
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <div class="container emi-container">
+    <div class="page-hero">
+      <div class="hero-badge">🏦 Car Loan</div>
+      <h1>EMI <span class="gradient-text">Calculator</span></h1>
+      <p>Plan your car purchase with precision</p>
+    </div>
+
+    <div class="emi-layout">
+      <!-- Controls Panel -->
+      <div class="glass-card controls-panel">
+        <h3 class="panel-title">Loan Parameters</h3>
+
+        <!-- Loan Amount -->
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Loan Amount</label>
+            <span class="slider-value">{{ formatLakhs(loanAmount()) }}</span>
+          </div>
+          <div class="slider-track">
+            <input
+              type="range"
+              min="100000"
+              max="5000000"
+              step="50000"
+              [value]="loanAmount()"
+              (input)="onLoanChange($event)"
+              class="range-slider"
+            />
+            <div class="range-labels">
+              <span>₹1L</span>
+              <span>₹50L</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interest Rate -->
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Interest Rate</label>
+            <span class="slider-value">{{ interestRate() }}%</span>
+          </div>
+          <div class="slider-track">
+            <input
+              type="range"
+              min="6"
+              max="20"
+              step="0.5"
+              [value]="interestRate()"
+              (input)="onRateChange($event)"
+              class="range-slider rate-slider"
+            />
+            <div class="range-labels">
+              <span>6%</span>
+              <span>20%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tenure -->
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Loan Tenure</label>
+            <span class="slider-value">{{ tenureMonths() }} months</span>
+          </div>
+          <div class="slider-track">
+            <input
+              type="range"
+              min="12"
+              max="84"
+              step="12"
+              [value]="tenureMonths()"
+              (input)="onTenureChange($event)"
+              class="range-slider tenure-slider"
+            />
+            <div class="range-labels">
+              <span>1 yr</span>
+              <span>7 yrs</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="results-summary">
+          <div class="result-item primary">
+            <div class="result-label">Monthly EMI</div>
+            <div class="result-value emi-value">{{ formatCurrency(monthlyEmi()) }}</div>
+          </div>
+          <div class="result-divider"></div>
+          <div class="mini-results">
+            <div class="result-item">
+              <div class="result-label">Total Interest</div>
+              <div class="result-value interest-value">{{ formatCurrency(totalInterest()) }}</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Total Amount</div>
+              <div class="result-value total-value">{{ formatCurrency(totalAmount()) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pie breakdown -->
+        <div class="breakdown-bar">
+          <div class="breakdown-label">
+            <span class="dot principal-dot"></span> Principal {{ principalPercent() | number:'1.0-0' }}%
+          </div>
+          <div class="bar-visual">
+            <div class="bar-segment principal-seg" [style.width.%]="principalPercent()"></div>
+            <div class="bar-segment interest-seg" [style.width.%]="interestPercent()"></div>
+          </div>
+          <div class="breakdown-label">
+            <span class="dot interest-dot"></span> Interest {{ interestPercent() | number:'1.0-0' }}%
+          </div>
+        </div>
+      </div>
+
+      <!-- Amortization Chart -->
+      <div class="glass-card amort-panel">
+        <h3 class="panel-title">Yearly Amortization</h3>
+
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-color principal-color"></span> Principal</div>
+          <div class="legend-item"><span class="legend-color interest-color"></span> Interest</div>
+        </div>
+
+        <div class="amort-chart">
+          <div *ngFor="let yr of amortizationYears()" class="year-bar-group">
+            <div class="bars-container">
+              <div class="bar-tooltip">
+                <div>Year {{ yr.year }}</div>
+                <div>Principal: {{ formatCurrency(yr.principal) }}</div>
+                <div>Interest: {{ formatCurrency(yr.interest) }}</div>
+                <div>Balance: {{ formatCurrency(yr.balance) }}</div>
+              </div>
+              <div class="bar-stack">
+                <div
+                  class="bar-segment-chart principal-bar"
+                  [style.height.%]="(yr.principal / maxBarValue()) * 100">
+                </div>
+                <div
+                  class="bar-segment-chart interest-bar"
+                  [style.height.%]="(yr.interest / maxBarValue()) * 100">
+                </div>
+              </div>
+            </div>
+            <div class="year-label">Y{{ yr.year }}</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="amort-table">
+          <div class="table-header">
+            <span>Year</span>
+            <span>Principal</span>
+            <span>Interest</span>
+            <span>Balance</span>
+          </div>
+          <div *ngFor="let yr of amortizationYears()" class="table-row">
+            <span>Year {{ yr.year }}</span>
+            <span class="principal-text">{{ formatCurrency(yr.principal) }}</span>
+            <span class="interest-text">{{ formatCurrency(yr.interest) }}</span>
+            <span class="balance-text">{{ formatCurrency(yr.balance) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

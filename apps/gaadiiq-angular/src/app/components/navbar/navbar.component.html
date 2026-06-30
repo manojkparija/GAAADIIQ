@@ -8,12 +8,13 @@
     <ul class="nav-links hide-mobile">
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a></li>
       <li><a routerLink="/listings" routerLinkActive="active">Browse Cars</a></li>
-      <li><a href="#features">AI Features</a></li>
-      <li><a href="#brands">Brands</a></li>
+      <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>
+      <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
+      <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI Calc</a></li>
     </ul>
 
     <div class="nav-actions hide-mobile">
-      <button class="btn-outline btn-sm">Sign In</button>
+      <a routerLink="/login" class="btn-outline btn-sm">Sign In</a>
       <button class="btn-gradient btn-sm">List Your Car ✨</button>
     </div>
 
@@ -24,10 +25,11 @@
   <div class="mobile-menu hide-desktop" [class.open]="menuOpen()">
     <a routerLink="/" (click)="closeMenu()">Home</a>
     <a routerLink="/listings" (click)="closeMenu()">Browse Cars</a>
-    <a href="#features" (click)="closeMenu()">AI Features</a>
-    <a href="#brands" (click)="closeMenu()">Brands</a>
+    <a routerLink="/ai-advisor" (click)="closeMenu()">AI Advisor</a>
+    <a routerLink="/compare" (click)="closeMenu()">Compare Cars</a>
+    <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
     <div class="mobile-btns">
-      <button class="btn-outline" style="width:100%">Sign In</button>
+      <a routerLink="/login" (click)="closeMenu()" class="btn-outline" style="width:100%;display:block;text-align:center">Sign In</a>
       <button class="btn-gradient" style="width:100%">List Your Car ✨</button>
     </div>
   </div>
