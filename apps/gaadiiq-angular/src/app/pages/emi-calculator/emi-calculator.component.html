@@ -1,172 +1,157 @@
 <div class="emi-page">
-  <div class="bg-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
+  <div class="emi-hero">
+    <div class="container">
+      <h1>EMI <span class="gradient-text">Calculator</span></h1>
+      <p>Calculate your monthly payment and compare bank rates</p>
+    </div>
   </div>
 
-  <div class="container emi-container">
-    <div class="page-hero">
-      <div class="hero-badge">🏦 Car Loan</div>
-      <h1>EMI <span class="gradient-text">Calculator</span></h1>
-      <p>Plan your car purchase with precision</p>
-    </div>
+  <div class="container">
+    <div class="emi-grid">
+      <!-- Controls -->
+      <div class="controls-card glass-card">
+        <h2>Loan Details</h2>
 
-    <div class="emi-layout">
-      <!-- Controls Panel -->
-      <div class="glass-card controls-panel">
-        <h3 class="panel-title">Loan Parameters</h3>
-
-        <!-- Loan Amount -->
         <div class="slider-group">
-          <div class="slider-header">
-            <label>Loan Amount</label>
-            <span class="slider-value">{{ formatLakhs(loanAmount()) }}</span>
+          <div class="slider-label">
+            <span>Car Price</span>
+            <strong>{{ fmt(loanAmount()) }}</strong>
           </div>
-          <div class="slider-track">
-            <input
-              type="range"
-              min="100000"
-              max="5000000"
-              step="50000"
-              [value]="loanAmount()"
-              (input)="onLoanChange($event)"
-              class="range-slider"
-            />
-            <div class="range-labels">
-              <span>₹1L</span>
-              <span>₹50L</span>
-            </div>
-          </div>
+          <input type="range" min="200000" max="10000000" step="50000"
+            [ngModel]="loanAmount()" (ngModelChange)="loanAmount.set($event)">
+          <div class="range-ends"><span>₹2L</span><span>₹1Cr</span></div>
         </div>
 
-        <!-- Interest Rate -->
         <div class="slider-group">
-          <div class="slider-header">
-            <label>Interest Rate</label>
-            <span class="slider-value">{{ interestRate() }}%</span>
+          <div class="slider-label">
+            <span>Down Payment</span>
+            <strong>{{ fmt(downPayment()) }}</strong>
           </div>
-          <div class="slider-track">
-            <input
-              type="range"
-              min="6"
-              max="20"
-              step="0.5"
-              [value]="interestRate()"
-              (input)="onRateChange($event)"
-              class="range-slider rate-slider"
-            />
-            <div class="range-labels">
-              <span>6%</span>
-              <span>20%</span>
-            </div>
-          </div>
+          <input type="range" min="0" [max]="loanAmount()" step="10000"
+            [ngModel]="downPayment()" (ngModelChange)="downPayment.set($event)">
+          <div class="range-ends"><span>₹0</span><span>{{ fmt(loanAmount()) }}</span></div>
         </div>
 
-        <!-- Tenure -->
         <div class="slider-group">
-          <div class="slider-header">
-            <label>Loan Tenure</label>
-            <span class="slider-value">{{ tenureMonths() }} months</span>
+          <div class="slider-label">
+            <span>Interest Rate</span>
+            <strong>{{ interestRate() }}%</strong>
           </div>
-          <div class="slider-track">
-            <input
-              type="range"
-              min="12"
-              max="84"
-              step="12"
-              [value]="tenureMonths()"
-              (input)="onTenureChange($event)"
-              class="range-slider tenure-slider"
-            />
-            <div class="range-labels">
-              <span>1 yr</span>
-              <span>7 yrs</span>
-            </div>
-          </div>
+          <input type="range" min="6" max="18" step="0.1"
+            [ngModel]="interestRate()" (ngModelChange)="interestRate.set(+$event)">
+          <div class="range-ends"><span>6%</span><span>18%</span></div>
         </div>
 
-        <!-- Results Summary -->
-        <div class="results-summary">
-          <div class="result-item primary">
-            <div class="result-label">Monthly EMI</div>
-            <div class="result-value emi-value">{{ formatCurrency(monthlyEmi()) }}</div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Tenure</span>
+            <strong>{{ tenureMonths() }} months</strong>
           </div>
-          <div class="result-divider"></div>
-          <div class="mini-results">
-            <div class="result-item">
-              <div class="result-label">Total Interest</div>
-              <div class="result-value interest-value">{{ formatCurrency(totalInterest()) }}</div>
-            </div>
-            <div class="result-item">
-              <div class="result-label">Total Amount</div>
-              <div class="result-value total-value">{{ formatCurrency(totalAmount()) }}</div>
-            </div>
-          </div>
+          <input type="range" min="12" max="84" step="12"
+            [ngModel]="tenureMonths()" (ngModelChange)="tenureMonths.set(+$event)">
+          <div class="range-ends"><span>12 mo</span><span>84 mo</span></div>
         </div>
 
-        <!-- Pie breakdown -->
-        <div class="breakdown-bar">
-          <div class="breakdown-label">
-            <span class="dot principal-dot"></span> Principal {{ principalPercent() | number:'1.0-0' }}%
+        <div class="loan-summary">
+          <div class="sum-row">
+            <span>Loan Amount</span>
+            <strong>{{ fmt(principal()) }}</strong>
           </div>
-          <div class="bar-visual">
-            <div class="bar-segment principal-seg" [style.width.%]="principalPercent()"></div>
-            <div class="bar-segment interest-seg" [style.width.%]="interestPercent()"></div>
+          <div class="sum-row highlight">
+            <span>Monthly EMI</span>
+            <strong class="emi-amount">{{ fmt(emi()) }}</strong>
           </div>
-          <div class="breakdown-label">
-            <span class="dot interest-dot"></span> Interest {{ interestPercent() | number:'1.0-0' }}%
+          <div class="sum-row">
+            <span>Total Interest</span>
+            <strong style="color:#FF6584">{{ fmt(totalInterest()) }}</strong>
+          </div>
+          <div class="sum-row">
+            <span>Total Amount</span>
+            <strong>{{ fmt(totalAmount()) }}</strong>
           </div>
         </div>
       </div>
 
-      <!-- Amortization Chart -->
-      <div class="glass-card amort-panel">
-        <h3 class="panel-title">Yearly Amortization</h3>
-
-        <div class="chart-legend">
-          <div class="legend-item"><span class="legend-color principal-color"></span> Principal</div>
-          <div class="legend-item"><span class="legend-color interest-color"></span> Interest</div>
-        </div>
-
-        <div class="amort-chart">
-          <div *ngFor="let yr of amortizationYears()" class="year-bar-group">
-            <div class="bars-container">
-              <div class="bar-tooltip">
-                <div>Year {{ yr.year }}</div>
-                <div>Principal: {{ formatCurrency(yr.principal) }}</div>
-                <div>Interest: {{ formatCurrency(yr.interest) }}</div>
-                <div>Balance: {{ formatCurrency(yr.balance) }}</div>
-              </div>
-              <div class="bar-stack">
-                <div
-                  class="bar-segment-chart principal-bar"
-                  [style.height.%]="(yr.principal / maxBarValue()) * 100">
-                </div>
-                <div
-                  class="bar-segment-chart interest-bar"
-                  [style.height.%]="(yr.interest / maxBarValue()) * 100">
-                </div>
-              </div>
+      <!-- Chart + Results -->
+      <div class="results-col">
+        <!-- Donut Chart -->
+        <div class="chart-card glass-card">
+          <h3>Loan Breakdown</h3>
+          <div class="donut-wrap">
+            <svg viewBox="0 0 120 120" class="donut-svg">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#6C63FF" stroke-width="12"
+                [attr.stroke-dasharray]="principalDash() + ' ' + (donutDash() - principalDash())"
+                stroke-linecap="round" transform="rotate(-90 60 60)" class="donut-seg"/>
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#FF6584" stroke-width="12"
+                [attr.stroke-dasharray]="interestDash() + ' ' + (donutDash() - interestDash())"
+                [attr.stroke-dashoffset]="-principalDash()"
+                transform="rotate(-90 60 60)" class="donut-seg"/>
+            </svg>
+            <div class="donut-center">
+              <div class="donut-emi">{{ fmt(emi()) }}</div>
+              <div class="donut-label">per month</div>
             </div>
-            <div class="year-label">Y{{ yr.year }}</div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><span class="dot principal"></span> Principal ({{ principalPercent() }}%)</div>
+            <div class="legend-item"><span class="dot interest"></span> Interest ({{ interestPercent() }}%)</div>
           </div>
         </div>
 
-        <!-- Table -->
-        <div class="amort-table">
-          <div class="table-header">
-            <span>Year</span>
-            <span>Principal</span>
-            <span>Interest</span>
-            <span>Balance</span>
-          </div>
-          <div *ngFor="let yr of amortizationYears()" class="table-row">
-            <span>Year {{ yr.year }}</span>
-            <span class="principal-text">{{ formatCurrency(yr.principal) }}</span>
-            <span class="interest-text">{{ formatCurrency(yr.interest) }}</span>
-            <span class="balance-text">{{ formatCurrency(yr.balance) }}</span>
+        <!-- Bank Comparison -->
+        <div class="banks-card glass-card">
+          <h3>Compare Bank Rates</h3>
+          <div class="banks-list">
+            @for (bank of banks; track bank.name) {
+              <div class="bank-row" [class.best]="bank.rate === 8.45">
+                <div class="bank-info">
+                  <span class="bank-logo">{{ bank.logo }}</span>
+                  <div>
+                    <div class="bank-name">{{ bank.name }}</div>
+                    <div class="bank-rate">{{ bank.rate }}% p.a.</div>
+                  </div>
+                </div>
+                <div class="bank-emi">
+                  <div class="emi-val">{{ fmt(bankEmi(bank.rate)) }}</div>
+                  <div class="emi-label">/ month</div>
+                </div>
+                @if (bank.rate === 8.45) {
+                  <div class="best-badge">Best Rate</div>
+                }
+              </div>
+            }
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Amortization Table -->
+    <div class="amort-card glass-card">
+      <h3>Amortization Schedule <span class="amort-sub">(First 12 months)</span></h3>
+      <div class="table-wrap">
+        <table class="amort-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>EMI</th>
+              <th>Principal</th>
+              <th>Interest</th>
+              <th>Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of amortization(); track row.month) {
+              <tr>
+                <td>{{ row.month }}</td>
+                <td>{{ fmt(row.emi) }}</td>
+                <td style="color:#43E97B">{{ fmt(row.principal) }}</td>
+                <td style="color:#FF6584">{{ fmt(row.interest) }}</td>
+                <td>{{ fmt(row.balance) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

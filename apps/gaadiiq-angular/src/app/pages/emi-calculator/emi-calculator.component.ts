@@ -2,92 +2,83 @@ import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+interface AmortizationRow {
+  month: number;
+  emi: number;
+  principal: number;
+  interest: number;
+  balance: number;
+}
+
 @Component({
   selector: 'app-emi-calculator',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './emi-calculator.component.html',
-  styleUrls: ['./emi-calculator.component.scss']
+  styleUrl: './emi-calculator.component.scss'
 })
 export class EmiCalculatorComponent {
-  loanAmount = signal(1500000);   // ₹15L default
-  interestRate = signal(10);       // 10%
-  tenureMonths = signal(60);       // 5 years
+  loanAmount = signal(1000000);
+  interestRate = signal(8.5);
+  tenureMonths = signal(60);
+  downPayment = signal(200000);
 
-  monthlyEmi = computed(() => {
-    const P = this.loanAmount();
+  banks = [
+    { name: 'SBI', rate: 8.45, logo: '🏦' },
+    { name: 'HDFC Bank', rate: 8.75, logo: '🏛' },
+    { name: 'ICICI Bank', rate: 8.85, logo: '💳' },
+    { name: 'Axis Bank', rate: 9.0, logo: '🔵' },
+    { name: 'Kotak Mahindra', rate: 8.65, logo: '🟠' },
+  ];
+
+  principal = computed(() => this.loanAmount() - this.downPayment());
+
+  emi = computed(() => {
+    const p = this.principal();
     const r = this.interestRate() / 12 / 100;
     const n = this.tenureMonths();
-    if (r === 0) return P / n;
-    return (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    if (r === 0) return p / n;
+    return Math.round(p * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1));
   });
 
-  totalAmount = computed(() => this.monthlyEmi() * this.tenureMonths());
-  totalInterest = computed(() => this.totalAmount() - this.loanAmount());
+  totalAmount = computed(() => this.emi() * this.tenureMonths());
+  totalInterest = computed(() => this.totalAmount() - this.principal());
 
-  principalPercent = computed(() => (this.loanAmount() / this.totalAmount()) * 100);
-  interestPercent = computed(() => (this.totalInterest() / this.totalAmount()) * 100);
+  principalPercent = computed(() => Math.round(this.principal() / this.totalAmount() * 100));
+  interestPercent = computed(() => 100 - this.principalPercent());
 
-  // Amortization schedule (yearly summary)
-  amortizationYears = computed(() => {
-    const P = this.loanAmount();
+  donutDash = computed(() => {
+    const circumference = 2 * Math.PI * 54;
+    return circumference;
+  });
+  principalDash = computed(() => (this.principalPercent() / 100) * this.donutDash());
+  interestDash = computed(() => (this.interestPercent() / 100) * this.donutDash());
+
+  amortization = computed((): AmortizationRow[] => {
+    const rows: AmortizationRow[] = [];
+    let balance = this.principal();
     const r = this.interestRate() / 12 / 100;
-    const n = this.tenureMonths();
-    const emi = this.monthlyEmi();
-    const years = Math.ceil(n / 12);
-
-    const result = [];
-    let balance = P;
-
-    for (let y = 1; y <= years; y++) {
-      const monthsInYear = Math.min(12, n - (y - 1) * 12);
-      let yearPrincipal = 0;
-      let yearInterest = 0;
-
-      for (let m = 0; m < monthsInYear; m++) {
-        const interestForMonth = balance * r;
-        const principalForMonth = emi - interestForMonth;
-        yearInterest += interestForMonth;
-        yearPrincipal += principalForMonth;
-        balance -= principalForMonth;
-      }
-
-      result.push({
-        year: y,
-        principal: yearPrincipal,
-        interest: yearInterest,
-        balance: Math.max(0, balance),
-        total: yearPrincipal + yearInterest
-      });
+    const emiVal = this.emi();
+    for (let m = 1; m <= Math.min(this.tenureMonths(), 12); m++) {
+      const interest = Math.round(balance * r);
+      const principal = emiVal - interest;
+      balance = Math.max(0, balance - principal);
+      rows.push({ month: m, emi: emiVal, principal, interest, balance });
     }
-
-    return result;
+    return rows;
   });
 
-  maxBarValue = computed(() => {
-    const years = this.amortizationYears();
-    return Math.max(...years.map(y => y.total));
-  });
-
-  formatCurrency(val: number): string {
-    if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
-    if (val >= 100000) return `₹${(val / 100000).toFixed(2)} L`;
-    return `₹${Math.round(val).toLocaleString('en-IN')}`;
+  bankEmi(rate: number) {
+    const p = this.principal();
+    const r = rate / 12 / 100;
+    const n = this.tenureMonths();
+    if (r === 0) return p / n;
+    return Math.round(p * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1));
   }
 
-  formatLakhs(val: number): string {
-    return `₹${(val / 100000).toFixed(1)}L`;
-  }
-
-  onLoanChange(event: Event) {
-    this.loanAmount.set(Number((event.target as HTMLInputElement).value));
-  }
-
-  onRateChange(event: Event) {
-    this.interestRate.set(Number((event.target as HTMLInputElement).value));
-  }
-
-  onTenureChange(event: Event) {
-    this.tenureMonths.set(Number((event.target as HTMLInputElement).value));
+  fmt(n: number) {
+    if (n >= 100000) return `₹${(n/100000).toFixed(1)}L`;
+    if (n >= 1000) return `₹${(n/1000).toFixed(0)}K`;
+    return `₹${n}`;
   }
 }

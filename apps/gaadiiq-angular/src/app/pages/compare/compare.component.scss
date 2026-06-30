@@ -1,293 +1,91 @@
 .compare-page {
   min-height: 100vh;
   background: #0A0E1A;
-  padding: 6rem 0 4rem;
-  position: relative;
-  overflow: hidden;
+  padding-bottom: 4rem;
 }
 
-.bg-orbs {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-
-  .orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(100px);
-    opacity: 0.2;
-
-    &-1 { width: 500px; height: 500px; background: #FF6584; top: -100px; left: -100px; }
-    &-2 { width: 400px; height: 400px; background: #6C63FF; bottom: -100px; right: -100px; }
-  }
-}
-
-.compare-container {
-  position: relative;
-  z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.page-hero {
+.compare-hero {
+  background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(255,101,132,0.1));
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 5rem 0 2.5rem;
   text-align: center;
-  margin-bottom: 3rem;
-
-  h1 {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 0.75rem;
-  }
-
-  p { color: rgba(255,255,255,0.6); font-size: 1.1rem; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; }
+  p { color: rgba(255,255,255,0.5); margin-top: 0.5rem; }
+  .gradient-text { background: linear-gradient(135deg, #6C63FF, #FF6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #6C63FF, #FF6584);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.car-selector { margin: 2.5rem 0;
+  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; margin-bottom: 1.5rem; }
 }
 
-.glass-card {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 20px;
+.cars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+
+.car-pick-card {
+  background: rgba(255,255,255,0.06); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; overflow: hidden;
+  cursor: pointer; transition: all 0.2s; position: relative;
+  &:hover { transform: translateY(-3px); border-color: rgba(108,99,255,0.4); }
+  &.selected { border-color: #6C63FF; background: rgba(108,99,255,0.15); }
+  img { width: 100%; height: 130px; object-fit: cover; }
+}
+
+.pick-check {
+  position: absolute; top: 0.75rem; right: 0.75rem;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #6C63FF; color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; opacity: 0; transition: opacity 0.2s;
+  &.visible { opacity: 1; }
+}
+
+.pick-info { padding: 0.75rem;
+  h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
+  p { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+}
+
+.comparison-table-wrap { margin-top: 2rem; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+
+.sticky-header {
+  display: grid;
+  grid-template-columns: 200px repeat(3, 1fr);
+  background: rgba(108,99,255,0.15);
   backdrop-filter: blur(20px);
-}
-
-.section-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.8);
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-
-  .count-badge {
-    background: rgba(108,99,255,0.2);
-    border: 1px solid rgba(108,99,255,0.4);
-    color: #6C63FF;
-    font-size: 0.8rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 100px;
-    font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  position: sticky; top: 64px; z-index: 10;
+  .spec-label-col { padding: 1.5rem; color: rgba(255,255,255,0.5); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; }
+  .car-col { padding: 1.25rem; text-align: center;
+    img { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 0.75rem; }
+    h3 { font-size: 0.95rem; font-weight: 700; }
+    .car-price { font-size: 0.85rem; color: #6C63FF; font-weight: 600; }
   }
 }
 
-.selector-section {
-  margin-bottom: 2.5rem;
-}
+.spec-rows { background: rgba(255,255,255,0.03); }
 
-.cars-grid {
+.spec-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
-}
-
-.car-selector-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-
-  &:hover:not(.disabled) {
-    border-color: rgba(108,99,255,0.4);
-    background: rgba(108,99,255,0.1);
-  }
-
-  &.selected {
-    border-color: #6C63FF;
-    background: rgba(108,99,255,0.2);
-  }
-
-  &.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .car-emoji { font-size: 1.8rem; flex-shrink: 0; }
-
-  .car-info {
-    flex: 1;
-    min-width: 0;
-
-    .car-name {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .car-price {
-      font-size: 0.8rem;
-      color: #6C63FF;
-      font-weight: 700;
-    }
-  }
-
-  .check-icon {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #6C63FF;
-    color: #fff;
-    font-size: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    opacity: 0;
-    transition: opacity 0.2s;
-    flex-shrink: 0;
-
-    &.visible { opacity: 1; }
-  }
-}
-
-.comparison-section {
-  padding: 2rem;
-  overflow-x: auto;
-}
-
-.compare-table {
-  min-width: 600px;
-}
-
-.table-header-row {
-  display: grid;
-  grid-template-columns: 140px repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.car-header-cell {
-  text-align: center;
-  padding: 1rem;
-  background: rgba(255,255,255,0.03);
-  border-radius: 12px;
-  position: relative;
-
-  &.empty-slot {
-    border: 1px dashed rgba(255,255,255,0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    color: rgba(255,255,255,0.25);
-
-    .add-car-icon { font-size: 1.5rem; }
-    .add-car-label { font-size: 0.8rem; }
-  }
-
-  .car-emoji-lg { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
-
-  .car-full-name {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 0.25rem;
-  }
-
-  .car-header-price {
-    font-size: 1rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #6C63FF, #FF6584);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .remove-btn {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: rgba(255,255,255,0.1);
-    border: none;
-    border-radius: 50%;
-    width: 22px;
-    height: 22px;
-    color: rgba(255,255,255,0.5);
-    cursor: pointer;
-    font-size: 0.7rem;
-    transition: all 0.2s;
-
-    &:hover { background: rgba(255,100,132,0.3); color: #FF6584; }
-  }
-}
-
-.row-label-cell {
-  display: flex;
-  align-items: center;
-  color: rgba(255,255,255,0.5);
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0 0.5rem;
-}
-
-.table-data-row {
-  display: grid;
-  grid-template-columns: 140px repeat(3, 1fr);
-  gap: 1rem;
-  padding: 0.5rem 0;
+  grid-template-columns: 200px repeat(3, 1fr);
   border-bottom: 1px solid rgba(255,255,255,0.05);
-
-  &.row-even .data-cell {
-    background: rgba(255,255,255,0.02);
-  }
-
   &:last-child { border-bottom: none; }
+  &.price-row .spec-val { font-weight: 700; color: #6C63FF; }
 }
 
-.data-cell {
-  text-align: center;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  color: rgba(255,255,255,0.8);
-  font-size: 0.9rem;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+.spec-label { padding: 1rem 1.5rem; color: rgba(255,255,255,0.5); font-size: 0.85rem; display: flex; align-items: center; }
 
-  &.best-value {
-    background: rgba(67,233,123,0.1);
-    border: 1px solid rgba(67,233,123,0.25);
-    color: #43E97B;
-    font-weight: 700;
-  }
-
-  &.empty {
-    background: rgba(255,255,255,0.02);
-    border: 1px dashed rgba(255,255,255,0.05);
-  }
-
-  .best-badge {
-    font-size: 0.65rem;
-    background: #43E97B;
-    color: #0A0E1A;
-    padding: 0.1rem 0.4rem;
-    border-radius: 100px;
-    font-weight: 700;
-  }
+.spec-val {
+  padding: 1rem; text-align: center; font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  transition: background 0.2s;
+  &.winner { background: rgba(67,233,123,0.12); color: #43E97B; font-weight: 600; }
 }
+.win-badge { font-size: 0.75rem; }
 
 .empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-
-  .empty-icon { font-size: 4rem; margin-bottom: 1.5rem; display: block; }
-
-  h3 { color: #fff; font-size: 1.3rem; margin-bottom: 0.75rem; }
-  p { color: rgba(255,255,255,0.4); }
+  margin: 3rem auto; max-width: 400px;
+  background: rgba(255,255,255,0.05); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+  padding: 3rem; text-align: center;
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+  h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; margin-bottom: 0.5rem; }
+  p { color: rgba(255,255,255,0.4); font-size: 0.9rem; }
 }

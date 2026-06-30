@@ -1,8 +1,10 @@
-import { Component, OnInit, signal, computed, ElementRef, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
+import { Component, OnInit, signal, AfterViewInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CarCardComponent } from '../../components/car-card/car-card.component';
+import { ScrollAnimateDirective } from '../../directives/scroll-animate.directive';
+import { CounterDirective } from '../../directives/counter.directive';
 
 interface Car {
   id: number; make: string; model: string; year: number; price: number;
@@ -13,7 +15,7 @@ interface Car {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule, FormsModule, CarCardComponent],
+  imports: [RouterLink, RouterLinkActive, CommonModule, FormsModule, CarCardComponent, ScrollAnimateDirective, CounterDirective],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })

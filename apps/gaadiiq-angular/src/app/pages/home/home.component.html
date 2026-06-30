@@ -1,7 +1,9 @@
 <!-- TICKER BAR -->
 <div class="ticker-bar">
   <div class="ticker-track">
-    <span *ngFor="let item of tickerItems.concat(tickerItems)">{{ item }} &nbsp;&nbsp;•&nbsp;&nbsp; </span>
+    @for (item of tickerItems.concat(tickerItems); track item) {
+      <span>{{ item }} &nbsp;&nbsp;•&nbsp;&nbsp; </span>
+    }
   </div>
 </div>
 
@@ -36,12 +38,13 @@
 
       <!-- BODY TYPE CHIPS -->
       <div class="body-chips">
-        <span
-          *ngFor="let type of bodyTypes"
-          class="chip"
-          [class.active]="activeBodyType() === type"
-          (click)="setBodyType(type)"
-        >{{ type }}</span>
+        @for (type of bodyTypes; track type) {
+          <span
+            class="chip"
+            [class.active]="activeBodyType() === type"
+            (click)="setBodyType(type)"
+          >{{ type }}</span>
+        }
       </div>
 
       <div class="hero-btns">
@@ -88,18 +91,20 @@
 </section>
 
 <!-- STATS -->
-<section class="stats-section">
+<section class="stats-section" appScrollAnimate>
   <div class="container stats-grid">
-    <div class="stat-item glass-card" *ngFor="let s of stats">
-      <div class="stat-icon">{{ s.icon }}</div>
-      <div class="stat-value gold-text">{{ s.value }}{{ s.suffix }}</div>
-      <div class="stat-label">{{ s.label }}</div>
-    </div>
+    @for (s of stats; track s.label) {
+      <div class="stat-item glass-card">
+        <div class="stat-icon">{{ s.icon }}</div>
+        <div class="stat-value gold-text">{{ s.value }}{{ s.suffix }}</div>
+        <div class="stat-label">{{ s.label }}</div>
+      </div>
+    }
   </div>
 </section>
 
 <!-- BRANDS -->
-<section class="brands-section" id="brands">
+<section class="brands-section" id="brands" appScrollAnimate>
   <div class="container">
     <div class="section-header">
       <span class="section-tag">Popular Brands</span>
@@ -107,23 +112,24 @@
       <p class="section-sub">India's most trusted car manufacturers — all verified listings</p>
     </div>
     <div class="brands-grid">
-      <a
-        *ngFor="let make of makes"
-        [routerLink]="['/listings']"
-        [queryParams]="{make: make.name}"
-        class="brand-card glass-card"
-      >
-        <div class="brand-logo" [style.background]="make.color + '22'" [style.borderColor]="make.color + '44'">
-          <span class="brand-short" [style.color]="make.color">{{ make.short }}</span>
-        </div>
-        <span class="brand-name">{{ make.name }}</span>
-      </a>
+      @for (make of makes; track make.name) {
+        <a
+          [routerLink]="['/listings']"
+          [queryParams]="{make: make.name}"
+          class="brand-card glass-card"
+        >
+          <div class="brand-logo" [style.background]="make.color + '22'" [style.borderColor]="make.color + '44'">
+            <span class="brand-short" [style.color]="make.color">{{ make.short }}</span>
+          </div>
+          <span class="brand-name">{{ make.name }}</span>
+        </a>
+      }
     </div>
   </div>
 </section>
 
 <!-- FEATURED CARS -->
-<section class="cars-section">
+<section class="cars-section" appScrollAnimate>
   <div class="container">
     <div class="section-header">
       <span class="section-tag">🔥 Hot Picks</span>
@@ -131,7 +137,9 @@
       <p class="section-sub">Hand-picked, AI-verified listings with the best value</p>
     </div>
     <div class="cars-grid">
-      <app-car-card *ngFor="let car of featuredCars" [car]="car"></app-car-card>
+      @for (car of featuredCars; track car.id) {
+        <app-car-card [car]="car"></app-car-card>
+      }
     </div>
     <div style="text-align:center;margin-top:3rem">
       <button class="btn-gradient btn-lg" routerLink="/listings">View All 50,000+ Cars →</button>
@@ -140,7 +148,7 @@
 </section>
 
 <!-- FEATURES -->
-<section class="features-section" id="features">
+<section class="features-section" id="features" appScrollAnimate>
   <div class="container">
     <div class="section-header center">
       <span class="section-tag">✨ Why GAADIIQ</span>
@@ -148,20 +156,22 @@
       <p class="section-sub" style="margin:0 auto">Not just a marketplace — the smartest car-buying experience in India.</p>
     </div>
     <div class="features-grid">
-      <div class="feature-card glass-card" *ngFor="let f of features">
-        <div class="feature-icon" [style.background]="f.color + '22'" [style.borderColor]="f.color + '33'">
-          <span>{{ f.icon }}</span>
+      @for (f of features; track f.title) {
+        <div class="feature-card glass-card">
+          <div class="feature-icon" [style.background]="f.color + '22'" [style.borderColor]="f.color + '33'">
+            <span>{{ f.icon }}</span>
+          </div>
+          <h3>{{ f.title }}</h3>
+          <p>{{ f.desc }}</p>
+          <div class="feature-arrow">→</div>
         </div>
-        <h3>{{ f.title }}</h3>
-        <p>{{ f.desc }}</p>
-        <div class="feature-arrow">→</div>
-      </div>
+      }
     </div>
   </div>
 </section>
 
 <!-- AI ADVISOR BANNER -->
-<section class="ai-banner">
+<section class="ai-banner" appScrollAnimate>
   <div class="orb orb-purple" style="width:400px;height:400px;top:-100px;right:-100px;opacity:0.5"></div>
   <div class="container ai-banner-inner">
     <div class="ai-banner-text">
@@ -169,8 +179,8 @@
       <h2 class="section-title">Tell us what you want.<br>We'll find the <span class="gradient-text">perfect car.</span></h2>
       <p class="section-sub">Answer 6 quick questions. Our AI matches you to the ideal car from 50,000+ listings — with explainable reasoning.</p>
       <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem">
-        <button class="btn-gradient btn-lg">Start AI Advisor 🤖</button>
-        <button class="btn-outline btn-lg">See How It Works</button>
+        <button class="btn-gradient btn-lg" routerLink="/ai-advisor">Start AI Advisor 🤖</button>
+        <button class="btn-outline btn-lg" routerLink="/emi-calculator">EMI Calculator</button>
       </div>
     </div>
     <div class="ai-demo glass-card">
@@ -190,30 +200,32 @@
 </section>
 
 <!-- TESTIMONIALS -->
-<section class="testimonials-section">
+<section class="testimonials-section" appScrollAnimate>
   <div class="container">
     <div class="section-header center">
       <span class="section-tag">💬 Reviews</span>
       <h2 class="section-title">Loved by <span class="gradient-text">Car Buyers</span></h2>
     </div>
     <div class="testimonials-grid">
-      <div class="testimonial-card glass-card" *ngFor="let t of testimonials">
-        <div class="stars">{{ '★'.repeat(t.rating) }}</div>
-        <p class="testi-text">"{{ t.text }}"</p>
-        <div class="testi-author">
-          <div class="avatar">{{ t.avatar }}</div>
-          <div>
-            <div style="font-weight:700">{{ t.name }}</div>
-            <div style="color:var(--muted);font-size:0.85rem">📍 {{ t.city }}</div>
+      @for (t of testimonials; track t.name) {
+        <div class="testimonial-card glass-card">
+          <div class="stars">{{ '★'.repeat(t.rating) }}</div>
+          <p class="testi-text">"{{ t.text }}"</p>
+          <div class="testi-author">
+            <div class="avatar">{{ t.avatar }}</div>
+            <div>
+              <div style="font-weight:700">{{ t.name }}</div>
+              <div style="color:var(--muted);font-size:0.85rem">📍 {{ t.city }}</div>
+            </div>
           </div>
         </div>
-      </div>
+      }
     </div>
   </div>
 </section>
 
 <!-- SELL CTA -->
-<section class="cta-section">
+<section class="cta-section" appScrollAnimate>
   <div class="orb orb-pink" style="width:500px;height:500px;bottom:-100px;left:-100px;opacity:0.4"></div>
   <div class="container cta-inner">
     <h2 class="section-title">Ready to Sell? <span class="gold-text">Get the Best Price.</span></h2>
@@ -242,10 +254,10 @@
   <button class="fab-center btn-gradient">
     <span style="font-size:1.4rem">⚡</span>
   </button>
-  <a href="#features">
+  <a routerLink="/ai-advisor" routerLinkActive="active">
     <span>🤖</span><span>AI</span>
   </a>
-  <a href="#account">
+  <a routerLink="/login" routerLinkActive="active">
     <span>👤</span><span>Account</span>
   </a>
 </nav>
