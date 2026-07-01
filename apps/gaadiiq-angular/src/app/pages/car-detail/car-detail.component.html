@@ -127,7 +127,7 @@
           <h3>💳 EMI Calculator</h3>
           <div class="emi-row">
             <label>Loan Amount</label>
-            <input type="range" min="100000" [max]="car.price" step="50000"
+            <input type="range" min="100000" [max]="car.price" [step]="Math.round(car.price / 100)"
               [value]="loan.amount" (input)="loan.amount=+$any($event.target).value; calcEmi()">
             <div class="emi-val">{{ formatPrice(loan.amount) }}</div>
           </div>

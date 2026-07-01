@@ -11,6 +11,7 @@ import { CarsDataService, Car } from '../../services/cars-data.service';
   styleUrl: './car-detail.component.scss'
 })
 export class CarDetailComponent implements OnInit {
+  Math = Math;
   activeTab = signal('overview');
   liked = signal(false);
   loan = { amount: 0, rate: 8.5, tenure: 60, emi: 0 };
