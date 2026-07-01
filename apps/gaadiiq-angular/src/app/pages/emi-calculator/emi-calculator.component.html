@@ -59,15 +59,15 @@
           </div>
           <div class="sum-row highlight">
             <span>Monthly EMI</span>
-            <strong class="emi-amount">{{ fmt(emi()) }}</strong>
+            <strong class="emi-amount">{{ fmtExact(emi()) }}</strong>
           </div>
           <div class="sum-row">
             <span>Total Interest</span>
-            <strong style="color:#FF6584">{{ fmt(totalInterest()) }}</strong>
+            <strong style="color:#FF6584">{{ fmtExact(totalInterest()) }}</strong>
           </div>
           <div class="sum-row">
             <span>Total Amount</span>
-            <strong>{{ fmt(totalAmount()) }}</strong>
+            <strong>{{ fmtExact(totalAmount()) }}</strong>
           </div>
         </div>
       </div>
@@ -89,7 +89,7 @@
                 transform="rotate(-90 60 60)" class="donut-seg"/>
             </svg>
             <div class="donut-center">
-              <div class="donut-emi">{{ fmt(emi()) }}</div>
+              <div class="donut-emi">{{ fmtExact(emi()) }}</div>
               <div class="donut-label">per month</div>
             </div>
           </div>
@@ -117,7 +117,7 @@
                   </div>
                 </div>
                 <div class="bank-emi">
-                  <div class="emi-val">{{ fmt(bankEmi(bank.rate)) }}</div>
+                  <div class="emi-val">{{ fmtExact(bankEmi(bank.rate)) }}</div>
                   <div class="emi-label">/ month</div>
                 </div>
                 @if (selectedBank() === bank.name) {

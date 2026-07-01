@@ -88,4 +88,8 @@ export class EmiCalculatorComponent {
     if (n >= 1000) return `₹${(n/1000).toFixed(0)}K`;
     return `₹${n}`;
   }
+
+  fmtExact(n: number) {
+    return `₹${Math.round(n).toLocaleString('en-IN')}`;
+  }
 }
