@@ -33,23 +33,29 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   bodyTypes = ['All','Hatchback','Sedan','SUV','MUV','Electric','Luxury'];
   makes = [
-    { name: 'Maruti Suzuki', short: 'MS', color: '#6C63FF' },
-    { name: 'Hyundai', short: 'HY', color: '#FF6584' },
-    { name: 'Tata', short: 'TM', color: '#43E97B' },
-    { name: 'Mahindra', short: 'MH', color: '#FFD700' },
-    { name: 'Honda', short: 'HO', color: '#FF8C00' },
-    { name: 'Toyota', short: 'TY', color: '#00C9FF' },
-    { name: 'Kia', short: 'KI', color: '#9B59B6' },
-    { name: 'MG Motor', short: 'MG', color: '#E74C3C' },
+    { name: 'Maruti Suzuki', short: 'MS', color: '#6C63FF', models: 12 },
+    { name: 'Hyundai', short: 'HY', color: '#FF6584', models: 8 },
+    { name: 'Tata', short: 'TM', color: '#43E97B', models: 7 },
+    { name: 'Mahindra', short: 'MH', color: '#FFD700', models: 9 },
+    { name: 'Honda', short: 'HO', color: '#FF8C00', models: 5 },
+    { name: 'Toyota', short: 'TY', color: '#00C9FF', models: 6 },
+    { name: 'Kia', short: 'KI', color: '#9B59B6', models: 4 },
+    { name: 'MG Motor', short: 'MG', color: '#E74C3C', models: 3 },
   ];
 
   featuredCars: Car[] = [
-    { id:1, make:'Hyundai', model:'Creta', year:2023, price:1450000, km:12000, fuel:'Petrol', transmission:'Automatic', badge:'🔥 Trending', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg', rating:4.8, reviews:234, verified:true },
-    { id:2, make:'Tata', model:'Nexon EV', year:2024, price:1850000, km:5000, fuel:'Electric', transmission:'Automatic', badge:'⚡ Electric', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg', rating:4.9, reviews:189, verified:true },
-    { id:3, make:'Maruti', model:'Swift', year:2023, price:750000, km:18000, fuel:'Petrol', transmission:'Manual', badge:'💰 Best Value', badgeType:'badge-gold', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.6, reviews:312, verified:true },
-    { id:4, make:'Mahindra', model:'XUV700', year:2022, price:2100000, km:22000, fuel:'Diesel', transmission:'Automatic', badge:'👑 Premium', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/42355/xuv700-exterior-right-front-three-quarter.jpeg', rating:4.7, reviews:156, verified:true },
-    { id:5, make:'Honda', model:'City', year:2023, price:1200000, km:9000, fuel:'Petrol', transmission:'CVT', badge:'✅ Certified', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/134297/city-exterior-right-front-three-quarter-4.jpeg', rating:4.5, reviews:278, verified:true },
-    { id:6, make:'Kia', model:'Seltos', year:2024, price:1680000, km:3000, fuel:'Petrol', transmission:'DCT', badge:'🆕 Nearly New', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/115025/seltos-exterior-right-front-three-quarter-3.jpeg', rating:4.8, reviews:201, verified:true },
+    // Maruti Suzuki lineup
+    { id:1, make:'Maruti Suzuki', model:'Swift', year:2024, price:749000, km:5000, fuel:'Petrol', transmission:'Manual', badge:'🔥 Bestseller', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.7, reviews:512, verified:true },
+    { id:2, make:'Maruti Suzuki', model:'Baleno', year:2024, price:669000, km:8000, fuel:'Petrol', transmission:'AMT', badge:'⭐ Top Rated', badgeType:'badge-gold', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/54523/baleno-exterior-right-front-three-quarter.jpeg', rating:4.7, reviews:445, verified:true },
+    { id:3, make:'Maruti Suzuki', model:'Brezza', year:2024, price:1349000, km:6000, fuel:'Petrol', transmission:'Automatic', badge:'💰 Best Value', badgeType:'badge-gold', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/146811/brezza-exterior-right-front-three-quarter-4.jpeg', rating:4.6, reviews:389, verified:true },
+    { id:4, make:'Maruti Suzuki', model:'Grand Vitara', year:2024, price:1799000, km:4000, fuel:'Hybrid', transmission:'Automatic', badge:'⚡ Hybrid', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/155843/grand-vitara-exterior-right-front-three-quarter-2.jpeg', rating:4.8, reviews:267, verified:true },
+    { id:5, make:'Maruti Suzuki', model:'Fronx', year:2024, price:899000, km:3000, fuel:'Petrol', transmission:'AMT', badge:'🆕 Nearly New', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/189349/fronx-exterior-right-front-three-quarter.jpeg', rating:4.6, reviews:198, verified:true },
+    { id:6, make:'Maruti Suzuki', model:'Jimny', year:2024, price:1299000, km:2000, fuel:'Petrol', transmission:'Manual', badge:'🏔️ Off-Road', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/130591/jimny-exterior-right-front-three-quarter-2.jpeg', rating:4.9, reviews:143, verified:true },
+    // Other popular models
+    { id:7, make:'Hyundai', model:'Creta', year:2023, price:1450000, km:12000, fuel:'Petrol', transmission:'Automatic', badge:'🔥 Trending', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg', rating:4.8, reviews:234, verified:true },
+    { id:8, make:'Tata', model:'Nexon EV', year:2024, price:1850000, km:5000, fuel:'Electric', transmission:'Automatic', badge:'⚡ Electric', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg', rating:4.9, reviews:189, verified:true },
+    { id:9, make:'Mahindra', model:'XUV700', year:2022, price:2100000, km:22000, fuel:'Diesel', transmission:'Automatic', badge:'👑 Premium', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/42355/xuv700-exterior-right-front-three-quarter.jpeg', rating:4.7, reviews:156, verified:true },
+    { id:10, make:'Kia', model:'Seltos', year:2024, price:1680000, km:3000, fuel:'Petrol', transmission:'DCT', badge:'🆕 Nearly New', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/115025/seltos-exterior-right-front-three-quarter-3.jpeg', rating:4.8, reviews:201, verified:true },
   ];
 
   features = [
