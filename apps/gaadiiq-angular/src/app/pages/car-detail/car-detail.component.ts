@@ -31,7 +31,8 @@ export class CarDetailComponent implements OnInit {
 
   // Ownership cost
   annualKm = signal(15000);
-  fuelPrice = signal(106); // petrol price
+  fuelPrice = signal(106);
+  fuelPriceMin = 85; fuelPriceMax = 130; fuelPriceUnit = '/L';
 
   // Reviews
   reviews: Review[] = [
@@ -58,6 +59,12 @@ export class CarDetailComponent implements OnInit {
     this.loan.amount = this.car.price;
     this.calcEmi();
     this.seo.setCarDetail(this.car.make, this.car.model, this.car.year, this.car.price, this.car.city || 'India');
+    // Set fuel price defaults based on car's fuel type
+    const fuel = this.car.fuel;
+    if (fuel === 'Diesel') { this.fuelPrice.set(92); this.fuelPriceMin = 80; this.fuelPriceMax = 110; this.fuelPriceUnit = '/L'; }
+    else if (fuel === 'CNG') { this.fuelPrice.set(85); this.fuelPriceMin = 70; this.fuelPriceMax = 110; this.fuelPriceUnit = '/kg'; }
+    else if (fuel === 'Electric') { this.fuelPriceUnit = '/kWh'; }
+    else { this.fuelPrice.set(106); this.fuelPriceMin = 90; this.fuelPriceMax = 130; this.fuelPriceUnit = '/L'; }
   }
 
   calcEmi() {

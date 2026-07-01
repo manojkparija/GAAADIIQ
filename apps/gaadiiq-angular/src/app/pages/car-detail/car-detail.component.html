@@ -76,8 +76,8 @@
                 <input type="range" min="5000" max="50000" step="1000" [value]="annualKm()" (input)="annualKm.set(+$any($event.target).value)">
               </div>
               <div class="oc-row" *ngIf="car.fuel !== 'Electric'">
-                <label>Fuel Price: ₹{{ fuelPrice() }}/L</label>
-                <input type="range" min="85" max="130" step="1" [value]="fuelPrice()" (input)="fuelPrice.set(+$any($event.target).value)">
+                <label>{{ car.fuel === 'CNG' ? 'CNG Price' : 'Fuel Price' }}: ₹{{ fuelPrice() }}{{ fuelPriceUnit }}</label>
+                <input type="range" [min]="fuelPriceMin" [max]="fuelPriceMax" step="1" [value]="fuelPrice()" (input)="fuelPrice.set(+$any($event.target).value)">
               </div>
             </div>
             <div class="oc-breakdown" *ngIf="ownershipCost() as oc">
