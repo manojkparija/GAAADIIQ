@@ -22,7 +22,7 @@
 
       <!-- Logged in -->
       <ng-container *ngIf="auth.isLoggedIn()">
-        <button class="btn-outline btn-sm">List Your Car ✨</button>
+        <a routerLink="/list-car" class="btn-outline btn-sm">List Your Car ✨</a>
         <div class="user-menu-wrap">
           <button class="user-avatar-btn" (click)="toggleUserMenu()">
             <span class="user-avatar">{{ auth.currentUser()?.name?.charAt(0)?.toUpperCase() }}</span>
