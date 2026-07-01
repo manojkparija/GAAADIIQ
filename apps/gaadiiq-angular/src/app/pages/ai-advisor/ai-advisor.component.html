@@ -22,10 +22,19 @@
           <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">{{ currentStep().subtitle }}</p>
           <div class="options-grid">
             @for (opt of currentStep().options; track opt) {
-              <button class="option-btn" [class.selected]="answers()[currentStep().key] === opt" (click)="select(opt)">
+              <button class="option-btn" [class.selected]="isSelected(opt)" (click)="toggle(opt)">
+                <span class="opt-check" *ngIf="isSelected(opt)">✓</span>
                 {{ opt }}
               </button>
             }
+          </div>
+          <div class="step-footer">
+            <span class="selection-hint" *ngIf="currentStep().multi && currentSelections().length > 0">
+              {{ currentSelections().length }} selected
+            </span>
+            <button class="btn-gradient continue-btn" [disabled]="!canProceed()" (click)="next()">
+              {{ step() === steps.length - 1 ? '🔍 Find My Cars' : 'Continue →' }}
+            </button>
           </div>
         </div>
       </div>
