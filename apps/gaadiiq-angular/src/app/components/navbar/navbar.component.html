@@ -31,7 +31,7 @@
           </button>
           <div class="user-dropdown" *ngIf="userMenuOpen()">
             <div class="dropdown-email">{{ auth.currentUser()?.email }}</div>
-            <a routerLink="/listings" (click)="userMenuOpen.set(false)" class="dropdown-item">🚗 My Listings</a>
+            <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">🚗 My Listings</a>
             <a routerLink="/compare" (click)="userMenuOpen.set(false)" class="dropdown-item">⚖️ Compare Cars</a>
             <button class="dropdown-item logout" (click)="logout()">🚪 Sign Out</button>
           </div>

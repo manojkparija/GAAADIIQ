@@ -1,0 +1,48 @@
+<div class="my-listings-page">
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <h1>My Listings</h1>
+        <p>Cars you've listed for sale on Gaadiiq</p>
+      </div>
+      <a routerLink="/list-car" class="btn-gradient">+ List Another Car</a>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state glass-card" *ngIf="myListings.listings().length === 0">
+      <div class="empty-icon">🚗</div>
+      <h2>No listings yet</h2>
+      <p>You haven't listed any cars for sale. It's free and takes only 2 minutes!</p>
+      <a routerLink="/list-car" class="btn-gradient">List Your Car Free →</a>
+    </div>
+
+    <!-- Listings grid -->
+    <div class="listings-grid" *ngIf="myListings.listings().length > 0">
+      <div class="listing-card glass-card" *ngFor="let car of myListings.listings()">
+        <div class="card-top">
+          <div>
+            <h3>{{ car.year }} {{ car.make }} {{ car.model }}</h3>
+            <div class="variant">{{ car.variant }}</div>
+          </div>
+          <span class="badge" [class]="statusClass(car.status)">{{ statusLabel(car.status) }}</span>
+        </div>
+
+        <div class="car-specs">
+          <span>⛽ {{ car.fuel }}</span>
+          <span>⚙️ {{ car.transmission }}</span>
+          <span>🛣️ {{ car.km.toLocaleString() }} km</span>
+          <span>📍 {{ car.city }}</span>
+        </div>
+
+        <div class="price-row">
+          <span class="price gradient-text">{{ formatPrice(car.price) }}</span>
+          <span class="date">Listed {{ car.createdAt | date:'d MMM yyyy' }}</span>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn-outline btn-sm" (click)="remove(car.id)">🗑️ Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

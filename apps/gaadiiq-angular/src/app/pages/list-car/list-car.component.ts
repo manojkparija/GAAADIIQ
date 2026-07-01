@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { MyListingsService } from '../../services/my-listings.service';
 
 @Component({
   selector: 'app-list-car',
@@ -30,7 +31,7 @@ export class ListCarComponent {
     bodyType: ''
   };
 
-  constructor(public auth: AuthService, private router: Router) {
+  constructor(public auth: AuthService, private myListings: MyListingsService, private router: Router) {
     const user = auth.currentUser();
     if (user) {
       this.form.name = user.name;
@@ -49,7 +50,15 @@ export class ListCarComponent {
 
   async onSubmit() {
     this.loading.set(true);
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise(r => setTimeout(r, 1000));
+    this.myListings.add({
+      make: this.form.make, model: this.form.model, variant: this.form.variant,
+      year: this.form.year, km: +this.form.km, fuel: this.form.fuel,
+      transmission: this.form.transmission, owners: this.form.owners,
+      color: this.form.color, city: this.form.city, price: +this.form.price,
+      description: this.form.description, bodyType: this.form.bodyType,
+      name: this.form.name, phone: this.form.phone, email: this.form.email,
+    });
     this.loading.set(false);
     this.submitted.set(true);
   }
