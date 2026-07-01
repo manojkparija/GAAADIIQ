@@ -2,70 +2,90 @@
   <div class="compare-hero">
     <div class="container">
       <h1>Compare <span class="gradient-text">Cars</span></h1>
-      <p>Compare up to 3 cars side by side. Winner specs highlighted in green.</p>
+      <p>Search any car from our database and compare up to 3 side by side. Winner specs highlighted.</p>
     </div>
   </div>
 
   <div class="container">
-    <!-- Car selector -->
-    <div class="car-selector">
-      <h2>Select cars to compare</h2>
-      <div class="cars-grid">
-        @for (car of availableCars; track car.id) {
-          <div class="car-pick-card glass-card" [class.selected]="isSelected(car)" (click)="toggleCar(car)">
-            <div class="pick-check" [class.visible]="isSelected(car)">✓</div>
-            <img [src]="car.image" [alt]="car.model">
-            <div class="pick-info">
-              <h3>{{ car.year }} {{ car.make }} {{ car.model }}</h3>
-              <p>{{ formatPrice(car.price) }}</p>
+    <!-- Slot selectors -->
+    <div class="slots-row">
+      <div class="slot" *ngFor="let slot of [0,1,2]">
+        <div class="slot-filled glass-card" *ngIf="selected()[slot] as car">
+          <button class="remove-btn" (click)="removeCar(slot)">✕</button>
+          <img [src]="car.image" [alt]="car.model" referrerpolicy="no-referrer"
+               onerror="this.onerror=null;this.src='https://placehold.co/400x220/1a1f35/6C63FF?text=No+Image'">
+          <h4>{{ car.make }} {{ car.model }}</h4>
+          <div class="slot-price gradient-text">{{ formatPrice(car.price) }}</div>
+          <div class="slot-sub">{{ car.year }} · {{ car.fuel }}</div>
+        </div>
+
+        <div class="slot-empty glass-card" *ngIf="!selected()[slot]">
+          <div class="search-wrap">
+            <input type="text"
+              [ngModel]="search(slot)"
+              (ngModelChange)="[searchA,searchB,searchC][slot].set($event); showDropdown.set(slot)"
+              [name]="'search'+slot"
+              placeholder="Search make or model..."
+              (focus)="showDropdown.set(slot)">
+            <div class="search-dropdown" *ngIf="showDropdown() === slot && search(slot)">
+              <div class="drop-item" *ngFor="let c of filtered(slot)" (click)="selectCar(slot, c)">
+                <span>{{ c.year }} {{ c.make }} {{ c.model }}</span>
+                <span class="drop-price">{{ formatPrice(c.price) }}</span>
+              </div>
+              <div class="drop-empty" *ngIf="filtered(slot).length === 0">No results</div>
             </div>
           </div>
-        }
+          <div class="popular-picks">
+            <div class="pick-chip" *ngFor="let c of allCars.slice(0,6)" (click)="selectCar(slot, c)">
+              {{ c.make }} {{ c.model }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Comparison Table -->
-    @if (selected().length >= 2) {
-      <div class="comparison-table-wrap">
-        <div class="sticky-header">
-          <div class="spec-label-col">Specification</div>
-          @for (car of selected(); track car.id) {
-            <div class="car-col">
-              <img [src]="car.image" [alt]="car.model">
-              <h3>{{ car.make }} {{ car.model }}</h3>
-              <p class="car-price">{{ formatPrice(car.price) }}</p>
-            </div>
-          }
+    <!-- Comparison table -->
+    <div class="comparison-table glass-card" *ngIf="activeCars().length >= 2">
+      <!-- Header -->
+      <div class="comp-header">
+        <div class="comp-label-col">Specification</div>
+        <div class="comp-car-col" *ngFor="let car of activeCars()">
+          <img [src]="car.image" [alt]="car.model" referrerpolicy="no-referrer"
+               onerror="this.onerror=null;this.src='https://placehold.co/200x130/1a1f35/6C63FF?text=img'">
+          <div class="comp-car-name">{{ car.make }} {{ car.model }}</div>
+          <div class="comp-car-price gradient-text">{{ formatPrice(car.price) }}</div>
+          <a [routerLink]="['/cars', car.id]" class="btn-outline btn-sm">View Details</a>
         </div>
+      </div>
 
-        <div class="spec-rows">
-          @for (row of specRows; track row.key) {
-            <div class="spec-row">
-              <div class="spec-label">{{ row.label }}</div>
-              @for (car of selected(); track car.id) {
-                <div class="spec-val" [class.winner]="isWinner(row.key, car)">
-                  {{ getVal(car, row.key) }}{{ row.unit }}
-                  @if (isWinner(row.key, car)) { <span class="win-badge">👑</span> }
-                </div>
-              }
-            </div>
-          }
-          <div class="spec-row price-row">
-            <div class="spec-label">Price</div>
-            @for (car of selected(); track car.id) {
-              <div class="spec-val">{{ formatPrice(car.price) }}</div>
-            }
+      <!-- Spec rows -->
+      <div class="comp-row" *ngFor="let row of specRows" [class.alt]="specRows.indexOf(row) % 2 === 0">
+        <div class="comp-label">{{ row.label }}</div>
+        <div class="comp-val" *ngFor="let car of activeCars()"
+             [class.winner]="isWinner(row.key, car, row.higher)">
+          {{ row.format(getVal(car, row.key)) }}
+          <span class="win-crown" *ngIf="isWinner(row.key, car, row.higher)">👑</span>
+        </div>
+      </div>
+
+      <!-- Features comparison -->
+      <div class="features-comp">
+        <h3>Features Comparison</h3>
+        <div class="feat-row" *ngFor="let f of ['Sunroof','ADAS','360 Camera','Wireless Charging','Ventilated Seats','6 Airbags']">
+          <div class="feat-label">{{ f }}</div>
+          <div class="feat-val" *ngFor="let car of activeCars()">
+            {{ hasFeature(car, f) ? '✅' : '❌' }}
           </div>
         </div>
       </div>
-    }
+    </div>
 
-    @if (selected().length === 0) {
-      <div class="empty-state glass-card">
-        <div class="empty-icon">🚗</div>
-        <h3>Select at least 2 cars to compare</h3>
-        <p>Click on any car above to add it to your comparison</p>
+    <div class="empty-hint" *ngIf="activeCars().length < 2">
+      <div class="glass-card" style="text-align:center;padding:3rem">
+        <div style="font-size:3rem;margin-bottom:1rem">⚖️</div>
+        <h3>Search and select at least 2 cars to compare</h3>
+        <p style="color:var(--muted)">Use the search boxes above to find any car from our 54-car database</p>
       </div>
-    }
+    </div>
   </div>
 </div>

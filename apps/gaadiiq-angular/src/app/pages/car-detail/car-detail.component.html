@@ -20,12 +20,8 @@
             </button>
           </div>
           <div class="thumbnails">
-            <div
-              *ngFor="let img of (car.images || [car.image]); let i = index"
-              class="thumb"
-              [class.active]="activeImg() === i"
-              (click)="activeImg.set(i)"
-            >
+            <div *ngFor="let img of (car.images || [car.image]); let i = index"
+              class="thumb" [class.active]="activeImg() === i" (click)="activeImg.set(i)">
               <img [src]="img" alt="thumb" referrerpolicy="no-referrer"
                    onerror="this.onerror=null;this.src='https://placehold.co/120x80/1a1f35/6C63FF?text=img'">
             </div>
@@ -38,8 +34,11 @@
             <button [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">Overview</button>
             <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">Specs</button>
             <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">Features</button>
+            <button [class.active]="activeTab()==='ownership'" (click)="activeTab.set('ownership')">Cost of Ownership</button>
+            <button [class.active]="activeTab()==='reviews'" (click)="activeTab.set('reviews')">Reviews ({{ reviews.length }})</button>
           </div>
 
+          <!-- OVERVIEW -->
           <div class="tab-content" *ngIf="activeTab()==='overview'">
             <div class="overview-pills">
               <div class="pill"><span>⛽</span><div><div class="pill-label">Fuel</div><div class="pill-val">{{ car.fuel }}</div></div></div>
@@ -51,6 +50,7 @@
             </div>
           </div>
 
+          <!-- SPECS -->
           <div class="tab-content" *ngIf="activeTab()==='specs'">
             <div class="specs-grid">
               <div class="spec-row" *ngFor="let spec of (car.specs || [])">
@@ -60,6 +60,7 @@
             </div>
           </div>
 
+          <!-- FEATURES -->
           <div class="tab-content" *ngIf="activeTab()==='features'">
             <div class="features-list">
               <div class="feature-item" *ngFor="let f of (car.features || [])">
@@ -67,10 +68,86 @@
               </div>
             </div>
           </div>
+
+          <!-- OWNERSHIP COST -->
+          <div class="tab-content" *ngIf="activeTab()==='ownership'">
+            <div class="ownership-controls">
+              <div class="oc-row">
+                <label>Annual Distance: {{ annualKm().toLocaleString() }} km</label>
+                <input type="range" min="5000" max="50000" step="1000" [value]="annualKm()" (input)="annualKm.set(+$any($event.target).value)">
+              </div>
+              <div class="oc-row" *ngIf="car.fuel !== 'Electric'">
+                <label>Fuel Price: ₹{{ fuelPrice() }}/L</label>
+                <input type="range" min="85" max="130" step="1" [value]="fuelPrice()" (input)="fuelPrice.set(+$any($event.target).value)">
+              </div>
+            </div>
+            <div class="oc-breakdown" *ngIf="ownershipCost() as oc">
+              <div class="oc-item"><span>⛽ Annual Fuel Cost</span><span class="gradient-text">{{ formatPrice(oc.fuelCost) }}</span></div>
+              <div class="oc-item"><span>🔧 Maintenance</span><span class="gradient-text">{{ formatPrice(oc.maintenance) }}</span></div>
+              <div class="oc-item"><span>🛡️ Insurance</span><span class="gradient-text">{{ formatPrice(oc.insurance) }}</span></div>
+              <div class="oc-item"><span>📉 Depreciation</span><span class="gradient-text">{{ formatPrice(oc.depreciation) }}</span></div>
+              <div class="oc-total"><span>Total Annual Cost</span><span>{{ formatPrice(oc.total) }}</span></div>
+              <div class="oc-perkm">≈ ₹{{ oc.perKm }} per km</div>
+            </div>
+            <div class="resale-card" *ngIf="resaleValue() as rv">
+              <div style="font-weight:700;margin-bottom:0.5rem">📈 Estimated Resale Value (1 yr)</div>
+              <div class="gradient-text" style="font-size:1.5rem;font-weight:900">{{ formatPrice(rv.value) }}</div>
+              <div style="font-size:0.8rem;color:var(--muted)">Retains {{ rv.pct }}% of purchase value</div>
+            </div>
+          </div>
+
+          <!-- REVIEWS -->
+          <div class="tab-content" *ngIf="activeTab()==='reviews'">
+            <div class="reviews-header">
+              <div class="avg-rating">
+                <div class="big-num gradient-text">{{ avgRating() }}</div>
+                <div class="stars-row">{{ stars(+avgRating()).join('') }}</div>
+                <div style="font-size:0.8rem;color:var(--muted)">{{ reviews.length }} reviews</div>
+              </div>
+              <button class="btn-gradient" style="height:fit-content" (click)="showReviewForm.set(!showReviewForm())">
+                {{ showReviewForm() ? 'Cancel' : '✏️ Write Review' }}
+              </button>
+            </div>
+
+            <!-- Review form -->
+            <div class="review-form glass-card" *ngIf="showReviewForm()">
+              <h4>Your Review</h4>
+              <div class="star-select">
+                <span *ngFor="let s of [1,2,3,4,5]"
+                  (click)="userReview.rating = s"
+                  (mouseenter)="hoverRating.set(s)"
+                  (mouseleave)="hoverRating.set(0)"
+                  [class.active]="s <= (hoverRating() || userReview.rating)">★</span>
+              </div>
+              <input type="text" [(ngModel)]="userReview.name" name="rname" placeholder="Your name *">
+              <input type="text" [(ngModel)]="userReview.city" name="rcity" placeholder="City">
+              <input type="text" [(ngModel)]="userReview.title" name="rtitle" placeholder="Review title">
+              <textarea [(ngModel)]="userReview.body" name="rbody" rows="4" placeholder="Share your experience with this car... *"></textarea>
+              <button class="btn-gradient" (click)="submitReview()">Submit Review</button>
+            </div>
+
+            <!-- Success -->
+            <div class="review-success" *ngIf="reviewSubmitted()">✅ Review submitted! Thank you.</div>
+
+            <!-- Review cards -->
+            <div class="review-card" *ngFor="let r of reviews">
+              <div class="review-top">
+                <div class="reviewer-avatar">{{ r.avatar }}</div>
+                <div>
+                  <div class="reviewer-name">{{ r.name }} <span class="reviewer-city">· {{ r.city }}</span></div>
+                  <div class="review-stars">{{ stars(r.rating).join('') }}</div>
+                </div>
+                <div class="review-date">{{ r.date }}</div>
+              </div>
+              <div class="review-title">{{ r.title }}</div>
+              <div class="review-body">{{ r.body }}</div>
+              <div class="review-likes">👍 {{ r.likes }} found this helpful</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- RIGHT: PRICE + ACTIONS -->
+      <!-- RIGHT -->
       <div class="detail-right">
         <!-- PRICE CARD -->
         <div class="price-card glass-card">
@@ -90,6 +167,24 @@
             <span>🔒 Safe Deal Guarantee</span>
             <span>📋 Free RC Check</span>
           </div>
+        </div>
+
+        <!-- ON-ROAD PRICE -->
+        <div class="onroad-card glass-card" *ngIf="onRoadPrice() as orp">
+          <h3>🛣️ On-Road Price</h3>
+          <div class="state-select">
+            <label>State:</label>
+            <select [ngModel]="selectedState()" (ngModelChange)="selectedState.set($event)" name="state">
+              <option *ngFor="let s of states" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+          <div class="orp-row"><span>Ex-Showroom</span><span>{{ formatPrice(orp.base) }}</span></div>
+          <div class="orp-row"><span>GST (28%)</span><span>{{ formatPrice(orp.gst) }}</span></div>
+          <div class="orp-row"><span>Cess</span><span>{{ formatPrice(orp.cess) }}</span></div>
+          <div class="orp-row"><span>Registration</span><span>{{ formatPrice(orp.registration) }}</span></div>
+          <div class="orp-row"><span>Insurance</span><span>{{ formatPrice(orp.insurance) }}</span></div>
+          <div class="orp-row"><span>Handling Charges</span><span>{{ formatPrice(orp.handling) }}</span></div>
+          <div class="orp-total"><span>On-Road Price</span><span class="gradient-text">{{ formatPrice(orp.total) }}</span></div>
         </div>
 
         <!-- AI VALUATION CARD -->
@@ -146,6 +241,13 @@
             <div class="gradient-text" style="font-size:2rem;font-weight:900">₹{{ loan.emi.toLocaleString() }}</div>
           </div>
           <button class="btn-gradient" style="width:100%">Apply for Loan →</button>
+        </div>
+
+        <!-- COMPARE CTA -->
+        <div class="compare-cta glass-card">
+          <div style="font-weight:700;margin-bottom:0.5rem">⚖️ Compare with similar cars</div>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">See how this stacks up against competition</p>
+          <a routerLink="/compare" class="btn-outline" style="width:100%;display:block;text-align:center">Open Comparison Tool</a>
         </div>
       </div>
     </div>

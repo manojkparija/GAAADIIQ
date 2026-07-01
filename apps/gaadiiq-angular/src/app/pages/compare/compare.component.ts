@@ -1,66 +1,76 @@
 import { Component, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-
-interface CompareCar {
-  id: number; make: string; model: string; year: number; price: number;
-  image: string; engine: string; power: string; torque: string; transmission: string;
-  fuel: string; mileage: string; bootSpace: string; groundClearance: string;
-  safetyRating: number; warranty: string;
-}
+import { FormsModule } from '@angular/forms';
+import { CarsDataService, Car } from '../../services/cars-data.service';
+import { SeoService } from '../../services/seo.service';
 
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, FormsModule],
   templateUrl: './compare.component.html',
   styleUrl: './compare.component.scss'
 })
 export class CompareComponent {
-  availableCars: CompareCar[] = [
-    { id:1, make:'Hyundai', model:'Creta', year:2024, price:1450000, image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg', engine:'1.5L Turbo', power:'160 bhp', torque:'253 Nm', transmission:'DCT', fuel:'Petrol', mileage:'16.8 kmpl', bootSpace:'433L', groundClearance:'190mm', safetyRating:5, warranty:'3 yr/Unlimited' },
-    { id:2, make:'Kia', model:'Seltos', year:2024, price:1680000, image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/115025/seltos-exterior-right-front-three-quarter-3.jpeg', engine:'1.5L Turbo', power:'160 bhp', torque:'253 Nm', transmission:'DCT', fuel:'Petrol', mileage:'16.5 kmpl', bootSpace:'433L', groundClearance:'190mm', safetyRating:4, warranty:'3 yr/Unlimited' },
-    { id:3, make:'Tata', model:'Nexon', year:2024, price:950000, image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg', engine:'1.2L Turbo', power:'120 bhp', torque:'170 Nm', transmission:'AMT', fuel:'Petrol', mileage:'17.4 kmpl', bootSpace:'350L', groundClearance:'209mm', safetyRating:5, warranty:'3 yr/Unlimited' },
-    { id:4, make:'Mahindra', model:'XUV700', year:2024, price:2100000, image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/42355/xuv700-exterior-right-front-three-quarter.jpeg', engine:'2.0L mStallion', power:'200 bhp', torque:'380 Nm', transmission:'Automatic', fuel:'Petrol', mileage:'14.5 kmpl', bootSpace:'604L', groundClearance:'200mm', safetyRating:5, warranty:'3 yr/100,000km' },
-  ];
-
-  selected = signal<CompareCar[]>([]);
+  allCars: Car[];
+  searchA = signal(''); searchB = signal(''); searchC = signal('');
+  selected = signal<(Car | null)[]>([null, null, null]);
+  showDropdown = signal<number>(-1);
 
   specRows = [
-    { key: 'engine', label: 'Engine', unit: '' },
-    { key: 'power', label: 'Power', unit: '' },
-    { key: 'torque', label: 'Torque', unit: '' },
-    { key: 'transmission', label: 'Transmission', unit: '' },
-    { key: 'fuel', label: 'Fuel Type', unit: '' },
-    { key: 'mileage', label: 'Mileage', unit: '' },
-    { key: 'bootSpace', label: 'Boot Space', unit: '' },
-    { key: 'groundClearance', label: 'Ground Clearance', unit: '' },
-    { key: 'safetyRating', label: 'Safety Rating', unit: '/5' },
-    { key: 'warranty', label: 'Warranty', unit: '' },
+    { label: 'Price', key: 'price', format: (v: any) => `₹${(+v/100000).toFixed(1)}L`, higher: false },
+    { label: 'Year', key: 'year', format: (v: any) => String(v), higher: true },
+    { label: 'KM Driven', key: 'km', format: (v: any) => `${(+v).toLocaleString()} km`, higher: false },
+    { label: 'Fuel Type', key: 'fuel', format: (v: any) => String(v), higher: null },
+    { label: 'Transmission', key: 'transmission', format: (v: any) => String(v), higher: null },
+    { label: 'Owners', key: 'owners', format: (v: any) => String(v) || '—', higher: null },
+    { label: 'Rating', key: 'rating', format: (v: any) => `${v} ★`, higher: true },
+    { label: 'Reviews', key: 'reviews', format: (v: any) => String(v), higher: true },
+    { label: 'City', key: 'city', format: (v: any) => String(v) || '—', higher: null },
   ];
 
-  isSelected(car: CompareCar) { return this.selected().some(c => c.id === car.id); }
-
-  toggleCar(car: CompareCar) {
-    if (this.isSelected(car)) {
-      this.selected.update(arr => arr.filter(c => c.id !== car.id));
-    } else if (this.selected().length < 3) {
-      this.selected.update(arr => [...arr, car]);
-    }
+  constructor(private carsData: CarsDataService, private seo: SeoService) {
+    this.allCars = carsData.getAll();
+    seo.setPage('Compare Cars', 'Compare up to 3 cars side by side. Specs, features, price, AI valuation — all in one place.');
   }
 
-  getVal(car: CompareCar, key: string): string {
-    return String((car as any)[key]);
+  search(slot: number) {
+    return [this.searchA, this.searchB, this.searchC][slot]();
   }
 
-  isWinner(key: string, car: CompareCar): boolean {
-    const sel = this.selected();
+  filtered(slot: number) {
+    const q = this.search(slot).toLowerCase();
+    if (!q) return this.allCars.slice(0, 10);
+    return this.allCars.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q)).slice(0, 8);
+  }
+
+  selectCar(slot: number, car: Car) {
+    this.selected.update(arr => { const n = [...arr]; n[slot] = car; return n; });
+    [this.searchA, this.searchB, this.searchC][slot].set('');
+    this.showDropdown.set(-1);
+  }
+
+  removeCar(slot: number) {
+    this.selected.update(arr => { const n = [...arr]; n[slot] = null; return n; });
+  }
+
+  getVal(car: Car, key: string): any { return (car as any)[key]; }
+
+  isWinner(key: string, car: Car, higher: boolean | null): boolean {
+    if (higher === null) return false;
+    const sel = this.selected().filter(Boolean) as Car[];
     if (sel.length < 2) return false;
-    const numericKeys = ['power', 'torque', 'mileage', 'bootSpace', 'groundClearance', 'safetyRating'];
-    if (!numericKeys.includes(key)) return false;
     const vals = sel.map(c => parseFloat(String((c as any)[key])));
     const myVal = parseFloat(String((car as any)[key]));
-    return myVal === Math.max(...vals);
+    if (isNaN(myVal)) return false;
+    return higher ? myVal === Math.max(...vals) : myVal === Math.min(...vals);
+  }
+
+  activeCars = computed(() => this.selected().filter(Boolean) as Car[]);
+
+  hasFeature(car: Car, feature: string): boolean {
+    return (car.features || []).some(ft => ft.toLowerCase().includes(feature.toLowerCase()));
   }
 
   formatPrice(p: number) { return `₹${(p/100000).toFixed(1)}L`; }

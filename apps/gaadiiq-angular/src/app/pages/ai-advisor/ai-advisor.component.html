@@ -19,6 +19,7 @@
         <div class="step-content">
           <div class="step-icon">{{ currentStep().icon }}</div>
           <h2>{{ currentStep().title }}</h2>
+          <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">{{ currentStep().subtitle }}</p>
           <div class="options-grid">
             @for (opt of currentStep().options; track opt) {
               <button class="option-btn" [class.selected]="answers()[currentStep().key] === opt" (click)="select(opt)">
@@ -49,17 +50,22 @@
     @if (done()) {
       <div class="results-section">
         <h2 class="results-title">🎯 Your <span class="gradient-text">AI Recommendations</span></h2>
+        <p style="color:var(--muted);text-align:center;margin-bottom:2rem">Top {{ results().length }} matches from our 54-car verified database</p>
         <div class="results-grid">
-          @for (car of results; track car.model) {
+          @for (car of results(); track car.id) {
             <div class="result-card glass-card">
-              <div class="match-badge">{{ car.match }}% Match</div>
-              <img [src]="car.image" [alt]="car.model" loading="lazy">
+              <div class="match-badge">{{ car.matchScore }}% Match</div>
+              <img [src]="car.image" [alt]="car.model" loading="lazy" referrerpolicy="no-referrer"
+                   onerror="this.onerror=null;this.src='https://placehold.co/400x220/1a1f35/6C63FF?text=No+Image'">
               <div class="result-info">
-                <div class="result-badge">{{ car.badge }}</div>
+                <span class="badge badge-red">{{ car.badge }}</span>
                 <h3>{{ car.year }} {{ car.make }} {{ car.model }}</h3>
-                <div class="result-price">{{ car.price }}</div>
+                <div class="result-price gradient-text">{{ formatPrice(car.price) }}</div>
+                <div class="result-reasons">
+                  <span *ngFor="let r of car.reasons" class="reason-chip">✓ {{ r }}</span>
+                </div>
                 <div class="result-actions">
-                  <a routerLink="/listings" class="btn-gradient btn-sm">View Listings</a>
+                  <a [routerLink]="['/cars', car.id]" class="btn-gradient btn-sm">View Details</a>
                   <a routerLink="/compare" class="btn-outline btn-sm">Compare</a>
                 </div>
               </div>
