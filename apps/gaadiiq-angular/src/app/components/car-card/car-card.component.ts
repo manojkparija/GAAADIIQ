@@ -28,6 +28,7 @@ export class CarCardComponent {
   }
 
   formatKm(km: number): string {
+    if (km === 0) return 'Brand New';
     if (km >= 1000) return `${(km/1000).toFixed(0)}k km`;
     return `${km} km`;
   }
