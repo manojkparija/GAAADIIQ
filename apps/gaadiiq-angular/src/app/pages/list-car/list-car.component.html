@@ -86,8 +86,8 @@
         <h2>📋 Condition & Price</h2>
         <div class="form-grid">
           <div class="form-group">
-            <label>KM Driven</label>
-            <input type="number" [(ngModel)]="form.km" name="km" placeholder="e.g. 25000">
+            <label>KM Driven (enter 0 for brand new)</label>
+            <input type="number" [(ngModel)]="form.km" name="km" min="0" placeholder="e.g. 25000 (0 for new)">
           </div>
           <div class="form-group">
             <label>No. of Owners</label>
@@ -114,7 +114,7 @@
         </div>
         <div class="btn-row">
           <button class="btn-outline" (click)="prevStep()">← Back</button>
-          <button class="btn-gradient" (click)="nextStep()" [disabled]="!form.km || !form.price">Continue →</button>
+          <button class="btn-gradient" (click)="nextStep()" [disabled]="form.km === '' || !form.price">Continue →</button>
         </div>
       </div>
     }
@@ -161,7 +161,7 @@
     <div class="success-details">
       <div class="detail-chip">📍 {{ form.city }}</div>
       <div class="detail-chip">💰 ₹{{ (+form.price / 100000).toFixed(1) }}L</div>
-      <div class="detail-chip">🛣️ {{ (+form.km).toLocaleString() }} km</div>
+      <div class="detail-chip">{{ +form.km === 0 ? '🆕 Brand New' : '🛣️ ' + (+form.km).toLocaleString() + ' km' }}</div>
     </div>
     <a routerLink="/my-listings" class="btn-gradient" style="display:inline-block;margin-top:1.5rem">View My Listings →</a>
   </div>
