@@ -91,28 +91,32 @@ export class AiAdvisorComponent {
     const all = this.carsData.getAll();
 
     const scored = all.map(car => {
-      let score = 50;
+      let score = 40;
       const reasons: string[] = [];
 
-      // Budget: match any selected range
+      // Budget — hard filter: strong penalty if outside ALL selected ranges
       const inBudget = budgets.some(b => {
         const [mn, mx] = BUDGET_MAP[b] || [0, Infinity];
         return car.price >= mn && car.price <= mx;
       });
-      if (inBudget) { score += 25; reasons.push(`Within budget`); }
+      if (inBudget) { score += 30; reasons.push('Within budget'); }
+      else { score -= 25; } // strong penalty for wrong price range
 
       // Fuel match
       const fuels = a['fuel'] || [];
-      if (fuels.length && !fuels.includes('Any')) {
+      if (fuels.length) {
         if (fuels.some(f => car.fuel.toLowerCase() === f.toLowerCase())) { score += 15; reasons.push(`${car.fuel} fuel`); }
-        else { score -= 10; }
+        else { score -= 12; }
       }
 
-      // Body type
+      // Body type — strong penalty for mismatch
       const bodyTypes = (a['bodyType'] || []).filter(b => b !== 'No preference');
       if (bodyTypes.length) {
-        if (bodyTypes.some(bt => bt === 'Electric' && car.fuel === 'Electric')) { score += 15; reasons.push('Electric vehicle'); }
-        else if (bodyTypes.some(bt => car.bodyType?.toLowerCase() === bt.toLowerCase())) { score += 12; reasons.push(`${car.bodyType} body`); }
+        const electricMatch = bodyTypes.includes('Electric') && car.fuel === 'Electric';
+        const bodyMatch = bodyTypes.some(bt => car.bodyType?.toLowerCase() === bt.toLowerCase());
+        if (electricMatch) { score += 20; reasons.push('Electric vehicle'); }
+        else if (bodyMatch) { score += 20; reasons.push(`${car.bodyType} body`); }
+        else { score -= 20; } // strong penalty: user wants SUV, this is a Hatchback
       }
 
       // Transmission
@@ -122,28 +126,29 @@ export class AiAdvisorComponent {
         const wantsManual = transmissions.includes('Manual');
         const isAuto = !car.transmission.toLowerCase().includes('manual');
         if ((wantsAuto && isAuto) || (wantsManual && !isAuto)) { score += 8; reasons.push(`${car.transmission} gearbox`); }
+        else { score -= 5; }
       }
 
       // Usage hints (multi)
       const usages = a['usage'] || [];
       if (usages.includes('Off-road adventures') && car.features?.some(f => f.toLowerCase().includes('4wd'))) { score += 12; reasons.push('4WD capability'); }
-      if (usages.includes('Family road trips') && (car.bodyType === 'MUV' || car.bodyType === 'SUV')) { score += 10; reasons.push('Family-friendly'); }
-      if (usages.includes('City commute') && car.km < 20000) { score += 8; reasons.push('Low mileage'); }
+      if (usages.includes('Family road trips') && (car.bodyType === 'MUV' || car.bodyType === 'SUV')) { score += 8; reasons.push('Family-friendly'); }
+      if (usages.includes('City commute') && car.km < 20000) { score += 5; reasons.push('Low mileage'); }
 
       // Priority (multi)
       const priorities = a['priority'] || [];
-      if (priorities.includes('Safety features') && car.features?.some(f => f.includes('Airbag'))) { score += 10; reasons.push('Multiple airbags'); }
-      if (priorities.includes('Technology & Features') && car.features?.some(f => f.includes('ADAS'))) { score += 12; reasons.push('ADAS equipped'); }
-      if (priorities.includes('Fuel efficiency')) { const m = car.specs?.find(s => s.label === 'Mileage'); if (m && parseFloat(m.value) > 20) { score += 12; reasons.push(`${m.value} mileage`); } }
-      if (priorities.includes('Resale value') && ['Maruti Suzuki','Hyundai'].includes(car.make)) { score += 10; reasons.push('Strong resale brand'); }
-      if (priorities.includes('Low maintenance') && ['Maruti Suzuki','Hyundai','Toyota'].includes(car.make)) { score += 8; reasons.push('Low running cost'); }
+      if (priorities.includes('Safety features') && car.features?.some(f => f.includes('Airbag'))) { score += 8; reasons.push('Multiple airbags'); }
+      if (priorities.includes('Technology & Features') && car.features?.some(f => f.includes('ADAS'))) { score += 10; reasons.push('ADAS equipped'); }
+      if (priorities.includes('Fuel efficiency')) { const m = car.specs?.find(s => s.label === 'Mileage'); if (m && parseFloat(m.value) > 20) { score += 10; reasons.push(`${m.value} mileage`); } }
+      if (priorities.includes('Resale value') && ['Maruti Suzuki','Hyundai'].includes(car.make)) { score += 8; reasons.push('Strong resale brand'); }
+      if (priorities.includes('Low maintenance') && ['Maruti Suzuki','Hyundai','Toyota'].includes(car.make)) { score += 6; reasons.push('Low running cost'); }
       if (priorities.includes('Performance / Power')) { const p = car.specs?.find(s => s.label === 'Power'); if (p && parseFloat(p.value) > 130) { score += 10; reasons.push(`${p.value} power`); } }
 
-      // Rating boost
-      score += (car.rating - 4) * 5;
+      // Rating boost (smaller weight)
+      score += (car.rating - 4) * 3;
       if (!reasons.length) reasons.push('Matches your criteria');
 
-      return { ...car, matchScore: Math.min(score, 99), reasons: reasons.slice(0, 3) };
+      return { ...car, matchScore: Math.min(Math.max(score, 1), 99), reasons: reasons.slice(0, 3) };
     });
 
     this.results.set(scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 5));
