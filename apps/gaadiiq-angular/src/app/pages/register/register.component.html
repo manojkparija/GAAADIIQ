@@ -46,6 +46,7 @@
           <label>Phone Number</label>
           <input type="tel" [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" placeholder="+91 9876543210">
         </div>
+        <div class="error-msg" *ngIf="error() && step()===1">⚠️ {{ error() }}</div>
         <button class="btn-gradient btn-full" (click)="nextStep()">Continue →</button>
       </div>
     }
@@ -99,7 +100,7 @@
         </label>
         <div class="btn-row">
           <button class="btn-outline" (click)="prevStep()">← Back</button>
-          <button class="btn-gradient" (click)="onSubmit()">Create Account 🎉</button>
+          <button class="btn-gradient" (click)="onSubmit()" [disabled]="loading()">{{ loading() ? 'Creating…' : 'Create Account 🎉' }}</button>
         </div>
       </div>
     }

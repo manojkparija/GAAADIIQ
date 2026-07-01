@@ -120,3 +120,13 @@
 .btn-row { display: flex; gap: 1rem; margin-top: 1.5rem; button { flex: 1; } }
 .btn-full { width: 100%; margin-top: 1.5rem; padding: 0.875rem; }
 .login-link { text-align: center; margin-top: 1.5rem; color: rgba(255,255,255,0.5); font-size: 0.9rem; a { color: #6C63FF; text-decoration: none; font-weight: 600; } }
+
+.error-msg {
+  background: rgba(255, 101, 132, 0.12);
+  border: 1px solid rgba(255, 101, 132, 0.4);
+  color: #FF6584;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
