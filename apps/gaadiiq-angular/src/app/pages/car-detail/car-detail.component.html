@@ -43,8 +43,6 @@
             <div class="overview-pills">
               <div class="pill"><span>⛽</span><div><div class="pill-label">Fuel</div><div class="pill-val">{{ car.fuel }}</div></div></div>
               <div class="pill"><span>⚙️</span><div><div class="pill-label">Gearbox</div><div class="pill-val">{{ car.transmission }}</div></div></div>
-              <div class="pill" *ngIf="car.km > 0"><span>🛣️</span><div><div class="pill-label">KM Driven</div><div class="pill-val">{{ car.km.toLocaleString() }}</div></div></div>
-              <div class="pill" *ngIf="car.km === 0"><span>🆕</span><div><div class="pill-label">Condition</div><div class="pill-val">Brand New</div></div></div>
               <div class="pill"><span>👤</span><div><div class="pill-label">Owners</div><div class="pill-val">{{ car.owners }}</div></div></div>
               <div class="pill"><span>🎨</span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
               <div class="pill"><span>📍</span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
