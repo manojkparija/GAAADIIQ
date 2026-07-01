@@ -81,11 +81,11 @@
               </div>
             </div>
             <div class="oc-breakdown" *ngIf="ownershipCost() as oc">
-              <div class="oc-item"><span>⛽ Annual Fuel Cost</span><span class="gradient-text">{{ formatPrice(oc.fuelCost) }}</span></div>
-              <div class="oc-item"><span>🔧 Maintenance</span><span class="gradient-text">{{ formatPrice(oc.maintenance) }}</span></div>
-              <div class="oc-item"><span>🛡️ Insurance</span><span class="gradient-text">{{ formatPrice(oc.insurance) }}</span></div>
-              <div class="oc-item"><span>📉 Depreciation</span><span class="gradient-text">{{ formatPrice(oc.depreciation) }}</span></div>
-              <div class="oc-total"><span>Total Annual Cost</span><span>{{ formatPrice(oc.total) }}</span></div>
+              <div class="oc-item"><span>⛽ Annual Fuel Cost</span><span class="gradient-text">₹{{ oc.fuelCost.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span>🔧 Maintenance</span><span class="gradient-text">₹{{ oc.maintenance.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span>🛡️ Insurance</span><span class="gradient-text">₹{{ oc.insurance.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span>📉 Depreciation</span><span class="gradient-text">₹{{ oc.depreciation.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-total"><span>Total Annual Cost</span><span>₹{{ oc.total.toLocaleString('en-IN') }}</span></div>
               <div class="oc-perkm">≈ ₹{{ oc.perKm }} per km</div>
             </div>
             <div class="resale-card" *ngIf="resaleValue() as rv">
