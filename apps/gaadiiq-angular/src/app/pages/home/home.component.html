@@ -157,14 +157,14 @@
     </div>
     <div class="features-grid">
       @for (f of features; track f.title) {
-        <div class="feature-card glass-card">
+        <a class="feature-card glass-card" [routerLink]="f.route" style="text-decoration:none;display:block;cursor:pointer">
           <div class="feature-icon" [style.background]="f.color + '22'" [style.borderColor]="f.color + '33'">
             <span>{{ f.icon }}</span>
           </div>
           <h3>{{ f.title }}</h3>
           <p>{{ f.desc }}</p>
-          <div class="feature-arrow">→</div>
-        </div>
+          <div class="feature-arrow" [style.color]="f.color">→</div>
+        </a>
       }
     </div>
   </div>

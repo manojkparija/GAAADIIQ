@@ -1,0 +1,60 @@
+<div class="alerts-page">
+  <div class="orb orb-1"></div>
+  <div class="container">
+    <div class="page-header">
+      <div class="ai-badge">🔔 Price Alerts</div>
+      <h1>Never Miss a <span class="gradient-text">Price Drop</span></h1>
+      <p>Set your target price and we'll notify you the moment a listing drops below it.</p>
+    </div>
+
+    <div class="content-grid">
+      <div class="form-card glass-card">
+        <h2>Create New Alert</h2>
+        <div class="success-msg" *ngIf="submitted()">✅ Alert created! We'll notify you at {{ form.email || 'your email' }}</div>
+        <div class="form-group">
+          <label>Car Make</label>
+          <select [(ngModel)]="form.make" name="make">
+            <option value="">Select make</option>
+            <option *ngFor="let m of makes" [value]="m">{{ m }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Model</label>
+          <input type="text" [(ngModel)]="form.model" name="model" placeholder="e.g. Creta, Swift, Nexon">
+        </div>
+        <div class="form-group">
+          <label>Target Price (₹)</label>
+          <input type="number" [(ngModel)]="form.targetPrice" name="price" placeholder="e.g. 1200000">
+          <span class="hint" *ngIf="form.targetPrice">Alert when price drops below {{ formatPrice(+form.targetPrice) }}</span>
+        </div>
+        <div class="form-group">
+          <label>Email for Notification</label>
+          <input type="email" [(ngModel)]="form.email" name="email" placeholder="your@email.com">
+        </div>
+        <button class="btn-gradient" style="width:100%;padding:1rem" (click)="submit()"
+          [disabled]="!form.make || !form.model || !form.targetPrice || !form.email">
+          🔔 Create Alert
+        </button>
+      </div>
+
+      <div class="alerts-list">
+        <h2>Your Active Alerts ({{ alerts().length }})</h2>
+        <div *ngIf="alerts().length === 0" class="empty-state glass-card">
+          <div style="font-size:3rem;margin-bottom:1rem">🔔</div>
+          <p>No alerts yet. Create one to get notified on price drops.</p>
+        </div>
+        <div class="alert-card glass-card" *ngFor="let a of alerts()">
+          <div class="alert-info">
+            <div class="alert-title">{{ a.make }} {{ a.model }}</div>
+            <div class="alert-target gradient-text">Target: {{ formatPrice(a.targetPrice) }}</div>
+            <div class="alert-meta">📧 {{ a.email }} · {{ a.createdAt }}</div>
+          </div>
+          <div class="alert-actions">
+            <span class="status-pill">Active</span>
+            <button class="remove-btn" (click)="remove(a.id)">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

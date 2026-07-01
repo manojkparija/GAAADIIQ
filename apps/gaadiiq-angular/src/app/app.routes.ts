@@ -11,5 +11,7 @@ export const routes: Routes = [
   { path: 'emi-calculator', loadComponent: () => import('./pages/emi-calculator/emi-calculator.component').then(m => m.EmiCalculatorComponent) },
   { path: 'list-car', loadComponent: () => import('./pages/list-car/list-car.component').then(m => m.ListCarComponent) },
   { path: 'my-listings', loadComponent: () => import('./pages/my-listings/my-listings.component').then(m => m.MyListingsComponent) },
+  { path: 'price-alerts', loadComponent: () => import('./pages/price-alerts/price-alerts.component').then(m => m.PriceAlertsComponent) },
+  { path: 'test-drive', loadComponent: () => import('./pages/test-drive/test-drive.component').then(m => m.TestDriveComponent) },
   { path: '**', redirectTo: '' },
 ];
