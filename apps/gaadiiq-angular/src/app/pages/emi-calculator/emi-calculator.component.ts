@@ -21,7 +21,7 @@ export class EmiCalculatorComponent {
   loanAmount = signal(1000000);
   interestRate = signal(8.5);
   tenureMonths = signal(60);
-  downPayment = signal(200000);
+  downPayment = signal(0);
 
   banks = [
     { name: 'SBI', rate: 8.45, logo: '🏦' },

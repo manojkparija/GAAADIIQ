@@ -14,21 +14,21 @@
 
         <div class="slider-group">
           <div class="slider-label">
-            <span>Car Price</span>
+            <span>Loan Amount</span>
             <strong>{{ fmt(loanAmount()) }}</strong>
           </div>
-          <input type="range" min="200000" max="10000000" step="50000"
-            [ngModel]="loanAmount()" (ngModelChange)="loanAmount.set($event)">
-          <div class="range-ends"><span>₹2L</span><span>₹1Cr</span></div>
+          <input type="range" min="100000" max="10000000" step="50000"
+            [ngModel]="loanAmount()" (ngModelChange)="loanAmount.set(+$event)">
+          <div class="range-ends"><span>₹1L</span><span>₹1Cr</span></div>
         </div>
 
         <div class="slider-group">
           <div class="slider-label">
-            <span>Down Payment</span>
+            <span>Down Payment (optional)</span>
             <strong>{{ fmt(downPayment()) }}</strong>
           </div>
           <input type="range" min="0" [max]="loanAmount()" step="10000"
-            [ngModel]="downPayment()" (ngModelChange)="downPayment.set($event)">
+            [ngModel]="downPayment()" (ngModelChange)="downPayment.set(+$event)">
           <div class="range-ends"><span>₹0</span><span>{{ fmt(loanAmount()) }}</span></div>
         </div>
 
@@ -54,7 +54,7 @@
 
         <div class="loan-summary">
           <div class="sum-row">
-            <span>Loan Amount</span>
+            <span>Principal</span>
             <strong>{{ fmt(principal()) }}</strong>
           </div>
           <div class="sum-row highlight">
