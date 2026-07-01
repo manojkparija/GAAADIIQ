@@ -17,7 +17,7 @@
       <!-- Logged out -->
       <ng-container *ngIf="!auth.isLoggedIn()">
         <a routerLink="/login" class="btn-outline btn-sm">Sign In</a>
-        <button class="btn-gradient btn-sm">List Your Car ✨</button>
+        <a routerLink="/list-car" class="btn-gradient btn-sm">List Your Car ✨</a>
       </ng-container>
 
       <!-- Logged in -->
@@ -58,7 +58,7 @@
         <div style="padding:0.5rem 0;font-size:0.85rem;color:var(--muted)">{{ auth.currentUser()?.name }}</div>
         <button class="btn-outline" style="width:100%" (click)="logout(); closeMenu()">Sign Out</button>
       </ng-container>
-      <button class="btn-gradient" style="width:100%">List Your Car ✨</button>
+      <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient" style="width:100%;display:block;text-align:center">List Your Car ✨</a>
     </div>
   </div>
 </nav>

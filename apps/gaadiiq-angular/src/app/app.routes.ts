@@ -9,5 +9,6 @@ export const routes: Routes = [
   { path: 'ai-advisor', loadComponent: () => import('./pages/ai-advisor/ai-advisor.component').then(m => m.AiAdvisorComponent) },
   { path: 'compare', loadComponent: () => import('./pages/compare/compare.component').then(m => m.CompareComponent) },
   { path: 'emi-calculator', loadComponent: () => import('./pages/emi-calculator/emi-calculator.component').then(m => m.EmiCalculatorComponent) },
+  { path: 'list-car', loadComponent: () => import('./pages/list-car/list-car.component').then(m => m.ListCarComponent) },
   { path: '**', redirectTo: '' },
 ];
