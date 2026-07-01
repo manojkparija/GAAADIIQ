@@ -3,8 +3,8 @@
   <div class="listings-header">
     <div class="container listings-header-inner">
       <div>
-        <h1>Browse <span class="gradient-text">Cars</span></h1>
-        <p style="color:var(--muted);font-size:0.9rem">{{ filteredCars().length }} listings found</p>
+        <h1>Browse <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></h1>
+        <p style="color:var(--muted);font-size:0.9rem">{{ filteredCars().length }} listings found<span *ngIf="selectedMake() !== 'All'"> &nbsp;·&nbsp; <a href="javascript:void(0)" (click)="selectedMake.set('All')" style="color:var(--accent);font-size:0.85rem">Clear brand filter ✕</a></span></p>
       </div>
       <div class="search-bar glass-card">
         <span>🔍</span>
@@ -98,7 +98,7 @@
         <div style="font-size:4rem;margin-bottom:1rem">🔍</div>
         <h3>No cars found</h3>
         <p style="color:var(--muted)">Try adjusting your filters or search query</p>
-        <button class="btn-gradient" style="margin-top:1.5rem" (click)="selectedFuel.set('All');selectedTransmission.set('All');selectedBodyType.set('All');selectedCondition.set('All');maxPrice.set(5000000);minYear.set(2018);searchQuery.set('')">Clear All Filters</button>
+        <button class="btn-gradient" style="margin-top:1.5rem" (click)="selectedFuel.set('All');selectedTransmission.set('All');selectedBodyType.set('All');selectedCondition.set('All');selectedMake.set('All');maxPrice.set(5000000);minYear.set(2018);searchQuery.set('')">Clear All Filters</button>
       </div>
     </ng-template>
   </div>

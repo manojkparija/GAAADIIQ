@@ -1,7 +1,7 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CarCardComponent } from '../../components/car-card/car-card.component';
 
 interface Car {
@@ -17,16 +17,25 @@ interface Car {
   templateUrl: './listings.component.html',
   styleUrl: './listings.component.scss'
 })
-export class ListingsComponent {
+export class ListingsComponent implements OnInit {
+  constructor(private route: ActivatedRoute) {}
+
   searchQuery = signal('');
   selectedFuel = signal('All');
   selectedTransmission = signal('All');
   selectedBodyType = signal('All');
   selectedCondition = signal('All');
   selectedSort = signal('Relevance');
+  selectedMake = signal('All');
   maxPrice = signal(5000000);
   minYear = signal(2018);
   sidebarOpen = signal(false);
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['make']) this.selectedMake.set(params['make']);
+    });
+  }
 
   fuels = ['All', 'Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'];
   transmissions = ['All', 'Manual', 'Automatic', 'CVT', 'DCT', 'AMT'];
@@ -104,6 +113,7 @@ export class ListingsComponent {
     let cars = this.allCars.filter(c => {
       const q = this.searchQuery().toLowerCase();
       const matchQ = !q || `${c.make} ${c.model} ${c.city} ${c.bodyType} ${c.year} ${c.fuel}`.toLowerCase().includes(q);
+      const matchMake = this.selectedMake() === 'All' || c.make === this.selectedMake();
       const matchFuel = this.selectedFuel() === 'All' || c.fuel === this.selectedFuel();
       const matchTx = this.selectedTransmission() === 'All' || c.transmission.includes(this.selectedTransmission());
       const matchBT = this.selectedBodyType() === 'All' || c.bodyType === this.selectedBodyType();
@@ -114,7 +124,7 @@ export class ListingsComponent {
         (cond === 'Brand New (0 km)' && c.km === 0) ||
         (cond === 'Used (< 50k km)' && c.km > 0 && c.km <= 50000) ||
         (cond === 'High Mileage (> 50k km)' && c.km > 50000);
-      return matchQ && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchCond;
+      return matchQ && matchMake && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchCond;
     });
 
     const sort = this.selectedSort();
