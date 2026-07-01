@@ -104,7 +104,11 @@
           <h3>Compare Bank Rates</h3>
           <div class="banks-list">
             @for (bank of banks; track bank.name) {
-              <div class="bank-row" [class.best]="bank.rate === 8.45">
+              <div class="bank-row"
+                [class.best]="bank.rate === 8.45"
+                [class.selected]="selectedBank() === bank.name"
+                (click)="selectBank(bank)"
+                style="cursor:pointer">
                 <div class="bank-info">
                   <span class="bank-logo">{{ bank.logo }}</span>
                   <div>
@@ -116,7 +120,9 @@
                   <div class="emi-val">{{ fmt(bankEmi(bank.rate)) }}</div>
                   <div class="emi-label">/ month</div>
                 </div>
-                @if (bank.rate === 8.45) {
+                @if (selectedBank() === bank.name) {
+                  <div class="selected-badge">Selected ✓</div>
+                } @else if (bank.rate === 8.45) {
                   <div class="best-badge">Best Rate</div>
                 }
               </div>

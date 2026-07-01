@@ -31,6 +31,13 @@ export class EmiCalculatorComponent {
     { name: 'Kotak Mahindra', rate: 8.65, logo: '🟠' },
   ];
 
+  selectedBank = signal('SBI');
+
+  selectBank(bank: { name: string; rate: number; logo: string }) {
+    this.selectedBank.set(bank.name);
+    this.interestRate.set(bank.rate);
+  }
+
   principal = computed(() => this.loanAmount() - this.downPayment());
 
   emi = computed(() => {
