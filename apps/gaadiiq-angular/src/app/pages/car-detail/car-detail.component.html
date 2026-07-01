@@ -11,7 +11,9 @@
         <!-- IMAGE GALLERY -->
         <div class="gallery glass-card">
           <div class="main-img">
-            <img [src]="(car.images || [car.image])[activeImg()]" [alt]="car.make + ' ' + car.model">
+            <img [src]="(car.images || [car.image])[activeImg()]" [alt]="car.make + ' ' + car.model"
+                 referrerpolicy="no-referrer"
+                 onerror="this.onerror=null;this.src='https://placehold.co/800x500/1a1f35/6C63FF?text=No+Image'">
             <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
             <button class="like-fab" (click)="liked.set(!liked())" [class.liked]="liked()">
               {{ liked() ? '❤️' : '🤍' }}
@@ -24,7 +26,8 @@
               [class.active]="activeImg() === i"
               (click)="activeImg.set(i)"
             >
-              <img [src]="img" alt="thumb">
+              <img [src]="img" alt="thumb" referrerpolicy="no-referrer"
+                   onerror="this.onerror=null;this.src='https://placehold.co/120x80/1a1f35/6C63FF?text=img'">
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 <div class="car-card glass-card" [routerLink]="['/cars', car.id]">
   <div class="card-img">
-    <img [src]="car.image" [alt]="car.make + ' ' + car.model" loading="lazy" onerror="this.src='https://via.placeholder.com/400x220/1a1f35/6C63FF?text=🚗'">
+    <img [src]="car.image" [alt]="car.make + ' ' + car.model" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/400x220/1a1f35/6C63FF?text=No+Image'">
     <div class="card-overlay">
       <span class="badge" [class]="car.badgeType">{{ car.badge }}</span>
       <button class="like-btn" (click)="toggleLike($event)" [class.liked]="liked">
