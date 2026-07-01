@@ -37,6 +37,8 @@ export class RegisterComponent {
     this.error.set('');
     if (this.step() === 1) {
       if (!this.name() || !this.email()) { this.error.set('Name and email are required.'); return; }
+    }
+    if (this.step() === 2) {
       if (this.password().length < 6) { this.error.set('Password must be at least 6 characters.'); return; }
       if (this.password() !== this.confirmPassword()) { this.error.set('Passwords do not match.'); return; }
     }
