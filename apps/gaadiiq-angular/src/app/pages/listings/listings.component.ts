@@ -21,13 +21,19 @@ export class ListingsComponent {
   searchQuery = signal('');
   selectedFuel = signal('All');
   selectedTransmission = signal('All');
+  selectedBodyType = signal('All');
+  selectedCondition = signal('All');
   selectedSort = signal('Relevance');
   maxPrice = signal(5000000);
+  minYear = signal(2018);
   sidebarOpen = signal(false);
 
   fuels = ['All', 'Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'];
-  transmissions = ['All', 'Manual', 'Automatic', 'CVT', 'DCT'];
+  transmissions = ['All', 'Manual', 'Automatic', 'CVT', 'DCT', 'AMT'];
+  bodyTypes = ['All', 'Hatchback', 'Sedan', 'SUV', 'MUV'];
+  conditions = ['All', 'New (< 10k km)', 'Used (10k–50k km)', 'High Mileage (> 50k km)'];
   sorts = ['Relevance', 'Price: Low to High', 'Price: High to Low', 'Newest First', 'Top Rated'];
+  years = Array.from({length: 10}, (_, i) => 2024 - i);
 
   allCars: Car[] = [
     // Maruti Suzuki
@@ -97,11 +103,18 @@ export class ListingsComponent {
   filteredCars = computed(() => {
     let cars = this.allCars.filter(c => {
       const q = this.searchQuery().toLowerCase();
-      const matchQ = !q || `${c.make} ${c.model} ${c.city}`.toLowerCase().includes(q);
+      const matchQ = !q || `${c.make} ${c.model} ${c.city} ${c.bodyType} ${c.year} ${c.fuel}`.toLowerCase().includes(q);
       const matchFuel = this.selectedFuel() === 'All' || c.fuel === this.selectedFuel();
-      const matchTx = this.selectedTransmission() === 'All' || c.transmission === this.selectedTransmission();
+      const matchTx = this.selectedTransmission() === 'All' || c.transmission.includes(this.selectedTransmission());
+      const matchBT = this.selectedBodyType() === 'All' || c.bodyType === this.selectedBodyType();
       const matchPrice = c.price <= this.maxPrice();
-      return matchQ && matchFuel && matchTx && matchPrice;
+      const matchYear = c.year >= this.minYear();
+      const cond = this.selectedCondition();
+      const matchCond = cond === 'All' ||
+        (cond === 'New (< 10k km)' && c.km < 10000) ||
+        (cond === 'Used (10k–50k km)' && c.km >= 10000 && c.km <= 50000) ||
+        (cond === 'High Mileage (> 50k km)' && c.km > 50000);
+      return matchQ && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchCond;
     });
 
     const sort = this.selectedSort();

@@ -8,7 +8,7 @@
       </div>
       <div class="search-bar glass-card">
         <span>🔍</span>
-        <input type="text" placeholder="Search make, model, city..." [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)">
+        <input type="text" placeholder="Search make, model, body type, city, year..." [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)">
       </div>
       <div class="sort-row">
         <select [(ngModel)]="sorts[0]" (change)="selectedSort.set($any($event.target).value)">
@@ -52,6 +52,29 @@
       </div>
 
       <div class="filter-group">
+        <label>Condition</label>
+        <div class="filter-chips">
+          <span *ngFor="let c of conditions" class="chip"
+            [class.active]="selectedCondition() === c" (click)="selectedCondition.set(c)">{{ c }}</span>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Body Type</label>
+        <div class="filter-chips">
+          <span *ngFor="let b of bodyTypes" class="chip"
+            [class.active]="selectedBodyType() === b" (click)="selectedBodyType.set(b)">{{ b }}</span>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Min Year: <strong class="gradient-text">{{ minYear() }}</strong></label>
+        <input type="range" min="2015" max="2024" step="1"
+          [value]="minYear()" (input)="minYear.set(+$any($event.target).value)" class="price-range">
+        <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>2015</span><span>2024</span></div>
+      </div>
+
+      <div class="filter-group">
         <label>Max Budget: <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
         <input type="range" min="300000" max="5000000" step="100000"
           [value]="maxPrice()" (input)="maxPrice.set(+$any($event.target).value)"
@@ -75,7 +98,7 @@
         <div style="font-size:4rem;margin-bottom:1rem">🔍</div>
         <h3>No cars found</h3>
         <p style="color:var(--muted)">Try adjusting your filters or search query</p>
-        <button class="btn-gradient" style="margin-top:1.5rem" (click)="selectedFuel.set('All');selectedTransmission.set('All');maxPrice.set(5000000);searchQuery.set('')">Clear All Filters</button>
+        <button class="btn-gradient" style="margin-top:1.5rem" (click)="selectedFuel.set('All');selectedTransmission.set('All');selectedBodyType.set('All');selectedCondition.set('All');maxPrice.set(5000000);minYear.set(2018);searchQuery.set('')">Clear All Filters</button>
       </div>
     </ng-template>
   </div>
