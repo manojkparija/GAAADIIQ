@@ -11,7 +11,7 @@
         <!-- IMAGE GALLERY -->
         <div class="gallery glass-card">
           <div class="main-img">
-            <img [src]="car.images[activeImg()]" [alt]="car.make + ' ' + car.model">
+            <img [src]="(car.images || [car.image])[activeImg()]" [alt]="car.make + ' ' + car.model">
             <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
             <button class="like-fab" (click)="liked.set(!liked())" [class.liked]="liked()">
               {{ liked() ? '❤️' : '🤍' }}
@@ -19,7 +19,7 @@
           </div>
           <div class="thumbnails">
             <div
-              *ngFor="let img of car.images; let i = index"
+              *ngFor="let img of (car.images || [car.image]); let i = index"
               class="thumb"
               [class.active]="activeImg() === i"
               (click)="activeImg.set(i)"
@@ -50,7 +50,7 @@
 
           <div class="tab-content" *ngIf="activeTab()==='specs'">
             <div class="specs-grid">
-              <div class="spec-row" *ngFor="let spec of car.specs">
+              <div class="spec-row" *ngFor="let spec of (car.specs || [])">
                 <span class="spec-label">{{ spec.label }}</span>
                 <span class="spec-val gradient-text">{{ spec.value }}</span>
               </div>
@@ -59,7 +59,7 @@
 
           <div class="tab-content" *ngIf="activeTab()==='features'">
             <div class="features-list">
-              <div class="feature-item" *ngFor="let f of car.features">
+              <div class="feature-item" *ngFor="let f of (car.features || [])">
                 <span class="check">✅</span> {{ f }}
               </div>
             </div>
@@ -95,9 +95,9 @@
             <span style="font-size:1.4rem">🤖</span>
             <div>
               <div style="font-weight:700">AI Price Analysis</div>
-              <div style="font-size:0.78rem;color:var(--muted)">{{ car.aiValuation.confidence }}% confidence</div>
+              <div style="font-size:0.78rem;color:var(--muted)">{{ car.aiValuation?.confidence }}% confidence</div>
             </div>
-            <span class="badge badge-green" style="margin-left:auto">{{ car.aiValuation.verdict }}</span>
+            <span class="badge badge-green" style="margin-left:auto">{{ car.aiValuation?.verdict }}</span>
           </div>
           <div class="val-bar">
             <div class="val-range">
@@ -109,13 +109,13 @@
               <div class="bar-marker"></div>
             </div>
             <div class="val-range">
-              <span class="gold-text">{{ formatPrice(car.aiValuation.marketMin) }}</span>
-              <span class="gold-text">{{ formatPrice(car.aiValuation.marketMax) }}</span>
+              <span class="gold-text">{{ formatPrice(car.aiValuation?.marketMin || 0) }}</span>
+              <span class="gold-text">{{ formatPrice(car.aiValuation?.marketMax || 0) }}</span>
             </div>
           </div>
           <div style="text-align:center;margin-top:0.75rem">
             <span style="font-size:0.85rem;color:var(--muted)">AI Fair Value: </span>
-            <span class="gradient-text" style="font-weight:800;font-size:1.1rem">{{ formatPrice(car.aiValuation.fairPrice) }}</span>
+            <span class="gradient-text" style="font-weight:800;font-size:1.1rem">{{ formatPrice(car.aiValuation?.fairPrice || 0) }}</span>
           </div>
         </div>
 
