@@ -1,10 +1,9 @@
 // Run with: node supabase-seed.mjs
+// Requires service role key: set SUPABASE_SERVICE_KEY=<key> before running
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  'https://gnhixykdvnuoxeccntjo.supabase.co',
-  'sb_publishable_K-cu3EbiH3uDIsonlonRmw_tqsKfp_K'
-);
+const key = process.env.SUPABASE_SERVICE_KEY || 'sb_publishable_K-cu3EbiH3uDIsonlonRmw_tqsKfp_K';
+const supabase = createClient('https://gnhixykdvnuoxeccntjo.supabase.co', key);
 
 const cars = [
   { id:1,  make:'Maruti Suzuki', model:'Swift',        variant:'ZXI+ AMT',            year:2024, price:749000,  km:5000,  fuel:'Petrol',   transmission:'Manual',    badge:'🔥 Bestseller',   badge_type:'badge-red',    image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg',        rating:4.7, reviews:512, verified:true, city:'Delhi',     body_type:'Hatchback', color:'Solid Fire Red',    owners:'1st Owner' },
