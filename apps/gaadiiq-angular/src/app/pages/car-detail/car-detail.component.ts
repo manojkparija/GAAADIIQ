@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, computed, OnInit, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -24,6 +24,7 @@ export class CarDetailComponent implements OnInit {
   car!: Car;
   activeImg = signal(0);
   notFound = false;
+  carLoaded = false;
 
   // On-road price
   selectedState = signal('Maharashtra');
@@ -45,26 +46,43 @@ export class CarDetailComponent implements OnInit {
   reviewSubmitted = signal(false);
   hoverRating = signal(0);
 
-  constructor(private route: ActivatedRoute, private carsData: CarsDataService, private seo: SeoService) {}
+  constructor(private route: ActivatedRoute, private carsData: CarsDataService, private seo: SeoService) {
+    effect(() => {
+      if (this.carLoaded || this.carsData.loading()) return;
+      const id = Number(this.route.snapshot.paramMap.get('id'));
+      this.resolveCar(id);
+    });
+  }
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (!this.carsData.loading()) {
+      this.resolveCar(id);
+    }
+  }
+
+  private resolveCar(id: number) {
+    if (this.carLoaded) return;
     const found = this.carsData.getById(id);
+    const all = this.carsData.getAll();
     if (found) {
       this.car = found;
-    } else {
+      this.carLoaded = true;
+    } else if (all.length > 0) {
       this.notFound = true;
-      this.car = this.carsData.getAll()[0];
+      this.car = all[0];
+      this.carLoaded = true;
     }
-    this.loan.amount = this.car.price;
-    this.calcEmi();
-    this.seo.setCarDetail(this.car.make, this.car.model, this.car.year, this.car.price, this.car.city || 'India');
-    // Set fuel price defaults based on car's fuel type
-    const fuel = this.car.fuel;
-    if (fuel === 'Diesel') { this.fuelPrice.set(92); this.fuelPriceMin = 80; this.fuelPriceMax = 110; this.fuelPriceUnit = '/L'; }
-    else if (fuel === 'CNG') { this.fuelPrice.set(85); this.fuelPriceMin = 70; this.fuelPriceMax = 110; this.fuelPriceUnit = '/kg'; }
-    else if (fuel === 'Electric') { this.fuelPriceUnit = '/kWh'; }
-    else { this.fuelPrice.set(106); this.fuelPriceMin = 90; this.fuelPriceMax = 130; this.fuelPriceUnit = '/L'; }
+    if (this.carLoaded) {
+      this.loan.amount = this.car.price;
+      this.calcEmi();
+      this.seo.setCarDetail(this.car.make, this.car.model, this.car.year, this.car.price, this.car.city || 'India');
+      const fuel = this.car.fuel;
+      if (fuel === 'Diesel') { this.fuelPrice.set(92); this.fuelPriceMin = 80; this.fuelPriceMax = 110; this.fuelPriceUnit = '/L'; }
+      else if (fuel === 'CNG') { this.fuelPrice.set(85); this.fuelPriceMin = 70; this.fuelPriceMax = 110; this.fuelPriceUnit = '/kg'; }
+      else if (fuel === 'Electric') { this.fuelPriceUnit = '/kWh'; }
+      else { this.fuelPrice.set(106); this.fuelPriceMin = 90; this.fuelPriceMax = 130; this.fuelPriceUnit = '/L'; }
+    }
   }
 
   calcEmi() {

@@ -88,13 +88,19 @@
       <button class="btn-gradient" style="width:100%;margin-top:1rem" (click)="sidebarOpen.set(false)">Apply Filters</button>
     </aside>
 
+    <!-- LOADING -->
+    <div *ngIf="loading()" style="grid-column:1/-1;text-align:center;padding:4rem">
+      <div style="font-size:3rem;margin-bottom:1rem">⏳</div>
+      <p style="color:var(--muted)">Loading cars from database...</p>
+    </div>
+
     <!-- GRID -->
-    <div class="cars-grid" *ngIf="filteredCars().length > 0; else noResults">
+    <div class="cars-grid" *ngIf="!loading() && filteredCars().length > 0; else noResults">
       <app-car-card *ngFor="let car of filteredCars()" [car]="car"></app-car-card>
     </div>
 
     <ng-template #noResults>
-      <div class="no-results glass-card">
+      <div class="no-results glass-card" *ngIf="!loading()">
         <div style="font-size:4rem;margin-bottom:1rem">🔍</div>
         <h3>No cars found</h3>
         <p style="color:var(--muted)">Try adjusting your filters or search query</p>
