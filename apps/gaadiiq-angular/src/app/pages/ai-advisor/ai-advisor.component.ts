@@ -4,13 +4,60 @@ import { CommonModule } from '@angular/common';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
 
+// ── Constants ──────────────────────────────────────────────────────────────
+
 const BUDGET_MAP: Record<string, [number, number]> = {
-  'Under ₹5L': [0, 500000],
-  '₹5L - ₹10L': [500000, 1000000],
-  '₹10L - ₹20L': [1000000, 2000000],
-  '₹20L - ₹30L': [2000000, 3000000],
-  'Above ₹30L': [3000000, Infinity],
+  'Under ₹5L':    [0, 500000],
+  '₹5L – ₹10L':  [500000, 1000000],
+  '₹10L – ₹15L': [1000000, 1500000],
+  '₹15L – ₹20L': [1500000, 2000000],
+  '₹20L – ₹30L': [2000000, 3000000],
+  'Above ₹30L':  [3000000, Infinity],
 };
+
+const DAILY_KM: Record<string, number> = {
+  '< 20 km/day': 15, '20 – 50 km/day': 35,
+  '50 – 100 km/day': 75, '100+ km/day': 120,
+};
+
+const MAINT: Record<string, number> = {
+  'Maruti Suzuki': 8000, 'Hyundai': 10000, 'Toyota': 10000,
+  'Honda': 11000, 'Tata': 13000, 'Mahindra': 14000,
+  'Kia': 12000, 'MG Motor': 13000,
+};
+
+const RESALE: Record<string, number> = {
+  'Maruti Suzuki': 0.65, 'Toyota': 0.62, 'Hyundai': 0.58,
+  'Honda': 0.58, 'Kia': 0.55, 'Mahindra': 0.55,
+  'Tata': 0.52, 'MG Motor': 0.50,
+};
+
+const ANALYZE_MSGS = [
+  { icon: '🔍', text: 'Profiling your requirements...' },
+  { icon: '🧮', text: 'Evaluating 58 vehicles across 14 parameters...' },
+  { icon: '💰', text: 'Calculating 5-year ownership costs...' },
+  { icon: '📊', text: 'Running AI recommendation engine...' },
+  { icon: '✨', text: 'Generating personalized insights...' },
+];
+
+// ── Types ──────────────────────────────────────────────────────────────────
+
+interface AdvisorStep {
+  key: string; title: string; icon: string; subtitle: string;
+  category: string; multi: boolean; ev?: boolean;
+  options: { label: string; sub: string }[];
+}
+
+export interface RecommendedCar extends Car {
+  matchScore: number; confidence: string;
+  reasons: string[]; pros: string[]; cons: string[];
+  monthlyFuel: number; monthlyEmi: number;
+  annualMaintenance: number; fiveYearTco: number;
+  costPerKm: number; resale5yr: number;
+  categoryBadges: string[];
+}
+
+// ── Component ──────────────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-ai-advisor',
@@ -20,140 +67,485 @@ const BUDGET_MAP: Record<string, [number, number]> = {
   styleUrl: './ai-advisor.component.scss'
 })
 export class AiAdvisorComponent {
-  step = signal(0);
-  matching = signal(false);
-  done = signal(false);
-  // Multi-select: each key maps to array of selected options
-  answers = signal<Record<string, string[]>>({});
+  phase = signal<'quiz' | 'analyzing' | 'results'>('quiz');
+  stepIdx = signal(0);
+  analyzeMsg = signal(ANALYZE_MSGS[0]);
+  analyzePct = signal(0);
+  profile = signal<Record<string, string | string[]>>({});
+  results = signal<RecommendedCar[]>([]);
+  showComparison = signal(false);
 
-  steps = [
-    { key: 'budget', title: 'What is your budget?', icon: '💰', subtitle: 'Select one or more ranges', options: ['Under ₹5L', '₹5L - ₹10L', '₹10L - ₹20L', '₹20L - ₹30L', 'Above ₹30L'], multi: false },
-    { key: 'fuel', title: 'Preferred fuel type?', icon: '⛽', subtitle: 'Select all that you are open to', options: ['Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'], multi: true },
-    { key: 'usage', title: 'Primary usage?', icon: '🗺️', subtitle: 'Select all that apply', options: ['City commute', 'Long highway trips', 'Mixed city & highway', 'Off-road adventures', 'Family road trips'], multi: true },
-    { key: 'bodyType', title: 'Preferred body type?', icon: '🚗', subtitle: 'Select all body types you like', options: ['Hatchback', 'Sedan', 'SUV', 'MUV', 'No preference'], multi: true },
-    { key: 'transmission', title: 'Transmission preference?', icon: '⚙️', subtitle: 'Select all you are comfortable with', options: ['Manual', 'Automatic / AMT', 'No preference'], multi: true },
-    { key: 'priority', title: 'What matters most to you?', icon: '✨', subtitle: 'Select all your top priorities', options: ['Fuel efficiency', 'Performance / Power', 'Safety features', 'Technology & Features', 'Resale value', 'Low maintenance'], multi: true },
+  readonly ALL_STEPS: AdvisorStep[] = [
+    {
+      key: 'budget', category: 'Financial', icon: '💰', multi: false,
+      title: 'What is your total car budget?',
+      subtitle: 'We\'ll match cars precisely within your price range',
+      options: [
+        { label: 'Under ₹5L',    sub: 'Entry segment' },
+        { label: '₹5L – ₹10L',  sub: 'Most popular range' },
+        { label: '₹10L – ₹15L', sub: 'Mid-segment' },
+        { label: '₹15L – ₹20L', sub: 'Premium mid' },
+        { label: '₹20L – ₹30L', sub: 'Luxury segment' },
+        { label: 'Above ₹30L',  sub: 'Ultra premium' },
+      ]
+    },
+    {
+      key: 'dailyKm', category: 'Driving', icon: '📍', multi: false,
+      title: 'How much do you drive daily?',
+      subtitle: 'Helps calculate fuel costs & EV range requirements',
+      options: [
+        { label: '< 20 km/day',     sub: 'Light use — local errands' },
+        { label: '20 – 50 km/day',  sub: 'Average city commute' },
+        { label: '50 – 100 km/day', sub: 'Heavy commute' },
+        { label: '100+ km/day',     sub: 'Long distance daily' },
+      ]
+    },
+    {
+      key: 'drivingMix', category: 'Driving', icon: '🗺️', multi: false,
+      title: 'Where do you drive most often?',
+      subtitle: 'City vs highway changes efficiency & comfort needs',
+      options: [
+        { label: 'Mostly City',    sub: '80%+ stop-go traffic' },
+        { label: 'Mostly Highway', sub: '80%+ open roads' },
+        { label: 'Mixed 50/50',   sub: 'Both equally' },
+        { label: 'Weekend trips only', sub: 'Occasional leisure use' },
+      ]
+    },
+    {
+      key: 'familySize', category: 'Family', icon: '👨‍👩‍👧', multi: false,
+      title: 'How many people travel regularly?',
+      subtitle: 'Determines seating, boot space and body type needs',
+      options: [
+        { label: 'Just me',       sub: 'Solo driver' },
+        { label: '2 – 3 people', sub: 'Couple or small family' },
+        { label: '4 – 5 people', sub: 'Medium family' },
+        { label: '6+ people',    sub: 'Large family or group travel' },
+      ]
+    },
+    {
+      key: 'usageType', category: 'Family', icon: '🚗', multi: true,
+      title: 'How will you primarily use the car?',
+      subtitle: 'Select all that apply',
+      options: [
+        { label: 'Daily commute',      sub: 'Office / work travel' },
+        { label: 'Family outings',     sub: 'Weekend trips & picnics' },
+        { label: 'Long road trips',    sub: 'Intercity highway travel' },
+        { label: 'Off-road adventure', sub: 'Hills, rough terrain' },
+        { label: 'Business use',       sub: 'Client visits, meetings' },
+        { label: 'School runs',        sub: 'Kids pickup & drop' },
+      ]
+    },
+    {
+      key: 'fuel', category: 'Fuel', icon: '⛽', multi: true,
+      title: 'Which fuel type are you open to?',
+      subtitle: 'Select all options you are comfortable with',
+      options: [
+        { label: 'Petrol',         sub: 'Widely available, smooth drive' },
+        { label: 'Diesel',         sub: 'Best for long highway runs' },
+        { label: 'CNG',            sub: 'Lowest running cost' },
+        { label: 'Hybrid',         sub: 'Best efficiency, no range anxiety' },
+        { label: 'Electric',       sub: 'Zero emission, future-ready' },
+        { label: 'No preference',  sub: 'Show me all options' },
+      ]
+    },
+    {
+      key: 'ev', category: 'Electric', icon: '⚡', multi: false, ev: true,
+      title: 'EV Suitability Check',
+      subtitle: 'Helps us assess your readiness for electric vehicles',
+      options: [
+        { label: 'Home charger ready', sub: 'Dedicated parking + charger installed' },
+        { label: 'Can install charger', sub: 'Own parking, will install charger' },
+        { label: 'Public charging only', sub: 'Rely on charging stations' },
+        { label: 'Not sure yet',        sub: 'Need guidance on EV readiness' },
+      ]
+    },
+    {
+      key: 'lifestyle', category: 'Lifestyle', icon: '✨', multi: true,
+      title: 'How would you describe yourself?',
+      subtitle: 'Select all that match your buying personality',
+      options: [
+        { label: 'First-time buyer', sub: 'New to car ownership' },
+        { label: 'Comfort-focused',  sub: 'Ride quality is top priority' },
+        { label: 'Performance lover',sub: 'Power & handling matters' },
+        { label: 'Eco-conscious',    sub: 'Sustainability first' },
+        { label: 'Safety first',     sub: 'Family safety is non-negotiable' },
+        { label: 'Tech enthusiast',  sub: 'Latest connected features' },
+        { label: 'Value seeker',     sub: 'Maximum bang for the buck' },
+        { label: 'Luxury oriented',  sub: 'Premium look, feel, experience' },
+      ]
+    },
+    {
+      key: 'bodyType', category: 'Vehicle', icon: '🏎️', multi: true,
+      title: 'What type of car do you prefer?',
+      subtitle: 'Select all body styles you like',
+      options: [
+        { label: 'Hatchback',   sub: 'Compact, affordable, easy to park' },
+        { label: 'Sedan',       sub: 'Classic, spacious boot, prestige' },
+        { label: 'Compact SUV', sub: 'Stylish & practical under ₹15L' },
+        { label: 'SUV',         sub: 'Space, height, road presence' },
+        { label: 'MUV / MPV',  sub: '7-8 seats for large families' },
+        { label: 'No preference', sub: 'Open to all' },
+      ]
+    },
+    {
+      key: 'features', category: 'Features', icon: '🛠️', multi: true,
+      title: 'Which features are must-haves?',
+      subtitle: 'Select features you won\'t compromise on',
+      options: [
+        { label: 'Sunroof',         sub: 'Panoramic or standard sunroof' },
+        { label: 'ADAS Safety',     sub: 'Auto braking, lane assist' },
+        { label: '360° Camera',     sub: 'Full surround parking view' },
+        { label: 'Wireless Charging', sub: 'Convenient phone charging' },
+        { label: 'Large Touchscreen', sub: '10"+ infotainment display' },
+        { label: 'Ventilated Seats',  sub: 'Cooled seats for summer' },
+        { label: 'Connected Car',     sub: 'Remote app, OTA updates' },
+        { label: '6+ Airbags',       sub: 'Maximum passive safety' },
+      ]
+    },
+    {
+      key: 'priorities', category: 'Priorities', icon: '🎯', multi: true,
+      title: 'What matters most to you?',
+      subtitle: 'Select your top ownership priorities',
+      options: [
+        { label: 'Fuel efficiency',   sub: 'Lowest running cost per km' },
+        { label: 'Low maintenance',   sub: 'Affordable service schedule' },
+        { label: 'Resale value',      sub: 'Strong 5-year resale' },
+        { label: 'Safety rating',     sub: 'High NCAP / safety score' },
+        { label: 'Brand reliability', sub: 'Trusted, proven manufacturer' },
+        { label: 'Feature-rich',      sub: 'Technology & comfort' },
+        { label: 'Performance',       sub: 'Power, acceleration, handling' },
+        { label: 'Low total cost',    sub: 'Lowest 5-year ownership cost' },
+      ]
+    },
   ];
 
-  results = signal<Array<Car & { matchScore: number; reasons: string[] }>>([]);
+  visibleSteps = computed(() => {
+    const fuels = (this.profile()['fuel'] as string[] || []);
+    return this.ALL_STEPS.filter(s => !s.ev || fuels.includes('Electric'));
+  });
 
-  currentStep = computed(() => this.steps[this.step()]);
-  progress = computed(() => ((this.step()) / this.steps.length) * 100);
-  currentSelections = computed(() => this.answers()[this.currentStep().key] || []);
-  canProceed = computed(() => this.currentSelections().length > 0);
+  currentStep  = computed(() => this.visibleSteps()[this.stepIdx()]);
+  totalSteps   = computed(() => this.visibleSteps().length);
+  progress     = computed(() => ((this.stepIdx() + 1) / this.totalSteps()) * 100);
+  currentSels  = computed(() => {
+    const key = this.currentStep()?.key;
+    if (!key) return [];
+    const v = this.profile()[key];
+    return v ? (Array.isArray(v) ? v : [v]) : [];
+  });
+  canProceed   = computed(() => this.currentSels().length > 0);
 
   constructor(private carsData: CarsDataService, private seo: SeoService) {
-    seo.setPage('AI Car Advisor', 'Answer 6 quick questions and let our AI recommend the perfect car from 54 verified listings.');
+    seo.setPage('AI Car Advisor',
+      'Answer 10 smart questions and get personalized, AI-powered car recommendations with full cost analysis.');
   }
 
   toggle(option: string) {
-    const key = this.currentStep().key;
-    const isMulti = this.currentStep().multi;
-    this.answers.update(a => {
-      const current = a[key] || [];
-      if (!isMulti) {
-        // Single select: replace
-        return { ...a, [key]: [option] };
-      }
-      // Multi select: toggle
-      if (current.includes(option)) {
-        return { ...a, [key]: current.filter(o => o !== option) };
-      }
-      return { ...a, [key]: [...current, option] };
+    const step = this.currentStep();
+    this.profile.update(p => {
+      const cur = (p[step.key] as string[] || []);
+      if (!step.multi) return { ...p, [step.key]: [option] };
+      if (cur.includes(option)) return { ...p, [step.key]: cur.filter(o => o !== option) };
+      return { ...p, [step.key]: [...cur, option] };
     });
   }
 
-  isSelected(option: string): boolean {
-    return this.currentSelections().includes(option);
-  }
+  isSelected(opt: string) { return this.currentSels().includes(opt); }
+
+  back() { if (this.stepIdx() > 0) this.stepIdx.update(v => v - 1); }
 
   next() {
     if (!this.canProceed()) return;
-    if (this.step() < this.steps.length - 1) {
-      this.step.update(v => v + 1);
+    if (this.stepIdx() < this.totalSteps() - 1) {
+      this.stepIdx.update(v => v + 1);
     } else {
-      this.matching.set(true);
-      setTimeout(() => { this.computeResults(); this.matching.set(false); this.done.set(true); }, 2000);
+      this.runAnalysis();
     }
   }
 
-  private has(key: string, value: string): boolean {
-    return (this.answers()[key] || []).some(v => v.toLowerCase() === value.toLowerCase());
+  private runAnalysis() {
+    this.phase.set('analyzing');
+    this.analyzeMsg.set(ANALYZE_MSGS[0]);
+    this.analyzePct.set(0);
+    let i = 0;
+    const tick = () => {
+      i++;
+      this.analyzePct.set(Math.round((i / ANALYZE_MSGS.length) * 100));
+      if (i < ANALYZE_MSGS.length) {
+        this.analyzeMsg.set(ANALYZE_MSGS[i]);
+        setTimeout(tick, 750);
+      } else {
+        this.computeResults();
+        this.phase.set('results');
+      }
+    };
+    setTimeout(tick, 750);
   }
 
-  private hasAny(key: string, values: string[]): boolean {
-    return values.some(v => this.has(key, v));
-  }
+  // ── Scoring engine ────────────────────────────────────────────────────────
 
   private computeResults() {
-    const a = this.answers();
-    const budgets = a['budget'] || [];
+    const p = this.profile();
+    const budget      = p['budget'] as string || '';
+    const dailyKmStr  = p['dailyKm'] as string || '20 – 50 km/day';
+    const familySize  = p['familySize'] as string || '2 – 3 people';
+    const fuels       = (p['fuel'] as string[] || []);
+    const bodyTypes   = (p['bodyType'] as string[] || []).filter(b => b !== 'No preference');
+    const usages      = (p['usageType'] as string[] || []);
+    const lifestyle   = (p['lifestyle'] as string[] || []);
+    const featureWish = (p['features'] as string[] || []);
+    const priorities  = (p['priorities'] as string[] || []);
+
+    const [budMin, budMax] = BUDGET_MAP[budget] || [0, Infinity];
+    const dailyKm = DAILY_KM[dailyKmStr] || 35;
+    const noFuelPref = fuels.includes('No preference') || fuels.length === 0;
+
     const all = this.carsData.getAll();
 
-    const scored = all.map(car => {
-      let score = 40;
+    const scored: RecommendedCar[] = all.map(car => {
+      let score = 0;
       const reasons: string[] = [];
+      const pros: string[] = [];
+      const cons: string[] = [];
 
-      // Budget — hard filter: strong penalty if outside ALL selected ranges
-      const inBudget = budgets.some(b => {
-        const [mn, mx] = BUDGET_MAP[b] || [0, Infinity];
-        return car.price >= mn && car.price <= mx;
-      });
-      if (inBudget) { score += 30; reasons.push('Within budget'); }
-      else { score -= 25; } // strong penalty for wrong price range
-
-      // Fuel match
-      const fuels = a['fuel'] || [];
-      if (fuels.length) {
-        if (fuels.some(f => car.fuel.toLowerCase() === f.toLowerCase())) { score += 15; reasons.push(`${car.fuel} fuel`); }
-        else { score -= 12; }
+      // ── 1. Budget (25 pts) ─────────────────────────────────────────────
+      if (car.price >= budMin && car.price <= budMax) {
+        score += 25; reasons.push('Within your budget');
+        pros.push(`${this.fmtP(car.price)} — fits your budget exactly`);
+      } else if (car.price < budMin && car.price >= budMin * 0.75) {
+        score += 18; pros.push(`${this.fmtP(car.price)} — below budget, great savings`);
+      } else if (car.price > budMax && car.price <= budMax * 1.12) {
+        score += 10; cons.push(`${this.fmtP(car.price - budMax)} above your budget`);
+      } else if (car.price < budMin * 0.75) {
+        score += 12;
+      } else {
+        score -= 20; cons.push('Significantly over your stated budget');
       }
 
-      // Body type — strong penalty for mismatch
-      const bodyTypes = (a['bodyType'] || []).filter(b => b !== 'No preference');
-      if (bodyTypes.length) {
-        const electricMatch = bodyTypes.includes('Electric') && car.fuel === 'Electric';
-        const bodyMatch = bodyTypes.some(bt => car.bodyType?.toLowerCase() === bt.toLowerCase());
-        if (electricMatch) { score += 20; reasons.push('Electric vehicle'); }
-        else if (bodyMatch) { score += 20; reasons.push(`${car.bodyType} body`); }
-        else { score -= 20; } // strong penalty: user wants SUV, this is a Hatchback
+      // ── 2. Fuel (15 pts) ───────────────────────────────────────────────
+      if (noFuelPref) {
+        score += 10;
+      } else if (fuels.some(f => car.fuel.toLowerCase() === f.toLowerCase())) {
+        score += 15; reasons.push(`${car.fuel} — your preferred fuel`);
+      } else {
+        score -= 10; cons.push(`${car.fuel} — not your preferred fuel type`);
       }
 
-      // Transmission
-      const transmissions = a['transmission'] || [];
-      if (transmissions.length && !transmissions.includes('No preference')) {
-        const wantsAuto = transmissions.some(t => t.includes('Automatic'));
-        const wantsManual = transmissions.includes('Manual');
-        const isAuto = !car.transmission.toLowerCase().includes('manual');
-        if ((wantsAuto && isAuto) || (wantsManual && !isAuto)) { score += 8; reasons.push(`${car.transmission} gearbox`); }
-        else { score -= 5; }
+      // ── 3. Daily km vs mileage / range (10 pts) ────────────────────────
+      const mileageSpec = car.specs?.find(s => s.label === 'Mileage');
+      const rangeSpec   = car.specs?.find(s => s.label === 'Range');
+
+      if (car.fuel === 'Electric' && rangeSpec) {
+        const range = parseFloat(rangeSpec.value);
+        if (dailyKm < range * 0.55) {
+          score += 10; reasons.push(`${rangeSpec.value} range — 2× your daily need`);
+          pros.push(`${rangeSpec.value} range comfortably covers ${dailyKm}km daily`);
+        } else if (dailyKm < range * 0.85) {
+          score += 6;
+        } else {
+          score -= 5; cons.push('Range may be tight for your daily distance');
+        }
+      } else if (mileageSpec) {
+        const km = parseFloat(mileageSpec.value);
+        if (km > 22) {
+          score += 10;
+          if (priorities.includes('Fuel efficiency')) {
+            reasons.push(`${mileageSpec.value} — top fuel efficiency`);
+            pros.push(`${mileageSpec.value} mileage — saves ≈₹${Math.round((km - 16) * dailyKm * 30 * 0.3 / km / 10) * 10}/month vs avg`);
+          }
+        } else if (km > 16) {
+          score += 6;
+        } else {
+          score += 2;
+          if (priorities.includes('Fuel efficiency')) cons.push('Below-average fuel efficiency');
+        }
       }
 
-      // Usage hints (multi)
-      const usages = a['usage'] || [];
-      if (usages.includes('Off-road adventures') && car.features?.some(f => f.toLowerCase().includes('4wd'))) { score += 12; reasons.push('4WD capability'); }
-      if (usages.includes('Family road trips') && (car.bodyType === 'MUV' || car.bodyType === 'SUV')) { score += 8; reasons.push('Family-friendly'); }
-      if (usages.includes('City commute') && car.km < 20000) { score += 5; reasons.push('Low mileage'); }
+      // ── 4. Seating / family fit (15 pts) ──────────────────────────────
+      const need = this.needSeating(familySize);
+      const has  = this.carSeating(car);
+      if (has >= need) {
+        score += 15;
+        if (need >= 7) { reasons.push(`${has}-seater — perfect for large family`); pros.push(`${has} seats — fits your group of 6+`); }
+        else if (need >= 5) { pros.push(`5-seat comfort — perfect for your family`); }
+      } else if (has === need - 1) {
+        score += 8;
+      } else {
+        score -= 10; cons.push(`Only ${has} seats — may not fit your family`);
+      }
 
-      // Priority (multi)
-      const priorities = a['priority'] || [];
-      if (priorities.includes('Safety features') && car.features?.some(f => f.includes('Airbag'))) { score += 8; reasons.push('Multiple airbags'); }
-      if (priorities.includes('Technology & Features') && car.features?.some(f => f.includes('ADAS'))) { score += 10; reasons.push('ADAS equipped'); }
-      if (priorities.includes('Fuel efficiency')) { const m = car.specs?.find(s => s.label === 'Mileage'); if (m && parseFloat(m.value) > 20) { score += 10; reasons.push(`${m.value} mileage`); } }
-      if (priorities.includes('Resale value') && ['Maruti Suzuki','Hyundai'].includes(car.make)) { score += 8; reasons.push('Strong resale brand'); }
-      if (priorities.includes('Low maintenance') && ['Maruti Suzuki','Hyundai','Toyota'].includes(car.make)) { score += 6; reasons.push('Low running cost'); }
-      if (priorities.includes('Performance / Power')) { const p = car.specs?.find(s => s.label === 'Power'); if (p && parseFloat(p.value) > 130) { score += 10; reasons.push(`${p.value} power`); } }
+      // ── 5. Body type (15 pts) ─────────────────────────────────────────
+      if (bodyTypes.length === 0) {
+        score += 8;
+      } else {
+        const match = bodyTypes.some(bt => {
+          if (bt === 'MUV / MPV') return car.bodyType === 'MUV';
+          if (bt === 'Compact SUV') return car.bodyType === 'SUV' && car.price < 1300000;
+          return car.bodyType?.toLowerCase() === bt.toLowerCase();
+        });
+        if (match) {
+          score += 15; reasons.push(`${car.bodyType} — matches your preference`);
+        } else {
+          score -= 12; cons.push(`${car.bodyType} — not your preferred body type`);
+        }
+      }
 
-      // Rating boost (smaller weight)
-      score += (car.rating - 4) * 3;
-      if (!reasons.length) reasons.push('Matches your criteria');
+      // ── 6. Features (10 pts) ──────────────────────────────────────────
+      let fs = 0;
+      if (featureWish.includes('Sunroof') && car.features?.some(f => /sunroof/i.test(f))) { fs += 2; pros.push('Sunroof included'); }
+      if (featureWish.includes('ADAS Safety') && car.features?.some(f => /adas/i.test(f))) { fs += 2; reasons.push('ADAS equipped'); }
+      if (featureWish.includes('360° Camera') && car.features?.some(f => /360/i.test(f))) { fs += 2; pros.push('360° camera system'); }
+      if (featureWish.includes('Wireless Charging') && car.features?.some(f => /wireless/i.test(f))) fs += 1;
+      if (featureWish.includes('6+ Airbags') && car.features?.some(f => /6 airbag/i.test(f))) { fs += 2; pros.push('6 airbags — max safety'); }
+      if (featureWish.includes('Connected Car') && car.features?.some(f => /connect|ota|smart/i.test(f))) fs += 1;
+      if (featureWish.includes('Ventilated Seats') && car.features?.some(f => /ventilated/i.test(f))) { fs += 2; pros.push('Ventilated seats'); }
+      if (featureWish.includes('Large Touchscreen') && car.features?.some(f => /10\.|12\.|14\./.test(f))) fs += 1;
+      score += Math.min(fs * 1.5, 10);
 
-      return { ...car, matchScore: Math.min(Math.max(score, 1), 99), reasons: reasons.slice(0, 3) };
+      // ── 7. Priorities (10 pts) ────────────────────────────────────────
+      let ps = 0;
+      if (priorities.includes('Fuel efficiency') && mileageSpec && parseFloat(mileageSpec.value) > 20) ps += 2;
+      if ((priorities.includes('Safety rating') || priorities.includes('Safety first')) &&
+          car.features?.some(f => /6 airbag|adas/i.test(f))) ps += 3;
+      if (priorities.includes('Performance')) {
+        const pw = car.specs?.find(s => s.label === 'Power');
+        if (pw && parseFloat(pw.value) > 130) { ps += 2; pros.push(`${pw.value} — strong performance`); }
+      }
+      if ((priorities.includes('Brand reliability') || priorities.includes('Low maintenance')) &&
+          ['Maruti Suzuki', 'Toyota', 'Hyundai'].includes(car.make)) {
+        ps += 2; pros.push(`${car.make} — top reliability brand`);
+      }
+      if (priorities.includes('Resale value')) {
+        const r = RESALE[car.make] || 0.5;
+        if (r >= 0.60) { ps += 2; pros.push(`~${Math.round(r * 100)}% resale value after 5 years`); }
+      }
+      if ((priorities.includes('Low total cost') || priorities.includes('Low maintenance')) &&
+          (MAINT[car.make] || 14000) <= 10000) ps += 2;
+      score += Math.min(ps, 10);
+
+      // ── 8. Lifestyle / usage bonus (5 pts) ───────────────────────────
+      if (usages.includes('Off-road adventure') && car.features?.some(f => /4wd|4x4/i.test(f))) { score += 5; pros.push('4WD — adventure ready'); }
+      if (usages.includes('Long road trips') && car.bodyType === 'SUV') score += 3;
+      if (lifestyle.includes('Eco-conscious') && ['Electric', 'Hybrid', 'CNG'].includes(car.fuel)) { score += 3; reasons.push('Eco-friendly fuel'); }
+      if (lifestyle.includes('Safety first') && car.features?.some(f => /adas/i.test(f))) score += 3;
+      if (lifestyle.includes('Luxury oriented') && car.price > 2000000) score += 3;
+      if (lifestyle.includes('Value seeker') && (car.features?.length || 0) / car.price > 8e-6) score += 2;
+
+      // ── 9. Rating bonus (5 pts) ───────────────────────────────────────
+      score += (car.rating - 4.0) * 5;
+
+      // Normalize to 1–99
+      const norm = Math.min(Math.max(Math.round((score / 115) * 99), 30), 99);
+
+      // ── Cost calculations ──────────────────────────────────────────────
+      const monthlyFuel = this.calcFuel(dailyKm, parseFloat(mileageSpec?.value || '18'), car.fuel);
+      const monthlyEmi  = this.calcEmi(car.price * 0.8, 8.5, 60);
+      const annualMaint = MAINT[car.make] || 12000;
+      const insurance   = car.price * 0.04;
+      const resalePct   = RESALE[car.make] || 0.52;
+      const resale5yr   = car.price * resalePct;
+      const fiveYearTco = car.price + monthlyFuel * 60 + annualMaint * 5 + insurance * 5 - resale5yr;
+      const costPerKm   = monthlyFuel / (dailyKm * 30);
+
+      // Fill empty pros/cons
+      if (pros.length === 0) pros.push(`${car.rating}★ customer rating`);
+      if (cons.length === 0 && car.km > 30000) cons.push(`${car.km.toLocaleString('en-IN')} km on odometer`);
+      if (cons.length === 0) {
+        const pw = car.specs?.find(s => s.label === 'Power');
+        if (pw && parseFloat(pw.value) < 80) cons.push('Modest engine output');
+      }
+
+      return {
+        ...car,
+        matchScore: norm,
+        confidence: norm >= 80 ? 'High' : norm >= 65 ? 'Medium' : 'Moderate',
+        reasons: reasons.slice(0, 4),
+        pros: pros.slice(0, 3),
+        cons: cons.slice(0, 2),
+        monthlyFuel: Math.round(monthlyFuel),
+        monthlyEmi: Math.round(monthlyEmi),
+        annualMaintenance: annualMaint,
+        fiveYearTco: Math.round(fiveYearTco),
+        costPerKm: Math.round(costPerKm * 100) / 100,
+        resale5yr: Math.round(resale5yr),
+        categoryBadges: [] as string[],
+      };
     });
 
-    this.results.set(scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 5));
+    // Sort & take top 6
+    const top = scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 6);
+
+    // Assign category badges
+    if (top.length > 0) top[0].categoryBadges.push('🎯 Best Match');
+
+    const byMileage = [...top].sort((a, b) => {
+      const m = (c: RecommendedCar) => parseFloat(c.specs?.find(s => s.label === 'Mileage')?.value || '0');
+      return m(b) - m(a);
+    });
+    if (byMileage[0]) byMileage[0].categoryBadges.push('⛽ Best Mileage');
+
+    const byValue = [...top].sort((a, b) =>
+      (b.features?.length || 0) / b.price - (a.features?.length || 0) / a.price);
+    if (byValue[0]) byValue[0].categoryBadges.push('💰 Best Value');
+
+    const bySeating = [...top].sort((a, b) => this.carSeating(b) - this.carSeating(a));
+    if (bySeating[0] && this.carSeating(bySeating[0]) >= 6) bySeating[0].categoryBadges.push('👨‍👩‍👧 Best Family');
+
+    const evTop = top.find(c => c.fuel === 'Electric');
+    if (evTop) evTop.categoryBadges.push('⚡ Best EV');
+
+    const lowestTco = [...top].sort((a, b) => a.fiveYearTco - b.fiveYearTco)[0];
+    if (lowestTco) lowestTco.categoryBadges.push('🏆 Lowest TCO');
+
+    this.results.set(top.slice(0, 5));
   }
 
-  restart() { this.step.set(0); this.answers.set({}); this.done.set(false); this.matching.set(false); this.results.set([]); }
-  formatPrice(p: number) { return `₹${(p/100000).toFixed(1)}L`; }
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  private needSeating(fs: string): number {
+    if (fs === 'Just me') return 2;
+    if (fs === '2 – 3 people') return 4;
+    if (fs === '4 – 5 people') return 5;
+    return 7;
+  }
+
+  private carSeating(car: Car): number {
+    const s = car.specs?.find(x => x.label === 'Seating');
+    if (s) return parseInt(s.value) || 5;
+    return car.bodyType === 'MUV' ? 7 : 5;
+  }
+
+  private calcFuel(dailyKm: number, mileage: number, fuel: string): number {
+    const km = dailyKm * 30;
+    if (fuel === 'Electric') return (km / 100) * 15 * 8;
+    if (fuel === 'CNG')      return (km / mileage) * 85;
+    if (fuel === 'Hybrid')   return (km / mileage) * 106 * 0.65;
+    if (fuel === 'Diesel')   return (km / mileage) * 92;
+    return (km / mileage) * 106;
+  }
+
+  private calcEmi(principal: number, rate: number, months: number): number {
+    const r = rate / 12 / 100;
+    return principal * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+  }
+
+  fmtP(n: number): string {
+    if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)}Cr`;
+    if (n >= 100000)   return `₹${(n / 100000).toFixed(1)}L`;
+    return `₹${n.toLocaleString('en-IN')}`;
+  }
+
+  fmtK(n: number): string {
+    if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
+    if (n >= 1000)   return `₹${(n / 1000).toFixed(0)}K`;
+    return `₹${Math.round(n)}`;
+  }
+
+  restart() {
+    this.phase.set('quiz');
+    this.stepIdx.set(0);
+    this.profile.set({});
+    this.results.set([]);
+    this.showComparison.set(false);
+  }
 }
