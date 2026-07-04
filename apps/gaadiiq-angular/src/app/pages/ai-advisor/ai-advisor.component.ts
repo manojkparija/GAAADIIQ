@@ -447,7 +447,8 @@ export class AiAdvisorComponent {
       // ── Cost calculations ──────────────────────────────────────────────
       const monthlyFuel = this.calcFuel(dailyKm, parseFloat(mileageSpec?.value || '18'), car.fuel);
       const monthlyEmi  = this.calcEmi(car.price * 0.8, 8.5, 60);
-      const annualMaint = MAINT[car.make] || 12000;
+      const baseMaint   = MAINT[car.make] || 12000;
+      const annualMaint = car.fuel === 'Electric' ? Math.round(baseMaint * 0.55) : car.fuel === 'Hybrid' ? Math.round(baseMaint * 0.80) : baseMaint;
       const insurance   = car.price * 0.04;
       const resalePct   = RESALE[car.make] || 0.52;
       const resale5yr   = car.price * resalePct;
@@ -482,19 +483,25 @@ export class AiAdvisorComponent {
     // Sort all by score
     scored.sort((a, b) => b.matchScore - a.matchScore);
 
-    // When user has explicit fuel preference, fuel-matching cars fill slots first;
-    // non-matching fuels only backfill if there are fewer than 3 matches.
+    // When user has explicit fuel preference, fuel-matching cars fill slots first.
+    // Within the fuel pool, budget-compatible cars rank before over-budget ones.
+    // Non-matching fuels only backfill if there are fewer than 3 fuel matches.
     let top: RecommendedCar[];
     if (noFuelPref) {
-      top = scored.slice(0, 6);
+      top = scored.slice(0, 5);
     } else {
       const fuelMatch = scored.filter(c =>
         fuels.some(f => c.fuel.toLowerCase() === f.toLowerCase()));
       const fuelOther = scored.filter(c =>
         !fuels.some(f => c.fuel.toLowerCase() === f.toLowerCase()));
-      top = [...fuelMatch, ...fuelOther].slice(0, Math.max(fuelMatch.length, 5));
-      // Cap to 5, but always show at least what matched
-      top = top.slice(0, 5);
+
+      // Within fuel-matched pool: budget-compatible first, over-budget after
+      const inBudget  = fuelMatch.filter(c => c.price <= budMax * 1.05);
+      const overBudget = fuelMatch.filter(c => c.price > budMax * 1.05);
+      const orderedFuelMatch = [...inBudget, ...overBudget];
+
+      const combined = [...orderedFuelMatch, ...fuelOther];
+      top = combined.slice(0, 5);
     }
 
     // Assign category badges
