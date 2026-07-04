@@ -328,7 +328,7 @@ export class AiAdvisorComponent {
       } else if (fuels.some(f => car.fuel.toLowerCase() === f.toLowerCase())) {
         score += 15; reasons.push(`${car.fuel} — your preferred fuel`);
       } else {
-        score -= 10; cons.push(`${car.fuel} — not your preferred fuel type`);
+        score -= 30; cons.push(`${car.fuel} — not your preferred fuel type`);
       }
 
       // ── 3. Daily km vs mileage / range (10 pts) ────────────────────────
@@ -364,10 +364,17 @@ export class AiAdvisorComponent {
       // ── 4. Seating / family fit (15 pts) ──────────────────────────────
       const need = this.needSeating(familySize);
       const has  = this.carSeating(car);
-      if (has >= need) {
+      if (has === need || has === need + 1) {
+        // Exact or one extra seat — perfect fit
         score += 15;
         if (need >= 7) { reasons.push(`${has}-seater — perfect for large family`); pros.push(`${has} seats — fits your group of 6+`); }
         else if (need >= 5) { pros.push(`5-seat comfort — perfect for your family`); }
+      } else if (has > need + 1) {
+        // More seats than needed — slight penalty for small/medium families
+        const over = has - need;
+        const penalty = need <= 4 ? over * 3 : 0; // penalise only for small families
+        score += Math.max(15 - penalty, 6);
+        if (need <= 4 && over >= 2) cons.push(`${has}-seater — larger than your family needs`);
       } else if (has === need - 1) {
         score += 8;
       } else {
@@ -488,8 +495,11 @@ export class AiAdvisorComponent {
       (b.features?.length || 0) / b.price - (a.features?.length || 0) / a.price);
     if (byValue[0]) byValue[0].categoryBadges.push('💰 Best Value');
 
-    const bySeating = [...top].sort((a, b) => this.carSeating(b) - this.carSeating(a));
-    if (bySeating[0] && this.carSeating(bySeating[0]) >= 6) bySeating[0].categoryBadges.push('👨‍👩‍👧 Best Family');
+    const needS = this.needSeating(p['familySize'] as string || '2 – 3 people');
+    if (needS >= 6) {
+      const bySeating = [...top].sort((a, b) => this.carSeating(b) - this.carSeating(a));
+      if (bySeating[0] && this.carSeating(bySeating[0]) >= 6) bySeating[0].categoryBadges.push('👨‍👩‍👧 Best Family');
+    }
 
     const evTop = top.find(c => c.fuel === 'Electric');
     if (evTop) evTop.categoryBadges.push('⚡ Best EV');
