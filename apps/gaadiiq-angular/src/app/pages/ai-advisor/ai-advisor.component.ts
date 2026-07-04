@@ -483,27 +483,24 @@ export class AiAdvisorComponent {
     // Sort all by score
     scored.sort((a, b) => b.matchScore - a.matchScore);
 
-    // When user has explicit fuel preference, fuel-matching cars fill slots first.
-    // Within the fuel pool, budget-compatible cars rank before over-budget ones.
-    // Non-matching fuels only backfill if there are fewer than 3 fuel matches.
+    // Hard rules when user has an explicit fuel preference:
+    //   1. ONLY fuel-matching cars are shown — no backfill with other fuels ever.
+    //   2. Within budget (price <= budMax) cars rank first.
+    //   3. Slightly over budget (<=20% above budMax) only allowed if in-budget count < 3.
+    //   4. Cars more than 20% over budget are excluded entirely.
     let top: RecommendedCar[];
     if (noFuelPref) {
       top = scored.slice(0, 5);
     } else {
       const fuelMatch = scored.filter(c =>
         fuels.some(f => c.fuel.toLowerCase() === f.toLowerCase()));
-      const fuelOther = scored.filter(c =>
-        !fuels.some(f => c.fuel.toLowerCase() === f.toLowerCase()));
 
-      // Within fuel-matched pool: only show budget-compatible cars (within 5% of max).
-      // Allow over-budget only if in-budget results are fewer than 3, capped to 1 over-budget card.
-      const inBudget   = fuelMatch.filter(c => c.price <= budMax * 1.05);
-      const overBudget = fuelMatch.filter(c => c.price > budMax * 1.05);
-      const overAllowed = inBudget.length < 3 ? overBudget.slice(0, 3 - inBudget.length) : [];
-      const orderedFuelMatch = [...inBudget, ...overAllowed];
+      const hardBudgetMax = budMax * 1.20; // never show anything more than 20% over budget
+      const inBudget    = fuelMatch.filter(c => c.price <= budMax);
+      const slightlyOver = fuelMatch.filter(c => c.price > budMax && c.price <= hardBudgetMax);
+      const overAllowed  = inBudget.length < 3 ? slightlyOver.slice(0, 3 - inBudget.length) : [];
 
-      const combined = [...orderedFuelMatch, ...fuelOther];
-      top = combined.slice(0, 5);
+      top = [...inBudget, ...overAllowed].slice(0, 5);
     }
 
     // Assign category badges
