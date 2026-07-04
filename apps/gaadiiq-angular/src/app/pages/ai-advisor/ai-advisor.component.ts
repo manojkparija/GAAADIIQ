@@ -495,10 +495,12 @@ export class AiAdvisorComponent {
       const fuelOther = scored.filter(c =>
         !fuels.some(f => c.fuel.toLowerCase() === f.toLowerCase()));
 
-      // Within fuel-matched pool: budget-compatible first, over-budget after
-      const inBudget  = fuelMatch.filter(c => c.price <= budMax * 1.05);
+      // Within fuel-matched pool: only show budget-compatible cars (within 5% of max).
+      // Allow over-budget only if in-budget results are fewer than 3, capped to 1 over-budget card.
+      const inBudget   = fuelMatch.filter(c => c.price <= budMax * 1.05);
       const overBudget = fuelMatch.filter(c => c.price > budMax * 1.05);
-      const orderedFuelMatch = [...inBudget, ...overBudget];
+      const overAllowed = inBudget.length < 3 ? overBudget.slice(0, 3 - inBudget.length) : [];
+      const orderedFuelMatch = [...inBudget, ...overAllowed];
 
       const combined = [...orderedFuelMatch, ...fuelOther];
       top = combined.slice(0, 5);
