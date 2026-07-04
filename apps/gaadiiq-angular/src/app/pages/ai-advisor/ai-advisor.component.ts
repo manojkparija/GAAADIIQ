@@ -286,9 +286,9 @@ export class AiAdvisorComponent {
 
   private computeResults() {
     const p = this.profile();
-    const budget      = p['budget'] as string || '';
-    const dailyKmStr  = p['dailyKm'] as string || '20 – 50 km/day';
-    const familySize  = p['familySize'] as string || '2 – 3 people';
+    const budget      = ((p['budget'] as string[])?.[0]) || '';
+    const dailyKmStr  = ((p['dailyKm'] as string[])?.[0]) || '20 – 50 km/day';
+    const familySize  = ((p['familySize'] as string[])?.[0]) || '2 – 3 people';
     const fuels       = (p['fuel'] as string[] || []);
     const bodyTypes   = (p['bodyType'] as string[] || []).filter(b => b !== 'No preference');
     const usages      = (p['usageType'] as string[] || []);
