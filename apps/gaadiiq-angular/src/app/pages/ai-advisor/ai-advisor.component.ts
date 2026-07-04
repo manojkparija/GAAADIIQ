@@ -77,6 +77,16 @@ export class AiAdvisorComponent {
 
   readonly ALL_STEPS: AdvisorStep[] = [
     {
+      key: 'condition', category: 'Purchase', icon: '🏷️', multi: false,
+      title: 'Are you looking for a new or used car?',
+      subtitle: 'Helps us filter the right listings for you',
+      options: [
+        { label: 'Brand New',        sub: '0 km — straight from showroom' },
+        { label: 'Certified Used',   sub: 'Low km, inspected & verified' },
+        { label: 'Any Condition',    sub: 'Show me all options' },
+      ]
+    },
+    {
       key: 'budget', category: 'Financial', icon: '💰', multi: false,
       title: 'What is your total car budget?',
       subtitle: 'We\'ll match cars precisely within your price range',
@@ -286,6 +296,7 @@ export class AiAdvisorComponent {
 
   private computeResults() {
     const p = this.profile();
+    const condition   = ((p['condition'] as string[])?.[0]) || 'Any Condition';
     const budget      = ((p['budget'] as string[])?.[0]) || '';
     const dailyKmStr  = ((p['dailyKm'] as string[])?.[0]) || '20 – 50 km/day';
     const familySize  = ((p['familySize'] as string[])?.[0]) || '2 – 3 people';
@@ -300,7 +311,11 @@ export class AiAdvisorComponent {
     const dailyKm = DAILY_KM[dailyKmStr] || 35;
     const noFuelPref = fuels.includes('No preference') || fuels.length === 0;
 
-    const all = this.carsData.getAll();
+    // Pre-filter by condition
+    const allCars = this.carsData.getAll();
+    const all = condition === 'Brand New'      ? allCars.filter(c => c.km === 0)
+              : condition === 'Certified Used' ? allCars.filter(c => c.km > 0)
+              : allCars;
 
     const scored: RecommendedCar[] = all.map(car => {
       let score = 0;
@@ -495,7 +510,7 @@ export class AiAdvisorComponent {
       const fuelMatch = scored.filter(c =>
         fuels.some(f => c.fuel.toLowerCase() === f.toLowerCase()));
 
-      const hardBudgetMax = budMax * 1.20; // never show anything more than 20% over budget
+      const hardBudgetMax = budMax * 1.10; // never show anything more than 10% over budget
       const inBudget    = fuelMatch.filter(c => c.price <= budMax);
       const slightlyOver = fuelMatch.filter(c => c.price > budMax && c.price <= hardBudgetMax);
       const overAllowed  = inBudget.length < 3 ? slightlyOver.slice(0, 3 - inBudget.length) : [];
