@@ -81,8 +81,8 @@ export class AiAdvisorComponent {
       title: 'Are you looking for a new or used car?',
       subtitle: 'Helps us filter the right listings for you',
       options: [
-        { label: 'Brand New',        sub: '0 km — straight from showroom' },
-        { label: 'Certified Used',   sub: 'Low km, inspected & verified' },
+        { label: 'Brand New',        sub: '2023–2024 model, low mileage' },
+        { label: 'Certified Used',   sub: 'Pre-owned, inspected & verified' },
         { label: 'Any Condition',    sub: 'Show me all options' },
       ]
     },
@@ -312,9 +312,14 @@ export class AiAdvisorComponent {
     const noFuelPref = fuels.includes('No preference') || fuels.length === 0;
 
     // Pre-filter by condition
+    // "Brand New" = 2023-2024 model year with low mileage (< 15,000 km)
+    // "Certified Used" = older model or higher mileage
+    const currentYear = new Date().getFullYear();
     const allCars = this.carsData.getAll();
-    const all = condition === 'Brand New'      ? allCars.filter(c => c.km === 0)
-              : condition === 'Certified Used' ? allCars.filter(c => c.km > 0)
+    const all = condition === 'Brand New'
+              ? allCars.filter(c => c.year >= currentYear - 1 && c.km < 15000)
+              : condition === 'Certified Used'
+              ? allCars.filter(c => c.year < currentYear - 1 || c.km >= 15000)
               : allCars;
 
     const scored: RecommendedCar[] = all.map(car => {
