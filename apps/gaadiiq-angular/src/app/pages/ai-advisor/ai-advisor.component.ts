@@ -479,8 +479,23 @@ export class AiAdvisorComponent {
       };
     });
 
-    // Sort & take top 6
-    const top = scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 6);
+    // Sort all by score
+    scored.sort((a, b) => b.matchScore - a.matchScore);
+
+    // When user has explicit fuel preference, fuel-matching cars fill slots first;
+    // non-matching fuels only backfill if there are fewer than 3 matches.
+    let top: RecommendedCar[];
+    if (noFuelPref) {
+      top = scored.slice(0, 6);
+    } else {
+      const fuelMatch = scored.filter(c =>
+        fuels.some(f => c.fuel.toLowerCase() === f.toLowerCase()));
+      const fuelOther = scored.filter(c =>
+        !fuels.some(f => c.fuel.toLowerCase() === f.toLowerCase()));
+      top = [...fuelMatch, ...fuelOther].slice(0, Math.max(fuelMatch.length, 5));
+      // Cap to 5, but always show at least what matched
+      top = top.slice(0, 5);
+    }
 
     // Assign category badges
     if (top.length > 0) top[0].categoryBadges.push('🎯 Best Match');
