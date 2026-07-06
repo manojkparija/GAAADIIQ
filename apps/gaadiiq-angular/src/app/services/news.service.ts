@@ -16,7 +16,7 @@ interface GNewsResponse {
 }
 
 // Get a free key at https://gnews.io — 100 req/day free tier
-const GNEWS_API_KEY = 'YOUR_GNEWS_API_KEY';
+const GNEWS_API_KEY = '943f97bb47d0adb1a67b6ee871a2ded0';
 
 @Injectable({ providedIn: 'root' })
 export class NewsService {
