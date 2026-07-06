@@ -17,14 +17,18 @@ export class MyListingsService {
   listings = signal<MyListing[]>(this.load());
 
   private load(): MyListing[] {
-    try { return JSON.parse(localStorage.getItem(this.KEY) || '[]'); } catch { return []; }
+    try {
+      const items: MyListing[] = JSON.parse(localStorage.getItem(this.KEY) || '[]');
+      // auto-approve any legacy pending listings
+      return items.map(l => l.status === 'pending' ? { ...l, status: 'live' } : l);
+    } catch { return []; }
   }
 
   add(data: Omit<MyListing, 'id' | 'status' | 'createdAt'>): MyListing {
     const listing: MyListing = {
       ...data,
       id: Date.now().toString(),
-      status: 'pending',
+      status: 'live',
       createdAt: new Date().toISOString(),
     };
     const updated = [listing, ...this.listings()];
