@@ -78,6 +78,20 @@
           </div>
         </div>
       </div>
+
+      <!-- TCO breakdown -->
+      <div class="features-comp tco-section">
+        <h3>💰 Total Cost of Ownership <span style="font-size:0.8rem;color:var(--muted);font-weight:400">(5-Year Analysis)</span></h3>
+        <div class="feat-row tco-row" *ngFor="let row of tcoRows"
+             [class.tco-total]="row.key === 'netCost5yr'" [class.tco-resale]="row.key === 'resaleValue'">
+          <div class="feat-label">{{ row.label }}</div>
+          <div class="feat-val tco-val" *ngFor="let car of activeCars()"
+               [class.winner]="row.key === 'netCost5yr' && getTco(car).netCost5yr === minTco()">
+            {{ row.key === 'resaleValue' ? '−' : '' }}{{ formatPrice(getTco(car)[row.key]) }}
+            <span class="win-crown" *ngIf="row.key === 'netCost5yr' && getTco(car).netCost5yr === minTco()">👑</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="empty-hint" *ngIf="activeCars().length < 2">

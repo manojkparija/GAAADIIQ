@@ -12,12 +12,17 @@
       <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
       <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI Calc</a></li>
       <li><a routerLink="/reviews-news" routerLinkActive="active">Reviews &amp; News</a></li>
+      <li><a routerLink="/buyer-journey" routerLinkActive="active">My Journey</a></li>
     </ul>
 
     <!-- City selector trigger -->
     <button class="city-btn-nav hide-mobile" (click)="openCityModal()" title="Select City">
       <span class="city-pin">📍</span>
       <span class="city-label">{{ city.selectedCity() || 'Select City' }}</span>
+    </button>
+
+    <button class="lang-toggle hide-mobile" (click)="lang.toggle()" title="Switch Language">
+      {{ lang.lang() === 'en' ? '🇮🇳 हिंदी' : '🇺🇸 EN' }}
     </button>
 
     <button class="theme-toggle hide-mobile" (click)="theme.toggle()" [title]="theme.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">

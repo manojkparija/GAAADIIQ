@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { CityService } from '../../services/city.service';
+import { LanguageService } from '../../services/language.service';
 import { CitySelectorComponent } from '../city-selector/city-selector.component';
 
 @Component({
@@ -19,7 +20,7 @@ export class NavbarComponent {
   userMenuOpen = signal(false);
   cityModalOpen = signal(false);
 
-  constructor(public auth: AuthService, public theme: ThemeService, public city: CityService) {}
+  constructor(public auth: AuthService, public theme: ThemeService, public city: CityService, public lang: LanguageService) {}
 
   @HostListener('window:scroll')
   onScroll() { this.scrolled.set(window.scrollY > 30); }

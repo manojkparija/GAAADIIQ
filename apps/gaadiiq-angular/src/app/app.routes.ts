@@ -17,5 +17,7 @@ export const routes: Routes = [
   { path: 'my-listings', loadComponent: () => import('./pages/my-listings/my-listings.component').then(m => m.MyListingsComponent) },
   { path: 'price-alerts', loadComponent: () => import('./pages/price-alerts/price-alerts.component').then(m => m.PriceAlertsComponent) },
   { path: 'test-drive', loadComponent: () => import('./pages/test-drive/test-drive.component').then(m => m.TestDriveComponent) },
+  { path: 'buyer-journey', loadComponent: () => import('./pages/buyer-journey/buyer-journey.component').then(m => m.BuyerJourneyComponent) },
+  { path: 'dealer-dashboard', loadComponent: () => import('./pages/dealer-dashboard/dealer-dashboard.component').then(m => m.DealerDashboardComponent) },
   { path: '**', redirectTo: '' },
 ];

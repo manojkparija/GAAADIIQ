@@ -1,0 +1,144 @@
+<div class="dd-wrap">
+  <!-- Header -->
+  <section class="dd-hero container">
+    <div class="dd-hero-left">
+      <div class="hero-badge">🏢 Dealer Intelligence</div>
+      <h1 class="dd-title">Dealer <span class="gradient-text">Dashboard</span></h1>
+      <p class="dd-sub">Real-time insights into your listings, leads, and revenue performance.</p>
+    </div>
+    <div class="dd-hero-right">
+      <div class="dealer-card glass-card">
+        <div class="dealer-avatar">SK</div>
+        <div>
+          <div class="dealer-name">Sharma Kars Pvt. Ltd.</div>
+          <div class="dealer-loc">📍 Bangalore, Karnataka</div>
+          <div class="dealer-since">Member since Jan 2023 · ⭐ 4.8 (312 reviews)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab Bar -->
+  <div class="dd-tabs container">
+    <button class="dd-tab" [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">📊 Overview</button>
+    <button class="dd-tab" [class.active]="activeTab()==='leads'" (click)="activeTab.set('leads')">💬 Leads</button>
+    <button class="dd-tab" [class.active]="activeTab()==='inventory'" (click)="activeTab.set('inventory')">🚗 Inventory</button>
+    <button class="dd-tab" [class.active]="activeTab()==='analytics'" (click)="activeTab.set('analytics')">📈 Analytics</button>
+  </div>
+
+  <div class="dd-content container">
+
+    <!-- OVERVIEW TAB -->
+    <ng-container *ngIf="activeTab()==='overview'">
+
+      <!-- Metric Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card glass-card" *ngFor="let m of metrics">
+          <div class="mc-top">
+            <span class="mc-icon">{{ m.icon }}</span>
+            <span class="mc-change" [class.up]="m.up" [class.down]="!m.up">
+              {{ m.up ? '↑' : '↓' }} {{ m.change }}
+            </span>
+          </div>
+          <div class="mc-value">{{ m.value }}</div>
+          <div class="mc-label">{{ m.label }}</div>
+        </div>
+      </div>
+
+      <!-- Recent Leads preview -->
+      <h2 class="section-head">Recent <span class="gradient-text">Leads</span></h2>
+      <div class="leads-table glass-card">
+        <div class="lt-row lt-header">
+          <span>Buyer</span><span>Car Interested In</span><span>Budget</span><span>Stage</span><span>Time</span>
+        </div>
+        <div class="lt-row" *ngFor="let l of leads.slice(0,4)">
+          <span class="lt-name">{{ l.name }}</span>
+          <span class="lt-car">{{ l.car }}</span>
+          <span class="lt-budget">{{ l.budget }}</span>
+          <span class="lt-stage" [ngClass]="'stage-' + l.stageColor">{{ l.stage }}</span>
+          <span class="lt-time">{{ l.time }}</span>
+        </div>
+      </div>
+
+      <!-- Top Models -->
+      <h2 class="section-head" style="margin-top:2rem">Top <span class="gradient-text">Performing Models</span></h2>
+      <div class="top-models glass-card">
+        <div class="tm-row tm-header"><span>Model</span><span>Views</span><span>Enquiries</span><span>Conv. Rate</span></div>
+        <div class="tm-row" *ngFor="let m of topModels; let i = index">
+          <span class="tm-rank-name"><span class="tm-rank">{{ i+1 }}</span>{{ m.model }}</span>
+          <span>{{ m.views }}</span>
+          <span>{{ m.enquiries }}</span>
+          <span class="tm-rate">{{ (m.enquiries/m.views*100).toFixed(1) }}%</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- LEADS TAB -->
+    <ng-container *ngIf="activeTab()==='leads'">
+      <h2 class="section-head">All <span class="gradient-text">Leads</span></h2>
+      <div class="leads-table glass-card">
+        <div class="lt-row lt-header">
+          <span>Buyer</span><span>Car Interested In</span><span>Budget</span><span>Stage</span><span>Time</span>
+        </div>
+        <div class="lt-row" *ngFor="let l of leads">
+          <span class="lt-name">{{ l.name }}</span>
+          <span class="lt-car">{{ l.car }}</span>
+          <span class="lt-budget">{{ l.budget }}</span>
+          <span class="lt-stage" [ngClass]="'stage-' + l.stageColor">{{ l.stage }}</span>
+          <span class="lt-time">{{ l.time }}</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- INVENTORY TAB -->
+    <ng-container *ngIf="activeTab()==='inventory'">
+      <div class="inventory-cta glass-card">
+        <div class="inv-icon">🚗</div>
+        <h3>Manage Your Inventory</h3>
+        <p>Add, edit and track all your listed vehicles in one place. Monitor days on lot and price competitiveness.</p>
+        <a routerLink="/my-listings" class="btn-gradient">Go to My Listings →</a>
+      </div>
+    </ng-container>
+
+    <!-- ANALYTICS TAB -->
+    <ng-container *ngIf="activeTab()==='analytics'">
+      <h2 class="section-head">Fuel Mix <span class="gradient-text">Breakdown</span></h2>
+      <div class="fuel-chart glass-card">
+        <div class="fc-bars">
+          <div class="fc-bar-row" *ngFor="let f of fuelMix">
+            <span class="fc-label">{{ f.label }}</span>
+            <div class="fc-bar-track">
+              <div class="fc-bar-fill" [style.width.%]="f.pct" [style.background]="f.color"></div>
+            </div>
+            <span class="fc-pct">{{ f.pct }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-head" style="margin-top:2rem">Market <span class="gradient-text">Intelligence</span></h2>
+      <div class="intel-grid">
+        <div class="intel-card glass-card">
+          <div class="ic-icon">📈</div>
+          <h4>Avg. Market Price</h4>
+          <p>SUVs in Bangalore are trending 4.2% above national average this week. Adjust pricing accordingly.</p>
+        </div>
+        <div class="intel-card glass-card">
+          <div class="ic-icon">⚡</div>
+          <h4>EV Demand Surge</h4>
+          <p>Electric vehicle searches up 34% in your city. Consider stocking more EV inventory.</p>
+        </div>
+        <div class="intel-card glass-card">
+          <div class="ic-icon">🏆</div>
+          <h4>Competitive Position</h4>
+          <p>Your response time (avg 22 min) is in the top 15% of dealers. Keep it up!</p>
+        </div>
+        <div class="intel-card glass-card">
+          <div class="ic-icon">📅</div>
+          <h4>Best Time to List</h4>
+          <p>Listings posted Thursday–Friday see 28% more views over the weekend.</p>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

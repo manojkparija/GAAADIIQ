@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car } from '../../services/cars-data.service';
+import { TcoService, TcoBreakdown } from '../../services/tco.service';
 import { SeoService } from '../../services/seo.service';
 
 @Component({
@@ -30,7 +31,7 @@ export class CompareComponent {
     { label: 'City', key: 'city', format: (v: any) => String(v) || '—', higher: null },
   ];
 
-  constructor(private carsData: CarsDataService, private seo: SeoService) {
+  constructor(private carsData: CarsDataService, private seo: SeoService, public tco: TcoService) {
     this.allCars = carsData.getAll();
     seo.setPage('Compare Cars', 'Compare up to 3 cars side by side. Specs, features, price, AI valuation — all in one place.');
   }
@@ -68,10 +69,22 @@ export class CompareComponent {
   }
 
   activeCars = computed(() => this.selected().filter(Boolean) as Car[]);
+  minTco = computed(() => Math.min(...this.activeCars().map(c => this.tco.calculateTco(c).netCost5yr)));
 
   hasFeature(car: Car, feature: string): boolean {
     return (car.features || []).some(ft => ft.toLowerCase().includes(feature.toLowerCase()));
   }
 
   formatPrice(p: number) { return `₹${(p/100000).toFixed(1)}L`; }
+
+  getTco(car: Car): TcoBreakdown { return this.tco.calculateTco(car); }
+  tcoRows: { label: string; key: keyof TcoBreakdown }[] = [
+    { label: 'Purchase Price', key: 'purchasePrice' },
+    { label: 'Registration (9%)', key: 'registration' },
+    { label: 'Insurance (5yr)', key: 'insurance5yr' },
+    { label: 'Fuel Cost (5yr)', key: 'fuel5yr' },
+    { label: 'Maintenance (5yr)', key: 'maintenance5yr' },
+    { label: '5yr Resale Value', key: 'resaleValue' },
+    { label: 'Net 5-yr Cost', key: 'netCost5yr' },
+  ];
 }

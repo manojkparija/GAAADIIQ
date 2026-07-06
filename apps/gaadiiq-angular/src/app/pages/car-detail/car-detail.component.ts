@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car } from '../../services/cars-data.service';
+import { TcoService } from '../../services/tco.service';
 import { SeoService } from '../../services/seo.service';
 
 interface Review {
@@ -46,7 +47,7 @@ export class CarDetailComponent implements OnInit {
   reviewSubmitted = signal(false);
   hoverRating = signal(0);
 
-  constructor(private route: ActivatedRoute, private carsData: CarsDataService, private seo: SeoService) {
+  constructor(private route: ActivatedRoute, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       const id = Number(this.route.snapshot.paramMap.get('id'));
