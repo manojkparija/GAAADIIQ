@@ -14,6 +14,12 @@
       <li><a routerLink="/reviews-news" routerLinkActive="active">Reviews &amp; News</a></li>
     </ul>
 
+    <!-- City selector trigger -->
+    <button class="city-btn-nav hide-mobile" (click)="openCityModal()" title="Select City">
+      <span class="city-pin">📍</span>
+      <span class="city-label">{{ city.selectedCity() || 'Select City' }}</span>
+    </button>
+
     <button class="theme-toggle hide-mobile" (click)="theme.toggle()" [title]="theme.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
       {{ theme.isDark() ? '☀️' : '🌙' }}
     </button>
@@ -56,6 +62,9 @@
     <a routerLink="/compare" (click)="closeMenu()">Compare Cars</a>
     <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
     <a routerLink="/reviews-news" (click)="closeMenu()">Reviews &amp; News</a>
+    <button class="city-btn-mobile" (click)="closeMenu(); openCityModal()">
+      📍 {{ city.selectedCity() || 'Select City' }}
+    </button>
     <div class="mobile-theme-row">
       <span style="font-size:0.9rem;color:var(--muted)">{{ theme.isDark() ? 'Dark Mode' : 'Light Mode' }}</span>
       <button class="theme-toggle" (click)="theme.toggle()">{{ theme.isDark() ? '☀️' : '🌙' }}</button>
@@ -72,3 +81,6 @@
     </div>
   </div>
 </nav>
+
+<!-- City Selector Modal -->
+<app-city-selector *ngIf="cityModalOpen()" (closed)="closeCityModal()"></app-city-selector>

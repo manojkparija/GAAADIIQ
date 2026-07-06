@@ -132,6 +132,43 @@
   }
 }
 
+.city-btn-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--fill-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 50px;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  max-width: 140px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(108,99,255,0.15);
+    border-color: var(--primary);
+  }
+
+  .city-pin { font-size: 0.95rem; flex-shrink: 0; }
+  .city-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+.city-btn-mobile {
+  background: var(--fill-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 50px;
+  padding: 0.6rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover { background: rgba(108,99,255,0.15); }
+}
+
 .theme-toggle {
   width: 38px;
   height: 38px;

@@ -3,11 +3,13 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
+import { CityService } from '../../services/city.service';
+import { CitySelectorComponent } from '../city-selector/city-selector.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule],
+  imports: [RouterLink, RouterLinkActive, CommonModule, CitySelectorComponent],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })
@@ -15,8 +17,9 @@ export class NavbarComponent {
   scrolled = signal(false);
   menuOpen = signal(false);
   userMenuOpen = signal(false);
+  cityModalOpen = signal(false);
 
-  constructor(public auth: AuthService, public theme: ThemeService) {}
+  constructor(public auth: AuthService, public theme: ThemeService, public city: CityService) {}
 
   @HostListener('window:scroll')
   onScroll() { this.scrolled.set(window.scrollY > 30); }
@@ -24,6 +27,8 @@ export class NavbarComponent {
   toggleMenu() { this.menuOpen.update(v => !v); }
   closeMenu() { this.menuOpen.set(false); }
   toggleUserMenu() { this.userMenuOpen.update(v => !v); }
+  openCityModal() { this.cityModalOpen.set(true); }
+  closeCityModal() { this.cityModalOpen.set(false); }
 
   logout() {
     this.userMenuOpen.set(false);
