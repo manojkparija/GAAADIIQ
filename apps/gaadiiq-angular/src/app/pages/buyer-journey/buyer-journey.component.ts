@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BuyerJourneyService, JOURNEY_STEPS, BuyerProfile } from '../../services/buyer-journey.service';
@@ -15,7 +15,8 @@ import { SeoService } from '../../services/seo.service';
 export class BuyerJourneyComponent {
   readonly steps = JOURNEY_STEPS;
   currentStep = signal(0);
-  answers = signal<Record<string, string>>({});
+  // multi-select: store arrays per step
+  answers = signal<Record<string, string[]>>({});
   done = signal(false);
 
   constructor(public journey: BuyerJourneyService, public lang: LanguageService, seo: SeoService) {
@@ -25,8 +26,22 @@ export class BuyerJourneyComponent {
 
   get step() { return this.steps[this.currentStep()]; }
 
-  select(option: string) {
-    this.answers.update(a => ({ ...a, [this.step.id]: option }));
+  toggle(option: string) {
+    this.answers.update(a => {
+      const current = a[this.step.id] ?? [];
+      const exists = current.includes(option);
+      return { ...a, [this.step.id]: exists ? current.filter(o => o !== option) : [...current, option] };
+    });
+  }
+
+  isSelected(option: string): boolean {
+    return (this.answers()[this.step.id] ?? []).includes(option);
+  }
+
+  hasSelection = computed(() => (this.answers()[this.step.id] ?? []).length > 0);
+
+  next() {
+    if (!this.hasSelection()) return;
     if (this.currentStep() < this.steps.length - 1) {
       this.currentStep.update(n => n + 1);
     } else {
@@ -40,14 +55,15 @@ export class BuyerJourneyComponent {
 
   finish() {
     const a = this.answers();
+    const join = (key: string) => (a[key] ?? []).join(', ');
     this.journey.saveProfile({
-      budget: a['budget'] ?? '',
-      useCase: a['useCase'] ?? '',
-      fuelPreference: a['fuelPreference'] ?? '',
-      transmission: a['transmission'] ?? '',
-      bodyType: a['bodyType'] ?? '',
+      budget: join('budget'),
+      useCase: join('useCase'),
+      fuelPreference: join('fuelPreference'),
+      transmission: join('transmission'),
+      bodyType: join('bodyType'),
       city: '',
-      priority: a['priority'] ?? '',
+      priority: join('priority'),
     } as BuyerProfile);
     this.done.set(true);
   }

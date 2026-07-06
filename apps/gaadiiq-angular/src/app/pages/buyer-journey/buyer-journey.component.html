@@ -71,18 +71,23 @@
         </div>
 
         <h2 class="q-text">{{ question() }}</h2>
+        <p class="multi-hint">Select all that apply</p>
 
         <div class="options-grid" [class.two-col]="step.options.length > 3">
           <button class="option-btn"
                   *ngFor="let opt of step.options"
-                  [class.selected]="answers()[step.id] === opt"
-                  (click)="select(opt)">
+                  [class.selected]="isSelected(opt)"
+                  (click)="toggle(opt)">
+            <span class="opt-check" *ngIf="isSelected(opt)">✓</span>
             {{ opt }}
           </button>
         </div>
 
         <div class="q-nav">
           <button class="btn-outline btn-sm" (click)="back()" *ngIf="currentStep() > 0">← Back</button>
+          <button class="btn-gradient btn-sm next-btn" (click)="next()" [disabled]="!hasSelection()">
+            {{ currentStep() === steps.length - 1 ? 'See My Results →' : 'Next →' }}
+          </button>
         </div>
       </div>
     </ng-container>
