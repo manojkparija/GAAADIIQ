@@ -177,6 +177,9 @@
   flex-direction: column;
   overflow: hidden;
   padding: 0;
+  text-decoration: none;
+  transition: transform 0.2s;
+  &:hover { transform: translateY(-3px); }
 
   .fc-image {
     font-size: 4rem;
@@ -259,6 +262,9 @@
   flex-direction: column;
   overflow: hidden;
   padding: 0;
+  text-decoration: none;
+  transition: transform 0.2s;
+  &:hover { transform: translateY(-3px); }
 
   .ac-image {
     font-size: 3rem;

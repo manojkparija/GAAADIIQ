@@ -1,0 +1,161 @@
+<!-- Not found -->
+<ng-container *ngIf="!article()">
+  <section class="ad-hero container">
+    <a [routerLink]="['/reviews-news']" class="back-link">← Reviews &amp; News</a>
+    <div class="not-found">
+      <div class="nf-icon">📰</div>
+      <h1>Article not found</h1>
+      <p>This article doesn't exist or may have been removed.</p>
+      <a routerLink="/reviews-news" class="btn-primary">Browse all articles</a>
+    </div>
+  </section>
+</ng-container>
+
+<!-- Article detail -->
+<ng-container *ngIf="article() as a">
+  <section class="ad-hero">
+    <div class="container">
+      <a [routerLink]="['/reviews-news', categorySlug()]" class="back-link">← {{ a.category }}</a>
+
+      <div class="ad-meta-row">
+        <span class="tag" [ngClass]="tagClass(a.tagColor)">{{ a.tag }}</span>
+        <span class="cat-chip">{{ a.category }}</span>
+      </div>
+
+      <h1 class="ad-title">{{ a.title }}</h1>
+
+      <div class="ad-byline">
+        <span class="avatar">{{ a.authorAvatar }}</span>
+        <div class="byline-info">
+          <span class="author-name">{{ a.author }}</span>
+          <span class="byline-meta">{{ a.date }} &nbsp;·&nbsp; {{ a.readTime }}</span>
+        </div>
+        <div class="stars-row" *ngIf="a.rating">
+          <span *ngFor="let s of stars(a.rating)" class="star">{{ s }}</span>
+          <span class="rating-num">{{ a.rating }}/5</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hero image -->
+  <div class="ad-cover">
+    <div class="cover-emoji">{{ a.image }}</div>
+    <div class="cover-gradient"></div>
+  </div>
+
+  <!-- Body -->
+  <article class="ad-body container">
+    <div class="ad-card glass-card">
+
+      <!-- Car model badge -->
+      <div class="car-model-row" *ngIf="a.carModel">
+        <span class="car-badge">🚗 {{ a.carModel }}</span>
+      </div>
+
+      <!-- Excerpt / Summary -->
+      <div class="ad-section">
+        <h2 class="section-label">Summary</h2>
+        <p class="ad-excerpt">{{ a.excerpt }}</p>
+      </div>
+
+      <!-- Full article placeholder content by category -->
+      <ng-container [ngSwitch]="a.category">
+
+        <!-- NEWS -->
+        <ng-container *ngSwitchCase="'News'">
+          <div class="ad-section">
+            <h2 class="section-label">What This Means</h2>
+            <p>This development marks a significant milestone in the Indian automotive landscape. Industry analysts expect this to trigger competitive responses from rival manufacturers, potentially accelerating product launches and price revisions across segments.</p>
+            <p>Consumers stand to benefit from improved technology availability, better pricing, and expanded choices as the market evolves rapidly in 2026.</p>
+          </div>
+          <div class="ad-section">
+            <h2 class="section-label">Key Highlights</h2>
+            <ul class="ad-list">
+              <li>Major implications for the competitive landscape</li>
+              <li>Expected to influence buyer decisions in the near term</li>
+              <li>Aligned with broader industry trends toward electrification and safety</li>
+              <li>Strong market response anticipated based on early indicators</li>
+            </ul>
+          </div>
+        </ng-container>
+
+        <!-- EXPERT REVIEW -->
+        <ng-container *ngSwitchCase="'Expert Review'">
+          <div class="ad-section">
+            <h2 class="section-label">Performance &amp; Dynamics</h2>
+            <p>On the road, the car delivers exactly what's promised on paper. Throttle response is linear, and the suspension setup strikes a commendable balance between comfort and composure. Highway stability at triple-digit speeds is reassuring, with minimal body roll through sweeping corners.</p>
+          </div>
+          <div class="ad-section">
+            <h2 class="section-label">Cabin &amp; Features</h2>
+            <p>The interior quality has taken a noticeable step up. Materials feel premium to the touch, and the infotainment system is responsive with minimal lag. Connected car features work reliably, and the ADAS suite — where available — functions confidently on highways.</p>
+          </div>
+          <div class="ad-section">
+            <h2 class="section-label">Fuel Efficiency</h2>
+            <p>Real-world efficiency tracks closely to the claimed figures, which is increasingly rare. City driving brings it down by roughly 15–18%, while highway runs deliver the best numbers. Overall ownership costs remain competitive within the segment.</p>
+          </div>
+          <div class="ad-section">
+            <h2 class="section-label">Verdict</h2>
+            <div class="verdict-box glass-card">
+              <div class="verdict-stars">
+                <span *ngFor="let s of stars(a.rating || 4)" class="star">{{ s }}</span>
+                <strong>{{ a.rating }}/5</strong>
+              </div>
+              <p>A well-rounded package that punches above its weight class. Recommended for buyers who prioritise value, reliability, and a well-equipped cabin over outright performance.</p>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- USER REVIEW -->
+        <ng-container *ngSwitchCase="'User Review'">
+          <div class="ad-section">
+            <h2 class="section-label">Day-to-Day Experience</h2>
+            <p>Living with this car day-to-day has been a largely positive experience. It fits comfortably into urban commuting, and the fuel economy has been consistent with expectations. The boot space is adequate for weekend getaways, and the rear seat comfort is acceptable for medium-length journeys.</p>
+          </div>
+          <div class="ad-section">
+            <h2 class="section-label">Service &amp; Maintenance</h2>
+            <p>Service intervals have been straightforward, and the authorised service centre network is accessible. Costs per service are predictable, and no major surprises have cropped up beyond routine wear items.</p>
+          </div>
+          <div class="ad-section">
+            <h2 class="section-label">Would I Recommend It?</h2>
+            <div class="verdict-box glass-card">
+              <div class="verdict-stars">
+                <span *ngFor="let s of stars(a.rating || 4)" class="star">{{ s }}</span>
+                <strong>{{ a.rating }}/5</strong>
+              </div>
+              <p>Absolutely yes — for anyone looking for a reliable, practical car with low running costs. It's not the most exciting car in its class, but it's dependable in a way that matters most over years of ownership.</p>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- SPECIAL REPORT -->
+        <ng-container *ngSwitchCase="'Special Report'">
+          <div class="ad-section">
+            <h2 class="section-label">Methodology</h2>
+            <p>This report is based on primary data collected across multiple Indian cities, supplemented by manufacturer data, dealer feedback, and owner surveys. All figures have been independently verified where possible.</p>
+          </div>
+          <div class="ad-section">
+            <h2 class="section-label">Key Findings</h2>
+            <ul class="ad-list">
+              <li>Data trends confirm a clear shift in buyer preferences toward fuel-efficient and electric vehicles</li>
+              <li>Tier-1 cities lead adoption but Tier-2 and Tier-3 cities are closing the gap rapidly</li>
+              <li>Total cost of ownership calculations favour EVs at higher annual mileages</li>
+              <li>Infrastructure remains the primary barrier in non-metro markets</li>
+            </ul>
+          </div>
+          <div class="ad-section">
+            <h2 class="section-label">Recommendations</h2>
+            <p>Buyers are advised to factor in 5-year total ownership costs rather than purchase price alone. With increasing charging infrastructure and falling battery costs, the EV value proposition improves significantly for high-usage scenarios.</p>
+          </div>
+        </ng-container>
+
+      </ng-container>
+
+      <!-- Tags footer -->
+      <div class="ad-footer">
+        <span class="tag" [ngClass]="tagClass(a.tagColor)">{{ a.tag }}</span>
+        <a [routerLink]="['/reviews-news', categorySlug()]" class="btn-outline">More {{ a.category }} →</a>
+      </div>
+    </div>
+  </article>
+</ng-container>

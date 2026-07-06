@@ -37,7 +37,7 @@
   <section class="featured-section container">
     <h2 class="sec-head">Featured <span class="gradient-text">Stories</span></h2>
     <div class="featured-grid">
-      <article class="featured-card glass-card" *ngFor="let a of featured">
+      <a class="featured-card glass-card" *ngFor="let a of featured" [routerLink]="['/reviews-news', slugMap[a.category], a.id]">
         <div class="fc-image">{{ a.image }}</div>
         <div class="fc-body">
           <div class="fc-meta">
@@ -61,7 +61,7 @@
             </div>
           </div>
         </div>
-      </article>
+      </a>
     </div>
   </section>
 </ng-container>
@@ -138,7 +138,7 @@
 
     <!-- ── STANDARD ARTICLE GRID ────────────────────────────────────────────── -->
     <div class="articles-grid" *ngIf="articles().length; else noResults">
-      <article class="article-card glass-card" *ngFor="let a of articles()">
+      <a class="article-card glass-card" *ngFor="let a of articles()" [routerLink]="['/reviews-news', slugMap[a.category], a.id]">
         <div class="ac-image">{{ a.image }}</div>
         <div class="ac-body">
           <div class="ac-meta">
@@ -163,7 +163,7 @@
             </div>
           </div>
         </div>
-      </article>
+      </a>
     </div>
     <ng-template #noResults>
       <div class="no-results">

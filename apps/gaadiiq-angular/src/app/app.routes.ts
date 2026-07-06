@@ -12,6 +12,7 @@ export const routes: Routes = [
   { path: 'list-car', loadComponent: () => import('./pages/list-car/list-car.component').then(m => m.ListCarComponent) },
   { path: 'reviews-news', loadComponent: () => import('./pages/reviews-news/reviews-news.component').then(m => m.ReviewsNewsComponent) },
   { path: 'reviews-news/:category', loadComponent: () => import('./pages/reviews-news/reviews-news.component').then(m => m.ReviewsNewsComponent) },
+  { path: 'reviews-news/:category/:id', loadComponent: () => import('./pages/article-detail/article-detail.component').then(m => m.ArticleDetailComponent) },
   { path: 'my-listings', loadComponent: () => import('./pages/my-listings/my-listings.component').then(m => m.MyListingsComponent) },
   { path: 'price-alerts', loadComponent: () => import('./pages/price-alerts/price-alerts.component').then(m => m.PriceAlertsComponent) },
   { path: 'test-drive', loadComponent: () => import('./pages/test-drive/test-drive.component').then(m => m.TestDriveComponent) },

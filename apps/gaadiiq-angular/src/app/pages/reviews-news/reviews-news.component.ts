@@ -21,7 +21,7 @@ export interface Article {
   featured?: boolean;
 }
 
-const ARTICLES: Article[] = [
+export const ARTICLES: Article[] = [
   // ── NEWS ────────────────────────────────────────────────────────────────────
   {
     id: 1, category: 'News', featured: true,
@@ -177,6 +177,13 @@ export class ReviewsNewsComponent {
   isNewsPage = signal(false);
 
   featured = ARTICLES.filter(a => a.featured);
+
+  readonly slugMap: Record<string, string> = {
+    'News': 'news',
+    'Expert Review': 'expert-reviews',
+    'User Review': 'user-reviews',
+    'Special Report': 'special-reports',
+  };
 
   // Live news (GNews API)
   liveArticles = this.news.articles;
