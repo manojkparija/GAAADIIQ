@@ -37,7 +37,7 @@ export class ListingsComponent implements OnInit {
   fuels = ['All', 'Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'];
   transmissions = ['All', 'Manual', 'Automatic', 'CVT', 'DCT', 'AMT'];
   bodyTypes = ['All', 'Hatchback', 'Sedan', 'SUV', 'MUV'];
-  conditions = ['All', 'Brand New (0 km)', 'Used (< 50k km)', 'High Mileage (> 50k km)'];
+  conditions = ['All', 'Brand New (0 km)', 'Used (< 50k km)', 'Used (> 50k km)'];
   sorts = ['Relevance', 'Price: Low to High', 'Price: High to Low', 'Newest First', 'Top Rated'];
   years = Array.from({length: 10}, (_, i) => 2024 - i);
 
@@ -55,7 +55,7 @@ export class ListingsComponent implements OnInit {
       const matchCond = cond === 'All' ||
         (cond === 'Brand New (0 km)' && c.km === 0) ||
         (cond === 'Used (< 50k km)' && c.km > 0 && c.km <= 50000) ||
-        (cond === 'High Mileage (> 50k km)' && c.km > 50000);
+        (cond === 'Used (> 50k km)' && c.km > 50000);
       return matchQ && matchMake && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchCond;
     });
 
