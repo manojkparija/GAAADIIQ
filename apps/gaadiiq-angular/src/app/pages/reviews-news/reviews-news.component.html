@@ -107,20 +107,21 @@
 
       <!-- Live articles -->
       <div class="live-grid" *ngIf="hasApiKey && !liveLoading() && liveArticles().length">
-        <a class="live-card glass-card" *ngFor="let a of liveArticles()" [href]="a.url" target="_blank" rel="noopener">
+        <div class="live-card glass-card" *ngFor="let a of liveArticles(); let i = index"
+             [routerLink]="['/reviews-news', 'news', 'live', i]">
           <div class="lc-thumb" [style.backgroundImage]="a.image ? 'url(' + a.image + ')' : 'none'">
             <span *ngIf="!a.image" class="lc-thumb-emoji">📰</span>
           </div>
           <div class="lc-body">
             <div class="lc-meta">
-              <span class="tag tag-blue">{{ a.source.name }}</span>
+              <span class="tag tag-blue">India Auto News</span>
               <span class="lc-date">{{ news.formatDate(a.publishedAt) }}</span>
             </div>
             <h3 class="lc-title">{{ a.title }}</h3>
             <p class="lc-desc">{{ a.description }}</p>
-            <span class="lc-read">Read full article →</span>
+            <span class="lc-read">Read more →</span>
           </div>
-        </a>
+        </div>
       </div>
 
       <h2 class="sec-head" style="margin-top:2.5rem">

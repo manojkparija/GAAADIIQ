@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 export interface NewsArticle {
+  id: string;
   title: string;
   description: string;
   url: string;
@@ -35,11 +36,11 @@ export class NewsService {
   readonly articles = signal<NewsArticle[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly hasApiKey: boolean = true; // Google News RSS needs no key
+  readonly hasApiKey: boolean = true;
 
   constructor(private http: HttpClient) {}
 
-  fetchNews(query = 'India car automobile EV', maxResults = 10) {
+  fetchNews(query = 'India car automobile EV launch', maxResults = 12) {
     this.loading.set(true);
     this.error.set(null);
 
@@ -52,13 +53,14 @@ export class NewsService {
           this.error.set('Could not load live news. Showing curated articles instead.');
           this.articles.set([]);
         } else {
-          this.articles.set(res.items.map(item => ({
-            title: item.title,
+          this.articles.set(res.items.map((item, i) => ({
+            id: `live-${i}`,
+            title: this.cleanTitle(item.title),
             description: this.stripHtml(item.description || item.content || ''),
             url: item.link,
             image: item.thumbnail || null,
             publishedAt: item.pubDate,
-            source: { name: item.author || 'Google News', url: item.link },
+            source: { name: 'Google News', url: '' },
           })));
         }
         this.loading.set(false);
@@ -75,7 +77,14 @@ export class NewsService {
     return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
+  // Strip " - SiteName" or " | SiteName" suffixes Google News appends to titles
+  private cleanTitle(title: string): string {
+    return title
+      .replace(/\s[-–|]\s[^-–|]+$/, '')
+      .trim();
+  }
+
   private stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, ' ').trim().slice(0, 200);
+    return html.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, ' ').trim().slice(0, 300);
   }
 }
