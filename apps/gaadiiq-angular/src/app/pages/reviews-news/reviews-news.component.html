@@ -88,14 +88,6 @@
     <!-- ── LIVE NEWS (News category only) ──────────────────────────────────── -->
     <ng-container *ngIf="isNewsPage()">
 
-      <!-- API key not configured -->
-      <div class="api-prompt glass-card" *ngIf="!hasApiKey">
-        <div class="ap-icon">📡</div>
-        <h3>Connect Live News</h3>
-        <p>Get a free GNews API key at <strong>gnews.io</strong> (100 req/day) and replace <code>YOUR_GNEWS_API_KEY</code> in <code>news.service.ts</code> to show real-time Indian auto news here.</p>
-        <p class="ap-note">Showing curated articles below in the meantime.</p>
-      </div>
-
       <!-- Loading skeleton -->
       <div class="live-grid" *ngIf="hasApiKey && liveLoading()">
         <div class="live-card glass-card skeleton" *ngFor="let i of [1,2,3,4,5,6]">

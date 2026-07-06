@@ -10,34 +10,57 @@ export interface NewsArticle {
   source: { name: string; url: string };
 }
 
-interface GNewsResponse {
-  totalArticles: number;
-  articles: NewsArticle[];
+interface Rss2JsonItem {
+  title: string;
+  link: string;
+  pubDate: string;
+  author: string;
+  thumbnail: string;
+  description: string;
+  content: string;
 }
 
-// Get a free key at https://gnews.io — 100 req/day free tier
-const GNEWS_API_KEY = '943f97bb47d0adb1a67b6ee871a2ded0';
+interface Rss2JsonResponse {
+  status: string;
+  feed: { title: string; link: string; image: string };
+  items: Rss2JsonItem[];
+}
+
+// Google News RSS → rss2json proxy (free, no API key, 10k req/month)
+const RSS2JSON = 'https://api.rss2json.com/v1/api.json';
+const GOOGLE_NEWS_RSS = 'https://news.google.com/rss/search?q={QUERY}&hl=en-IN&gl=IN&ceid=IN:en';
 
 @Injectable({ providedIn: 'root' })
 export class NewsService {
   readonly articles = signal<NewsArticle[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly hasApiKey: boolean = GNEWS_API_KEY.length > 0 && !GNEWS_API_KEY.startsWith('YOUR_');
+  readonly hasApiKey: boolean = true; // Google News RSS needs no key
 
   constructor(private http: HttpClient) {}
 
-  fetchNews(query = 'India car automobile', maxResults = 10) {
-    if (!this.hasApiKey) return;
-
+  fetchNews(query = 'India car automobile EV', maxResults = 10) {
     this.loading.set(true);
     this.error.set(null);
 
-    const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&country=in&max=${maxResults}&apikey=${GNEWS_API_KEY}`;
+    const rssUrl = GOOGLE_NEWS_RSS.replace('{QUERY}', encodeURIComponent(query));
+    const url = `${RSS2JSON}?rss_url=${encodeURIComponent(rssUrl)}&count=${maxResults}`;
 
-    this.http.get<GNewsResponse>(url).subscribe({
+    this.http.get<Rss2JsonResponse>(url).subscribe({
       next: res => {
-        this.articles.set(res.articles ?? []);
+        if (res.status !== 'ok') {
+          this.error.set('Could not load live news. Showing curated articles instead.');
+          this.articles.set([]);
+        } else {
+          this.articles.set(res.items.map(item => ({
+            title: item.title,
+            description: this.stripHtml(item.description || item.content || ''),
+            url: item.link,
+            image: item.thumbnail || null,
+            publishedAt: item.pubDate,
+            source: { name: item.author || 'Google News', url: item.link },
+          })));
+        }
         this.loading.set(false);
       },
       error: () => {
@@ -50,5 +73,9 @@ export class NewsService {
 
   formatDate(iso: string): string {
     return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  private stripHtml(html: string): string {
+    return html.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, ' ').trim().slice(0, 200);
   }
 }
