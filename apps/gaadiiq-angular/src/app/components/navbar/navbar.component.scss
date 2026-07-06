@@ -36,6 +36,18 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  .logo-tagline {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-left: 1px solid var(--glass-border);
+    padding-left: 0.6rem;
+    margin-left: 0.1rem;
+    line-height: 1;
+    align-self: center;
+  }
 }
 
 .nav-links {
