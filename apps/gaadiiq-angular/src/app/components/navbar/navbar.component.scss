@@ -18,7 +18,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .logo {
@@ -41,11 +41,11 @@
 .nav-links {
   display: flex;
   list-style: none;
-  gap: 2rem;
+  gap: 1.25rem;
   a {
     color: var(--muted);
     font-weight: 500;
-    font-size: 1rem;
+    font-size: 0.875rem;
     transition: color 0.2s;
     position: relative;
     &::after {

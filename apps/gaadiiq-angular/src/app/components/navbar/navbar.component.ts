@@ -24,6 +24,14 @@ export class NavbarComponent {
   @HostListener('window:scroll')
   onScroll() { this.scrolled.set(window.scrollY > 30); }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (this.userMenuOpen() && !target.closest('.user-menu-wrap')) {
+      this.userMenuOpen.set(false);
+    }
+  }
+
   toggleMenu() { this.menuOpen.update(v => !v); }
   closeMenu() { this.menuOpen.set(false); }
   toggleUserMenu() { this.userMenuOpen.update(v => !v); }
