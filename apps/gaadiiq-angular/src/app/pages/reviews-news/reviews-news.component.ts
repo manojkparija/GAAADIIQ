@@ -2,6 +2,7 @@ import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
+import { NewsService } from '../../services/news.service';
 
 export interface Article {
   id: number;
@@ -173,8 +174,15 @@ export class ReviewsNewsComponent {
   activeTab = signal<Tab>('All');
   searchQuery = signal('');
   isHub = signal(true);
+  isNewsPage = signal(false);
 
   featured = ARTICLES.filter(a => a.featured);
+
+  // Live news (GNews API)
+  liveArticles = this.news.articles;
+  liveLoading = this.news.loading;
+  liveError = this.news.error;
+  hasApiKey = this.news.hasApiKey;
 
   articles = computed(() => {
     const tab = this.activeTab();
@@ -203,15 +211,18 @@ export class ReviewsNewsComponent {
     return `cat-card-${color}`;
   }
 
-  constructor(seo: SeoService, route: ActivatedRoute) {
+  constructor(seo: SeoService, route: ActivatedRoute, public news: NewsService) {
     route.params.subscribe(params => {
       const slug = params['category'];
       if (slug && CATEGORY_SLUGS[slug]) {
         this.isHub.set(false);
         this.activeTab.set(CATEGORY_SLUGS[slug]);
+        this.isNewsPage.set(slug === 'news');
+        if (slug === 'news') this.news.fetchNews('India car automobile launch EV');
         seo.setPage(CATEGORY_SLUGS[slug], `${CATEGORY_SLUGS[slug]} articles on GAADIIQ`);
       } else {
         this.isHub.set(true);
+        this.isNewsPage.set(false);
         this.activeTab.set('All');
         seo.setPage('Reviews & News', 'Latest car news, expert reviews, user stories and special reports from GAADIIQ.');
       }
