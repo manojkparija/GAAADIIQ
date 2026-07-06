@@ -1,6 +1,6 @@
 import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 
 export interface Article {
@@ -145,6 +145,20 @@ const ARTICLES: Article[] = [
 const TABS = ['All', 'News', 'Expert Review', 'User Review', 'Special Report'] as const;
 type Tab = typeof TABS[number];
 
+const CATEGORY_SLUGS: Record<string, Tab> = {
+  'news': 'News',
+  'expert-reviews': 'Expert Review',
+  'user-reviews': 'User Review',
+  'special-reports': 'Special Report',
+};
+
+export const CATEGORY_META = [
+  { slug: 'news',           label: 'News',           icon: '📰', desc: 'Breaking news, launches & industry updates',  color: 'blue',   count: ARTICLES.filter(a => a.category === 'News').length },
+  { slug: 'expert-reviews', label: 'Expert Reviews', icon: '🏎️', desc: 'In-depth tests & long-term ownership reports', color: 'purple', count: ARTICLES.filter(a => a.category === 'Expert Review').length },
+  { slug: 'user-reviews',   label: 'User Reviews',   icon: '👤', desc: 'Real owner stories & honest experiences',      color: 'green',  count: ARTICLES.filter(a => a.category === 'User Review').length },
+  { slug: 'special-reports',label: 'Special Reports',icon: '📊', desc: 'Data-driven guides, cost analysis & research', color: 'gold',   count: ARTICLES.filter(a => a.category === 'Special Report').length },
+];
+
 @Component({
   selector: 'app-reviews-news',
   standalone: true,
@@ -154,8 +168,11 @@ type Tab = typeof TABS[number];
 })
 export class ReviewsNewsComponent {
   readonly tabs = TABS;
+  readonly categoryMeta = CATEGORY_META;
+
   activeTab = signal<Tab>('All');
   searchQuery = signal('');
+  isHub = signal(true);
 
   featured = ARTICLES.filter(a => a.featured);
 
@@ -182,7 +199,22 @@ export class ReviewsNewsComponent {
     return map[color] || 'tag-blue';
   }
 
-  constructor(seo: SeoService) {
-    seo.setPage('Reviews & News', 'Latest car news, expert reviews, user stories and special reports from GAADIIQ.');
+  categoryBadgeClass(color: string) {
+    return `cat-card-${color}`;
+  }
+
+  constructor(seo: SeoService, route: ActivatedRoute) {
+    route.params.subscribe(params => {
+      const slug = params['category'];
+      if (slug && CATEGORY_SLUGS[slug]) {
+        this.isHub.set(false);
+        this.activeTab.set(CATEGORY_SLUGS[slug]);
+        seo.setPage(CATEGORY_SLUGS[slug], `${CATEGORY_SLUGS[slug]} articles on GAADIIQ`);
+      } else {
+        this.isHub.set(true);
+        this.activeTab.set('All');
+        seo.setPage('Reviews & News', 'Latest car news, expert reviews, user stories and special reports from GAADIIQ.');
+      }
+    });
   }
 }

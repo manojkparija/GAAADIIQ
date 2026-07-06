@@ -61,6 +61,100 @@
   }
 }
 
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  opacity: 0.8;
+  &:hover { opacity: 1; }
+}
+
+// ── Hub Category Cards ───────────────────────────────────────────────────────
+.hub-section {
+  padding: 0 1.5rem 2rem;
+}
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.cat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 2rem 1.75rem;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 0;
+  }
+  &:hover::after { opacity: 0.05; }
+  & > * { position: relative; z-index: 1; }
+
+  .cat-icon {
+    font-size: 2.5rem;
+    width: 64px; height: 64px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--fill-soft);
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+  }
+
+  .cat-body { flex: 1; }
+
+  .cat-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0.5rem 0 0.4rem;
+    line-height: 1.2;
+  }
+
+  .cat-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .cat-arrow {
+    font-size: 1.25rem;
+    color: var(--primary);
+    font-weight: 700;
+    align-self: flex-end;
+    transition: transform 0.2s;
+  }
+  &:hover .cat-arrow { transform: translateX(4px); }
+}
+
+.cat-count-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 50px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cat-badge-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
+.cat-badge-purple { background: rgba(108,99,255,0.15);  color: #a78bfa; border: 1px solid rgba(108,99,255,0.3); }
+.cat-badge-green  { background: rgba(67,233,123,0.15);  color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
+.cat-badge-gold   { background: rgba(255,215,0,0.15);   color: #B8860B; border: 1px solid rgba(255,215,0,0.3); }
+
 // ── Featured ────────────────────────────────────────────────────────────────
 .featured-section {
   padding: 2rem 1.5rem 1rem;
@@ -267,6 +361,6 @@
 }
 
 @media (max-width: 768px) {
-  .featured-grid, .articles-grid { grid-template-columns: 1fr; }
+  .featured-grid, .articles-grid, .hub-grid { grid-template-columns: 1fr; }
   .rn-hero { padding: 5.5rem 0 2rem; }
 }
