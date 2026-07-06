@@ -25,8 +25,6 @@ export class LiveNewsDetailComponent {
       // If service was reset (e.g. page refresh), refetch then pick item
       if (!found) {
         this.news.fetchNews();
-        const sub = this.news.articles.subscribe?.(() => {});
-        // Poll once after fetch completes
         setTimeout(() => {
           const refreshed = this.news.articles()[idx] ?? null;
           this.article.set(refreshed);
