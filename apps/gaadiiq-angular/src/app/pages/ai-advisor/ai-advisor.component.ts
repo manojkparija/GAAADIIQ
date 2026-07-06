@@ -81,7 +81,7 @@ export class AiAdvisorComponent {
       title: 'Are you looking for a new or used car?',
       subtitle: 'Helps us filter the right listings for you',
       options: [
-        { label: 'Brand New',        sub: '2023–2024 model, low mileage' },
+        { label: 'Brand New',        sub: 'Factory fresh, never owned' },
         { label: 'Certified Used',   sub: 'Pre-owned, inspected & verified' },
         { label: 'Any Condition',    sub: 'Show me all options' },
       ]

@@ -21,10 +21,6 @@
       <span class="city-label">{{ city.selectedCity() || 'Select City' }}</span>
     </button>
 
-    <button class="lang-toggle hide-mobile" (click)="lang.toggle()" title="Switch Language">
-      {{ lang.lang() === 'en' ? '🇮🇳 हिंदी' : '🇺🇸 EN' }}
-    </button>
-
     <button class="theme-toggle hide-mobile" (click)="theme.toggle()" [title]="theme.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
       {{ theme.isDark() ? '☀️' : '🌙' }}
     </button>
