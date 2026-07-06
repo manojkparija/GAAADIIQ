@@ -8,6 +8,16 @@
     </div>
   </section>
 
+  <!-- Tab Bar -->
+  <div class="tabs-wrap container">
+    <div class="tabs-scroll">
+      <a *ngFor="let c of categoryMeta" class="tab-btn" [routerLink]="['/reviews-news', c.slug]">
+        {{ c.label }}
+        <span class="tab-count">{{ c.count }}</span>
+      </a>
+    </div>
+  </div>
+
   <!-- Category Cards -->
   <section class="hub-section container">
     <div class="hub-grid">
