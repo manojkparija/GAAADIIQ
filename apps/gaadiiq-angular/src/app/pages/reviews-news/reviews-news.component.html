@@ -1,0 +1,97 @@
+<section class="rn-hero">
+  <div class="container">
+    <div class="hero-badge">📰 GAADIIQ Media</div>
+    <h1 class="hero-title">Reviews &amp; <span class="gradient-text">News</span></h1>
+    <p class="hero-sub">Expert reviews, real owner stories, breaking news and in-depth special reports on the Indian automotive world.</p>
+
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Search articles, car models, topics…"
+             [value]="searchQuery()"
+             (input)="searchQuery.set($any($event.target).value)" />
+    </div>
+  </div>
+</section>
+
+<!-- Featured Articles -->
+<section class="featured-section container" *ngIf="!searchQuery()">
+  <h2 class="sec-head">Featured <span class="gradient-text">Stories</span></h2>
+  <div class="featured-grid">
+    <article class="featured-card glass-card" *ngFor="let a of featured">
+      <div class="fc-image">{{ a.image }}</div>
+      <div class="fc-body">
+        <div class="fc-meta">
+          <span class="tag" [ngClass]="tagClass(a.tagColor)">{{ a.tag }}</span>
+          <span class="cat-chip">{{ a.category }}</span>
+        </div>
+        <h3 class="fc-title">{{ a.title }}</h3>
+        <p class="fc-excerpt">{{ a.excerpt }}</p>
+        <div class="fc-footer">
+          <div class="author-row">
+            <span class="avatar">{{ a.authorAvatar }}</span>
+            <span class="author-name">{{ a.author }}</span>
+          </div>
+          <div class="fc-info">
+            <span>📅 {{ a.date }}</span>
+            <span>⏱ {{ a.readTime }}</span>
+          </div>
+          <div class="stars-row" *ngIf="a.rating">
+            <span *ngFor="let s of stars(a.rating)" class="star">{{ s }}</span>
+            <span class="rating-num">{{ a.rating }}</span>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- Tab Bar -->
+<div class="tabs-wrap container">
+  <div class="tabs-scroll">
+    <button *ngFor="let t of tabs" class="tab-btn" [class.active]="activeTab() === t"
+            (click)="activeTab.set(t)">
+      {{ t }}
+      <span class="tab-count">{{ counts()[t] }}</span>
+    </button>
+  </div>
+</div>
+
+<!-- Article Grid -->
+<section class="articles-section container">
+  <div class="articles-grid" *ngIf="articles().length; else noResults">
+    <article class="article-card glass-card" *ngFor="let a of articles()">
+      <div class="ac-image">{{ a.image }}</div>
+      <div class="ac-body">
+        <div class="ac-meta">
+          <span class="tag" [ngClass]="tagClass(a.tagColor)">{{ a.tag }}</span>
+          <span class="cat-label">{{ a.category }}</span>
+        </div>
+        <h3 class="ac-title">{{ a.title }}</h3>
+        <p class="ac-excerpt">{{ a.excerpt }}</p>
+        <div class="stars-row" *ngIf="a.rating">
+          <span *ngFor="let s of stars(a.rating)" class="star">{{ s }}</span>
+          <span class="rating-num">{{ a.rating }}/5</span>
+          <span class="car-model" *ngIf="a.carModel">— {{ a.carModel }}</span>
+        </div>
+        <div class="ac-footer">
+          <div class="author-row">
+            <span class="avatar">{{ a.authorAvatar }}</span>
+            <span class="author-name">{{ a.author }}</span>
+          </div>
+          <div class="ac-info">
+            <span>{{ a.date }}</span>
+            <span class="dot">·</span>
+            <span>{{ a.readTime }}</span>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+  <ng-template #noResults>
+    <div class="no-results">
+      <div class="nr-icon">🔍</div>
+      <p>No articles found for "<strong>{{ searchQuery() }}</strong>"</p>
+      <button class="btn-outline" (click)="searchQuery.set('')">Clear Search</button>
+    </div>
+  </ng-template>
+</section>

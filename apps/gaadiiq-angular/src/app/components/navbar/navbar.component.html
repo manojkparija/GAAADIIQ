@@ -11,6 +11,7 @@
       <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>
       <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
       <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI Calc</a></li>
+      <li><a routerLink="/reviews-news" routerLinkActive="active">Reviews &amp; News</a></li>
     </ul>
 
     <button class="theme-toggle hide-mobile" (click)="theme.toggle()" [title]="theme.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
@@ -54,6 +55,7 @@
     <a routerLink="/ai-advisor" (click)="closeMenu()">AI Advisor</a>
     <a routerLink="/compare" (click)="closeMenu()">Compare Cars</a>
     <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
+    <a routerLink="/reviews-news" (click)="closeMenu()">Reviews &amp; News</a>
     <div class="mobile-theme-row">
       <span style="font-size:0.9rem;color:var(--muted)">{{ theme.isDark() ? 'Dark Mode' : 'Light Mode' }}</span>
       <button class="theme-toggle" (click)="theme.toggle()">{{ theme.isDark() ? '☀️' : '🌙' }}</button>
