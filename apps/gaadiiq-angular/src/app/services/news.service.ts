@@ -1,6 +1,5 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, of } from 'rxjs';
 
 export interface NewsArticle {
   title: string;
@@ -36,15 +35,16 @@ export class NewsService {
 
     const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&country=in&max=${maxResults}&apikey=${GNEWS_API_KEY}`;
 
-    this.http.get<GNewsResponse>(url).pipe(
-      map(res => res.articles),
-      catchError(err => {
+    this.http.get<GNewsResponse>(url).subscribe({
+      next: res => {
+        this.articles.set(res.articles ?? []);
+        this.loading.set(false);
+      },
+      error: () => {
         this.error.set('Could not load live news. Showing curated articles instead.');
-        return of([]);
-      })
-    ).subscribe(articles => {
-      this.articles.set(articles);
-      this.loading.set(false);
+        this.articles.set([]);
+        this.loading.set(false);
+      },
     });
   }
 
