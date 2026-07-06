@@ -29,12 +29,11 @@
       <!-- Logged out -->
       <ng-container *ngIf="!auth.isLoggedIn()">
         <a routerLink="/login" class="btn-outline btn-sm">Sign In</a>
-        <a routerLink="/list-car" class="btn-gradient btn-sm">List Your Car ✨</a>
+        <a routerLink="/register" class="btn-gradient btn-sm">Get Started</a>
       </ng-container>
 
       <!-- Logged in -->
       <ng-container *ngIf="auth.isLoggedIn()">
-        <a routerLink="/list-car" class="btn-outline btn-sm">List Your Car ✨</a>
         <div class="user-menu-wrap">
           <button class="user-avatar-btn" (click)="toggleUserMenu()">
             <span class="user-avatar">{{ auth.currentUser()?.name?.charAt(0)?.toUpperCase() }}</span>
@@ -44,7 +43,9 @@
           <div class="user-dropdown" *ngIf="userMenuOpen()">
             <div class="dropdown-email">{{ auth.currentUser()?.email }}</div>
             <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">🚗 My Listings</a>
+            <a routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">✨ List Your Car</a>
             <a routerLink="/compare" (click)="userMenuOpen.set(false)" class="dropdown-item">⚖️ Compare Cars</a>
+            <a routerLink="/dealer-dashboard" (click)="userMenuOpen.set(false)" class="dropdown-item">🏢 Dealer Dashboard</a>
             <button class="dropdown-item logout" (click)="logout()">🚪 Sign Out</button>
           </div>
         </div>
@@ -73,12 +74,14 @@
     <div class="mobile-btns">
       <ng-container *ngIf="!auth.isLoggedIn()">
         <a routerLink="/login" (click)="closeMenu()" class="btn-outline" style="width:100%;display:block;text-align:center">Sign In</a>
+        <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient" style="width:100%;display:block;text-align:center">List Your Car ✨</a>
       </ng-container>
       <ng-container *ngIf="auth.isLoggedIn()">
+        <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">✨ List Your Car</a>
+        <a routerLink="/dealer-dashboard" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">🏢 Dealer Dashboard</a>
         <div style="padding:0.5rem 0;font-size:0.85rem;color:var(--muted)">{{ auth.currentUser()?.name }}</div>
         <button class="btn-outline" style="width:100%" (click)="logout(); closeMenu()">Sign Out</button>
       </ng-container>
-      <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient" style="width:100%;display:block;text-align:center">List Your Car ✨</a>
     </div>
   </div>
 </nav>
