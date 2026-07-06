@@ -2,6 +2,7 @@ import { Component, HostListener, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-navbar',
@@ -15,7 +16,7 @@ export class NavbarComponent {
   menuOpen = signal(false);
   userMenuOpen = signal(false);
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, public theme: ThemeService) {}
 
   @HostListener('window:scroll')
   onScroll() { this.scrolled.set(window.scrollY > 30); }

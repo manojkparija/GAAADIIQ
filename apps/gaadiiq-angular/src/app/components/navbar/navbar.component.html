@@ -13,6 +13,10 @@
       <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI Calc</a></li>
     </ul>
 
+    <button class="theme-toggle hide-mobile" (click)="theme.toggle()" [title]="theme.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+      {{ theme.isDark() ? '☀️' : '🌙' }}
+    </button>
+
     <div class="nav-actions hide-mobile">
       <!-- Logged out -->
       <ng-container *ngIf="!auth.isLoggedIn()">
@@ -50,6 +54,10 @@
     <a routerLink="/ai-advisor" (click)="closeMenu()">AI Advisor</a>
     <a routerLink="/compare" (click)="closeMenu()">Compare Cars</a>
     <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
+    <div class="mobile-theme-row">
+      <span style="font-size:0.9rem;color:var(--muted)">{{ theme.isDark() ? 'Dark Mode' : 'Light Mode' }}</span>
+      <button class="theme-toggle" (click)="theme.toggle()">{{ theme.isDark() ? '☀️' : '🌙' }}</button>
+    </div>
     <div class="mobile-btns">
       <ng-container *ngIf="!auth.isLoggedIn()">
         <a routerLink="/login" (click)="closeMenu()" class="btn-outline" style="width:100%;display:block;text-align:center">Sign In</a>

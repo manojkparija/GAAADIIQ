@@ -95,7 +95,8 @@
 .mobile-menu {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(10, 14, 26, 0.97);
+  background: rgba(var(--navy-rgb, 10, 14, 26), 0.97);
+  background: var(--navy);
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
@@ -129,6 +130,38 @@
     width: 260px;
     margin-top: 1rem;
   }
+}
+
+.theme-toggle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(108,99,255,0.15);
+    border-color: rgba(108,99,255,0.4);
+    transform: rotate(20deg);
+  }
+}
+
+.mobile-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 0.5rem;
+
+  .theme-toggle { width: 36px; height: 36px; font-size: 1rem; }
 }
 
 .user-menu-wrap {

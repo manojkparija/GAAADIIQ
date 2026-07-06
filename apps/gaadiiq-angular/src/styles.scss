@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-:root {
+:root, [data-theme="dark"] {
   --primary: #6C63FF;
   --primary-dark: #4B44E0;
   --secondary: #FF6584;
@@ -19,6 +19,18 @@
   --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 
+[data-theme="light"] {
+  --navy: #F0F2FF;
+  --dark: #FFFFFF;
+  --card-bg: rgba(108,99,255,0.04);
+  --glass: rgba(255,255,255,0.80);
+  --glass-border: rgba(108,99,255,0.15);
+  --text: #1E1B4B;
+  --muted: #6B7280;
+  --glow: 0 0 40px rgba(108, 99, 255, 0.2);
+  --card-shadow: 0 8px 32px rgba(108,99,255,0.1);
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { scroll-behavior: smooth; }
@@ -30,6 +42,7 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.6;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 h1,h2,h3,h4,h5,h6 {
