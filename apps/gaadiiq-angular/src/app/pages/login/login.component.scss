@@ -6,7 +6,7 @@
   padding: 2rem;
   position: relative;
   overflow: hidden;
-  background: #0A0E1A;
+  background: var(--navy);
 }
 
 .orb {
@@ -39,7 +39,7 @@
 .login-header {
   text-align: center;
   margin-bottom: 2rem;
-  .logo-link { font-size: 1.5rem; font-weight: 800; font-family: 'Space Grotesk', sans-serif; text-decoration: none; color: white; }
+  .logo-link { font-size: 1.5rem; font-weight: 800; font-family: 'Space Grotesk', sans-serif; text-decoration: none; color: var(--text); }
   .gradient-text { background: linear-gradient(135deg, #6C63FF, #FF6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.75rem; font-weight: 700; margin: 1rem 0 0.25rem; }
   p { color: var(--muted); font-size: 0.9rem; }
@@ -61,7 +61,7 @@
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.15);
   background: var(--fill-dim);
-  color: white;
+  color: var(--text);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -94,7 +94,7 @@
     background: var(--fill-soft);
     border: 1px solid var(--border-soft);
     border-radius: 10px;
-    color: white;
+    color: var(--text);
     font-size: 0.95rem;
     transition: border-color 0.2s;
     &:focus { outline: none; border-color: #6C63FF; }

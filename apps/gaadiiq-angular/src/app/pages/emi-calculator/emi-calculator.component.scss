@@ -1,6 +1,6 @@
 .emi-page {
   min-height: 100vh;
-  background: #0A0E1A;
+  background: var(--navy);
   padding-bottom: 4rem;
 }
 
@@ -29,7 +29,7 @@
 .slider-group {
   margin-bottom: 1.5rem;
   .slider-label { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary);
-    strong { color: white; }
+    strong { color: var(--text); }
   }
   input[type=range] {
     width: 100%; appearance: none; height: 4px;
@@ -44,7 +44,7 @@
   border-radius: 12px; padding: 1.25rem; margin-top: 1rem;
 }
 .sum-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.9rem; color: var(--text-secondary);
-  strong { color: white; }
+  strong { color: var(--text); }
   &.highlight { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 0.5rem; padding-top: 0.75rem; }
 }
 .emi-amount { font-size: 1.3rem; background: linear-gradient(135deg, #6C63FF, #FF6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -76,7 +76,7 @@
 .bank-emi { text-align: right; }
 .emi-val { font-size: 1rem; font-weight: 700; color: #6C63FF; }
 .emi-label { font-size: 0.7rem; color: var(--text-tertiary); }
-.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #6C63FF, #FF6584); color: white; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
+.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #6C63FF, #FF6584); color: var(--text); font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 .selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 
 .amort-card { margin-top: 0; }
