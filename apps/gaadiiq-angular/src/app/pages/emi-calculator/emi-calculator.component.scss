@@ -6,10 +6,10 @@
 
 .emi-hero {
   background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(255,101,132,0.1));
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--divider);
   padding: 5rem 0 2.5rem; text-align: center;
   h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; }
-  p { color: rgba(255,255,255,0.5); margin-top: 0.5rem; }
+  p { color: var(--muted); margin-top: 0.5rem; }
   .gradient-text { background: linear-gradient(135deg, #6C63FF, #FF6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 }
 
@@ -18,8 +18,8 @@
 }
 
 .controls-card, .chart-card, .banks-card, .amort-card {
-  background: rgba(255,255,255,0.07); backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 1.75rem;
+  background: var(--fill-soft); backdrop-filter: blur(20px);
+  border: 1px solid var(--border-soft); border-radius: 20px; padding: 1.75rem;
   h2, h3 { font-family: 'Space Grotesk', sans-serif; margin-bottom: 1.5rem; }
   h3 { font-size: 1.1rem; }
 }
@@ -28,7 +28,7 @@
 
 .slider-group {
   margin-bottom: 1.5rem;
-  .slider-label { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem; color: rgba(255,255,255,0.7);
+  .slider-label { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary);
     strong { color: white; }
   }
   input[type=range] {
@@ -36,14 +36,14 @@
     background: linear-gradient(90deg, #6C63FF, #FF6584); border-radius: 2px;
     &::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: white; cursor: pointer; box-shadow: 0 0 0 3px rgba(108,99,255,0.4); }
   }
-  .range-ends { display: flex; justify-content: space-between; margin-top: 0.25rem; font-size: 0.75rem; color: rgba(255,255,255,0.3); }
+  .range-ends { display: flex; justify-content: space-between; margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-tertiary); }
 }
 
 .loan-summary {
   background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2);
   border-radius: 12px; padding: 1.25rem; margin-top: 1rem;
 }
-.sum-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.9rem; color: rgba(255,255,255,0.7);
+.sum-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.9rem; color: var(--text-secondary);
   strong { color: white; }
   &.highlight { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 0.5rem; padding-top: 0.75rem; }
 }
@@ -54,37 +54,37 @@
 .donut-seg { transition: stroke-dasharray 0.5s ease; }
 .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .donut-emi { font-size: 1.1rem; font-weight: 700; }
-.donut-label { font-size: 0.7rem; color: rgba(255,255,255,0.4); }
+.donut-label { font-size: 0.7rem; color: var(--text-tertiary); }
 
 .chart-legend { display: flex; gap: 1.5rem; justify-content: center; }
-.legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+.legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); }
 .dot { width: 10px; height: 10px; border-radius: 50%; &.principal { background: #6C63FF; } &.interest { background: #FF6584; } }
 
 .banks-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .bank-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.875rem 1rem; border-radius: 10px; background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08); position: relative;
+  padding: 0.875rem 1rem; border-radius: 10px; background: var(--fill-dim);
+  border: 1px solid var(--divider); position: relative;
   &.best { border-color: rgba(108,99,255,0.4); background: rgba(108,99,255,0.1); }
   &.selected { border-color: rgba(67,233,123,0.5); background: rgba(67,233,123,0.08); }
-  &:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.07); }
+  &:hover { border-color: var(--text-tertiary); background: var(--fill-soft); }
 }
 .bank-info { display: flex; align-items: center; gap: 0.75rem; }
 .bank-logo { font-size: 1.5rem; }
 .bank-name { font-size: 0.9rem; font-weight: 600; }
-.bank-rate { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+.bank-rate { font-size: 0.8rem; color: var(--text-tertiary); }
 .bank-emi { text-align: right; }
 .emi-val { font-size: 1rem; font-weight: 700; color: #6C63FF; }
-.emi-label { font-size: 0.7rem; color: rgba(255,255,255,0.3); }
+.emi-label { font-size: 0.7rem; color: var(--text-tertiary); }
 .best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #6C63FF, #FF6584); color: white; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 .selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 
 .amort-card { margin-top: 0; }
-.amort-sub { font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 400; }
+.amort-sub { font-size: 0.75rem; color: var(--text-tertiary); font-weight: 400; }
 .table-wrap { overflow-x: auto; }
 .amort-table {
   width: 100%; border-collapse: collapse; font-size: 0.875rem;
-  th { padding: 0.75rem 1rem; text-align: left; color: rgba(255,255,255,0.5); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  th { padding: 0.75rem 1rem; text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--divider); }
   td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
   tr:hover td { background: rgba(255,255,255,0.02); }
 }

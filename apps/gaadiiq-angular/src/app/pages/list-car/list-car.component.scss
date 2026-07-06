@@ -20,7 +20,7 @@
   text-align: center;
   margin-bottom: 2rem;
 
-  .logo-link { font-size: 1.5rem; font-weight: 800; text-decoration: none; color: #fff; }
+  .logo-link { font-size: 1.5rem; font-weight: 800; text-decoration: none; color: var(--input-color); }
   h1 { font-size: 2.2rem; font-weight: 900; margin: 0.75rem 0 0.5rem; }
   p { color: var(--muted, #6b7280); }
 }
@@ -37,8 +37,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.06);
-  border: 2px solid rgba(255,255,255,0.15);
+  background: var(--fill-soft);
+  border: 2px solid var(--border-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,13 +48,13 @@
   transition: all 0.3s;
 
   &.active { border-color: #6C63FF; color: #6C63FF; background: rgba(108,99,255,0.15); }
-  &.done { background: #6C63FF; border-color: #6C63FF; color: #fff; }
+  &.done { background: #6C63FF; border-color: #6C63FF; color: var(--input-color); }
 }
 
 .step-line {
   width: 80px;
   height: 2px;
-  background: rgba(255,255,255,0.1);
+  background: var(--fill-medium);
   &.filled { background: #6C63FF; }
 }
 
@@ -93,18 +93,18 @@
   label { font-size: 0.85rem; color: var(--muted, #6b7280); font-weight: 500; }
 
   input, select, textarea {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: var(--fill-dim);
+    border: 1px solid var(--border-soft);
     border-radius: 10px;
     padding: 0.75rem 1rem;
-    color: #fff;
+    color: var(--input-color);
     font-size: 0.95rem;
     outline: none;
     transition: border-color 0.2s;
     font-family: inherit;
 
     &:focus { border-color: #6C63FF; }
-    option { background: #141828; }
+    option { background: var(--dropdown-bg); }
   }
 
   textarea { resize: vertical; min-height: 100px; }

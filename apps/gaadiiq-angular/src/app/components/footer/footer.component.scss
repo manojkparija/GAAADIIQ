@@ -33,7 +33,7 @@
     color: var(--muted);
     cursor: pointer;
     transition: all 0.2s;
-    &:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
+    &:hover { background: var(--primary); border-color: var(--primary); color: var(--input-color); }
   }
 }
 

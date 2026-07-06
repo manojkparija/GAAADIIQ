@@ -9,7 +9,7 @@
 
 .btn-gradient {
   background: linear-gradient(135deg, #6C63FF, #FF6584);
-  color: #fff;
+  color: var(--input-color);
   border: none;
   border-radius: 12px;
   padding: 0.75rem 1.75rem;
@@ -35,9 +35,9 @@
 }
 
 .glass-card {
-  background: rgba(255,255,255,0.04);
+  background: var(--fill-dim);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--divider);
   border-radius: 20px;
 }
 
@@ -97,7 +97,7 @@
 
 .progress-bar-track {
   height: 6px;
-  background: rgba(255,255,255,0.08);
+  background: var(--fill-medium);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -160,8 +160,8 @@
 
 .option-btn {
   position: relative;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--fill-dim);
+  border: 1px solid var(--border-soft);
   border-radius: 14px;
   padding: 1rem 1.25rem;
   cursor: pointer;
@@ -193,7 +193,7 @@
     justify-content: center;
     font-size: 0.7rem;
     font-weight: 900;
-    color: #fff;
+    color: var(--input-color);
   }
 
   .opt-label {
@@ -223,7 +223,7 @@
     cursor: pointer;
     font-weight: 600;
     transition: border-color 0.2s;
-    &:hover:not(:disabled) { border-color: rgba(255,255,255,0.35); color: #e2e8f0; }
+    &:hover:not(:disabled) { border-color: var(--border-strong); color: #e2e8f0; }
     &:disabled { opacity: 0.3; cursor: not-allowed; }
   }
 
@@ -241,7 +241,7 @@
     width: 8px;
     height: 8px;
     border-radius: 4px;
-    background: rgba(255,255,255,0.15);
+    background: var(--fill-medium);
     transition: all 0.3s;
 
     &.done {
@@ -296,7 +296,7 @@
 
 .analyze-bar-track {
   height: 8px;
-  background: rgba(255,255,255,0.08);
+  background: var(--fill-medium);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.75rem;
@@ -324,7 +324,7 @@
     width: 10px;
     height: 10px;
     border-radius: 5px;
-    background: rgba(255,255,255,0.1);
+    background: var(--fill-medium);
     transition: background 0.4s;
     &.active { background: linear-gradient(135deg, #6C63FF, #FF6584); }
   }
@@ -398,7 +398,7 @@
 
   th, td {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid var(--divider);
     font-size: 0.88rem;
     color: #e2e8f0;
   }
@@ -481,7 +481,7 @@
   font-weight: 900;
   padding: 0.35rem 0.8rem;
   border-radius: 10px;
-  background: rgba(255,255,255,0.08);
+  background: var(--fill-medium);
   color: var(--muted, #8892b0);
   flex-shrink: 0;
 
@@ -634,7 +634,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
-  background: rgba(255,255,255,0.06);
+  background: var(--fill-soft);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 1.25rem;
@@ -713,7 +713,7 @@
   flex-wrap: wrap;
   margin-bottom: 1.25rem;
 
-  .cpk-sep { color: rgba(255,255,255,0.2); }
+  .cpk-sep { color: var(--text-tertiary); }
 }
 
 // CTA
@@ -731,7 +731,7 @@
   font-weight: 700;
   padding: 0.3rem 0.8rem;
   border-radius: 20px;
-  background: rgba(255,255,255,0.06);
+  background: var(--fill-soft);
   color: var(--muted, #8892b0);
 
   &.high {

@@ -27,9 +27,9 @@
   width: 100%;
   max-width: 480px;
   padding: 2.5rem;
-  background: rgba(255,255,255,0.07);
+  background: var(--fill-soft);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--border-soft);
   border-radius: 24px;
   position: relative;
   z-index: 1;
@@ -53,7 +53,7 @@
 .step-dot {
   width: 32px; height: 32px;
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.2);
+  border: 2px solid var(--border-strong);
   display: flex; align-items: center; justify-content: center;
   font-size: 0.8rem; font-weight: 600;
   transition: all 0.3s;
@@ -63,7 +63,7 @@
 
 .step-line {
   height: 2px; width: 60px;
-  background: rgba(255,255,255,0.1);
+  background: var(--fill-medium);
   transition: background 0.3s;
   &.filled { background: linear-gradient(90deg, #6C63FF, #FF6584); }
 }
@@ -72,7 +72,7 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 2rem;
-  span { font-size: 0.7rem; color: rgba(255,255,255,0.4); text-align: center; width: 80px; }
+  span { font-size: 0.7rem; color: var(--text-tertiary); text-align: center; width: 80px; }
 }
 
 .progress-bar-wrap { margin-bottom: 0; }
@@ -83,43 +83,43 @@
 
 .form-group {
   display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;
-  label { font-size: 0.85rem; color: rgba(255,255,255,0.7); }
+  label { font-size: 0.85rem; color: var(--text-secondary); }
   input, select {
     padding: 0.75rem 1rem;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
+    background: var(--fill-soft);
+    border: 1px solid var(--border-soft);
     border-radius: 10px;
     color: white; font-size: 0.95rem;
     &:focus { outline: none; border-color: #6C63FF; }
-    &::placeholder { color: rgba(255,255,255,0.3); }
+    &::placeholder { color: var(--text-tertiary); }
   }
   select option { background: #0A0E1A; }
 }
 
 .pass-strength {
-  height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-bottom: 0.5rem;
+  height: 4px; background: var(--fill-medium); border-radius: 2px; overflow: hidden; margin-bottom: 0.5rem;
   .bar { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
 }
-.pass-hint { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 1rem; }
+.pass-hint { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
 
 .pref-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
 .pref-chip {
   padding: 0.4rem 1rem;
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.7);
+  background: var(--fill-dim);
+  color: var(--text-secondary);
   font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
   &.selected { background: rgba(108,99,255,0.3); border-color: #6C63FF; color: white; }
-  &:hover { background: rgba(255,255,255,0.1); }
+  &:hover { background: var(--fill-medium); }
 }
 
-.checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.6); cursor: pointer; }
-.hint { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 1rem; }
+.checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; }
+.hint { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
 
 .btn-row { display: flex; gap: 1rem; margin-top: 1.5rem; button { flex: 1; } }
 .btn-full { width: 100%; margin-top: 1.5rem; padding: 0.875rem; }
-.login-link { text-align: center; margin-top: 1.5rem; color: rgba(255,255,255,0.5); font-size: 0.9rem; a { color: #6C63FF; text-decoration: none; font-weight: 600; } }
+.login-link { text-align: center; margin-top: 1.5rem; color: var(--muted); font-size: 0.9rem; a { color: #6C63FF; text-decoration: none; font-weight: 600; } }
 
 .error-msg {
   background: rgba(255, 101, 132, 0.12);

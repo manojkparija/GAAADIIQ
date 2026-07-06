@@ -6,11 +6,11 @@
 
 .compare-hero {
   background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(255,101,132,0.1));
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--divider);
   padding: 5rem 0 2.5rem;
   text-align: center;
   h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; }
-  p { color: rgba(255,255,255,0.5); margin-top: 0.5rem; }
+  p { color: var(--muted); margin-top: 0.5rem; }
   .gradient-text { background: linear-gradient(135deg, #6C63FF, #FF6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 }
 
@@ -21,8 +21,8 @@
 .cars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
 
 .car-pick-card {
-  background: rgba(255,255,255,0.06); backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; overflow: hidden;
+  background: var(--fill-soft); backdrop-filter: blur(20px);
+  border: 1px solid var(--border-soft); border-radius: 16px; overflow: hidden;
   cursor: pointer; transition: all 0.2s; position: relative;
   &:hover { transform: translateY(-3px); border-color: rgba(108,99,255,0.4); }
   &.selected { border-color: #6C63FF; background: rgba(108,99,255,0.15); }
@@ -40,19 +40,19 @@
 
 .pick-info { padding: 0.75rem;
   h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
-  p { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+  p { font-size: 0.8rem; color: var(--muted); }
 }
 
-.comparison-table-wrap { margin-top: 2rem; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+.comparison-table-wrap { margin-top: 2rem; border-radius: 20px; overflow: hidden; border: 1px solid var(--border-soft); }
 
 .sticky-header {
   display: grid;
   grid-template-columns: 200px repeat(3, 1fr);
   background: rgba(108,99,255,0.15);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--border-soft);
   position: sticky; top: 64px; z-index: 10;
-  .spec-label-col { padding: 1.5rem; color: rgba(255,255,255,0.5); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; }
+  .spec-label-col { padding: 1.5rem; color: var(--muted); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; }
   .car-col { padding: 1.25rem; text-align: center;
     img { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 0.75rem; }
     h3 { font-size: 0.95rem; font-weight: 700; }
@@ -65,12 +65,12 @@
 .spec-row {
   display: grid;
   grid-template-columns: 200px repeat(3, 1fr);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--divider);
   &:last-child { border-bottom: none; }
   &.price-row .spec-val { font-weight: 700; color: #6C63FF; }
 }
 
-.spec-label { padding: 1rem 1.5rem; color: rgba(255,255,255,0.5); font-size: 0.85rem; display: flex; align-items: center; }
+.spec-label { padding: 1rem 1.5rem; color: var(--muted); font-size: 0.85rem; display: flex; align-items: center; }
 
 .spec-val {
   padding: 1rem; text-align: center; font-size: 0.9rem;
@@ -82,12 +82,12 @@
 
 .empty-state {
   margin: 3rem auto; max-width: 400px;
-  background: rgba(255,255,255,0.05); backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+  background: var(--fill-dim); backdrop-filter: blur(20px);
+  border: 1px solid var(--border-soft); border-radius: 20px;
   padding: 3rem; text-align: center;
   .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
   h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; margin-bottom: 0.5rem; }
-  p { color: rgba(255,255,255,0.4); font-size: 0.9rem; }
+  p { color: var(--text-tertiary); font-size: 0.9rem; }
 }
 
 .slots-row { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-bottom:2rem; @media(max-width:768px){grid-template-columns:1fr;} }
@@ -100,14 +100,14 @@
 .remove-btn { position:absolute; top:0.5rem; right:0.5rem; background:rgba(255,101,132,0.2); border:none; color:#FF6584; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; justify-content:center; }
 .slot-empty { padding:1.5rem; min-height:200px; display:flex; flex-direction:column; gap:1rem;
   .search-wrap { position:relative; }
-  input { width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.75rem 1rem; color:#fff; font-size:0.9rem; outline:none; box-sizing:border-box; &:focus{border-color:#6C63FF;} }
+  input { width:100%; background: var(--fill-soft); border: 1px solid var(--border-soft); border-radius:10px; padding:0.75rem 1rem; color: var(--input-color); font-size:0.9rem; outline:none; box-sizing:border-box; &:focus{border-color:#6C63FF;} }
 }
-.search-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#141828; border:1px solid rgba(255,255,255,0.1); border-radius:10px; z-index:50; overflow:hidden; }
+.search-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background: var(--dropdown-bg); border: 1px solid var(--border-soft); border-radius:10px; z-index:50; overflow:hidden; }
 .drop-item { display:flex; justify-content:space-between; padding:0.6rem 1rem; font-size:0.875rem; cursor:pointer; &:hover{background:rgba(108,99,255,0.15);} }
 .drop-price { color:var(--muted); font-size:0.8rem; }
 .drop-empty { padding:0.75rem 1rem; color:var(--muted); font-size:0.875rem; }
 .popular-picks { display:flex; flex-wrap:wrap; gap:0.5rem; }
-.pick-chip { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:50px; padding:0.3rem 0.75rem; font-size:0.78rem; cursor:pointer; transition:all 0.15s; &:hover{background:rgba(108,99,255,0.2);border-color:#6C63FF;} }
+.pick-chip { background: var(--fill-dim); border: 1px solid var(--border-soft); border-radius:50px; padding:0.3rem 0.75rem; font-size:0.78rem; cursor:pointer; transition:all 0.15s; &:hover{background:rgba(108,99,255,0.2);border-color:#6C63FF;} }
 .comparison-table { padding:0; overflow:hidden;
   .comp-header { display:grid; gap:0; border-bottom:2px solid rgba(108,99,255,0.3); }
   .comp-label-col { padding:1.25rem; font-weight:700; font-size:0.85rem; color:var(--muted); background:rgba(0,0,0,0.2); }

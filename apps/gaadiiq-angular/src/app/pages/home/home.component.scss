@@ -269,7 +269,7 @@
     font-size: 0.9rem;
     max-width: 85%;
     &.ai { background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.2); align-self: flex-start; }
-    &.user { background: rgba(255,255,255,0.08); align-self: flex-end; }
+    &.user { background: var(--fill-medium); align-self: flex-end; }
   }
   .ai-result {
     margin-top: 0.5rem;
