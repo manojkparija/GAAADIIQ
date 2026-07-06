@@ -23,7 +23,7 @@ export class NewsService {
   readonly articles = signal<NewsArticle[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly hasApiKey = GNEWS_API_KEY !== 'YOUR_GNEWS_API_KEY';
+  readonly hasApiKey: boolean = GNEWS_API_KEY.length > 0 && !GNEWS_API_KEY.startsWith('YOUR_');
 
   constructor(private http: HttpClient) {}
 
