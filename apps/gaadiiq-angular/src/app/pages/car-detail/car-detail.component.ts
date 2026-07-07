@@ -1,8 +1,145 @@
-import { Component, signal, computed, OnInit, effect, inject } from '@angular/core';
+import { Component, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car } from '../../services/cars-data.service';
+
+interface NewCarVariant { name: string; minPrice: number; maxPrice: number; count?: number; }
+interface NewCarHighlight { icon: string; title: string; caption: string; }
+interface NewCarUpdate { text: string; date: string; }
+interface NewCarMeta { priceRange: [number, number]; variants: NewCarVariant[]; highlights: NewCarHighlight[]; updates: NewCarUpdate[]; }
+
+const NEW_CAR_META: Record<string, NewCarMeta> = {
+  'Maruti Suzuki Swift': {
+    priceRange: [649000, 999000],
+    variants: [
+      { name: 'LXi', minPrice: 649000, maxPrice: 649000 },
+      { name: 'VXi', minPrice: 749000, maxPrice: 809000, count: 2 },
+      { name: 'VXi S-CNG', minPrice: 819000, maxPrice: 819000 },
+      { name: 'ZXi', minPrice: 899000, maxPrice: 959000, count: 2 },
+      { name: 'ZXi S-CNG', minPrice: 919000, maxPrice: 919000 },
+      { name: 'ZXi+', minPrice: 969000, maxPrice: 999000, count: 2 },
+    ],
+    highlights: [
+      { icon: '⚡', title: 'Z-Series Engine', caption: 'New 1.2L Z12E 3-cylinder engine with 81.58 PS and S-CNG option.' },
+      { icon: '🛡️', title: '6 Airbags Standard', caption: '6 airbags across all variants — best-in-class safety.' },
+      { icon: '📱', title: 'SmartPlay Pro+', caption: '17.78 cm touchscreen with wireless Android Auto & Apple CarPlay.' },
+      { icon: '🌿', title: '32.85 km/kg CNG', caption: 'Best-in-segment S-CNG mileage with factory-fitted CNG kit.' },
+    ],
+    updates: [
+      { text: 'Maruti Swift Z-Series S-CNG now available at select dealerships nationwide.', date: '15 Jun 2026' },
+      { text: 'Swift 2025 receives 5-star Global NCAP rating for adult occupant protection.', date: '10 Mar 2026' },
+      { text: 'New Swift launched with Z-Series engine; prices start at ₹6.49 Lakh.', date: '9 Jan 2026' },
+    ],
+  },
+  'Tata Punch': {
+    priceRange: [570000, 1067000],
+    variants: [
+      { name: 'Smart', minPrice: 570000, maxPrice: 680000, count: 2 },
+      { name: 'Pure', minPrice: 660000, maxPrice: 761000, count: 2 },
+      { name: 'Pure Plus', minPrice: 710000, maxPrice: 867000, count: 4 },
+      { name: 'Pure Plus (S)', minPrice: 745000, maxPrice: 846000, count: 2 },
+      { name: 'Adventure', minPrice: 820000, maxPrice: 970000, count: 3 },
+      { name: 'Accomplished', minPrice: 910000, maxPrice: 1067000, count: 4 },
+    ],
+    highlights: [
+      { icon: '⭐', title: '5-Star BNCAP', caption: 'Scored 30.58/32 for adult occupants and 45/49 for child safety.' },
+      { icon: '🔄', title: 'CNG Automatic', caption: 'First-in-segment CNG with AMT and paddle shifters.' },
+      { icon: '📺', title: '10.25" Infotainment', caption: 'Cleaner dual-tone dashboard with large touchscreen.' },
+      { icon: '📷', title: '360-Degree Camera', caption: '360° surround-view camera for easy parking.' },
+    ],
+    updates: [
+      { text: 'Tata Punch receives a price hike of up to Rs. 7,000.', date: '6 Jul 2026' },
+      { text: 'Punch enters the seven lakh sales club in four years and three months.', date: '1 Feb 2026' },
+      { text: 'Tata Punch achieves five-star BNCAP certification — 30.58 out of 32 points.', date: '21 Jan 2026' },
+    ],
+  },
+  'Hyundai Creta': {
+    priceRange: [1100000, 2015000],
+    variants: [
+      { name: 'E', minPrice: 1100000, maxPrice: 1100000 },
+      { name: 'EX', minPrice: 1318000, maxPrice: 1318000 },
+      { name: 'S', minPrice: 1400000, maxPrice: 1500000, count: 2 },
+      { name: 'S(O)', minPrice: 1550000, maxPrice: 1620000, count: 2 },
+      { name: 'SX', minPrice: 1720000, maxPrice: 1800000, count: 3 },
+      { name: 'SX(O)', minPrice: 1900000, maxPrice: 2015000, count: 2 },
+    ],
+    highlights: [
+      { icon: '🎨', title: 'ADAS Level 2', caption: 'Advanced driver-assistance with lane keep, auto emergency braking.' },
+      { icon: '📺', title: 'Dual 10.25" Screens', caption: 'Panoramic dual-screen setup for driver and infotainment.' },
+      { icon: '🔋', title: 'Hybrid Option', caption: '48V mild hybrid powertrain available for better fuel efficiency.' },
+      { icon: '🛡️', title: '6 Airbags', caption: '6 airbags standard with ESC, VSM and hill assist.' },
+    ],
+    updates: [
+      { text: 'Hyundai Creta facelift launched with updated interior and new ADAS features.', date: '1 Apr 2026' },
+      { text: 'Creta crosses 10 lakh cumulative sales milestone in India.', date: '15 Feb 2026' },
+      { text: 'Creta EV variant gets new 51.4 kWh long-range battery option.', date: '10 Jan 2026' },
+    ],
+  },
+  'Tata Nexon': {
+    priceRange: [810000, 1475000],
+    variants: [
+      { name: 'Smart', minPrice: 810000, maxPrice: 810000 },
+      { name: 'Smart+', minPrice: 920000, maxPrice: 970000, count: 2 },
+      { name: 'Pure', minPrice: 1020000, maxPrice: 1060000, count: 2 },
+      { name: 'Creative', minPrice: 1250000, maxPrice: 1310000, count: 2 },
+      { name: 'Fearless', minPrice: 1350000, maxPrice: 1475000, count: 3 },
+    ],
+    highlights: [
+      { icon: '⭐', title: '5-Star Global NCAP', caption: 'India\'s first 5-star rated car — 16.45/17 for adult safety.' },
+      { icon: '🔋', title: 'EV Option', caption: 'Available as Nexon EV with 40.5 kWh battery and 465 km range.' },
+      { icon: '🎮', title: 'Arcade.ev Ready', caption: 'Advanced connected car tech with over-the-air updates.' },
+      { icon: '🛡️', title: '6 Airbags', caption: '6 airbags with ADAS, front & rear parking sensors.' },
+    ],
+    updates: [
+      { text: 'Tata Nexon facelift launched with new turbo petrol engine and ADAS features.', date: '20 May 2026' },
+      { text: 'Nexon EV gets new 40.5 kWh battery with improved 465 km range.', date: '10 Mar 2026' },
+      { text: 'Nexon becomes best-selling compact SUV for 2025-26 fiscal year.', date: '5 Apr 2026' },
+    ],
+  },
+  'Kia Seltos': {
+    priceRange: [1089000, 2000000],
+    variants: [
+      { name: 'HTK', minPrice: 1089000, maxPrice: 1089000 },
+      { name: 'HTK+', minPrice: 1342000, maxPrice: 1420000, count: 2 },
+      { name: 'HTX', minPrice: 1570000, maxPrice: 1650000, count: 2 },
+      { name: 'HTX+', minPrice: 1735000, maxPrice: 1800000, count: 2 },
+      { name: 'GTX+', minPrice: 1900000, maxPrice: 2000000, count: 2 },
+    ],
+    highlights: [
+      { icon: '🖥️', title: 'Panoramic Dual Display', caption: '26-inch dual-screen curved display — biggest in segment.' },
+      { icon: '🚗', title: '3 Powertrain Options', caption: 'Petrol, Diesel and Petrol Turbo DCT available.' },
+      { icon: '🎵', title: 'Bose Premium Sound', caption: '8-speaker Bose premium sound system in top variants.' },
+      { icon: '🛡️', title: 'ADAS Level 2', caption: '19 ADAS safety features including Forward Collision Warning.' },
+    ],
+    updates: [
+      { text: 'Kia Seltos 2025 gets new panoramic curved display and updated ADAS suite.', date: '1 Jun 2026' },
+      { text: 'Seltos X-Line dark edition launched with new colour options.', date: '20 Mar 2026' },
+      { text: 'Kia Seltos crosses 5 lakh cumulative sales in India.', date: '10 Jan 2026' },
+    ],
+  },
+  'Mahindra XUV700': {
+    priceRange: [1399000, 2699000],
+    variants: [
+      { name: 'MX', minPrice: 1399000, maxPrice: 1399000 },
+      { name: 'AX3', minPrice: 1649000, maxPrice: 1749000, count: 2 },
+      { name: 'AX5', minPrice: 1849000, maxPrice: 1999000, count: 3 },
+      { name: 'AX7', minPrice: 2099000, maxPrice: 2399000, count: 3 },
+      { name: 'AX7 L', minPrice: 2499000, maxPrice: 2699000, count: 2 },
+    ],
+    highlights: [
+      { icon: '🤖', title: 'ADAS Level 2', caption: 'AdrenoX ADAS with 5 radars and cameras for autonomous driving assistance.' },
+      { icon: '🔊', title: 'Sony 3D Sound', caption: '12-speaker Sony 3D surround sound in top AX7 L variants.' },
+      { icon: '💪', title: '200 PS Diesel', caption: 'Powerful 2.2L mHawk diesel with 450 Nm torque.' },
+      { icon: '7️⃣', title: '7-Seater Option', caption: 'Available in 5 and 7-seater configurations.' },
+    ],
+    updates: [
+      { text: 'XUV700 AX7 L gets new stargazer moonroof and updated ADAS.', date: '15 May 2026' },
+      { text: 'Mahindra XUV700 waitlist reopens; deliveries within 4 weeks.', date: '5 Mar 2026' },
+      { text: 'XUV700 wins Indian Car of the Year award for third consecutive year.', date: '12 Jan 2026' },
+    ],
+  },
+};
 import { TcoService } from '../../services/tco.service';
 import { ReviewsService, CarReview } from '../../services/reviews.service';
 import { SeoService } from '../../services/seo.service';
@@ -185,4 +322,16 @@ export class CarDetailComponent implements OnInit {
 
   formatPrice(p: number) { return p >= 100000 ? `₹${(p / 100000).toFixed(1)}L` : `₹${p.toLocaleString()}`; }
   stars(n: number) { return Array.from({length: 5}, (_, i) => i < n ? '★' : '☆'); }
+
+  get isNewCar() { return this.car?.km === 0 && this.car?.year >= 2025; }
+  get newCarMeta(): NewCarMeta | null {
+    if (!this.isNewCar) return null;
+    const key = `${this.car.make} ${this.car.model}`;
+    return NEW_CAR_META[key] ?? null;
+  }
+  formatLakh(p: number) { return `₹${(p / 100000).toFixed(2)} Lakh`; }
+  formatLakhRange(min: number, max: number) {
+    if (min === max) return `₹${(min / 100000).toFixed(2)} Lakh`;
+    return `₹${(min / 100000).toFixed(2)} - ${(max / 100000).toFixed(2)} Lakh`;
+  }
 }

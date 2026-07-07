@@ -39,6 +39,7 @@
         <div class="tabs glass-card">
           <div class="tab-nav">
             <button [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">Overview</button>
+            <button *ngIf="isNewCar && newCarMeta" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">Variants</button>
             <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">Specs</button>
             <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">Features</button>
             <button [class.active]="activeTab()==='ownership'" (click)="activeTab.set('ownership')">Cost of Ownership</button>
@@ -53,6 +54,32 @@
               <div class="pill"><span>👤</span><div><div class="pill-label">Owners</div><div class="pill-val">{{ car.owners }}</div></div></div>
               <div class="pill"><span>🎨</span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
               <div class="pill"><span>📍</span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
+            </div>
+          </div>
+
+          <!-- VARIANTS (new cars only) -->
+          <div class="tab-content" *ngIf="activeTab()==='variants' && newCarMeta">
+            <div class="variants-header">
+              <p class="variants-sub">{{ car.make }} {{ car.model }} price starts at
+                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[0]) }}</strong> and goes up to
+                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[1]) }}</strong> (ex-showroom).
+              </p>
+              <div class="variants-filter-chips">
+                <span class="chip active">All</span>
+                <span class="chip">Petrol</span>
+                <span class="chip">CNG</span>
+                <span class="chip">Manual</span>
+                <span class="chip">Automatic</span>
+              </div>
+            </div>
+            <div class="variants-list">
+              <div class="variant-row" *ngFor="let v of newCarMeta!.variants">
+                <div class="variant-name-wrap">
+                  <span class="variant-name">{{ car.model }} {{ v.name }}</span>
+                  <span *ngIf="v.count && v.count > 1" class="variant-count-badge">View {{ v.count }} Variants</span>
+                </div>
+                <span class="variant-price gradient-text">{{ formatLakhRange(v.minPrice, v.maxPrice) }}</span>
+              </div>
             </div>
           </div>
 
@@ -204,6 +231,31 @@
             </div>
           </div>
         </div>
+        <!-- HIGHLIGHTS (new cars only) -->
+        <div class="highlights-card glass-card" *ngIf="isNewCar && newCarMeta">
+          <div class="section-title">⭐ Top Things to Know About {{ car.make }} {{ car.model }}</div>
+          <div class="highlights-grid">
+            <div class="highlight-item" *ngFor="let h of newCarMeta!.highlights">
+              <div class="highlight-icon">{{ h.icon }}</div>
+              <div class="highlight-title">{{ h.title }}</div>
+              <div class="highlight-caption">{{ h.caption }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LATEST UPDATES (new cars only) -->
+        <div class="updates-card glass-card" *ngIf="isNewCar && newCarMeta">
+          <div class="section-title">📰 {{ car.make }} {{ car.model }} Latest Updates</div>
+          <ul class="updates-list">
+            <li *ngFor="let u of newCarMeta!.updates" class="update-item">
+              <span class="update-dot"></span>
+              <div>
+                <div class="update-text">{{ u.text }}</div>
+                <div class="update-date">{{ u.date }}</div>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <!-- RIGHT -->
@@ -216,7 +268,13 @@
           </div>
           <h1>{{ car.make }} {{ car.model }}</h1>
           <div style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">{{ car.variant }} · {{ car.year }}</div>
-          <div class="big-price gradient-text">{{ formatPrice(car.price) }}</div>
+          <ng-container *ngIf="isNewCar && newCarMeta; else singlePrice">
+            <div class="big-price gradient-text">{{ formatLakhRange(newCarMeta!.priceRange[0], newCarMeta!.priceRange[1]) }}</div>
+            <div style="color:var(--muted);font-size:0.8rem;margin-bottom:0.25rem">Ex-Showroom Price</div>
+          </ng-container>
+          <ng-template #singlePrice>
+            <div class="big-price gradient-text">{{ formatPrice(car.price) }}</div>
+          </ng-template>
           <div style="color:var(--muted);font-size:0.85rem">EMI from ₹{{ loan.emi.toLocaleString() }}/mo · No cost EMI available</div>
           <div class="action-btns">
             <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem">📞 Contact Seller</button>
