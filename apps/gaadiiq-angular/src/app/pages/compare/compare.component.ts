@@ -30,7 +30,7 @@ export class CompareComponent {
     { label: 'City', key: 'city', format: (v: any) => String(v) || '—', higher: null },
   ];
 
-  constructor(private carsData: CarsDataService, private seo: SeoService, public tco: TcoService) {
+  constructor(public carsData: CarsDataService, private seo: SeoService, public tco: TcoService) {
     seo.setPage('Compare Cars', 'Compare up to 3 cars side by side. Specs, features, price, AI valuation — all in one place.');
   }
 
