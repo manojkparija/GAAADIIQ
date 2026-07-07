@@ -90,7 +90,7 @@ export class ListingsComponent implements OnInit {
 
   swiftGallery = [
     { src: 'assets/cars/swift/front.jpg',      label: 'Front View',     pos: 'center 65%' },
-    { src: 'assets/cars/swift/rear-wide.jpg',  label: 'Side & Rear',    pos: 'center center' },
+    { src: 'assets/cars/swift/rear-wide.jpg',  label: 'Side & Rear',    pos: 'center 85%' },
     { src: 'assets/cars/swift/trio.jpg',       label: 'Colour Range',   pos: 'center center' },
     { src: 'assets/cars/swift/interior.jpg',   label: 'Interior',       pos: 'center center' },
     { src: 'assets/cars/swift/rear-motion.jpg',label: 'On the Road',    pos: 'center center' },
