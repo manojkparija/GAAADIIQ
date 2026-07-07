@@ -18,7 +18,8 @@
           <div class="main-img">
             <img [src]="(car.images || [car.image])[activeImg()]" [alt]="car.make + ' ' + car.model"
                  referrerpolicy="no-referrer"
-                 onerror="this.onerror=null;this.src='https://placehold.co/800x500/1a1f35/6C63FF?text=No+Image'">
+                 [style.objectPosition]="(car.images || [car.image])[activeImg()]?.includes('swift/front') ? 'center 65%' : 'center center'"
+                 onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
             <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
             <button class="like-fab" (click)="liked.set(!liked())" [class.liked]="liked()">
               {{ liked() ? '❤️' : '🤍' }}
@@ -28,7 +29,8 @@
             <div *ngFor="let img of (car.images || [car.image]); let i = index"
               class="thumb" [class.active]="activeImg() === i" (click)="activeImg.set(i)">
               <img [src]="img" alt="thumb" referrerpolicy="no-referrer"
-                   onerror="this.onerror=null;this.src='https://placehold.co/120x80/1a1f35/6C63FF?text=img'">
+                   [style.objectPosition]="img?.includes('swift/front') ? 'center 65%' : 'center center'"
+                   onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
             </div>
           </div>
         </div>

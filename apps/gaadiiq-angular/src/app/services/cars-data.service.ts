@@ -56,12 +56,14 @@ export class CarsDataService {
       transmission: row.transmission,
       badge: row.badge ?? '',
       badgeType: row.badge_type ?? '',
-      image: row.image || LOCAL_IMAGES[`${row.make} ${row.model}`]?.[0] || '',
+      image: LOCAL_IMAGES[`${row.make} ${row.model}`]?.[0] || row.image || '',
       images: (() => {
+        const local = LOCAL_IMAGES[`${row.make} ${row.model}`];
+        if (local) return local;
         const dbImgs = row.car_images
           ? [...row.car_images].sort((a: any, b: any) => a.sort_order - b.sort_order).map((i: any) => i.url)
           : (row.image ? [row.image] : []);
-        return dbImgs.length > 0 ? dbImgs : (LOCAL_IMAGES[`${row.make} ${row.model}`] ?? []);
+        return dbImgs;
       })(),
       rating: parseFloat(row.rating) || 0,
       reviews: row.reviews ?? 0,
