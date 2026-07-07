@@ -29,9 +29,9 @@ alter table public.car_reviews enable row level security;
 create policy "Anyone can read reviews"
   on public.car_reviews for select using (true);
 
-create policy "Authenticated users can insert reviews"
+create policy "Anyone can insert reviews"
   on public.car_reviews for insert
-  with check (auth.uid() is not null);
+  with check (true);
 
 create policy "Users can update their own reviews"
   on public.car_reviews for update

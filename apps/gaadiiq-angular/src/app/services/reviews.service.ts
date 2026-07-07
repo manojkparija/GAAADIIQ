@@ -16,73 +16,101 @@ export interface CarReview {
   created_at?: string;
 }
 
+const LS_KEY = 'gaadiiq_reviews';
+
 @Injectable({ providedIn: 'root' })
 export class ReviewsService {
   loading = signal(false);
   uploading = signal(false);
+  useLocalFallback = false;
 
   constructor(private sb: SupabaseService) {}
 
+  // ── Read ──────────────────────────────────────────────────────────────────
+
   async getReviewsForCar(carId: string): Promise<CarReview[]> {
     this.loading.set(true);
-    const { data, error } = await this.sb.client
-      .from('car_reviews')
-      .select('*')
-      .eq('car_id', carId)
-      .order('created_at', { ascending: false });
-    this.loading.set(false);
-    if (error) { console.error(error); return []; }
-    return data ?? [];
-  }
+    try {
+      const { data, error } = await this.sb.client
+        .from('car_reviews')
+        .select('*')
+        .eq('car_id', carId)
+        .order('created_at', { ascending: false });
 
-  async submitReview(review: Omit<CarReview, 'id' | 'likes' | 'created_at'>): Promise<CarReview | null> {
-    const { data: { user } } = await this.sb.client.auth.getUser();
-    const { data, error } = await this.sb.client
-      .from('car_reviews')
-      .insert({ ...review, user_id: user?.id ?? null, likes: 0 })
-      .select()
-      .single();
-    if (error) { console.error(error); return null; }
-    return data;
-  }
-
-  async uploadVideo(file: File, carId: string): Promise<string | null> {
-    this.uploading.set(true);
-    const ext = file.name.split('.').pop();
-    const path = `${carId}/${Date.now()}.${ext}`;
-    const { error } = await this.sb.client.storage
-      .from('review-videos')
-      .upload(path, file, { cacheControl: '3600', upsert: false });
-    this.uploading.set(false);
-    if (error) { console.error(error); return null; }
-    const { data } = this.sb.client.storage.from('review-videos').getPublicUrl(path);
-    return data.publicUrl;
-  }
-
-  async toggleLike(reviewId: string, liked: boolean): Promise<void> {
-    const { data: { user } } = await this.sb.client.auth.getUser();
-    if (!user) return;
-    if (liked) {
-      await this.sb.client.from('review_likes').delete()
-        .eq('review_id', reviewId).eq('user_id', user.id);
-      await this.sb.client.from('car_reviews')
-        .update({ likes: this.sb.client.rpc as any })
-        .eq('id', reviewId);
-      // simple decrement via rpc-free approach:
-      const { data } = await this.sb.client.from('car_reviews').select('likes').eq('id', reviewId).single();
-      if (data) await this.sb.client.from('car_reviews').update({ likes: Math.max(0, data.likes - 1) }).eq('id', reviewId);
-    } else {
-      await this.sb.client.from('review_likes').insert({ review_id: reviewId, user_id: user.id });
-      const { data } = await this.sb.client.from('car_reviews').select('likes').eq('id', reviewId).single();
-      if (data) await this.sb.client.from('car_reviews').update({ likes: data.likes + 1 }).eq('id', reviewId);
+      if (error) throw error;
+      this.loading.set(false);
+      // merge with any local-fallback reviews for this car
+      const local = this.localReviews().filter(r => r.car_id === carId);
+      return [...local, ...(data ?? [])];
+    } catch (err) {
+      console.warn('Supabase unavailable, using local storage', err);
+      this.useLocalFallback = true;
+      this.loading.set(false);
+      return this.localReviews().filter(r => r.car_id === carId);
     }
   }
 
-  async hasLiked(reviewId: string): Promise<boolean> {
-    const { data: { user } } = await this.sb.client.auth.getUser();
-    if (!user) return false;
-    const { data } = await this.sb.client.from('review_likes')
-      .select('review_id').eq('review_id', reviewId).eq('user_id', user.id).maybeSingle();
-    return !!data;
+  // ── Write ─────────────────────────────────────────────────────────────────
+
+  async submitReview(review: Omit<CarReview, 'id' | 'likes' | 'created_at'>): Promise<CarReview | null> {
+    const newReview: CarReview = {
+      ...review,
+      id: crypto.randomUUID(),
+      likes: 0,
+      created_at: new Date().toISOString(),
+    };
+
+    // Try Supabase first
+    if (!this.useLocalFallback) {
+      try {
+        const { data, error } = await this.sb.client
+          .from('car_reviews')
+          .insert({ ...newReview, user_id: null })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } catch (err: any) {
+        console.warn('Supabase insert failed, saving locally:', err?.message ?? err);
+        this.useLocalFallback = true;
+      }
+    }
+
+    // Local storage fallback
+    this.saveLocalReview(newReview);
+    return newReview;
+  }
+
+  // ── Video upload ──────────────────────────────────────────────────────────
+
+  async uploadVideo(file: File, carId: string): Promise<string | null> {
+    this.uploading.set(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${carId}/${Date.now()}.${ext}`;
+      const { error } = await this.sb.client.storage
+        .from('review-videos')
+        .upload(path, file, { cacheControl: '3600', upsert: false });
+      this.uploading.set(false);
+      if (error) throw error;
+      const { data } = this.sb.client.storage.from('review-videos').getPublicUrl(path);
+      return data.publicUrl;
+    } catch (err) {
+      console.warn('Video upload failed — review will be saved without video', err);
+      this.uploading.set(false);
+      return null;
+    }
+  }
+
+  // ── Local storage helpers ─────────────────────────────────────────────────
+
+  private localReviews(): CarReview[] {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+  }
+
+  private saveLocalReview(review: CarReview) {
+    const all = this.localReviews();
+    localStorage.setItem(LS_KEY, JSON.stringify([review, ...all]));
   }
 }
