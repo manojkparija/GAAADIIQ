@@ -21,22 +21,22 @@
       <div class="link-group">
         <h4>Sell</h4>
         <a routerLink="/list-car">List Your Car</a>
-        <a href="#">AI Valuation</a>
-        <a href="#">Seller Dashboard</a>
-        <a href="#">Pricing Plans</a>
+        <a routerLink="/list-car" [queryParams]="{tab:'valuation'}">AI Valuation</a>
+        <a routerLink="/dealer-dashboard">Seller Dashboard</a>
+        <a routerLink="/pricing-plans">Pricing Plans</a>
       </div>
       <div class="link-group">
         <h4>Tools</h4>
         <a routerLink="/emi-calculator">EMI Calculator</a>
         <a routerLink="/compare">Car Comparison</a>
         <a routerLink="/ai-advisor">AI Car Advisor</a>
-        <a href="#">Price Alerts</a>
+        <a routerLink="/price-alerts">Price Alerts</a>
       </div>
       <div class="link-group">
         <h4>Account</h4>
         <a routerLink="/login">Sign In</a>
         <a routerLink="/register">Create Account</a>
-        <a href="#">About Us</a>
+        <a routerLink="/reviews-news">About Us</a>
         <a href="mailto:support@gaadiiq.com">Contact</a>
       </div>
     </div>
