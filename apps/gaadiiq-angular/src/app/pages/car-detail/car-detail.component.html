@@ -40,7 +40,7 @@
             <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">Specs</button>
             <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">Features</button>
             <button [class.active]="activeTab()==='ownership'" (click)="activeTab.set('ownership')">Cost of Ownership</button>
-            <button [class.active]="activeTab()==='reviews'" (click)="activeTab.set('reviews')">Reviews ({{ reviews.length }})</button>
+            <button [class.active]="activeTab()==='reviews'" (click)="activeTab.set('reviews')">Reviews ({{ reviews().length }})</button>
           </div>
 
           <!-- OVERVIEW -->

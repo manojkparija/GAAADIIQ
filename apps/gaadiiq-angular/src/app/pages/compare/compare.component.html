@@ -36,7 +36,7 @@
             </div>
           </div>
           <div class="popular-picks">
-            <div class="pick-chip" *ngFor="let c of allCars.slice(0,6)" (click)="selectCar(slot, c)">
+            <div class="pick-chip" *ngFor="let c of carsData.cars().slice(0,6)" (click)="selectCar(slot, c)">
               {{ c.make }} {{ c.model }}
             </div>
           </div>
