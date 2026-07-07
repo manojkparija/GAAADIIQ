@@ -88,6 +88,17 @@ export class ListingsComponent implements OnInit {
   newCount  = computed(() => this.carsData.cars().filter(c => c.km === 0).length);
   usedCount = computed(() => this.carsData.cars().filter(c => c.km > 0).length);
 
+  swiftImages = [
+    { src: 'assets/cars/swift/front.jpg',       label: 'Front View' },
+    { src: 'assets/cars/swift/trio.jpg',         label: 'Colour Range' },
+    { src: 'assets/cars/swift/rear-motion.jpg',  label: 'Rear Motion' },
+    { src: 'assets/cars/swift/rear.jpg',         label: 'Rear View' },
+    { src: 'assets/cars/swift/interior.jpg',     label: 'Interior' },
+    { src: 'assets/cars/swift/steering.jpg',     label: 'Steering' },
+  ];
+  showcaseActive = this.swiftImages[0].src;
+  swiftActiveIdx = computed(() => this.swiftImages.findIndex(i => i.src === this.showcaseActive));
+
   formatPrice(p: number) {
     if (p >= 10000000) return `₹${(p/10000000).toFixed(1)} Cr`;
     if (p >= 100000)   return `₹${(p/100000).toFixed(0)}L`;

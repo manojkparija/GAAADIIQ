@@ -106,6 +106,34 @@
       <button class="btn-gradient" style="width:100%;margin-top:1rem" (click)="sidebarOpen.set(false)">Apply Filters</button>
     </aside>
 
+    <!-- NEW CARS SWIFT SHOWCASE -->
+    <div class="new-car-showcase glass-card" *ngIf="carType() === 'New' && !loading()">
+      <div class="showcase-header">
+        <div>
+          <div class="showcase-tag">⚡ Featured New Car</div>
+          <h3>The Epic New <span class="gradient-text">Maruti Swift</span></h3>
+          <p>India's best-selling hatchback — reimagined with Z-Series engine &amp; 6 airbags standard</p>
+        </div>
+        <div class="showcase-stats">
+          <div class="sc-stat"><span class="sc-val">25.75</span><span class="sc-unit">km/l</span><span class="sc-label">Fuel Economy</span></div>
+          <div class="sc-stat"><span class="sc-val">6</span><span class="sc-unit">Airbags</span><span class="sc-label">All Variants</span></div>
+          <div class="sc-stat"><span class="sc-val">32.85</span><span class="sc-unit">km/kg</span><span class="sc-label">S-CNG Mileage</span></div>
+        </div>
+      </div>
+      <div class="showcase-gallery">
+        <div class="sc-main">
+          <img [src]="showcaseActive" alt="Maruti Swift" class="sc-main-img" [style.objectPosition]="showcaseActive.includes('front') ? 'center 65%' : 'center center'">
+        </div>
+        <div class="sc-thumbs">
+          <img *ngFor="let img of swiftImages" [src]="img.src" [alt]="img.label"
+            [class.active]="showcaseActive === img.src"
+            (click)="showcaseActive = img.src"
+            [style.objectPosition]="img.src.includes('front') ? 'center 65%' : 'center center'">
+          <div class="sc-label-pill">{{ swiftImages[swiftActiveIdx()]?.label }}</div>
+        </div>
+      </div>
+    </div>
+
     <!-- LOADING -->
     <div *ngIf="loading()" style="grid-column:1/-1;text-align:center;padding:4rem">
       <div style="font-size:3rem;margin-bottom:1rem">⏳</div>
