@@ -155,6 +155,21 @@
 .cat-badge-green  { background: rgba(67,233,123,0.15);  color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
 .cat-badge-gold   { background: rgba(255,215,0,0.15);   color: #B8860B; border: 1px solid rgba(255,215,0,0.3); }
 
+// ── Write a Review CTA ──────────────────────────────────────────────────────
+.write-review-cta { padding: 0 1.5rem 2rem; }
+.wrc-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+  padding: 1.5rem 2rem; flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(108,99,255,0.12), rgba(255,101,132,0.08));
+  border: 1px solid rgba(108,99,255,0.3);
+}
+.wrc-left { display: flex; align-items: center; gap: 1.25rem; }
+.wrc-icon { font-size: 2.5rem; flex-shrink: 0; }
+.wrc-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.25rem; }
+.wrc-sub { font-size: 0.85rem; color: var(--muted); }
+.wrc-btn { white-space: nowrap; flex-shrink: 0; }
+@media (max-width: 600px) { .wrc-card { flex-direction: column; text-align: center; } .wrc-left { flex-direction: column; } .wrc-btn { width: 100%; text-align: center; } }
+
 // ── Featured ────────────────────────────────────────────────────────────────
 .featured-section {
   padding: 2rem 1.5rem 1rem;

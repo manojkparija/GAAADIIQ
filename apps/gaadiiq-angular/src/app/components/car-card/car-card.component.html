@@ -32,7 +32,10 @@
     </div>
     <div class="ai-row">
       <span class="ai-tag">🤖 AI: Fair Price</span>
-      <button class="btn-gradient card-cta">View Details</button>
+      <div class="card-actions">
+        <a [routerLink]="['/cars', car.id]" [queryParams]="{tab:'reviews'}" class="btn-outline card-cta-sm" (click)="$event.stopPropagation()">✍️ Review</a>
+        <button class="btn-gradient card-cta">View Details</button>
+      </div>
     </div>
   </div>
 </div>

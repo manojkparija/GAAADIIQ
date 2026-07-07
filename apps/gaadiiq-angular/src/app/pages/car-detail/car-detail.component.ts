@@ -52,6 +52,8 @@ export class CarDetailComponent implements OnInit {
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if (tab) this.activeTab.set(tab);
     if (!this.carsData.loading()) {
       this.resolveCar(id);
     }

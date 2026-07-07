@@ -107,6 +107,8 @@
       color: #a78bfa;
       font-weight: 600;
     }
+    .card-actions { display: flex; gap: 0.4rem; align-items: center; }
     .card-cta { padding: 0.45rem 1rem; font-size: 0.8rem; }
+    .card-cta-sm { padding: 0.35rem 0.7rem; font-size: 0.75rem; text-decoration: none; }
   }
 }
