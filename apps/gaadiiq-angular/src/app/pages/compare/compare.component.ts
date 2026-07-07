@@ -38,6 +38,16 @@ export class CompareComponent {
     return [this.searchA, this.searchB, this.searchC][slot]();
   }
 
+  popularPicks = computed(() => {
+    const seen = new Set<string>();
+    const picks: Car[] = [];
+    for (const c of this.carsData.cars()) {
+      if (!seen.has(c.make)) { seen.add(c.make); picks.push(c); }
+      if (picks.length === 6) break;
+    }
+    return picks;
+  });
+
   filtered(slot: number) {
     const q = this.search(slot).toLowerCase();
     const all = this.carsData.cars();
