@@ -20,17 +20,36 @@
       <h2>Tell us about your car</h2>
 
       <div class="form-grid">
+        <!-- Make -->
         <div class="form-group">
           <label>Car Make *</label>
-          <select [(ngModel)]="form.make">
+          <select [(ngModel)]="form.make" (ngModelChange)="onMakeChange()">
             <option value="">Select make</option>
             <option *ngFor="let m of makes" [value]="m">{{ m }}</option>
           </select>
         </div>
+
+        <!-- Model — dropdown if catalogue has models, else text input -->
         <div class="form-group">
           <label>Model *</label>
-          <input type="text" [(ngModel)]="form.model" placeholder="e.g. Swift, Creta, Nexon">
+          <select *ngIf="availableModels.length > 0" [(ngModel)]="form.model" (ngModelChange)="onModelChange()">
+            <option value="">Select model</option>
+            <option *ngFor="let m of availableModels" [value]="m">{{ m }}</option>
+          </select>
+          <input *ngIf="availableModels.length === 0" type="text" [(ngModel)]="form.model" placeholder="e.g. Swift, Creta, Nexon">
         </div>
+
+        <!-- Variant — dropdown, shown only when variants exist -->
+        <div class="form-group" *ngIf="availableVariants.length > 0">
+          <label>Variant <span class="label-tip">— affects price accuracy</span></label>
+          <select [(ngModel)]="form.variant">
+            <option value="">Select variant (optional)</option>
+            <option *ngFor="let v of availableVariants" [value]="v.name">
+              {{ v.name }} · {{ fmt(v.basePrice) }}
+            </option>
+          </select>
+        </div>
+
         <div class="form-group">
           <label>Year *</label>
           <select [(ngModel)]="form.year">
@@ -95,7 +114,7 @@
   <!-- RESULT -->
   <section class="result-section container" *ngIf="step() === 'result' && result() as r">
     <div class="result-header">
-      <div class="result-car">{{ form.make }} {{ form.model }} · {{ form.year }} · {{ form.fuel }}</div>
+      <div class="result-car">{{ form.make }} {{ form.model }}{{ form.variant ? ' ' + form.variant : '' }} · {{ form.year }} · {{ form.fuel }}</div>
       <h2>Your Car's <span class="gradient-text">Market Value</span></h2>
     </div>
 
