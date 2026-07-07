@@ -4,25 +4,48 @@
 .car-type-bar {
   background: rgba(255,255,255,0.03);
   border-bottom: 1px solid var(--glass-border);
-  padding: .75rem 0;
+  padding: 1rem 0;
 }
 .car-type-inner {
-  display: flex; gap: .75rem; flex-wrap: wrap;
+  display: flex; gap: 1rem; flex-wrap: wrap;
 }
 .type-btn {
-  display: flex; align-items: center; gap: .5rem;
-  padding: .5rem 1.25rem; border-radius: 2rem;
-  border: 1px solid var(--glass-border); background: transparent;
-  color: var(--muted); font-size: .9rem; font-weight: 600; cursor: pointer;
-  transition: all .2s;
-  &:hover { border-color: var(--primary); color: var(--text); }
-  &.active { background: var(--glass); border-color: var(--primary); color: var(--text); }
-  &.new-btn.active  { background: rgba(67,233,123,.12); border-color: #43E97B; color: #43E97B; }
-  &.used-btn.active { background: rgba(108,99,255,.12); border-color: var(--primary); color: #a78bfa; }
+  display: flex; align-items: center; gap: .6rem;
+  padding: .65rem 1.5rem; border-radius: 2rem;
+  border: 2px solid var(--glass-border); background: transparent;
+  color: var(--muted); font-size: .95rem; font-weight: 700; cursor: pointer;
+  transition: all .25s; letter-spacing: .01em;
+
+  &:hover { transform: translateY(-1px); border-color: var(--primary); color: var(--text); }
+
+  // All Cars — active: gradient fill
+  &.active {
+    background: var(--gradient);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(108,99,255,.45);
+  }
+
+  // New Cars — active: green gradient
+  &.new-btn.active {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(56,239,125,.4);
+  }
+
+  // Used Cars — active: orange gradient
+  &.used-btn.active {
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    border-color: transparent;
+    color: #1a1a2e;
+    box-shadow: 0 4px 18px rgba(255,210,0,.35);
+  }
 }
 .type-count {
-  background: var(--fill-dim); border-radius: 1rem;
-  padding: .1rem .5rem; font-size: .75rem; font-weight: 700;
+  background: rgba(255,255,255,.2); border-radius: 1rem;
+  padding: .15rem .55rem; font-size: .78rem; font-weight: 800;
+  .active & { background: rgba(255,255,255,.25); }
 }
 
 .listings-header {
