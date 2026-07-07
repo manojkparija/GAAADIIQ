@@ -1,6 +1,15 @@
 -- GAADIIQ Car Seed — paste into Supabase SQL Editor
 -- https://supabase.com/dashboard/project/gnhixykdvnuoxeccntjo/sql
 
+-- Fix: ensure id column has an auto-increment default
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_sequences WHERE sequencename = 'cars_id_seq') THEN
+    CREATE SEQUENCE cars_id_seq;
+  END IF;
+END $$;
+ALTER TABLE cars ALTER COLUMN id SET DEFAULT nextval('cars_id_seq');
+SELECT setval('cars_id_seq', COALESCE((SELECT MAX(id) FROM cars), 0) + 1, false);
+
 -- Optional: clear existing cars first (uncomment if needed)
 -- TRUNCATE cars CASCADE;
 
