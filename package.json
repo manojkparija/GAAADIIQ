@@ -10,7 +10,8 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "migrate": "node scripts/migrate.js"
   },
   "devDependencies": {
     "turbo": "^2.0.0"
