@@ -88,16 +88,40 @@ export class ListingsComponent implements OnInit {
   newCount  = computed(() => this.carsData.cars().filter(c => c.km === 0).length);
   usedCount = computed(() => this.carsData.cars().filter(c => c.km > 0).length);
 
-  swiftImages = [
-    { src: 'assets/cars/swift/front.jpg',       label: 'Front View' },
-    { src: 'assets/cars/swift/trio.jpg',         label: 'Colour Range' },
-    { src: 'assets/cars/swift/rear-motion.jpg',  label: 'Rear Motion' },
-    { src: 'assets/cars/swift/rear.jpg',         label: 'Rear View' },
-    { src: 'assets/cars/swift/interior.jpg',     label: 'Interior' },
-    { src: 'assets/cars/swift/steering.jpg',     label: 'Steering' },
+  swiftGallery = [
+    { src: 'assets/cars/swift/front.jpg',      label: 'Front View',     pos: 'center 65%' },
+    { src: 'assets/cars/swift/rear-wide.jpg',  label: 'Side & Rear',    pos: 'center center' },
+    { src: 'assets/cars/swift/trio.jpg',       label: 'Colour Range',   pos: 'center center' },
+    { src: 'assets/cars/swift/interior.jpg',   label: 'Interior',       pos: 'center center' },
+    { src: 'assets/cars/swift/rear-motion.jpg',label: 'On the Road',    pos: 'center center' },
+    { src: 'assets/cars/swift/steering.jpg',   label: 'Steering',       pos: 'center center' },
   ];
-  showcaseActive = this.swiftImages[0].src;
-  swiftActiveIdx = computed(() => this.swiftImages.findIndex(i => i.src === this.showcaseActive));
+  swiftColours = [
+    { src: 'assets/cars/swift/colours/sizzling-red.jpg',   name: 'Sizzling Red',    hex: '#C0392B', dual: false },
+    { src: 'assets/cars/swift/colours/luster-blue.jpg',    name: 'Luster Blue',     hex: '#2980B9', dual: false },
+    { src: 'assets/cars/swift/colours/novel-orange.jpg',   name: 'Novel Orange',    hex: '#E67E22', dual: false },
+    { src: 'assets/cars/swift/colours/magma-grey.jpg',     name: 'Magma Grey',      hex: '#7F8C8D', dual: false },
+    { src: 'assets/cars/swift/colours/splendid-silver.jpg',name: 'Splendid Silver', hex: '#BDC3C7', dual: false },
+    { src: 'assets/cars/swift/colours/pearl-white.jpg',    name: 'Pearl Arctic White', hex: '#ECF0F1', dual: false },
+    { src: 'assets/cars/swift/colours/red-black-roof.jpg', name: 'Sizzling Red + Black Roof',  hex: '#C0392B', dual: true },
+    { src: 'assets/cars/swift/colours/blue-black-roof.jpg',name: 'Luster Blue + Black Roof',   hex: '#2980B9', dual: true },
+    { src: 'assets/cars/swift/colours/white-black-roof.jpg',name:'Pearl White + Black Roof',   hex: '#ECF0F1', dual: true },
+  ];
+  showcaseActive = this.swiftGallery[0].src;
+  showcasePos    = this.swiftGallery[0].pos;
+  activeColour   = this.swiftColours[0];
+
+  showDualTone = false;
+
+  setShowcaseImg(item: {src:string; label:string; pos:string}) {
+    this.showcaseActive = item.src;
+    this.showcasePos    = item.pos;
+  }
+  setColour(c: {src:string; name:string; hex:string; dual:boolean}) {
+    this.activeColour   = c;
+    this.showcaseActive = c.src;
+    this.showcasePos    = 'center center';
+  }
 
   formatPrice(p: number) {
     if (p >= 10000000) return `₹${(p/10000000).toFixed(1)} Cr`;

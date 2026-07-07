@@ -108,30 +108,60 @@
 
     <!-- NEW CARS SWIFT SHOWCASE -->
     <div class="new-car-showcase glass-card" *ngIf="carType() === 'New' && !loading()">
+
+      <!-- Header + stats -->
       <div class="showcase-header">
         <div>
           <div class="showcase-tag">⚡ Featured New Car</div>
           <h3>The Epic New <span class="gradient-text">Maruti Swift</span></h3>
-          <p>India's best-selling hatchback — reimagined with Z-Series engine &amp; 6 airbags standard</p>
+          <p>India's best-selling hatchback — Z-Series engine · 6 Airbags standard · Available in S-CNG</p>
         </div>
         <div class="showcase-stats">
-          <div class="sc-stat"><span class="sc-val">25.75</span><span class="sc-unit">km/l</span><span class="sc-label">Fuel Economy</span></div>
+          <div class="sc-stat"><span class="sc-val">25.75</span><span class="sc-unit">km/l</span><span class="sc-label">Fuel Economy (AMT)</span></div>
           <div class="sc-stat"><span class="sc-val">6</span><span class="sc-unit">Airbags</span><span class="sc-label">All Variants</span></div>
           <div class="sc-stat"><span class="sc-val">32.85</span><span class="sc-unit">km/kg</span><span class="sc-label">S-CNG Mileage</span></div>
         </div>
       </div>
-      <div class="showcase-gallery">
-        <div class="sc-main">
-          <img [src]="showcaseActive" alt="Maruti Swift" class="sc-main-img" [style.objectPosition]="showcaseActive.includes('front') ? 'center 65%' : 'center center'">
+
+      <!-- Main photo + gallery strip -->
+      <div class="showcase-layout">
+        <div class="sc-main-wrap">
+          <img [src]="showcaseActive" alt="Maruti Swift" class="sc-main-img" [style.objectPosition]="showcasePos">
         </div>
-        <div class="sc-thumbs">
-          <img *ngFor="let img of swiftImages" [src]="img.src" [alt]="img.label"
-            [class.active]="showcaseActive === img.src"
-            (click)="showcaseActive = img.src"
-            [style.objectPosition]="img.src.includes('front') ? 'center 65%' : 'center center'">
-          <div class="sc-label-pill">{{ swiftImages[swiftActiveIdx()]?.label }}</div>
+        <div class="sc-gallery-strip">
+          <div class="sc-thumb" *ngFor="let img of swiftGallery"
+               [class.active]="showcaseActive === img.src"
+               (click)="setShowcaseImg(img)">
+            <img [src]="img.src" [alt]="img.label" [style.objectPosition]="img.pos">
+            <span>{{ img.label }}</span>
+          </div>
         </div>
       </div>
+
+      <!-- Colour variants -->
+      <div class="sc-colours-section">
+        <div class="sc-colours-header">
+          <span class="sc-colours-title">Available Colours</span>
+          <span class="sc-active-colour">{{ activeColour.name }}<span *ngIf="activeColour.dual" class="dual-badge">Dual-Tone</span></span>
+        </div>
+
+        <div class="sc-colour-tabs">
+          <button class="sc-tab" [class.active]="!showDualTone" (click)="showDualTone=false">Monotone (6)</button>
+          <button class="sc-tab" [class.active]="showDualTone"  (click)="showDualTone=true">Dual-Tone (3)</button>
+        </div>
+
+        <div class="sc-colour-grid">
+          <div class="sc-colour-card"
+               *ngFor="let c of (showDualTone ? swiftColours.slice(6) : swiftColours.slice(0,6))"
+               [class.active]="activeColour.src === c.src"
+               (click)="setColour(c)">
+            <img [src]="c.src" [alt]="c.name">
+            <div class="sc-colour-dot" [style.background]="c.hex" [style.borderColor]="c.hex"></div>
+            <span>{{ c.name }}</span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- LOADING -->
