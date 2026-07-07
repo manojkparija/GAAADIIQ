@@ -11,6 +11,17 @@ export interface Car {
   aiValuation?: { fairPrice: number; marketMin: number; marketMax: number; verdict: string; confidence: number };
 }
 
+const LOCAL_IMAGES: Record<string, string[]> = {
+  'Maruti Suzuki Swift': [
+    'assets/cars/swift/front.jpg',
+    'assets/cars/swift/trio.jpg',
+    'assets/cars/swift/rear-motion.jpg',
+    'assets/cars/swift/rear.jpg',
+    'assets/cars/swift/interior.jpg',
+    'assets/cars/swift/steering.jpg',
+  ],
+};
+
 @Injectable({ providedIn: 'root' })
 export class CarsDataService {
   private _cars = signal<Car[]>([]);
@@ -45,10 +56,13 @@ export class CarsDataService {
       transmission: row.transmission,
       badge: row.badge ?? '',
       badgeType: row.badge_type ?? '',
-      image: row.image ?? '',
-      images: row.car_images
-        ? [...row.car_images].sort((a: any, b: any) => a.sort_order - b.sort_order).map((i: any) => i.url)
-        : (row.image ? [row.image] : []),
+      image: row.image || LOCAL_IMAGES[`${row.make} ${row.model}`]?.[0] || '',
+      images: (() => {
+        const dbImgs = row.car_images
+          ? [...row.car_images].sort((a: any, b: any) => a.sort_order - b.sort_order).map((i: any) => i.url)
+          : (row.image ? [row.image] : []);
+        return dbImgs.length > 0 ? dbImgs : (LOCAL_IMAGES[`${row.make} ${row.model}`] ?? []);
+      })(),
       rating: parseFloat(row.rating) || 0,
       reviews: row.reviews ?? 0,
       verified: row.verified ?? true,
