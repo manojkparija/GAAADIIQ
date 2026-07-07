@@ -1,5 +1,5 @@
 import { Component, HostListener, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, Router, NavigationStart } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
@@ -15,19 +15,12 @@ import { CitySelectorComponent } from '../city-selector/city-selector.component'
   styleUrl: './navbar.component.scss'
 })
 export class NavbarComponent {
-  scrolled     = signal(false);
-  menuOpen     = signal(false);
+  scrolled = signal(false);
+  menuOpen = signal(false);
   userMenuOpen = signal(false);
   cityModalOpen = signal(false);
-  activeMega   = signal<'new' | 'used' | null>(null);
 
-  constructor(
-    public auth: AuthService, public theme: ThemeService,
-    public city: CityService, public lang: LanguageService,
-    router: Router
-  ) {
-    router.events.subscribe(e => { if (e instanceof NavigationStart) this.closeMega(); });
-  }
+  constructor(public auth: AuthService, public theme: ThemeService, public city: CityService, public lang: LanguageService) {}
 
   @HostListener('window:scroll')
   onScroll() { this.scrolled.set(window.scrollY > 30); }
@@ -40,11 +33,8 @@ export class NavbarComponent {
     }
   }
 
-  openMega(m: 'new' | 'used') { this.activeMega.set(m); }
-  closeMega() { this.activeMega.set(null); }
-
   toggleMenu() { this.menuOpen.update(v => !v); }
-  closeMenu() { this.menuOpen.set(false); this.closeMega(); }
+  closeMenu() { this.menuOpen.set(false); }
   toggleUserMenu() { this.userMenuOpen.update(v => !v); }
   openCityModal() { this.cityModalOpen.set(true); }
   closeCityModal() { this.cityModalOpen.set(false); }
