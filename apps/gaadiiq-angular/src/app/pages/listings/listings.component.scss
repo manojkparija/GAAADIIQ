@@ -1,5 +1,30 @@
 .listings-page { padding-top: 64px; min-height: 100vh; }
 
+// New / Used toggle bar
+.car-type-bar {
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--glass-border);
+  padding: .75rem 0;
+}
+.car-type-inner {
+  display: flex; gap: .75rem; flex-wrap: wrap;
+}
+.type-btn {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .5rem 1.25rem; border-radius: 2rem;
+  border: 1px solid var(--glass-border); background: transparent;
+  color: var(--muted); font-size: .9rem; font-weight: 600; cursor: pointer;
+  transition: all .2s;
+  &:hover { border-color: var(--primary); color: var(--text); }
+  &.active { background: var(--glass); border-color: var(--primary); color: var(--text); }
+  &.new-btn.active  { background: rgba(67,233,123,.12); border-color: #43E97B; color: #43E97B; }
+  &.used-btn.active { background: rgba(108,99,255,.12); border-color: var(--primary); color: #a78bfa; }
+}
+.type-count {
+  background: var(--fill-dim); border-radius: 1rem;
+  padding: .1rem .5rem; font-size: .75rem; font-weight: 700;
+}
+
 .listings-header {
   background: rgba(255,255,255,0.02);
   border-bottom: 1px solid var(--glass-border);

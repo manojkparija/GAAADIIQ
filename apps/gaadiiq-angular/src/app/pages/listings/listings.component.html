@@ -19,6 +19,21 @@
     </div>
   </div>
 
+  <!-- NEW / USED TOGGLE BAR -->
+  <div class="car-type-bar">
+    <div class="container car-type-inner">
+      <button class="type-btn" [class.active]="carType()==='All'" (click)="setCarType('All')">
+        🚘 All Cars <span class="type-count">{{ newCount() + usedCount() }}</span>
+      </button>
+      <button class="type-btn new-btn" [class.active]="carType()==='New'" (click)="setCarType('New')">
+        ✨ New Cars <span class="type-count">{{ newCount() }}</span>
+      </button>
+      <button class="type-btn used-btn" [class.active]="carType()==='Used'" (click)="setCarType('Used')">
+        🔑 Used Cars <span class="type-count">{{ usedCount() }}</span>
+      </button>
+    </div>
+  </div>
+
   <div class="container listings-body">
     <!-- SIDEBAR -->
     <aside class="sidebar glass-card" [class.open]="sidebarOpen()">
@@ -51,11 +66,13 @@
         </div>
       </div>
 
-      <div class="filter-group">
-        <label>Condition</label>
+      <!-- Mileage sub-filter — only relevant for Used Cars -->
+      <div class="filter-group" *ngIf="carType() === 'Used'">
+        <label>Mileage Range</label>
         <div class="filter-chips">
-          <span *ngFor="let c of conditions" class="chip"
-            [class.active]="selectedCondition() === c" (click)="selectedCondition.set(c)">{{ c }}</span>
+          <span class="chip" [class.active]="usedKmRange()==='All'"      (click)="usedKmRange.set('All')">All</span>
+          <span class="chip" [class.active]="usedKmRange()==='< 50k km'" (click)="usedKmRange.set('< 50k km')">Under 50k km</span>
+          <span class="chip" [class.active]="usedKmRange()==='> 50k km'" (click)="usedKmRange.set('> 50k km')">Over 50k km</span>
         </div>
       </div>
 
@@ -104,7 +121,7 @@
         <div style="font-size:4rem;margin-bottom:1rem">🔍</div>
         <h3>No cars found</h3>
         <p style="color:var(--muted)">Try adjusting your filters or search query</p>
-        <button class="btn-gradient" style="margin-top:1.5rem" (click)="selectedFuel.set('All');selectedTransmission.set('All');selectedBodyType.set('All');selectedCondition.set('All');selectedMake.set('All');maxPrice.set(5000000);minYear.set(2018);searchQuery.set('')">Clear All Filters</button>
+        <button class="btn-gradient" style="margin-top:1.5rem" (click)="clearAll()">Clear All Filters</button>
       </div>
     </ng-template>
   </div>
