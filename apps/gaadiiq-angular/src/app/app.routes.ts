@@ -20,5 +20,6 @@ export const routes: Routes = [
   { path: 'buyer-journey', loadComponent: () => import('./pages/buyer-journey/buyer-journey.component').then(m => m.BuyerJourneyComponent) },
   { path: 'dealer-dashboard', loadComponent: () => import('./pages/dealer-dashboard/dealer-dashboard.component').then(m => m.DealerDashboardComponent) },
   { path: 'pricing-plans', loadComponent: () => import('./pages/pricing-plans/pricing-plans.component').then(m => m.PricingPlansComponent) },
+  { path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent) },
   { path: '**', redirectTo: '' },
 ];
