@@ -66,8 +66,8 @@ export class ListingsComponent implements OnInit {
       // Top-level New / Used split
       const type = this.carType();
       const matchType = type === 'All' ? true :
-        type === 'New'  ? c.km === 0 :
-        /* Used */ c.km > 0;
+        type === 'New'  ? c.km === 0 && c.year >= 2025 :
+        /* Used */ c.km > 0 || c.year < 2025;
 
       // Used km sub-range
       const range = this.usedKmRange();
@@ -85,8 +85,8 @@ export class ListingsComponent implements OnInit {
     return cars;
   });
 
-  newCount  = computed(() => this.carsData.cars().filter(c => c.km === 0).length);
-  usedCount = computed(() => this.carsData.cars().filter(c => c.km > 0).length);
+  newCount  = computed(() => this.carsData.cars().filter(c => c.km === 0 && c.year >= 2025).length);
+  usedCount = computed(() => this.carsData.cars().filter(c => c.km > 0 || c.year < 2025).length);
 
   swiftGallery = [
     { src: 'assets/cars/swift/front.jpg',      label: 'Front View',     pos: 'center 65%' },
