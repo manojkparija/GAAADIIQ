@@ -4,12 +4,8 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { TcoService } from '../../services/tco.service';
+import { ReviewsService, CarReview } from '../../services/reviews.service';
 import { SeoService } from '../../services/seo.service';
-
-interface Review {
-  name: string; rating: number; city: string; date: string;
-  title: string; body: string; avatar: string; likes: number;
-}
 
 @Component({
   selector: 'app-car-detail',
@@ -36,18 +32,17 @@ export class CarDetailComponent implements OnInit {
   fuelPrice = signal(106);
   fuelPriceMin = 85; fuelPriceMax = 130; fuelPriceUnit = '/L';
 
-  // Reviews
-  reviews: Review[] = [
-    { name:'Rajesh Kumar', rating:5, city:'Mumbai', date:'15 Jun 2025', title:'Excellent value for money!', body:'Been using it for 6 months. Fuel efficiency is outstanding and the infotainment is top class. Service experience at Maruti is seamless.', avatar:'RK', likes:24 },
-    { name:'Priya Singh', rating:4, city:'Delhi', date:'02 May 2025', title:'Great car, minor niggles', body:'Loved the build quality and features. Sunroof is a delight. Only gripe is the rear seat space could be slightly better for tall passengers.', avatar:'PS', likes:18 },
-    { name:'Amit Verma', rating:5, city:'Bangalore', date:'10 Apr 2025', title:'AI valuation saved me ₹60,000', body:'Gaadiiq AI told me the fair price before I visited the dealer. Negotiated confidently. Absolutely recommend this platform before buying any car.', avatar:'AV', likes:41 },
-  ];
+  // Reviews (Supabase-backed)
+  reviews = signal<CarReview[]>([]);
   userReview = { rating: 0, title: '', body: '', name: '', city: '' };
+  selectedVideoFile: File | null = null;
+  videoPreviewUrl: string | null = null;
   showReviewForm = signal(false);
   reviewSubmitted = signal(false);
+  reviewError = signal('');
   hoverRating = signal(0);
 
-  constructor(private route: ActivatedRoute, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService) {
+  constructor(private route: ActivatedRoute, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -77,6 +72,7 @@ export class CarDetailComponent implements OnInit {
     if (this.carLoaded) {
       this.loan.amount = this.car.price;
       this.calcEmi();
+      this.loadReviews();
       this.seo.setCarDetail(this.car.make, this.car.model, this.car.year, this.car.price, this.car.city || 'India');
       const fuel = this.car.fuel;
       if (fuel === 'Diesel') { this.fuelPrice.set(92); this.fuelPriceMin = 80; this.fuelPriceMax = 110; this.fuelPriceUnit = '/L'; }
@@ -131,21 +127,57 @@ export class CarDetailComponent implements OnInit {
     return { value: val, pct: Math.round((val / this.car.price) * 100) };
   });
 
-  submitReview() {
-    if (!this.userReview.rating || !this.userReview.body || !this.userReview.name) return;
-    this.reviews.unshift({
-      name: this.userReview.name, rating: this.userReview.rating,
-      city: this.userReview.city || 'India', date: new Date().toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}),
-      title: this.userReview.title || 'My Review', body: this.userReview.body,
-      avatar: this.userReview.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2),
-      likes: 0
+  async loadReviews() {
+    const data = await this.reviewsSvc.getReviewsForCar(String(this.car.id));
+    this.reviews.set(data);
+  }
+
+  onVideoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { this.reviewError.set('Video must be under 50 MB'); return; }
+    this.selectedVideoFile = file;
+    this.videoPreviewUrl = URL.createObjectURL(file);
+    this.reviewError.set('');
+  }
+
+  async submitReview() {
+    if (!this.userReview.rating || !this.userReview.body || !this.userReview.name) {
+      this.reviewError.set('Please fill in your name, a rating, and your review.');
+      return;
+    }
+    this.reviewError.set('');
+    let videoUrl: string | null = null;
+    if (this.selectedVideoFile) {
+      videoUrl = await this.reviewsSvc.uploadVideo(this.selectedVideoFile, String(this.car.id));
+    }
+    const avatar = this.userReview.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+    const saved = await this.reviewsSvc.submitReview({
+      car_id: String(this.car.id),
+      user_name: this.userReview.name,
+      user_city: this.userReview.city || 'India',
+      avatar,
+      rating: this.userReview.rating,
+      title: this.userReview.title || 'My Review',
+      body: this.userReview.body,
+      video_url: videoUrl,
     });
-    this.reviewSubmitted.set(true);
-    this.showReviewForm.set(false);
+    if (saved) {
+      this.reviews.update(r => [saved, ...r]);
+      this.reviewSubmitted.set(true);
+      this.showReviewForm.set(false);
+      this.selectedVideoFile = null;
+      this.videoPreviewUrl = null;
+      this.userReview = { rating: 0, title: '', body: '', name: '', city: '' };
+    } else {
+      this.reviewError.set('Failed to submit review. Please try again.');
+    }
   }
 
   avgRating = computed(() => {
-    const all = this.reviews.map(r => r.rating);
+    const all = this.reviews().map(r => r.rating);
+    if (!all.length) return '0.0';
     return (all.reduce((a, b) => a + b, 0) / all.length).toFixed(1);
   });
 

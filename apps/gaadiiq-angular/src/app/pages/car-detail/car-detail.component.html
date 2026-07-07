@@ -134,7 +134,7 @@
               <div class="avg-rating">
                 <div class="big-num gradient-text">{{ avgRating() }}</div>
                 <div class="stars-row">{{ stars(+avgRating()).join('') }}</div>
-                <div style="font-size:0.8rem;color:var(--muted)">{{ reviews.length }} reviews</div>
+                <div style="font-size:0.8rem;color:var(--muted)">{{ reviews().length }} reviews</div>
               </div>
               <button class="btn-gradient" style="height:fit-content" (click)="showReviewForm.set(!showReviewForm())">
                 {{ showReviewForm() ? 'Cancel' : '✏️ Write Review' }}
@@ -155,24 +155,49 @@
               <input type="text" [(ngModel)]="userReview.city" name="rcity" placeholder="City">
               <input type="text" [(ngModel)]="userReview.title" name="rtitle" placeholder="Review title">
               <textarea [(ngModel)]="userReview.body" name="rbody" rows="4" placeholder="Share your experience with this car... *"></textarea>
-              <button class="btn-gradient" (click)="submitReview()">Submit Review</button>
+
+              <!-- Video upload -->
+              <div class="video-upload-wrap">
+                <label class="video-upload-label">
+                  🎥 Add a video review (optional, max 50 MB)
+                  <input type="file" accept="video/*" (change)="onVideoSelected($event)" style="display:none">
+                </label>
+                <video *ngIf="videoPreviewUrl" [src]="videoPreviewUrl" controls class="video-preview"></video>
+              </div>
+
+              <div class="review-error" *ngIf="reviewError()">⚠️ {{ reviewError() }}</div>
+              <button class="btn-gradient" (click)="submitReview()" [disabled]="reviewsSvc.uploading()">
+                {{ reviewsSvc.uploading() ? 'Uploading video…' : 'Submit Review' }}
+              </button>
             </div>
+
+            <!-- Loading -->
+            <div class="review-loading" *ngIf="reviewsSvc.loading()">Loading reviews…</div>
 
             <!-- Success -->
             <div class="review-success" *ngIf="reviewSubmitted()">✅ Review submitted! Thank you.</div>
 
+            <!-- Empty state -->
+            <div class="review-empty" *ngIf="!reviewsSvc.loading() && reviews().length === 0 && !reviewSubmitted()">
+              No reviews yet. Be the first to review this car!
+            </div>
+
             <!-- Review cards -->
-            <div class="review-card" *ngFor="let r of reviews">
+            <div class="review-card" *ngFor="let r of reviews()">
               <div class="review-top">
                 <div class="reviewer-avatar">{{ r.avatar }}</div>
                 <div>
-                  <div class="reviewer-name">{{ r.name }} <span class="reviewer-city">· {{ r.city }}</span></div>
+                  <div class="reviewer-name">{{ r.user_name }} <span class="reviewer-city">· {{ r.user_city }}</span></div>
                   <div class="review-stars">{{ stars(r.rating).join('') }}</div>
                 </div>
-                <div class="review-date">{{ r.date }}</div>
+                <div class="review-date">{{ r.created_at | date:'d MMM y' }}</div>
               </div>
               <div class="review-title">{{ r.title }}</div>
               <div class="review-body">{{ r.body }}</div>
+              <!-- Video review player -->
+              <div class="review-video-wrap" *ngIf="r.video_url">
+                <video [src]="r.video_url" controls class="review-video" preload="metadata"></video>
+              </div>
               <div class="review-likes">👍 {{ r.likes }} found this helpful</div>
             </div>
           </div>

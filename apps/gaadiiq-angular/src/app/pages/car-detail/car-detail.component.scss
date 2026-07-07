@@ -172,6 +172,14 @@
   span { transition:color 0.15s; &.active { color:#FFD700; } }
 }
 .review-success { background:rgba(67,233,123,0.1); border:1px solid rgba(67,233,123,0.3); color:#43E97B; border-radius:8px; padding:0.75rem 1rem; font-size:0.875rem; margin-bottom:1rem; }
+.review-error { background:rgba(255,101,132,0.1); border:1px solid rgba(255,101,132,0.3); color:#FF6584; border-radius:8px; padding:0.6rem 0.9rem; font-size:0.82rem; margin-bottom:0.75rem; }
+.review-loading { color:var(--muted); font-size:0.875rem; padding:1rem 0; }
+.review-empty { color:var(--muted); font-size:0.9rem; padding:1.5rem 0; text-align:center; }
+.video-upload-wrap { margin-bottom:0.75rem; }
+.video-upload-label { display:inline-block; padding:0.5rem 1rem; border-radius:8px; border:1.5px dashed var(--glass-border); font-size:0.82rem; color:var(--muted); cursor:pointer; transition:border-color 0.2s; &:hover{border-color:var(--primary);color:var(--primary);} }
+.video-preview { width:100%; max-height:200px; border-radius:10px; margin-top:0.75rem; object-fit:cover; }
+.review-video-wrap { margin:0.75rem 0; }
+.review-video { width:100%; max-height:240px; border-radius:10px; object-fit:cover; background:#000; }
 .review-card { border-bottom:1px solid rgba(255,255,255,0.07); padding:1.25rem 0;
   &:last-child { border-bottom:none; }
 }
