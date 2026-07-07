@@ -14,7 +14,6 @@ import { SeoService } from '../../services/seo.service';
   styleUrl: './compare.component.scss'
 })
 export class CompareComponent {
-  allCars: Car[];
   searchA = signal(''); searchB = signal(''); searchC = signal('');
   selected = signal<(Car | null)[]>([null, null, null]);
   showDropdown = signal<number>(-1);
@@ -32,7 +31,6 @@ export class CompareComponent {
   ];
 
   constructor(private carsData: CarsDataService, private seo: SeoService, public tco: TcoService) {
-    this.allCars = carsData.getAll();
     seo.setPage('Compare Cars', 'Compare up to 3 cars side by side. Specs, features, price, AI valuation — all in one place.');
   }
 
@@ -42,8 +40,9 @@ export class CompareComponent {
 
   filtered(slot: number) {
     const q = this.search(slot).toLowerCase();
-    if (!q) return this.allCars.slice(0, 10);
-    return this.allCars.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q)).slice(0, 8);
+    const all = this.carsData.cars();
+    if (!q) return all.slice(0, 10);
+    return all.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q)).slice(0, 8);
   }
 
   selectCar(slot: number, car: Car) {
