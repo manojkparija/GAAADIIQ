@@ -91,7 +91,7 @@
   pointer-events: none;
   transform: translateY(-8px);
   transition: opacity .2s ease, transform .2s ease;
-  padding: 1.5rem 0;
+  padding: 0.75rem 0;
 
   &.open {
     opacity: 1;
@@ -131,13 +131,15 @@
     display: block;
     font-size: .83rem;
     color: var(--text) !important;
-    padding: .35rem 0;
+    padding: .2rem 0;
     font-weight: 500;
     transition: color .15s, padding-left .15s;
     text-decoration: none;
     &::after { display: none !important; }
     &:hover { color: var(--primary) !important; padding-left: .4rem; }
   }
+
+  .mega-col-title { margin-bottom: .5rem; }
 }
 
 // Featured card on the right
@@ -147,7 +149,7 @@
   background: linear-gradient(135deg, rgba(108,99,255,.08), rgba(56,239,125,.05));
   border: 1px solid var(--glass-border);
   border-radius: 1rem;
-  padding: 1rem;
+  padding: 0.65rem;
   text-align: center;
   margin-left: .5rem;
 
@@ -157,12 +159,12 @@
   }
 
   .mega-featured-img {
-    width: 100%; height: 90px; object-fit: cover; object-position: center 65%;
-    border-radius: .6rem; margin-bottom: .6rem;
+    width: 100%; height: 72px; object-fit: cover; object-position: center 65%;
+    border-radius: .6rem; margin-bottom: .4rem;
   }
 
-  .mega-featured-name { font-size: .82rem; font-weight: 800; color: var(--text); margin-bottom: .15rem; }
-  .mega-featured-sub  { font-size: .7rem; color: var(--muted); margin-bottom: .75rem; }
+  .mega-featured-name { font-size: .82rem; font-weight: 800; color: var(--text); margin-bottom: .1rem; }
+  .mega-featured-sub  { font-size: .7rem; color: var(--muted); margin-bottom: .5rem; }
 
   .mega-featured-cta {
     display: inline-block;
