@@ -125,8 +125,9 @@
 
       <!-- Main photo + gallery strip -->
       <div class="showcase-layout">
-        <div class="sc-main-wrap">
+        <div class="sc-main-wrap" (click)="lightboxOpen=true" style="cursor:zoom-in;">
           <img [src]="showcaseActive" alt="Maruti Swift" class="sc-main-img" [style.objectPosition]="showcasePos">
+          <div class="sc-expand-hint">⛶ Expand</div>
         </div>
         <div class="sc-gallery-strip">
           <div class="sc-thumb" *ngFor="let img of swiftGallery"
@@ -183,5 +184,23 @@
         <button class="btn-gradient" style="margin-top:1.5rem" (click)="clearAll()">Clear All Filters</button>
       </div>
     </ng-template>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="sc-lightbox" *ngIf="lightboxOpen" (click)="lightboxOpen=false">
+  <button class="sc-lightbox-close" (click)="lightboxOpen=false">✕</button>
+  <div class="sc-lightbox-inner" (click)="$event.stopPropagation()">
+    <button class="sc-lb-nav sc-lb-prev" (click)="lightboxStep(-1)">‹</button>
+    <img [src]="showcaseActive" [style.objectPosition]="showcasePos" alt="Maruti Swift" class="sc-lightbox-img">
+    <button class="sc-lb-nav sc-lb-next" (click)="lightboxStep(1)">›</button>
+  </div>
+  <div class="sc-lightbox-thumbs">
+    <div *ngFor="let img of swiftGallery"
+         class="sc-lb-thumb"
+         [class.active]="showcaseActive === img.src"
+         (click)="setShowcaseImg(img); $event.stopPropagation()">
+      <img [src]="img.src" [alt]="img.label">
+    </div>
   </div>
 </div>

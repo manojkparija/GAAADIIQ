@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, computed, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
@@ -112,11 +112,26 @@ export class ListingsComponent implements OnInit {
   activeColour   = this.swiftColours[0];
 
   showDualTone = false;
+  lightboxOpen = false;
 
   setShowcaseImg(item: {src:string; label:string; pos:string}) {
     this.showcaseActive = item.src;
     this.showcasePos    = item.pos;
   }
+  @HostListener('document:keydown', ['$event'])
+  onKey(e: KeyboardEvent) {
+    if (!this.lightboxOpen) return;
+    if (e.key === 'Escape') this.lightboxOpen = false;
+    if (e.key === 'ArrowRight') this.lightboxStep(1);
+    if (e.key === 'ArrowLeft') this.lightboxStep(-1);
+  }
+
+  lightboxStep(dir: 1 | -1) {
+    const idx = this.swiftGallery.findIndex(g => g.src === this.showcaseActive);
+    const next = (idx + dir + this.swiftGallery.length) % this.swiftGallery.length;
+    this.setShowcaseImg(this.swiftGallery[next]);
+  }
+
   setColour(c: {src:string; name:string; hex:string; dual:boolean}) {
     this.activeColour   = c;
     this.showcaseActive = c.src;
