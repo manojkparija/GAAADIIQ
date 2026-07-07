@@ -84,21 +84,22 @@
         </div>
       </div>
 
-      <div class="filter-group">
+      <!-- Min Year only relevant for Used cars -->
+      <div class="filter-group" *ngIf="carType() !== 'New'">
         <label>Min Year: <strong class="gradient-text">{{ minYear() }}</strong></label>
-        <input type="range" min="2015" max="2024" step="1"
+        <input type="range" min="2015" max="2025" step="1"
           [value]="minYear()" (input)="minYear.set(+$any($event.target).value)" class="price-range">
-        <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>2015</span><span>2024</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>2015</span><span>2025</span></div>
       </div>
 
       <div class="filter-group">
         <label>Max Budget: <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
-        <input type="range" min="300000" max="5000000" step="100000"
+        <input type="range" min="300000" max="20000000" step="100000"
           [value]="maxPrice()" (input)="maxPrice.set(+$any($event.target).value)"
           class="price-range"
         >
         <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">
-          <span>₹3L</span><span>₹50L</span>
+          <span>₹3L</span><span>₹2 Cr</span>
         </div>
       </div>
 

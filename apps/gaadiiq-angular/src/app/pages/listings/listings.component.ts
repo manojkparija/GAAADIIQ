@@ -23,7 +23,7 @@ export class ListingsComponent implements OnInit {
   selectedBodyType   = signal('All');
   selectedSort       = signal('Relevance');
   selectedMake       = signal('All');
-  maxPrice           = signal(5000000);
+  maxPrice           = signal(20000000);
   minYear            = signal(2018);
   sidebarOpen        = signal(false);
 
@@ -88,12 +88,16 @@ export class ListingsComponent implements OnInit {
   newCount  = computed(() => this.carsData.cars().filter(c => c.km === 0).length);
   usedCount = computed(() => this.carsData.cars().filter(c => c.km > 0).length);
 
-  formatPrice(p: number) { return p >= 100000 ? `₹${(p/100000).toFixed(0)}L` : `₹${p}`; }
+  formatPrice(p: number) {
+    if (p >= 10000000) return `₹${(p/10000000).toFixed(1)} Cr`;
+    if (p >= 100000)   return `₹${(p/100000).toFixed(0)}L`;
+    return `₹${p}`;
+  }
 
   clearAll() {
     this.carType.set('All'); this.usedKmRange.set('All');
     this.selectedFuel.set('All'); this.selectedTransmission.set('All');
     this.selectedBodyType.set('All'); this.selectedMake.set('All');
-    this.maxPrice.set(5000000); this.minYear.set(2018); this.searchQuery.set('');
+    this.maxPrice.set(20000000); this.minYear.set(2018); this.searchQuery.set('');
   }
 }
