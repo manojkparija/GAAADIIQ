@@ -334,4 +334,22 @@ export class CarDetailComponent implements OnInit {
     if (min === max) return `₹${(min / 100000).toFixed(2)} Lakh`;
     return `₹${(min / 100000).toFixed(2)} - ${(max / 100000).toFixed(2)} Lakh`;
   }
+
+  similarCars = computed(() => {
+    if (!this.car || !this.isNewCar) return [];
+    const all = this.carsData.cars();
+    return all
+      .filter(c =>
+        c.id !== this.car.id &&
+        c.km === 0 && c.year >= 2025 &&
+        (c.bodyType === this.car.bodyType || Math.abs(c.price - this.car.price) < 500000)
+      )
+      .sort((a, b) => Math.abs(a.price - this.car.price) - Math.abs(b.price - this.car.price))
+      .slice(0, 5);
+  });
+
+  getMileage(car: Car) {
+    const spec = car.specs?.find(s => s.label.toLowerCase().includes('mileage') && !s.label.toLowerCase().includes('cng'));
+    return spec?.value ?? '—';
+  }
 }

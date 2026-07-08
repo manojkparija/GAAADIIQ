@@ -256,6 +256,65 @@
             </li>
           </ul>
         </div>
+
+        <!-- COMPARE WITH SIMILAR CARS (new cars only) -->
+        <div class="similar-cars-card glass-card" *ngIf="isNewCar && similarCars().length > 0">
+          <div class="section-title">⚖️ Compare {{ car.make }} {{ car.model }} with Similar Cars</div>
+          <div class="similar-table-wrap">
+            <table class="similar-table">
+              <thead>
+                <tr>
+                  <th>Car</th>
+                  <th>Image</th>
+                  <th>Avg. Ex-Showroom Price</th>
+                  <th>User Rating</th>
+                  <th>Mileage (ARAI)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Current car row -->
+                <tr class="similar-row current-car-row">
+                  <td class="similar-car-name">{{ car.make }} {{ car.model }}</td>
+                  <td class="similar-img-cell">
+                    <img [src]="car.image" [alt]="car.make + ' ' + car.model"
+                         onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                  </td>
+                  <td>
+                    <span class="similar-price">{{ formatPrice(car.price) }}</span>
+                    <span class="similar-onwards"> onwards</span>
+                  </td>
+                  <td>
+                    <span class="similar-rating">★ {{ car.rating }}/5</span>
+                    <div class="similar-reviews">{{ car.reviews }} Ratings</div>
+                  </td>
+                  <td class="similar-mileage">{{ getMileage(car) }}</td>
+                </tr>
+                <!-- Similar cars rows -->
+                <tr class="similar-row" *ngFor="let s of similarCars()">
+                  <td class="similar-car-name">
+                    <a [routerLink]="['/car', s.id]" class="similar-link">{{ s.make }} {{ s.model }}</a>
+                    <span class="similar-arrow"> ›</span>
+                  </td>
+                  <td class="similar-img-cell">
+                    <a [routerLink]="['/car', s.id]">
+                      <img [src]="s.image" [alt]="s.make + ' ' + s.model"
+                           onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                    </a>
+                  </td>
+                  <td>
+                    <span class="similar-price">{{ formatPrice(s.price) }}</span>
+                    <span class="similar-onwards"> onwards</span>
+                  </td>
+                  <td>
+                    <span class="similar-rating">★ {{ s.rating }}/5</span>
+                    <div class="similar-reviews">{{ s.reviews }} Ratings</div>
+                  </td>
+                  <td class="similar-mileage">{{ getMileage(s) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- RIGHT -->

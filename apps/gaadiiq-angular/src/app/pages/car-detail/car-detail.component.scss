@@ -258,3 +258,60 @@
 }
 .update-text { font-size: 0.9rem; color: var(--text); line-height: 1.5; margin-bottom: 0.2rem; }
 .update-date { font-size: 0.78rem; color: var(--muted); }
+
+// ── Similar Cars comparison table ─────────────────────────────────────────────
+.similar-cars-card { padding: 1.5rem; }
+
+.similar-table-wrap { overflow-x: auto; }
+
+.similar-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--divider);
+    white-space: nowrap;
+  }
+}
+
+.similar-row {
+  border-bottom: 1px solid var(--divider);
+  transition: background 0.15s;
+  &:hover { background: rgba(108,99,255,0.04); }
+  &:last-child { border-bottom: none; }
+
+  td { padding: 0.9rem 0.75rem; vertical-align: middle; }
+}
+
+.current-car-row {
+  background: rgba(108,99,255,0.06);
+  .similar-car-name { font-weight: 800; color: var(--text); }
+}
+
+.similar-car-name {
+  font-weight: 600;
+  white-space: nowrap;
+  .similar-link { color: var(--primary); text-decoration: none; &:hover { text-decoration: underline; } }
+  .similar-arrow { color: var(--muted); font-size: 1rem; }
+}
+
+.similar-img-cell {
+  img {
+    width: 100px; height: 65px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: var(--fill-soft);
+  }
+}
+
+.similar-price { font-weight: 700; color: var(--text); }
+.similar-onwards { font-size: 0.75rem; color: var(--muted); }
+.similar-rating { font-weight: 700; color: #f59e0b; white-space: nowrap; }
+.similar-reviews { font-size: 0.72rem; color: var(--muted); }
+.similar-mileage { font-weight: 600; color: var(--text); white-space: nowrap; }
