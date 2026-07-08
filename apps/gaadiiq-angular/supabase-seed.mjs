@@ -64,6 +64,46 @@ const cars = [
   { id:56, make:'Mahindra',      model:'XUV 3XO',      variant:'MX5 Pro Turbo AT',    year:2024, price:999000,  km:0,     fuel:'Petrol',   transmission:'Automatic', badge:'🔥 Trending',    badge_type:'badge-red',    image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/198343/xuv-3xo-exterior-right-front-three-quarter.jpeg',         rating:4.8, reviews:289, verified:true, city:'Mumbai',    body_type:'SUV',       color:'Napoli Black',      owners:'Brand New' },
   { id:57, make:'Mahindra',      model:'XUV 3XO',      variant:'MX3 Diesel MT',       year:2024, price:1149000, km:0,     fuel:'Diesel',   transmission:'Manual',    badge:'💰 Best Value',  badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/198343/xuv-3xo-exterior-right-front-three-quarter.jpeg',         rating:4.7, reviews:198, verified:true, city:'Bangalore', body_type:'SUV',       color:'Dazzling Silver',   owners:'Brand New' },
   { id:58, make:'Mahindra',      model:'XUV 3XO',      variant:'MX5 Pro Diesel AT',   year:2024, price:1349000, km:0,     fuel:'Diesel',   transmission:'Automatic', badge:'⭐ Top Rated',   badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/198343/xuv-3xo-exterior-right-front-three-quarter.jpeg',         rating:4.9, reviews:156, verified:true, city:'Hyderabad', body_type:'SUV',       color:'Midnight Black',    owners:'Brand New' },
+
+  // ── Tata Nexon 2025 – Full Brochure Variant Range ──────────────────────────
+  // Smart Persona
+  { id:59, make:'Tata', model:'Nexon', variant:'Smart Petrol 5MT',        year:2025, price: 799000, km:0, fuel:'Petrol', transmission:'Manual',    badge:'💰 Entry Level', badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.5, reviews:320, verified:true, city:'Delhi',     body_type:'SUV', color:'Pristine White',  owners:'Brand New' },
+  { id:60, make:'Tata', model:'Nexon', variant:'Smart Diesel 6MT',        year:2025, price: 949000, km:0, fuel:'Diesel', transmission:'Manual',    badge:'🌿 Eco Diesel',  badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.5, reviews:210, verified:true, city:'Mumbai',    body_type:'SUV', color:'Daytona Grey',    owners:'Brand New' },
+  { id:61, make:'Tata', model:'Nexon', variant:'Smart iCNG 6MT',          year:2025, price: 929000, km:0, fuel:'CNG',    transmission:'Manual',    badge:'🌿 CNG Turbo',   badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.5, reviews:175, verified:true, city:'Jaipur',    body_type:'SUV', color:'Grassland Beige', owners:'Brand New' },
+
+  // Smart+ Persona
+  { id:62, make:'Tata', model:'Nexon', variant:'Smart+ Petrol 6MT',       year:2025, price: 919000, km:0, fuel:'Petrol', transmission:'Manual',    badge:'⭐ Popular',     badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.6, reviews:280, verified:true, city:'Pune',      body_type:'SUV', color:'Royal Blue',      owners:'Brand New' },
+  { id:63, make:'Tata', model:'Nexon', variant:'Smart+ Diesel 6MT',       year:2025, price:1049000, km:0, fuel:'Diesel', transmission:'Manual',    badge:'🌿 Diesel Value', badge_type:'badge-green',             image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.6, reviews:198, verified:true, city:'Chennai',   body_type:'SUV', color:'Daytona Grey',    owners:'Brand New' },
+
+  // Pure+ Persona
+  { id:64, make:'Tata', model:'Nexon', variant:'Pure+ Petrol 6MT',        year:2025, price:1049000, km:0, fuel:'Petrol', transmission:'Manual',    badge:'✅ Certified',   badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.6, reviews:345, verified:true, city:'Bangalore', body_type:'SUV', color:'Pure Grey',       owners:'Brand New' },
+  { id:65, make:'Tata', model:'Nexon', variant:'Pure+ Diesel 6MT',        year:2025, price:1199000, km:0, fuel:'Diesel', transmission:'Manual',    badge:'💰 Best Value',  badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.6, reviews:267, verified:true, city:'Hyderabad', body_type:'SUV', color:'Pristine White',  owners:'Brand New' },
+  { id:66, make:'Tata', model:'Nexon', variant:'Pure+ iCNG 6MT',          year:2025, price:1179000, km:0, fuel:'CNG',    transmission:'Manual',    badge:'🌿 Turbo CNG',   badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.6, reviews:189, verified:true, city:'Delhi',     body_type:'SUV', color:'Grassland Beige', owners:'Brand New' },
+
+  // Pure+S Persona
+  { id:67, make:'Tata', model:'Nexon', variant:'Pure+S Petrol DCA',       year:2025, price:1249000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'⭐ Sunroof DCA',  badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.7, reviews:312, verified:true, city:'Mumbai',    body_type:'SUV', color:'Ocean Blue',      owners:'Brand New' },
+
+  // Pure+PS Persona
+  { id:68, make:'Tata', model:'Nexon', variant:'Pure+PS Petrol DCA',      year:2025, price:1349000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'🏔️ Panoramic',  badge_type:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.7, reviews:290, verified:true, city:'Pune',      body_type:'SUV', color:'Royal Blue',      owners:'Brand New' },
+  { id:69, make:'Tata', model:'Nexon', variant:'Pure+PS Diesel 6MT',      year:2025, price:1499000, km:0, fuel:'Diesel', transmission:'Manual',    badge:'💰 Diesel PS',   badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.7, reviews:198, verified:true, city:'Delhi',     body_type:'SUV', color:'Daytona Grey',    owners:'Brand New' },
+
+  // Creative Persona
+  { id:70, make:'Tata', model:'Nexon', variant:'Creative Petrol DCA',     year:2025, price:1449000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'🔥 Trending',    badge_type:'badge-red',    image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.7, reviews:412, verified:true, city:'Bangalore', body_type:'SUV', color:'Ocean Blue',      owners:'Brand New' },
+  { id:71, make:'Tata', model:'Nexon', variant:'Creative Diesel 6MT',     year:2025, price:1599000, km:0, fuel:'Diesel', transmission:'Manual',    badge:'⭐ Top Rated',   badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.7, reviews:267, verified:true, city:'Chennai',   body_type:'SUV', color:'Pure Grey',       owners:'Brand New' },
+  { id:72, make:'Tata', model:'Nexon', variant:'Creative iCNG 6MT',       year:2025, price:1529000, km:0, fuel:'CNG',    transmission:'Manual',    badge:'🌿 CNG SUV',     badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.7, reviews:189, verified:true, city:'Jaipur',    body_type:'SUV', color:'Grassland Beige', owners:'Brand New' },
+
+  // Creative+PS Persona
+  { id:73, make:'Tata', model:'Nexon', variant:'Creative+PS Petrol DCA',  year:2025, price:1649000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'🔥 Bestseller',  badge_type:'badge-red',    image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.8, reviews:534, verified:true, city:'Mumbai',    body_type:'SUV', color:'Pristine White',  owners:'Brand New' },
+  { id:74, make:'Tata', model:'Nexon', variant:'Creative+PS Diesel 6AMT', year:2025, price:1799000, km:0, fuel:'Diesel', transmission:'AMT',       badge:'💰 Diesel+PS',   badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.8, reviews:312, verified:true, city:'Delhi',     body_type:'SUV', color:'Daytona Grey',    owners:'Brand New' },
+
+  // Fearless+PS Persona
+  { id:75, make:'Tata', model:'Nexon', variant:'Fearless+PS Petrol DCA',  year:2025, price:1849000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'👑 Flagship',    badge_type:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.9, reviews:289, verified:true, city:'Bangalore', body_type:'SUV', color:'Ocean Blue',      owners:'Brand New' },
+  { id:76, make:'Tata', model:'Nexon', variant:'Fearless+PS Diesel 6AMT', year:2025, price:1949000, km:0, fuel:'Diesel', transmission:'AMT',       badge:'👑 Top Spec',    badge_type:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.9, reviews:234, verified:true, city:'Hyderabad', body_type:'SUV', color:'Royal Blue',      owners:'Brand New' },
+
+  // Special Editions
+  { id:77, make:'Tata', model:'Nexon', variant:'#DARK Creative+PS DCA',   year:2025, price:1700000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'🖤 #DARK Edition',badge_type:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.8, reviews:198, verified:true, city:'Mumbai',    body_type:'SUV', color:'Carbon Black',    owners:'Brand New' },
+  { id:78, make:'Tata', model:'Nexon', variant:'#DARK Fearless+PS DCA',   year:2025, price:1900000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'🖤 #DARK Fearless',badge_type:'badge-purple',image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.9, reviews:167, verified:true, city:'Delhi',     body_type:'SUV', color:'Carbon Black',    owners:'Brand New' },
+  { id:79, make:'Tata', model:'Nexon', variant:'RED #DARK Fearless+PS DCA',year:2025,price:2000000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'🔴 RED #DARK',   badge_type:'badge-red',    image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.9, reviews:145, verified:true, city:'Bangalore', body_type:'SUV', color:'Carbon Black',    owners:'Brand New' },
 ];
 
 const specs = {
@@ -125,6 +165,29 @@ const specs = {
   56: [{label:'Engine',value:'1.2L TGDi Turbo Petrol'},{label:'Power',value:'129 bhp'},{label:'Torque',value:'230 Nm'},{label:'Mileage',value:'17.96 km/l'},{label:'Seating',value:'5 Persons'},{label:'Boot Space',value:'364 Litres'}],
   57: [{label:'Engine',value:'1.5L mHawk Diesel'},{label:'Power',value:'116.6 bhp'},{label:'Torque',value:'300 Nm'},{label:'Mileage',value:'20.1 km/l'},{label:'Seating',value:'5 Persons'},{label:'Boot Space',value:'364 Litres'}],
   58: [{label:'Engine',value:'1.5L mHawk Diesel'},{label:'Power',value:'116.6 bhp'},{label:'Torque',value:'300 Nm'},{label:'Mileage',value:'20.1 km/l'},{label:'Seating',value:'5 Persons'},{label:'Boot Space',value:'364 Litres'}],
+
+  // Tata Nexon 2025 specs (from official brochure)
+  59: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'Ground Clearance',value:'208 mm'},{label:'Boot Space',value:'382 L'},{label:'Wheelbase',value:'2498 mm'},{label:'Dimensions',value:'3995×1804×1620 mm'}],
+  60: [{label:'Engine',value:'1.5L Revotorq Turbo Diesel'},{label:'Power',value:'113 bhp @ 3750 rpm'},{label:'Torque',value:'260 Nm @ 1500–2750 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Ground Clearance',value:'208 mm'},{label:'Boot Space',value:'382 L'},{label:'Wheelbase',value:'2498 mm'},{label:'Mileage',value:'~24 km/l'}],
+  61: [{label:'Engine',value:'1.2L Revotron Turbo iCNG'},{label:'CNG Power',value:'98.5 bhp @ 5000 rpm'},{label:'CNG Torque',value:'170 Nm @ 2000 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Ground Clearance',value:'208 mm'},{label:'CNG Tank',value:'60 L (30+30 Twin Cylinders)'},{label:'Boot Space',value:'321 L'},{label:'CNG Mode',value:'Direct Start'}],
+  62: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Infotainment',value:'17.78 cm HARMAN'},{label:'Ground Clearance',value:'208 mm'},{label:'Boot Space',value:'382 L'},{label:'Speakers',value:'2'}],
+  63: [{label:'Engine',value:'1.5L Revotorq Turbo Diesel'},{label:'Power',value:'113 bhp @ 3750 rpm'},{label:'Torque',value:'260 Nm @ 1500–2750 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Infotainment',value:'17.78 cm HARMAN'},{label:'Ground Clearance',value:'208 mm'},{label:'Boot Space',value:'382 L'},{label:'Mileage',value:'~24 km/l'}],
+  64: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Infotainment',value:'26.03 cm HARMAN Slim Bezel'},{label:'Ground Clearance',value:'208 mm'},{label:'Boot Space',value:'382 L'},{label:'Speakers',value:'4'}],
+  65: [{label:'Engine',value:'1.5L Revotorq Turbo Diesel'},{label:'Power',value:'113 bhp @ 3750 rpm'},{label:'Torque',value:'260 Nm @ 1500–2750 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Infotainment',value:'26.03 cm HARMAN'},{label:'Ground Clearance',value:'208 mm'},{label:'Boot Space',value:'382 L'},{label:'Mileage',value:'~24 km/l'}],
+  66: [{label:'Engine',value:'1.2L Revotron Turbo iCNG'},{label:'CNG Power',value:'98.5 bhp @ 5000 rpm'},{label:'CNG Torque',value:'170 Nm @ 2000 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Infotainment',value:'26.03 cm HARMAN'},{label:'CNG Tank',value:'60 L (30+30 Twin)'},{label:'Boot Space',value:'321 L'},{label:'CNG Mode',value:'Direct Start'}],
+  67: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA'},{label:'Infotainment',value:'26.03 cm HARMAN'},{label:'Sunroof',value:'Voice-assisted Electric'},{label:'Ground Clearance',value:'208 mm'},{label:'Drive Modes',value:'Eco / City / Sport'}],
+  68: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA'},{label:'Infotainment',value:'26.03 cm HARMAN'},{label:'Sunroof',value:'Voice-assisted Panoramic'},{label:'Cruise Control',value:'Yes (DCA)'},{label:'Tweeters',value:'2'}],
+  69: [{label:'Engine',value:'1.5L Revotorq Turbo Diesel'},{label:'Power',value:'113 bhp @ 3750 rpm'},{label:'Torque',value:'260 Nm @ 1500–2750 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Infotainment',value:'26.03 cm HARMAN'},{label:'Sunroof',value:'Voice-assisted Panoramic'},{label:'Ground Clearance',value:'208 mm'},{label:'Boot Space',value:'382 L'}],
+  70: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA'},{label:'Infotainment',value:'26.03 cm HARMAN Slim Bezel'},{label:'360° Camera',value:'HD Surround View + Blind Monitor'},{label:'Wheels',value:'R16 Alloy'},{label:'Ground Clearance',value:'208 mm'}],
+  71: [{label:'Engine',value:'1.5L Revotorq Turbo Diesel'},{label:'Power',value:'113 bhp @ 3750 rpm'},{label:'Torque',value:'260 Nm @ 1500–2750 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Infotainment',value:'26.03 cm HARMAN Slim Bezel'},{label:'360° Camera',value:'Yes'},{label:'Wheels',value:'R16 Alloy'},{label:'Ground Clearance',value:'208 mm'}],
+  72: [{label:'Engine',value:'1.2L Revotron Turbo iCNG'},{label:'CNG Power',value:'98.5 bhp @ 5000 rpm'},{label:'CNG Torque',value:'170 Nm @ 2000 rpm'},{label:'Transmission',value:'6-Speed Manual'},{label:'Infotainment',value:'26.03 cm HARMAN Slim Bezel'},{label:'CNG Tank',value:'60 L (30+30 Twin)'},{label:'Boot Space',value:'321 L'},{label:'Wheels',value:'R16 Alloy'}],
+  73: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA + Paddle Shifters'},{label:'Infotainment',value:'26.03 cm HARMAN Slim Bezel'},{label:'Sunroof',value:'Panoramic (Electric)'},{label:'Headlights',value:'Bi-LED with Cornering'},{label:'Tyre Size',value:'215/60 R16'}],
+  74: [{label:'Engine',value:'1.5L Revotorq Turbo Diesel'},{label:'Power',value:'113 bhp @ 3750 rpm'},{label:'Torque',value:'260 Nm @ 1500–2750 rpm'},{label:'Transmission',value:'6-Speed AMT'},{label:'Infotainment',value:'26.03 cm HARMAN Slim Bezel'},{label:'Sunroof',value:'Panoramic'},{label:'Headlights',value:'Bi-LED with Cornering'},{label:'Tyre Size',value:'215/60 R16'}],
+  75: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA + Paddle Shifters'},{label:'Infotainment',value:'26.03 cm HARMAN Slim Bezel'},{label:'Digital Cluster',value:'26.03 cm'},{label:'Seats',value:'Ventilated Driver & Co-driver (Benecke Kaliko)'},{label:'ADAS',value:'7-System (FCW, AEB, LCS, LKA, LDW, TSR, HBA)'}],
+  76: [{label:'Engine',value:'1.5L Revotorq Turbo Diesel'},{label:'Power',value:'113 bhp @ 3750 rpm'},{label:'Torque',value:'260 Nm @ 1500–2750 rpm'},{label:'Transmission',value:'6-Speed AMT'},{label:'Infotainment',value:'26.03 cm HARMAN Slim Bezel'},{label:'Digital Cluster',value:'26.03 cm'},{label:'Seats',value:'Ventilated Benecke Kaliko Leatherette'},{label:'ADAS',value:'7-System Suite'}],
+  77: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA + Paddle Shifters'},{label:'Edition',value:'#DARK – Carbon Black'},{label:'Interior',value:'Dark Themed + Blue Stitching Benecke Kaliko'},{label:'Sunroof',value:'Voice-assisted Panoramic'},{label:'360° Camera',value:'HD Surround View + Blind Monitor'}],
+  78: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA + Paddle Shifters'},{label:'Edition',value:'#DARK Fearless – Carbon Black'},{label:'ADAS',value:'7-System Suite'},{label:'Interior',value:'Dark Themed + Blue Stitching'},{label:'iRA Connected',value:'Yes + OTA Updates'}],
+  79: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA + Paddle Shifters'},{label:'Edition',value:'RED #DARK – Black Body / Red Interior'},{label:'Seats',value:'Ventilated Red Benecke-Kaliko Leatherette'},{label:'ADAS',value:'7-System Suite + iRA Connected'},{label:'Dashboard',value:'Red Hot #DARK Theme + Red Deco Stitching'}],
 };
 
 const features = {
@@ -186,6 +249,29 @@ const features = {
   56: ['Panoramic Sunroof','ADAS Level 2','360 Camera','10.25" Display','Wireless Charger','Sony 3D Sound','6 Airbags'],
   57: ['10.25" Touchscreen','Sunroof','6 Airbags','ESP','Hill Assist','Rear Camera'],
   58: ['Panoramic Sunroof','ADAS Level 2','360 Camera','Sony 3D Sound','Ventilated Seats','Wireless Charger','6 Airbags','HUD'],
+
+  // Tata Nexon 2025 features
+  59: ['6 Airbags','Bharat NCAP 5-Star','LED Head Lamps & DRLs','LED Tail Lamps','R16 Steel Wheels','ESP','2-Spoke Steering with Illuminated Logo','Multi-Drive Modes (Eco/City/Sport)','Full Digital Cluster','ISOFIX'],
+  60: ['6 Airbags','Bharat NCAP 5-Star','LED Head Lamps & DRLs','LED Tail Lamps','R16 Steel Wheels','ESP','Full Digital Cluster','ISOFIX','260 Nm Diesel Torque','24+ km/l Mileage'],
+  61: ['6 Airbags','Bharat NCAP 5-Star','India 1st Turbo CNG SUV','Twin-Cylinder 60L CNG Tank','321L Boot Space','Direct Start in CNG','Auto-Switch Fuels','CNG Leak Detection','Fire Protection Device','iCNG Thermal Protection'],
+  62: ['6 Airbags','Bharat NCAP 5-Star','17.78cm HARMAN Touchscreen','Android Auto / Apple CarPlay','All Power Windows','Steering Wheel Controls','E-Shifter & Paddle Shifters','USB Type-A','Follow Me Home Headlamps','LED DRLs'],
+  63: ['6 Airbags','Bharat NCAP 5-Star','17.78cm HARMAN Touchscreen','Android Auto / Apple CarPlay','260 Nm Diesel Torque','All Power Windows','Steering Wheel Controls','LED DRLs','24+ km/l Mileage','6-Speed Manual'],
+  64: ['6 Airbags','Bharat NCAP 5-Star','26.03cm HARMAN Touchscreen','Wireless Android Auto & CarPlay','HD Rear View Camera','Auto-Fold ORVM','Height Adjustable Driver Seat','Front Armrest','Rear AC Vents','4 Speakers'],
+  65: ['6 Airbags','Bharat NCAP 5-Star','26.03cm HARMAN Touchscreen','Wireless Android Auto & CarPlay','260 Nm Diesel Torque','HD Rear View Camera','Auto-Fold ORVM','Height Adjustable Driver Seat','Rear AC Vents','4 Speakers'],
+  66: ['6 Airbags','Bharat NCAP 5-Star','India 1st Turbo CNG SUV','26.03cm HARMAN Touchscreen','Twin-Cylinder 60L CNG Tank','321L Boot Space','Direct Start in CNG','CNG Leak Detection','HD Rear View Camera','4 Speakers'],
+  67: ['6 Airbags','Bharat NCAP 5-Star','26.03cm HARMAN Touchscreen','Voice-assisted Electric Sunroof','7-Speed DCA Auto','Paddle Shifters','Auto Headlamps','Rain-Sensing Wipers','HD Rear View Camera','Wireless Android Auto & CarPlay'],
+  68: ['6 Airbags','Bharat NCAP 5-Star','26.03cm HARMAN Touchscreen','Voice-assisted Panoramic Sunroof','7-Speed DCA Auto','Cruise Control','Paddle Shifters','Rear Wiper & Washer','2 Tweeters','Auto Headlamps'],
+  69: ['6 Airbags','Bharat NCAP 5-Star','26.03cm HARMAN Touchscreen','Voice-assisted Panoramic Sunroof','260 Nm Diesel Torque','Rear Wiper & Washer','2 Tweeters','HD Rear View Camera','Auto Headlamps','Rain-Sensing Wipers'],
+  70: ['6 Airbags','Bharat NCAP 5-Star','360° HD Surround View + Blind Monitor','R16 Alloy Wheels','Push Button Start','FATC Capacitive Touch','26.03cm HARMAN Touchscreen','7-Speed DCA','Cruise Control','Wireless Charger'],
+  71: ['6 Airbags','Bharat NCAP 5-Star','360° HD Surround View + Blind Monitor','R16 Alloy Wheels','Push Button Start','FATC','26.03cm HARMAN Touchscreen','260 Nm Diesel Torque','Cooled Glovebox','Touch Based Control Panel'],
+  72: ['6 Airbags','Bharat NCAP 5-Star','India 1st Turbo CNG SUV','360° HD Surround View + Blind Monitor','R16 Alloy Wheels','Twin-Cylinder 60L CNG','321L Boot Space','Push Button Start','26.03cm HARMAN Touchscreen','CNG Leak Detection'],
+  73: ['6 Airbags','Bharat NCAP 5-Star','Panoramic Sunroof','Bi-LED Headlamps with Cornering','X-Graphic Full LED Taillights','360° HD Surround View','7-Speed DCA + Paddle Shifters','Wireless Charger','TPMS','60:40 Flip & Fold Seats','PEPS','4 Speakers + 2 Tweeters'],
+  74: ['6 Airbags','Bharat NCAP 5-Star','Panoramic Sunroof','Bi-LED Headlamps with Cornering','X-Graphic Full LED Taillights','360° HD Surround View','6-Speed AMT','Wireless Charger','TPMS','60:40 Flip & Fold Seats','260 Nm Diesel'],
+  75: ['6 Airbags','Bharat NCAP 5-Star','ADAS (FCW + AEB + LCS + LKA + LDW + TSR + HBA)','Voice-assisted Panoramic Sunroof','JBL Sound System','Subwoofer','Ventilated Driver & Co-driver Seat','iRA Connected Car','OTA Updates','26.03cm Digital Cluster','Premium Benecke Kaliko Leatherette','Air Purifier','360° Surround View','7-Speed DCA'],
+  76: ['6 Airbags','Bharat NCAP 5-Star','ADAS (7-System Suite)','Voice-assisted Panoramic Sunroof','JBL Sound System','Subwoofer','Ventilated Benecke Kaliko Seats','iRA Connected Car','OTA Updates','26.03cm Digital Cluster','260 Nm Diesel Torque','6-Speed AMT','Rear Sunshade'],
+  77: ['6 Airbags','Bharat NCAP 5-Star','#DARK Edition – Carbon Black','Dark Themed Dashboard','Benecke Kaliko Blue-Stitched Seats','Voice-assisted Panoramic Sunroof','360° HD Surround View + Blind Monitor','7-Speed DCA + Paddle Shifters','#DARK Mascot','Ventilated Seats','Wireless Charger','60:40 Fold Seats'],
+  78: ['6 Airbags','Bharat NCAP 5-Star','#DARK Fearless Edition – Carbon Black','ADAS (7-System Suite)','Dark Themed Dashboard','Benecke Kaliko Blue-Stitched Seats','Voice-assisted Panoramic Sunroof','7-Speed DCA','JBL Sound + Subwoofer','iRA Connected Car','OTA Updates','26.03cm Digital Cluster','Air Purifier'],
+  79: ['6 Airbags','Bharat NCAP 5-Star','RED #DARK Edition – Black/Red','ADAS (7-System Suite)','Ventilated Red Benecke-Kaliko Seats','Red Hot #DARK Interior Dashboard','Voice-assisted Panoramic Sunroof','7-Speed DCA + Paddle Shifters','JBL Sound + Subwoofer','iRA Connected Car','OTA Updates','360° Surround Camera','Rear Sunshade','Air Purifier'],
 };
 
 const aiValuations = {
@@ -247,6 +333,29 @@ const aiValuations = {
   56: {fair_price:999000, market_min:960000, market_max:1050000,verdict:'Fair Deal', confidence:95},
   57: {fair_price:1149000,market_min:1100000,market_max:1210000,verdict:'Fair Deal', confidence:93},
   58: {fair_price:1349000,market_min:1300000,market_max:1410000,verdict:'Fair Deal', confidence:94},
+
+  // Tata Nexon 2025 AI Valuations (brand new ex-showroom, no negotiation floor)
+  59: {fair_price: 799000, market_min: 780000, market_max: 830000, verdict:'Fair Deal', confidence:95},
+  60: {fair_price: 949000, market_min: 930000, market_max: 980000, verdict:'Fair Deal', confidence:95},
+  61: {fair_price: 929000, market_min: 910000, market_max: 960000, verdict:'Fair Deal', confidence:95},
+  62: {fair_price: 919000, market_min: 900000, market_max: 950000, verdict:'Fair Deal', confidence:95},
+  63: {fair_price:1049000, market_min:1020000, market_max:1090000, verdict:'Fair Deal', confidence:95},
+  64: {fair_price:1049000, market_min:1020000, market_max:1090000, verdict:'Fair Deal', confidence:95},
+  65: {fair_price:1199000, market_min:1170000, market_max:1240000, verdict:'Fair Deal', confidence:95},
+  66: {fair_price:1179000, market_min:1150000, market_max:1220000, verdict:'Fair Deal', confidence:95},
+  67: {fair_price:1249000, market_min:1220000, market_max:1290000, verdict:'Fair Deal', confidence:95},
+  68: {fair_price:1349000, market_min:1320000, market_max:1390000, verdict:'Fair Deal', confidence:95},
+  69: {fair_price:1499000, market_min:1470000, market_max:1550000, verdict:'Fair Deal', confidence:95},
+  70: {fair_price:1449000, market_min:1420000, market_max:1500000, verdict:'Fair Deal', confidence:95},
+  71: {fair_price:1599000, market_min:1560000, market_max:1650000, verdict:'Fair Deal', confidence:95},
+  72: {fair_price:1529000, market_min:1500000, market_max:1580000, verdict:'Fair Deal', confidence:95},
+  73: {fair_price:1649000, market_min:1610000, market_max:1700000, verdict:'Fair Deal', confidence:95},
+  74: {fair_price:1799000, market_min:1760000, market_max:1860000, verdict:'Fair Deal', confidence:95},
+  75: {fair_price:1849000, market_min:1810000, market_max:1910000, verdict:'Fair Deal', confidence:95},
+  76: {fair_price:1949000, market_min:1910000, market_max:2010000, verdict:'Fair Deal', confidence:95},
+  77: {fair_price:1700000, market_min:1660000, market_max:1760000, verdict:'Fair Deal', confidence:95},
+  78: {fair_price:1900000, market_min:1860000, market_max:1960000, verdict:'Fair Deal', confidence:95},
+  79: {fair_price:2000000, market_min:1960000, market_max:2060000, verdict:'Fair Deal', confidence:95},
 };
 
 async function seed() {
@@ -281,7 +390,7 @@ async function seed() {
   if (valError) { console.error('❌ Valuation insert failed:', valError.message); return; }
   console.log(`✅ Inserted ${valuationRows.length} AI valuation rows`);
 
-  console.log('\n🎉 Seed complete! All 58 cars are now in Supabase.');
+  console.log('\n🎉 Seed complete! All 79 cars are now in Supabase.');
 }
 
 seed();
