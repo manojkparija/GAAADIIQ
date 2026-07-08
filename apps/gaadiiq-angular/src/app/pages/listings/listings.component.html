@@ -6,11 +6,6 @@
         <h1>Browse <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></h1>
         <p style="color:var(--muted);font-size:0.9rem">{{ filteredCars().length }} listings found<span *ngIf="selectedMake() !== 'All'"> &nbsp;·&nbsp; <a href="javascript:void(0)" (click)="selectedMake.set('All')" style="color:var(--accent);font-size:0.85rem">Clear brand filter ✕</a></span></p>
       </div>
-      <div class="search-bar glass-card">
-        <span>🔍</span>
-        <input #searchInput type="text" placeholder="Search make, model, body type, city, year..."
-  (input)="searchQuery.set(searchInput.value)">
-      </div>
       <div class="sort-row">
         <select [(ngModel)]="sorts[0]" (change)="selectedSort.set($any($event.target).value)">
           <option *ngFor="let s of sorts">{{ s }}</option>
