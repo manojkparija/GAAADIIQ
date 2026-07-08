@@ -82,9 +82,9 @@
   gap: 0.75rem;
   align-items: center;
   select {
-    background: #1a1f35;
+    background: var(--dropdown-bg, #1a1f35);
     border: 1px solid var(--glass-border);
-    color: var(--text);
+    color: var(--dropdown-text, #fff);
     padding: 0.5rem 1rem;
     border-radius: 50px;
     font-size: 0.85rem;
@@ -94,8 +94,8 @@
     -webkit-appearance: none;
     outline: none;
     option {
-      background: #1a1f35;
-      color: #fff;
+      background: var(--dropdown-bg, #1a1f35);
+      color: var(--dropdown-text, #fff);
     }
   }
 }
