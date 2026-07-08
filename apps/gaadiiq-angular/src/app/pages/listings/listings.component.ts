@@ -1,9 +1,17 @@
 import { Component, signal, computed, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { CarCardComponent } from '../../components/car-card/car-card.component';
 import { CarsDataService, Car } from '../../services/cars-data.service';
+
+interface NewCarModel {
+  make: string; model: string; image: string;
+  minPrice: number; maxPrice: number;
+  variantCount: number; bodyType: string; fuel: string;
+  rating: number; reviews: number; badge: string;
+  representativeId: number;
+}
 
 @Component({
   selector: 'app-listings',
@@ -13,7 +21,7 @@ import { CarsDataService, Car } from '../../services/cars-data.service';
   styleUrl: './listings.component.scss'
 })
 export class ListingsComponent implements OnInit {
-  constructor(private route: ActivatedRoute, private carsData: CarsDataService) {}
+  constructor(private route: ActivatedRoute, private carsData: CarsDataService, private router: Router) {}
 
   get loading() { return this.carsData.loading; }
 
@@ -89,6 +97,52 @@ export class ListingsComponent implements OnInit {
 
   newCount  = computed(() => this.carsData.cars().filter(c => c.km === 0 && c.year >= 2025).length);
   usedCount = computed(() => this.carsData.cars().filter(c => c.km > 0 || c.year < 2025).length);
+
+  selectedModel = signal<string | null>(null);
+
+  newCarModels = computed<NewCarModel[]>(() => {
+    const newCars = this.carsData.cars().filter(c => c.km === 0 && c.year >= 2025);
+    const map = new Map<string, Car[]>();
+    for (const c of newCars) {
+      const key = `${c.make}||${c.model}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(c);
+    }
+    return Array.from(map.entries()).map(([key, cars]) => {
+      const [make, model] = key.split('||');
+      const prices = cars.map(c => c.price);
+      const rep = cars.find(c => c.image) ?? cars[0];
+      return {
+        make, model,
+        image: rep.image,
+        minPrice: Math.min(...prices),
+        maxPrice: Math.max(...prices),
+        variantCount: cars.length,
+        bodyType: rep.bodyType ?? '',
+        fuel: [...new Set(cars.map(c => c.fuel))].join(' / '),
+        rating: rep.rating,
+        reviews: rep.reviews,
+        badge: rep.badge,
+        representativeId: rep.id,
+      };
+    }).sort((a, b) => b.reviews - a.reviews);
+  });
+
+  newModelVariants = computed(() => {
+    const sel = this.selectedModel();
+    if (!sel) return [];
+    const [make, model] = sel.split('||');
+    return this.carsData.cars()
+      .filter(c => c.make === make && c.model === model && c.km === 0 && c.year >= 2025)
+      .sort((a, b) => a.price - b.price);
+  });
+
+  selectModel(m: NewCarModel) { this.selectedModel.set(`${m.make}||${m.model}`); }
+  clearModel() { this.selectedModel.set(null); }
+
+  formatPriceLakh(p: number) {
+    return `₹${(p / 100000).toFixed(2)}L`;
+  }
 
   swiftGallery = [
     { src: 'assets/cars/swift/front.jpg',      label: 'Front View',     pos: 'center 65%' },

@@ -1,21 +1,40 @@
 <div class="listings-page">
+
   <!-- HEADER BAR -->
   <div class="listings-header">
     <div class="container listings-header-inner">
       <div>
         <h1>
-          <span *ngIf="carType()==='New'">New <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></span>
+          <span *ngIf="carType()==='New'">
+            <ng-container *ngIf="!selectedModel()">Explore <span class="gradient-text">New Cars</span></ng-container>
+            <ng-container *ngIf="selectedModel()">
+              <span class="gradient-text">{{ selectedModel()!.split('||')[1] }}</span> Variants
+            </ng-container>
+          </span>
           <span *ngIf="carType()==='Used'">Used <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></span>
           <span *ngIf="carType()==='All'">Browse <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></span>
         </h1>
-        <p style="color:var(--muted);font-size:0.9rem">{{ filteredCars().length }} listings found<span *ngIf="selectedMake() !== 'All'"> &nbsp;·&nbsp; <a href="javascript:void(0)" (click)="selectedMake.set('All')" style="color:var(--accent);font-size:0.85rem">Clear brand filter ✕</a></span></p>
+        <p style="color:var(--muted);font-size:0.9rem">
+          <ng-container *ngIf="carType()==='New' && !selectedModel()">{{ newCarModels().length }} models available</ng-container>
+          <ng-container *ngIf="carType()==='New' && selectedModel()">
+            {{ newModelVariants().length }} variants &nbsp;·&nbsp;
+            <a href="javascript:void(0)" (click)="clearModel()" style="color:var(--accent);font-size:0.85rem">← Back to all models</a>
+          </ng-container>
+          <ng-container *ngIf="carType()!=='New'">
+            {{ filteredCars().length }} listings found
+            <span *ngIf="selectedMake() !== 'All'">&nbsp;·&nbsp;
+              <a href="javascript:void(0)" (click)="selectedMake.set('All')" style="color:var(--accent);font-size:0.85rem">Clear brand filter ✕</a>
+            </span>
+          </ng-container>
+        </p>
       </div>
-      <div class="sort-row">
+      <div class="sort-row" *ngIf="carType()!=='New'">
         <select [(ngModel)]="sorts[0]" (change)="selectedSort.set($any($event.target).value)">
           <option *ngFor="let s of sorts">{{ s }}</option>
         </select>
         <button class="btn-gradient hide-desktop filter-toggle" (click)="sidebarOpen.set(!sidebarOpen())">⚙️ Filters</button>
       </div>
+      <button *ngIf="carType()==='New'" class="btn-gradient hide-desktop filter-toggle" (click)="sidebarOpen.set(!sidebarOpen())">⚙️ Filters</button>
     </div>
   </div>
 
@@ -34,176 +53,236 @@
     </div>
   </div>
 
-  <div class="container listings-body">
-    <!-- SIDEBAR -->
-    <aside class="sidebar glass-card" [class.open]="sidebarOpen()">
-      <div class="sidebar-header">
-        <h3>Filters</h3>
-        <button class="hide-desktop" (click)="sidebarOpen.set(false)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem">✕</button>
-      </div>
+  <!-- ═══════════════════════════════════════════════════
+       NEW CARS EXPERIENCE
+  ════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="carType()==='New' && !loading()">
 
-      <div class="filter-group">
-        <label>Fuel Type</label>
-        <div class="filter-chips">
-          <span
-            *ngFor="let f of fuels"
-            class="chip"
-            [class.active]="selectedFuel() === f"
-            (click)="selectedFuel.set(f)"
-          >{{ f }}</span>
-        </div>
-      </div>
+    <!-- MODEL BROWSER (no model selected) -->
+    <div class="new-cars-page" *ngIf="!selectedModel()">
 
-      <div class="filter-group">
-        <label>Transmission</label>
-        <div class="filter-chips">
-          <span
-            *ngFor="let t of transmissions"
-            class="chip"
-            [class.active]="selectedTransmission() === t"
-            (click)="selectedTransmission.set(t)"
-          >{{ t }}</span>
-        </div>
-      </div>
-
-      <!-- Mileage sub-filter — only relevant for Used Cars -->
-      <div class="filter-group" *ngIf="carType() === 'Used'">
-        <label>Mileage Range</label>
-        <div class="filter-chips">
-          <span class="chip" [class.active]="usedKmRange()==='All'"      (click)="usedKmRange.set('All')">All</span>
-          <span class="chip" [class.active]="usedKmRange()==='< 50k km'" (click)="usedKmRange.set('< 50k km')">Under 50k km</span>
-          <span class="chip" [class.active]="usedKmRange()==='> 50k km'" (click)="usedKmRange.set('> 50k km')">Over 50k km</span>
-        </div>
-      </div>
-
-      <div class="filter-group">
-        <label>Body Type</label>
-        <div class="filter-chips">
-          <span *ngFor="let b of bodyTypes" class="chip"
-            [class.active]="selectedBodyType() === b" (click)="selectedBodyType.set(b)">{{ b }}</span>
-        </div>
-      </div>
-
-      <!-- Min Year only relevant for Used cars -->
-      <div class="filter-group" *ngIf="carType() !== 'New'">
-        <label>Min Year: <strong class="gradient-text">{{ minYear() }}</strong></label>
-        <input type="range" min="2015" max="2025" step="1"
-          [value]="minYear()" (input)="minYear.set(+$any($event.target).value)" class="price-range">
-        <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>2015</span><span>2025</span></div>
-      </div>
-
-      <div class="filter-group">
-        <label>Max Budget: <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
-        <input type="range" min="300000" max="20000000" step="100000"
-          [value]="maxPrice()" (input)="maxPrice.set(+$any($event.target).value)"
-          class="price-range"
-        >
-        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">
-          <span>₹3L</span><span>₹2 Cr</span>
-        </div>
-      </div>
-
-      <button class="btn-gradient" style="width:100%;margin-top:1rem" (click)="sidebarOpen.set(false)">Apply Filters</button>
-    </aside>
-
-    <!-- NEW CARS SWIFT SHOWCASE -->
-    <div class="new-car-showcase glass-card" *ngIf="carType() === 'New' && !loading()">
-
-      <!-- Header + stats -->
-      <div class="showcase-header">
-        <div>
-          <div class="showcase-tag">⚡ Featured New Car</div>
-          <h3>The Epic New <span class="gradient-text">Maruti Swift</span></h3>
-          <p>India's best-selling hatchback — Z-Series engine · 6 Airbags standard · Available in S-CNG</p>
-        </div>
-        <div class="showcase-stats">
-          <div class="sc-stat"><span class="sc-val">25.75</span><span class="sc-unit">km/l</span><span class="sc-label">Mileage (AMT)</span></div>
-          <div class="sc-stat"><span class="sc-val">81.58</span><span class="sc-unit">PS</span><span class="sc-label">Max Power</span></div>
-          <div class="sc-stat"><span class="sc-val">111.7</span><span class="sc-unit">Nm</span><span class="sc-label">Max Torque</span></div>
-          <div class="sc-stat"><span class="sc-val">6</span><span class="sc-unit">Airbags</span><span class="sc-label">All Variants</span></div>
-          <div class="sc-stat"><span class="sc-val">32.85</span><span class="sc-unit">km/kg</span><span class="sc-label">S-CNG Mileage</span></div>
-          <div class="sc-stat"><span class="sc-val">163</span><span class="sc-unit">mm</span><span class="sc-label">Ground Clearance</span></div>
-        </div>
-      </div>
-
-      <!-- Main photo + gallery strip -->
-      <div class="showcase-layout">
-        <div class="sc-main-wrap" (click)="lightboxOpen=true" style="cursor:zoom-in;">
-          <img [src]="showcaseActive" alt="Maruti Swift" class="sc-main-img" [style.objectPosition]="showcasePos">
-          <div class="sc-expand-hint">⛶ Expand</div>
-        </div>
-        <div class="sc-gallery-strip">
-          <div class="sc-thumb" *ngFor="let img of swiftGallery"
-               [class.active]="showcaseActive === img.src"
-               (click)="setShowcaseImg(img)">
-            <img [src]="img.src" [alt]="img.label" [style.objectPosition]="img.pos">
-            <span>{{ img.label }}</span>
+      <!-- Hero Banner -->
+      <div class="nc-hero">
+        <div class="nc-hero-orb orb-purple"></div>
+        <div class="nc-hero-orb orb-pink"></div>
+        <div class="container nc-hero-inner">
+          <div class="nc-hero-text">
+            <span class="section-tag">✨ Brand New Cars</span>
+            <h2>Find Your <span class="gradient-text">Perfect New Car</span></h2>
+            <p>Zero km. Factory fresh. AI-verified prices. {{ newCarModels().length }} models available right now.</p>
+          </div>
+          <div class="nc-hero-chips">
+            <span class="chip" *ngFor="let b of bodyTypes.slice(1)"
+              [class.active]="selectedBodyType()===b" (click)="selectedBodyType.set(b)">{{ b }}</span>
+            <span class="chip" [class.active]="selectedBodyType()==='All'" (click)="selectedBodyType.set('All')">All Types</span>
           </div>
         </div>
       </div>
 
-      <!-- Colour variants -->
-      <div class="sc-colours-section">
-        <div class="sc-colours-header">
-          <span class="sc-colours-title">Available Colours</span>
-          <span class="sc-active-colour">{{ activeColour.name }}<span *ngIf="activeColour.dual" class="dual-badge">Dual-Tone</span></span>
-        </div>
+      <!-- Filters sidebar + model grid -->
+      <div class="container listings-body">
+        <aside class="sidebar glass-card" [class.open]="sidebarOpen()">
+          <div class="sidebar-header">
+            <h3>Filters</h3>
+            <button class="hide-desktop" (click)="sidebarOpen.set(false)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem">✕</button>
+          </div>
+          <div class="filter-group">
+            <label>Fuel Type</label>
+            <div class="filter-chips">
+              <span *ngFor="let f of fuels" class="chip" [class.active]="selectedFuel()===f" (click)="selectedFuel.set(f)">{{ f }}</span>
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Body Type</label>
+            <div class="filter-chips">
+              <span *ngFor="let b of bodyTypes" class="chip" [class.active]="selectedBodyType()===b" (click)="selectedBodyType.set(b)">{{ b }}</span>
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Max Budget: <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
+            <input type="range" min="300000" max="20000000" step="100000"
+              [value]="maxPrice()" (input)="maxPrice.set(+$any($event.target).value)" class="price-range">
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)"><span>₹3L</span><span>₹2 Cr</span></div>
+          </div>
+          <button class="btn-gradient" style="width:100%;margin-top:1rem" (click)="sidebarOpen.set(false)">Apply</button>
+        </aside>
 
-        <div class="sc-colour-tabs">
-          <button class="sc-tab" [class.active]="!showDualTone" (click)="showDualTone=false">Monotone (6)</button>
-          <button class="sc-tab" [class.active]="showDualTone"  (click)="showDualTone=true">Dual-Tone (3)</button>
-        </div>
-
-        <div class="sc-colour-grid">
-          <div class="sc-colour-card"
-               *ngFor="let c of (showDualTone ? swiftColours.slice(6) : swiftColours.slice(0,6))"
-               [class.active]="activeColour.src === c.src"
-               (click)="setColour(c)">
-            <img [src]="c.src" [alt]="c.name">
-            <div class="sc-colour-dot" [style.background]="c.hex" [style.borderColor]="c.hex"></div>
-            <span>{{ c.name }}</span>
+        <!-- MODEL CARDS GRID -->
+        <div class="nc-models-grid">
+          <div class="nc-model-card glass-card"
+               *ngFor="let m of newCarModels()"
+               (click)="selectModel(m)">
+            <div class="nc-card-img-wrap">
+              <img *ngIf="m.image" [src]="m.image" [alt]="m.make + ' ' + m.model" class="nc-card-img">
+              <div *ngIf="!m.image" class="nc-card-no-img">🚗</div>
+              <span class="nc-card-badge" *ngIf="m.badge">{{ m.badge }}</span>
+            </div>
+            <div class="nc-card-body">
+              <div class="nc-card-make">{{ m.make }}</div>
+              <div class="nc-card-model">{{ m.model }}</div>
+              <div class="nc-card-meta">
+                <span class="nc-meta-chip">{{ m.bodyType }}</span>
+                <span class="nc-meta-chip">{{ m.fuel }}</span>
+              </div>
+              <div class="nc-card-price">
+                {{ formatPriceLakh(m.minPrice) }}
+                <span *ngIf="m.maxPrice > m.minPrice"> – {{ formatPriceLakh(m.maxPrice) }}</span>
+                <span class="nc-card-price-note">ex-showroom</span>
+              </div>
+              <div class="nc-card-footer">
+                <span class="nc-variant-count">{{ m.variantCount }} Variants</span>
+                <span class="nc-rating">⭐ {{ m.rating }} ({{ m.reviews }})</span>
+              </div>
+              <button class="btn-gradient nc-explore-btn">Explore Variants →</button>
+            </div>
           </div>
         </div>
       </div>
-
     </div>
 
-    <!-- LOADING -->
-    <div *ngIf="loading()" style="grid-column:2;text-align:center;padding:4rem">
-      <div style="font-size:3rem;margin-bottom:1rem">⏳</div>
-      <p style="color:var(--muted)">Loading cars from database...</p>
-    </div>
+    <!-- VARIANT DETAIL VIEW (model selected) -->
+    <div class="nc-variant-page" *ngIf="selectedModel()">
+      <div class="container">
+        <div class="nc-variant-layout">
 
-    <!-- GRID -->
-    <div class="cars-grid" *ngIf="!loading() && filteredCars().length > 0; else noResults">
-      <app-car-card *ngFor="let car of filteredCars()" [car]="car"></app-car-card>
-    </div>
+          <!-- Left: Hero image -->
+          <div class="nc-variant-hero">
+            <div class="nc-variant-img-wrap glass-card">
+              <img *ngIf="newModelVariants()[0]?.image" [src]="newModelVariants()[0].image" [alt]="selectedModel()!" class="nc-variant-main-img">
+              <div *ngIf="!newModelVariants()[0]?.image" class="nc-card-no-img" style="height:260px">🚗</div>
+            </div>
+            <!-- Key specs from first variant -->
+            <div class="nc-key-specs glass-card" *ngIf="newModelVariants()[0]?.specs?.length">
+              <div class="nc-key-spec" *ngFor="let s of newModelVariants()[0].specs!.slice(0,6)">
+                <span class="nc-spec-label">{{ s.label }}</span>
+                <span class="nc-spec-val">{{ s.value }}</span>
+              </div>
+            </div>
+          </div>
 
-    <ng-template #noResults>
-      <div class="no-results glass-card" *ngIf="!loading()">
-        <div style="font-size:4rem;margin-bottom:1rem">🔍</div>
-        <h3>No cars found</h3>
-        <p style="color:var(--muted)">Try adjusting your filters or search query</p>
-        <button class="btn-gradient" style="margin-top:1.5rem" (click)="clearAll()">Clear All Filters</button>
+          <!-- Right: Variants list -->
+          <div class="nc-variant-list">
+            <div class="nc-variant-card glass-card"
+                 *ngFor="let v of newModelVariants()"
+                 [routerLink]="['/car', v.id]">
+              <div class="nc-vc-top">
+                <div>
+                  <div class="nc-vc-name">{{ v.variant || v.model }}</div>
+                  <div class="nc-vc-meta">
+                    <span>{{ v.fuel }}</span>
+                    <span>{{ v.transmission }}</span>
+                    <span *ngIf="v.km === 0">Brand New</span>
+                  </div>
+                </div>
+                <div class="nc-vc-price">
+                  <div class="nc-vc-price-val">{{ formatPriceLakh(v.price) }}</div>
+                  <div class="nc-vc-price-note">ex-showroom</div>
+                </div>
+              </div>
+
+              <!-- Features chips -->
+              <div class="nc-vc-features" *ngIf="v.features?.length">
+                <span class="nc-feature-chip" *ngFor="let f of v.features!.slice(0,4)">✓ {{ f }}</span>
+              </div>
+
+              <!-- Specs row -->
+              <div class="nc-vc-specs" *ngIf="v.specs?.length">
+                <span *ngFor="let s of v.specs!.slice(0,3)" class="nc-vc-spec">
+                  <span class="nc-vc-spec-l">{{ s.label }}</span>
+                  <span class="nc-vc-spec-v">{{ s.value }}</span>
+                </span>
+              </div>
+
+              <div class="nc-vc-footer">
+                <span class="nc-vc-emi">EMI from ₹{{ (v.price * 0.008 / 1000).toFixed(0) }}k/mo</span>
+                <button class="btn-gradient btn-sm">View Details →</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </ng-template>
-  </div>
-</div>
-
-<!-- LIGHTBOX -->
-<div class="sc-lightbox" *ngIf="lightboxOpen" (click)="lightboxOpen=false">
-  <button class="sc-lightbox-close" (click)="lightboxOpen=false">✕</button>
-  <div class="sc-lightbox-inner" (click)="$event.stopPropagation()">
-    <button class="sc-lb-nav sc-lb-prev" (click)="lightboxStep(-1)">‹</button>
-    <img [src]="showcaseActive" [style.objectPosition]="showcasePos" alt="Maruti Swift" class="sc-lightbox-img">
-    <button class="sc-lb-nav sc-lb-next" (click)="lightboxStep(1)">›</button>
-  </div>
-  <div class="sc-lightbox-thumbs">
-    <div *ngFor="let img of swiftGallery"
-         class="sc-lb-thumb"
-         [class.active]="showcaseActive === img.src"
-         (click)="setShowcaseImg(img); $event.stopPropagation()">
-      <img [src]="img.src" [alt]="img.label">
     </div>
+
+  </ng-container>
+
+  <!-- ═══════════════════════════════════════════════════
+       USED / ALL CARS EXPERIENCE (unchanged)
+  ════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="carType()!=='New'">
+    <div class="container listings-body">
+      <!-- SIDEBAR -->
+      <aside class="sidebar glass-card" [class.open]="sidebarOpen()">
+        <div class="sidebar-header">
+          <h3>Filters</h3>
+          <button class="hide-desktop" (click)="sidebarOpen.set(false)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem">✕</button>
+        </div>
+        <div class="filter-group">
+          <label>Fuel Type</label>
+          <div class="filter-chips">
+            <span *ngFor="let f of fuels" class="chip" [class.active]="selectedFuel()===f" (click)="selectedFuel.set(f)">{{ f }}</span>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label>Transmission</label>
+          <div class="filter-chips">
+            <span *ngFor="let t of transmissions" class="chip" [class.active]="selectedTransmission()===t" (click)="selectedTransmission.set(t)">{{ t }}</span>
+          </div>
+        </div>
+        <div class="filter-group" *ngIf="carType()==='Used'">
+          <label>Mileage Range</label>
+          <div class="filter-chips">
+            <span class="chip" [class.active]="usedKmRange()==='All'" (click)="usedKmRange.set('All')">All</span>
+            <span class="chip" [class.active]="usedKmRange()==='< 50k km'" (click)="usedKmRange.set('< 50k km')">Under 50k km</span>
+            <span class="chip" [class.active]="usedKmRange()==='> 50k km'" (click)="usedKmRange.set('> 50k km')">Over 50k km</span>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label>Body Type</label>
+          <div class="filter-chips">
+            <span *ngFor="let b of bodyTypes" class="chip" [class.active]="selectedBodyType()===b" (click)="selectedBodyType.set(b)">{{ b }}</span>
+          </div>
+        </div>
+        <div class="filter-group" *ngIf="carType()!=='New'">
+          <label>Min Year: <strong class="gradient-text">{{ minYear() }}</strong></label>
+          <input type="range" min="2015" max="2025" step="1"
+            [value]="minYear()" (input)="minYear.set(+$any($event.target).value)" class="price-range">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>2015</span><span>2025</span></div>
+        </div>
+        <div class="filter-group">
+          <label>Max Budget: <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
+          <input type="range" min="300000" max="20000000" step="100000"
+            [value]="maxPrice()" (input)="maxPrice.set(+$any($event.target).value)" class="price-range">
+          <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)"><span>₹3L</span><span>₹2 Cr</span></div>
+        </div>
+        <button class="btn-gradient" style="width:100%;margin-top:1rem" (click)="sidebarOpen.set(false)">Apply Filters</button>
+      </aside>
+
+      <!-- LOADING -->
+      <div *ngIf="loading()" style="text-align:center;padding:4rem">
+        <div style="font-size:3rem;margin-bottom:1rem">⏳</div>
+        <p style="color:var(--muted)">Loading cars from database...</p>
+      </div>
+
+      <!-- GRID -->
+      <div class="cars-grid" *ngIf="!loading() && filteredCars().length > 0; else noResults">
+        <app-car-card *ngFor="let car of filteredCars()" [car]="car"></app-car-card>
+      </div>
+
+      <ng-template #noResults>
+        <div class="no-results glass-card" *ngIf="!loading()">
+          <div style="font-size:4rem;margin-bottom:1rem">🔍</div>
+          <h3>No cars found</h3>
+          <p style="color:var(--muted)">Try adjusting your filters or search query</p>
+          <button class="btn-gradient" style="margin-top:1.5rem" (click)="clearAll()">Clear All Filters</button>
+        </div>
+      </ng-template>
+    </div>
+  </ng-container>
+
+  <!-- Loading for New Cars -->
+  <div *ngIf="carType()==='New' && loading()" style="text-align:center;padding:4rem">
+    <div style="font-size:3rem;margin-bottom:1rem">⏳</div>
+    <p style="color:var(--muted)">Loading cars from database...</p>
   </div>
+
 </div>
