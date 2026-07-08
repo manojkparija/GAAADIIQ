@@ -42,6 +42,7 @@
             <button *ngIf="isNewCar && newCarMeta" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">Variants</button>
             <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">Specs</button>
             <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">Features</button>
+            <button *ngIf="modelColours().length > 0" [class.active]="activeTab()==='colours'" (click)="activeTab.set('colours')">Colours</button>
             <button [class.active]="activeTab()==='ownership'" (click)="activeTab.set('ownership')">Cost of Ownership</button>
             <button [class.active]="activeTab()==='reviews'" (click)="activeTab.set('reviews')">Reviews ({{ reviews().length }})</button>
           </div>
@@ -98,6 +99,29 @@
             <div class="features-list">
               <div class="feature-item" *ngFor="let f of (car.features || [])">
                 <span class="check">✅</span> {{ f }}
+              </div>
+            </div>
+          </div>
+
+          <!-- COLOURS -->
+          <div class="tab-content" *ngIf="activeTab()==='colours'">
+            <p class="colours-intro">{{ car.make }} {{ car.model }} is available in {{ modelColours().length }} colour option{{ modelColours().length !== 1 ? 's' : '' }}. Select a colour to see more details.</p>
+            <div class="colour-swatches">
+              <div class="colour-swatch" *ngFor="let c of modelColours()"
+                   [class.selected]="selectedColour() === c.name"
+                   (click)="selectedColour.set(c.name)">
+                <div class="swatch-circle"
+                     [style.background]="c.hex"
+                     [style.boxShadow]="selectedColour() === c.name ? '0 0 0 3px var(--primary), 0 0 0 5px var(--glass)' : 'none'">
+                  <span *ngIf="c.name.includes('+Black Roof')" class="dual-tone-badge">Dual</span>
+                </div>
+                <div class="swatch-name">{{ c.name.replace('+Black Roof', '') }}</div>
+                <div *ngIf="c.name.includes('+Black Roof')" class="dual-tone-label">+ Black Roof</div>
+              </div>
+            </div>
+            <div class="selected-colour-info" *ngIf="selectedColour()">
+              <div class="sci-preview" [style.background]="getHex(selectedColour())">
+                <div class="sci-name" [style.color]="isLightColour(selectedColour()) ? '#1a1a2e' : '#ffffff'">{{ selectedColour() }}</div>
               </div>
             </div>
           </div>
@@ -397,26 +421,36 @@
         <div class="emi-card glass-card">
           <h3>💳 EMI Calculator</h3>
           <div class="emi-row">
-            <label>Loan Amount</label>
-            <input type="range" min="100000" [max]="car.price" step="1"
+            <div class="emi-label-row"><label>Loan Amount</label><span class="emi-val">{{ formatPrice(loan.amount) }}</span></div>
+            <input type="range" min="100000" [max]="car.price" step="10000"
               [value]="loan.amount" (input)="loan.amount=+$any($event.target).value; calcEmi()">
-            <div class="emi-val">{{ formatPrice(loan.amount) }}</div>
           </div>
           <div class="emi-row">
-            <label>Interest Rate: {{ loan.rate }}%</label>
-            <input type="range" min="7" max="15" step="0.5"
+            <div class="emi-label-row"><label>Interest Rate</label><span class="emi-val">{{ loan.rate }}% p.a.</span></div>
+            <input type="range" min="7" max="18" step="0.5"
               [value]="loan.rate" (input)="loan.rate=+$any($event.target).value; calcEmi()">
           </div>
           <div class="emi-row">
-            <label>Tenure: {{ loan.tenure }} months</label>
+            <div class="emi-label-row"><label>Tenure</label><span class="emi-val">{{ loan.tenure }} months</span></div>
             <input type="range" min="12" max="84" step="12"
               [value]="loan.tenure" (input)="loan.tenure=+$any($event.target).value; calcEmi()">
           </div>
           <div class="emi-result">
             <div style="color:var(--muted);font-size:0.85rem">Monthly EMI</div>
-            <div class="gradient-text" style="font-size:2rem;font-weight:900">₹{{ loan.emi.toLocaleString() }}</div>
+            <div class="gradient-text" style="font-size:2rem;font-weight:900">₹{{ loan.emi.toLocaleString('en-IN') }}</div>
           </div>
-          <button class="btn-gradient" style="width:100%">Apply for Loan →</button>
+          <ng-container *ngIf="emiBreakdown() as eb">
+            <div class="emi-breakdown">
+              <div class="emi-bar">
+                <div class="emi-bar-principal" [style.width.%]="(eb.principal / eb.total) * 100"></div>
+                <div class="emi-bar-interest" [style.width.%]="(eb.interest / eb.total) * 100"></div>
+              </div>
+              <div class="emi-bd-row"><span class="emi-dot principal"></span><span>Principal</span><span class="emi-bd-val">₹{{ eb.principal.toLocaleString('en-IN') }}</span></div>
+              <div class="emi-bd-row"><span class="emi-dot interest"></span><span>Total Interest</span><span class="emi-bd-val">₹{{ eb.interest.toLocaleString('en-IN') }}</span></div>
+              <div class="emi-bd-row total-row"><span>Total Payment</span><span class="emi-bd-val gradient-text">₹{{ eb.total.toLocaleString('en-IN') }}</span></div>
+            </div>
+          </ng-container>
+          <button class="btn-gradient" style="width:100%;margin-top:1rem">Apply for Loan →</button>
         </div>
 
         <!-- COMPARE CTA -->

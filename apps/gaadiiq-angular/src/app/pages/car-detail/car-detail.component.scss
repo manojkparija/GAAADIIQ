@@ -315,3 +315,65 @@
 .similar-rating { font-weight: 700; color: #f59e0b; white-space: nowrap; }
 .similar-reviews { font-size: 0.72rem; color: var(--muted); }
 .similar-mileage { font-weight: 600; color: var(--text); white-space: nowrap; }
+
+// ── Colour Picker ─────────────────────────────────────────────────────────────
+.colours-intro { font-size: 0.9rem; color: var(--muted); margin-bottom: 1.5rem; }
+
+.colour-swatches {
+  display: flex; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.75rem;
+}
+
+.colour-swatch {
+  display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  cursor: pointer;
+  .swatch-circle {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid var(--glass-border);
+    transition: all 0.2s;
+    position: relative;
+    &:hover { transform: scale(1.1); }
+  }
+  .swatch-name { font-size: 0.72rem; font-weight: 600; color: var(--text); text-align: center; max-width: 60px; }
+  .dual-tone-label { font-size: 0.65rem; color: var(--muted); text-align: center; }
+  .dual-tone-badge {
+    position: absolute; bottom: -2px; right: -2px;
+    font-size: 0.55rem; font-weight: 700; background: #1a1a1a; color: #fff;
+    border-radius: 50px; padding: 1px 4px;
+  }
+}
+
+.selected-colour-info {
+  .sci-preview {
+    border-radius: 16px; height: 100px;
+    display: flex; align-items: flex-end; padding: 1rem;
+    transition: background 0.4s;
+  }
+  .sci-name { font-weight: 800; font-size: 1rem; }
+}
+
+// ── EMI Calculator enhancements ───────────────────────────────────────────────
+.emi-label-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.4rem;
+  label { font-size: 0.82rem; color: var(--muted); }
+}
+
+.emi-breakdown {
+  background: var(--glass); border-radius: 12px; padding: 1rem; margin-top: 0.5rem;
+}
+
+.emi-bar {
+  display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 0.75rem;
+  .emi-bar-principal { background: var(--primary); transition: width 0.3s; }
+  .emi-bar-interest { background: #FF6584; transition: width 0.3s; }
+}
+
+.emi-bd-row {
+  display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--muted);
+  .emi-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    &.principal { background: var(--primary); }
+    &.interest { background: #FF6584; }
+  }
+  .emi-bd-val { margin-left: auto; font-weight: 700; color: var(--text); }
+  &.total-row { border-top: 1px solid var(--divider); padding-top: 0.4rem; margin-top: 0.2rem; color: var(--text); font-weight: 700; }
+}

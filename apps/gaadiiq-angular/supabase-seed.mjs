@@ -104,6 +104,21 @@ const cars = [
   { id:77, make:'Tata', model:'Nexon', variant:'#DARK Creative+PS DCA',   year:2025, price:1700000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'🖤 #DARK Edition',badge_type:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.8, reviews:198, verified:true, city:'Mumbai',    body_type:'SUV', color:'Carbon Black',    owners:'Brand New' },
   { id:78, make:'Tata', model:'Nexon', variant:'#DARK Fearless+PS DCA',   year:2025, price:1900000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'🖤 #DARK Fearless',badge_type:'badge-purple',image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.9, reviews:167, verified:true, city:'Delhi',     body_type:'SUV', color:'Carbon Black',    owners:'Brand New' },
   { id:79, make:'Tata', model:'Nexon', variant:'RED #DARK Fearless+PS DCA',year:2025,price:2000000, km:0, fuel:'Petrol', transmission:'DCA',       badge:'🔴 RED #DARK',   badge_type:'badge-red',    image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/156909/nexon-exterior-right-front-three-quarter-4.jpeg', rating:4.9, reviews:145, verified:true, city:'Bangalore', body_type:'SUV', color:'Carbon Black',    owners:'Brand New' },
+
+  // ── Maruti Suzuki Swift 2025 – Full Brochure Variant Range ─────────────────
+  { id:80, make:'Maruti Suzuki', model:'Swift', variant:'LXI 5MT',         year:2025, price: 649900, km:0, fuel:'Petrol', transmission:'Manual',    badge:'💰 Entry Level', badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.5, reviews:210, verified:true, city:'Delhi',     body_type:'Hatchback', color:'Sizzling Red',        owners:'Brand New' },
+  { id:81, make:'Maruti Suzuki', model:'Swift', variant:'VXI 5MT',         year:2025, price: 749900, km:0, fuel:'Petrol', transmission:'Manual',    badge:'⭐ Popular',     badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.6, reviews:389, verified:true, city:'Mumbai',    body_type:'Hatchback', color:'Luster Blue',         owners:'Brand New' },
+  { id:82, make:'Maruti Suzuki', model:'Swift', variant:'VXI AMT',         year:2025, price: 799900, km:0, fuel:'Petrol', transmission:'AMT',       badge:'⭐ Auto Value',  badge_type:'badge-gold',   image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.6, reviews:267, verified:true, city:'Pune',      body_type:'Hatchback', color:'Pearl Arctic White',  owners:'Brand New' },
+  { id:83, make:'Maruti Suzuki', model:'Swift', variant:'VXI(O) 5MT',      year:2025, price: 824900, km:0, fuel:'Petrol', transmission:'Manual',    badge:'🔥 Smart Tech',  badge_type:'badge-red',    image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.7, reviews:312, verified:true, city:'Bangalore', body_type:'Hatchback', color:'Novel Orange',        owners:'Brand New' },
+  { id:84, make:'Maruti Suzuki', model:'Swift', variant:'VXI(O) AMT',      year:2025, price: 874900, km:0, fuel:'Petrol', transmission:'AMT',       badge:'🔥 Auto Smart',  badge_type:'badge-red',    image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.7, reviews:198, verified:true, city:'Chennai',   body_type:'Hatchback', color:'Splendid Silver',     owners:'Brand New' },
+  { id:85, make:'Maruti Suzuki', model:'Swift', variant:'ZXI 5MT',         year:2025, price: 924900, km:0, fuel:'Petrol', transmission:'Manual',    badge:'✅ Top Seller',  badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.8, reviews:512, verified:true, city:'Hyderabad', body_type:'Hatchback', color:'Magma Grey',          owners:'Brand New' },
+  { id:86, make:'Maruti Suzuki', model:'Swift', variant:'ZXI AMT',         year:2025, price: 974900, km:0, fuel:'Petrol', transmission:'AMT',       badge:'✅ Auto Pick',   badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.8, reviews:423, verified:true, city:'Delhi',     body_type:'Hatchback', color:'Sizzling Red+Black Roof', owners:'Brand New' },
+  { id:87, make:'Maruti Suzuki', model:'Swift', variant:'ZXI+ 5MT',        year:2025, price:1024900, km:0, fuel:'Petrol', transmission:'Manual',    badge:'👑 Top Spec',    badge_type:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.9, reviews:445, verified:true, city:'Mumbai',    body_type:'Hatchback', color:'Luster Blue+Black Roof', owners:'Brand New' },
+  { id:88, make:'Maruti Suzuki', model:'Swift', variant:'ZXI+ AMT',        year:2025, price:1074900, km:0, fuel:'Petrol', transmission:'AMT',       badge:'🔥 Bestseller',  badge_type:'badge-red',    image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.9, reviews:598, verified:true, city:'Pune',      body_type:'Hatchback', color:'Pearl Arctic White+Black Roof', owners:'Brand New' },
+  { id:89, make:'Maruti Suzuki', model:'Swift', variant:'VXI CNG 5MT',     year:2025, price: 874900, km:0, fuel:'CNG',    transmission:'Manual',    badge:'🌿 CNG Eco',     badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.6, reviews:198, verified:true, city:'Jaipur',    body_type:'Hatchback', color:'Pearl Arctic White',  owners:'Brand New' },
+  { id:90, make:'Maruti Suzuki', model:'Swift', variant:'VXI(O) CNG 5MT',  year:2025, price: 949900, km:0, fuel:'CNG',    transmission:'Manual',    badge:'🌿 CNG Smart',   badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.7, reviews:156, verified:true, city:'Ahmedabad', body_type:'Hatchback', color:'Sizzling Red',        owners:'Brand New' },
+  { id:91, make:'Maruti Suzuki', model:'Swift', variant:'ZXI CNG 5MT',     year:2025, price:1024900, km:0, fuel:'CNG',    transmission:'Manual',    badge:'🌿 CNG Premium', badge_type:'badge-green',  image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.8, reviews:134, verified:true, city:'Kolkata',   body_type:'Hatchback', color:'Novel Orange',        owners:'Brand New' },
+  { id:92, make:'Maruti Suzuki', model:'Swift', variant:'ZXI+ CNG 5MT',    year:2025, price:1099900, km:0, fuel:'CNG',    transmission:'Manual',    badge:'👑 CNG Flagship',badge_type:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.9, reviews:112, verified:true, city:'Delhi',     body_type:'Hatchback', color:'Magma Grey',          owners:'Brand New' },
 ];
 
 const specs = {
@@ -188,6 +203,21 @@ const specs = {
   77: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA + Paddle Shifters'},{label:'Edition',value:'#DARK – Carbon Black'},{label:'Interior',value:'Dark Themed + Blue Stitching Benecke Kaliko'},{label:'Sunroof',value:'Voice-assisted Panoramic'},{label:'360° Camera',value:'HD Surround View + Blind Monitor'}],
   78: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA + Paddle Shifters'},{label:'Edition',value:'#DARK Fearless – Carbon Black'},{label:'ADAS',value:'7-System Suite'},{label:'Interior',value:'Dark Themed + Blue Stitching'},{label:'iRA Connected',value:'Yes + OTA Updates'}],
   79: [{label:'Engine',value:'1.2L Revotron Turbo Petrol'},{label:'Power',value:'118 bhp @ 5500 rpm'},{label:'Torque',value:'170 Nm @ 1750–4000 rpm'},{label:'Transmission',value:'7-Speed DCA + Paddle Shifters'},{label:'Edition',value:'RED #DARK – Black Body / Red Interior'},{label:'Seats',value:'Ventilated Red Benecke-Kaliko Leatherette'},{label:'ADAS',value:'7-System Suite + iRA Connected'},{label:'Dashboard',value:'Red Hot #DARK Theme + Red Deco Stitching'}],
+
+  // Maruti Suzuki Swift 2025 specs (from official brochure)
+  80: [{label:'Engine',value:'Z12E 1197cc Petrol'},{label:'Power',value:'81.5 PS (60 kW) @ 5700 rpm'},{label:'Torque',value:'111.7 Nm @ 4300 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'Mileage',value:'24.8 km/l (ARAI)'},{label:'Seating',value:'5 Persons'},{label:'Boot Space',value:'265 Litres'},{label:'Tyre',value:'165/80 R14'}],
+  81: [{label:'Engine',value:'Z12E 1197cc Petrol'},{label:'Power',value:'81.5 PS (60 kW) @ 5700 rpm'},{label:'Torque',value:'111.7 Nm @ 4300 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'Mileage',value:'24.8 km/l (ARAI)'},{label:'Seating',value:'5 Persons'},{label:'Boot Space',value:'265 Litres'},{label:'Tyre',value:'165/80 R14'}],
+  82: [{label:'Engine',value:'Z12E 1197cc Petrol'},{label:'Power',value:'81.5 PS (60 kW) @ 5700 rpm'},{label:'Torque',value:'111.7 Nm @ 4300 rpm'},{label:'Transmission',value:'5-Speed AMT'},{label:'Mileage',value:'25.75 km/l (ARAI)'},{label:'Seating',value:'5 Persons'},{label:'Boot Space',value:'265 Litres'},{label:'Tyre',value:'165/80 R14'}],
+  83: [{label:'Engine',value:'Z12E 1197cc Petrol'},{label:'Power',value:'81.5 PS (60 kW) @ 5700 rpm'},{label:'Torque',value:'111.7 Nm @ 4300 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'Mileage',value:'24.8 km/l (ARAI)'},{label:'Infotainment',value:'SmartPlay Pro+ (Wireless AA/ACP)'},{label:'Boot Space',value:'265 Litres'},{label:'Tyre',value:'165/80 R14'}],
+  84: [{label:'Engine',value:'Z12E 1197cc Petrol'},{label:'Power',value:'81.5 PS (60 kW) @ 5700 rpm'},{label:'Torque',value:'111.7 Nm @ 4300 rpm'},{label:'Transmission',value:'5-Speed AMT'},{label:'Mileage',value:'25.75 km/l (ARAI)'},{label:'Infotainment',value:'SmartPlay Pro+ (Wireless AA/ACP)'},{label:'Boot Space',value:'265 Litres'},{label:'Tyre',value:'165/80 R14'}],
+  85: [{label:'Engine',value:'Z12E 1197cc Petrol'},{label:'Power',value:'81.5 PS (60 kW) @ 5700 rpm'},{label:'Torque',value:'111.7 Nm @ 4300 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'Mileage',value:'24.8 km/l (ARAI)'},{label:'Infotainment',value:'SmartPlay Pro+'},{label:'Cruise Control',value:'Yes'},{label:'Tyre',value:'185/65 R15'}],
+  86: [{label:'Engine',value:'Z12E 1197cc Petrol'},{label:'Power',value:'81.5 PS (60 kW) @ 5700 rpm'},{label:'Torque',value:'111.7 Nm @ 4300 rpm'},{label:'Transmission',value:'5-Speed AMT'},{label:'Mileage',value:'25.75 km/l (ARAI)'},{label:'Infotainment',value:'SmartPlay Pro+'},{label:'Cruise Control',value:'Yes'},{label:'Tyre',value:'185/65 R15'}],
+  87: [{label:'Engine',value:'Z12E 1197cc Petrol'},{label:'Power',value:'81.5 PS (60 kW) @ 5700 rpm'},{label:'Torque',value:'111.7 Nm @ 4300 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'Mileage',value:'24.8 km/l (ARAI)'},{label:'Infotainment',value:'SmartPlay Pro+'},{label:'Wireless Charger',value:'Yes'},{label:'Tyre',value:'185/65 R15'}],
+  88: [{label:'Engine',value:'Z12E 1197cc Petrol'},{label:'Power',value:'81.5 PS (60 kW) @ 5700 rpm'},{label:'Torque',value:'111.7 Nm @ 4300 rpm'},{label:'Transmission',value:'5-Speed AMT'},{label:'Mileage',value:'25.75 km/l (ARAI)'},{label:'Infotainment',value:'SmartPlay Pro+'},{label:'Wireless Charger',value:'Yes'},{label:'Tyre',value:'185/65 R15'}],
+  89: [{label:'Engine',value:'Z12E 1197cc Dual Fuel'},{label:'CNG Power',value:'69.5 PS (51.3 kW) @ 5700 rpm'},{label:'CNG Torque',value:'101.8 Nm @ 3300 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'CNG Mileage',value:'32.85 km/kg (ARAI)'},{label:'Petrol Mileage',value:'24.8 km/l'},{label:'Boot Space',value:'265 Litres'},{label:'Tyre',value:'165/80 R14'}],
+  90: [{label:'Engine',value:'Z12E 1197cc Dual Fuel'},{label:'CNG Power',value:'69.5 PS (51.3 kW) @ 5700 rpm'},{label:'CNG Torque',value:'101.8 Nm @ 3300 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'CNG Mileage',value:'32.85 km/kg (ARAI)'},{label:'Infotainment',value:'SmartPlay Pro+ (Wireless AA/ACP)'},{label:'Boot Space',value:'265 Litres'},{label:'Tyre',value:'165/80 R14'}],
+  91: [{label:'Engine',value:'Z12E 1197cc Dual Fuel'},{label:'CNG Power',value:'69.5 PS (51.3 kW) @ 5700 rpm'},{label:'CNG Torque',value:'101.8 Nm @ 3300 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'CNG Mileage',value:'32.85 km/kg (ARAI)'},{label:'Infotainment',value:'SmartPlay Pro+'},{label:'Cruise Control',value:'Yes'},{label:'Tyre',value:'185/65 R15'}],
+  92: [{label:'Engine',value:'Z12E 1197cc Dual Fuel'},{label:'CNG Power',value:'69.5 PS (51.3 kW) @ 5700 rpm'},{label:'CNG Torque',value:'101.8 Nm @ 3300 rpm'},{label:'Transmission',value:'5-Speed Manual'},{label:'CNG Mileage',value:'32.85 km/kg (ARAI)'},{label:'Infotainment',value:'SmartPlay Pro+'},{label:'Wireless Charger',value:'Yes'},{label:'Tyre',value:'185/65 R15'}],
 };
 
 const features = {
@@ -272,6 +302,21 @@ const features = {
   77: ['6 Airbags','Bharat NCAP 5-Star','#DARK Edition – Carbon Black','Dark Themed Dashboard','Benecke Kaliko Blue-Stitched Seats','Voice-assisted Panoramic Sunroof','360° HD Surround View + Blind Monitor','7-Speed DCA + Paddle Shifters','#DARK Mascot','Ventilated Seats','Wireless Charger','60:40 Fold Seats'],
   78: ['6 Airbags','Bharat NCAP 5-Star','#DARK Fearless Edition – Carbon Black','ADAS (7-System Suite)','Dark Themed Dashboard','Benecke Kaliko Blue-Stitched Seats','Voice-assisted Panoramic Sunroof','7-Speed DCA','JBL Sound + Subwoofer','iRA Connected Car','OTA Updates','26.03cm Digital Cluster','Air Purifier'],
   79: ['6 Airbags','Bharat NCAP 5-Star','RED #DARK Edition – Black/Red','ADAS (7-System Suite)','Ventilated Red Benecke-Kaliko Seats','Red Hot #DARK Interior Dashboard','Voice-assisted Panoramic Sunroof','7-Speed DCA + Paddle Shifters','JBL Sound + Subwoofer','iRA Connected Car','OTA Updates','360° Surround Camera','Rear Sunshade','Air Purifier'],
+
+  // Maruti Suzuki Swift 2025 features
+  80: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','Rear Parking Sensors','LED DRLs','Day/Night IRVM','Adjustable Headrests','Suzuki Connect','3-Year / 1L km Warranty'],
+  81: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','7" SmartPlay Studio','Rear View Camera','Android Auto / Apple CarPlay','Push Type AC','LED DRLs','Suzuki Connect'],
+  82: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','7" SmartPlay Studio','Rear View Camera','Android Auto / Apple CarPlay','AMT Auto Gear Shift','LED DRLs','Suzuki Connect'],
+  83: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','SmartPlay Pro+ 9"','Wireless Android Auto & Apple CarPlay','Rear View Camera','Auto-Fold ORVMs','LED DRLs','Suzuki Connect'],
+  84: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','SmartPlay Pro+ 9"','Wireless Android Auto & Apple CarPlay','Rear View Camera','AMT Auto Gear Shift','Auto-Fold ORVMs','Suzuki Connect'],
+  85: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','SmartPlay Pro+','Wireless Android Auto & Apple CarPlay','Cruise Control','Auto AC','Rear AC Vent','Alloy Wheels 15"','LED Headlamps','Suzuki Connect'],
+  86: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','SmartPlay Pro+','Wireless Android Auto & Apple CarPlay','Cruise Control','AMT Auto Gear Shift','Auto AC','Rear AC Vent','Alloy Wheels 15"','Suzuki Connect'],
+  87: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','SmartPlay Pro+','Wireless Charger','Cruise Control','Auto AC','Rear AC Vent','Push Button Start','Alloy Wheels 15"','LED Headlamps','Keyless Entry','Suzuki Connect'],
+  88: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','SmartPlay Pro+','Wireless Charger','Cruise Control','AMT Auto Gear Shift','Auto AC','Rear AC Vent','Push Button Start','Alloy Wheels 15"','Keyless Entry','Suzuki Connect'],
+  89: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','Factory-Fitted CNG','7" SmartPlay Studio','Rear View Camera','Android Auto / Apple CarPlay','CNG + Petrol Dual Fuel','32.85 km/kg Efficiency','LED DRLs','Suzuki Connect'],
+  90: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','SmartPlay Pro+ 9"','Wireless Android Auto & Apple CarPlay','Factory-Fitted CNG','Auto-Fold ORVMs','32.85 km/kg Efficiency','LED DRLs','Suzuki Connect'],
+  91: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','SmartPlay Pro+','Wireless Android Auto & Apple CarPlay','Factory-Fitted CNG','Cruise Control','Auto AC','Rear AC Vent','Alloy Wheels 15"','32.85 km/kg Efficiency','Suzuki Connect'],
+  92: ['6 Airbags','ABS with EBD','ESP','Hill Hold Assist','SmartPlay Pro+','Wireless Charger','Factory-Fitted CNG','Cruise Control','Push Button Start','Auto AC','Rear AC Vent','Alloy Wheels 15"','32.85 km/kg Efficiency','Keyless Entry','Suzuki Connect'],
 };
 
 const aiValuations = {
@@ -356,6 +401,21 @@ const aiValuations = {
   77: {fair_price:1700000, market_min:1660000, market_max:1760000, verdict:'Fair Deal', confidence:95},
   78: {fair_price:1900000, market_min:1860000, market_max:1960000, verdict:'Fair Deal', confidence:95},
   79: {fair_price:2000000, market_min:1960000, market_max:2060000, verdict:'Fair Deal', confidence:95},
+
+  // Maruti Suzuki Swift 2025 AI Valuations (brand new, ex-showroom)
+  80: {fair_price: 649900, market_min: 635000, market_max: 665000, verdict:'Fair Deal', confidence:96},
+  81: {fair_price: 749900, market_min: 730000, market_max: 770000, verdict:'Fair Deal', confidence:96},
+  82: {fair_price: 799900, market_min: 780000, market_max: 820000, verdict:'Fair Deal', confidence:96},
+  83: {fair_price: 824900, market_min: 800000, market_max: 845000, verdict:'Fair Deal', confidence:96},
+  84: {fair_price: 874900, market_min: 850000, market_max: 895000, verdict:'Fair Deal', confidence:96},
+  85: {fair_price: 924900, market_min: 900000, market_max: 950000, verdict:'Fair Deal', confidence:97},
+  86: {fair_price: 974900, market_min: 950000, market_max:1000000, verdict:'Fair Deal', confidence:97},
+  87: {fair_price:1024900, market_min:1000000, market_max:1050000, verdict:'Fair Deal', confidence:97},
+  88: {fair_price:1074900, market_min:1050000, market_max:1100000, verdict:'Fair Deal', confidence:97},
+  89: {fair_price: 874900, market_min: 850000, market_max: 900000, verdict:'Fair Deal', confidence:96},
+  90: {fair_price: 949900, market_min: 925000, market_max: 975000, verdict:'Fair Deal', confidence:96},
+  91: {fair_price:1024900, market_min:1000000, market_max:1050000, verdict:'Fair Deal', confidence:96},
+  92: {fair_price:1099900, market_min:1075000, market_max:1125000, verdict:'Fair Deal', confidence:96},
 };
 
 async function seed() {
@@ -390,7 +450,7 @@ async function seed() {
   if (valError) { console.error('❌ Valuation insert failed:', valError.message); return; }
   console.log(`✅ Inserted ${valuationRows.length} AI valuation rows`);
 
-  console.log('\n🎉 Seed complete! All 79 cars are now in Supabase.');
+  console.log('\n🎉 Seed complete! All 92 cars are now in Supabase.');
 }
 
 seed();

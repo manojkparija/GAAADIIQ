@@ -140,6 +140,40 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
     ],
   },
 };
+// Colour name → hex map for swatches
+const COLOUR_HEX: Record<string, string> = {
+  'Pristine White':                '#F5F5F0', 'Daytona Grey':              '#6B7280',
+  'Grassland Beige':               '#C4A882', 'Royal Blue':                '#1A3A8B',
+  'Ocean Blue':                    '#1E5B8A', 'Pure Grey':                 '#9CA3AF',
+  'Carbon Black':                  '#1A1A1A', 'Sizzling Red':              '#CC2020',
+  'Sizzling Red+Black Roof':       '#CC2020', 'Luster Blue':               '#1B4F8A',
+  'Luster Blue+Black Roof':        '#1B4F8A', 'Novel Orange':              '#E87820',
+  'Pearl Arctic White':            '#F8F8F8', 'Pearl Arctic White+Black Roof': '#F8F8F8',
+  'Magma Grey':                    '#5A5A5A', 'Splendid Silver':           '#C0C0C0',
+  'Solid Fire Red':                '#CC2020', 'Grandeur Grey':             '#6B6B6B',
+  'Speedy Blue':                   '#1B4F8A', 'Silky Silver':              '#C0C0C0',
+  'Oxford Blue':                   '#1A3A8B', 'Brave Khaki':               '#7A7040',
+  'Opulent Red':                   '#A01818', 'Celestial Blue':            '#4A90D9',
+  'Kinetic Yellow':                '#F5C842', 'Auburn Silver':             '#B8A090',
+  'Sizzling Orange':               '#E87820', 'Atlas White':               '#FFFFFF',
+  'Denim Blue':                    '#2D4A7A', 'Titan Grey':                '#6B7280',
+  'Fiery Red':                     '#CC2020', 'Starry Night':              '#1A1A3A',
+  'Ranger Khaki':                  '#8A7A50', 'Phantom Black':             '#1A1A1A',
+  'Typhoon Silver':                '#A0A0A0', 'Calgary White':             '#F5F5F0',
+  'Orcus White':                   '#FFFFFF', 'Calypso Red':               '#CC2020',
+  'Oberon Black':                  '#1A1A1A', 'Avenue White':              '#F8F8F8',
+  'Teal Blue':                     '#006D75', 'Midnight Black':            '#1A1A1A',
+  'Deep Forest':                   '#1A3A1A', 'Rocky Beige':               '#C4B090',
+  'Aquamarine':                    '#1ABC9C', 'Infinity Blue':             '#1A2A8B',
+  'Diamond White':                 '#FFFFFF', 'Pearl White':               '#F8F8F8',
+  'Radiant Red':                   '#CC2020', 'Obsidian Blue':             '#1E2A5A',
+  'Lunar Silver':                  '#C8C8C8', 'Super White':               '#FFFFFF',
+  'Silver Metallic':               '#C0C0C0', 'Cafe White':                '#F5F0E8',
+  'Aurora Silver':                 '#C4C8CC', 'Glaze Red':                 '#C82020',
+  'Candy White':                   '#FFFFFF', 'Everest White':             '#F5F5F0',
+  'Napoli Black':                  '#1A1A1A', 'Dazzling Silver':           '#C4C8CC',
+};
+
 import { TcoService } from '../../services/tco.service';
 import { ReviewsService, CarReview } from '../../services/reviews.service';
 import { SeoService } from '../../services/seo.service';
@@ -154,13 +188,45 @@ import { SeoService } from '../../services/seo.service';
 export class CarDetailComponent implements OnInit {
   activeTab = signal('overview');
   liked = signal(false);
-  loan = { amount: 0, rate: 8.5, tenure: 60, emi: 0 };
+  loan = { amount: 0, rate: 8.5, tenure: 60, emi: 0 }; // kept for template binding
   car!: Car;
   activeImg = signal(0);
   notFound = false;
   carLoaded = false;
 
   // On-road price
+  // Colour picker
+  selectedColour = signal('');
+  modelColours = computed(() => {
+    if (!this.car) return [];
+    const all = this.carsData.cars();
+    const seen = new Set<string>();
+    const result: { name: string; hex: string; variantId: number }[] = [];
+    all.filter(c => c.make === this.car.make && c.model === this.car.model)
+       .forEach(c => {
+         if (c.color && !seen.has(c.color)) {
+           seen.add(c.color);
+           result.push({ name: c.color, hex: COLOUR_HEX[c.color] ?? '#888888', variantId: c.id });
+         }
+       });
+    return result;
+  });
+
+  // EMI state as signals so emiBreakdown can react
+  loanAmount = signal(0);
+  loanRate = signal(8.5);
+  loanTenure = signal(60);
+  loanEmi = signal(0);
+
+  // EMI breakdown computed
+  emiBreakdown = computed(() => {
+    const emi = this.loanEmi();
+    const tenure = this.loanTenure();
+    const principal = this.loanAmount();
+    const total = emi * tenure;
+    return { total, interest: total - principal, principal };
+  });
+
   selectedState = signal('Maharashtra');
   states = ['Maharashtra','Delhi','Karnataka','Tamil Nadu','Telangana','Gujarat','Rajasthan','West Bengal','Uttar Pradesh','Kerala'];
 
@@ -211,6 +277,7 @@ export class CarDetailComponent implements OnInit {
     if (this.carLoaded) {
       this.loan.amount = this.car.price;
       this.calcEmi();
+      if (this.car.color) this.selectedColour.set(this.car.color);
       this.loadReviews();
       this.seo.setCarDetail(this.car.make, this.car.model, this.car.year, this.car.price, this.car.city || 'India');
       const fuel = this.car.fuel;
@@ -226,6 +293,10 @@ export class CarDetailComponent implements OnInit {
     const n = this.loan.tenure;
     const p = this.loan.amount;
     this.loan.emi = Math.round(p * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1));
+    this.loanAmount.set(this.loan.amount);
+    this.loanRate.set(this.loan.rate);
+    this.loanTenure.set(this.loan.tenure);
+    this.loanEmi.set(this.loan.emi);
   }
 
   // On-road price calculation
@@ -354,6 +425,13 @@ export class CarDetailComponent implements OnInit {
     }
     return result;
   });
+
+  getHex(colourName: string): string { return COLOUR_HEX[colourName] ?? '#888888'; }
+  isLightColour(name: string): boolean {
+    const hex = (COLOUR_HEX[name] ?? '#888888').replace('#', '');
+    const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+    return (r * 0.299 + g * 0.587 + b * 0.114) > 160;
+  }
 
   getMileage(car: Car) {
     const spec = car.specs?.find(s => s.label.toLowerCase().includes('mileage') && !s.label.toLowerCase().includes('cng'));
