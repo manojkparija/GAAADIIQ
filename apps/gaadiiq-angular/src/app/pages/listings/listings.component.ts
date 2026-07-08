@@ -108,6 +108,9 @@ export class ListingsComponent implements OnInit {
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(c);
     }
+    const bt = this.selectedBodyType();
+    const fuel = this.selectedFuel();
+    const budget = this.maxPrice();
     return Array.from(map.entries()).map(([key, cars]) => {
       const [make, model] = key.split('||');
       const prices = cars.map(c => c.price);
@@ -125,7 +128,13 @@ export class ListingsComponent implements OnInit {
         badge: rep.badge,
         representativeId: rep.id,
       };
-    }).sort((a, b) => b.reviews - a.reviews);
+    })
+    .filter(m =>
+      (bt === 'All' || m.bodyType === bt) &&
+      (fuel === 'All' || m.fuel.includes(fuel)) &&
+      m.minPrice <= budget
+    )
+    .sort((a, b) => b.reviews - a.reviews);
   });
 
   newModelVariants = computed(() => {
