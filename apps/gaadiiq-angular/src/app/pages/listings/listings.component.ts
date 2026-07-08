@@ -39,6 +39,8 @@ export class ListingsComponent implements OnInit {
       this.selectedFuel.set(params['fuel'] || 'All');
       this.selectedBodyType.set(params['bodyType'] || 'All');
       if (params['carType']) this.carType.set(params['carType'] as any);
+      if (params['maxPrice']) this.maxPrice.set(+params['maxPrice']);
+      if (params['transmission']) this.selectedTransmission.set(params['transmission']);
     });
   }
 
