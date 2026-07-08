@@ -113,26 +113,28 @@ export class ListingsComponent implements OnInit {
     const budget = this.maxPrice();
     return Array.from(map.entries()).map(([key, cars]) => {
       const [make, model] = key.split('||');
-      const prices = cars.map(c => c.price);
-      const rep = cars.find(c => c.image) ?? cars[0];
+      // Only count/price variants within the budget
+      const affordable = cars.filter(c => c.price <= budget);
+      if (affordable.length === 0) return null;
+      const prices = affordable.map(c => c.price);
+      const rep = affordable.find(c => c.image) ?? affordable[0];
       return {
         make, model,
         image: rep.image,
         minPrice: Math.min(...prices),
         maxPrice: Math.max(...prices),
-        variantCount: cars.length,
+        variantCount: affordable.length,
         bodyType: rep.bodyType ?? '',
-        fuel: [...new Set(cars.map(c => c.fuel))].join(' / '),
+        fuel: [...new Set(affordable.map(c => c.fuel))].join(' / '),
         rating: rep.rating,
         reviews: rep.reviews,
         badge: rep.badge,
         representativeId: rep.id,
       };
     })
-    .filter(m =>
+    .filter((m): m is NewCarModel => m !== null &&
       (bt === 'All' || m.bodyType === bt) &&
-      (fuel === 'All' || m.fuel.includes(fuel)) &&
-      m.minPrice <= budget
+      (fuel === 'All' || m.fuel.includes(fuel))
     )
     .sort((a, b) => b.reviews - a.reviews);
   });
@@ -141,8 +143,9 @@ export class ListingsComponent implements OnInit {
     const sel = this.selectedModel();
     if (!sel) return [];
     const [make, model] = sel.split('||');
+    const budget = this.maxPrice();
     return this.carsData.cars()
-      .filter(c => c.make === make && c.model === model && c.km === 0 && c.year >= 2025)
+      .filter(c => c.make === make && c.model === model && c.km === 0 && c.year >= 2025 && c.price <= budget)
       .sort((a, b) => a.price - b.price);
   });
 

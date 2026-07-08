@@ -102,7 +102,7 @@
             <label>Max Budget: <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
             <input type="range" min="300000" max="20000000" step="100000"
               [value]="maxPrice()" (input)="maxPrice.set(+$any($event.target).value)" class="price-range">
-            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)"><span>₹3L</span><span>₹2 Cr</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)"><span>₹3L (Min)</span><span>₹2 Cr (Max)</span></div>
           </div>
           <button class="btn-gradient" style="width:100%;margin-top:1rem" (click)="sidebarOpen.set(false)">Apply</button>
         </aside>
