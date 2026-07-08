@@ -8,7 +8,7 @@
       </div>
       <div class="search-bar glass-card">
         <span>🔍</span>
-        <input type="text" placeholder="Search make, model, body type, city, year..." [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)">
+        <input type="text" placeholder="Search make, model, body type, city, year..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
       </div>
       <div class="sort-row">
         <select [(ngModel)]="sorts[0]" (change)="selectedSort.set($any($event.target).value)">
