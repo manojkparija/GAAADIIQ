@@ -338,14 +338,21 @@ export class CarDetailComponent implements OnInit {
   similarCars = computed(() => {
     if (!this.car || !this.isNewCar) return [];
     const all = this.carsData.cars();
-    return all
+    const seen = new Set<string>();
+    const result: Car[] = [];
+    const candidates = all
       .filter(c =>
-        c.id !== this.car.id &&
         c.km === 0 && c.year >= 2025 &&
+        !(c.make === this.car.make && c.model === this.car.model) &&
         (c.bodyType === this.car.bodyType || Math.abs(c.price - this.car.price) < 500000)
       )
-      .sort((a, b) => Math.abs(a.price - this.car.price) - Math.abs(b.price - this.car.price))
-      .slice(0, 5);
+      .sort((a, b) => Math.abs(a.price - this.car.price) - Math.abs(b.price - this.car.price));
+    for (const c of candidates) {
+      const key = `${c.make}||${c.model}`;
+      if (!seen.has(key)) { seen.add(key); result.push(c); }
+      if (result.length >= 5) break;
+    }
+    return result;
   });
 
   getMileage(car: Car) {
