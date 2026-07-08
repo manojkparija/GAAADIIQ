@@ -57,7 +57,7 @@ export class ListingsComponent implements OnInit {
   filteredCars = computed(() => {
     let cars = this.carsData.cars().filter(c => {
       const q = this.searchQuery().toLowerCase();
-      const matchQ  = !q || `${c.make} ${c.model} ${c.city} ${c.bodyType} ${c.year} ${c.fuel}`.toLowerCase().includes(q);
+      const matchQ  = !q || `${c.make} ${c.model} ${c.variant ?? ''} ${c.city} ${c.bodyType} ${c.year} ${c.fuel} ${c.transmission} ${c.color ?? ''}`.toLowerCase().includes(q);
       const matchMake = this.selectedMake() === 'All' || c.make === this.selectedMake();
       const matchFuel = this.selectedFuel() === 'All' || c.fuel === this.selectedFuel();
       const matchTx   = this.selectedTransmission() === 'All' || c.transmission.includes(this.selectedTransmission());
