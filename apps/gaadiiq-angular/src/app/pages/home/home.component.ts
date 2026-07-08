@@ -32,16 +32,50 @@ export class HomeComponent implements OnInit, AfterViewInit {
   ];
 
   bodyTypes = ['All','Hatchback','Sedan','SUV','MUV','Electric','Luxury'];
+  showAllBrands = false;
+
   makes = [
-    { name: 'Maruti Suzuki', short: 'MS', color: '#6C63FF', models: 12 },
-    { name: 'Hyundai', short: 'HY', color: '#FF6584', models: 8 },
-    { name: 'Tata', short: 'TM', color: '#43E97B', models: 7 },
-    { name: 'Mahindra', short: 'MH', color: '#FFD700', models: 9 },
-    { name: 'Honda', short: 'HO', color: '#FF8C00', models: 5 },
-    { name: 'Toyota', short: 'TY', color: '#00C9FF', models: 6 },
-    { name: 'Kia', short: 'KI', color: '#9B59B6', models: 4 },
-    { name: 'MG Motor', short: 'MG', color: '#E74C3C', models: 3 },
+    // Popular (shown by default)
+    { name: 'Tata',           short: 'TT', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Tata_logo_2020.svg/120px-Tata_logo_2020.svg.png' },
+    { name: 'Maruti Suzuki',  short: 'MS', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Suzuki_logo_2.svg/120px-Suzuki_logo_2.svg.png' },
+    { name: 'Mahindra',       short: 'MH', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Mahindra_%26_Mahindra_Logo.svg/120px-Mahindra_%26_Mahindra_Logo.svg.png' },
+    { name: 'Hyundai',        short: 'HY', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Hyundai_Motor_Company_logo.svg/120px-Hyundai_Motor_Company_logo.svg.png' },
+    { name: 'Toyota',         short: 'TY', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Toyota_carlogo.svg/120px-Toyota_carlogo.svg.png' },
+    { name: 'Kia',            short: 'KI', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Kia-logo.svg/120px-Kia-logo.svg.png' },
+    { name: 'BMW',            short: 'BMW', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/BMW.svg/120px-BMW.svg.png' },
+    { name: 'Skoda',          short: 'SK', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Skoda_Auto_logo.svg/120px-Skoda_Auto_logo.svg.png' },
+    { name: 'MG',             short: 'MG', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/MG_Motor_logo.svg/120px-MG_Motor_logo.svg.png' },
+    { name: 'Renault',        short: 'RN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Renault_2021_Text.svg/120px-Renault_2021_Text.svg.png' },
+    { name: 'Volkswagen',     short: 'VW', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Volkswagen_logo_2019.svg/120px-Volkswagen_logo_2019.svg.png' },
+    { name: 'Mercedes-Benz',  short: 'MB', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mercedes-Logo.svg/120px-Mercedes-Logo.svg.png' },
+    // Extended (shown when "View More" is clicked)
+    { name: 'Honda',          short: 'HO', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Honda_logo.svg/120px-Honda_logo.svg.png' },
+    { name: 'Nissan',         short: 'NS', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Nissan_-_logo_%28English%29.svg/120px-Nissan_-_logo_%28English%29.svg.png' },
+    { name: 'Land Rover',     short: 'LR', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Land_Rover_logo.svg/120px-Land_Rover_logo.svg.png' },
+    { name: 'VinFast',        short: 'VF', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/VinFast_logo.svg/120px-VinFast_logo.svg.png' },
+    { name: 'Citroen',        short: 'CT', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Logo_citroen.svg/120px-Logo_citroen.svg.png' },
+    { name: 'Jeep',           short: 'JP', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Jeep_logo.svg/120px-Jeep_logo.svg.png' },
+    { name: 'BYD',            short: 'BYD', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/BYD_Auto_logo.svg/120px-BYD_Auto_logo.svg.png' },
+    { name: 'Audi',           short: 'AU', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Audi-Logo_2016.svg/120px-Audi-Logo_2016.svg.png' },
+    { name: 'Porsche',        short: 'PR', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Porsche_logo.svg/120px-Porsche_logo.svg.png' },
+    { name: 'Volvo',          short: 'VO', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Volvo_cars_logo.svg/120px-Volvo_cars_logo.svg.png' },
+    { name: 'Lexus',          short: 'LX', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Lexus_logo.svg/120px-Lexus_logo.svg.png' },
+    { name: 'Mini',           short: 'MN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/MINI_logo.svg/120px-MINI_logo.svg.png' },
+    { name: 'Lamborghini',    short: 'LB', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Lamborghini_Logo.svg/120px-Lamborghini_Logo.svg.png' },
+    { name: 'Force Motors',   short: 'FM', logo: '' },
+    { name: 'Jaguar',         short: 'JG', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Jaguar_logo.svg/120px-Jaguar_logo.svg.png' },
+    { name: 'Rolls-Royce',    short: 'RR', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Rolls-Royce_Motor_Cars_logo.svg/120px-Rolls-Royce_Motor_Cars_logo.svg.png' },
+    { name: 'Ferrari',        short: 'FR', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Ferrari-Logo.svg/120px-Ferrari-Logo.svg.png' },
+    { name: 'Tesla',          short: 'TS', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Tesla_T_symbol.svg/120px-Tesla_T_symbol.svg.png' },
+    { name: 'Isuzu',          short: 'IZ', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Isuzu_wordmark.svg/120px-Isuzu_wordmark.svg.png' },
+    { name: 'Maserati',       short: 'MA', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Maserati_badge.svg/120px-Maserati_badge.svg.png' },
+    { name: 'Aston Martin',   short: 'AM', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Aston_Martin_logo.svg/120px-Aston_Martin_logo.svg.png' },
+    { name: 'McLaren',        short: 'MC', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/McLaren_logo_%282020%29.svg/120px-McLaren_logo_%282020%29.svg.png' },
+    { name: 'Bentley',        short: 'BT', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Bentley_logo.svg/120px-Bentley_logo.svg.png' },
+    { name: 'Lotus',          short: 'LO', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Lotus_Cars_Logo.svg/120px-Lotus_Cars_Logo.svg.png' },
   ];
+
+  get visibleMakes() { return this.showAllBrands ? this.makes : this.makes.slice(0, 12); }
 
   featuredCars: Car[] = [
     // Maruti Suzuki lineup

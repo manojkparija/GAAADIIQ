@@ -112,18 +112,25 @@
       <p class="section-sub">India's most trusted car manufacturers — all verified listings</p>
     </div>
     <div class="brands-grid">
-      @for (make of makes; track make.name) {
+      @for (make of visibleMakes; track make.name) {
         <a
           [routerLink]="['/listings']"
           [queryParams]="{make: make.name}"
           class="brand-card glass-card"
         >
-          <div class="brand-logo" [style.background]="make.color + '22'" [style.borderColor]="make.color + '44'">
-            <span class="brand-short" [style.color]="make.color">{{ make.short }}</span>
+          <div class="brand-logo">
+            <img *ngIf="make.logo" [src]="make.logo" [alt]="make.name"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <span class="brand-short" [style.display]="make.logo ? 'none' : 'flex'">{{ make.short }}</span>
           </div>
           <span class="brand-name">{{ make.name }}</span>
         </a>
       }
+    </div>
+    <div class="brands-toggle">
+      <button class="btn-outline" (click)="showAllBrands = !showAllBrands">
+        {{ showAllBrands ? '▲ View Less Brands' : '▼ View All ' + makes.length + ' Brands' }}
+      </button>
     </div>
   </div>
 </section>
