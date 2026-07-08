@@ -135,6 +135,31 @@
   </div>
 </section>
 
+<!-- FIND CARS BY CHOICE -->
+<section class="find-cars-section" appScrollAnimate>
+  <div class="container">
+    <div class="find-cars-card glass-card">
+      <h2 class="find-cars-title">Find The Cars Of Your Choice</h2>
+      <div class="find-cars-tabs">
+        <button
+          *ngFor="let tab of findCarsTabs"
+          class="find-tab"
+          [class.active]="findCarsTab === tab"
+          (click)="findCarsTab = tab"
+        >{{ tab }}</button>
+      </div>
+      <div class="find-cars-pills">
+        <a
+          *ngFor="let opt of activeOptions"
+          routerLink="/listings"
+          [queryParams]="opt.params"
+          class="find-pill"
+        >{{ opt.label }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- SWIFT SPOTLIGHT -->
 <section class="swift-spotlight" appScrollAnimate>
   <div class="container">

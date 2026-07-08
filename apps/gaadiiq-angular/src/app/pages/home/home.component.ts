@@ -77,6 +77,57 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   get visibleMakes() { return this.showAllBrands ? this.makes : this.makes.slice(0, 12); }
 
+  // Find Cars section
+  findCarsTab = 'Budget';
+  findCarsTabs = ['Budget', 'Body Type', 'Fuel Type', 'Transmission', 'Seating Capacity'];
+
+  findCarsOptions: Record<string, { label: string; params: Record<string, string> }[]> = {
+    'Budget': [
+      { label: 'Under 5 Lakh',  params: { maxPrice: '500000' } },
+      { label: 'Under 6 Lakh',  params: { maxPrice: '600000' } },
+      { label: 'Under 7 Lakh',  params: { maxPrice: '700000' } },
+      { label: 'Under 8 Lakh',  params: { maxPrice: '800000' } },
+      { label: 'Under 10 Lakh', params: { maxPrice: '1000000' } },
+      { label: 'Under 15 Lakh', params: { maxPrice: '1500000' } },
+      { label: 'Under 20 Lakh', params: { maxPrice: '2000000' } },
+      { label: 'Under 25 Lakh', params: { maxPrice: '2500000' } },
+      { label: 'Under 30 Lakh', params: { maxPrice: '3000000' } },
+      { label: 'Luxury Cars',   params: { maxPrice: '20000000', minPrice: '3000000' } },
+    ],
+    'Body Type': [
+      { label: 'Hatchback', params: { bodyType: 'Hatchback' } },
+      { label: 'Sedan',     params: { bodyType: 'Sedan' } },
+      { label: 'SUV',       params: { bodyType: 'SUV' } },
+      { label: 'MUV / MPV', params: { bodyType: 'MUV' } },
+      { label: 'Coupe',     params: { bodyType: 'Coupe' } },
+      { label: 'Convertible', params: { bodyType: 'Convertible' } },
+      { label: 'Pickup Truck', params: { bodyType: 'Pickup' } },
+    ],
+    'Fuel Type': [
+      { label: 'Petrol',   params: { fuel: 'Petrol' } },
+      { label: 'Diesel',   params: { fuel: 'Diesel' } },
+      { label: 'Electric', params: { fuel: 'Electric' } },
+      { label: 'CNG',      params: { fuel: 'CNG' } },
+      { label: 'Hybrid',   params: { fuel: 'Hybrid' } },
+    ],
+    'Transmission': [
+      { label: 'Manual',    params: { transmission: 'Manual' } },
+      { label: 'Automatic', params: { transmission: 'Automatic' } },
+      { label: 'AMT',       params: { transmission: 'AMT' } },
+      { label: 'CVT',       params: { transmission: 'CVT' } },
+      { label: 'DCT',       params: { transmission: 'DCT' } },
+    ],
+    'Seating Capacity': [
+      { label: '4 Seater', params: { seats: '4' } },
+      { label: '5 Seater', params: { seats: '5' } },
+      { label: '6 Seater', params: { seats: '6' } },
+      { label: '7 Seater', params: { seats: '7' } },
+      { label: '8 Seater', params: { seats: '8' } },
+    ],
+  };
+
+  get activeOptions() { return this.findCarsOptions[this.findCarsTab] ?? []; }
+
   featuredCars: Car[] = [
     // Maruti Suzuki lineup
     { id:1, make:'Maruti Suzuki', model:'Swift', year:2024, price:749000, km:5000, fuel:'Petrol', transmission:'Manual', badge:'🔥 Bestseller', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.7, reviews:512, verified:true },

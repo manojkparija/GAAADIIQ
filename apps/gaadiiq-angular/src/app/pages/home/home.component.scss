@@ -212,6 +212,83 @@
   }
 }
 
+// ── Find Cars section ────────────────────────────────────────────────────────
+.find-cars-section { padding: 2rem 0 3rem; }
+
+.find-cars-card {
+  padding: 2rem 2rem 1.75rem;
+}
+
+.find-cars-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+}
+
+.find-cars-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--divider);
+  margin-bottom: 1.5rem;
+}
+
+.find-tab {
+  background: none;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+  transition: color 0.2s;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0; right: 0;
+    height: 2px;
+    background: var(--primary);
+    transform: scaleX(0);
+    transition: transform 0.2s;
+  }
+
+  &.active {
+    color: var(--primary);
+    &::after { transform: scaleX(1); }
+  }
+
+  &:hover:not(.active) { color: var(--text); }
+}
+
+.find-cars-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.find-pill {
+  display: inline-block;
+  padding: 0.45rem 1.2rem;
+  border-radius: 50px;
+  border: 1.5px solid var(--glass-border);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--fill-soft);
+  transition: all 0.18s;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba(108,99,255,0.12);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+}
+
 /* CARS GRID */
 .cars-section { padding: 5rem 0; background: rgba(255,255,255,0.02); }
 
