@@ -3,7 +3,11 @@
   <div class="listings-header">
     <div class="container listings-header-inner">
       <div>
-        <h1>Browse <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></h1>
+        <h1>
+          <span *ngIf="carType()==='New'">New <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></span>
+          <span *ngIf="carType()==='Used'">Used <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></span>
+          <span *ngIf="carType()==='All'">Browse <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></span>
+        </h1>
         <p style="color:var(--muted);font-size:0.9rem">{{ filteredCars().length }} listings found<span *ngIf="selectedMake() !== 'All'"> &nbsp;·&nbsp; <a href="javascript:void(0)" (click)="selectedMake.set('All')" style="color:var(--accent);font-size:0.85rem">Clear brand filter ✕</a></span></p>
       </div>
       <div class="sort-row">
