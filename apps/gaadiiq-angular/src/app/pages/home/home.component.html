@@ -9,19 +9,17 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="orb orb-purple" style="width:600px;height:600px;top:-100px;left:-150px;opacity:0.5"></div>
-  <div class="orb orb-pink" style="width:400px;height:400px;top:100px;right:-100px;opacity:0.4"></div>
-  <div class="orb orb-teal" style="width:300px;height:300px;bottom:0;left:40%;opacity:0.25"></div>
-
   <div class="container hero-content">
+    <!-- Left: copy + search -->
     <div class="hero-text">
-      <div class="badge badge-purple mb-4">🤖 India's AI-First Car Platform</div>
+      <div class="badge badge-blue mb-4">🚘 AI Car Valuation</div>
       <h1>
-        Buy &amp; Sell Cars<br>
-        <span class="gradient-text">Intelligently.</span>
+        Know Your Car's<br>
+        <span class="gradient-text">True Market Value</span>
       </h1>
+      <p class="hero-powered">Powered by <strong>200+ AI Signals</strong></p>
       <p class="hero-sub">
-        AI-powered valuations, instant loan comparisons, verified listings, and dealer intelligence — all in one stunning platform.
+        Get an accurate valuation in under 30 seconds — data-driven, instant, no guesswork.
       </p>
 
       <!-- SEARCH BAR -->
@@ -48,43 +46,106 @@
       </div>
 
       <div class="hero-btns">
-        <button class="btn-gradient btn-lg" routerLink="/listings">Explore Cars 🚗</button>
-        <button class="btn-outline btn-lg" routerLink="/list-car">List Your Car ✨</button>
+        <button class="btn-gradient btn-lg" routerLink="/ai-advisor">Get AI Valuation 🤖</button>
+        <button class="btn-outline btn-lg" routerLink="/listings">Browse Cars</button>
       </div>
     </div>
 
+    <!-- Right: live valuation panel -->
     <div class="hero-visual">
-      <div class="hero-car-card glass-card animate-float">
-        <div class="car-img-placeholder">
-          <img src="https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg" alt="Featured Car" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://placehold.co/800x450/1a1f35/6C63FF?text=Gaadiiq'" style="width:100%;height:100%;object-fit:cover;border-radius:16px">
+      <div class="val-panel glass-card">
+        <!-- Panel header -->
+        <div class="vp-header">
+          <div class="vp-live-badge">
+            <span class="vp-live-dot"></span>
+            Live Analysis
+          </div>
+          <span class="vp-model">Hyundai Creta SX 2023</span>
         </div>
-        <div class="car-info">
-          <div style="display:flex;justify-content:space-between;align-items:start">
-            <div>
-              <div style="font-size:0.75rem;color:var(--muted)">FEATURED LISTING</div>
-              <div style="font-weight:700;font-size:1.1rem">Hyundai Creta 2023</div>
+
+        <!-- Animated price chart -->
+        <div class="vp-chart-wrap">
+          <div class="vp-y-labels">
+            <span>₹16L</span><span>₹14L</span><span>₹12L</span>
+          </div>
+          <svg viewBox="0 0 280 96" class="vp-chart-svg" aria-hidden="true" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stop-color="#2563EB"/>
+                <stop offset="100%" stop-color="#7C3AED"/>
+              </linearGradient>
+              <linearGradient id="areaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stop-color="#2563EB" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid rules -->
+            <line x1="0" y1="18" x2="280" y2="18" stroke="currentColor" stroke-opacity="0.07" stroke-width="1"/>
+            <line x1="0" y1="48" x2="280" y2="48" stroke="currentColor" stroke-opacity="0.07" stroke-width="1"/>
+            <line x1="0" y1="78" x2="280" y2="78" stroke="currentColor" stroke-opacity="0.07" stroke-width="1"/>
+            <!-- Area fill -->
+            <path class="vp-area" d="M0,72 C50,66 100,54 140,44 C180,34 220,24 280,16 L280,96 L0,96 Z" fill="url(#areaGrad)"/>
+            <!-- Price line -->
+            <path class="vp-line" d="M0,72 C50,66 100,54 140,44 C180,34 220,24 280,16"
+              fill="none" stroke="url(#lineGrad)" stroke-width="2.5"
+              stroke-linecap="round" stroke-dasharray="380" stroke-dashoffset="380"/>
+            <!-- Waypoint dots -->
+            <circle cx="140" cy="44" r="3" fill="#2563EB" opacity="0" class="vp-dot vp-dot-1"/>
+            <circle cx="220" cy="24" r="3" fill="#7C3AED" opacity="0" class="vp-dot vp-dot-2"/>
+            <!-- Endpoint -->
+            <circle cx="280" cy="16" r="5"  class="vp-endpoint-core"/>
+            <circle cx="280" cy="16" r="10" class="vp-endpoint-ring"/>
+          </svg>
+          <div class="vp-x-labels">
+            <span>6 mo</span><span>3 mo</span><span>Now</span>
+          </div>
+        </div>
+
+        <!-- Price rows -->
+        <div class="vp-price-section">
+          <div class="vp-price-main">
+            <div class="vpm-label">AI Fair Value</div>
+            <div class="vpm-amount gradient-text">₹14.2L</div>
+            <div class="vpm-delta positive">↑ 2.4% vs last month</div>
+          </div>
+          <div class="vp-range-section">
+            <div class="vp-range-label">Market Range</div>
+            <div class="vp-range-row">
+              <span class="range-lo">₹12.8L</span>
+              <div class="range-track">
+                <div class="range-fill"></div>
+                <div class="range-thumb"></div>
+              </div>
+              <span class="range-hi">₹15.6L</span>
             </div>
-            <span class="badge badge-red">🔥 Hot</span>
           </div>
-          <div style="font-size:1.5rem;font-weight:800" class="gradient-text">₹14.5L</div>
-          <div style="display:flex;gap:1rem;font-size:0.8rem;color:var(--muted)">
-            <span>⛽ Petrol</span>
-            <span>⚙️ Auto</span>
-            <span>📍 Delhi</span>
+        </div>
+
+        <!-- AI confidence -->
+        <div class="vp-confidence">
+          <span class="conf-label">AI Confidence</span>
+          <div class="conf-track">
+            <div class="conf-fill" style="width:94%"></div>
           </div>
-          <div class="ai-badge">
-            <span>🤖 AI Valuation: Fair Price</span>
-          </div>
+          <span class="conf-pct">94%</span>
+        </div>
+
+        <!-- Signal chips -->
+        <div class="vp-signals">
+          <span class="vsig good">✓ Fair Deal</span>
+          <span class="vsig">📊 High Demand</span>
+          <span class="vsig">🔋 Low Depreciation</span>
         </div>
       </div>
 
-      <div class="floating-pill glass-card animate-float" style="animation-delay:0.5s;top:10%;right:-20px">
-        <span>⚡</span>
-        <div><div style="font-weight:700;font-size:0.9rem">EV Range</div><div style="color:#43E97B;font-size:0.85rem">500km+</div></div>
+      <!-- Floating stat pills -->
+      <div class="hero-stat-pill glass-card" style="top:-18px;right:-12px">
+        <span class="hsp-num gradient-text">200+</span>
+        <span class="hsp-label">AI Signals</span>
       </div>
-      <div class="floating-pill glass-card animate-float" style="animation-delay:1s;bottom:15%;left:-30px">
-        <span>💰</span>
-        <div><div style="font-weight:700;font-size:0.9rem">EMI from</div><div style="color:#FFD700;font-size:0.85rem">₹12,400/mo</div></div>
+      <div class="hero-stat-pill glass-card" style="bottom:24px;left:-18px">
+        <span class="hsp-num gradient-text">30s</span>
+        <span class="hsp-label">Instant Result</span>
       </div>
     </div>
   </div>
