@@ -5,7 +5,11 @@ import { SeoService } from '../../services/seo.service';
 import { CarsDataService } from '../../services/cars-data.service';
 
 interface DealerMetric { label: string; value: string; change: string; up: boolean; icon: string; }
-interface LeadRow { name: string; car: string; budget: string; stage: string; stageColor: string; time: string; }
+interface LeadRow {
+  name: string; car: string; budget: string; stage: string; stageColor: string; time: string;
+  intentScore: number; leadGrade: 'A' | 'B' | 'C' | 'D';
+  bestContactTime: string; nba: string; phone: string;
+}
 
 @Component({
   selector: 'app-dealer-dashboard',
@@ -25,12 +29,12 @@ export class DealerDashboardComponent {
   ];
 
   leads: LeadRow[] = [
-    { name: 'Arjun Mehta', car: 'Maruti Swift 2024', budget: '₹7–9L', stage: 'Hot Lead', stageColor: 'red', time: '2 min ago' },
-    { name: 'Priya Nair', car: 'Hyundai Creta 2023', budget: '₹12–15L', stage: 'Test Drive', stageColor: 'purple', time: '18 min ago' },
-    { name: 'Ravi Kumar', car: 'Tata Nexon EV', budget: '₹14–18L', stage: 'Negotiation', stageColor: 'gold', time: '1 hr ago' },
-    { name: 'Sneha Joshi', car: 'Maruti Alto K10', budget: '₹4–5L', stage: 'New Enquiry', stageColor: 'blue', time: '2 hr ago' },
-    { name: 'Deepak Rao', car: 'Mahindra Scorpio-N', budget: '₹18–22L', stage: 'Documentation', stageColor: 'green', time: '3 hr ago' },
-    { name: 'Lalita Sharma', car: 'Toyota Innova HyCross', budget: '₹20–25L', stage: 'Hot Lead', stageColor: 'red', time: '4 hr ago' },
+    { name: 'Arjun Mehta', car: 'Maruti Swift 2024', budget: '₹7–9L', stage: 'Hot Lead', stageColor: 'red', time: '2 min ago', intentScore: 92, leadGrade: 'A', bestContactTime: 'Now · 10am–1pm', nba: 'Schedule Test Drive', phone: '+91 98765 43210' },
+    { name: 'Priya Nair', car: 'Hyundai Creta 2023', budget: '₹12–15L', stage: 'Test Drive', stageColor: 'purple', time: '18 min ago', intentScore: 85, leadGrade: 'A', bestContactTime: 'Eve · 6–8pm', nba: 'Send Finance Offer', phone: '+91 98745 12340' },
+    { name: 'Ravi Kumar', car: 'Tata Nexon EV', budget: '₹14–18L', stage: 'Negotiation', stageColor: 'gold', time: '1 hr ago', intentScore: 78, leadGrade: 'B', bestContactTime: 'Morn · 9–11am', nba: 'Share Subsidy Details', phone: '+91 97865 43201' },
+    { name: 'Sneha Joshi', car: 'Maruti Alto K10', budget: '₹4–5L', stage: 'New Enquiry', stageColor: 'blue', time: '2 hr ago', intentScore: 61, leadGrade: 'B', bestContactTime: 'Noon · 12–2pm', nba: 'Send Brochure', phone: '+91 96754 32109' },
+    { name: 'Deepak Rao', car: 'Mahindra Scorpio-N', budget: '₹18–22L', stage: 'Documentation', stageColor: 'green', time: '3 hr ago', intentScore: 95, leadGrade: 'A', bestContactTime: 'Morn · 10am', nba: 'Collect Documents', phone: '+91 95643 21098' },
+    { name: 'Lalita Sharma', car: 'Toyota Innova HyCross', budget: '₹20–25L', stage: 'Hot Lead', stageColor: 'red', time: '4 hr ago', intentScore: 44, leadGrade: 'C', bestContactTime: 'Eve · 7–9pm', nba: 'Re-engage via WhatsApp', phone: '+91 94532 10987' },
   ];
 
   fuelMix = [
@@ -53,5 +57,9 @@ export class DealerDashboardComponent {
 
   constructor(seo: SeoService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
+  }
+
+  countGrade(grade: 'A' | 'B' | 'C' | 'D') {
+    return this.leads.filter(l => l.leadGrade === grade).length;
   }
 }

@@ -79,6 +79,58 @@
 .best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #6C63FF, #FF6584); color: var(--text); font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 .selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 
+/* Affordability section */
+.afford-card {
+  background: var(--fill-soft); backdrop-filter: blur(20px);
+  border: 1px solid var(--border-soft); border-radius: 20px; padding: 1.75rem;
+  margin-bottom: 1.5rem;
+  h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; margin-bottom: 0.25rem; }
+}
+.afford-header { margin-bottom: 1.5rem; .afford-sub { font-size: 0.85rem; color: var(--muted); } }
+.afford-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+  @media(max-width:768px) { grid-template-columns: 1fr; }
+}
+.afford-inputs { display: flex; flex-direction: column; }
+.afford-scores { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* Gauge */
+.score-gauge { position: relative; text-align: center; }
+.gauge-svg { width: 180px; height: 90px; }
+.gauge-center {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  .gauge-score { font-size: 2rem; font-weight: 800; line-height: 1; }
+  .gauge-label { font-size: 0.8rem; font-weight: 700; margin-top: 0.1rem; }
+}
+
+/* DTI */
+.dti-row {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding: 1rem; background: rgba(108,99,255,0.08); border-radius: 12px;
+  border: 1px solid rgba(108,99,255,0.15);
+  .dti-item { text-align: center; }
+  .dti-val { font-size: 1.4rem; font-weight: 800; &.warn { color: #FF6584; } }
+  .dti-label { font-size: 0.72rem; color: var(--muted); }
+  .dti-arrow { font-size: 1.25rem; color: var(--muted); }
+  .dti-ideal { flex: 1; }
+  .ideal-badge {
+    font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 50px; display: inline-block;
+    &.ok { background: rgba(67,233,123,0.15); color: #43E97B; }
+    &.over { background: rgba(255,101,132,0.15); color: #FF6584; }
+  }
+}
+
+/* Afford metrics */
+.afford-metrics { display: flex; gap: 1rem; }
+.am-item {
+  flex: 1; text-align: center; padding: 1rem 0.5rem; background: var(--fill-dim);
+  border: 1px solid var(--divider); border-radius: 12px;
+  .am-icon { font-size: 1.25rem; margin-bottom: 0.4rem; }
+  .am-val { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem;
+    &.good { color: #43E97B; } &.bad { color: #FF6584; }
+  }
+  .am-label { font-size: 0.72rem; color: var(--muted); }
+}
+
 .amort-card { margin-top: 0; }
 .amort-sub { font-size: 0.75rem; color: var(--text-tertiary); font-weight: 400; }
 .table-wrap { overflow-x: auto; }

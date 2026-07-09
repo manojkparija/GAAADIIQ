@@ -21,7 +21,7 @@
   <!-- Tab Bar -->
   <div class="dd-tabs container">
     <button class="dd-tab" [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">📊 Overview</button>
-    <button class="dd-tab" [class.active]="activeTab()==='leads'" (click)="activeTab.set('leads')">💬 Leads</button>
+    <button class="dd-tab" [class.active]="activeTab()==='leads'" (click)="activeTab.set('leads')">💬 AI Leads</button>
     <button class="dd-tab" [class.active]="activeTab()==='inventory'" (click)="activeTab.set('inventory')">🚗 Inventory</button>
     <button class="dd-tab" [class.active]="activeTab()==='analytics'" (click)="activeTab.set('analytics')">📈 Analytics</button>
   </div>
@@ -45,17 +45,46 @@
         </div>
       </div>
 
+      <!-- AI Lead Intelligence Summary -->
+      <h2 class="section-head">🤖 AI Lead <span class="gradient-text">Intelligence</span></h2>
+      <div class="ai-lead-summary glass-card">
+        <div class="ai-summary-chips">
+          <div class="ai-sum-chip hot">
+            <span class="chip-num">{{ countGrade('A') }}</span>
+            <span class="chip-label">Grade A · Act Now</span>
+          </div>
+          <div class="ai-sum-chip warm">
+            <span class="chip-num">{{ countGrade('B') }}</span>
+            <span class="chip-label">Grade B · Follow Up</span>
+          </div>
+          <div class="ai-sum-chip cool">
+            <span class="chip-num">{{ countGrade('C') }}</span>
+            <span class="chip-label">Grade C · Nurture</span>
+          </div>
+          <div class="ai-sum-chip cold">
+            <span class="chip-num">{{ countGrade('D') }}</span>
+            <span class="chip-label">Grade D · Re-engage</span>
+          </div>
+        </div>
+        <div class="ai-top-lead">
+          <span class="atl-label">🔥 Highest Intent Lead Today</span>
+          <span class="atl-name">Deepak Rao</span>
+          <span class="atl-score">95% intent · Grade A · <em>Collect Documents</em></span>
+        </div>
+      </div>
+
       <!-- Recent Leads preview -->
-      <h2 class="section-head">Recent <span class="gradient-text">Leads</span></h2>
+      <h2 class="section-head" style="margin-top:2rem">Recent <span class="gradient-text">Leads</span></h2>
       <div class="leads-table glass-card">
         <div class="lt-row lt-header">
-          <span>Buyer</span><span>Car Interested In</span><span>Budget</span><span>Stage</span><span>Time</span>
+          <span>Buyer</span><span>Car</span><span>Budget</span><span>Stage</span><span>Grade</span><span>Time</span>
         </div>
         <div class="lt-row" *ngFor="let l of leads.slice(0,4)">
           <span class="lt-name">{{ l.name }}</span>
           <span class="lt-car">{{ l.car }}</span>
           <span class="lt-budget">{{ l.budget }}</span>
           <span class="lt-stage" [ngClass]="'stage-' + l.stageColor">{{ l.stage }}</span>
+          <span class="lead-grade" [ngClass]="'grade-' + l.leadGrade">{{ l.leadGrade }}</span>
           <span class="lt-time">{{ l.time }}</span>
         </div>
       </div>
@@ -75,17 +104,50 @@
 
     <!-- LEADS TAB -->
     <ng-container *ngIf="activeTab()==='leads'">
-      <h2 class="section-head">All <span class="gradient-text">Leads</span></h2>
-      <div class="leads-table glass-card">
-        <div class="lt-row lt-header">
-          <span>Buyer</span><span>Car Interested In</span><span>Budget</span><span>Stage</span><span>Time</span>
-        </div>
-        <div class="lt-row" *ngFor="let l of leads">
-          <span class="lt-name">{{ l.name }}</span>
-          <span class="lt-car">{{ l.car }}</span>
-          <span class="lt-budget">{{ l.budget }}</span>
-          <span class="lt-stage" [ngClass]="'stage-' + l.stageColor">{{ l.stage }}</span>
-          <span class="lt-time">{{ l.time }}</span>
+      <h2 class="section-head">AI-Scored <span class="gradient-text">Leads</span></h2>
+
+      <div class="ai-leads-list">
+        <div class="ai-lead-card glass-card" *ngFor="let l of leads">
+          <!-- Top row: name + grade + stage -->
+          <div class="alc-top">
+            <div class="alc-avatar">{{ l.name.charAt(0) }}</div>
+            <div class="alc-identity">
+              <div class="alc-name">{{ l.name }}</div>
+              <div class="alc-phone">{{ l.phone }}</div>
+            </div>
+            <span class="lead-grade lg-large" [ngClass]="'grade-' + l.leadGrade">{{ l.leadGrade }}</span>
+            <span class="lt-stage" [ngClass]="'stage-' + l.stageColor">{{ l.stage }}</span>
+          </div>
+
+          <!-- Car + budget -->
+          <div class="alc-car-row">
+            <span class="alc-car-label">🚗 {{ l.car }}</span>
+            <span class="alc-budget">{{ l.budget }}</span>
+            <span class="lt-time">{{ l.time }}</span>
+          </div>
+
+          <!-- Intent score bar -->
+          <div class="alc-intent-row">
+            <span class="intent-label">Purchase Intent</span>
+            <div class="intent-bar-track">
+              <div class="intent-bar-fill"
+                [style.width.%]="l.intentScore"
+                [class.high]="l.intentScore >= 80"
+                [class.medium]="l.intentScore >= 60 && l.intentScore < 80"
+                [class.low]="l.intentScore < 60"></div>
+            </div>
+            <span class="intent-pct" [class.high]="l.intentScore >= 80">{{ l.intentScore }}%</span>
+          </div>
+
+          <!-- AI recommendations -->
+          <div class="alc-ai-row">
+            <div class="alc-ai-chip contact">
+              <span>🕐</span> Best time: <strong>{{ l.bestContactTime }}</strong>
+            </div>
+            <div class="alc-ai-chip nba">
+              <span>⚡</span> NBA: <strong>{{ l.nba }}</strong>
+            </div>
+          </div>
         </div>
       </div>
     </ng-container>

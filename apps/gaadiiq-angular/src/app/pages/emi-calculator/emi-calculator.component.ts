@@ -33,6 +33,11 @@ export class EmiCalculatorComponent {
 
   selectedBank = signal('SBI');
 
+  // Affordability inputs
+  monthlyIncome = signal(80000);
+  existingEmis = signal(0);
+  monthlyExpenses = signal(25000);
+
   selectBank(bank: { name: string; rate: number; logo: string }) {
     this.selectedBank.set(bank.name);
     this.interestRate.set(bank.rate);
@@ -74,6 +79,49 @@ export class EmiCalculatorComponent {
     }
     return rows;
   });
+
+  // Affordability computed signals
+  dtiCurrent = computed(() => {
+    const income = this.monthlyIncome();
+    if (!income) return 0;
+    return Math.round((this.existingEmis() / income) * 100);
+  });
+
+  dtiAfter = computed(() => {
+    const income = this.monthlyIncome();
+    if (!income) return 0;
+    return Math.round(((this.existingEmis() + this.emi()) / income) * 100);
+  });
+
+  affordabilityScore = computed(() => {
+    const income = this.monthlyIncome();
+    const dti = this.dtiAfter();
+    const surplus = income - this.existingEmis() - this.emi() - this.monthlyExpenses();
+    const buffer = income * 0.15; // 15% emergency buffer
+    let score = 100;
+    if (dti > 50) score -= 40;
+    else if (dti > 40) score -= 25;
+    else if (dti > 30) score -= 10;
+    if (surplus < buffer) score -= 20;
+    if (surplus < 0) score -= 30;
+    return Math.max(0, Math.min(100, score));
+  });
+
+  affordabilityLabel = computed(() => {
+    const s = this.affordabilityScore();
+    if (s >= 80) return { label: 'Excellent', color: '#43E97B' };
+    if (s >= 60) return { label: 'Good', color: '#60A5FA' };
+    if (s >= 40) return { label: 'Fair', color: '#FFD700' };
+    return { label: 'Stretched', color: '#FF6584' };
+  });
+
+  monthlySurplus = computed(() =>
+    this.monthlyIncome() - this.existingEmis() - this.emi() - this.monthlyExpenses()
+  );
+
+  emergencyBufferOk = computed(() =>
+    this.monthlySurplus() >= this.monthlyIncome() * 0.15
+  );
 
   bankEmi(rate: number) {
     const p = this.principal();

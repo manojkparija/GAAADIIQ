@@ -219,7 +219,7 @@
 
         <!-- CTA -->
         <div class="rec-actions">
-          <a [routerLink]="['/car', car.id]" class="btn-gradient rec-btn">View Details →</a>
+          <a [routerLink]="['/cars', car.id]" class="btn-gradient rec-btn">View Details →</a>
           <span class="confidence-pill" [class.high]="car.confidence === 'High'" [class.medium]="car.confidence === 'Medium'">
             {{ car.confidence }} Confidence
           </span>

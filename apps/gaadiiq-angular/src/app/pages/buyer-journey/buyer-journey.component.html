@@ -24,22 +24,46 @@
         </div>
       </div>
 
-      <!-- Recommended next steps -->
-      <div class="next-steps">
-        <h3 class="ns-head">Recommended <span class="gradient-text">Next Steps</span></h3>
-        <div class="ns-grid">
-          <a routerLink="/compare" class="ns-card glass-card">
-            <span class="ns-icon">⚖️</span>
-            <div><h4>Compare Cars</h4><p>Compare your shortlisted cars side-by-side with TCO analysis</p></div>
-          </a>
-          <a routerLink="/emi-calculator" class="ns-card glass-card">
-            <span class="ns-icon">🧮</span>
-            <div><h4>EMI Calculator</h4><p>Calculate your monthly payment based on your budget</p></div>
-          </a>
-          <a routerLink="/test-drive" class="ns-card glass-card">
-            <span class="ns-icon">🗝️</span>
-            <div><h4>Book Test Drive</h4><p>Schedule a test drive for your top pick</p></div>
-          </a>
+      <!-- Milestone Roadmap -->
+      <div class="milestone-section">
+        <div class="milestone-header">
+          <h3>Your Buying <span class="gradient-text">Roadmap</span></h3>
+          <div class="milestone-progress-row">
+            <div class="ms-prog-bar">
+              <div class="ms-prog-fill" [style.width.%]="milestoneProgress()"></div>
+            </div>
+            <span class="ms-prog-label">{{ completedMilestones().length }} / {{ milestones.length }} stages complete</span>
+          </div>
+        </div>
+
+        <div class="milestones-list">
+          <div class="milestone-item" *ngFor="let m of milestones; let i = index; let last = last"
+            [class.complete]="isMilestoneComplete(m.id)"
+            [class.active]="!isMilestoneComplete(m.id) && (i === 0 || isMilestoneComplete(milestones[i-1].id))">
+
+            <div class="ms-left">
+              <div class="ms-circle" (click)="toggleMilestone(m.id)">
+                <span *ngIf="isMilestoneComplete(m.id)">✓</span>
+                <span *ngIf="!isMilestoneComplete(m.id)">{{ m.icon }}</span>
+              </div>
+              <div class="ms-connector" *ngIf="!last"></div>
+            </div>
+
+            <div class="ms-body glass-card">
+              <div class="ms-top-row">
+                <h4 class="ms-title">{{ m.title }}</h4>
+                <span class="ms-status-badge" *ngIf="isMilestoneComplete(m.id)">✓ Done</span>
+                <span class="ms-status-badge active-badge" *ngIf="!isMilestoneComplete(m.id) && (i === 0 || isMilestoneComplete(milestones[i-1].id))">▶ Up Next</span>
+              </div>
+              <p class="ms-desc">{{ m.desc }}</p>
+              <div class="ms-actions">
+                <a *ngIf="m.link" [routerLink]="m.link" class="ms-link">{{ m.linkLabel }} →</a>
+                <button class="ms-toggle" (click)="toggleMilestone(m.id)">
+                  {{ isMilestoneComplete(m.id) ? 'Mark Incomplete' : 'Mark Complete' }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </ng-container>
