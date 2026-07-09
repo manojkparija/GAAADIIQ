@@ -11,6 +11,13 @@ export interface Car {
   aiValuation?: { fairPrice: number; marketMin: number; marketMax: number; verdict: string; confidence: number };
 }
 
+// Fallback image URLs per model — used when the DB image URL fails to load.
+// Uses a working CDN URL as primary; the onerror on <img> shows placeholder.svg.
+const MODEL_IMAGE_FALLBACK: Record<string, string> = {
+  'Tata Nexon':     'https://imgd.aeplcdn.com/1200x900/n/cw/ec/199321/nexon-exterior-right-front-three-quarter-2.jpeg',
+  'Tata Nexon EV':  'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg',
+};
+
 const LOCAL_IMAGES: Record<string, string[]> = {
   'Maruti Suzuki Swift': [
     'assets/cars/swift/front.jpg',
@@ -19,6 +26,10 @@ const LOCAL_IMAGES: Record<string, string[]> = {
     'assets/cars/swift/rear.jpg',
     'assets/cars/swift/interior.jpg',
     'assets/cars/swift/steering.jpg',
+  ],
+  'Tata Nexon': [
+    'https://imgd.aeplcdn.com/1200x900/n/cw/ec/199321/nexon-exterior-right-front-three-quarter-2.jpeg',
+    'https://imgd.aeplcdn.com/1200x900/n/cw/ec/199321/nexon-exterior-right-front-three-quarter.jpeg',
   ],
 };
 
