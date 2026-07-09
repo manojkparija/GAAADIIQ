@@ -301,7 +301,7 @@
                   <td class="similar-car-name">{{ car.make }} {{ car.model }}</td>
                   <td class="similar-img-cell">
                     <img [src]="car.image" [alt]="car.make + ' ' + car.model"
-                         onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                         referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
                   </td>
                   <td>
                     <span class="similar-price">{{ formatPrice(car.price) }}</span>
@@ -322,7 +322,7 @@
                   <td class="similar-img-cell">
                     <a [routerLink]="['/car', s.id]">
                       <img [src]="s.image" [alt]="s.make + ' ' + s.model"
-                           onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                           referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
                     </a>
                   </td>
                   <td>

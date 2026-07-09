@@ -113,7 +113,7 @@
                *ngFor="let m of newCarModels()"
                (click)="selectModel(m)">
             <div class="nc-card-img-wrap">
-              <img *ngIf="m.image" [src]="m.image" [alt]="m.make + ' ' + m.model" class="nc-card-img">
+              <img *ngIf="m.image" [src]="m.image" [alt]="m.make + ' ' + m.model" class="nc-card-img" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
               <div *ngIf="!m.image" class="nc-card-no-img">🚗</div>
               <span class="nc-card-badge" *ngIf="m.badge">{{ m.badge }}</span>
             </div>
@@ -148,7 +148,7 @@
           <!-- Left: Hero image -->
           <div class="nc-variant-hero">
             <div class="nc-variant-img-wrap glass-card">
-              <img *ngIf="newModelVariants()[0]?.image" [src]="newModelVariants()[0].image" [alt]="selectedModel()!" class="nc-variant-main-img">
+              <img *ngIf="newModelVariants()[0]?.image" [src]="newModelVariants()[0].image" [alt]="selectedModel()!" class="nc-variant-main-img" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
               <div *ngIf="!newModelVariants()[0]?.image" class="nc-card-no-img" style="height:260px">🚗</div>
             </div>
             <!-- Key specs from first variant -->
