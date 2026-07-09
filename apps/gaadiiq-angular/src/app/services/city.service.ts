@@ -16,8 +16,10 @@ export const POPULAR_CITIES: City[] = [
   { name: 'Chennai',     icon: '🌊' },
   { name: 'Kolkata',     icon: '🌉' },
   { name: 'Chandigarh',  icon: '🌸' },
-  { name: 'Jaipur',      icon: '🏰' },
-  { name: 'Surat',       icon: '💎' },
+  { name: 'Jaipur',       icon: '🏰' },
+  { name: 'Surat',        icon: '💎' },
+  { name: 'Bhubaneswar',  icon: '🛕' },
+  { name: 'Rourkela',     icon: '⚙️' },
 ];
 
 @Injectable({ providedIn: 'root' })
