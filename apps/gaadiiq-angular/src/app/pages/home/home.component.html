@@ -168,9 +168,7 @@
           class="brand-card glass-card"
         >
           <div class="brand-logo">
-            <img *ngIf="make.logo" [src]="make.logo" [alt]="make.name"
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <span class="brand-short" [style.display]="make.logo ? 'none' : 'flex'">{{ make.short }}</span>
+            <img [src]="make.logo" [alt]="make.name" onerror="this.style.opacity='0'">
           </div>
           <span class="brand-name">{{ make.name }}</span>
         </a>
