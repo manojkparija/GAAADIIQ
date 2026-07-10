@@ -37,6 +37,7 @@ export class UsedCarsComponent implements OnInit {
   heroMake = signal('');
   heroModel = signal('');
   heroBudgetMax = signal(5000000);
+  heroCity = signal('');
 
   // Sidebar filters
   sidebarOpen = signal(false);
@@ -121,10 +122,12 @@ export class UsedCarsComponent implements OnInit {
     const rawUsed = this.carsData.cars().filter(c => c.km > 0 || c.year < 2025);
     const heroMake = this.heroMake();
     const heroModel = this.heroModel().toLowerCase();
+    const heroCity = this.heroCity().toLowerCase();
 
     let filtered = rawUsed.filter(c => {
       if (heroMake && heroMake !== 'All' && c.make !== heroMake) return false;
       if (heroModel && !`${c.model} ${c.variant ?? ''}`.toLowerCase().includes(heroModel)) return false;
+      if (heroCity && !(c.city ?? '').toLowerCase().includes(heroCity)) return false;
       if (c.price < this.minBudget() || c.price > this.maxBudget()) return false;
       if (c.year < this.yearFrom() || c.year > this.yearTo()) return false;
       if (!this.matchesKmRange(c.km, this.selectedKmRanges())) return false;
@@ -191,6 +194,14 @@ export class UsedCarsComponent implements OnInit {
     }
   }
 
+  applyHeroSearch() {
+    // City from the city selector service
+    const city = this.cityService.selectedCity();
+    this.heroCity.set(city ?? '');
+    // Scroll to results
+    document.querySelector('.uc-main-layout')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
   loadMore() {
     this.pageSize.update(n => n + 12);
   }
@@ -228,6 +239,7 @@ export class UsedCarsComponent implements OnInit {
   clearAllFilters() {
     this.heroMake.set('');
     this.heroModel.set('');
+    this.heroCity.set('');
     this.minBudget.set(100000);
     this.maxBudget.set(5000000);
     this.yearFrom.set(2015);
