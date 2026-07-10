@@ -15,10 +15,8 @@ import { filter } from 'rxjs/operators';
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })
-// Pages whose hero is dark — navbar must always show glass background
-const DARK_HERO_ROUTES = ['/new-cars', '/used-cars'];
-
 export class NavbarComponent {
+  private static readonly DARK_HERO_ROUTES = ['/new-cars', '/used-cars'];
   private _scrolled = signal(false);
   private _darkHero = signal(false);
   scrolled = computed(() => this._scrolled() || this._darkHero());
@@ -35,7 +33,7 @@ export class NavbarComponent {
     router: Router
   ) {
     router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
-      this._darkHero.set(DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
+      this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
     });
   }
 
