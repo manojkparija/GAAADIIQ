@@ -63,16 +63,21 @@ export class DealerDashboardComponent {
   pendingTestDrives = computed(() => this.testDriveRequests().filter(r => r.status === 'Pending'));
 
   currentSeller = signal<Seller | null>(null);
+  authUser = computed(() => this.auth.currentUser());
   sellerInitials = computed(() => {
     const s = this.currentSeller();
     if (!s) return '??';
     return s.business_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   });
+  authInitials = computed(() => {
+    const u = this.auth.currentUser();
+    if (!u) return '?';
+    return u.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  });
 
   constructor(seo: SeoService, private testDriveSvc: TestDriveService,
               private auth: AuthService, private sellersSvc: SellersService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
-    this.testDriveSvc.loadAll();
     this.loadSellerInfo();
   }
 
@@ -80,14 +85,17 @@ export class DealerDashboardComponent {
     const user = this.auth.currentUser();
     if (!user) return;
 
+    let seller: Seller | null = null;
     if (user.sellerId) {
-      const seller = await this.sellersSvc.getById(user.sellerId);
-      this.currentSeller.set(seller);
+      seller = await this.sellersSvc.getById(user.sellerId);
     } else if (user.email) {
-      // Fallback: look up by email (session stored before user_profiles migration)
-      const seller = await this.sellersSvc.getByEmail(user.email);
-      this.currentSeller.set(seller);
+      seller = await this.sellersSvc.getByEmail(user.email);
     }
+    this.currentSeller.set(seller);
+
+    // Load test drives filtered to this seller
+    const sellerId = seller?.id ?? user.sellerId;
+    this.testDriveSvc.loadForSeller(sellerId ?? null, this.auth.isAdmin());
   }
 
   timeAgo(dateStr: string): string {

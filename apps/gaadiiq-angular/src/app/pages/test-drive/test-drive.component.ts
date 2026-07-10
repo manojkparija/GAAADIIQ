@@ -5,6 +5,7 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
 import { TestDriveService } from '../../services/test-drive.service';
+import { SellersService } from '../../services/sellers.service';
 
 @Component({
   selector: 'app-test-drive',
@@ -41,7 +42,8 @@ export class TestDriveComponent {
     private carsData: CarsDataService,
     private seo: SeoService,
     private route: ActivatedRoute,
-    private testDriveSvc: TestDriveService
+    private testDriveSvc: TestDriveService,
+    private sellersSvc: SellersService
   ) {
     this.allCars = carsData.getAll();
     seo.setPage('Book Test Drive', 'Book a test drive for any car in our verified database. Choose your date, time, and location.');
@@ -62,6 +64,8 @@ export class TestDriveComponent {
     this.submitting.set(true);
     this.submitError.set('');
 
+    const seller = await this.sellersSvc.getForCar(car.id);
+
     const ok = await this.testDriveSvc.submit({
       car_id: car.id,
       car_make: car.make,
@@ -74,6 +78,7 @@ export class TestDriveComponent {
       preferred_time: this.form.time,
       location: this.form.location || undefined,
       notes: this.form.notes || undefined,
+      seller_id: seller.id,
     });
 
     this.submitting.set(false);

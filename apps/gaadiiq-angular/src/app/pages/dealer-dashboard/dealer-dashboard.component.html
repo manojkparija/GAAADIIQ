@@ -15,9 +15,13 @@
           <div class="dealer-since">{{ currentSeller()!.name }} · ⭐ {{ currentSeller()!.rating }} ({{ currentSeller()!.total_reviews }} reviews)</div>
         </div>
       </div>
-      <div class="dealer-card glass-card" *ngIf="!currentSeller()">
-        <div class="dealer-avatar">...</div>
-        <div><div class="dealer-name">Loading…</div></div>
+      <div class="dealer-card glass-card" *ngIf="!currentSeller() && authUser()">
+        <div class="dealer-avatar">{{ authInitials() }}</div>
+        <div>
+          <div class="dealer-name">{{ authUser()!.name }}</div>
+          <div class="dealer-loc">📍 India</div>
+          <div class="dealer-since">{{ authUser()!.email }}</div>
+        </div>
       </div>
     </div>
   </section>

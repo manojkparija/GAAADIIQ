@@ -14,6 +14,7 @@ export interface TestDriveRequest {
   preferred_time: string;
   location?: string;
   notes?: string;
+  seller_id?: number;
   status?: string;
   created_at?: string;
 }
@@ -31,6 +32,22 @@ export class TestDriveService {
     return !error;
   }
 
+  async loadForSeller(sellerId: number | null, isAdmin: boolean) {
+    let query = this.sb.client
+      .from('test_drive_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // Admin sees all; seller sees only their own
+    if (!isAdmin && sellerId) {
+      query = query.eq('seller_id', sellerId);
+    }
+
+    const { data, error } = await query;
+    if (!error && data) this.requests.set(data);
+  }
+
+  // Legacy: load all (admin use)
   async loadAll() {
     const { data, error } = await this.sb.client
       .from('test_drive_requests')
