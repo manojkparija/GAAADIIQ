@@ -8,8 +8,8 @@
 
     <ul class="nav-links hide-mobile">
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a></li>
-      <li><a routerLink="/listings" [queryParams]="{carType:'New'}" routerLinkActive="active">New Cars</a></li>
-      <li><a routerLink="/listings" [queryParams]="{carType:'Used'}" routerLinkActive="active">Used Cars</a></li>
+      <li><a routerLink="/new-cars" routerLinkActive="active">New Cars</a></li>
+      <li><a routerLink="/used-cars" routerLinkActive="active">Used Cars</a></li>
       <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>
       <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
       <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI Calc</a></li>
@@ -60,8 +60,8 @@
 
   <div class="mobile-menu hide-desktop" [class.open]="menuOpen()">
     <a routerLink="/" (click)="closeMenu()">Home</a>
-    <a routerLink="/listings" [queryParams]="{carType:'New'}" (click)="closeMenu()">New Cars</a>
-    <a routerLink="/listings" [queryParams]="{carType:'Used'}" (click)="closeMenu()">Used Cars</a>
+    <a routerLink="/new-cars" (click)="closeMenu()">New Cars</a>
+    <a routerLink="/used-cars" (click)="closeMenu()">Used Cars</a>
     <a routerLink="/ai-advisor" (click)="closeMenu()">AI Advisor</a>
     <a routerLink="/compare" (click)="closeMenu()">Compare Cars</a>
     <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>

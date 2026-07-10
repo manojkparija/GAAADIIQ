@@ -3,6 +3,8 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent) },
   { path: 'listings', loadComponent: () => import('./pages/listings/listings.component').then(m => m.ListingsComponent) },
+  { path: 'new-cars', loadComponent: () => import('./pages/new-cars/new-cars.component').then(m => m.NewCarsComponent) },
+  { path: 'used-cars', loadComponent: () => import('./pages/used-cars/used-cars.component').then(m => m.UsedCarsComponent) },
   { path: 'cars/:id', loadComponent: () => import('./pages/car-detail/car-detail.component').then(m => m.CarDetailComponent) },
   { path: 'login', loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent) },
   { path: 'register', loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent) },
