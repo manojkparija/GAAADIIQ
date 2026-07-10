@@ -464,6 +464,38 @@
   </div>
 </div>
 
+<!-- ENQUIRY MODAL — shown to normal users instead of seller details -->
+<div class="seller-overlay" *ngIf="enquiryModalOpen()" (click)="enquiryModalOpen.set(false)">
+  <div class="seller-modal glass-card" (click)="$event.stopPropagation()">
+    <button class="seller-close" (click)="enquiryModalOpen.set(false)">✕</button>
+    <div *ngIf="!enquirySent()">
+      <h3 style="margin-bottom:0.25rem">📩 Send Enquiry</h3>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem">
+        Our team will connect you with the seller within 2 hours.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <input class="enq-input" type="text" placeholder="Your Name *" #enqName>
+        <input class="enq-input" type="tel" placeholder="Phone Number *" #enqPhone>
+        <input class="enq-input" type="email" placeholder="Email (optional)" #enqEmail>
+        <textarea class="enq-input" rows="3" placeholder="Any specific questions…" #enqNote></textarea>
+      </div>
+      <button class="btn-gradient" style="width:100%;margin-top:1rem;padding:0.9rem"
+        (click)="enquirySent.set(true)">
+        Submit Enquiry
+      </button>
+    </div>
+    <div *ngIf="enquirySent()" style="text-align:center;padding:2rem">
+      <div style="font-size:3rem">✅</div>
+      <h3 style="margin:0.75rem 0 0.5rem">Enquiry Sent!</h3>
+      <p style="color:var(--muted);font-size:0.88rem">
+        Our team will contact you within 2 hours to arrange a callback with the seller.
+      </p>
+      <button class="btn-outline" style="margin-top:1rem;padding:0.75rem 2rem"
+        (click)="enquiryModalOpen.set(false); enquirySent.set(false)">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONTACT SELLER MODAL -->
 <div class="seller-overlay" *ngIf="sellerModalOpen()" (click)="sellerModalOpen.set(false)">
   <div class="seller-modal glass-card" (click)="$event.stopPropagation()">

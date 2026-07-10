@@ -178,6 +178,7 @@ import { TcoService } from '../../services/tco.service';
 import { ReviewsService, CarReview } from '../../services/reviews.service';
 import { SeoService } from '../../services/seo.service';
 import { SellersService, Seller } from '../../services/sellers.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-car-detail',
@@ -191,6 +192,8 @@ export class CarDetailComponent implements OnInit {
   liked = signal(false);
   sellerModalOpen = signal(false);
   seller = signal<Seller | null>(null);
+  enquiryModalOpen = signal(false);
+  enquirySent = signal(false);
   loan = { amount: 0, rate: 8.5, tenure: 60, emi: 0 }; // kept for template binding
   car!: Car;
   activeImg = signal(0);
@@ -255,14 +258,19 @@ export class CarDetailComponent implements OnInit {
   }
 
   async openContactSeller() {
-    if (!this.seller()) {
-      const s = await this.sellersSvc.getForCar(this.car.id);
-      this.seller.set(s);
+    const user = this.auth.currentUser();
+    if (user?.role === 'admin' || user?.role === 'seller') {
+      if (!this.seller()) {
+        const s = await this.sellersSvc.getForCar(this.car.id);
+        this.seller.set(s);
+      }
+      this.sellerModalOpen.set(true);
+    } else {
+      this.enquiryModalOpen.set(true);
     }
-    this.sellerModalOpen.set(true);
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService) {
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       const id = Number(this.route.snapshot.paramMap.get('id'));
