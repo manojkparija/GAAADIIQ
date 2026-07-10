@@ -4,6 +4,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 
+export type AccountType = 'customer' | 'seller' | 'admin';
+
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -13,11 +15,11 @@ import { AuthService } from '../../services/auth.service';
 })
 export class RegisterComponent {
   step = signal(1);
-  totalSteps = 3;
 
   name = signal('');
   email = signal('');
   phone = signal('');
+  accountType = signal<AccountType>('customer');
   password = signal('');
   confirmPassword = signal('');
   interestedIn = signal<string[]>([]);
@@ -26,10 +28,18 @@ export class RegisterComponent {
   loading = signal(false);
   error = signal('');
 
-  progressWidth = computed(() => `${((this.step() - 1) / (this.totalSteps - 1)) * 100}%`);
+  // Customers get 3 steps, Admin/Seller get 2 (skip preferences)
+  totalSteps = computed(() => this.accountType() === 'customer' ? 3 : 2);
+  isCustomer = computed(() => this.accountType() === 'customer');
 
   preferences = ['Hatchback', 'Sedan', 'SUV', 'Electric', 'Luxury', 'Budget'];
   budgetRanges = ['Under ₹5L', '₹5L-10L', '₹10L-20L', '₹20L-30L', '30L+'];
+
+  accountTypes: { value: AccountType; label: string; desc: string; icon: string }[] = [
+    { value: 'customer', label: 'Customer', desc: 'Browse & buy cars', icon: '🚗' },
+    { value: 'seller',   label: 'Seller',   desc: 'List & sell cars', icon: '🏪' },
+    { value: 'admin',    label: 'Admin',     desc: 'Manage the platform', icon: '⚙️' },
+  ];
 
   constructor(private auth: AuthService, private router: Router) {}
 
@@ -41,8 +51,10 @@ export class RegisterComponent {
     if (this.step() === 2) {
       if (this.password().length < 6) { this.error.set('Password must be at least 6 characters.'); return; }
       if (this.password() !== this.confirmPassword()) { this.error.set('Passwords do not match.'); return; }
+      // Admin/Seller skip preferences → submit directly
+      if (!this.isCustomer()) { this.onSubmit(); return; }
     }
-    if (this.step() < this.totalSteps) this.step.update(v => v + 1);
+    if (this.step() < this.totalSteps()) this.step.update(v => v + 1);
   }
 
   prevStep() { if (this.step() > 1) this.step.update(v => v - 1); }
@@ -57,7 +69,7 @@ export class RegisterComponent {
     this.error.set('');
     this.loading.set(true);
     try {
-      await this.auth.register(this.name(), this.email(), this.password());
+      await this.auth.register(this.name(), this.email(), this.password(), this.accountType());
       this.router.navigate(['/']);
     } catch (e: any) {
       this.error.set(e.message || 'Registration failed. Please try again.');

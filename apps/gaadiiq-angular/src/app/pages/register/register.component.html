@@ -24,19 +24,23 @@
         <div class="step-dot" [class.active]="step() >= 2" [class.done]="step() > 2">
           <span>{{ step() > 2 ? '✓' : '2' }}</span>
         </div>
-        <div class="step-line" [class.filled]="step() > 2"></div>
-        <div class="step-dot" [class.active]="step() >= 3">
-          <span>3</span>
-        </div>
+        @if (isCustomer()) {
+          <div class="step-line" [class.filled]="step() > 2"></div>
+          <div class="step-dot" [class.active]="step() >= 3">
+            <span>3</span>
+          </div>
+        }
       </div>
       <div class="step-labels">
         <span>Personal Info</span>
         <span>Password</span>
-        <span>Preferences</span>
+        @if (isCustomer()) {
+          <span>Preferences</span>
+        }
       </div>
     </div>
 
-    <!-- Step 1 -->
+    <!-- Step 1: Personal Info + Account Type -->
     @if (step() === 1) {
       <div class="step-content">
         <h2>Tell us about yourself</h2>
@@ -52,18 +56,35 @@
           <label>Phone Number</label>
           <input type="tel" [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" placeholder="+91 9876543210">
         </div>
+
+        <div class="form-group">
+          <label>I am signing up as</label>
+          <div class="role-picker">
+            @for (t of accountTypes; track t.value) {
+              <button type="button"
+                class="role-chip"
+                [class.selected]="accountType() === t.value"
+                (click)="accountType.set(t.value)">
+                <span class="role-icon">{{ t.icon }}</span>
+                <span class="role-label">{{ t.label }}</span>
+                <span class="role-desc">{{ t.desc }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
         <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
         <button class="btn-gradient btn-full" (click)="nextStep()">Continue →</button>
       </div>
     }
 
-    <!-- Step 2 -->
+    <!-- Step 2: Password -->
     @if (step() === 2) {
       <div class="step-content">
         <h2>Set your password</h2>
         <div class="form-group">
           <label>Password</label>
-          <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" placeholder="Min 8 characters">
+          <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" placeholder="Min 6 characters">
         </div>
         <div class="form-group">
           <label>Confirm Password</label>
@@ -77,13 +98,15 @@
         <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
         <div class="btn-row">
           <button class="btn-outline" (click)="prevStep()">← Back</button>
-          <button class="btn-gradient" (click)="nextStep()">Continue →</button>
+          <button class="btn-gradient" (click)="nextStep()" [disabled]="loading()">
+            {{ isCustomer() ? 'Continue →' : (loading() ? 'Creating…' : 'Create Account 🎉') }}
+          </button>
         </div>
       </div>
     }
 
-    <!-- Step 3 -->
-    @if (step() === 3) {
+    <!-- Step 3: Car Preferences (Customers only) -->
+    @if (step() === 3 && isCustomer()) {
       <div class="step-content">
         <h2>Your car preferences</h2>
         <p class="hint">Select all that interest you</p>
@@ -112,7 +135,6 @@
       </div>
     }
 
-    <!-- Sign In / Sign Up tabs (mirrored for register) -->
     <p class="login-link">Already have an account? <a routerLink="/login">Sign in</a></p>
   </div>
 </div>

@@ -52,19 +52,20 @@ export class AuthService {
     this.currentUser.set(user);
   }
 
-  async register(name: string, email: string, password: string): Promise<void> {
+  async register(name: string, email: string, password: string, accountType: 'customer' | 'seller' | 'admin' = 'customer'): Promise<void> {
     await new Promise(r => setTimeout(r, 800));
 
     if (!name || !email || password.length < 6) {
       throw new Error('All fields are required (password min 6 characters).');
     }
 
-    // Insert profile as default 'user' role
+    const role: UserRole = accountType === 'customer' ? 'user' : accountType;
+
     await this.sb.client
       .from('user_profiles')
-      .upsert({ email, name, role: 'user' }, { onConflict: 'email', ignoreDuplicates: true });
+      .upsert({ email, name, role }, { onConflict: 'email', ignoreDuplicates: true });
 
-    const user: AuthUser = { email, name, role: 'user' };
+    const user: AuthUser = { email, name, role };
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
     this.currentUser.set(user);
   }
