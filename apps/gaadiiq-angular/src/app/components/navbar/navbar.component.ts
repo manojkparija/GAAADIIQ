@@ -6,7 +6,6 @@ import { ThemeService } from '../../services/theme.service';
 import { CityService } from '../../services/city.service';
 import { LanguageService } from '../../services/language.service';
 import { CitySelectorComponent } from '../city-selector/city-selector.component';
-import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-navbar',
@@ -32,8 +31,10 @@ export class NavbarComponent {
     public lang: LanguageService,
     router: Router
   ) {
-    router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
-      this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
+    router.events.subscribe(e => {
+      if (e instanceof NavigationEnd) {
+        this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
+      }
     });
   }
 
