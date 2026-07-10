@@ -11,7 +11,10 @@ import { MyListingsService, MyListing } from '../../services/my-listings.service
   styleUrl: './my-listings.component.scss'
 })
 export class MyListingsComponent {
-  constructor(public myListings: MyListingsService) {}
+  constructor(public myListings: MyListingsService) {
+    // Ensure listings are loaded for the currently logged-in user
+    myListings.reload();
+  }
 
   formatPrice(p: number) { return p >= 100000 ? `₹${(p / 100000).toFixed(1)}L` : `₹${p.toLocaleString()}`; }
 
