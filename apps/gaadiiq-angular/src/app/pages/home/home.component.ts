@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, AfterViewInit } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CarCardComponent } from '../../components/car-card/car-card.component';
@@ -22,6 +22,8 @@ interface Car {
 export class HomeComponent implements OnInit, AfterViewInit {
   searchQuery = signal('');
   activeBodyType = signal('All');
+
+  constructor(private router: Router) {}
   activeStat = signal(0);
 
   stats = [
@@ -183,11 +185,25 @@ export class HomeComponent implements OnInit, AfterViewInit {
     });
   }
 
-  setBodyType(type: string) { this.activeBodyType.set(type); }
+  setBodyType(type: string) {
+    this.activeBodyType.set(type);
+    if (type !== 'All') {
+      this.router.navigate(['/listings'], { queryParams: { bodyType: type } });
+    }
+  }
 
   onSearch(event: Event) {
     const val = (event.target as HTMLInputElement).value;
     this.searchQuery.set(val);
+  }
+
+  doSearch() {
+    const params: Record<string, string> = {};
+    const q = this.searchQuery().trim();
+    if (q) params['q'] = q;
+    const bt = this.activeBodyType();
+    if (bt && bt !== 'All') params['bodyType'] = bt;
+    this.router.navigate(['/listings'], { queryParams: params });
   }
 
   formatPrice(p: number): string {

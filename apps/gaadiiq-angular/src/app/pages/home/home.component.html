@@ -29,9 +29,10 @@
           type="text"
           placeholder='Try "Red SUV under 15L in Mumbai"...'
           (input)="onSearch($event)"
+          (keyup.enter)="doSearch()"
           style="background:transparent;border:none;box-shadow:none;padding:0;font-size:1rem"
         />
-        <button class="btn-gradient search-btn" routerLink="/listings">Search</button>
+        <button class="btn-gradient search-btn" (click)="doSearch()">Search</button>
       </div>
 
       <!-- BODY TYPE CHIPS -->
