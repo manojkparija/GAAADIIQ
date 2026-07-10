@@ -78,8 +78,14 @@ export class DealerDashboardComponent {
 
   private async loadSellerInfo() {
     const user = this.auth.currentUser();
-    if (user?.sellerId) {
+    if (!user) return;
+
+    if (user.sellerId) {
       const seller = await this.sellersSvc.getById(user.sellerId);
+      this.currentSeller.set(seller);
+    } else if (user.email) {
+      // Fallback: look up by email (session stored before user_profiles migration)
+      const seller = await this.sellersSvc.getByEmail(user.email);
       this.currentSeller.set(seller);
     }
   }

@@ -46,6 +46,17 @@ export class SellersService {
     return seller;
   }
 
+  async getByEmail(email: string): Promise<Seller | null> {
+    const { data, error } = await this.sb.client
+      .from('sellers')
+      .select('*')
+      .eq('email', email)
+      .single();
+    if (error || !data) return null;
+    this.cache.set(-data.id, data);
+    return data;
+  }
+
   async getForCar(carId: number): Promise<Seller> {
     if (this.cache.has(carId)) return this.cache.get(carId)!;
 
