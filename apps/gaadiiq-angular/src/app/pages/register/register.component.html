@@ -5,8 +5,14 @@
   <div class="register-card glass-card">
     <div class="reg-header">
       <a routerLink="/" class="logo-link">⚡ <span class="gradient-text">GAADIIQ</span></a>
-      <h1>Create your account</h1>
     </div>
+
+    <div class="auth-tabs">
+      <a routerLink="/login" class="auth-tab">Sign In</a>
+      <button class="auth-tab active">Sign Up</button>
+    </div>
+
+    <h1 class="reg-title">Create your account</h1>
 
     <!-- Progress Bar -->
     <div class="progress-bar-wrap">
@@ -106,6 +112,7 @@
       </div>
     }
 
+    <!-- Sign In / Sign Up tabs (mirrored for register) -->
     <p class="login-link">Already have an account? <a routerLink="/login">Sign in</a></p>
   </div>
 </div>
