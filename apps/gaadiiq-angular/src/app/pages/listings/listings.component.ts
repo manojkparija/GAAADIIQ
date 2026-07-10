@@ -43,6 +43,7 @@ export class ListingsComponent implements OnInit {
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
+      if (params['q']) this.searchQuery.set(params['q']);
       this.selectedMake.set(params['make'] || 'All');
       this.selectedFuel.set(params['fuel'] || 'All');
       this.selectedBodyType.set(params['bodyType'] || 'All');

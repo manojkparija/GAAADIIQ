@@ -200,9 +200,21 @@ export class HomeComponent implements OnInit, AfterViewInit {
   doSearch() {
     const params: Record<string, string> = {};
     const q = this.searchQuery().trim();
-    if (q) params['q'] = q;
+    const knownTypes = ['hatchback', 'sedan', 'suv', 'muv', 'electric', 'luxury'];
+    const qLower = q.toLowerCase();
+    const matchedType = knownTypes.find(t => qLower === t || qLower.startsWith(t + ' ') || qLower.endsWith(' ' + t));
+
+    if (matchedType) {
+      // Exact body-type keyword → use the precise filter, capitalised
+      params['bodyType'] = matchedType.charAt(0).toUpperCase() + matchedType.slice(1);
+      const remainder = q.replace(new RegExp(matchedType, 'i'), '').trim();
+      if (remainder) params['q'] = remainder;
+    } else {
+      if (q) params['q'] = q;
+    }
+
     const bt = this.activeBodyType();
-    if (bt && bt !== 'All') params['bodyType'] = bt;
+    if (bt && bt !== 'All' && !params['bodyType']) params['bodyType'] = bt;
     this.router.navigate(['/listings'], { queryParams: params });
   }
 
