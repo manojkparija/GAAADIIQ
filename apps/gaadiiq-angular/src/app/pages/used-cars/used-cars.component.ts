@@ -22,6 +22,8 @@ interface UsedCarViewModel extends Car {
   styleUrl: './used-cars.component.scss'
 })
 export class UsedCarsComponent implements OnInit {
+  protected readonly Math = Math;
+
   constructor(
     private carsData: CarsDataService,
     public cityService: CityService,
