@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
-  <rect width="120" height="80" fill="white"/>
-  <polygon points="60,8 95,22 95,58 60,72 25,58 25,22" fill="none" stroke="#C00" stroke-width="2"/>
-  <text x="60" y="44" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#C00" text-anchor="middle">PORSCHE</text>
+  <polygon points="60,4 100,20 100,60 60,76 20,60 20,20" fill="#CC0000"/>
+  <polygon points="60,10 94,24 94,56 60,70 26,56 26,24" fill="white"/>
+  <polygon points="60,16 88,28 88,52 60,64 32,52 32,28" fill="#CC0000"/>
+  <line x1="60" y1="16" x2="60" y2="64" stroke="white" stroke-width="2"/>
+  <line x1="32" y1="40" x2="88" y2="40" stroke="white" stroke-width="2"/>
+  <text x="60" y="37" font-family="Arial,sans-serif" font-size="7" fill="white" text-anchor="middle" letter-spacing="1">PORSCHE</text>
 </svg>

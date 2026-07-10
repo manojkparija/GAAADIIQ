@@ -1,6 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
-  <rect width="120" height="80" fill="white"/>
-  <circle cx="60" cy="38" r="30" fill="#001E50"/>
-  <circle cx="60" cy="38" r="26" fill="#001E50" stroke="white" stroke-width="2"/>
-  <text x="60" y="46" font-family="Arial Black,sans-serif" font-size="20" font-weight="900" fill="white" text-anchor="middle">VW</text>
+  <circle cx="60" cy="40" r="36" fill="#001E50"/>
+  <circle cx="60" cy="40" r="36" fill="none" stroke="#C0C0C0" stroke-width="2"/>
+  <circle cx="60" cy="40" r="28" fill="none" stroke="#C0C0C0" stroke-width="1.5"/>
+  <path d="M46,22 L54,40 L46,58" fill="none" stroke="white" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M74,22 L66,40 L74,58" fill="none" stroke="white" stroke-width="4" stroke-linejoin="round"/>
+  <line x1="40" y1="40" x2="80" y2="40" stroke="white" stroke-width="1.5"/>
 </svg>

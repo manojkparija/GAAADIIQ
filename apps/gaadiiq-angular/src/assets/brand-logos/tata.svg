@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
-  <ellipse cx="60" cy="40" rx="50" ry="32" fill="#003399"/>
-  <text x="60" y="48" font-family="Arial Black,sans-serif" font-size="32" font-weight="900" fill="white" text-anchor="middle">T</text>
+  <ellipse cx="60" cy="40" rx="54" ry="34" fill="#003399"/>
+  <rect x="36" y="24" width="48" height="8" rx="2" fill="white"/>
+  <rect x="56" y="24" width="8" height="30" rx="2" fill="white"/>
 </svg>
