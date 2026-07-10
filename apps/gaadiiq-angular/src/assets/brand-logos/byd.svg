@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect width="120" height="80" fill="white"/>
+  <ellipse cx="60" cy="40" rx="48" ry="26" fill="none" stroke="#CC0000" stroke-width="3"/>
+  <text x="60" y="47" font-family="Arial Black,sans-serif" font-size="22" font-weight="900" fill="#CC0000" text-anchor="middle">BYD</text>
+</svg>

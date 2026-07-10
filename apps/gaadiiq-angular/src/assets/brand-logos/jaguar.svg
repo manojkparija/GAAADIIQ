@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect width="120" height="80" fill="white"/>
+  <text x="60" y="35" font-family="serif" font-size="14" font-style="italic" fill="#1A1A1A" text-anchor="middle">JAGUAR</text>
+  <path d="M30,45 Q50,38 70,42 Q85,45 90,40" fill="none" stroke="#1A1A1A" stroke-width="2"/>
+</svg>

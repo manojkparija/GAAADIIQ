@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect width="120" height="80" fill="white"/>
+  <path d="M20,30 Q60,10 100,30" fill="none" stroke="#C00" stroke-width="6"/>
+  <path d="M20,42 Q60,22 100,42" fill="none" stroke="#C00" stroke-width="6"/>
+  <text x="60" y="68" font-family="Arial,sans-serif" font-size="10" fill="#333" text-anchor="middle" letter-spacing="1">CITROËN</text>
+</svg>

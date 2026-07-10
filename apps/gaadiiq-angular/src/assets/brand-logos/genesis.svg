@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect width="120" height="80" fill="white"/>
+  <path d="M20,40 Q60,10 100,40 Q60,70 20,40 Z" fill="none" stroke="#1A1A1A" stroke-width="2"/>
+  <path d="M35,40 Q60,22 85,40 Q60,58 35,40 Z" fill="none" stroke="#1A1A1A" stroke-width="2"/>
+  <circle cx="60" cy="40" r="4" fill="#1A1A1A"/>
+  <text x="60" y="72" font-family="serif" font-size="9" fill="#333" text-anchor="middle" letter-spacing="2">GENESIS</text>
+</svg>

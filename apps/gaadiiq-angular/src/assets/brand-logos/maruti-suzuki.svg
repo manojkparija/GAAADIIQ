@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect width="120" height="80" fill="white"/>
+  <path d="M60 10 L75 25 L60 40 L45 25 Z" fill="#888" transform="rotate(-15,60,25)"/>
+  <path d="M60 40 L75 55 L60 70 L45 55 Z" fill="#555" transform="rotate(-15,60,55)"/>
+  <text x="60" y="75" font-family="Arial,sans-serif" font-size="9" fill="#333" text-anchor="middle">SUZUKI</text>
+</svg>

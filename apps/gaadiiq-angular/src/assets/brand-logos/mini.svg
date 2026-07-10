@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect width="120" height="80" fill="white"/>
+  <circle cx="60" cy="36" r="26" fill="none" stroke="#1A1A1A" stroke-width="4"/>
+  <circle cx="60" cy="36" r="20" fill="#1A1A1A"/>
+  <text x="60" y="41" font-family="Arial Black,sans-serif" font-size="11" font-weight="900" fill="white" text-anchor="middle">MINI</text>
+  <text x="60" y="70" font-family="Arial,sans-serif" font-size="8" fill="#333" text-anchor="middle" letter-spacing="1">MINI</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect width="120" height="80" fill="white"/>
+  <circle cx="60" cy="40" r="30" fill="none" stroke="#1C69D4" stroke-width="3"/>
+  <circle cx="60" cy="40" r="26" fill="white"/>
+  <path d="M60 14 A26 26 0 0 1 86 40 L60 40 Z" fill="#1C69D4"/>
+  <path d="M60 66 A26 26 0 0 1 34 40 L60 40 Z" fill="#1C69D4"/>
+  <text x="60" y="76" font-family="Arial,sans-serif" font-size="8" font-weight="bold" fill="#1C69D4" text-anchor="middle">BMW</text>
+</svg>

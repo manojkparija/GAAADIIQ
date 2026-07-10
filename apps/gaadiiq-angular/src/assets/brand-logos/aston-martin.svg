@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect width="120" height="80" fill="white"/>
+  <ellipse cx="60" cy="40" rx="52" ry="20" fill="#2E7D32" stroke="#1B5E20" stroke-width="1"/>
+  <text x="60" y="36" font-family="serif" font-size="7" fill="white" text-anchor="middle" letter-spacing="1">ASTON MARTIN</text>
+  <path d="M20,42 Q60,55 100,42" fill="none" stroke="white" stroke-width="1"/>
+  <path d="M25,46 Q60,58 95,46" fill="none" stroke="white" stroke-width="1"/>
+</svg>
