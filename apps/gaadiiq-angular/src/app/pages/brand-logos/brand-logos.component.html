@@ -1,0 +1,57 @@
+<div class="blm-page">
+  <div class="blm-header">
+    <h1>Brand Logo Manager</h1>
+    <p class="blm-sub">
+      All logos are stored in <code>src/assets/brand-logos/</code>.<br>
+      To replace a logo: drop a PNG/SVG with the exact filename shown below into that folder and rebuild.
+    </p>
+  </div>
+
+  <div class="blm-table-wrap">
+    <table class="blm-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Logo Preview</th>
+          <th>Brand Name</th>
+          <th>Country</th>
+          <th>Asset File</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (brand of brands; track brand.slug; let i = $index) {
+          <tr>
+            <td class="blm-num">{{ i + 1 }}</td>
+            <td class="blm-logo-cell">
+              <div class="blm-logo-box">
+                <img
+                  [src]="brand.logo"
+                  [alt]="brand.name"
+                  class="blm-logo-img"
+                  (error)="onImgError($event, brand)"
+                />
+              </div>
+            </td>
+            <td class="blm-name">{{ brand.name }}</td>
+            <td class="blm-country">{{ brand.country }}</td>
+            <td class="blm-file"><code>{{ brand.logo }}</code></td>
+            <td class="blm-status">
+              <span class="status-dot ok">✓ OK</span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="blm-guide">
+    <h2>How to add / replace a logo</h2>
+    <ol>
+      <li>Find the asset file name in the <strong>Asset File</strong> column above (e.g. <code>assets/brand-logos/tata.svg</code>).</li>
+      <li>Save your PNG or SVG with that exact filename into <code>apps/gaadiiq-angular/src/assets/brand-logos/</code>.</li>
+      <li>Run <code>ng serve</code> — the new logo appears everywhere in the app automatically.</li>
+      <li>To add a new brand: add a row to <code>src/app/data/brands.ts</code> and drop the logo file.</li>
+    </ol>
+  </div>
+</div>

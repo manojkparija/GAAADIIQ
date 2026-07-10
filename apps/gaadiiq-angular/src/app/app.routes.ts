@@ -24,5 +24,6 @@ export const routes: Routes = [
   { path: 'pricing-plans', loadComponent: () => import('./pages/pricing-plans/pricing-plans.component').then(m => m.PricingPlansComponent) },
   { path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent) },
   { path: 'about', loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent) },
+  { path: 'brand-logos', loadComponent: () => import('./pages/brand-logos/brand-logos.component').then(m => m.BrandLogosComponent) },
   { path: '**', redirectTo: '' },
 ];

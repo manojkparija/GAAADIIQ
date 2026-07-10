@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { CarsDataService } from '../../services/cars-data.service';
+import { BRANDS } from '../../data/brands';
 
 interface NewCarModel {
   make: string;
@@ -68,46 +69,7 @@ export class NewCarsComponent implements OnInit {
   transmissionOptions = ['Manual', 'Automatic', 'CVT', 'DCT', 'AMT'];
   sortOptions = ['Popularity', 'Price: Low to High', 'Price: High to Low'];
 
-  brands = [
-    { name: 'Tata',          logo: 'assets/brand-logos/tata.svg' },
-    { name: 'Maruti Suzuki', logo: 'assets/brand-logos/maruti-suzuki.svg' },
-    { name: 'Mahindra',      logo: 'assets/brand-logos/mahindra.svg' },
-    { name: 'Nissan',        logo: 'assets/brand-logos/nissan.svg' },
-    { name: 'Hyundai',       logo: 'assets/brand-logos/hyundai.svg' },
-    { name: 'Toyota',        logo: 'assets/brand-logos/toyota.svg' },
-    { name: 'Kia',           logo: 'assets/brand-logos/kia.svg' },
-    { name: 'BMW',           logo: 'assets/brand-logos/bmw.svg' },
-    { name: 'Skoda',         logo: 'assets/brand-logos/skoda.svg' },
-    { name: 'MG',            logo: 'assets/brand-logos/mg.svg' },
-    { name: 'Renault',       logo: 'assets/brand-logos/renault.svg' },
-    { name: 'Volkswagen',    logo: 'assets/brand-logos/volkswagen.svg' },
-    { name: 'Mercedes-Benz', logo: 'assets/brand-logos/mercedes-benz.svg' },
-    { name: 'Honda',         logo: 'assets/brand-logos/honda.svg' },
-    { name: 'Land Rover',    logo: 'assets/brand-logos/land-rover.svg' },
-    { name: 'Citroen',       logo: 'assets/brand-logos/citroen.svg' },
-    { name: 'VinFast',       logo: 'assets/brand-logos/vinfast.svg' },
-    { name: 'BYD',           logo: 'assets/brand-logos/byd.svg' },
-    { name: 'Jeep',          logo: 'assets/brand-logos/jeep.svg' },
-    { name: 'Audi',          logo: 'assets/brand-logos/audi.svg' },
-    { name: 'Porsche',       logo: 'assets/brand-logos/porsche.svg' },
-    { name: 'Volvo',         logo: 'assets/brand-logos/volvo.svg' },
-    { name: 'Lexus',         logo: 'assets/brand-logos/lexus.svg' },
-    { name: 'Mini',          logo: 'assets/brand-logos/mini.svg' },
-    { name: 'Force Motors',  logo: 'assets/brand-logos/force-motors.svg' },
-    { name: 'Lamborghini',   logo: 'assets/brand-logos/lamborghini.svg' },
-    { name: 'Jaguar',        logo: 'assets/brand-logos/jaguar.svg' },
-    { name: 'Rolls-Royce',   logo: 'assets/brand-logos/rolls-royce.svg' },
-    { name: 'Ferrari',       logo: 'assets/brand-logos/ferrari.svg' },
-    { name: 'Tesla',         logo: 'assets/brand-logos/tesla.svg' },
-    { name: 'Isuzu',         logo: 'assets/brand-logos/isuzu.svg' },
-    { name: 'Maserati',      logo: 'assets/brand-logos/maserati.svg' },
-    { name: 'Aston Martin',  logo: 'assets/brand-logos/aston-martin.svg' },
-    { name: 'McLaren',       logo: 'assets/brand-logos/mclaren.svg' },
-    { name: 'Bentley',       logo: 'assets/brand-logos/bentley.svg' },
-    { name: 'Lotus',         logo: 'assets/brand-logos/lotus.svg' },
-    { name: 'OLA Electric',  logo: 'assets/brand-logos/ola-electric.svg' },
-    { name: 'Genesis',       logo: 'assets/brand-logos/genesis.svg' },
-  ];
+  brands = BRANDS;
 
   bodyTypeCards = [
     { name: 'Hatchback', icon: '🚗', desc: 'Compact & city-friendly' },
