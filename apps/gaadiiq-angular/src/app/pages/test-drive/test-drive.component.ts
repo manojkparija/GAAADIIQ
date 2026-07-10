@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
+import { TestDriveService } from '../../services/test-drive.service';
 
 @Component({
   selector: 'app-test-drive',
@@ -17,6 +18,8 @@ export class TestDriveComponent {
   searchQuery = signal('');
   selectedCar = signal<Car | null>(null);
   submitted = signal(false);
+  submitting = signal(false);
+  submitError = signal('');
   showDropdown = signal(false);
 
   form = { name: '', phone: '', email: '', date: '', time: '', location: '', notes: '' };
@@ -34,7 +37,12 @@ export class TestDriveComponent {
     return this.allCars.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q)).slice(0, 6);
   }
 
-  constructor(private carsData: CarsDataService, private seo: SeoService, private route: ActivatedRoute) {
+  constructor(
+    private carsData: CarsDataService,
+    private seo: SeoService,
+    private route: ActivatedRoute,
+    private testDriveSvc: TestDriveService
+  ) {
     this.allCars = carsData.getAll();
     seo.setPage('Book Test Drive', 'Book a test drive for any car in our verified database. Choose your date, time, and location.');
     this.route.queryParams.subscribe(params => {
@@ -47,11 +55,41 @@ export class TestDriveComponent {
 
   selectCar(car: Car) { this.selectedCar.set(car); this.searchQuery.set(''); this.showDropdown.set(false); }
 
-  submit() {
-    if (!this.selectedCar() || !this.form.name || !this.form.phone || !this.form.date || !this.form.time) return;
-    this.submitted.set(true);
+  async submit() {
+    const car = this.selectedCar();
+    if (!car || !this.form.name || !this.form.phone || !this.form.date || !this.form.time) return;
+
+    this.submitting.set(true);
+    this.submitError.set('');
+
+    const ok = await this.testDriveSvc.submit({
+      car_id: car.id,
+      car_make: car.make,
+      car_model: car.model,
+      car_year: car.year,
+      buyer_name: this.form.name,
+      buyer_phone: this.form.phone,
+      buyer_email: this.form.email || undefined,
+      preferred_date: this.form.date,
+      preferred_time: this.form.time,
+      location: this.form.location || undefined,
+      notes: this.form.notes || undefined,
+    });
+
+    this.submitting.set(false);
+    if (ok) {
+      this.submitted.set(true);
+    } else {
+      this.submitError.set('Booking failed — please try again or call us directly.');
+    }
   }
 
-  reset() { this.selectedCar.set(null); this.submitted.set(false); this.form = { name:'', phone:'', email:'', date:'', time:'', location:'', notes:'' }; }
+  reset() {
+    this.selectedCar.set(null);
+    this.submitted.set(false);
+    this.submitError.set('');
+    this.form = { name:'', phone:'', email:'', date:'', time:'', location:'', notes:'' };
+  }
+
   formatPrice(p: number) { return `₹${(p/100000).toFixed(1)}L`; }
 }

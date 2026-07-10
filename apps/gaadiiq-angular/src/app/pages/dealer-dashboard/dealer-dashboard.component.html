@@ -24,6 +24,10 @@
     <button class="dd-tab" [class.active]="activeTab()==='leads'" (click)="activeTab.set('leads')">💬 AI Leads</button>
     <button class="dd-tab" [class.active]="activeTab()==='inventory'" (click)="activeTab.set('inventory')">🚗 Inventory</button>
     <button class="dd-tab" [class.active]="activeTab()==='analytics'" (click)="activeTab.set('analytics')">📈 Analytics</button>
+    <button class="dd-tab" [class.active]="activeTab()==='test-drives'" (click)="activeTab.set('test-drives')">
+      🗝️ Test Drives
+      <span *ngIf="pendingTestDrives().length > 0" class="td-badge">{{ pendingTestDrives().length }}</span>
+    </button>
   </div>
 
   <div class="dd-content container">
@@ -198,6 +202,37 @@
           <div class="ic-icon">📅</div>
           <h4>Best Time to List</h4>
           <p>Listings posted Thursday–Friday see 28% more views over the weekend.</p>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- TEST DRIVES TAB -->
+    <ng-container *ngIf="activeTab()==='test-drives'">
+      <h2 class="section-head">Test Drive <span class="gradient-text">Requests</span></h2>
+
+      <div *ngIf="testDriveRequests().length === 0" class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:1rem">🗝️</div>
+        <p>No test drive requests yet. They will appear here as soon as buyers book.</p>
+      </div>
+
+      <div *ngIf="testDriveRequests().length > 0" class="td-table glass-card">
+        <div class="td-header">
+          <span>Buyer</span>
+          <span>Car</span>
+          <span>Date & Time</span>
+          <span>Phone</span>
+          <span>Location</span>
+          <span>Status</span>
+          <span>Received</span>
+        </div>
+        <div class="td-row" *ngFor="let r of testDriveRequests()">
+          <span class="td-name">{{ r.buyer_name }}</span>
+          <span class="td-car">{{ r.car_make }} {{ r.car_model }} {{ r.car_year }}</span>
+          <span class="td-dt">{{ r.preferred_date }} · {{ r.preferred_time }}</span>
+          <span class="td-phone"><a [href]="'tel:' + r.buyer_phone">{{ r.buyer_phone }}</a></span>
+          <span class="td-loc">{{ r.location || '—' }}</span>
+          <span class="td-status" [class.pending]="r.status === 'Pending'" [class.confirmed]="r.status === 'Confirmed'">{{ r.status }}</span>
+          <span class="td-time">{{ timeAgo(r.created_at!) }}</span>
         </div>
       </div>
     </ng-container>

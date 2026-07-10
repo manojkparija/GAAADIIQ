@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { CarsDataService } from '../../services/cars-data.service';
+import { TestDriveService, TestDriveRequest } from '../../services/test-drive.service';
 
 interface DealerMetric { label: string; value: string; change: string; up: boolean; icon: string; }
 interface LeadRow {
@@ -23,7 +24,7 @@ export class DealerDashboardComponent {
     { label: 'Total Listings', value: '24', change: '+3 this week', up: true, icon: '🚗' },
     { label: 'Profile Views', value: '1,248', change: '+18% vs last week', up: true, icon: '👁️' },
     { label: 'Enquiries', value: '87', change: '+12 today', up: true, icon: '💬' },
-    { label: 'Test Drive Requests', value: '14', change: '−2 vs last week', up: false, icon: '🗝️' },
+    { label: 'Test Drive Requests', value: '—', change: 'Loading…', up: true, icon: '🗝️' },
     { label: 'Avg. Days to Sell', value: '18', change: '−3 days improved', up: true, icon: '📅' },
     { label: 'Revenue (MTD)', value: '₹14.2L', change: '+24% vs last month', up: true, icon: '💰' },
   ];
@@ -53,10 +54,24 @@ export class DealerDashboardComponent {
     { model: 'Maruti Alto K10', views: 176, enquiries: 9 },
   ];
 
-  activeTab = signal<'overview' | 'leads' | 'inventory' | 'analytics'>('overview');
+  activeTab = signal<'overview' | 'leads' | 'inventory' | 'analytics' | 'test-drives'>('overview');
 
-  constructor(seo: SeoService) {
+  testDriveRequests = this.testDriveSvc.requests;
+  testDriveCount = computed(() => this.testDriveRequests().length);
+  pendingTestDrives = computed(() => this.testDriveRequests().filter(r => r.status === 'Pending'));
+
+  constructor(seo: SeoService, private testDriveSvc: TestDriveService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
+    this.testDriveSvc.loadAll();
+  }
+
+  timeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hr ago`;
+    return `${Math.floor(hrs / 24)} days ago`;
   }
 
   countGrade(grade: 'A' | 'B' | 'C' | 'D') {

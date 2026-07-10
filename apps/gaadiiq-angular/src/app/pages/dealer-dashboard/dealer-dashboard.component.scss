@@ -206,3 +206,43 @@
   .ai-summary-chips { gap: 0.5rem; }
   .ai-sum-chip { min-width: 80px; padding: 0.75rem; }
 }
+
+/* ── TEST DRIVES TAB ── */
+.td-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #ef4444; color: #fff; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 700; min-width: 18px; height: 18px;
+  padding: 0 4px; margin-left: 6px;
+}
+
+.td-table { overflow-x: auto; }
+
+.td-header, .td-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.5fr 1.2fr 1fr 1fr 0.8fr 0.8fr;
+  gap: 0.5rem; padding: 0.75rem 1rem; align-items: center;
+  font-size: 0.85rem;
+}
+
+.td-header {
+  font-weight: 700; color: var(--muted); font-size: 0.75rem;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));
+}
+
+.td-row {
+  border-bottom: 1px solid var(--border, rgba(0,0,0,0.06));
+  &:last-child { border-bottom: none; }
+}
+
+.td-name { font-weight: 600; }
+.td-car  { color: var(--primary); font-weight: 500; }
+.td-phone a { color: var(--primary); text-decoration: none; }
+.td-time { color: var(--muted); font-size: 0.78rem; }
+
+.td-status {
+  display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 600;
+  &.pending   { background: #fef9c3; color: #854d0e; }
+  &.confirmed { background: #dcfce7; color: #166534; }
+}
