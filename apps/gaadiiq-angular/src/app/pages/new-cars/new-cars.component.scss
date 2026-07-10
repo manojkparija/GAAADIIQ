@@ -5,7 +5,8 @@
 /* ── HERO ── */
 .nc-hero {
   background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
-  padding: 5rem 0 3rem;
+  padding: 6.5rem 0 3rem; /* 6.5rem = ~4.5rem navbar height + 2rem breathing room */
+  margin-top: 0;
   position: relative;
   overflow: hidden;
 
