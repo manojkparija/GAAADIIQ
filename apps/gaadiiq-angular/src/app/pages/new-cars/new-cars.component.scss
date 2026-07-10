@@ -242,9 +242,28 @@
   }
 }
 
-.brand-icon-wrap {
-  font-size: 1.8rem;
-  line-height: 1;
+.brand-logo-wrap {
+  width: 64px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-logo-img {
+  max-width: 64px;
+  max-height: 44px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transition: transform 0.2s;
+  .brand-card:hover & { transform: scale(1.08); }
+}
+
+.brand-quick-logo {
+  width: 24px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .brand-name {

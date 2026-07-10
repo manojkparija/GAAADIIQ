@@ -29,7 +29,7 @@
             <div class="brand-quick-grid">
               @for (brand of brands.slice(0, 8); track brand.name) {
                 <button class="brand-quick-pill" (click)="navigateToBrand(brand.name)">
-                  <span class="brand-icon">{{ brand.icon }}</span>
+                  <img [src]="brand.logo" [alt]="brand.name" class="brand-quick-logo" onerror="this.style.display='none'">
                   <span>{{ brand.name }}</span>
                 </button>
               }
@@ -74,7 +74,10 @@
     <div class="brand-grid">
       @for (brand of brands; track brand.name) {
         <button class="brand-card glass-card" (click)="navigateToBrand(brand.name)">
-          <div class="brand-icon-wrap">{{ brand.icon }}</div>
+          <div class="brand-logo-wrap">
+            <img [src]="brand.logo" [alt]="brand.name" class="brand-logo-img"
+                 onerror="this.style.opacity='0'">
+          </div>
           <span class="brand-name">{{ brand.name }}</span>
         </button>
       }
