@@ -18,6 +18,40 @@ const MODEL_IMAGE_FALLBACK: Record<string, string> = {
   'Tata Nexon EV':  'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg',
 };
 
+// Fallback body-type when DB body_type column is null/empty
+const MODEL_BODY_TYPE: Record<string, string> = {
+  // SUVs
+  'Brezza': 'SUV', 'Grand Vitara': 'SUV', 'Jimny': 'SUV',
+  'Creta': 'SUV', 'Venue': 'SUV', 'Alcazar': 'SUV', 'Tucson': 'SUV',
+  'Nexon': 'SUV', 'Nexon EV': 'SUV', 'Harrier': 'SUV', 'Safari': 'SUV', 'Curvv': 'SUV',
+  'XUV700': 'SUV', 'XUV400': 'SUV', 'XUV300': 'SUV', 'Scorpio N': 'SUV', 'Scorpio': 'SUV',
+  'Thar': 'SUV', 'Thar Roxx': 'SUV', 'BE6': 'SUV', 'XEV9e': 'SUV',
+  'Seltos': 'SUV', 'Sonet': 'SUV', 'Carnival': 'SUV', 'EV6': 'SUV',
+  'Fortuner': 'SUV', 'Innova Crysta': 'SUV', 'RAV4': 'SUV', 'Land Cruiser': 'SUV',
+  'Kushaq': 'SUV', 'Kodiaq': 'SUV', 'Slavia': 'Sedan',
+  'Hector': 'SUV', 'Hector Plus': 'SUV', 'Gloster': 'SUV', 'Windsor': 'SUV',
+  'Duster': 'SUV', 'Kiger': 'SUV',
+  'Jeep Compass': 'SUV', 'Jeep Meridian': 'SUV', 'Wrangler': 'SUV',
+  'Astor': 'SUV', 'Atto 3': 'SUV',
+  // Hatchbacks
+  'Swift': 'Hatchback', 'Baleno': 'Hatchback', 'Alto K10': 'Hatchback',
+  'WagonR': 'Hatchback', 'Fronx': 'Hatchback', 'S-Presso': 'Hatchback', 'Celerio': 'Hatchback',
+  'i20': 'Hatchback', 'Grand i10 Nios': 'Hatchback', 'Exter': 'Hatchback',
+  'Punch': 'Hatchback', 'Altroz': 'Hatchback', 'Tiago': 'Hatchback',
+  'Ignis': 'Hatchback',
+  // Sedans
+  'Dzire': 'Sedan', 'Ciaz': 'Sedan',
+  'Verna': 'Sedan', 'Aura': 'Sedan',
+  'Tigor': 'Sedan', 'Tigor EV': 'Sedan',
+  'Amaze': 'Sedan', 'City': 'Sedan', 'Civic': 'Sedan',
+  'Rapid': 'Sedan',
+  // MUVs
+  'Ertiga': 'MUV', 'XL6': 'MUV',
+  'Marazzo': 'MUV', 'Bolero': 'MUV',
+  'Innova': 'MUV', 'Innova HyCross': 'MUV',
+  'Carens': 'MUV',
+};
+
 const LOCAL_IMAGES: Record<string, string[]> = {
   'Maruti Suzuki Swift': [
     'assets/cars/swift/front.jpg',
@@ -80,7 +114,7 @@ export class CarsDataService {
       reviews: row.reviews ?? 0,
       verified: row.verified ?? true,
       city: row.city,
-      bodyType: row.body_type,
+      bodyType: row.body_type || MODEL_BODY_TYPE[row.model] || '',
       color: row.color,
       owners: row.owners,
       specs: row.car_specs?.map((s: any) => ({ label: s.label, value: s.value })) ?? [],

@@ -70,7 +70,7 @@ export class ListingsComponent implements OnInit {
       const matchMake = this.selectedMake() === 'All' || c.make === this.selectedMake();
       const matchFuel = this.selectedFuel() === 'All' || c.fuel === this.selectedFuel();
       const matchTx   = this.selectedTransmission() === 'All' || c.transmission.includes(this.selectedTransmission());
-      const matchBT   = this.selectedBodyType() === 'All' || c.bodyType === this.selectedBodyType();
+      const matchBT   = this.selectedBodyType() === 'All' || (c.bodyType ?? '').toLowerCase() === this.selectedBodyType().toLowerCase();
       const matchPrice = c.price <= this.maxPrice();
       const matchYear  = c.year >= this.minYear();
 
