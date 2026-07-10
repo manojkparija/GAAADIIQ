@@ -18,7 +18,22 @@ export class AuthService {
 
   currentUser = signal<AuthUser | null>(this.loadUser());
 
-  constructor(private router: Router, private sb: SupabaseService) {}
+  constructor(private router: Router, private sb: SupabaseService) {
+    // Silently refresh role for any stored session that may have stale 'user' role
+    const stored = this.loadUser();
+    if (stored && stored.role === 'user') {
+      this.refreshStoredRole(stored);
+    }
+  }
+
+  private async refreshStoredRole(stored: AuthUser) {
+    const { role, sellerId } = await this.fetchRole(stored.email);
+    if (role !== stored.role || sellerId !== stored.sellerId) {
+      const updated = { ...stored, role, sellerId };
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
+      this.currentUser.set(updated);
+    }
+  }
 
   private loadUser(): AuthUser | null {
     try {
@@ -30,12 +45,29 @@ export class AuthService {
   }
 
   private async fetchRole(email: string): Promise<{ role: UserRole; sellerId?: number }> {
-    const { data } = await this.sb.client
+    // First check user_profiles table
+    const { data: profile } = await this.sb.client
       .from('user_profiles')
       .select('role, seller_id')
       .eq('email', email)
       .single();
-    return { role: (data?.role as UserRole) ?? 'user', sellerId: data?.seller_id ?? undefined };
+
+    if (profile?.role && profile.role !== 'user') {
+      return { role: profile.role as UserRole, sellerId: profile.seller_id ?? undefined };
+    }
+
+    // Fallback: check sellers table — if email matches, they are a seller
+    const { data: seller } = await this.sb.client
+      .from('sellers')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (seller) {
+      return { role: 'seller', sellerId: seller.id };
+    }
+
+    return { role: (profile?.role as UserRole) ?? 'user', sellerId: profile?.seller_id ?? undefined };
   }
 
   async login(email: string, password: string): Promise<void> {
