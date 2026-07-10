@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, PLATFORM_ID, Inject } from '@angul
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { CityService } from '../../services/city.service';
 
@@ -28,6 +28,7 @@ export class UsedCarsComponent implements OnInit {
     private carsData: CarsDataService,
     public cityService: CityService,
     private router: Router,
+    private route: ActivatedRoute,
     @Inject(PLATFORM_ID) private platformId: object
   ) {}
 
@@ -196,6 +197,13 @@ export class UsedCarsComponent implements OnInit {
         if (stored) this.wishlist.set(new Set(JSON.parse(stored)));
       } catch {}
     }
+
+    // Pre-apply filters from query params (e.g. coming from My Journey)
+    this.route.queryParams.subscribe(params => {
+      if (params['fuel']) this.selectedFuels.set([params['fuel']]);
+      if (params['bodyType']) this.selectedBodyTypes.set([params['bodyType']]);
+      if (params['maxBudget']) this.maxBudget.set(+params['maxBudget']);
+    });
   }
 
   onMinBudget(val: number) {

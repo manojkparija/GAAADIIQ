@@ -1,6 +1,7 @@
 import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { RouterLink, Router } from '@angular/router';
 import { BuyerJourneyService, JOURNEY_STEPS, BuyerProfile } from '../../services/buyer-journey.service';
 import { LanguageService } from '../../services/language.service';
 import { SeoService } from '../../services/seo.service';
@@ -10,7 +11,7 @@ interface Milestone { id: string; icon: string; title: string; desc: string; lin
 @Component({
   selector: 'app-buyer-journey',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './buyer-journey.component.html',
   styleUrl: './buyer-journey.component.scss',
 })
@@ -31,7 +32,7 @@ export class BuyerJourneyComponent {
 
   completedMilestones = signal<string[]>(['research', 'finance']);
 
-  constructor(public journey: BuyerJourneyService, public lang: LanguageService, seo: SeoService) {
+  constructor(public journey: BuyerJourneyService, public lang: LanguageService, seo: SeoService, private router: Router) {
     seo.setPage('My Buyer Journey', 'Personalized car buying journey tailored to your needs.');
     if (journey.isComplete()) this.done.set(true);
   }
@@ -78,6 +79,29 @@ export class BuyerJourneyComponent {
       priority: join('priority'),
     } as BuyerProfile);
     this.done.set(true);
+  }
+
+  seeMatchedCars() {
+    const profile = this.journey.profile();
+    if (!profile) { this.router.navigate(['/used-cars']); return; }
+
+    // Extract first fuel type
+    const fuel = profile.fuelPreference?.split(',')[0]?.trim() ?? '';
+    // Extract first body type
+    const bodyType = profile.bodyType?.split(',')[0]?.trim() ?? '';
+    // Parse max budget from e.g. "₹5L–₹10L, ₹10L–₹15L" → take highest upper bound
+    let maxBudget = 5000000;
+    const budgetMatches = (profile.budget ?? '').match(/₹(\d+)L/g);
+    if (budgetMatches && budgetMatches.length > 0) {
+      const nums = budgetMatches.map(m => +m.replace('₹', '').replace('L', '') * 100000);
+      maxBudget = Math.max(...nums);
+    }
+
+    this.router.navigate(['/used-cars'], { queryParams: {
+      fuel: fuel || null,
+      bodyType: bodyType || null,
+      maxBudget: maxBudget !== 5000000 ? maxBudget : null,
+    }});
   }
 
   restart() {
