@@ -198,6 +198,14 @@ export class UsedCarsComponent implements OnInit {
     }
   }
 
+  onMinBudget(val: number) {
+    this.minBudget.set(Math.min(val, this.maxBudget() - 100000));
+  }
+
+  onMaxBudget(val: number) {
+    this.maxBudget.set(Math.max(val, this.minBudget() + 100000));
+  }
+
   applyHeroSearch() {
     // Filters are already reactive — just scroll to results
     document.querySelector('.uc-main-layout')?.scrollIntoView({ behavior: 'smooth' });

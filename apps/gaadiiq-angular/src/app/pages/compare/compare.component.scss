@@ -5,13 +5,13 @@
 }
 
 .compare-hero {
-  background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(255,101,132,0.1));
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 60%, #DB2777 100%);
   border-bottom: 1px solid var(--divider);
   padding: 5rem 0 2.5rem;
   text-align: center;
-  h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; }
-  p { color: var(--muted); margin-top: 0.5rem; }
-  .gradient-text { background: linear-gradient(135deg, #6C63FF, #FF6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; }
+  p { color: rgba(255,255,255,0.75); margin-top: 0.5rem; }
+  .gradient-text { background: linear-gradient(135deg, #A5B4FC, #FBCFE8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 }
 
 .car-selector { margin: 2.5rem 0;

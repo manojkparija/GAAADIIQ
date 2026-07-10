@@ -53,13 +53,14 @@
 
 .advisor-hero {
   text-align: center;
-  padding: 3rem 1rem 2rem;
+  padding: 5rem 1rem 3rem;
+  background: linear-gradient(135deg, #1e40af 0%, #7C3AED 100%);
 
   .hero-icon { font-size: 3rem; margin-bottom: 1rem; }
 
-  h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 900; margin-bottom: 0.75rem; color: var(--text); }
+  h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 900; margin-bottom: 0.75rem; color: #fff; }
 
-  .hero-sub { color: var(--muted, #8892b0); font-size: 1rem; max-width: 520px; margin: 0 auto; }
+  .hero-sub { color: rgba(255,255,255,0.75); font-size: 1rem; max-width: 520px; margin: 0 auto; }
 }
 
 .quiz-container {

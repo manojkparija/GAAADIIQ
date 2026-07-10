@@ -99,10 +99,15 @@
             <span>{{ formatLakh(minBudget()) }}</span> – <span>{{ formatLakh(maxBudget()) }}</span>
           </div>
           <div class="dual-range">
+            <div class="range-track"></div>
+            <div class="range-fill"
+              [style.left]="((minBudget() - 100000) / (5000000 - 100000) * 100) + '%'"
+              [style.width]="((maxBudget() - minBudget()) / (5000000 - 100000) * 100) + '%'">
+            </div>
             <input type="range" class="range-input" min="100000" max="5000000" step="50000"
-              [value]="minBudget()" (input)="minBudget.set(Math.min(+$any($event.target).value, maxBudget() - 100000))" />
+              [value]="minBudget()" (input)="onMinBudget(+$any($event.target).value)" />
             <input type="range" class="range-input" min="100000" max="5000000" step="50000"
-              [value]="maxBudget()" (input)="maxBudget.set(Math.max(+$any($event.target).value, minBudget() + 100000))" />
+              [value]="maxBudget()" (input)="onMaxBudget(+$any($event.target).value)" />
           </div>
           <div class="range-labels"><span>₹1L</span><span>₹50L</span></div>
         </div>
