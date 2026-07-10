@@ -29,7 +29,14 @@
 .form-group input, .form-group select, .form-group textarea { width:100%; padding:.75rem 1rem; background: var(--fill-dim); border: 1px solid var(--border-soft); border-radius:.75rem; color: var(--input-color); font-size:.92rem; outline:none; font-family:inherit; resize:vertical; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--primary); }
 .form-group select option { background: var(--dropdown-bg); }
-.form-group input[type="date"]::-webkit-calendar-picker-indicator { filter:invert(1); opacity:.6; }
+.form-group input[type="date"] { cursor: pointer; }
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer; opacity: 0.8; width: 20px; height: 20px;
+  filter: none;
+}
+@media (prefers-color-scheme: dark) {
+  .form-group input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+}
 .success-card { max-width:520px; margin:0 auto; text-align:center; padding:3rem; }
 .success-card h2 { font-size:1.8rem; font-weight:900; margin-bottom:1rem; }
 .success-card p { color:var(--muted); line-height:1.6; }
