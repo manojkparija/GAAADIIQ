@@ -18,7 +18,7 @@
           <div class="main-img">
             <img [src]="(car.images || [car.image])[activeImg()]" [alt]="car.make + ' ' + car.model"
                  referrerpolicy="no-referrer"
-                 [style.objectPosition]="(car.images || [car.image])[activeImg()]?.includes('swift/front') ? 'center 65%' : 'center center'"
+                 [style.objectPosition]="((car.images || [car.image])[activeImg()] || '').includes('swift/front') ? 'center 65%' : 'center center'"
                  onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
             <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
             <button class="like-fab" (click)="liked.set(!liked())" [class.liked]="liked()">

@@ -120,7 +120,7 @@
       <h2 class="section-title">Popular <span class="gradient-text">New Car Models</span></h2>
       <div class="sort-bar">
         <label class="sort-label">Sort by:</label>
-        <select class="sort-select" [(ngModel)]="$any(selectedSort)" (change)="selectedSort.set($any($event.target).value)">
+        <select class="sort-select" [value]="selectedSort()" (change)="selectedSort.set($any($event.target).value)">
           @for (s of sortOptions; track s) {
             <option [value]="s">{{ s }}</option>
           }
