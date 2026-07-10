@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { CarsDataService } from '../../services/cars-data.service';
-import { BRANDS } from '../../data/brands';
+import { BrandsService } from '../../services/brands.service';
 
 interface NewCarModel {
   make: string;
@@ -49,7 +49,11 @@ interface UpcomingCar {
   styleUrl: './new-cars.component.scss'
 })
 export class NewCarsComponent implements OnInit {
-  constructor(private carsData: CarsDataService, private router: Router) {}
+  constructor(
+    private carsData: CarsDataService,
+    private router: Router,
+    public brandsService: BrandsService
+  ) {}
 
   get loading() { return this.carsData.loading; }
 
@@ -69,7 +73,7 @@ export class NewCarsComponent implements OnInit {
   transmissionOptions = ['Manual', 'Automatic', 'CVT', 'DCT', 'AMT'];
   sortOptions = ['Popularity', 'Price: Low to High', 'Price: High to Low'];
 
-  brands = BRANDS;
+  get brands() { return this.brandsService.brands(); }
 
   bodyTypeCards = [
     { name: 'Hatchback', icon: '🚗', desc: 'Compact & city-friendly' },

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BRANDS, Brand } from '../../data/brands';
+import { BrandsService } from '../../services/brands.service';
+import { Brand } from '../../data/brands';
 
 @Component({
   selector: 'app-brand-logos',
@@ -10,7 +11,9 @@ import { BRANDS, Brand } from '../../data/brands';
   styleUrl: './brand-logos.component.scss'
 })
 export class BrandLogosComponent {
-  brands: Brand[] = BRANDS;
+  constructor(public brandsService: BrandsService) {}
+
+  get brands() { return this.brandsService.brands(); }
 
   onImgError(event: Event, brand: Brand) {
     (event.target as HTMLImageElement).style.opacity = '0.2';
