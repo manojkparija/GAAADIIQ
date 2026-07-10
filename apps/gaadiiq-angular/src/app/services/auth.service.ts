@@ -59,11 +59,22 @@ export class AuthService {
       throw new Error('All fields are required (password min 6 characters).');
     }
 
+    // Check if email is already registered
+    const { data: existing } = await this.sb.client
+      .from('user_profiles')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existing) {
+      throw new Error('This email is already registered. Please sign in instead.');
+    }
+
     const role: UserRole = accountType === 'customer' ? 'user' : accountType;
 
     await this.sb.client
       .from('user_profiles')
-      .upsert({ email, name, role }, { onConflict: 'email', ignoreDuplicates: true });
+      .insert({ email, name, role });
 
     const user: AuthUser = { email, name, role };
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
@@ -74,6 +85,15 @@ export class AuthService {
     localStorage.removeItem(this.STORAGE_KEY);
     this.currentUser.set(null);
     this.router.navigate(['/']);
+  }
+
+  async isEmailTaken(email: string): Promise<boolean> {
+    const { data } = await this.sb.client
+      .from('user_profiles')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
+    return !!data;
   }
 
   isLoggedIn(): boolean { return this.currentUser() !== null; }

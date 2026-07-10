@@ -138,7 +138,9 @@
         </div>
 
         <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
-        <button class="btn-gradient btn-full" (click)="nextStep()">Continue →</button>
+        <button class="btn-gradient btn-full" (click)="nextStep()" [disabled]="checkingEmail()">
+          {{ checkingEmail() ? 'Checking…' : 'Continue →' }}
+        </button>
       </div>
     }
 

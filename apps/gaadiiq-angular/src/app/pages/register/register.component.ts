@@ -41,12 +41,19 @@ export class RegisterComponent {
     { value: 'admin',    label: 'Admin',     desc: 'Manage the platform' },
   ];
 
+  checkingEmail = signal(false);
+
   constructor(private auth: AuthService, private router: Router) {}
 
-  nextStep() {
+  async nextStep() {
     this.error.set('');
     if (this.step() === 1) {
       if (!this.name() || !this.email()) { this.error.set('Name and email are required.'); return; }
+      // Check email uniqueness before proceeding
+      this.checkingEmail.set(true);
+      const taken = await this.auth.isEmailTaken(this.email());
+      this.checkingEmail.set(false);
+      if (taken) { this.error.set('This email is already registered. Please sign in instead.'); return; }
     }
     if (this.step() === 2) {
       if (this.password().length < 6) { this.error.set('Password must be at least 6 characters.'); return; }
