@@ -35,10 +35,10 @@ export class RegisterComponent {
   preferences = ['Hatchback', 'Sedan', 'SUV', 'Electric', 'Luxury', 'Budget'];
   budgetRanges = ['Under ₹5L', '₹5L-10L', '₹10L-20L', '₹20L-30L', '30L+'];
 
-  accountTypes: { value: AccountType; label: string; desc: string; icon: string }[] = [
-    { value: 'customer', label: 'Customer', desc: 'Browse & buy cars', icon: '🚗' },
-    { value: 'seller',   label: 'Seller',   desc: 'List & sell cars', icon: '🏪' },
-    { value: 'admin',    label: 'Admin',     desc: 'Manage the platform', icon: '⚙️' },
+  accountTypes: { value: AccountType; label: string; desc: string }[] = [
+    { value: 'customer', label: 'Customer', desc: 'Browse & buy cars' },
+    { value: 'seller',   label: 'Seller',   desc: 'List & sell cars' },
+    { value: 'admin',    label: 'Admin',     desc: 'Manage the platform' },
   ];
 
   constructor(private auth: AuthService, private router: Router) {}

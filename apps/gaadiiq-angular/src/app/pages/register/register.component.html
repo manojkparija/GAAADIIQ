@@ -60,16 +60,80 @@
         <div class="form-group">
           <label>I am signing up as</label>
           <div class="role-picker">
-            @for (t of accountTypes; track t.value) {
-              <button type="button"
-                class="role-chip"
-                [class.selected]="accountType() === t.value"
-                (click)="accountType.set(t.value)">
-                <span class="role-icon">{{ t.icon }}</span>
-                <span class="role-label">{{ t.label }}</span>
-                <span class="role-desc">{{ t.desc }}</span>
-              </button>
-            }
+
+            <!-- Customer -->
+            <button type="button" class="role-chip" [class.selected]="accountType() === 'customer'" (click)="accountType.set('customer')">
+              <svg class="role-svg" viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Road -->
+                <rect x="5" y="42" width="70" height="8" rx="2" fill="#E2E8F0"/>
+                <rect x="18" y="45" width="10" height="2" rx="1" fill="#94A3B8"/>
+                <rect x="35" y="45" width="10" height="2" rx="1" fill="#94A3B8"/>
+                <rect x="52" y="45" width="10" height="2" rx="1" fill="#94A3B8"/>
+                <!-- Car body -->
+                <rect x="12" y="28" width="56" height="16" rx="5" fill="#3B82F6"/>
+                <!-- Car roof -->
+                <path d="M24 28 L30 16 L50 16 L56 28Z" fill="#2563EB"/>
+                <!-- Windows -->
+                <rect x="31" y="18" width="8" height="8" rx="2" fill="#BAE6FD"/>
+                <rect x="41" y="18" width="8" height="8" rx="2" fill="#BAE6FD"/>
+                <!-- Wheels -->
+                <circle cx="24" cy="44" r="6" fill="#1E293B"/>
+                <circle cx="24" cy="44" r="3" fill="#64748B"/>
+                <circle cx="56" cy="44" r="6" fill="#1E293B"/>
+                <circle cx="56" cy="44" r="3" fill="#64748B"/>
+                <!-- Headlight -->
+                <rect x="64" y="32" width="5" height="4" rx="1" fill="#FEF08A"/>
+                <!-- Tail light -->
+                <rect x="11" y="32" width="4" height="4" rx="1" fill="#FCA5A5"/>
+              </svg>
+              <span class="role-label">Customer</span>
+              <span class="role-desc">Browse &amp; buy cars</span>
+            </button>
+
+            <!-- Seller -->
+            <button type="button" class="role-chip" [class.selected]="accountType() === 'seller'" (click)="accountType.set('seller')">
+              <svg class="role-svg" viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Showroom building -->
+                <rect x="8" y="20" width="64" height="32" rx="3" fill="#F1F5F9"/>
+                <rect x="8" y="20" width="64" height="7" rx="3" fill="#10B981"/>
+                <!-- Sign text bar -->
+                <rect x="18" y="23" width="44" height="3" rx="1.5" fill="#A7F3D0"/>
+                <!-- Glass door -->
+                <rect x="30" y="35" width="20" height="17" rx="2" fill="#BAE6FD"/>
+                <line x1="40" y1="35" x2="40" y2="52" stroke="#7DD3FC" stroke-width="1"/>
+                <circle cx="36" cy="44" r="1.5" fill="#0EA5E9"/>
+                <circle cx="44" cy="44" r="1.5" fill="#0EA5E9"/>
+                <!-- Side windows -->
+                <rect x="12" y="33" width="14" height="10" rx="2" fill="#BAE6FD"/>
+                <rect x="54" y="33" width="14" height="10" rx="2" fill="#BAE6FD"/>
+                <!-- Mini car in showroom -->
+                <rect x="14" y="37" width="10" height="5" rx="2" fill="#6366F1"/>
+                <circle cx="16" cy="43" r="2" fill="#1E293B"/>
+                <circle cx="22" cy="43" r="2" fill="#1E293B"/>
+                <!-- Price tag -->
+                <rect x="56" y="13" width="18" height="10" rx="2" fill="#FEF08A" stroke="#FCD34D" stroke-width="1"/>
+                <text x="65" y="21" text-anchor="middle" font-size="6" fill="#92400E" font-weight="bold">₹</text>
+              </svg>
+              <span class="role-label">Seller</span>
+              <span class="role-desc">List &amp; sell cars</span>
+            </button>
+
+            <!-- Admin -->
+            <button type="button" class="role-chip" [class.selected]="accountType() === 'admin'" (click)="accountType.set('admin')">
+              <svg class="role-svg" viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Shield -->
+                <path d="M40 8 L58 16 L58 32 C58 43 40 52 40 52 C40 52 22 43 22 32 L22 16 Z" fill="#7C3AED"/>
+                <path d="M40 12 L54 19 L54 32 C54 41 40 49 40 49 C40 49 26 41 26 32 L26 19 Z" fill="#8B5CF6"/>
+                <!-- Checkmark on shield -->
+                <path d="M32 30 L37 35 L48 24" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Stars -->
+                <path d="M10 10 L11.5 14 L15.5 14 L12.5 16.5 L13.5 20.5 L10 18 L6.5 20.5 L7.5 16.5 L4.5 14 L8.5 14 Z" fill="#FCD34D"/>
+                <path d="M68 8 L69 11 L72 11 L69.5 13 L70.5 16 L68 14.5 L65.5 16 L66.5 13 L64 11 L67 11 Z" fill="#FCD34D"/>
+              </svg>
+              <span class="role-label">Admin</span>
+              <span class="role-desc">Manage the platform</span>
+            </button>
+
           </div>
         </div>
 
