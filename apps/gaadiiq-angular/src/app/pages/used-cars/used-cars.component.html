@@ -14,7 +14,11 @@
         <div class="hero-search-row">
           <div class="search-field">
             <label class="search-field-label">📍 City</label>
-            <div class="city-display">{{ cityService.selectedCity() || 'All India' }}</div>
+            <input type="text" class="search-input" placeholder="All India"
+              [value]="heroCity()" (input)="heroCity.set($any($event.target).value)" list="city-suggestions" />
+            <datalist id="city-suggestions">
+              @for (c of cityOptions; track c) { <option [value]="c"></option> }
+            </datalist>
           </div>
           <div class="search-field">
             <label class="search-field-label">🚗 Make</label>

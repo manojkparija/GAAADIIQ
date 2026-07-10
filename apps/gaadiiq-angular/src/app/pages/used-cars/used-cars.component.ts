@@ -37,7 +37,9 @@ export class UsedCarsComponent implements OnInit {
   heroMake = signal('');
   heroModel = signal('');
   heroBudgetMax = signal(5000000);
-  heroCity = signal('');
+  heroCity = signal(''); // empty = All India (no city filter)
+
+  cityOptions = ['Mumbai','Delhi','Bengaluru','Hyderabad','Chennai','Kolkata','Pune','Ahmedabad','Jaipur','Rourkela','Lucknow','Chandigarh','Surat','Nagpur','Indore'];
 
   // Sidebar filters
   sidebarOpen = signal(false);
@@ -195,10 +197,7 @@ export class UsedCarsComponent implements OnInit {
   }
 
   applyHeroSearch() {
-    // City from the city selector service
-    const city = this.cityService.selectedCity();
-    this.heroCity.set(city ?? '');
-    // Scroll to results
+    // Filters are already reactive — just scroll to results
     document.querySelector('.uc-main-layout')?.scrollIntoView({ behavior: 'smooth' });
   }
 
