@@ -96,13 +96,26 @@ export class ListingsComponent implements OnInit {
     return cars;
   });
 
-  newCount  = computed(() => this.carsData.cars().filter(c => c.km === 0 && c.year >= 2025).length);
-  usedCount = computed(() => this.carsData.cars().filter(c => c.km > 0 || c.year < 2025).length);
+  newCount  = computed(() => {
+    const make = this.selectedMake();
+    return this.carsData.cars().filter(c =>
+      c.km === 0 && c.year >= 2025 && (make === 'All' || c.make === make)
+    ).length;
+  });
+  usedCount = computed(() => {
+    const make = this.selectedMake();
+    return this.carsData.cars().filter(c =>
+      (c.km > 0 || c.year < 2025) && (make === 'All' || c.make === make)
+    ).length;
+  });
 
   selectedModel = signal<string | null>(null);
 
   newCarModels = computed<NewCarModel[]>(() => {
-    const newCars = this.carsData.cars().filter(c => c.km === 0 && c.year >= 2025);
+    const make = this.selectedMake();
+    const newCars = this.carsData.cars().filter(c =>
+      c.km === 0 && c.year >= 2025 && (make === 'All' || c.make === make)
+    );
     const map = new Map<string, Car[]>();
     for (const c of newCars) {
       const key = `${c.make}||${c.model}`;
