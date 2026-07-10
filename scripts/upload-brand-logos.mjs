@@ -8,7 +8,7 @@
  *   node scripts/upload-brand-logos.mjs
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '../node_modules/@supabase/supabase-js/dist/index.mjs';
 import { readFileSync, readdirSync } from 'fs';
 import { resolve, join, basename } from 'path';
 
@@ -19,6 +19,11 @@ const LOGOS_DIR = resolve('apps/gaadiiq-angular/src/assets/brand-logos');
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('❌  Set SUPABASE_URL and SUPABASE_SERVICE_KEY env vars first.');
+  process.exit(1);
+}
+if (SUPABASE_URL.includes('your-project-ref') || SUPABASE_URL.includes('abcdefgh')) {
+  console.error('❌  SUPABASE_URL is still a placeholder. Set your real Supabase project URL.');
+  console.error('    Find it at: Supabase Dashboard → Settings → API → Project URL');
   process.exit(1);
 }
 
