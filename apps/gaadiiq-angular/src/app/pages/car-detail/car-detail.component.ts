@@ -177,6 +177,7 @@ const COLOUR_HEX: Record<string, string> = {
 import { TcoService } from '../../services/tco.service';
 import { ReviewsService, CarReview } from '../../services/reviews.service';
 import { SeoService } from '../../services/seo.service';
+import { SellersService, Seller } from '../../services/sellers.service';
 
 @Component({
   selector: 'app-car-detail',
@@ -188,6 +189,8 @@ import { SeoService } from '../../services/seo.service';
 export class CarDetailComponent implements OnInit {
   activeTab = signal('overview');
   liked = signal(false);
+  sellerModalOpen = signal(false);
+  seller = signal<Seller | null>(null);
   loan = { amount: 0, rate: 8.5, tenure: 60, emi: 0 }; // kept for template binding
   car!: Car;
   activeImg = signal(0);
@@ -251,7 +254,15 @@ export class CarDetailComponent implements OnInit {
     }
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService) {
+  async openContactSeller() {
+    if (!this.seller()) {
+      const s = await this.sellersSvc.getForCar(this.car.id);
+      this.seller.set(s);
+    }
+    this.sellerModalOpen.set(true);
+  }
+
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       const id = Number(this.route.snapshot.paramMap.get('id'));

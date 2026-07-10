@@ -360,7 +360,7 @@
           </ng-template>
           <div style="color:var(--muted);font-size:0.85rem">EMI from ₹{{ loan.emi.toLocaleString() }}/mo · No cost EMI available</div>
           <div class="action-btns">
-            <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem">📞 Contact Seller</button>
+            <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem" (click)="openContactSeller()">📞 Contact Seller</button>
             <button class="btn-outline" style="width:100%;padding:1rem;font-size:1rem" (click)="bookTestDrive()">📅 Book Test Drive</button>
           </div>
           <div style="display:flex;justify-content:center;gap:2rem;font-size:0.8rem;color:var(--muted)">
@@ -461,5 +461,43 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- CONTACT SELLER MODAL -->
+<div class="seller-overlay" *ngIf="sellerModalOpen()" (click)="sellerModalOpen.set(false)">
+  <div class="seller-modal glass-card" (click)="$event.stopPropagation()">
+    <button class="seller-close" (click)="sellerModalOpen.set(false)">✕</button>
+
+    <div *ngIf="!seller()" style="text-align:center;padding:2rem;color:var(--muted)">Loading seller info…</div>
+
+    <ng-container *ngIf="seller() as s">
+      <div class="seller-header">
+        <div class="seller-avatar">{{ s.name.charAt(0) }}</div>
+        <div>
+          <h3 class="seller-name">{{ s.name }}</h3>
+          <p class="seller-biz">{{ s.business_name }}</p>
+          <span *ngIf="s.verified" class="seller-verified">✅ Verified Dealer</span>
+        </div>
+      </div>
+
+      <div class="seller-rating">
+        <span class="star">★</span> {{ s.rating }} · {{ s.total_reviews }} reviews
+      </div>
+
+      <div class="seller-details">
+        <div class="seller-row"><span>📍</span><span>{{ s.address }}, {{ s.city }}</span></div>
+        <div class="seller-row"><span>✉️</span><span>{{ s.email }}</span></div>
+      </div>
+
+      <div class="seller-actions">
+        <a [href]="'tel:' + s.phone" class="btn-gradient seller-call">
+          📞 Call {{ s.phone }}
+        </a>
+        <a [href]="'https://wa.me/' + s.phone.replace(/\D/g,'')" target="_blank" class="btn-whatsapp">
+          💬 WhatsApp
+        </a>
+      </div>
+    </ng-container>
   </div>
 </div>
