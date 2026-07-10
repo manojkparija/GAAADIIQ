@@ -14,6 +14,7 @@ export interface AuthUser {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly STORAGE_KEY = 'gaadiiq_user';
+  private readonly REGISTERED_EMAILS_KEY = 'gaadiiq_registered_emails';
 
   currentUser = signal<AuthUser | null>(this.loadUser());
 
@@ -49,6 +50,7 @@ export class AuthService {
 
     const user: AuthUser = { email, name, role, sellerId };
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+    this.saveRegisteredEmail(email);
     this.currentUser.set(user);
   }
 
@@ -78,6 +80,7 @@ export class AuthService {
 
     const user: AuthUser = { email, name, role };
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+    this.saveRegisteredEmail(email);
     this.currentUser.set(user);
   }
 
@@ -87,7 +90,37 @@ export class AuthService {
     this.router.navigate(['/']);
   }
 
+  private getRegisteredEmails(): Set<string> {
+    try {
+      const raw = localStorage.getItem(this.REGISTERED_EMAILS_KEY);
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch { return new Set(); }
+  }
+
+  private saveRegisteredEmail(email: string) {
+    const emails = this.getRegisteredEmails();
+    emails.add(email.toLowerCase());
+    localStorage.setItem(this.REGISTERED_EMAILS_KEY, JSON.stringify([...emails]));
+  }
+
   async isEmailTaken(email: string): Promise<boolean> {
+    const lc = email.toLowerCase();
+    // Check localStorage registry (catches pre-DB registrations)
+    if (this.getRegisteredEmails().has(lc)) return true;
+    // Also seed the registry from all known localStorage keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i) ?? '';
+      if (key.startsWith('gaadiiq_listings_')) {
+        const storedEmail = key.replace('gaadiiq_listings_', '').toLowerCase();
+        this.saveRegisteredEmail(storedEmail);
+        if (storedEmail === lc) return true;
+      }
+    }
+    // Check the currently-stored session email
+    const stored = this.loadUser();
+    if (stored?.email?.toLowerCase() === lc) return true;
+
+    // Then check Supabase
     const { data } = await this.sb.client
       .from('user_profiles')
       .select('email')
