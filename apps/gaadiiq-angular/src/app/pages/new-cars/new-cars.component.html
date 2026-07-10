@@ -1,0 +1,344 @@
+<!-- =========================================================
+     NEW CARS PAGE
+     ========================================================= -->
+
+<!-- ── HERO ── -->
+<section class="nc-hero">
+  <div class="container">
+    <div class="hero-content">
+      <span class="hero-badge">🚗 New Cars 2025</span>
+      <h1 class="hero-heading">Explore <span class="gradient-text">New Cars</span></h1>
+      <p class="hero-sub">Find your perfect car from 500+ new models across all budgets</p>
+
+      <!-- Hero Tab Search -->
+      <div class="hero-search-card glass-card">
+        <div class="hero-tabs">
+          <button class="hero-tab" [class.active]="activeHeroTab() === 'brand'" (click)="activeHeroTab.set('brand')">
+            🏷️ By Brand
+          </button>
+          <button class="hero-tab" [class.active]="activeHeroTab() === 'budget'" (click)="activeHeroTab.set('budget')">
+            💰 By Budget
+          </button>
+          <button class="hero-tab" [class.active]="activeHeroTab() === 'bodytype'" (click)="activeHeroTab.set('bodytype')">
+            🚘 By Body Type
+          </button>
+        </div>
+
+        @if (activeHeroTab() === 'brand') {
+          <div class="hero-tab-content">
+            <div class="brand-quick-grid">
+              @for (brand of brands.slice(0, 8); track brand.name) {
+                <button class="brand-quick-pill" (click)="navigateToBrand(brand.name)">
+                  <span class="brand-icon">{{ brand.icon }}</span>
+                  <span>{{ brand.name }}</span>
+                </button>
+              }
+            </div>
+            <a routerLink="/listings" [queryParams]="{carType:'New'}" class="view-all-link">View All Brands →</a>
+          </div>
+        }
+
+        @if (activeHeroTab() === 'budget') {
+          <div class="hero-tab-content">
+            <div class="budget-quick-grid">
+              @for (range of budgetRanges; track range.label) {
+                <button class="budget-pill" (click)="navigateToBudget(range.max)">{{ range.label }}</button>
+              }
+            </div>
+          </div>
+        }
+
+        @if (activeHeroTab() === 'bodytype') {
+          <div class="hero-tab-content">
+            <div class="bodytype-quick-grid">
+              @for (bt of bodyTypeCards; track bt.name) {
+                <button class="bodytype-pill" (click)="navigateToBodyType(bt.name)">
+                  <span>{{ bt.icon }}</span> {{ bt.name }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── BROWSE BY BRAND ── -->
+<section class="nc-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Browse by <span class="gradient-text">Brand</span></h2>
+      <a routerLink="/listings" [queryParams]="{carType:'New'}" class="see-all-link">See All →</a>
+    </div>
+    <div class="brand-grid">
+      @for (brand of brands; track brand.name) {
+        <button class="brand-card glass-card" (click)="navigateToBrand(brand.name)">
+          <div class="brand-icon-wrap">{{ brand.icon }}</div>
+          <span class="brand-name">{{ brand.name }}</span>
+        </button>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ── BROWSE BY BODY TYPE ── -->
+<section class="nc-section nc-section-alt">
+  <div class="container">
+    <h2 class="section-title">Browse by <span class="gradient-text">Body Type</span></h2>
+    <div class="bodytype-grid">
+      @for (bt of bodyTypeCards; track bt.name) {
+        <button class="bodytype-card glass-card" (click)="navigateToBodyType(bt.name)">
+          <div class="bt-icon">{{ bt.icon }}</div>
+          <div class="bt-name">{{ bt.name }}</div>
+          <div class="bt-desc">{{ bt.desc }}</div>
+        </button>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ── BROWSE BY BUDGET ── -->
+<section class="nc-section">
+  <div class="container">
+    <h2 class="section-title">Browse by <span class="gradient-text">Budget</span></h2>
+    <div class="budget-grid">
+      @for (range of budgetRanges; track range.label) {
+        <button class="budget-card glass-card" (click)="navigateToBudget(range.max)">
+          <span class="budget-label">{{ range.label }}</span>
+          <span class="budget-arrow">→</span>
+        </button>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ── POPULAR NEW MODELS + FILTER SIDEBAR ── -->
+<section class="nc-section nc-section-alt">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Popular <span class="gradient-text">New Car Models</span></h2>
+      <div class="sort-bar">
+        <label class="sort-label">Sort by:</label>
+        <select class="sort-select" [(ngModel)]="$any(selectedSort)" (change)="selectedSort.set($any($event.target).value)">
+          @for (s of sortOptions; track s) {
+            <option [value]="s">{{ s }}</option>
+          }
+        </select>
+        <button class="filter-toggle-btn btn-outline" (click)="sidebarOpen.set(!sidebarOpen())">
+          🔧 Filters @if (activeFiltersCount() > 0) { <span class="filter-badge">{{ activeFiltersCount() }}</span> }
+        </button>
+      </div>
+    </div>
+
+    <div class="models-layout">
+      <!-- Filter Sidebar -->
+      <aside class="filter-sidebar glass-card" [class.open]="sidebarOpen()">
+        <div class="sidebar-header">
+          <h3 class="sidebar-title">Filters</h3>
+          @if (activeFiltersCount() > 0) {
+            <button class="clear-btn" (click)="clearAllFilters()">Clear All</button>
+          }
+        </div>
+
+        <!-- Budget Slider -->
+        <div class="filter-group">
+          <label class="filter-group-label">Max Budget: <strong>{{ formatBudgetLabel(maxBudget()) }}</strong></label>
+          <input type="range" class="budget-slider" min="200000" max="10000000" step="100000"
+            [value]="maxBudget()" (input)="maxBudget.set(+$any($event.target).value)" />
+          <div class="slider-labels">
+            <span>₹2L</span><span>₹1 Cr</span>
+          </div>
+        </div>
+
+        <!-- Body Type -->
+        <div class="filter-group">
+          <label class="filter-group-label">Body Type</label>
+          @for (bt of bodyTypeOptions; track bt) {
+            <label class="checkbox-label">
+              <input type="checkbox" [checked]="selectedBodyTypes().includes(bt)" (change)="toggleBodyType(bt)" />
+              {{ bt }}
+            </label>
+          }
+        </div>
+
+        <!-- Fuel Type -->
+        <div class="filter-group">
+          <label class="filter-group-label">Fuel Type</label>
+          @for (f of fuelOptions; track f) {
+            <label class="checkbox-label">
+              <input type="checkbox" [checked]="selectedFuels().includes(f)" (change)="toggleFuel(f)" />
+              {{ f }}
+            </label>
+          }
+        </div>
+
+        <!-- Transmission -->
+        <div class="filter-group">
+          <label class="filter-group-label">Transmission</label>
+          @for (t of transmissionOptions; track t) {
+            <label class="checkbox-label">
+              <input type="checkbox" [checked]="selectedTransmissions().includes(t)" (change)="toggleTransmission(t)" />
+              {{ t }}
+            </label>
+          }
+        </div>
+      </aside>
+
+      <!-- Results -->
+      <div class="models-results">
+        <!-- Active Filters Strip -->
+        @if (activeFiltersCount() > 0) {
+          <div class="active-filters-strip">
+            @for (bt of selectedBodyTypes(); track bt) {
+              <span class="filter-chip">{{ bt }} <button (click)="toggleBodyType(bt)">×</button></span>
+            }
+            @for (f of selectedFuels(); track f) {
+              <span class="filter-chip">{{ f }} <button (click)="toggleFuel(f)">×</button></span>
+            }
+            @for (t of selectedTransmissions(); track t) {
+              <span class="filter-chip">{{ t }} <button (click)="toggleTransmission(t)">×</button></span>
+            }
+            @if (maxBudget() < 10000000) {
+              <span class="filter-chip">Under {{ formatBudgetLabel(maxBudget()) }} <button (click)="maxBudget.set(10000000)">×</button></span>
+            }
+          </div>
+        }
+
+        @if (loading()) {
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading new cars...</p>
+          </div>
+        } @else if (newCarModels().length === 0) {
+          <div class="empty-state glass-card">
+            <div class="empty-icon">🚗</div>
+            <h3>No models found</h3>
+            <p>Try adjusting your filters</p>
+            <button class="btn-gradient" (click)="clearAllFilters()">Clear Filters</button>
+          </div>
+        } @else {
+          <div class="models-count">{{ newCarModels().length }} models found</div>
+          <div class="models-grid">
+            @for (model of newCarModels(); track model.make + model.model) {
+              <div class="model-card glass-card">
+                <div class="model-img-wrap">
+                  <img [src]="model.image || 'assets/placeholder.svg'" [alt]="model.make + ' ' + model.model"
+                    class="model-img" (error)="$any($event.target).src='assets/placeholder.svg'" loading="lazy" />
+                  @if (model.badge) {
+                    <span class="model-badge badge-featured">{{ model.badge }}</span>
+                  }
+                  <button class="compare-heart" [class.active]="compareSet().has(model.make + model.model)"
+                    (click)="toggleCompare(model.make + model.model)" title="Add to Compare">
+                    {{ compareSet().has(model.make + model.model) ? '💙' : '🤍' }}
+                  </button>
+                </div>
+                <div class="model-info">
+                  <div class="model-meta">
+                    @if (model.bodyType) {
+                      <span class="model-bt-badge">{{ model.bodyType }}</span>
+                    }
+                    <div class="model-rating">
+                      ⭐ {{ model.rating.toFixed(1) }} <span class="model-reviews">({{ model.reviews }})</span>
+                    </div>
+                  </div>
+                  <h3 class="model-name">{{ model.make }} {{ model.model }}</h3>
+                  <div class="model-price-range">
+                    {{ formatLakh(model.minPrice) }} – {{ formatLakh(model.maxPrice) }}
+                  </div>
+                  <div class="model-details">
+                    <span class="model-fuels">⛽ {{ model.fuels.join(' / ') }}</span>
+                    <span class="model-variants">{{ model.variantCount }} Variant{{ model.variantCount > 1 ? 's' : '' }}</span>
+                  </div>
+                  <div class="model-actions">
+                    <a [routerLink]="['/listings']" [queryParams]="{make: model.make, model: model.model, carType: 'New'}"
+                      class="btn-gradient btn-sm">View Details →</a>
+                    <a [routerLink]="['/compare']" class="btn-outline btn-sm">Compare</a>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── NEW LAUNCHES ── -->
+<section class="nc-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">🎉 New <span class="gradient-text">Launches</span></h2>
+      <span class="section-sub">Cars launched in the last 3 months</span>
+    </div>
+    <div class="launches-scroll">
+      @for (car of newLaunches; track car.make + car.model) {
+        <div class="launch-card glass-card">
+          <div class="launch-img-wrap">
+            <img [src]="car.image" [alt]="car.make + ' ' + car.model"
+              class="launch-img" (error)="$any($event.target).src='assets/placeholder.svg'" loading="lazy" />
+            @if (car.isNew) {
+              <span class="launch-new-badge">NEW</span>
+            }
+            <span class="launch-date-badge">{{ car.launchDate }}</span>
+          </div>
+          <div class="launch-info">
+            <div class="launch-bt">{{ car.bodyType }} · {{ car.fuel }}</div>
+            <h4 class="launch-name">{{ car.make }} {{ car.model }}</h4>
+            <div class="launch-price">{{ car.price }}</div>
+            <a routerLink="/listings" [queryParams]="{carType: 'New', make: car.make}" class="btn-gradient btn-sm">Explore →</a>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ── UPCOMING CARS ── -->
+<section class="nc-section nc-section-alt">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">⏳ Upcoming <span class="gradient-text">Cars</span></h2>
+      <span class="section-sub">Get notified when they launch</span>
+    </div>
+    <div class="upcoming-list">
+      @for (car of upcomingCars; track car.make + car.model) {
+        <div class="upcoming-card glass-card">
+          <img [src]="car.image" [alt]="car.make + ' ' + car.model"
+            class="upcoming-img" (error)="$any($event.target).src='assets/placeholder.svg'" loading="lazy" />
+          <div class="upcoming-info">
+            <span class="upcoming-expected">Expected: {{ car.expectedDate }}</span>
+            <h4 class="upcoming-name">{{ car.make }} {{ car.model }}</h4>
+            <div class="upcoming-meta">{{ car.bodyType }} · {{ car.fuel }}</div>
+            <div class="upcoming-price">{{ car.expectedPrice }}</div>
+          </div>
+          <button class="notify-btn" [class.notified]="notifiedCars().has(car.make + car.model)"
+            (click)="toggleNotify(car.make + car.model)">
+            {{ notifiedCars().has(car.make + car.model) ? '🔔 Notified' : '🔕 Notify Me' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ── EXPERT RECOMMENDATIONS ── -->
+<section class="nc-section">
+  <div class="container">
+    <h2 class="section-title">🏆 Expert <span class="gradient-text">Recommendations</span></h2>
+    <div class="expert-grid">
+      @for (pick of expertPicks; track pick.category) {
+        <div class="expert-card glass-card">
+          <div class="expert-icon">{{ pick.icon }}</div>
+          <div class="expert-badge">{{ pick.badge }}</div>
+          <div class="expert-category">{{ pick.category }}</div>
+          <h4 class="expert-name">{{ pick.make }} {{ pick.model }}</h4>
+          <div class="expert-price">Starting at {{ pick.price }}</div>
+          <p class="expert-reason">{{ pick.reason }}</p>
+          <a routerLink="/listings" [queryParams]="{carType: 'New', make: pick.make}" class="btn-gradient btn-sm">View Model →</a>
+        </div>
+      }
+    </div>
+  </div>
+</section>
