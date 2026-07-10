@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { MyListingsService } from '../../services/my-listings.service';
+import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
   selector: 'app-list-car',
@@ -31,7 +32,7 @@ export class ListCarComponent {
     bodyType: ''
   };
 
-  constructor(public auth: AuthService, private myListings: MyListingsService, private router: Router) {
+  constructor(public auth: AuthService, private myListings: MyListingsService, private router: Router, private sb: SupabaseService) {
     const user = auth.currentUser();
     if (user) {
       this.form.name = user.name;
@@ -50,7 +51,36 @@ export class ListCarComponent {
 
   async onSubmit() {
     this.loading.set(true);
-    await new Promise(r => setTimeout(r, 1000));
+    const user = this.auth.currentUser();
+
+    // Insert into Supabase so customers can see the listing
+    const { data: inserted } = await this.sb.client
+      .from('cars')
+      .insert({
+        make: this.form.make,
+        model: this.form.model,
+        variant: this.form.variant || null,
+        year: this.form.year,
+        km: +this.form.km,
+        fuel: this.form.fuel,
+        transmission: this.form.transmission,
+        owners: this.form.owners || null,
+        color: this.form.color || null,
+        city: this.form.city || null,
+        price: +this.form.price,
+        body_type: this.form.bodyType || null,
+        badge: 'New',
+        badge_type: 'new',
+        seller_email: this.form.email,
+        seller_id: user?.sellerId ?? null,
+        verified: false,
+        rating: 0,
+        reviews: 0,
+      })
+      .select('id')
+      .single();
+
+    // Also save to local MyListings so seller sees it in My Listings page
     this.myListings.add({
       make: this.form.make, model: this.form.model, variant: this.form.variant,
       year: this.form.year, km: +this.form.km, fuel: this.form.fuel,
@@ -58,7 +88,9 @@ export class ListCarComponent {
       color: this.form.color, city: this.form.city, price: +this.form.price,
       description: this.form.description, bodyType: this.form.bodyType,
       name: this.form.name, phone: this.form.phone, email: this.form.email,
+      supabaseId: inserted?.id ?? null,
     });
+
     this.loading.set(false);
     this.submitted.set(true);
   }

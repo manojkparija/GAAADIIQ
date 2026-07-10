@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { AuthService } from './auth.service';
+import { SupabaseService } from './supabase.service';
 
 export interface MyListing {
   id: string;
@@ -9,13 +10,14 @@ export interface MyListing {
   bodyType: string; name: string; phone: string; email: string;
   status: 'pending' | 'live' | 'sold';
   createdAt: string;
+  supabaseId?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
 export class MyListingsService {
   listings = signal<MyListing[]>([]);
 
-  constructor(private auth: AuthService) {
+  constructor(private auth: AuthService, private sb: SupabaseService) {
     this.reload();
     // Reload listings whenever the logged-in user changes
     (auth.currentUser as any).subscribe?.(() => this.reload());
@@ -49,6 +51,10 @@ export class MyListingsService {
   }
 
   remove(id: string) {
+    const listing = this.listings().find(l => l.id === id);
+    if (listing?.supabaseId) {
+      this.sb.client.from('cars').delete().eq('id', listing.supabaseId).then(() => {});
+    }
     const updated = this.listings().filter(l => l.id !== id);
     localStorage.setItem(this.storageKey(), JSON.stringify(updated));
     this.listings.set(updated);
