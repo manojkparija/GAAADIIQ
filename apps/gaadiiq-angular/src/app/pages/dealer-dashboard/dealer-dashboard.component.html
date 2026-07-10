@@ -218,7 +218,12 @@
     <ng-container *ngIf="activeTab()==='test-drives'">
       <h2 class="section-head">Test Drive <span class="gradient-text">Requests</span></h2>
 
-      <div *ngIf="testDriveRequests().length === 0" class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
+      <div *ngIf="testDriveRequests().length === 0 && !currentSeller()" class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:1rem">⚠️</div>
+        <p style="margin-bottom:.5rem;font-weight:600;color:var(--text)">Seller profile not found in database</p>
+        <p>Run migration <code>005_sellers.sql</code> in Supabase SQL Editor to seed seller data, then log out and log back in.</p>
+      </div>
+      <div *ngIf="testDriveRequests().length === 0 && currentSeller()" class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
         <div style="font-size:3rem;margin-bottom:1rem">🗝️</div>
         <p>No test drive requests yet. They will appear here as soon as buyers book.</p>
       </div>

@@ -33,6 +33,12 @@ export class TestDriveService {
   }
 
   async loadForSeller(sellerId: number | null, isAdmin: boolean) {
+    // Seller with unknown ID → show nothing (sellers table not seeded yet)
+    if (!isAdmin && !sellerId) {
+      this.requests.set([]);
+      return;
+    }
+
     let query = this.sb.client
       .from('test_drive_requests')
       .select('*')
