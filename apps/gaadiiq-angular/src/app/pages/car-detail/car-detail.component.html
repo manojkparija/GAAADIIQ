@@ -494,7 +494,7 @@
         <a [href]="'tel:' + s.phone" class="btn-gradient seller-call">
           📞 Call {{ s.phone }}
         </a>
-        <a [href]="'https://wa.me/' + s.phone.replace(/\D/g,'')" target="_blank" class="btn-whatsapp">
+        <a [href]="waLink(s.phone)" target="_blank" class="btn-whatsapp">
           💬 WhatsApp
         </a>
       </div>

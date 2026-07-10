@@ -408,6 +408,8 @@ export class CarDetailComponent implements OnInit {
     return (all.reduce((a, b) => a + b, 0) / all.length).toFixed(1);
   });
 
+  waLink(phone: string) { return 'https://wa.me/' + phone.replace(/[^0-9]/g, ''); }
+
   formatPrice(p: number) { return p >= 100000 ? `₹${(p / 100000).toFixed(1)}L` : `₹${p.toLocaleString()}`; }
   stars(n: number) { return Array.from({length: 5}, (_, i) => i < n ? '★' : '☆'); }
 
