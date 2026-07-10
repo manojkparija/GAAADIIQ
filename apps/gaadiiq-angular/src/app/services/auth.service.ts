@@ -27,12 +27,16 @@ export class AuthService {
   }
 
   private async refreshStoredRole(stored: AuthUser) {
-    const { role, sellerId } = await this.fetchRole(stored.email);
-    if (role !== stored.role || sellerId !== stored.sellerId) {
-      const updated = { ...stored, role, sellerId };
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
-      this.currentUser.set(updated);
-    }
+    try {
+      const { role, sellerId } = await this.fetchRole(stored.email);
+      if (role !== stored.role || sellerId !== stored.sellerId) {
+        const updated = { ...stored, role, sellerId };
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
+        this.currentUser.set(updated);
+        // Reload so navbar and route guards reflect the new role immediately
+        window.location.reload();
+      }
+    } catch { /* ignore — seller table may not exist yet */ }
   }
 
   private loadUser(): AuthUser | null {
