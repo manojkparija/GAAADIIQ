@@ -7,13 +7,17 @@
       <p class="dd-sub">Real-time insights into your listings, leads, and revenue performance.</p>
     </div>
     <div class="dd-hero-right">
-      <div class="dealer-card glass-card">
-        <div class="dealer-avatar">SK</div>
+      <div class="dealer-card glass-card" *ngIf="currentSeller()">
+        <div class="dealer-avatar">{{ sellerInitials() }}</div>
         <div>
-          <div class="dealer-name">Sharma Kars Pvt. Ltd.</div>
-          <div class="dealer-loc">📍 Bangalore, Karnataka</div>
-          <div class="dealer-since">Member since Jan 2023 · ⭐ 4.8 (312 reviews)</div>
+          <div class="dealer-name">{{ currentSeller()!.business_name }}</div>
+          <div class="dealer-loc">📍 {{ currentSeller()!.city }}</div>
+          <div class="dealer-since">{{ currentSeller()!.name }} · ⭐ {{ currentSeller()!.rating }} ({{ currentSeller()!.total_reviews }} reviews)</div>
         </div>
+      </div>
+      <div class="dealer-card glass-card" *ngIf="!currentSeller()">
+        <div class="dealer-avatar">...</div>
+        <div><div class="dealer-name">Loading…</div></div>
       </div>
     </div>
   </section>

@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { CarsDataService } from '../../services/cars-data.service';
 import { TestDriveService, TestDriveRequest } from '../../services/test-drive.service';
+import { AuthService } from '../../services/auth.service';
+import { SellersService, Seller } from '../../services/sellers.service';
 
 interface DealerMetric { label: string; value: string; change: string; up: boolean; icon: string; }
 interface LeadRow {
@@ -60,9 +62,26 @@ export class DealerDashboardComponent {
   testDriveCount = computed(() => this.testDriveRequests().length);
   pendingTestDrives = computed(() => this.testDriveRequests().filter(r => r.status === 'Pending'));
 
-  constructor(seo: SeoService, private testDriveSvc: TestDriveService) {
+  currentSeller = signal<Seller | null>(null);
+  sellerInitials = computed(() => {
+    const s = this.currentSeller();
+    if (!s) return '??';
+    return s.business_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  });
+
+  constructor(seo: SeoService, private testDriveSvc: TestDriveService,
+              private auth: AuthService, private sellersSvc: SellersService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
     this.testDriveSvc.loadAll();
+    this.loadSellerInfo();
+  }
+
+  private async loadSellerInfo() {
+    const user = this.auth.currentUser();
+    if (user?.sellerId) {
+      const seller = await this.sellersSvc.getById(user.sellerId);
+      this.currentSeller.set(seller);
+    }
   }
 
   timeAgo(dateStr: string): string {

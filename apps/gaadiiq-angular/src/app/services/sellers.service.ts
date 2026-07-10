@@ -34,6 +34,18 @@ export class SellersService {
 
   constructor(private sb: SupabaseService) {}
 
+  async getById(sellerId: number): Promise<Seller> {
+    if (this.cache.has(-sellerId)) return this.cache.get(-sellerId)!;
+    const { data, error } = await this.sb.client
+      .from('sellers')
+      .select('*')
+      .eq('id', sellerId)
+      .single();
+    const seller: Seller = (!error && data) ? data : { ...this.DUMMY, id: sellerId };
+    this.cache.set(-sellerId, seller);
+    return seller;
+  }
+
   async getForCar(carId: number): Promise<Seller> {
     if (this.cache.has(carId)) return this.cache.get(carId)!;
 
