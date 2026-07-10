@@ -1,6 +1,6 @@
 import { Component, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 
@@ -245,7 +245,13 @@ export class CarDetailComponent implements OnInit {
   reviewError = signal('');
   hoverRating = signal(0);
 
-  constructor(private route: ActivatedRoute, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService) {
+  bookTestDrive() {
+    if (this.car) {
+      this.router.navigate(['/test-drive'], { queryParams: { carId: this.car.id } });
+    }
+  }
+
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       const id = Number(this.route.snapshot.paramMap.get('id'));

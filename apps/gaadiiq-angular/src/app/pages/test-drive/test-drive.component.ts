@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
 
@@ -34,9 +34,15 @@ export class TestDriveComponent {
     return this.allCars.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q)).slice(0, 6);
   }
 
-  constructor(private carsData: CarsDataService, private seo: SeoService) {
+  constructor(private carsData: CarsDataService, private seo: SeoService, private route: ActivatedRoute) {
     this.allCars = carsData.getAll();
     seo.setPage('Book Test Drive', 'Book a test drive for any car in our verified database. Choose your date, time, and location.');
+    this.route.queryParams.subscribe(params => {
+      if (params['carId']) {
+        const car = this.allCars.find(c => c.id === +params['carId']);
+        if (car) this.selectedCar.set(car);
+      }
+    });
   }
 
   selectCar(car: Car) { this.selectedCar.set(car); this.searchQuery.set(''); this.showDropdown.set(false); }

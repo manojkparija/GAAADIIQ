@@ -361,7 +361,7 @@
           <div style="color:var(--muted);font-size:0.85rem">EMI from ₹{{ loan.emi.toLocaleString() }}/mo · No cost EMI available</div>
           <div class="action-btns">
             <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem">📞 Contact Seller</button>
-            <button class="btn-outline" style="width:100%;padding:1rem;font-size:1rem">📅 Book Test Drive</button>
+            <button class="btn-outline" style="width:100%;padding:1rem;font-size:1rem" (click)="bookTestDrive()">📅 Book Test Drive</button>
           </div>
           <div style="display:flex;justify-content:center;gap:2rem;font-size:0.8rem;color:var(--muted)">
             <span>🔒 Safe Deal Guarantee</span>
