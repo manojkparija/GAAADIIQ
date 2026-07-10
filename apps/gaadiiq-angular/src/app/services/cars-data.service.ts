@@ -6,6 +6,8 @@ export interface Car {
   km: number; fuel: string; transmission: string; badge: string; badgeType: string;
   image: string; images?: string[]; rating: number; reviews: number; verified: boolean;
   city?: string; bodyType?: string; color?: string; owners?: string;
+  isSellerListing?: boolean;
+  sellerEmail?: string;
   specs?: { label: string; value: string }[];
   features?: string[];
   aiValuation?: { fairPrice: number; marketMin: number; marketMax: number; verdict: string; confidence: number };
@@ -117,6 +119,8 @@ export class CarsDataService {
       bodyType: row.body_type || MODEL_BODY_TYPE[row.model] || '',
       color: row.color,
       owners: row.owners,
+      isSellerListing: row.is_seller_listing ?? false,
+      sellerEmail: row.seller_email ?? undefined,
       specs: row.car_specs?.map((s: any) => ({ label: s.label, value: s.value })) ?? [],
       features: row.car_features?.map((f: any) => f.feature) ?? [],
       aiValuation: row.ai_valuation?.[0]

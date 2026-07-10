@@ -1,10 +1,11 @@
 -- Add seller tracking columns to cars table so listings from the list-car form
 -- can be attributed to the seller and shown on the public used-cars page.
 ALTER TABLE public.cars
-  ADD COLUMN IF NOT EXISTS seller_email text,
-  ADD COLUMN IF NOT EXISTS seller_id    int REFERENCES public.sellers(id),
-  ADD COLUMN IF NOT EXISTS body_type    text,
-  ADD COLUMN IF NOT EXISTS owners       text;
+  ADD COLUMN IF NOT EXISTS seller_email       text,
+  ADD COLUMN IF NOT EXISTS seller_id          int REFERENCES public.sellers(id),
+  ADD COLUMN IF NOT EXISTS body_type          text,
+  ADD COLUMN IF NOT EXISTS owners             text,
+  ADD COLUMN IF NOT EXISTS is_seller_listing  boolean DEFAULT false;
 
 -- Allow public insert so sellers can list cars through the app
 DROP POLICY IF EXISTS "cars_insert" ON public.cars;

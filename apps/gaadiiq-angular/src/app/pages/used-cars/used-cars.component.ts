@@ -77,13 +77,15 @@ export class UsedCarsComponent implements OnInit {
   kmRangeOptions = ['Under 20,000 km', '20,000 – 50,000 km', '50,000 – 80,000 km', 'Above 80,000 km'];
   yearOptions = Array.from({ length: 11 }, (_, i) => 2015 + i);
 
+  private isUsedCar = (c: any) => c.isSellerListing || c.km > 0 || c.year < 2025;
+
   makes = computed(() => {
-    const usedCars = this.carsData.cars().filter(c => c.km > 0 || c.year < 2025);
+    const usedCars = this.carsData.cars().filter(this.isUsedCar);
     return ['All', ...new Set(usedCars.map(c => c.make))].sort();
   });
 
   private avgUsedPrice = computed(() => {
-    const used = this.carsData.cars().filter(c => c.km > 0 || c.year < 2025);
+    const used = this.carsData.cars().filter(this.isUsedCar);
     if (used.length === 0) return 500000;
     return used.reduce((sum, c) => sum + c.price, 0) / used.length;
   });
@@ -121,7 +123,7 @@ export class UsedCarsComponent implements OnInit {
   }
 
   allFilteredCars = computed<UsedCarViewModel[]>(() => {
-    const rawUsed = this.carsData.cars().filter(c => c.km > 0 || c.year < 2025);
+    const rawUsed = this.carsData.cars().filter(this.isUsedCar);
     const heroMake = this.heroMake();
     const heroModel = this.heroModel().toLowerCase();
     const heroCity = this.heroCity().toLowerCase();
