@@ -1,4 +1,11 @@
 <div class="bj-wrap">
+  <div class="bj-hero">
+    <div class="container">
+      <div class="bj-badge">🧭 Buyer Journey</div>
+      <h1 class="bj-title">Find Your Perfect Car</h1>
+      <p class="bj-sub">Answer a few quick questions to get your personalized recommendation.</p>
+    </div>
+  </div>
   <div class="bj-container container">
 
     <!-- DONE state -->
@@ -70,12 +77,6 @@
 
     <!-- QUIZ state -->
     <ng-container *ngIf="!done()">
-      <div class="bj-header">
-        <div class="bj-badge">🧭 Buyer Journey</div>
-        <h1 class="bj-title">Find Your <span class="gradient-text">Perfect Car</span></h1>
-        <p class="bj-sub">Answer {{ steps.length }} quick questions to get a personalized car recommendation.</p>
-      </div>
-
       <!-- Progress -->
       <div class="bj-progress">
         <div class="prog-bar">

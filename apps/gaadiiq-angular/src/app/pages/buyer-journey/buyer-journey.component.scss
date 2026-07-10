@@ -1,14 +1,21 @@
 .bj-wrap { min-height: 100vh; background: var(--navy); padding-bottom: 4rem; }
-.bj-container { max-width: 720px; padding: 7rem 1.5rem 4rem; }
+.bj-container { max-width: 720px; padding: 2rem 1.5rem 4rem; }
+
+.bj-hero {
+  background: linear-gradient(135deg, #1e40af 0%, #7C3AED 100%);
+  padding: 5rem 0 3rem;
+  text-align: center;
+  margin-bottom: 0;
+}
 
 .bj-header { text-align: center; margin-bottom: 2rem; }
 .bj-badge {
   display: inline-block; padding: 0.3rem 1rem; border-radius: 50px; font-size: 0.75rem;
   font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  background: rgba(108,99,255,0.15); color: #a78bfa; border: 1px solid rgba(108,99,255,0.3); margin-bottom: 1rem;
+  background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); margin-bottom: 1rem;
 }
-.bj-title { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; margin-bottom: 0.75rem; }
-.bj-sub { color: var(--muted); font-size: 1rem; }
+.bj-title { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; margin-bottom: 0.75rem; color: #fff; }
+.bj-sub { color: rgba(255,255,255,0.75); font-size: 1rem; }
 
 .bj-progress {
   display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;

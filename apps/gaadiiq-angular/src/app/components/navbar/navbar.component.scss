@@ -3,7 +3,11 @@
   top: 0; left: 0; right: 0;
   z-index: 1000;
   transition: all 0.3s ease;
-  padding: 1rem 0;
+  padding: 0.6rem 0;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--card-shadow);
 
   &.scrolled {
     background: var(--glass);
