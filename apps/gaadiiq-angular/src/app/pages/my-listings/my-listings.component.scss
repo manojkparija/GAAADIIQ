@@ -85,9 +85,12 @@
   &:hover { background: rgba(30,64,175,0.2); }
 }
 
-[data-theme="dark"] .btn-edit, @media (prefers-color-scheme: dark) { .btn-edit {
+[data-theme="dark"] .btn-edit {
   color: #93C5FD; border-color: rgba(147,197,253,0.3); background: rgba(147,197,253,0.1);
-}}
+}
+@media (prefers-color-scheme: dark) {
+  .btn-edit { color: #93C5FD; border-color: rgba(147,197,253,0.3); background: rgba(147,197,253,0.1); }
+}
 
 .market-row {
   display: flex;
