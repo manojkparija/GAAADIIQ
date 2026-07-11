@@ -50,6 +50,17 @@ export class MyListingsService {
     return listing;
   }
 
+  async updatePrice(id: string, newPrice: number): Promise<void> {
+    const listing = this.listings().find(l => l.id === id);
+    if (!listing) return;
+    if (listing.supabaseId) {
+      await this.sb.client.from('cars').update({ price: newPrice }).eq('id', listing.supabaseId);
+    }
+    const updated = this.listings().map(l => l.id === id ? { ...l, price: newPrice } : l);
+    localStorage.setItem(this.storageKey(), JSON.stringify(updated));
+    this.listings.set(updated);
+  }
+
   remove(id: string) {
     const listing = this.listings().find(l => l.id === id);
     if (listing?.supabaseId) {

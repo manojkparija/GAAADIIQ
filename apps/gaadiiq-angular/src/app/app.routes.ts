@@ -22,6 +22,7 @@ export const routes: Routes = [
   { path: 'test-drive', loadComponent: () => import('./pages/test-drive/test-drive.component').then(m => m.TestDriveComponent) },
   { path: 'buyer-journey', loadComponent: () => import('./pages/buyer-journey/buyer-journey.component').then(m => m.BuyerJourneyComponent) },
   { path: 'dealer-dashboard', loadComponent: () => import('./pages/dealer-dashboard/dealer-dashboard.component').then(m => m.DealerDashboardComponent), canActivate: [sellerGuard] },
+  { path: 'admin/pricing', loadComponent: () => import('./pages/admin-pricing/admin-pricing.component').then(m => m.AdminPricingComponent), canActivate: [sellerGuard] },
   { path: 'pricing-plans', loadComponent: () => import('./pages/pricing-plans/pricing-plans.component').then(m => m.PricingPlansComponent) },
   { path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent) },
   { path: 'about', loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent) },

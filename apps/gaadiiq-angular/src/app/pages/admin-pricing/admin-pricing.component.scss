@@ -1,0 +1,113 @@
+.ap-page { min-height: 100vh; background: var(--navy); padding-bottom: 4rem; }
+
+.ap-hero {
+  background: linear-gradient(135deg, #1e40af 0%, #7C3AED 100%);
+  padding: 5rem 0 2.5rem;
+  text-align: center;
+  .ap-badge {
+    display: inline-block; padding: 0.3rem 1rem; border-radius: 50px;
+    background: rgba(255,255,255,0.15); color: #fff; font-size: 0.75rem;
+    font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,0.25); margin-bottom: 1rem;
+  }
+  h1 { font-size: clamp(2rem,4vw,3rem); font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
+  p  { color: rgba(255,255,255,0.75); font-size: 1rem; }
+  .gradient-text { background: linear-gradient(135deg,#fff,#C4B5FD); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+}
+
+.ap-body { padding-top: 2rem; }
+
+.toast {
+  background: rgba(67,233,123,0.15); border: 1px solid rgba(67,233,123,0.4);
+  color: #43E97B; border-radius: 10px; padding: 0.75rem 1.25rem;
+  font-weight: 600; font-size: 0.9rem; margin-bottom: 1rem;
+}
+
+.ap-filters {
+  display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1; min-width: 220px; padding: 0.65rem 1rem; border-radius: 10px;
+  border: 1px solid var(--border-soft); background: var(--input-bg);
+  color: var(--input-color); font-size: 0.9rem; outline: none;
+  &:focus { border-color: #1e40af; }
+}
+
+.make-select {
+  padding: 0.65rem 1rem; border-radius: 10px; border: 1px solid var(--border-soft);
+  background: var(--input-bg); color: var(--input-color); font-size: 0.9rem;
+  outline: none; cursor: pointer; min-width: 140px;
+}
+
+.result-count { font-size: 0.85rem; color: var(--muted); white-space: nowrap; margin-left: auto; }
+
+.table-wrap { overflow-x: auto; padding: 0; }
+
+.price-table {
+  width: 100%; border-collapse: collapse; font-size: 0.875rem;
+
+  thead tr { border-bottom: 2px solid rgba(30,64,175,0.2); }
+  th {
+    padding: 1rem 1.25rem; text-align: left; font-size: 0.78rem;
+    font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  td { padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--divider); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--fill-dim); }
+  tr.editing-row td { background: rgba(30,64,175,0.05); }
+}
+
+.car-cell { min-width: 160px; }
+.car-name { font-weight: 700; font-size: 0.9rem; }
+.car-variant { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+
+.type-chip {
+  font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem;
+  border-radius: 50px; background: var(--fill-soft); border: 1px solid var(--border-soft);
+}
+
+.price-cell { min-width: 140px; }
+.price-val { font-weight: 700; font-size: 1rem; color: var(--text); }
+
+.price-input {
+  width: 130px; padding: 0.45rem 0.7rem; border-radius: 8px;
+  border: 1.5px solid #1e40af; background: var(--input-bg);
+  color: var(--input-color); font-size: 0.9rem; font-weight: 600; outline: none;
+}
+
+.muted-cell { color: var(--muted); font-size: 0.85rem; }
+
+.verdict-chip {
+  font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.65rem;
+  border-radius: 50px; white-space: nowrap;
+  &.v-low  { background: rgba(67,233,123,0.15);  color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
+  &.v-fair { background: rgba(251,191,36,0.15);   color: #FBBF24; border: 1px solid rgba(251,191,36,0.3); }
+  &.v-high { background: rgba(248,113,113,0.15);  color: #F87171; border: 1px solid rgba(248,113,113,0.3); }
+}
+
+.actions-cell { display: flex; gap: 0.5rem; align-items: center; }
+
+.btn-edit {
+  background: rgba(30,64,175,0.1); border: 1px solid rgba(30,64,175,0.25);
+  color: #1e40af; border-radius: 8px; padding: 0.4rem 0.8rem;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: all 0.15s;
+  &:hover { background: rgba(30,64,175,0.2); }
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #1e40af, #7C3AED); color: #fff;
+  border: none; border-radius: 8px; padding: 0.4rem 0.8rem;
+  font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-cancel {
+  background: transparent; border: 1px solid var(--border-soft); color: var(--muted);
+  border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.8rem; cursor: pointer;
+  &:hover { border-color: var(--border-strong); color: var(--text); }
+}
+
+[data-theme="dark"] .btn-edit { color: #93C5FD; border-color: rgba(147,197,253,0.3); background: rgba(147,197,253,0.1); }
