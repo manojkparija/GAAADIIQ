@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS public.subscription_plans (
   highlight     boolean DEFAULT false,
   sort_order    int DEFAULT 0,
   active        boolean DEFAULT true,
-  created_at    timestamptz DEFAULT now()
+  created_at    timestamptz DEFAULT now(),
+  updated_at    timestamptz
 );
 
 -- Seed with current plan data
@@ -52,8 +53,6 @@ ON CONFLICT (id) DO UPDATE SET
   features      = EXCLUDED.features,
   description   = EXCLUDED.description,
   updated_at    = now();
-
-ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS updated_at timestamptz;
 
 
 -- 2. User Subscriptions
