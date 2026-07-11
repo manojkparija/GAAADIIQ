@@ -6,7 +6,7 @@
 }
 
 .orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
-.orb-1 { width: 400px; height: 400px; background: rgba(108,99,255,0.15); top: -100px; right: -100px; }
+.orb-1 { width: 400px; height: 400px; background: rgba(30,64,175,0.15); top: -100px; right: -100px; }
 .orb-2 { width: 300px; height: 300px; background: rgba(255,101,132,0.1); bottom: -50px; left: -50px; }
 
 .list-container, .success-card {
@@ -47,15 +47,15 @@
   color: var(--muted, #6b7280);
   transition: all 0.3s;
 
-  &.active { border-color: #6C63FF; color: #6C63FF; background: rgba(108,99,255,0.15); }
-  &.done { background: #6C63FF; border-color: #6C63FF; color: var(--input-color); }
+  &.active { border-color: #1e40af; color: #1e40af; background: rgba(30,64,175,0.15); }
+  &.done { background: #1e40af; border-color: #1e40af; color: var(--input-color); }
 }
 
 .step-line {
   width: 80px;
   height: 2px;
   background: var(--fill-medium);
-  &.filled { background: #6C63FF; }
+  &.filled { background: #1e40af; }
 }
 
 .step-labels {
@@ -103,7 +103,7 @@
     transition: border-color 0.2s;
     font-family: inherit;
 
-    &:focus { border-color: #6C63FF; }
+    &:focus { border-color: #1e40af; }
     option { background: var(--dropdown-bg); }
   }
 
@@ -111,8 +111,8 @@
 }
 
 .ai-hint {
-  background: rgba(108,99,255,0.1);
-  border: 1px solid rgba(108,99,255,0.2);
+  background: rgba(30,64,175,0.1);
+  border: 1px solid rgba(30,64,175,0.2);
   border-radius: 10px;
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
@@ -159,8 +159,8 @@
 }
 
 .detail-chip {
-  background: rgba(108,99,255,0.15);
-  border: 1px solid rgba(108,99,255,0.3);
+  background: rgba(30,64,175,0.15);
+  border: 1px solid rgba(30,64,175,0.3);
   border-radius: 50px;
   padding: 0.4rem 1rem;
   font-size: 0.875rem;

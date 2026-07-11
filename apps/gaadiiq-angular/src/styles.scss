@@ -19,10 +19,10 @@
   --text:           #0F172A;
   --muted:          #64748B;
 
-  --gradient:       linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+  --gradient:       linear-gradient(135deg, #1e40af 0%, #7C3AED 100%);
   --gradient-gold:  linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
-  --glow:           0 4px 24px rgba(37,99,235,0.16);
-  --card-shadow:    0 1px 4px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.05);
+  --glow:           0 4px 32px rgba(30,64,175,0.18);
+  --card-shadow:    0 2px 8px rgba(15,23,42,0.06), 0 12px 32px rgba(15,23,42,0.07);
 
   --divider:        rgba(15,23,42,0.07);
   --border-soft:    rgba(15,23,42,0.09);
@@ -176,16 +176,16 @@ a { text-decoration: none; color: inherit; }
 // ── Glass card ────────────────────────────────────────────────────────────────
 .glass-card {
   background: var(--glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   box-shadow: var(--card-shadow);
-  transition: all 0.25s ease;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
   &:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
     box-shadow: var(--glow), var(--card-shadow);
-    border-color: rgba(37,99,235,0.22);
+    border-color: rgba(30,64,175,0.25);
   }
 }
 
@@ -247,6 +247,14 @@ a { text-decoration: none; color: inherit; }
 // ── Text utilities ────────────────────────────────────────────────────────────
 .gradient-text {
   background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// For use inside dark hero sections (#1e40af→#7C3AED background)
+.gradient-text-hero {
+  background: linear-gradient(135deg, #ffffff 0%, #C4B5FD 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
