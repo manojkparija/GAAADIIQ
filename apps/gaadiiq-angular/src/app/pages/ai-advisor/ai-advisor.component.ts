@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
+import { AnalyticsService } from '../../services/analytics.service';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -245,7 +246,7 @@ export class AiAdvisorComponent {
   });
   canProceed   = computed(() => this.currentSels().length > 0);
 
-  constructor(private carsData: CarsDataService, private seo: SeoService) {
+  constructor(private carsData: CarsDataService, private seo: SeoService, private analytics: AnalyticsService) {
     seo.setPage('AI Car Advisor',
       'Answer 10 smart questions and get personalized, AI-powered car recommendations with full cost analysis.');
   }
@@ -274,6 +275,13 @@ export class AiAdvisorComponent {
   }
 
   private runAnalysis() {
+    const p = this.profile();
+    this.analytics.track('ai_query', {
+      budget:    (p['budget'] as string[] | undefined)?.[0],
+      fuel:      (p['fuel']   as string[] | undefined)?.[0],
+      body_type: (p['body']   as string[] | undefined)?.[0],
+      query:     JSON.stringify(p),
+    });
     this.phase.set('analyzing');
     this.analyzeMsg.set(ANALYZE_MSGS[0]);
     this.analyzePct.set(0);

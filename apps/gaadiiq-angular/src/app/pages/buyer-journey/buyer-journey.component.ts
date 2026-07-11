@@ -5,6 +5,7 @@ import { RouterLink, Router } from '@angular/router';
 import { BuyerJourneyService, JOURNEY_STEPS, BuyerProfile } from '../../services/buyer-journey.service';
 import { LanguageService } from '../../services/language.service';
 import { SeoService } from '../../services/seo.service';
+import { AnalyticsService } from '../../services/analytics.service';
 
 interface Milestone { id: string; icon: string; title: string; desc: string; link?: string; linkLabel?: string; }
 
@@ -32,7 +33,7 @@ export class BuyerJourneyComponent {
 
   completedMilestones = signal<string[]>(['research', 'finance']);
 
-  constructor(public journey: BuyerJourneyService, public lang: LanguageService, seo: SeoService, private router: Router) {
+  constructor(public journey: BuyerJourneyService, public lang: LanguageService, seo: SeoService, private router: Router, private analytics: AnalyticsService) {
     seo.setPage('My Buyer Journey', 'Personalized car buying journey tailored to your needs.');
     if (journey.isComplete()) this.done.set(true);
   }
@@ -69,7 +70,7 @@ export class BuyerJourneyComponent {
   finish() {
     const a = this.answers();
     const join = (key: string) => (a[key] ?? []).join(', ');
-    this.journey.saveProfile({
+    const profile: BuyerProfile = {
       budget: join('budget'),
       useCase: join('useCase'),
       fuelPreference: join('fuelPreference'),
@@ -77,7 +78,13 @@ export class BuyerJourneyComponent {
       bodyType: join('bodyType'),
       city: '',
       priority: join('priority'),
-    } as BuyerProfile);
+    };
+    this.journey.saveProfile(profile);
+    this.analytics.track('journey_complete', {
+      budget:    profile.budget,
+      fuel:      profile.fuelPreference,
+      body_type: profile.bodyType,
+    });
     this.done.set(true);
   }
 
@@ -105,6 +112,7 @@ export class BuyerJourneyComponent {
   }
 
   restart() {
+    this.analytics.track('journey_retake');
     this.journey.clearProfile();
     this.answers.set({});
     this.currentStep.set(0);

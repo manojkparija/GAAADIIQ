@@ -1,4 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { SupabaseService } from './supabase.service';
+import { AuthService } from './auth.service';
 
 export interface BuyerProfile {
   budget: string;
@@ -52,10 +54,31 @@ export class BuyerJourneyService {
 
   readonly isComplete = computed(() => !!this.profile());
 
+  constructor(private sb: SupabaseService, private auth: AuthService) {}
+
   saveProfile(profile: BuyerProfile) {
     const p = { ...profile, completedAt: new Date().toISOString() };
     this.profile.set(p);
     localStorage.setItem('gaadiiq_journey', JSON.stringify(p));
+    this.persistToDb(p);
+  }
+
+  private persistToDb(p: BuyerProfile): void {
+    const sid = sessionStorage.getItem('gaadiiq_sid') ?? undefined;
+    this.sb.client.from('buyer_journeys').insert({
+      user_email:      this.auth.currentUser()?.email ?? null,
+      session_id:      sid,
+      budget:          p.budget,
+      use_case:        p.useCase,
+      fuel_preference: p.fuelPreference,
+      transmission:    p.transmission,
+      body_type:       p.bodyType,
+      city:            p.city,
+      priority:        p.priority,
+      completed_at:    p.completedAt,
+    }).then(({ error }) => {
+      if (error) console.warn('[journey] persist failed:', error.message);
+    });
   }
 
   clearProfile() {
