@@ -1,7 +1,17 @@
+import logging
+import warnings
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
+
+if settings.secret_key == "change-me-in-production":
+    warnings.warn(
+        "SECRET_KEY is set to the insecure default. Set the SECRET_KEY environment variable before deploying.",
+        stacklevel=1,
+    )
+    logging.getLogger("gaadiiq").warning("BUG-007: SECRET_KEY is using the insecure default value.")
 from routers import admin, auth, bookings, cars, dealers, health, listings, loans, notifications, payments, price_alerts, reviews, search
 
 app = FastAPI(

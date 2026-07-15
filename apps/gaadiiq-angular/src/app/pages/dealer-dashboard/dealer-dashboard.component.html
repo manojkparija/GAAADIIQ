@@ -36,6 +36,10 @@
       🗝️ Test Drives
       <span *ngIf="pendingTestDrives().length > 0" class="td-badge">{{ pendingTestDrives().length }}</span>
     </button>
+    <button class="dd-tab" [class.active]="activeTab()==='enquiries'" (click)="activeTab.set('enquiries')">
+      📩 Enquiries
+      <span *ngIf="enquiries().length > 0" class="td-badge">{{ enquiries().length }}</span>
+    </button>
   </div>
 
   <div class="dd-content container">
@@ -246,6 +250,28 @@
           <span class="td-loc">{{ r.location || '—' }}</span>
           <span class="td-status" [class.pending]="r.status === 'Pending'" [class.confirmed]="r.status === 'Confirmed'">{{ r.status }}</span>
           <span class="td-time">{{ timeAgo(r.created_at!) }}</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ENQUIRIES TAB -->
+    <ng-container *ngIf="activeTab()==='enquiries'">
+      <h2 class="section-head">📩 Buyer <span class="gradient-text">Enquiries</span></h2>
+      <div *ngIf="enquiriesLoading()" style="padding:2rem;text-align:center;color:var(--muted)">Loading enquiries…</div>
+      <div *ngIf="!enquiriesLoading() && enquiries().length === 0" class="glass-card" style="padding:2rem;text-align:center;color:var(--muted)">
+        No enquiries yet. They'll appear here once buyers contact you through a listing.
+      </div>
+      <div *ngIf="enquiries().length > 0" class="leads-table glass-card">
+        <div class="lt-row lt-header">
+          <span>Buyer</span><span>Phone</span><span>Email</span><span>Car ID</span><span>Notes</span><span>Received</span>
+        </div>
+        <div class="lt-row" *ngFor="let e of enquiries()">
+          <span class="lt-name">{{ e.buyer_name }}</span>
+          <span><a [href]="'tel:' + e.buyer_phone" style="color:var(--primary)">{{ e.buyer_phone }}</a></span>
+          <span style="font-size:.8rem;color:var(--muted)">{{ e.buyer_email || '—' }}</span>
+          <span style="font-size:.8rem">#{{ e.car_id }}</span>
+          <span style="font-size:.78rem;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="e.notes">{{ e.notes || '—' }}</span>
+          <span class="lt-time">{{ timeAgo(e.created_at) }}</span>
         </div>
       </div>
     </ng-container>

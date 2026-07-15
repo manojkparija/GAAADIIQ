@@ -6,6 +6,12 @@ import { CarsDataService } from '../../services/cars-data.service';
 import { TestDriveService, TestDriveRequest } from '../../services/test-drive.service';
 import { AuthService } from '../../services/auth.service';
 import { SellersService, Seller } from '../../services/sellers.service';
+import { SupabaseService } from '../../services/supabase.service';
+
+interface CarEnquiry {
+  id: string; car_id: number; buyer_name: string; buyer_phone: string;
+  buyer_email: string | null; notes: string | null; created_at: string;
+}
 
 interface DealerMetric { label: string; value: string; change: string; up: boolean; icon: string; }
 interface LeadRow {
@@ -56,7 +62,10 @@ export class DealerDashboardComponent {
     { model: 'Maruti Alto K10', views: 176, enquiries: 9 },
   ];
 
-  activeTab = signal<'overview' | 'leads' | 'inventory' | 'analytics' | 'test-drives'>('overview');
+  activeTab = signal<'overview' | 'leads' | 'inventory' | 'analytics' | 'test-drives' | 'enquiries'>('overview');
+
+  enquiries = signal<CarEnquiry[]>([]);
+  enquiriesLoading = signal(false);
 
   testDriveRequests = this.testDriveSvc.requests;
   testDriveCount = computed(() => this.testDriveRequests().length);
@@ -76,7 +85,8 @@ export class DealerDashboardComponent {
   });
 
   constructor(seo: SeoService, private testDriveSvc: TestDriveService,
-              private auth: AuthService, private sellersSvc: SellersService) {
+              private auth: AuthService, private sellersSvc: SellersService,
+              private sb: SupabaseService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
     this.loadSellerInfo();
   }
@@ -96,6 +106,35 @@ export class DealerDashboardComponent {
     // Load test drives filtered to this seller
     const sellerId = seller?.id ?? user.sellerId;
     this.testDriveSvc.loadForSeller(sellerId ?? null, this.auth.isAdmin());
+
+    // Load buyer enquiries for this seller's car listings
+    this.loadEnquiries(sellerId ?? null);
+  }
+
+  private async loadEnquiries(sellerId: number | null) {
+    this.enquiriesLoading.set(true);
+    try {
+      let query = this.sb.client
+        .from('car_enquiries')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // If not admin, scope to this seller's listings
+      if (sellerId && !this.auth.isAdmin()) {
+        const { data: listings } = await this.sb.client
+          .from('car_listings')
+          .select('id')
+          .eq('seller_id', sellerId);
+        const ids = (listings ?? []).map((l: any) => l.id);
+        if (ids.length === 0) { this.enquiries.set([]); this.enquiriesLoading.set(false); return; }
+        query = query.in('car_id', ids);
+      }
+
+      const { data } = await query;
+      this.enquiries.set((data ?? []) as CarEnquiry[]);
+    } finally {
+      this.enquiriesLoading.set(false);
+    }
   }
 
   timeAgo(dateStr: string): string {

@@ -9,13 +9,22 @@ from core.security import decode_access_token
 from db.session import get_db
 from models.user import User
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
+
+_unauthorized = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Not authenticated",
+    headers={"WWW-Authenticate": "Bearer"},
+)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    if credentials is None:
+        raise _unauthorized
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired token",

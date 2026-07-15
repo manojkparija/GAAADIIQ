@@ -105,10 +105,35 @@ export class AuthService {
 
     const role: UserRole = accountType === 'customer' ? 'user' : 'seller';
 
-    // Upsert profile row (in case seeded admin/seller accounts sign up via the form)
+    // Upsert profile row
     await this.sb.client
       .from('user_profiles')
       .upsert({ email, name, role }, { onConflict: 'email', ignoreDuplicates: false });
+
+    // For sellers: ensure a sellers row exists so they can receive enquiries and manage inventory
+    if (role === 'seller') {
+      const { data: existingSeller } = await this.sb.client
+        .from('sellers')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (!existingSeller) {
+        const { data: newSeller } = await this.sb.client
+          .from('sellers')
+          .insert({ email, name, business_name: name, city: 'India', is_verified: false })
+          .select('id')
+          .single();
+
+        // Backfill seller_id into user_profiles
+        if (newSeller?.id) {
+          await this.sb.client
+            .from('user_profiles')
+            .update({ seller_id: newSeller.id })
+            .eq('email', email);
+        }
+      }
+    }
 
     // If Supabase returns a session immediately (email confirm disabled), hydrate now
     if (data.session?.user) {
