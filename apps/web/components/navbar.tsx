@@ -34,6 +34,18 @@ export default function Navbar() {
           <Link href="/listings?fuel_type=electric" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             Electric
           </Link>
+          <Link href="/cars" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            Brands
+          </Link>
+          <Link href="/compare" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            Compare
+          </Link>
+          <Link href="/tco" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            TCO
+          </Link>
+          <Link href="/recommend" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            AI Advisor
+          </Link>
         </nav>
 
         {/* Search bar — desktop */}
