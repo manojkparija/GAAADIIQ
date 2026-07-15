@@ -183,8 +183,8 @@ export default function TCOPage() {
                     onClick={() => setFuelType(ft)}
                     className={`px-3 py-1.5 rounded-lg text-sm border transition-all
                       ${inputs.fuelType === ft
-                        ? "border-primary bg-primary/10 text-primary font-medium"
-                        : "border-border hover:border-primary/40"}`}
+                        ? "border-accent bg-accent/10 text-accent font-medium"
+                        : "border-border hover:border-accent/40"}`}
                   >
                     {FUEL_DEFAULTS[ft].label.split(" ")[0]}
                   </button>

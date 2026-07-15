@@ -90,8 +90,8 @@ function OptionButton({ label, Icon, selected, onClick }: OptionButtonProps) {
       onClick={onClick}
       className={`flex items-center gap-3 px-5 py-4 rounded-xl border-2 text-left transition-all w-full
         ${selected
-          ? "border-primary bg-primary/5 text-primary font-medium"
-          : "border-border hover:border-primary/50 hover:bg-muted/40"
+          ? "border-accent bg-accent/5 text-accent font-medium"
+          : "border-border hover:border-accent/50 hover:bg-muted/40"
         }`}
     >
       {Icon && <Icon className="h-5 w-5 shrink-0" />}
@@ -143,7 +143,7 @@ export default function RecommendPage() {
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary rounded-full transition-all duration-500"
+                className="h-full bg-accent rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
