@@ -55,12 +55,14 @@ export default function NotificationBell() {
     } catch { /* silent */ }
   }, [token, apiUrl]);
 
-  // Poll unread count every 30s
+  // Poll unread count every 30s — async setState inside effect is intentional (data fetching)
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     void fetchUnread();
     const id = setInterval(() => { void fetchUnread(); }, 30_000);
     return () => clearInterval(id);
   }, [fetchUnread]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Close on outside click
   useEffect(() => {

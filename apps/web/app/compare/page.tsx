@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Car, Fuel, Settings, Calendar, MapPin, Users } from "lucide-react";
+import { X, Plus, Car } from "lucide-react";
 import type { Listing } from "@/types/listing";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";

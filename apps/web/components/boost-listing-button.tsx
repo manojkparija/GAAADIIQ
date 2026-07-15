@@ -41,7 +41,7 @@ export default function BoostListingButton({ listingId, isFeatured, onBoostSucce
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${(session as any)?.access_token}`,
+          Authorization: `Bearer ${(session as { access_token?: string })?.access_token}`,
         },
         body: JSON.stringify({ listing_id: listingId, duration_days: selected }),
       });
@@ -54,8 +54,8 @@ export default function BoostListingButton({ listingId, isFeatured, onBoostSucce
         setSuccess(true);
         onBoostSuccess?.();
       }
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to boost listing");
     } finally {
       setLoading(false);
     }
