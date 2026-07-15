@@ -77,14 +77,14 @@ async function fetchRecommendations(answers: Answers): Promise<Listing[]> {
   }
 }
 
-interface OptionButtonProps<T> {
+interface OptionButtonProps {
   label: string;
   Icon?: React.ComponentType<{ className?: string }>;
   selected: boolean;
   onClick: () => void;
 }
 
-function OptionButton<T>({ label, Icon, selected, onClick }: OptionButtonProps<T>) {
+function OptionButton({ label, Icon, selected, onClick }: OptionButtonProps) {
   return (
     <button
       onClick={onClick}

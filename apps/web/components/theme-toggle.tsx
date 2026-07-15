@@ -6,11 +6,13 @@ import { Moon, Sun } from "lucide-react";
 export default function ThemeToggle() {
   const [dark, setDark] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const stored = localStorage.getItem("gaadiiq-theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     setDark(stored === "dark" || (!stored && prefersDark));
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const toggle = () => {
     const next = !dark;
