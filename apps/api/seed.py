@@ -9,7 +9,7 @@ Creates a demo dealer account + 15 car listings with real images.
 Safe to run multiple times (checks for existing demo user first).
 """
 import asyncio
-import sys
+import sys  # isort: skip_file
 
 from sqlalchemy import select
 
@@ -17,7 +17,6 @@ from sqlalchemy import select
 sys.path.insert(0, ".")
 
 from core.database import AsyncSessionLocal
-
 from core.security import hash_password
 from models.car import Car
 from models.listing import Listing
