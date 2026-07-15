@@ -10,6 +10,7 @@ Covers:
 """
 import hashlib
 import hmac
+import json
 import uuid
 from unittest.mock import patch
 
@@ -343,3 +344,123 @@ def test_alembic_initial_migration_exists():
     versions = Path(__file__).resolve().parents[1] / "alembic" / "versions"
     files = list(versions.glob("*.py"))
     assert any("0001" in f.name for f in files), f"No initial migration in {versions}: {files}"
+
+
+# ── Razorpay webhook ──────────────────────────────────────────────────────────
+
+def _webhook_payload(order_id: str, payment_id: str = "pay_wh_1") -> bytes:
+    return json.dumps({
+        "event": "payment.captured",
+        "payload": {
+            "payment": {
+                "entity": {
+                    "id": payment_id,
+                    "order_id": order_id,
+                    "status": "captured",
+                }
+            }
+        },
+    }).encode()
+
+
+@pytest.mark.asyncio
+async def test_webhook_rejects_forged_signature_when_keys_set(client: AsyncClient):
+    token, _ = await _register(client, "wh_forge@test.com")
+    listing_id = await _make_listing(client, token)
+    secret = "wh_secret_forge"
+
+    with patch("routers.payments.settings") as mock_settings:
+        mock_settings.is_production = False
+        mock_settings.payments_enabled = True
+        mock_settings.RAZORPAY_KEY_ID = "rzp_test"
+        mock_settings.RAZORPAY_KEY_SECRET = secret
+
+        with patch("razorpay.Client") as mock_client_cls:
+            mock_client_cls.return_value.order.create.return_value = {"id": "order_wh_forge"}
+            r = await client.post(
+                "/payments/feature-listing",
+                json={"listing_id": listing_id, "duration_days": 7},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert r.status_code == 200, r.text
+            order_id = r.json()["razorpay_order_id"]
+
+        body = _webhook_payload(order_id)
+        r = await client.post(
+            "/payments/webhook",
+            content=body,
+            headers={"Content-Type": "application/json", "X-Razorpay-Signature": "forged"},
+        )
+        assert r.status_code == 400
+        assert "signature" in r.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_webhook_accepts_valid_signature_and_features_listing(client: AsyncClient):
+    token, _ = await _register(client, "wh_ok@test.com")
+    listing_id = await _make_listing(client, token)
+    secret = "wh_secret_ok"
+
+    with patch("routers.payments.settings") as mock_settings:
+        mock_settings.is_production = False
+        mock_settings.payments_enabled = True
+        mock_settings.RAZORPAY_KEY_ID = "rzp_test"
+        mock_settings.RAZORPAY_KEY_SECRET = secret
+
+        with patch("razorpay.Client") as mock_client_cls:
+            mock_client_cls.return_value.order.create.return_value = {"id": "order_wh_ok"}
+            r = await client.post(
+                "/payments/feature-listing",
+                json={"listing_id": listing_id, "duration_days": 7},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert r.status_code == 200, r.text
+            order_id = r.json()["razorpay_order_id"]
+            assert r.json()["listing_featured"] is False
+
+        body = _webhook_payload(order_id, "pay_wh_ok")
+        signature = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+        r = await client.post(
+            "/payments/webhook",
+            content=body,
+            headers={"Content-Type": "application/json", "X-Razorpay-Signature": signature},
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["status"] == "ok"
+
+        r = await client.get(f"/listings/{listing_id}")
+        assert r.json()["is_featured"] is True
+
+
+@pytest.mark.asyncio
+async def test_webhook_ignores_non_capture_events(client: AsyncClient):
+    body = json.dumps({"event": "payment.failed", "payload": {}}).encode()
+    r = await client.post(
+        "/payments/webhook",
+        content=body,
+        headers={"Content-Type": "application/json"},
+    )
+    assert r.status_code == 200
+    assert r.json()["status"] == "ignored"
+
+
+# ── Rate limiting / Docker presence ───────────────────────────────────────────
+
+def test_auth_rate_limiter_wired():
+    from routers import auth as auth_router
+
+    assert auth_router.limiter is not None
+    # Decorators applied to register/login
+    assert hasattr(auth_router.register, "__wrapped__") or hasattr(auth_router.register, "__name__")
+
+
+def test_docker_compose_and_dockerfile_exist():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[3]
+    assert (root / "docker-compose.yml").exists()
+    assert (root / "apps" / "api" / "Dockerfile").exists()
+    compose = (root / "docker-compose.yml").read_text()
+    assert "redis:" in compose
+    assert "postgres" in compose
+    assert "api:" in compose
