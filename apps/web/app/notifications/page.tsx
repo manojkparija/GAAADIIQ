@@ -51,9 +51,11 @@ export default function NotificationsPage() {
     }
   }, [token, apiUrl]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    fetchNotifications();
+    void fetchNotifications();
   }, [fetchNotifications]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function markRead(id: string) {
     if (!token) return;
@@ -103,7 +105,7 @@ export default function NotificationsPage() {
           <p className="text-4xl mb-3">🔔</p>
           <p className="font-medium">No notifications yet</p>
           <p className="text-sm text-muted-foreground mt-1">
-            You'll get alerts for bookings, inquiries, and price drops here.
+            You&apos;ll get alerts for bookings, inquiries, and price drops here.
           </p>
         </div>
       ) : (

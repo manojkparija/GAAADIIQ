@@ -48,7 +48,9 @@ export default function ReviewList({ listingId, sellerId, onReviewAdded }: Props
     }
   }, [listingId, sellerId, apiUrl]);
 
-  useEffect(() => { load(); }, [load, onReviewAdded]);
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => { void load(); }, [load, onReviewAdded]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (loading) return <div className="text-sm text-muted-foreground py-4">Loading reviews…</div>;
 

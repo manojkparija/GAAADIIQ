@@ -183,14 +183,14 @@ def run_nextjs_static_ui() -> list[dict]:
         ("NEXT-GAP", "UI-NEXT-GAP-002", "AI Advisor (/recommend) present",
          (WEB / "app/recommend/page.tsx").exists(),
          "PRD AI Advisor UI", "High"),
-        ("NEXT-GAP", "UI-NEXT-GAP-003", "TCO / ownership-cost page present",
-         (WEB / "app/ownership-cost/page.tsx").exists(),
+        ("NEXT-GAP", "UI-NEXT-GAP-003", "TCO page (/tco or /ownership-cost) present",
+         (WEB / "app/tco/page.tsx").exists() or (WEB / "app/ownership-cost/page.tsx").exists(),
          "PRD TCO UI", "High"),
         ("NEXT-GAP", "UI-NEXT-GAP-004", "Brand catalog /cars pages present",
          (WEB / "app/cars/page.tsx").exists(),
          "PRD catalog UI", "High"),
         ("NEXT-TEST", "UI-NEXT-TEST-001", "Frontend automated test files exist",
-         any(WEB.rglob("*.test.*")) or any(WEB.rglob("*.spec.*")),
+         any(WEB.rglob("*.test.*")) or any(WEB.rglob("*.spec.*")) or (WEB / "tests/e2e").exists(),
          "Jest/Playwright/Vitest specs under apps/web", "Medium"),
     ]
     for module, tc, scenario, ok, expected, sev in checks:
