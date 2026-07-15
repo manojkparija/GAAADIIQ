@@ -28,5 +28,6 @@ export const routes: Routes = [
   { path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent), canActivate: [authGuard] },
   { path: 'about', loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent) },
   { path: 'brand-logos', loadComponent: () => import('./pages/brand-logos/brand-logos.component').then(m => m.BrandLogosComponent) },
+  { path: 'reset-password', loadComponent: () => import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent) },
   { path: '**', redirectTo: '' },
 ];
