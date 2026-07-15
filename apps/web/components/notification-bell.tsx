@@ -57,8 +57,8 @@ export default function NotificationBell() {
 
   // Poll unread count every 30s
   useEffect(() => {
-    fetchUnread();
-    const id = setInterval(fetchUnread, 30_000);
+    void fetchUnread();
+    const id = setInterval(() => { void fetchUnread(); }, 30_000);
     return () => clearInterval(id);
   }, [fetchUnread]);
 

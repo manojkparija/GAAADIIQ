@@ -48,7 +48,7 @@ export default function ReviewList({ listingId, sellerId, onReviewAdded }: Props
     }
   }, [listingId, sellerId, apiUrl]);
 
-  useEffect(() => { load(); }, [load, onReviewAdded]);
+  useEffect(() => { void load(); }, [load, onReviewAdded]);
 
   if (loading) return <div className="text-sm text-muted-foreground py-4">Loading reviews…</div>;
 

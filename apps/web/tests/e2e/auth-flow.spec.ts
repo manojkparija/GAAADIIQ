@@ -4,10 +4,6 @@
  */
 import { test, expect } from "@playwright/test";
 
-function uniqueEmail() {
-  return `pw_test_${Date.now()}@example.com`;
-}
-
 test("register page renders form", async ({ page }) => {
   await page.goto("/register");
   await expect(page.locator("input[type='email'], input[name='email']")).toBeVisible();
