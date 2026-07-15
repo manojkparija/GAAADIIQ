@@ -18,6 +18,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from core.config import Settings
 from db.base import Base
@@ -29,7 +30,12 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest_asyncio.fixture
 async def db_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(
+        TEST_DB_URL,
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -344,6 +350,143 @@ def test_alembic_initial_migration_exists():
     versions = Path(__file__).resolve().parents[1] / "alembic" / "versions"
     files = list(versions.glob("*.py"))
     assert any("0001" in f.name for f in files), f"No initial migration in {versions}: {files}"
+    assert any("0002" in f.name for f in files), f"Missing refresh_tokens migration: {files}"
+
+
+# ── Auth cookies + refresh/logout ─────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_register_sets_httponly_auth_cookies(client: AsyncClient):
+    r = await client.post(
+        "/auth/register",
+        json={"email": "cookie_user@test.com", "password": "pass1234", "full_name": "Cookie"},
+    )
+    assert r.status_code in (200, 201), r.text
+    # httpx stores Set-Cookie on the client jar
+    cookie_names = {c.name for c in client.cookies.jar}
+    assert "access_token" in cookie_names
+    assert "refresh_token" in cookie_names
+    # Response should still include Bearer token for API clients
+    assert "access_token" in r.json()
+
+
+@pytest.mark.asyncio
+async def test_me_works_with_cookie_only(client: AsyncClient):
+    r = await client.post(
+        "/auth/register",
+        json={"email": "cookie_me@test.com", "password": "pass1234"},
+    )
+    assert r.status_code in (200, 201)
+    # Drop Authorization header usage — rely on cookies from jar
+    r = await client.get("/auth/me")
+    assert r.status_code == 200
+    assert r.json()["email"] == "cookie_me@test.com"
+
+
+@pytest.mark.asyncio
+async def test_refresh_rotates_tokens(client: AsyncClient):
+    r = await client.post(
+        "/auth/register",
+        json={"email": "refresh_user@test.com", "password": "pass1234"},
+    )
+    assert r.status_code in (200, 201)
+    old_refresh = client.cookies.get("refresh_token")
+    assert old_refresh
+
+    r = await client.post("/auth/refresh")
+    assert r.status_code == 200, r.text
+    assert "access_token" in r.json()
+    new_refresh = client.cookies.get("refresh_token")
+    assert new_refresh
+    assert new_refresh != old_refresh
+
+
+@pytest.mark.asyncio
+async def test_logout_clears_session(client: AsyncClient):
+    r = await client.post(
+        "/auth/register",
+        json={"email": "logout_user@test.com", "password": "pass1234"},
+    )
+    assert r.status_code in (200, 201)
+    r = await client.post("/auth/logout")
+    assert r.status_code == 204
+    client.cookies.clear()
+    r = await client.get("/auth/me")
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_metrics_endpoint_exposes_prometheus(client: AsyncClient):
+    await client.get("/health")
+    r = await client.get("/metrics")
+    assert r.status_code == 200
+    body = r.text
+    assert "http_requests_total" in body
+    assert "http_request_duration_seconds" in body
+
+
+def test_limiter_uses_redis_uri_in_production_config():
+    from pathlib import Path
+
+    source = (Path(__file__).resolve().parents[1] / "core" / "limiter.py").read_text()
+    assert "redis_url" in source
+    assert "is_production" in source
+
+
+def test_wider_rate_limits_decorated_on_hot_paths():
+    from pathlib import Path
+
+    listings = (Path(__file__).resolve().parents[1] / "routers" / "listings.py").read_text()
+    search = (Path(__file__).resolve().parents[1] / "routers" / "search.py").read_text()
+    payments = (Path(__file__).resolve().parents[1] / "routers" / "payments.py").read_text()
+    assert "@limiter.limit" in listings
+    assert "@limiter.limit" in search
+    assert "@limiter.limit" in payments
+    assert "refund" in payments
+
+
+# ── Refunds ───────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_refund_featured_listing_in_dev(client: AsyncClient):
+    token, _ = await _register(client, "refund_seller@test.com")
+    listing_id = await _make_listing(client, token)
+    r = await client.post(
+        "/payments/feature-listing",
+        json={"listing_id": listing_id, "duration_days": 7},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200, r.text
+    payment_id = r.json()["payment_id"]
+    assert r.json()["listing_featured"] is True
+
+    r = await client.post(
+        f"/payments/{payment_id}/refund",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] == "refunded"
+
+    r = await client.get(f"/listings/{listing_id}")
+    assert r.json()["is_featured"] is False
+
+
+@pytest.mark.asyncio
+async def test_refund_requires_owner(client: AsyncClient):
+    owner, _ = await _register(client, "refund_owner@test.com")
+    other, _ = await _register(client, "refund_other@test.com")
+    listing_id = await _make_listing(client, owner)
+    r = await client.post(
+        "/payments/feature-listing",
+        json={"listing_id": listing_id, "duration_days": 7},
+        headers={"Authorization": f"Bearer {owner}"},
+    )
+    payment_id = r.json()["payment_id"]
+    r = await client.post(
+        f"/payments/{payment_id}/refund",
+        headers={"Authorization": f"Bearer {other}"},
+    )
+    assert r.status_code == 404
 
 
 # ── Razorpay webhook ──────────────────────────────────────────────────────────
