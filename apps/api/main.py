@@ -3,6 +3,9 @@ import warnings
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from core.config import settings
 
@@ -15,6 +18,8 @@ if settings.secret_key == "change-me-in-production":
         stacklevel=1,
     )
     logging.getLogger("gaadiiq").warning("SECRET_KEY is using the insecure default value.")
+
+limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 from routers import (  # noqa: E402
     admin,
@@ -42,6 +47,9 @@ app = FastAPI(
     docs_url=_docs_url,
     redoc_url=_redoc_url,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

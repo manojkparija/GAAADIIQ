@@ -10,11 +10,12 @@ Production mode (environment == production):
 """
 import hashlib
 import hmac
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -177,6 +178,78 @@ async def verify_payment(
 
     await db.commit()
     return {"status": "paid"}
+
+
+@router.post("/webhook", status_code=status.HTTP_200_OK)
+async def razorpay_webhook(
+    request: Request,
+    db: DbDep,
+):
+    """Razorpay server-to-server webhook — more reliable than client /verify."""
+    raw_body = await request.body()
+    signature = request.headers.get("X-Razorpay-Signature", "")
+
+    if settings.payments_enabled:
+        expected = hmac.new(
+            settings.RAZORPAY_KEY_SECRET.encode(),
+            raw_body,
+            hashlib.sha256,
+        ).hexdigest()
+        if not hmac.compare_digest(expected, signature):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid webhook signature")
+
+    try:
+        event = json.loads(raw_body)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON")
+
+    if event.get("event") != "payment.captured":
+        return {"status": "ignored"}
+
+    payload_data = event.get("payload", {}).get("payment", {}).get("entity", {})
+    razorpay_order_id = payload_data.get("order_id")
+    razorpay_payment_id = payload_data.get("id")
+
+    if not razorpay_order_id:
+        return {"status": "ignored"}
+
+    result = await db.execute(
+        select(Payment).where(Payment.razorpay_order_id == razorpay_order_id)
+    )
+    payment = result.scalar_one_or_none()
+    if not payment or payment.status == PaymentStatus.paid:
+        return {"status": "already_handled"}
+
+    payment.status = PaymentStatus.paid
+    payment.razorpay_payment_id = razorpay_payment_id
+
+    if payment.listing_id and payment.purpose == PaymentPurpose.featured_listing:
+        listing = await db.get(Listing, payment.listing_id)
+        if listing:
+            listing.is_featured = True
+
+    if payment.purpose in (PaymentPurpose.subscription_pro, PaymentPurpose.subscription_dealer):
+        tier_map = {
+            PaymentPurpose.subscription_pro: SubscriptionTier.pro,
+            PaymentPurpose.subscription_dealer: SubscriptionTier.dealer,
+        }
+        tier = tier_map[payment.purpose]
+        sub_result = await db.execute(
+            select(Subscription).where(Subscription.user_id == payment.user_id)
+        )
+        sub = sub_result.scalar_one_or_none()
+        if sub:
+            sub.tier = tier
+            sub.valid_until = datetime.now(timezone.utc) + timedelta(days=30)
+        else:
+            db.add(Subscription(
+                user_id=payment.user_id,
+                tier=tier,
+                valid_until=datetime.now(timezone.utc) + timedelta(days=30),
+            ))
+
+    await db.commit()
+    return {"status": "ok"}
 
 
 @router.get("/my", response_model=list[PaymentOut])
