@@ -2,7 +2,7 @@
 Valuation service and endpoint tests.
 Mocks both Ollama (LLM path) and the heuristic fallback.
 """
-from datetime import datetime, timezone
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,9 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from db.base import Base
 from db.session import get_db
 from main import app
-from models.car import BodyType, Car, FuelType, Transmission
-from models.listing import Listing, ListingType
-from models.user import User
 from services.valuation import _heuristic_valuation
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
@@ -179,7 +176,9 @@ async def test_valuate_ollama_path(client: AsyncClient):
     token = await _register_token(client, "val3@test.com")
     listing_id = await _make_listing(client, token)
 
-    mock_llm_response = '{"fair_value": 980000, "confidence": "high", "reasoning": "Well maintained SUV"}'
+    mock_llm_response = (
+        '{"fair_value": 980000, "confidence": "high", "reasoning": "Well maintained SUV"}'
+    )
 
     with patch("services.valuation.httpx.AsyncClient") as mock_http:
         mock_http.return_value.__aenter__ = AsyncMock(return_value=MagicMock(

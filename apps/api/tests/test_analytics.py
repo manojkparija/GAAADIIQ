@@ -4,8 +4,8 @@ Tests for view tracking, admin endpoints, and seller analytics.
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from db.base import Base
 from db.session import get_db
@@ -224,7 +224,10 @@ async def test_seller_analytics_with_data(client):
     await client.post("/reviews", json={"listing_id": listing_id, "rating": 4},
                       headers={"Authorization": f"Bearer {buyer_token}"})
 
-    r = await client.get("/dealers/me/analytics", headers={"Authorization": f"Bearer {seller_token}"})
+    r = await client.get(
+        "/dealers/me/analytics",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
     assert r.status_code == 200
     data = r.json()
     assert data["total_listings"] == 1

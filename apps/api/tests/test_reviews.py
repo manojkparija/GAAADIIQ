@@ -156,7 +156,10 @@ async def test_delete_own_review(client):
                             headers={"Authorization": f"Bearer {buyer_token}"})
     rev_id = rev.json()["id"]
 
-    r = await client.delete(f"/reviews/{rev_id}", headers={"Authorization": f"Bearer {buyer_token}"})
+    r = await client.delete(
+        f"/reviews/{rev_id}",
+        headers={"Authorization": f"Bearer {buyer_token}"},
+    )
     assert r.status_code == 204
 
 
@@ -171,7 +174,10 @@ async def test_cannot_delete_others_review(client):
                             headers={"Authorization": f"Bearer {buyer_token}"})
     rev_id = rev.json()["id"]
 
-    r = await client.delete(f"/reviews/{rev_id}", headers={"Authorization": f"Bearer {other_token}"})
+    r = await client.delete(
+        f"/reviews/{rev_id}",
+        headers={"Authorization": f"Bearer {other_token}"},
+    )
     assert r.status_code == 404
 
 

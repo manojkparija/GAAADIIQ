@@ -169,7 +169,11 @@ async def test_create_booking(client: AsyncClient):
 
     resp = await client.post(
         "/bookings",
-        json={"listing_id": listing_id, "preferred_date": "2026-07-15", "notes": "Morning slot preferred"},
+        json={
+            "listing_id": listing_id,
+            "preferred_date": "2026-07-15",
+            "notes": "Morning slot preferred",
+        },
         headers={"Authorization": f"Bearer {buyer_token}"},
     )
     assert resp.status_code == 201
@@ -230,12 +234,18 @@ async def test_received_bookings_seller_only(client: AsyncClient):
     )
 
     # Seller sees the booking
-    resp = await client.get("/bookings/received", headers={"Authorization": f"Bearer {seller_token}"})
+    resp = await client.get(
+        "/bookings/received",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
     assert resp.status_code == 200
     assert len(resp.json()) == 1
 
     # Other user sees nothing
-    resp2 = await client.get("/bookings/received", headers={"Authorization": f"Bearer {other_token}"})
+    resp2 = await client.get(
+        "/bookings/received",
+        headers={"Authorization": f"Bearer {other_token}"},
+    )
     assert resp.status_code == 200
     assert len(resp2.json()) == 0
 
