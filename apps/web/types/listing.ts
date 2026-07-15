@@ -18,14 +18,11 @@ export interface Car {
   created_at: string;
 }
 
+/** Public seller shape — matches API UserPublicOut (no email/phone). */
 export interface Seller {
   id: string;
-  email: string;
   full_name: string | null;
-  phone: string | null;
   role: string;
-  is_verified: boolean;
-  is_active: boolean;
   created_at: string;
 }
 

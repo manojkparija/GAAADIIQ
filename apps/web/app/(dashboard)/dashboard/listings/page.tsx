@@ -14,7 +14,7 @@ interface MyListingsResponse {
 async function getMyListings(token: string): Promise<MyListingsResponse> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   try {
-    const res = await fetch(`${apiUrl}/listings?page_size=50`, {
+    const res = await fetch(`${apiUrl}/listings/me?page_size=50`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
