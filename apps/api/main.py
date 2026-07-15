@@ -1,6 +1,5 @@
 import logging
 import time
-import warnings
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
