@@ -91,8 +91,9 @@ async def list_all_listings(
     offset: int = 0,
     is_active: bool | None = None,
 ):
-    from schemas.listing import ListingListOut
     from sqlalchemy.orm import selectinload
+
+    from schemas.listing import ListingListOut
 
     q = (
         select(Listing)
@@ -104,7 +105,7 @@ async def list_all_listings(
     if is_active is not None:
         q = q.where(Listing.is_active == is_active)  # noqa: E712
     result = await db.execute(q)
-    return [ListingListOut.model_validate(l) for l in result.scalars().all()]
+    return [ListingListOut.model_validate(row) for row in result.scalars().all()]
 
 
 @router.patch("/listings/{listing_id}/deactivate", status_code=status.HTTP_204_NO_CONTENT)

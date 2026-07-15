@@ -1,6 +1,15 @@
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -99,7 +108,7 @@ async def list_listings(
     listings = result.scalars().all()
 
     return ListingListOut(
-        items=[ListingOut.model_validate(l) for l in listings],
+        items=[ListingOut.model_validate(lst) for lst in listings],
         total=total,
         page=page,
         page_size=page_size,
@@ -293,6 +302,6 @@ async def similar_listings(
         .limit(5)
     )
     result = await db.execute(similar_q)
-    return [ListingOut.model_validate(l) for l in result.scalars().all()]
+    return [ListingOut.model_validate(row) for row in result.scalars().all()]
 
 

@@ -12,7 +12,21 @@ if settings.secret_key == "change-me-in-production":
         stacklevel=1,
     )
     logging.getLogger("gaadiiq").warning("BUG-007: SECRET_KEY is using the insecure default value.")
-from routers import admin, auth, bookings, cars, dealers, health, listings, loans, notifications, payments, price_alerts, reviews, search
+from routers import (
+    admin,
+    auth,
+    bookings,
+    cars,
+    dealers,
+    health,
+    listings,
+    loans,
+    notifications,
+    payments,
+    price_alerts,
+    reviews,
+    search,
+)
 
 app = FastAPI(
     title=settings.app_name,

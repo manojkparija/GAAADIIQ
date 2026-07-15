@@ -8,7 +8,7 @@ import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import String, cast, func, or_, select, text
+from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -103,7 +103,7 @@ async def full_text_search(
     items = result.scalars().all()
 
     return ListingListOut(
-        items=[ListingOut.model_validate(l) for l in items],
+        items=[ListingOut.model_validate(lst) for lst in items],
         total=total,
         page=page,
         page_size=page_size,

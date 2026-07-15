@@ -10,7 +10,6 @@ Safe to run multiple times (checks for existing demo user first).
 """
 import asyncio
 import sys
-from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 
@@ -18,10 +17,11 @@ from sqlalchemy import select
 sys.path.insert(0, ".")
 
 from core.database import AsyncSessionLocal
+
 from core.security import hash_password
-from models.user import User
 from models.car import Car
 from models.listing import Listing
+from models.user import User
 
 DEMO_EMAIL = "demo@gaadiiq.com"
 DEMO_PASSWORD = "Demo@1234"

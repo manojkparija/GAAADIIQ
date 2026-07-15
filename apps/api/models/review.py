@@ -1,7 +1,15 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, SmallInteger, String, Text, UniqueConstraint, Boolean
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    ForeignKey,
+    SmallInteger,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -9,8 +17,6 @@ from db.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from .user import User
-    from .listing import Listing
-    from .test_drive_booking import TestDriveBooking
 
 
 class Review(UUIDMixin, TimestampMixin, Base):

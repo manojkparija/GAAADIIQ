@@ -132,7 +132,7 @@ async def seller_analytics(
         .order_by(Listing.created_at.desc())
     )
     listings = listings_result.scalars().all()
-    listing_ids = [l.id for l in listings]
+    listing_ids = [lst.id for lst in listings]
 
     # Aggregate bookings per listing
     booking_counts: dict = {}
@@ -172,19 +172,19 @@ async def seller_analytics(
             rev_avg[row.listing_id] = round(float(row.avg), 2) if row.avg else None
 
     listing_analytics = []
-    for l in listings:
-        car = l.car
-        title = f"{car.year} {car.make} {car.model}" if car else str(l.id)
+    for lst in listings:
+        car = lst.car
+        title = f"{car.year} {car.make} {car.model}" if car else str(lst.id)
         listing_analytics.append(ListingAnalytics(
-            listing_id=str(l.id),
+            listing_id=str(lst.id),
             title=title,
-            price=float(l.price),
-            views=int(l.views_count or 0),
-            bookings=booking_counts.get(l.id, 0),
-            loan_inquiries=inq_counts.get(l.id, 0),
-            reviews=rev_counts.get(l.id, 0),
-            avg_rating=rev_avg.get(l.id),
-            is_active=l.is_active,
+            price=float(lst.price),
+            views=int(lst.views_count or 0),
+            bookings=booking_counts.get(lst.id, 0),
+            loan_inquiries=inq_counts.get(lst.id, 0),
+            reviews=rev_counts.get(lst.id, 0),
+            avg_rating=rev_avg.get(lst.id),
+            is_active=lst.is_active,
         ))
 
     total_views = sum(a.views for a in listing_analytics)
@@ -196,7 +196,7 @@ async def seller_analytics(
 
     return SellerAnalytics(
         total_listings=len(listings),
-        active_listings=sum(1 for l in listings if l.is_active),
+        active_listings=sum(1 for lst in listings if lst.is_active),
         total_views=total_views,
         total_bookings=total_bookings,
         total_loan_inquiries=total_inqs,
