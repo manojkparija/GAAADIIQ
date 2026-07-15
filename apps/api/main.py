@@ -6,13 +6,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 
+# Fail fast in production if secrets are missing/default
+settings.validate_production_config()
+
 if settings.secret_key == "change-me-in-production":
     warnings.warn(
         "SECRET_KEY is set to the insecure default. Set the SECRET_KEY environment variable before deploying.",
         stacklevel=1,
     )
-    logging.getLogger("gaadiiq").warning("BUG-007: SECRET_KEY is using the insecure default value.")
-from routers import (
+    logging.getLogger("gaadiiq").warning("SECRET_KEY is using the insecure default value.")
+
+from routers import (  # noqa: E402
     admin,
     auth,
     bookings,
@@ -28,11 +32,15 @@ from routers import (
     search,
 )
 
+# Hide API docs in production
+_docs_url = None if settings.is_production else "/docs"
+_redoc_url = None if settings.is_production else "/redoc"
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
 )
 
 app.add_middleware(
@@ -61,4 +69,4 @@ app.include_router(payments.subs_router)
 
 @app.get("/")
 async def root():
-    return {"message": "GAADIIQ API", "docs": "/docs"}
+    return {"message": "GAADIIQ API", "version": settings.app_version}

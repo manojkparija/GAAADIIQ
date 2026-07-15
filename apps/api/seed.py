@@ -16,7 +16,7 @@ from sqlalchemy import select
 # Add the apps/api directory to path
 sys.path.insert(0, ".")
 
-from core.database import AsyncSessionLocal
+from db.session import AsyncSessionLocal
 from core.security import hash_password
 from models.car import Car
 from models.listing import Listing

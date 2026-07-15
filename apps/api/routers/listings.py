@@ -115,6 +115,33 @@ async def list_listings(
     )
 
 
+@router.get("/me", response_model=ListingListOut)
+async def my_listings(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return only listings owned by the authenticated seller."""
+    q = (
+        select(Listing)
+        .options(*_LOAD)
+        .where(Listing.seller_id == current_user.id)
+        .order_by(Listing.created_at.desc())
+    )
+    total_result = await db.execute(select(func.count()).select_from(q.options().order_by(None).subquery()))
+    total = total_result.scalar_one()
+
+    result = await db.execute(q.offset((page - 1) * page_size).limit(page_size))
+    listings = result.scalars().all()
+    return ListingListOut(
+        items=[ListingOut.model_validate(lst) for lst in listings],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
 @router.get("/{listing_id}", response_model=ListingOut)
 async def get_listing(listing_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(

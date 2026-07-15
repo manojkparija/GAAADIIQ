@@ -25,7 +25,20 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserPublicOut(BaseModel):
+    """Safe public representation — no PII (email/phone).
+    Used in ListingOut and other publicly accessible responses.
+    """
+    id: uuid.UUID
+    full_name: str | None
+    role: UserRole
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class UserOut(BaseModel):
+    """Full representation returned only to the authenticated user themselves."""
     id: uuid.UUID
     email: str
     full_name: str | None
