@@ -17,6 +17,11 @@ export class LoginComponent {
   loading = signal(false);
   showPass = signal(false);
   error = signal('');
+  resetEmail = signal('');
+  resetSent = signal(false);
+  resetLoading = signal(false);
+  resetError = signal('');
+  showResetForm = signal(false);
   private returnUrl = '/';
 
   constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {
@@ -24,6 +29,30 @@ export class LoginComponent {
   }
 
   toggleShowPass() { this.showPass.set(!this.showPass()); }
+
+  openResetForm(e: Event) {
+    e.preventDefault();
+    this.resetEmail.set(this.email());
+    this.resetError.set('');
+    this.resetSent.set(false);
+    this.showResetForm.set(true);
+  }
+
+  closeResetForm() { this.showResetForm.set(false); }
+
+  async onSendReset() {
+    if (!this.resetEmail()) { this.resetError.set('Please enter your email address.'); return; }
+    this.resetLoading.set(true);
+    this.resetError.set('');
+    try {
+      await this.auth.sendPasswordReset(this.resetEmail());
+      this.resetSent.set(true);
+    } catch (e: any) {
+      this.resetError.set(e.message || 'Failed to send reset email. Please try again.');
+    } finally {
+      this.resetLoading.set(false);
+    }
+  }
 
   async onSubmit() {
     this.error.set('');

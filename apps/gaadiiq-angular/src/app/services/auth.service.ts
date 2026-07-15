@@ -147,6 +147,13 @@ export class AuthService {
     this.router.navigate(['/']);
   }
 
+  async sendPasswordReset(email: string): Promise<void> {
+    const { error } = await this.sb.client.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw new Error(error.message);
+  }
+
   async isEmailTaken(email: string): Promise<boolean> {
     const { data } = await this.sb.client
       .from('user_profiles')

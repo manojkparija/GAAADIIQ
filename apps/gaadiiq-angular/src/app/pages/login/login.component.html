@@ -46,7 +46,7 @@
       </div>
       <div class="form-row">
         <label class="checkbox-label"><input type="checkbox"> Remember me</label>
-        <a href="#" class="forgot">Forgot password?</a>
+        <a href="#" class="forgot" (click)="openResetForm($event)">Forgot password?</a>
       </div>
       <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
       <button type="submit" class="btn-gradient btn-full" [disabled]="loading()">
@@ -55,5 +55,34 @@
     </form>
 
     <p class="register-link">Don't have an account? <a routerLink="/register">Create one free</a></p>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="reset-overlay" *ngIf="showResetForm()" (click)="closeResetForm()">
+  <div class="reset-modal glass-card" (click)="$event.stopPropagation()">
+    <button class="reset-close" (click)="closeResetForm()">✕</button>
+
+    <ng-container *ngIf="!resetSent(); else resetDone">
+      <h2>Reset your password</h2>
+      <p class="reset-sub">Enter your email and we'll send you a reset link.</p>
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" [ngModel]="resetEmail()" (ngModelChange)="resetEmail.set($event)" name="resetEmail" placeholder="you@example.com">
+      </div>
+      <div class="error-msg" *ngIf="resetError()">⚠️ {{ resetError() }}</div>
+      <button class="btn-gradient btn-full" (click)="onSendReset()" [disabled]="resetLoading()">
+        {{ resetLoading() ? 'Sending…' : 'Send Reset Link' }}
+      </button>
+    </ng-container>
+
+    <ng-template #resetDone>
+      <div class="reset-success">
+        <div class="reset-icon">✉️</div>
+        <h2>Check your inbox</h2>
+        <p>A password reset link has been sent to <strong>{{ resetEmail() }}</strong>. Check your spam folder if you don't see it.</p>
+        <button class="btn-gradient btn-full" (click)="closeResetForm()">Back to Sign In</button>
+      </div>
+    </ng-template>
   </div>
 </div>
