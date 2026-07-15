@@ -179,6 +179,7 @@ import { ReviewsService, CarReview } from '../../services/reviews.service';
 import { SeoService } from '../../services/seo.service';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { AuthService } from '../../services/auth.service';
+import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
   selector: 'app-car-detail',
@@ -194,6 +195,9 @@ export class CarDetailComponent implements OnInit {
   seller = signal<Seller | null>(null);
   enquiryModalOpen = signal(false);
   enquirySent = signal(false);
+  enquirySubmitting = signal(false);
+  enquiryError = signal('');
+  enquiryForm = { name: '', phone: '', email: '', notes: '' };
   loan = { amount: 0, rate: 8.5, tenure: 60, emi: 0 }; // kept for template binding
   car!: Car;
   activeImg = signal(0);
@@ -266,11 +270,39 @@ export class CarDetailComponent implements OnInit {
       }
       this.sellerModalOpen.set(true);
     } else {
+      // Pre-fill form from logged-in user if available
+      if (user) {
+        this.enquiryForm.name  = this.enquiryForm.name  || user.name;
+        this.enquiryForm.email = this.enquiryForm.email || user.email;
+      }
       this.enquiryModalOpen.set(true);
     }
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService) {
+  async submitEnquiry() {
+    if (!this.enquiryForm.name || !this.enquiryForm.phone) {
+      this.enquiryError.set('Name and phone number are required.');
+      return;
+    }
+    this.enquiryError.set('');
+    this.enquirySubmitting.set(true);
+    const { error } = await this.sb.client.from('car_enquiries').insert({
+      car_id:      this.car.id,
+      buyer_name:  this.enquiryForm.name,
+      buyer_phone: this.enquiryForm.phone,
+      buyer_email: this.enquiryForm.email || null,
+      notes:       this.enquiryForm.notes || null,
+    });
+    this.enquirySubmitting.set(false);
+    if (error) {
+      this.enquiryError.set('Could not send enquiry. Please try again.');
+    } else {
+      this.enquirySent.set(true);
+      this.enquiryForm = { name: '', phone: '', email: '', notes: '' };
+    }
+  }
+
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       const id = Number(this.route.snapshot.paramMap.get('id'));

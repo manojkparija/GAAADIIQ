@@ -474,14 +474,16 @@
         Our team will connect you with the seller within 2 hours.
       </p>
       <div style="display:flex;flex-direction:column;gap:0.75rem">
-        <input class="enq-input" type="text" placeholder="Your Name *" #enqName>
-        <input class="enq-input" type="tel" placeholder="Phone Number *" #enqPhone>
-        <input class="enq-input" type="email" placeholder="Email (optional)" #enqEmail>
-        <textarea class="enq-input" rows="3" placeholder="Any specific questions…" #enqNote></textarea>
+        <input class="enq-input" type="text" placeholder="Your Name *" [(ngModel)]="enquiryForm.name">
+        <input class="enq-input" type="tel" placeholder="Phone Number *" [(ngModel)]="enquiryForm.phone">
+        <input class="enq-input" type="email" placeholder="Email (optional)" [(ngModel)]="enquiryForm.email">
+        <textarea class="enq-input" rows="3" placeholder="Any specific questions…" [(ngModel)]="enquiryForm.notes"></textarea>
       </div>
+      <div *ngIf="enquiryError()" style="color:#FF6B6B;font-size:0.82rem;margin-top:0.5rem">⚠️ {{ enquiryError() }}</div>
       <button class="btn-gradient" style="width:100%;margin-top:1rem;padding:0.9rem"
-        (click)="enquirySent.set(true)">
-        Submit Enquiry
+        [disabled]="enquirySubmitting()"
+        (click)="submitEnquiry()">
+        {{ enquirySubmitting() ? 'Sending…' : 'Submit Enquiry' }}
       </button>
     </div>
     <div *ngIf="enquirySent()" style="text-align:center;padding:2rem">

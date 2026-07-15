@@ -57,6 +57,6 @@ export class NavbarComponent {
 
   logout() {
     this.userMenuOpen.set(false);
-    this.auth.logout();
+    this.auth.logout().catch(() => {});
   }
 }

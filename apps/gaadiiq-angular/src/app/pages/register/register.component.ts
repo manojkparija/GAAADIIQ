@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 
-export type AccountType = 'customer' | 'seller' | 'admin';
+export type AccountType = 'customer' | 'seller';
 
 @Component({
   selector: 'app-register',
@@ -38,7 +38,6 @@ export class RegisterComponent {
   accountTypes: { value: AccountType; label: string; desc: string }[] = [
     { value: 'customer', label: 'Customer', desc: 'Browse & buy cars' },
     { value: 'seller',   label: 'Seller',   desc: 'List & sell cars' },
-    { value: 'admin',    label: 'Admin',     desc: 'Manage the platform' },
   ];
 
   checkingEmail = signal(false);
@@ -56,7 +55,7 @@ export class RegisterComponent {
       if (taken) { this.error.set('This email is already registered. Please sign in instead.'); return; }
     }
     if (this.step() === 2) {
-      if (this.password().length < 6) { this.error.set('Password must be at least 6 characters.'); return; }
+      if (this.password().length < 8) { this.error.set('Password must be at least 8 characters.'); return; }
       if (this.password() !== this.confirmPassword()) { this.error.set('Passwords do not match.'); return; }
       // Admin/Seller skip preferences → submit directly
       if (!this.isCustomer()) { this.onSubmit(); return; }
@@ -77,7 +76,7 @@ export class RegisterComponent {
     this.loading.set(true);
     try {
       await this.auth.register(this.name(), this.email(), this.password(), this.accountType());
-      this.router.navigate(['/']);
+      this.router.navigate([this.accountType() === 'seller' ? '/dealer-dashboard' : '/']);
     } catch (e: any) {
       this.error.set(e.message || 'Registration failed. Please try again.');
     } finally {

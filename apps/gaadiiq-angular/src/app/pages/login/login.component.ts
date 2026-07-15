@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -17,8 +17,11 @@ export class LoginComponent {
   loading = signal(false);
   showPass = signal(false);
   error = signal('');
+  private returnUrl = '/';
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
+  }
 
   toggleShowPass() { this.showPass.set(!this.showPass()); }
 
@@ -27,7 +30,7 @@ export class LoginComponent {
     this.loading.set(true);
     try {
       await this.auth.login(this.email(), this.password());
-      this.router.navigate(['/']);
+      this.router.navigateByUrl(this.returnUrl);
     } catch (e: any) {
       this.error.set(e.message || 'Sign in failed. Please try again.');
     } finally {

@@ -13,150 +13,116 @@ export interface AuthUser {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly STORAGE_KEY = 'gaadiiq_user';
-  private readonly REGISTERED_EMAILS_KEY = 'gaadiiq_registered_emails';
-
-  currentUser = signal<AuthUser | null>(this.loadUser());
+  currentUser = signal<AuthUser | null>(null);
 
   constructor(private router: Router, private sb: SupabaseService) {
-    // Silently refresh role for any stored session that may have stale 'user' role
-    const stored = this.loadUser();
-    if (stored && stored.role === 'user') {
-      this.refreshStoredRole(stored);
-    }
-  }
-
-  private async refreshStoredRole(stored: AuthUser) {
-    try {
-      const { role, sellerId } = await this.fetchRole(stored.email);
-      if (role !== stored.role || sellerId !== stored.sellerId) {
-        const updated = { ...stored, role, sellerId };
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
-        this.currentUser.set(updated);
-        // Reload so navbar and route guards reflect the new role immediately
-        window.location.reload();
+    // Restore session from Supabase on boot
+    this.sb.client.auth.getSession().then(({ data }) => {
+      if (data.session?.user?.email) {
+        this.hydrateUser(data.session.user.email);
       }
-    } catch { /* ignore — seller table may not exist yet */ }
+    });
+
+    // Keep signal in sync with Supabase auth state changes
+    this.sb.client.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email) {
+        this.hydrateUser(session.user.email);
+      } else {
+        this.currentUser.set(null);
+      }
+    });
   }
 
-  private loadUser(): AuthUser | null {
-    try {
-      const raw = localStorage.getItem(this.STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
+  private async hydrateUser(email: string): Promise<void> {
+    const { role, sellerId, name } = await this.fetchProfile(email);
+    this.currentUser.set({ email, name, role, sellerId });
   }
 
-  private async fetchRole(email: string): Promise<{ role: UserRole; sellerId?: number }> {
-    // First check user_profiles table
+  private async fetchProfile(email: string): Promise<{ role: UserRole; sellerId?: number; name: string }> {
     const { data: profile } = await this.sb.client
       .from('user_profiles')
-      .select('role, seller_id')
+      .select('role, seller_id, name')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
-    if (profile?.role && profile.role !== 'user') {
-      return { role: profile.role as UserRole, sellerId: profile.seller_id ?? undefined };
+    if (profile) {
+      return {
+        role: (profile.role as UserRole) ?? 'user',
+        sellerId: profile.seller_id ?? undefined,
+        name: profile.name ?? this.nameFromEmail(email),
+      };
     }
 
-    // Fallback: check sellers table — if email matches, they are a seller
+    // Fallback: check sellers table (existing seller accounts pre-dating user_profiles rows)
     const { data: seller } = await this.sb.client
       .from('sellers')
-      .select('id')
+      .select('id, name')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
     if (seller) {
-      return { role: 'seller', sellerId: seller.id };
+      return { role: 'seller', sellerId: seller.id, name: seller.name ?? this.nameFromEmail(email) };
     }
 
-    return { role: (profile?.role as UserRole) ?? 'user', sellerId: profile?.seller_id ?? undefined };
+    return { role: 'user', name: this.nameFromEmail(email) };
+  }
+
+  private nameFromEmail(email: string): string {
+    return email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
   async login(email: string, password: string): Promise<void> {
-    await new Promise(r => setTimeout(r, 800));
-
     if (!email || password.length < 6) {
       throw new Error('Invalid email or password (min 6 characters).');
     }
 
-    const { role, sellerId } = await this.fetchRole(email);
-    const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-
-    const user: AuthUser = { email, name, role, sellerId };
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-    this.saveRegisteredEmail(email);
-    this.currentUser.set(user);
+    const { error } = await this.sb.client.auth.signInWithPassword({ email, password });
+    if (error) {
+      // Supabase returns "Invalid login credentials" for wrong password or unknown email
+      throw new Error('Incorrect email or password. Please try again.');
+    }
+    // onAuthStateChange fires and calls hydrateUser
   }
 
-  async register(name: string, email: string, password: string, accountType: 'customer' | 'seller' | 'admin' = 'customer'): Promise<void> {
-    await new Promise(r => setTimeout(r, 800));
-
-    if (!name || !email || password.length < 6) {
-      throw new Error('All fields are required (password min 6 characters).');
+  async register(
+    name: string,
+    email: string,
+    password: string,
+    accountType: 'customer' | 'seller' = 'customer',
+  ): Promise<void> {
+    if (!name || !email || password.length < 8) {
+      throw new Error('All fields are required (password min 8 characters).');
     }
 
-    // Check if email is already registered
-    const { data: existing } = await this.sb.client
-      .from('user_profiles')
-      .select('email')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (existing) {
-      throw new Error('This email is already registered. Please sign in instead.');
+    // Create Supabase Auth account (handles password hashing)
+    const { data, error } = await this.sb.client.auth.signUp({ email, password });
+    if (error) {
+      if (error.message.toLowerCase().includes('already registered')) {
+        throw new Error('This email is already registered. Please sign in instead.');
+      }
+      throw new Error(error.message);
     }
 
-    const role: UserRole = accountType === 'customer' ? 'user' : accountType;
+    const role: UserRole = accountType === 'customer' ? 'user' : 'seller';
 
+    // Upsert profile row (in case seeded admin/seller accounts sign up via the form)
     await this.sb.client
       .from('user_profiles')
-      .insert({ email, name, role });
+      .upsert({ email, name, role }, { onConflict: 'email', ignoreDuplicates: false });
 
-    const user: AuthUser = { email, name, role };
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-    this.saveRegisteredEmail(email);
-    this.currentUser.set(user);
+    // If Supabase returns a session immediately (email confirm disabled), hydrate now
+    if (data.session?.user) {
+      await this.hydrateUser(email);
+    }
   }
 
-  logout(): void {
-    localStorage.removeItem(this.STORAGE_KEY);
+  async logout(): Promise<void> {
+    await this.sb.client.auth.signOut();
     this.currentUser.set(null);
     this.router.navigate(['/']);
   }
 
-  private getRegisteredEmails(): Set<string> {
-    try {
-      const raw = localStorage.getItem(this.REGISTERED_EMAILS_KEY);
-      return new Set(raw ? JSON.parse(raw) : []);
-    } catch { return new Set(); }
-  }
-
-  private saveRegisteredEmail(email: string) {
-    const emails = this.getRegisteredEmails();
-    emails.add(email.toLowerCase());
-    localStorage.setItem(this.REGISTERED_EMAILS_KEY, JSON.stringify([...emails]));
-  }
-
   async isEmailTaken(email: string): Promise<boolean> {
-    const lc = email.toLowerCase();
-    // Check localStorage registry (catches pre-DB registrations)
-    if (this.getRegisteredEmails().has(lc)) return true;
-    // Also seed the registry from all known localStorage keys
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i) ?? '';
-      if (key.startsWith('gaadiiq_listings_')) {
-        const storedEmail = key.replace('gaadiiq_listings_', '').toLowerCase();
-        this.saveRegisteredEmail(storedEmail);
-        if (storedEmail === lc) return true;
-      }
-    }
-    // Check the currently-stored session email
-    const stored = this.loadUser();
-    if (stored?.email?.toLowerCase() === lc) return true;
-
-    // Then check Supabase
     const { data } = await this.sb.client
       .from('user_profiles')
       .select('email')
@@ -168,5 +134,5 @@ export class AuthService {
   isLoggedIn(): boolean { return this.currentUser() !== null; }
   isAdmin(): boolean    { return this.currentUser()?.role === 'admin'; }
   isSeller(): boolean   { return this.currentUser()?.role === 'seller'; }
-  isUser(): boolean     { return this.currentUser()?.role === 'user' || !this.currentUser(); }
+  isUser(): boolean     { return this.currentUser()?.role === 'user'; }
 }

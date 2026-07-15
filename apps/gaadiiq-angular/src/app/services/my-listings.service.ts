@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, effect } from '@angular/core';
 import { AuthService } from './auth.service';
 import { SupabaseService } from './supabase.service';
 
@@ -18,9 +18,11 @@ export class MyListingsService {
   listings = signal<MyListing[]>([]);
 
   constructor(private auth: AuthService, private sb: SupabaseService) {
-    this.reload();
-    // Reload listings whenever the logged-in user changes
-    (auth.currentUser as any).subscribe?.(() => this.reload());
+    // Reload listings whenever the logged-in user changes (uses Angular effect to react to signal)
+    effect(() => {
+      auth.currentUser(); // track dependency
+      this.reload();
+    });
   }
 
   private storageKey(): string {
