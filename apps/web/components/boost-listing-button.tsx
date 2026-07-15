@@ -73,11 +73,9 @@ export default function BoostListingButton({ listingId, isFeatured, onBoostSucce
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5 text-accent border-accent/40 hover:bg-accent/10">
-          <Star className="h-3.5 w-3.5" />
-          Boost
-        </Button>
+      <DialogTrigger className="inline-flex items-center gap-1.5 text-sm font-medium border border-accent/40 text-accent hover:bg-accent/10 rounded-md px-3 h-8 transition-colors">
+        <Star className="h-3.5 w-3.5" />
+        Boost
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
