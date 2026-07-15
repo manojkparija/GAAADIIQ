@@ -4,6 +4,7 @@ from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.dependencies import get_current_user
 from core.security import create_access_token, hash_password, verify_password
 from db.session import get_db
@@ -11,7 +12,7 @@ from models.user import User
 from schemas.user import Token, UserCreate, UserLogin, UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address, enabled=settings.is_production)
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
