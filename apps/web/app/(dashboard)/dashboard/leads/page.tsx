@@ -57,17 +57,17 @@ function formatINR(n: number) {
 }
 
 const BOOKING_STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  completed: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
+  pending:   "bg-accent/15 text-accent-foreground border border-accent/30",
+  confirmed: "bg-chart-2/15 text-chart-2",
+  completed: "bg-success/15 text-success",
+  cancelled: "bg-destructive/15 text-destructive",
 };
 
 const LOAN_STATUS_COLORS: Record<string, string> = {
-  submitted: "bg-yellow-100 text-yellow-800",
-  processing: "bg-blue-100 text-blue-800",
-  approved: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
+  submitted:  "bg-accent/15 text-accent-foreground border border-accent/30",
+  processing: "bg-chart-2/15 text-chart-2",
+  approved:   "bg-success/15 text-success",
+  rejected:   "bg-destructive/15 text-destructive",
 };
 
 export default async function LeadsPage() {

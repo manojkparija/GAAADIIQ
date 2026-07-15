@@ -25,7 +25,7 @@ export default function StarRating({
   return (
     <span className={`inline-flex items-center gap-0.5 ${SIZES[size]}`}>
       {stars.map((type, i) => (
-        <span key={i} className={type === "empty" ? "text-muted-foreground/30" : "text-amber-400"}>
+        <span key={i} className={type === "empty" ? "text-muted-foreground/30" : "text-accent"}>
           {type === "full" ? "★" : type === "half" ? "⯨" : "☆"}
         </span>
       ))}

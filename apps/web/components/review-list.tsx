@@ -71,9 +71,9 @@ export default function ReviewList({ listingId, sellerId, onReviewAdded }: Props
               return (
                 <div key={star} className="flex items-center gap-2 text-xs">
                   <span className="w-4 shrink-0 text-right text-muted-foreground">{star}</span>
-                  <span className="text-amber-400 shrink-0">★</span>
+                  <span className="text-accent shrink-0">★</span>
                   <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
-                    <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-accent rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                   <span className="w-5 shrink-0 text-muted-foreground">{count}</span>
                 </div>
@@ -94,7 +94,7 @@ export default function ReviewList({ listingId, sellerId, onReviewAdded }: Props
                 <div className="flex items-center gap-2">
                   <StarRating rating={rev.rating} size="sm" />
                   {rev.is_verified && (
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-success/15 text-success">
                       ✓ Verified
                     </span>
                   )}

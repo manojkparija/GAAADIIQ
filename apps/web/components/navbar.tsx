@@ -6,6 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { buttonVariants } from "@/components/ui/button";
 import SearchBar from "@/components/search-bar";
 import NotificationBell from "@/components/notification-bell";
+import ThemeToggle from "@/components/theme-toggle";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -16,8 +17,10 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link href="/" className="font-bold text-xl tracking-tight text-primary shrink-0 flex items-center gap-2">
-          <span className="text-amber-500">⬡</span>
-          <span>GAADIIQ</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 1L18.66 6v8L10 19 1.34 14V6L10 1z" fill="currentColor" className="text-accent" />
+          </svg>
+          GAADIIQ
         </Link>
 
         {/* Nav links — desktop */}
@@ -53,6 +56,7 @@ export default function Navbar() {
 
         {/* Auth — desktop */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
+          <ThemeToggle />
           {session ? (
             <>
               <NotificationBell />
@@ -73,7 +77,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/register"
-                className={buttonVariants({ size: "sm" }) + " bg-amber-500 hover:bg-amber-400 text-slate-900"}
+                className={buttonVariants({ size: "sm" }) + " bg-accent text-accent-foreground hover:bg-accent/90"}
               >
                 Register
               </Link>
@@ -133,7 +137,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/register"
-                  className={buttonVariants({ size: "sm" }) + " w-full justify-center bg-amber-500 hover:bg-amber-400 text-slate-900"}
+                  className={buttonVariants({ size: "sm" }) + " w-full justify-center bg-accent text-accent-foreground hover:bg-accent/90"}
                   onClick={() => setMobileOpen(false)}
                 >
                   Register Free
