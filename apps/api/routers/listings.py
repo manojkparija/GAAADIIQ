@@ -25,6 +25,7 @@ from models.user import User
 from schemas.listing import ListingCreate, ListingListOut, ListingOut, ListingUpdate
 from services import storage, valuation
 from services.notifications import notify_price_drop
+from services.search_index import search_index
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -51,7 +52,9 @@ async def create_listing(
     result = await db.execute(
         select(Listing).options(*_LOAD).where(Listing.id == listing.id)
     )
-    return ListingOut.model_validate(result.scalar_one())
+    full_listing = result.scalar_one()
+    await search_index.index_listing(full_listing)
+    return ListingOut.model_validate(full_listing)
 
 
 @router.get("", response_model=ListingListOut)
