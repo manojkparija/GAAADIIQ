@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379"
 
-    # Auth
+    # Auth — override SECRET_KEY env var in production; default is intentionally weak
     secret_key: str = "change-me-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24  # 24h
