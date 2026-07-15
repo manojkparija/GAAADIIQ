@@ -5,6 +5,7 @@ Tests model instantiation, relationships, and field defaults.
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from db.base import Base
 from models import Car, Dealer, Listing, LoanInquiry, TestDriveBooking, User
@@ -20,7 +21,7 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest_asyncio.fixture
 async def db_session():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(TEST_DB_URL, echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

@@ -1,13 +1,15 @@
 import logging
+import time
 import warnings
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 from core.config import settings
+from core.limiter import limiter
 
 # Fail fast in production if secrets are missing/default
 settings.validate_production_config()
@@ -18,8 +20,6 @@ if settings.secret_key == "change-me-in-production":
         stacklevel=1,
     )
     logging.getLogger("gaadiiq").warning("SECRET_KEY is using the insecure default value.")
-
-limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 from routers import (  # noqa: E402
     admin,
@@ -35,6 +35,18 @@ from routers import (  # noqa: E402
     price_alerts,
     reviews,
     search,
+)
+
+# ── Prometheus metrics ─────────────────────────────────────────────────────────
+_REQUEST_COUNT = Counter(
+    "http_requests_total",
+    "Total HTTP requests",
+    ["method", "path", "status"],
+)
+_REQUEST_LATENCY = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request latency",
+    ["method", "path"],
 )
 
 # Hide API docs in production
@@ -58,6 +70,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def _metrics_middleware(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration = time.perf_counter() - start
+    path = request.url.path
+    _REQUEST_LATENCY.labels(method=request.method, path=path).observe(duration)
+    _REQUEST_COUNT.labels(method=request.method, path=path, status=response.status_code).inc()
+    return response
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    """Prometheus scrape endpoint — restrict to internal network in production."""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
 
 app.include_router(health.router)
 app.include_router(auth.router)

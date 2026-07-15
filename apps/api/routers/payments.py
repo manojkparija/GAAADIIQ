@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.dependencies import get_current_user
+from core.limiter import limiter
 from db.session import get_db
 from models.listing import Listing
 from models.payment import Payment, PaymentPurpose, PaymentStatus
@@ -79,7 +80,9 @@ def _verify_razorpay_signature(order_id: str, payment_id: str, signature: str) -
 
 
 @router.post("/feature-listing", response_model=RazorpayOrderOut)
+@limiter.limit("10/minute")
 async def feature_listing(
+    request: Request,
     payload: FeatureListingRequest,
     db: DbDep,
     current_user: CurrentUser,
@@ -262,6 +265,42 @@ async def my_payments(db: DbDep, current_user: CurrentUser):
     return result.scalars().all()
 
 
+@router.post("/{payment_id}/refund", status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def refund_payment(
+    request: Request,
+    payment_id: uuid.UUID,
+    db: DbDep,
+    current_user: CurrentUser,
+):
+    """Initiate a Razorpay refund for a paid payment owned by the current user."""
+    payment = await db.get(Payment, payment_id)
+    if not payment or payment.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+    if payment.status != PaymentStatus.paid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only paid payments can be refunded")
+    if not payment.razorpay_payment_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No Razorpay payment ID on record")
+
+    if not _dev_mode():
+        if not settings.payments_enabled:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Payment processing not configured")
+        import razorpay  # type: ignore[import]
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        client.payment.refund(payment.razorpay_payment_id, {"amount": payment.amount_paise})
+
+    payment.status = PaymentStatus.refunded
+
+    # Undo effects
+    if payment.listing_id and payment.purpose == PaymentPurpose.featured_listing:
+        listing = await db.get(Listing, payment.listing_id)
+        if listing:
+            listing.is_featured = False
+
+    await db.commit()
+    return {"status": "refunded", "payment_id": str(payment_id)}
+
+
 # ── Subscriptions ─────────────────────────────────────────────────────────────
 
 subs_router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
@@ -279,7 +318,9 @@ async def my_subscription(db: DbDep, current_user: CurrentUser):
 
 
 @subs_router.post("/upgrade", response_model=RazorpayOrderOut)
+@limiter.limit("10/minute")
 async def upgrade_subscription(
+    request: Request,
     payload: SubscriptionUpgradeRequest,
     db: DbDep,
     current_user: CurrentUser,
