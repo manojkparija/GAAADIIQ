@@ -5,7 +5,7 @@ python_classes = ["Test*Suite", "Test*Case"]
 
 [tool.ruff]
 line-length = 150
-lint.select = ["E", "F", "I"]
+select = ["E", "F", "I"]
 
 [tool.mypy]
 python_version = "3.12"
