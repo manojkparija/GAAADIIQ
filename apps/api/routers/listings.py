@@ -7,6 +7,7 @@ from fastapi import (
     File,
     HTTPException,
     Query,
+    Request,
     UploadFile,
     status,
 )
@@ -15,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from core.dependencies import get_current_user
+from core.limiter import limiter
 from db.session import get_db
 from models.car import Car
 from models.listing import Listing
@@ -31,7 +33,9 @@ _LOAD = [selectinload(Listing.car), selectinload(Listing.seller)]
 
 
 @router.post("", response_model=ListingOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_listing(
+    request: Request,
     payload: ListingCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -276,7 +280,9 @@ async def upload_image(
 
 
 @router.post("/{listing_id}/valuate", response_model=ListingOut)
+@limiter.limit("5/minute")
 async def valuate_listing(
+    request: Request,
     listing_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),

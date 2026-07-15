@@ -5,6 +5,7 @@ from .loan_inquiry import LoanInquiry
 from .notification import Notification
 from .payment import Payment
 from .price_alert import PriceAlert
+from .refresh_token import RefreshToken
 from .review import Review
 from .subscription import Subscription
 from .test_drive_booking import TestDriveBooking
@@ -12,5 +13,5 @@ from .user import User
 
 __all__ = [
     "User", "Dealer", "Car", "Listing", "TestDriveBooking", "LoanInquiry",
-    "Notification", "PriceAlert", "Review", "Payment", "Subscription",
+    "Notification", "PriceAlert", "Review", "Payment", "Subscription", "RefreshToken",
 ]

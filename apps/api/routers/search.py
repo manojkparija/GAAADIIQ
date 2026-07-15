@@ -7,11 +7,12 @@ Fallback: ILIKE-based search (used automatically in tests via SQLite).
 import re
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from core.limiter import limiter
 from db.session import get_db
 from models.car import Car
 from models.listing import Listing
@@ -38,7 +39,9 @@ def _safe_tsquery(q: str) -> str:
 
 
 @router.get("", response_model=ListingListOut)
+@limiter.limit("30/minute")
 async def full_text_search(
+    request: Request,
     q: str = Query(..., min_length=1, max_length=200),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
