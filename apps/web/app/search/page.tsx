@@ -53,10 +53,11 @@ export default async function SearchPage({ searchParams }: Props) {
   const page = Math.max(1, parseInt(params.page ?? "1") || 1);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <main className="max-w-7xl mx-auto px-4 py-8">
       {/* Hero search bar */}
       <div className="max-w-2xl mx-auto mb-10">
-        <h1 className="text-2xl font-bold text-center mb-4">Search Cars</h1>
+        <h1 className="text-2xl font-display font-semibold text-center mb-4">Search Cars</h1>
+        <div className="gold-rule mx-auto mb-6" />
         <SearchBar initialQuery={q} className="w-full" />
       </div>
 
@@ -69,6 +70,6 @@ export default async function SearchPage({ searchParams }: Props) {
           Type a make, model, or city above to search.
         </p>
       )}
-    </div>
+    </main>
   );
 }

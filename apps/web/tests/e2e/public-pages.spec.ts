@@ -43,8 +43,8 @@ test("/compare page loads with add-car prompt", async ({ page }) => {
 
 test("/recommend page shows advisor questionnaire", async ({ page }) => {
   await page.goto("/recommend");
-  await expect(page).toHaveTitle(/GAADIIQ/i);
-  await expect(page.getByText("Car Advisor")).toBeVisible();
+  await expect(page).toHaveTitle(/Car Advisor|GAADIIQ/i);
+  await expect(page.getByRole("heading", { name: "Car Advisor" })).toBeVisible();
   await expect(page.getByText("Find Your Perfect Car")).toBeVisible();
 });
 
@@ -99,10 +99,7 @@ test("/dashboard redirects unauthenticated user to login", async ({ page }) => {
 
 test("/notifications redirects unauthenticated user to login", async ({ page }) => {
   await page.goto("/notifications");
-  // Should either redirect or show login prompt
-  const url = page.url();
-  const body = await page.locator("body").textContent();
-  expect(url.includes("login") || url.includes("signin") || (body ?? "").includes("log in") || (body ?? "").includes("Sign in")).toBeTruthy();
+  await expect(page).toHaveURL(/login|signin/i);
 });
 
 test("/dashboard/analytics redirects unauthenticated user", async ({ page }) => {
