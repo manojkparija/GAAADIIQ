@@ -183,7 +183,9 @@ async def forgot_password(
             html=f"""
 <p>Hi {user.full_name or "there"},</p>
 <p>We received a request to reset the password for your GAADIIQ account.</p>
-<p><a href="{reset_url}" style="background:#C9A227;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">Reset Password</a></p>
+<p><a href="{reset_url}"
+   style="background:#C9A227;color:#fff;padding:10px 20px;border-radius:6px;
+          text-decoration:none;font-weight:600;">Reset Password</a></p>
 <p>This link expires in <strong>1 hour</strong>. If you didn't request this, you can safely ignore this email.</p>
 <p>— The GAADIIQ Team</p>
 """,
