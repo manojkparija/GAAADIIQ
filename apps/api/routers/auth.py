@@ -1,4 +1,5 @@
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
@@ -20,7 +21,8 @@ from core.security import (
 from db.session import get_db
 from models.refresh_token import RefreshToken
 from models.user import User
-from schemas.user import Token, UserCreate, UserLogin, UserOut
+from schemas.user import ForgotPasswordRequest, ResetPasswordRequest, Token, UserCreate, UserLogin, UserOut
+from services.email import send_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -152,3 +154,72 @@ async def logout(
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)):
     return UserOut.model_validate(current_user)
+
+
+@router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    payload: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Send a password-reset link to the given email.
+    Always returns 202 to avoid user enumeration.
+    """
+    result = await db.execute(select(User).where(User.email == payload.email))
+    user = result.scalar_one_or_none()
+
+    if user and user.is_active:
+        raw_token = secrets.token_urlsafe(32)
+        user.password_reset_token = hashlib.sha256(raw_token.encode()).hexdigest()
+        user.password_reset_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+        await db.commit()
+
+        reset_url = f"{settings.frontend_url}/reset-password?token={raw_token}"
+        await send_email(
+            to=user.email,
+            subject="Reset your GAADIIQ password",
+            html=f"""
+<p>Hi {user.full_name or "there"},</p>
+<p>We received a request to reset the password for your GAADIIQ account.</p>
+<p><a href="{reset_url}" style="background:#C9A227;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">Reset Password</a></p>
+<p>This link expires in <strong>1 hour</strong>. If you didn't request this, you can safely ignore this email.</p>
+<p>— The GAADIIQ Team</p>
+""",
+            text=f"Reset your GAADIIQ password: {reset_url}\n\nThis link expires in 1 hour.",
+        )
+
+    return {"detail": "If an account with that email exists, a reset link has been sent."}
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    payload: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Exchange a valid reset token for a new password."""
+    token_hash = hashlib.sha256(payload.token.encode()).hexdigest()
+    result = await db.execute(
+        select(User).where(User.password_reset_token == token_hash)
+    )
+    user = result.scalar_one_or_none()
+
+    if (
+        not user
+        or not user.password_reset_expires
+        or user.password_reset_expires.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token.",
+        )
+
+    user.hashed_password = hash_password(payload.new_password)
+    user.password_reset_token = None
+    user.password_reset_expires = None
+    await db.commit()
+
+    return {"detail": "Password updated successfully. You can now sign in."}

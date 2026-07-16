@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
 
+    # Frontend — used for reset-password link generation
+    frontend_url: str = "http://localhost:3000"
+
     # SMTP — leave blank to skip emails in dev
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
