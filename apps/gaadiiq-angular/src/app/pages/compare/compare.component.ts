@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { TcoService, TcoBreakdown } from '../../services/tco.service';
 import { SeoService } from '../../services/seo.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule],
+  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
   templateUrl: './compare.component.html',
   styleUrl: './compare.component.scss'
 })

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
 import { AnalyticsService } from '../../services/analytics.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -34,10 +35,10 @@ const RESALE: Record<string, number> = {
 };
 
 const ANALYZE_MSGS = [
-  { icon: '🔍', text: 'Profiling your requirements...' },
+  { icon: 'search', text: 'Profiling your requirements...' },
   { icon: '🧮', text: 'Evaluating 58 vehicles across 14 parameters...' },
-  { icon: '💰', text: 'Calculating 5-year ownership costs...' },
-  { icon: '📊', text: 'Running AI recommendation engine...' },
+  { icon: 'calculator', text: 'Calculating 5-year ownership costs...' },
+  { icon: 'bar-chart', text: 'Running AI recommendation engine...' },
   { icon: '✨', text: 'Generating personalized insights...' },
 ];
 
@@ -63,7 +64,7 @@ export interface RecommendedCar extends Car {
 @Component({
   selector: 'app-ai-advisor',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, IconComponent],
   templateUrl: './ai-advisor.component.html',
   styleUrl: './ai-advisor.component.scss'
 })
@@ -88,7 +89,7 @@ export class AiAdvisorComponent {
       ]
     },
     {
-      key: 'budget', category: 'Financial', icon: '💰', multi: false,
+      key: 'budget', category: 'Financial', icon: 'calculator', multi: false,
       title: 'What is your total car budget?',
       subtitle: 'We\'ll match cars precisely within your price range',
       options: [
@@ -101,7 +102,7 @@ export class AiAdvisorComponent {
       ]
     },
     {
-      key: 'dailyKm', category: 'Driving', icon: '📍', multi: false,
+      key: 'dailyKm', category: 'Driving', icon: 'road', multi: false,
       title: 'How much do you drive daily?',
       subtitle: 'Helps calculate fuel costs & EV range requirements',
       options: [
@@ -134,7 +135,7 @@ export class AiAdvisorComponent {
       ]
     },
     {
-      key: 'usageType', category: 'Family', icon: '🚗', multi: true,
+      key: 'usageType', category: 'Family', icon: 'car', multi: true,
       title: 'How will you primarily use the car?',
       subtitle: 'Select all that apply',
       options: [
@@ -160,7 +161,7 @@ export class AiAdvisorComponent {
       ]
     },
     {
-      key: 'ev', category: 'Electric', icon: '⚡', multi: false, ev: true,
+      key: 'ev', category: 'Electric', icon: 'zap', multi: false, ev: true,
       title: 'EV Suitability Check',
       subtitle: 'Helps us assess your readiness for electric vehicles',
       options: [
@@ -542,7 +543,7 @@ export class AiAdvisorComponent {
 
     const byValue = [...top].sort((a, b) =>
       (b.features?.length || 0) / b.price - (a.features?.length || 0) / a.price);
-    if (byValue[0]) byValue[0].categoryBadges.push('💰 Best Value');
+    if (byValue[0]) byValue[0].categoryBadges.push('Best Value');
 
     const needS = this.needSeating(p['familySize'] as string || '2 – 3 people');
     if (needS >= 6) {
@@ -551,7 +552,7 @@ export class AiAdvisorComponent {
     }
 
     const evTop = top.find(c => c.fuel === 'Electric');
-    if (evTop) evTop.categoryBadges.push('⚡ Best EV');
+    if (evTop) evTop.categoryBadges.push('Best EV');
 
     const lowestTco = [...top].sort((a, b) => a.fiveYearTco - b.fiveYearTco)[0];
     if (lowestTco) lowestTco.categoryBadges.push('🏆 Lowest TCO');

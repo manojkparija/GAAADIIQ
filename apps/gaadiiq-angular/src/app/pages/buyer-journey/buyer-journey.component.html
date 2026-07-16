@@ -16,12 +16,12 @@
         <p class="done-sub">Based on your preferences, here's your buyer profile:</p>
 
         <div class="profile-grid" *ngIf="profile">
-          <div class="pf-item"><span class="pf-label">💰 Budget</span><span class="pf-val">{{ profile.budget }}</span></div>
-          <div class="pf-item"><span class="pf-label">🚗 Use Case</span><span class="pf-val">{{ profile.useCase }}</span></div>
+          <div class="pf-item"><span class="pf-label">Budget</span><span class="pf-val">{{ profile.budget }}</span></div>
+          <div class="pf-item"><span class="pf-label">Use Case</span><span class="pf-val">{{ profile.useCase }}</span></div>
           <div class="pf-item"><span class="pf-label">⛽ Fuel</span><span class="pf-val">{{ profile.fuelPreference }}</span></div>
           <div class="pf-item"><span class="pf-label">⚙️ Transmission</span><span class="pf-val">{{ profile.transmission }}</span></div>
           <div class="pf-item"><span class="pf-label">🏎️ Body Type</span><span class="pf-val">{{ profile.bodyType }}</span></div>
-          <div class="pf-item"><span class="pf-label">⭐ Priority</span><span class="pf-val">{{ profile.priority }}</span></div>
+          <div class="pf-item"><span class="pf-label">Priority</span><span class="pf-val">{{ profile.priority }}</span></div>
         </div>
 
         <div class="done-actions">
@@ -51,7 +51,7 @@
             <div class="ms-left">
               <div class="ms-circle" (click)="toggleMilestone(m.id)">
                 <span *ngIf="isMilestoneComplete(m.id)">✓</span>
-                <span *ngIf="!isMilestoneComplete(m.id)">{{ m.icon }}</span>
+                <span *ngIf="!isMilestoneComplete(m.id)"><app-icon [name]="m.icon" [size]="18"></app-icon></span>
               </div>
               <div class="ms-connector" *ngIf="!last"></div>
             </div>

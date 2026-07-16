@@ -6,7 +6,7 @@
 <section class="nc-hero">
   <div class="container">
     <div class="hero-content">
-      <span class="hero-badge">🚗 New Cars 2025</span>
+      <span class="hero-badge">New Cars 2025</span>
       <h1 class="hero-heading">Explore <span class="gradient-text">New Cars</span></h1>
       <p class="hero-sub">Find your perfect car from 500+ new models across all budgets</p>
 
@@ -17,7 +17,7 @@
             🏷️ By Brand
           </button>
           <button class="hero-tab" [class.active]="activeHeroTab() === 'budget'" (click)="activeHeroTab.set('budget')">
-            💰 By Budget
+            By Budget
           </button>
           <button class="hero-tab" [class.active]="activeHeroTab() === 'bodytype'" (click)="activeHeroTab.set('bodytype')">
             🚘 By Body Type
@@ -53,7 +53,7 @@
             <div class="bodytype-quick-grid">
               @for (bt of bodyTypeCards; track bt.name) {
                 <button class="bodytype-pill" (click)="navigateToBodyType(bt.name)">
-                  <span>{{ bt.icon }}</span> {{ bt.name }}
+                  <app-icon [name]="bt.icon" [size]="14"></app-icon> {{ bt.name }}
                 </button>
               }
             </div>
@@ -92,7 +92,7 @@
     <div class="bodytype-grid">
       @for (bt of bodyTypeCards; track bt.name) {
         <button class="bodytype-card glass-card" (click)="navigateToBodyType(bt.name)">
-          <div class="bt-icon">{{ bt.icon }}</div>
+          <div class="bt-icon"><app-icon [name]="bt.icon" [size]="28"></app-icon></div>
           <div class="bt-name">{{ bt.name }}</div>
           <div class="bt-desc">{{ bt.desc }}</div>
         </button>
@@ -215,7 +215,7 @@
           </div>
         } @else if (newCarModels().length === 0) {
           <div class="empty-state glass-card">
-            <div class="empty-icon">🚗</div>
+            <div class="empty-icon"><app-icon name="car" [size]="48"></app-icon></div>
             <h3>No models found</h3>
             <p>Try adjusting your filters</p>
             <button class="btn-gradient" (click)="clearAllFilters()">Clear Filters</button>
@@ -242,7 +242,7 @@
                       <span class="model-bt-badge">{{ model.bodyType }}</span>
                     }
                     <div class="model-rating">
-                      ⭐ {{ model.rating.toFixed(1) }} <span class="model-reviews">({{ model.reviews }})</span>
+                      <app-icon name="star" [size]="12" class="star-gold"></app-icon> {{ model.rating.toFixed(1) }} <span class="model-reviews">({{ model.reviews }})</span>
                     </div>
                   </div>
                   <h3 class="model-name">{{ model.make }} {{ model.model }}</h3>
@@ -318,7 +318,7 @@
           </div>
           <button class="notify-btn" [class.notified]="notifiedCars().has(car.make + car.model)"
             (click)="toggleNotify(car.make + car.model)">
-            {{ notifiedCars().has(car.make + car.model) ? '🔔 Notified' : '🔕 Notify Me' }}
+            {{ notifiedCars().has(car.make + car.model) ? 'Notified' : 'Notify Me' }}
           </button>
         </div>
       }
@@ -329,11 +329,11 @@
 <!-- ── EXPERT RECOMMENDATIONS ── -->
 <section class="nc-section">
   <div class="container">
-    <h2 class="section-title">🏆 Expert <span class="gradient-text">Recommendations</span></h2>
+    <h2 class="section-title"><app-icon name="star" [size]="16" class="mr-1"></app-icon> Expert <span class="gradient-text">Recommendations</span></h2>
     <div class="expert-grid">
       @for (pick of expertPicks; track pick.category) {
         <div class="expert-card glass-card">
-          <div class="expert-icon">{{ pick.icon }}</div>
+          <div class="expert-icon"><app-icon [name]="pick.icon" [size]="24"></app-icon></div>
           <div class="expert-badge">{{ pick.badge }}</div>
           <div class="expert-category">{{ pick.category }}</div>
           <h4 class="expert-name">{{ pick.make }} {{ pick.model }}</h4>

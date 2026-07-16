@@ -135,7 +135,7 @@
     <!-- Affordability Score -->
     <div class="afford-card glass-card">
       <div class="afford-header">
-        <h3>🏦 Affordability <span class="gradient-text">Analysis</span></h3>
+        <h3>Affordability <span class="gradient-text">Analysis</span></h3>
         <p class="afford-sub">Enter your income details to see if this loan fits your financial health</p>
       </div>
 
@@ -216,14 +216,14 @@
               <div class="am-label">Total Monthly EMI</div>
             </div>
             <div class="am-item">
-              <div class="am-icon">💰</div>
+              <div class="am-icon"><app-icon name="indian-rupee" [size]="22"></app-icon></div>
               <div class="am-val" [class.bad]="monthlySurplus() < 0" [class.good]="monthlySurplus() > 0">
                 {{ fmt(monthlySurplus()) }}
               </div>
               <div class="am-label">Monthly Surplus</div>
             </div>
             <div class="am-item">
-              <div class="am-icon">🛡️</div>
+              <div class="am-icon"><app-icon name="shield" [size]="22"></app-icon></div>
               <div class="am-val" [class.good]="emergencyBufferOk()" [class.bad]="!emergencyBufferOk()">
                 {{ emergencyBufferOk() ? 'Adequate' : 'Tight' }}
               </div>

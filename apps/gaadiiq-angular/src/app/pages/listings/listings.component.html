@@ -145,7 +145,7 @@
               </div>
               <div class="nc-card-footer">
                 <span class="nc-variant-count">{{ m.variantCount }} Variants</span>
-                <span class="nc-rating">⭐ {{ m.rating }} ({{ m.reviews }})</span>
+                <span class="nc-rating"><app-icon name="star" [size]="11" class="star-gold"></app-icon> {{ m.rating }} ({{ m.reviews }})</span>
               </div>
               <button class="btn-gradient nc-explore-btn">Explore Variants →</button>
             </div>
@@ -296,7 +296,7 @@
 
       <ng-template #noResults>
         <div class="no-results glass-card" *ngIf="!loading()">
-          <div style="font-size:4rem;margin-bottom:1rem">🔍</div>
+          <div style="margin-bottom:1rem;color:var(--muted)"><app-icon name="search" [size]="48"></app-icon></div>
           <h3>No cars found</h3>
           <p style="color:var(--muted)">Try adjusting your filters or search query</p>
           <button class="btn-gradient" style="margin-top:1.5rem" (click)="clearAll()">Clear All Filters</button>

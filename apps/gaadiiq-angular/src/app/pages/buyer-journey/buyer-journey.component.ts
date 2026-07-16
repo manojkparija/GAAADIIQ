@@ -6,13 +6,14 @@ import { BuyerJourneyService, JOURNEY_STEPS, BuyerProfile } from '../../services
 import { LanguageService } from '../../services/language.service';
 import { SeoService } from '../../services/seo.service';
 import { AnalyticsService } from '../../services/analytics.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 interface Milestone { id: string; icon: string; title: string; desc: string; link?: string; linkLabel?: string; }
 
 @Component({
   selector: 'app-buyer-journey',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, IconComponent],
   templateUrl: './buyer-journey.component.html',
   styleUrl: './buyer-journey.component.scss',
 })
@@ -23,9 +24,9 @@ export class BuyerJourneyComponent {
   done = signal(false);
 
   milestones: Milestone[] = [
-    { id: 'research',   icon: '🔍', title: 'Research',      desc: 'Explore car types, compare features, and read expert reviews to build your shortlist.',   link: '/listings',     linkLabel: 'Browse Cars' },
-    { id: 'finance',    icon: '🏦', title: 'Finance',       desc: 'Check EMI options, get loan pre-approval, and understand your total cost of ownership.', link: '/emi-calculator', linkLabel: 'EMI Calculator' },
-    { id: 'shortlist',  icon: '⭐', title: 'Shortlist',     desc: 'Narrow down to 2–3 options based on your budget, fuel preference, and lifestyle needs.',  link: '/compare',      linkLabel: 'Compare Cars' },
+    { id: 'research',   icon: 'search', title: 'Research',      desc: 'Explore car types, compare features, and read expert reviews to build your shortlist.',   link: '/listings',     linkLabel: 'Browse Cars' },
+    { id: 'finance',    icon: 'calculator', title: 'Finance',       desc: 'Check EMI options, get loan pre-approval, and understand your total cost of ownership.', link: '/emi-calculator', linkLabel: 'EMI Calculator' },
+    { id: 'shortlist',  icon: 'star', title: 'Shortlist',     desc: 'Narrow down to 2–3 options based on your budget, fuel preference, and lifestyle needs.',  link: '/compare',      linkLabel: 'Compare Cars' },
     { id: 'testdrive',  icon: '🗝️', title: 'Test Drive',    desc: 'Book test drives for your shortlisted cars and validate real-world comfort and features.', link: '/test-drive',   linkLabel: 'Book Test Drive' },
     { id: 'negotiate',  icon: '🤝', title: 'Negotiate',     desc: 'Use market price data and competing offers to negotiate the best deal with your dealer.',  link: '/dealer-dashboard', linkLabel: 'Find Dealers' },
     { id: 'purchase',   icon: '🎉', title: 'Purchase',      desc: 'Finalize paperwork, register your vehicle, and drive home your dream car!',               link: '/listings',     linkLabel: 'Start Journey' },

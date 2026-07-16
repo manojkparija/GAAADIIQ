@@ -6,14 +6,14 @@
 <section class="uc-hero">
   <div class="container">
     <div class="hero-content">
-      <span class="hero-badge">🔍 {{ totalCount() }}+ Used Cars Available</span>
+      <span class="hero-badge">{{ totalCount() }}+ Used Cars Available</span>
       <h1 class="hero-heading">Find Your Perfect <span class="gradient-text">Used Car</span></h1>
       <p class="hero-sub">AI-verified pricing, certified inspections, and the best deals in your city</p>
 
       <div class="hero-search-card glass-card">
         <div class="hero-search-row">
           <div class="search-field">
-            <label class="search-field-label">📍 City</label>
+            <label class="search-field-label">City</label>
             <input type="text" class="search-input" placeholder="All India"
               [value]="heroCity()" (input)="heroCity.set($any($event.target).value)" list="city-suggestions" />
             <datalist id="city-suggestions">
@@ -21,7 +21,7 @@
             </datalist>
           </div>
           <div class="search-field">
-            <label class="search-field-label">🚗 Make</label>
+            <label class="search-field-label">Make</label>
             <select class="search-select" [value]="heroMake()" (change)="heroMake.set($any($event.target).value)">
               @for (m of makes(); track m) {
                 <option [value]="m === 'All' ? '' : m">{{ m }}</option>
@@ -29,12 +29,12 @@
             </select>
           </div>
           <div class="search-field">
-            <label class="search-field-label">🔎 Model</label>
+            <label class="search-field-label">Model</label>
             <input type="text" class="search-input" placeholder="e.g. Nexon, Swift..."
               [value]="heroModel()" (input)="heroModel.set($any($event.target).value)" />
           </div>
           <div class="search-field">
-            <label class="search-field-label">💰 Max Budget</label>
+            <label class="search-field-label">Max Budget</label>
             <select class="search-select" [value]="heroBudgetMax()" (change)="maxBudget.set(+$any($event.target).value); heroBudgetMax.set(+$any($event.target).value)">
               <option value="500000">Under ₹5L</option>
               <option value="1000000">Under ₹10L</option>
@@ -55,22 +55,22 @@
   <div class="container">
     <div class="stats-row">
       <div class="stat-item">
-        <div class="stat-icon">💸</div>
+        <div class="stat-icon"><app-icon name="indian-rupee" [size]="28"></app-icon></div>
         <div class="stat-value">Save up to 40%</div>
         <div class="stat-label">vs new car price</div>
       </div>
       <div class="stat-item">
-        <div class="stat-icon">🤖</div>
+        <div class="stat-icon"><app-icon name="brain" [size]="28"></app-icon></div>
         <div class="stat-value">AI-Verified</div>
         <div class="stat-label">pricing on every car</div>
       </div>
       <div class="stat-item">
-        <div class="stat-icon">🚗</div>
+        <div class="stat-icon"><app-icon name="car" [size]="28"></app-icon></div>
         <div class="stat-value">50,000+</div>
         <div class="stat-label">listed cars</div>
       </div>
       <div class="stat-item">
-        <div class="stat-icon">🛡️</div>
+        <div class="stat-icon"><app-icon name="shield" [size]="28"></app-icon></div>
         <div class="stat-value">1-Year Warranty</div>
         <div class="stat-label">options available</div>
       </div>
@@ -280,7 +280,7 @@
           </div>
         } @else if (displayedCars().length === 0) {
           <div class="empty-state glass-card">
-            <div class="empty-icon">🔍</div>
+            <div class="empty-icon"><app-icon name="search" [size]="48"></app-icon></div>
             <h3>No cars match your filters</h3>
             <p>Try broadening your search criteria</p>
             <button class="btn-gradient" (click)="clearAllFilters()">Clear All Filters</button>
@@ -332,21 +332,21 @@
 
                   <!-- Details Row -->
                   <div class="car-details-row">
-                    <span class="detail-pill">🛞 {{ car.formattedKm }}</span>
-                    <span class="detail-pill">⛽ {{ car.fuel }}</span>
-                    <span class="detail-pill">⚙️ {{ car.transmission }}</span>
+                    <span class="detail-pill">{{ car.formattedKm }}</span>
+                    <span class="detail-pill">{{ car.fuel }}</span>
+                    <span class="detail-pill">{{ car.transmission }}</span>
                     @if (car.bodyType) {
-                      <span class="detail-pill">🚗 {{ car.bodyType }}</span>
+                      <span class="detail-pill">{{ car.bodyType }}</span>
                     }
                   </div>
 
                   <!-- City + Owners -->
                   <div class="meta-row">
                     @if (car.city) {
-                      <span class="meta-pill">📍 {{ car.city }}</span>
+                      <span class="meta-pill"><app-icon name="map-pin" [size]="11"></app-icon> {{ car.city }}</span>
                     }
                     @if (car.owners) {
-                      <span class="meta-pill">👤 {{ car.owners }}</span>
+                      <span class="meta-pill">{{ car.owners }}</span>
                     }
                   </div>
 
@@ -373,7 +373,7 @@
         <!-- Recently Viewed -->
         @if (recentlyViewedCars().length > 0) {
           <div class="recently-viewed">
-            <h3 class="rv-title">👁️ Recently Viewed</h3>
+            <h3 class="rv-title">Recently Viewed</h3>
             <div class="rv-cards">
               @for (car of recentlyViewedCars(); track car.id) {
                 <div class="rv-card glass-card" (click)="viewCar(car.id)">

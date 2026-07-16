@@ -1,6 +1,7 @@
 import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { IconComponent } from '../../components/icon/icon.component';
 
 interface AmortizationRow {
   month: number;
@@ -13,7 +14,7 @@ interface AmortizationRow {
 @Component({
   selector: 'app-emi-calculator',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   templateUrl: './emi-calculator.component.html',
   styleUrl: './emi-calculator.component.scss'
 })

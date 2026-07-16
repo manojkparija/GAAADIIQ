@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 interface Alert {
   id: string; make: string; model: string; targetPrice: number; email: string; createdAt: string;
@@ -11,7 +12,7 @@ interface Alert {
 @Component({
   selector: 'app-price-alerts',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   templateUrl: './price-alerts.component.html',
   styleUrl: './price-alerts.component.scss'
 })

@@ -3,11 +3,12 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule],
+  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })

@@ -51,7 +51,7 @@
 .confidence-badge { display: inline-block; background: rgba(67,233,123,.15); border: 1px solid rgba(67,233,123,.3); color: #43E97B; border-radius: 2rem; padding: .25rem .85rem; font-size: .8rem; font-weight: 700; margin-bottom: 1.5rem; }
 .range-row { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 1rem; text-align: center; margin-bottom: 1.5rem; }
 .range-label { font-size: .75rem; color: var(--muted); margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .05em; }
-.range-val { font-size: 1.4rem; font-weight: 900; font-family: 'Space Grotesk',sans-serif; }
+.range-val { font-size: 1.4rem; font-weight: 900; font-family: 'Outfit',sans-serif; }
 .range-item.mid .range-val { font-size: 1.8rem; }
 .range-sub { font-size: .72rem; color: var(--muted); margin-top: .25rem; }
 .price-bar { height: 8px; background: var(--fill-dim); border-radius: 4px; position: relative; overflow: hidden;

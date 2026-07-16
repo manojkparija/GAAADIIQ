@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { CarCardComponent } from '../../components/car-card/car-card.component';
+import { IconComponent } from '../../components/icon/icon.component';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 
 interface NewCarModel {
@@ -16,7 +17,7 @@ interface NewCarModel {
 @Component({
   selector: 'app-listings',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CarCardComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CarCardComponent, IconComponent],
   templateUrl: './listings.component.html',
   styleUrl: './listings.component.scss'
 })

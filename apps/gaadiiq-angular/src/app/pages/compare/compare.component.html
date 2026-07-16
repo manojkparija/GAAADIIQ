@@ -74,14 +74,14 @@
         <div class="feat-row" *ngFor="let f of ['Sunroof','ADAS','360 Camera','Wireless Charging','Ventilated Seats','6 Airbags']">
           <div class="feat-label">{{ f }}</div>
           <div class="feat-val" *ngFor="let car of activeCars()">
-            {{ hasFeature(car, f) ? '✅' : '❌' }}
+            {{ hasFeature(car, f) ? '✓' : '✗' }}
           </div>
         </div>
       </div>
 
       <!-- TCO breakdown -->
       <div class="features-comp tco-section">
-        <h3>💰 Total Cost of Ownership <span style="font-size:0.8rem;color:var(--muted);font-weight:400">(5-Year Analysis)</span></h3>
+        <h3>Total Cost of Ownership <span style="font-size:0.8rem;color:var(--muted);font-weight:400">(5-Year Analysis)</span></h3>
         <div class="feat-row tco-row" *ngFor="let row of tcoRows"
              [class.tco-total]="row.key === 'netCost5yr'" [class.tco-resale]="row.key === 'resaleValue'">
           <div class="feat-label">{{ row.label }}</div>

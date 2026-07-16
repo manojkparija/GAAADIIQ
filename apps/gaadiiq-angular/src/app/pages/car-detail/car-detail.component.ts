@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car } from '../../services/cars-data.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 interface NewCarVariant { name: string; minPrice: number; maxPrice: number; count?: number; }
 interface NewCarHighlight { icon: string; title: string; caption: string; }
@@ -21,10 +22,10 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
       { name: 'ZXi+', minPrice: 969000, maxPrice: 999000, count: 2 },
     ],
     highlights: [
-      { icon: '⚡', title: 'Z-Series Engine', caption: 'New 1.2L Z12E 3-cylinder engine with 81.58 PS and S-CNG option.' },
-      { icon: '🛡️', title: '6 Airbags Standard', caption: '6 airbags across all variants — best-in-class safety.' },
-      { icon: '📱', title: 'SmartPlay Pro+', caption: '17.78 cm touchscreen with wireless Android Auto & Apple CarPlay.' },
-      { icon: '🌿', title: '32.85 km/kg CNG', caption: 'Best-in-segment S-CNG mileage with factory-fitted CNG kit.' },
+      { icon: 'cpu', title: 'Z-Series Engine', caption: 'New 1.2L Z12E 3-cylinder engine with 81.58 PS and S-CNG option.' },
+      { icon: 'shield', title: '6 Airbags Standard', caption: '6 airbags across all variants — best-in-class safety.' },
+      { icon: 'cpu', title: 'SmartPlay Pro+', caption: '17.78 cm touchscreen with wireless Android Auto & Apple CarPlay.' },
+      { icon: 'leaf', title: '32.85 km/kg CNG', caption: 'Best-in-segment S-CNG mileage with factory-fitted CNG kit.' },
     ],
     updates: [
       { text: 'Maruti Swift Z-Series S-CNG now available at select dealerships nationwide.', date: '15 Jun 2026' },
@@ -43,10 +44,10 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
       { name: 'Accomplished', minPrice: 910000, maxPrice: 1067000, count: 4 },
     ],
     highlights: [
-      { icon: '⭐', title: '5-Star BNCAP', caption: 'Scored 30.58/32 for adult occupants and 45/49 for child safety.' },
-      { icon: '🔄', title: 'CNG Automatic', caption: 'First-in-segment CNG with AMT and paddle shifters.' },
-      { icon: '📺', title: '10.25" Infotainment', caption: 'Cleaner dual-tone dashboard with large touchscreen.' },
-      { icon: '📷', title: '360-Degree Camera', caption: '360° surround-view camera for easy parking.' },
+      { icon: 'star', title: '5-Star BNCAP', caption: 'Scored 30.58/32 for adult occupants and 45/49 for child safety.' },
+      { icon: 'settings', title: 'CNG Automatic', caption: 'First-in-segment CNG with AMT and paddle shifters.' },
+      { icon: 'cpu', title: '10.25" Infotainment', caption: 'Cleaner dual-tone dashboard with large touchscreen.' },
+      { icon: 'eye', title: '360-Degree Camera', caption: '360° surround-view camera for easy parking.' },
     ],
     updates: [
       { text: 'Tata Punch receives a price hike of up to Rs. 7,000.', date: '6 Jul 2026' },
@@ -65,10 +66,10 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
       { name: 'SX(O)', minPrice: 1900000, maxPrice: 2015000, count: 2 },
     ],
     highlights: [
-      { icon: '🎨', title: 'ADAS Level 2', caption: 'Advanced driver-assistance with lane keep, auto emergency braking.' },
-      { icon: '📺', title: 'Dual 10.25" Screens', caption: 'Panoramic dual-screen setup for driver and infotainment.' },
-      { icon: '🔋', title: 'Hybrid Option', caption: '48V mild hybrid powertrain available for better fuel efficiency.' },
-      { icon: '🛡️', title: '6 Airbags', caption: '6 airbags standard with ESC, VSM and hill assist.' },
+      { icon: 'sparkles', title: 'ADAS Level 2', caption: 'Advanced driver-assistance with lane keep, auto emergency braking.' },
+      { icon: 'cpu', title: 'Dual 10.25" Screens', caption: 'Panoramic dual-screen setup for driver and infotainment.' },
+      { icon: 'zap', title: 'Hybrid Option', caption: '48V mild hybrid powertrain available for better fuel efficiency.' },
+      { icon: 'shield', title: '6 Airbags', caption: '6 airbags standard with ESC, VSM and hill assist.' },
     ],
     updates: [
       { text: 'Hyundai Creta facelift launched with updated interior and new ADAS features.', date: '1 Apr 2026' },
@@ -86,10 +87,10 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
       { name: 'Fearless', minPrice: 1350000, maxPrice: 1475000, count: 3 },
     ],
     highlights: [
-      { icon: '⭐', title: '5-Star Global NCAP', caption: 'India\'s first 5-star rated car — 16.45/17 for adult safety.' },
-      { icon: '🔋', title: 'EV Option', caption: 'Available as Nexon EV with 40.5 kWh battery and 465 km range.' },
-      { icon: '🎮', title: 'Arcade.ev Ready', caption: 'Advanced connected car tech with over-the-air updates.' },
-      { icon: '🛡️', title: '6 Airbags', caption: '6 airbags with ADAS, front & rear parking sensors.' },
+      { icon: 'star', title: '5-Star Global NCAP', caption: 'India\'s first 5-star rated car — 16.45/17 for adult safety.' },
+      { icon: 'zap', title: 'EV Option', caption: 'Available as Nexon EV with 40.5 kWh battery and 465 km range.' },
+      { icon: 'cpu', title: 'Arcade.ev Ready', caption: 'Advanced connected car tech with over-the-air updates.' },
+      { icon: 'shield', title: '6 Airbags', caption: '6 airbags with ADAS, front & rear parking sensors.' },
     ],
     updates: [
       { text: 'Tata Nexon facelift launched with new turbo petrol engine and ADAS features.', date: '20 May 2026' },
@@ -107,10 +108,10 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
       { name: 'GTX+', minPrice: 1900000, maxPrice: 2000000, count: 2 },
     ],
     highlights: [
-      { icon: '🖥️', title: 'Panoramic Dual Display', caption: '26-inch dual-screen curved display — biggest in segment.' },
-      { icon: '🚗', title: '3 Powertrain Options', caption: 'Petrol, Diesel and Petrol Turbo DCT available.' },
-      { icon: '🎵', title: 'Bose Premium Sound', caption: '8-speaker Bose premium sound system in top variants.' },
-      { icon: '🛡️', title: 'ADAS Level 2', caption: '19 ADAS safety features including Forward Collision Warning.' },
+      { icon: 'cpu', title: 'Panoramic Dual Display', caption: '26-inch dual-screen curved display — biggest in segment.' },
+      { icon: 'car', title: '3 Powertrain Options', caption: 'Petrol, Diesel and Petrol Turbo DCT available.' },
+      { icon: 'sparkles', title: 'Bose Premium Sound', caption: '8-speaker Bose premium sound system in top variants.' },
+      { icon: 'shield', title: 'ADAS Level 2', caption: '19 ADAS safety features including Forward Collision Warning.' },
     ],
     updates: [
       { text: 'Kia Seltos 2025 gets new panoramic curved display and updated ADAS suite.', date: '1 Jun 2026' },
@@ -128,10 +129,10 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
       { name: 'AX7 L', minPrice: 2499000, maxPrice: 2699000, count: 2 },
     ],
     highlights: [
-      { icon: '🤖', title: 'ADAS Level 2', caption: 'AdrenoX ADAS with 5 radars and cameras for autonomous driving assistance.' },
-      { icon: '🔊', title: 'Sony 3D Sound', caption: '12-speaker Sony 3D surround sound in top AX7 L variants.' },
-      { icon: '💪', title: '200 PS Diesel', caption: 'Powerful 2.2L mHawk diesel with 450 Nm torque.' },
-      { icon: '7️⃣', title: '7-Seater Option', caption: 'Available in 5 and 7-seater configurations.' },
+      { icon: 'brain', title: 'ADAS Level 2', caption: 'AdrenoX ADAS with 5 radars and cameras for autonomous driving assistance.' },
+      { icon: 'sparkles', title: 'Sony 3D Sound', caption: '12-speaker Sony 3D surround sound in top AX7 L variants.' },
+      { icon: 'trending-up', title: '200 PS Diesel', caption: 'Powerful 2.2L mHawk diesel with 450 Nm torque.' },
+      { icon: 'user', title: '7-Seater Option', caption: 'Available in 5 and 7-seater configurations.' },
     ],
     updates: [
       { text: 'XUV700 AX7 L gets new stargazer moonroof and updated ADAS.', date: '15 May 2026' },
@@ -184,7 +185,7 @@ import { SupabaseService } from '../../services/supabase.service';
 @Component({
   selector: 'app-car-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, IconComponent],
   templateUrl: './car-detail.component.html',
   styleUrl: './car-detail.component.scss'
 })

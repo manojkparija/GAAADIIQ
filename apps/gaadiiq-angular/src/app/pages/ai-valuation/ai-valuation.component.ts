@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 interface Variant { name: string; basePrice: number; }
 interface ModelEntry { variants: Variant[]; }
@@ -119,7 +120,7 @@ const CATALOGUE: Record<string, Record<string, Variant[]>> = {
 @Component({
   selector: 'app-ai-valuation',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   templateUrl: './ai-valuation.component.html',
   styleUrl: './ai-valuation.component.scss',
 })

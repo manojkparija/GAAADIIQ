@@ -3,7 +3,7 @@
 ══════════════════════════════════════════════════════════════════ -->
 <div class="advisor-page" *ngIf="phase() === 'quiz'">
   <div class="advisor-hero">
-    <div class="hero-icon">🤖</div>
+    <div class="hero-icon"><app-icon name="brain" [size]="40"></app-icon></div>
     <h1>AI Car <span class="gradient-text">Advisor</span></h1>
     <p class="hero-sub">Answer {{ totalSteps() }} smart questions and get data-driven recommendations with full cost analysis</p>
   </div>
@@ -62,7 +62,7 @@
 ══════════════════════════════════════════════════════════════════ -->
 <div class="analyzing-page" *ngIf="phase() === 'analyzing'">
   <div class="analyze-card glass-card">
-    <div class="analyze-icon">{{ analyzeMsg().icon }}</div>
+    <div class="analyze-icon"><app-icon [name]="analyzeMsg().icon" [size]="24"></app-icon></div>
     <h2>Analyzing Your Profile</h2>
     <p class="analyze-msg">{{ analyzeMsg().text }}</p>
     <div class="analyze-bar-track">
@@ -198,7 +198,7 @@
         <!-- Pros / Cons -->
         <div class="pros-cons">
           <div class="pros-col">
-            <div class="pc-head pros-head">✅ Pros</div>
+            <div class="pc-head pros-head">Pros</div>
             <div class="pc-item" *ngFor="let p of car.pros">{{ p }}</div>
           </div>
           <div class="cons-col">

@@ -9,13 +9,13 @@
   border-bottom: 1px solid var(--divider);
   padding: 5rem 0 2.5rem;
   text-align: center;
-  h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; }
+  h1 { font-family: 'Outfit', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; }
   p { color: rgba(255,255,255,0.75); margin-top: 0.5rem; }
   .gradient-text { background: linear-gradient(135deg, #ffffff, #C4B5FD); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 }
 
 .car-selector { margin: 2.5rem 0;
-  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; margin-bottom: 1.5rem; }
+  h2 { font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin-bottom: 1.5rem; }
 }
 
 .cars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
@@ -86,7 +86,7 @@
   border: 1px solid var(--border-soft); border-radius: 20px;
   padding: 3rem; text-align: center;
   .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
-  h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; margin-bottom: 0.5rem; }
+  h3 { font-family: 'Outfit', sans-serif; font-size: 1.2rem; margin-bottom: 0.5rem; }
   p { color: var(--text-tertiary); font-size: 0.9rem; }
 }
 

@@ -1,11 +1,12 @@
 import { Component, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../icon/icon.component';
 import { CityService, POPULAR_CITIES } from '../../services/city.service';
 
 @Component({
   selector: 'app-city-selector',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   templateUrl: './city-selector.component.html',
   styleUrl: './city-selector.component.scss',
 })

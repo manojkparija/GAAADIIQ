@@ -2,7 +2,7 @@
   <div class="orb orb-1"></div>
   <div class="container">
     <div class="page-header">
-      <div class="ai-badge">🔔 Price Alerts</div>
+      <div class="ai-badge">Price Alerts</div>
       <h1>Never Miss a <span class="gradient-text">Price Drop</span></h1>
       <p>Set your target price and we'll notify you the moment a listing drops below it.</p>
     </div>
@@ -10,7 +10,7 @@
     <div class="content-grid">
       <div class="form-card glass-card">
         <h2>Create New Alert</h2>
-        <div class="success-msg" *ngIf="submitted()">✅ Alert created! We'll notify you at {{ form.email || 'your email' }}</div>
+        <div class="success-msg" *ngIf="submitted()">Alert created! We'll notify you at {{ form.email || 'your email' }}</div>
         <div class="form-group">
           <label>Car Make</label>
           <select [(ngModel)]="form.make" name="make">
@@ -33,7 +33,7 @@
         </div>
         <button class="btn-gradient" style="width:100%;padding:1rem" (click)="submit()"
           [disabled]="!form.make || !form.model || !form.targetPrice || !form.email">
-          🔔 Create Alert
+          Create Alert
         </button>
       </div>
 

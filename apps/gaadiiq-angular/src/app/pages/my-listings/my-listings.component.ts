@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MyListingsService, MyListing } from '../../services/my-listings.service';
 import { CarsDataService } from '../../services/cars-data.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-my-listings',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule],
+  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
   templateUrl: './my-listings.component.html',
   styleUrl: './my-listings.component.scss'
 })
