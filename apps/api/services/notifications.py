@@ -1,8 +1,8 @@
 """
 Notification creation helpers used by routers as FastAPI BackgroundTasks.
 """
-import uuid
 import logging
+import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

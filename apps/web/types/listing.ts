@@ -45,6 +45,9 @@ export interface Listing {
   is_featured: boolean;
   views_count: number;
   ai_valuation: number | null;
+  ai_method: string | null;
+  ai_confidence: string | null;
+  ai_reasoning: string | null;
   image_urls: string[];
   car: Car;
   seller: Seller;

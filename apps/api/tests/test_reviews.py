@@ -5,6 +5,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from db.base import Base
 from db.session import get_db
@@ -15,7 +16,7 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest_asyncio.fixture
 async def db_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(TEST_DB_URL, echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -89,6 +90,7 @@ async def test_review_requires_auth(client):
     seller_token = await _register_token(client, "rev_noauth_seller@test.com")
     listing = await _make_listing(client, seller_token)
 
+    client.cookies.clear()  # remove session cookie so the request is truly unauthenticated
     r = await client.post("/reviews", json={"listing_id": listing["id"], "rating": 3})
     assert r.status_code == 401
 
@@ -156,7 +158,10 @@ async def test_delete_own_review(client):
                             headers={"Authorization": f"Bearer {buyer_token}"})
     rev_id = rev.json()["id"]
 
-    r = await client.delete(f"/reviews/{rev_id}", headers={"Authorization": f"Bearer {buyer_token}"})
+    r = await client.delete(
+        f"/reviews/{rev_id}",
+        headers={"Authorization": f"Bearer {buyer_token}"},
+    )
     assert r.status_code == 204
 
 
@@ -171,7 +176,10 @@ async def test_cannot_delete_others_review(client):
                             headers={"Authorization": f"Bearer {buyer_token}"})
     rev_id = rev.json()["id"]
 
-    r = await client.delete(f"/reviews/{rev_id}", headers={"Authorization": f"Bearer {other_token}"})
+    r = await client.delete(
+        f"/reviews/{rev_id}",
+        headers={"Authorization": f"Bearer {other_token}"},
+    )
     assert r.status_code == 404
 
 

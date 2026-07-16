@@ -1,0 +1,395 @@
+<!-- =========================================================
+     USED CARS PAGE
+     ========================================================= -->
+
+<!-- ── HERO SEARCH ── -->
+<section class="uc-hero">
+  <div class="container">
+    <div class="hero-content">
+      <span class="hero-badge">🔍 {{ totalCount() }}+ Used Cars Available</span>
+      <h1 class="hero-heading">Find Your Perfect <span class="gradient-text">Used Car</span></h1>
+      <p class="hero-sub">AI-verified pricing, certified inspections, and the best deals in your city</p>
+
+      <div class="hero-search-card glass-card">
+        <div class="hero-search-row">
+          <div class="search-field">
+            <label class="search-field-label">📍 City</label>
+            <input type="text" class="search-input" placeholder="All India"
+              [value]="heroCity()" (input)="heroCity.set($any($event.target).value)" list="city-suggestions" />
+            <datalist id="city-suggestions">
+              @for (c of cityOptions; track c) { <option [value]="c"></option> }
+            </datalist>
+          </div>
+          <div class="search-field">
+            <label class="search-field-label">🚗 Make</label>
+            <select class="search-select" [value]="heroMake()" (change)="heroMake.set($any($event.target).value)">
+              @for (m of makes(); track m) {
+                <option [value]="m === 'All' ? '' : m">{{ m }}</option>
+              }
+            </select>
+          </div>
+          <div class="search-field">
+            <label class="search-field-label">🔎 Model</label>
+            <input type="text" class="search-input" placeholder="e.g. Nexon, Swift..."
+              [value]="heroModel()" (input)="heroModel.set($any($event.target).value)" />
+          </div>
+          <div class="search-field">
+            <label class="search-field-label">💰 Max Budget</label>
+            <select class="search-select" [value]="heroBudgetMax()" (change)="maxBudget.set(+$any($event.target).value); heroBudgetMax.set(+$any($event.target).value)">
+              <option value="500000">Under ₹5L</option>
+              <option value="1000000">Under ₹10L</option>
+              <option value="1500000">Under ₹15L</option>
+              <option value="2000000">Under ₹20L</option>
+              <option value="5000000" selected>Any Budget</option>
+            </select>
+          </div>
+          <button class="btn-gradient search-btn" (click)="applyHeroSearch()">Search</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WHY BUY USED STATS ── -->
+<section class="uc-stats-banner">
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-icon">💸</div>
+        <div class="stat-value">Save up to 40%</div>
+        <div class="stat-label">vs new car price</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-value">AI-Verified</div>
+        <div class="stat-label">pricing on every car</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">🚗</div>
+        <div class="stat-value">50,000+</div>
+        <div class="stat-label">listed cars</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">🛡️</div>
+        <div class="stat-value">1-Year Warranty</div>
+        <div class="stat-label">options available</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MAIN CONTENT: SIDEBAR + RESULTS ── -->
+<section class="uc-main">
+  <div class="container">
+    <div class="uc-layout">
+
+      <!-- ── FILTER SIDEBAR ── -->
+      <aside class="uc-sidebar glass-card" [class.open]="sidebarOpen()">
+        <div class="sidebar-header">
+          <h3 class="sidebar-title">Filters</h3>
+          @if (activeFiltersCount() > 0) {
+            <button class="clear-all-btn" (click)="clearAllFilters()">Clear All ({{ activeFiltersCount() }})</button>
+          }
+        </div>
+
+        <!-- Budget Range -->
+        <div class="filter-group">
+          <label class="filter-group-label">Budget Range</label>
+          <div class="range-display">
+            <span>{{ formatLakh(minBudget()) }}</span> – <span>{{ formatLakh(maxBudget()) }}</span>
+          </div>
+          <div class="dual-range">
+            <div class="range-track"></div>
+            <div class="range-fill"
+              [style.left]="((minBudget() - 100000) / (5000000 - 100000) * 100) + '%'"
+              [style.width]="((maxBudget() - minBudget()) / (5000000 - 100000) * 100) + '%'">
+            </div>
+            <input type="range" class="range-input" min="100000" max="5000000" step="50000"
+              [value]="minBudget()" (input)="onMinBudget(+$any($event.target).value)" />
+            <input type="range" class="range-input" min="100000" max="5000000" step="50000"
+              [value]="maxBudget()" (input)="onMaxBudget(+$any($event.target).value)" />
+          </div>
+          <div class="range-labels"><span>₹1L</span><span>₹50L</span></div>
+        </div>
+
+        <!-- Year Range -->
+        <div class="filter-group">
+          <label class="filter-group-label">Year</label>
+          <div class="year-selects">
+            <select class="year-select" [value]="yearFrom()" (change)="yearFrom.set(+$any($event.target).value)">
+              @for (y of yearOptions; track y) {
+                <option [value]="y">{{ y }}</option>
+              }
+            </select>
+            <span class="year-sep">to</span>
+            <select class="year-select" [value]="yearTo()" (change)="yearTo.set(+$any($event.target).value)">
+              @for (y of yearOptions; track y) {
+                <option [value]="y">{{ y }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- KM Driven -->
+        <div class="filter-group">
+          <label class="filter-group-label">KM Driven</label>
+          @for (r of kmRangeOptions; track r) {
+            <label class="checkbox-label">
+              <input type="checkbox" [checked]="selectedKmRanges().includes(r)" (change)="toggleKmRange(r)" />
+              {{ r }}
+            </label>
+          }
+        </div>
+
+        <!-- Fuel Type -->
+        <div class="filter-group">
+          <label class="filter-group-label">Fuel Type</label>
+          <div class="chip-filters">
+            @for (f of fuelOptions; track f) {
+              <button class="chip-filter" [class.active]="selectedFuels().includes(f)" (click)="toggleFuel(f)">
+                {{ f }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Transmission -->
+        <div class="filter-group">
+          <label class="filter-group-label">Transmission</label>
+          <div class="chip-filters">
+            @for (t of transmissionOptions; track t) {
+              <button class="chip-filter" [class.active]="selectedTransmissions().includes(t)" (click)="toggleTransmission(t)">
+                {{ t }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Body Type -->
+        <div class="filter-group">
+          <label class="filter-group-label">Body Type</label>
+          @for (bt of bodyTypeOptions; track bt) {
+            <label class="checkbox-label">
+              <input type="checkbox" [checked]="selectedBodyTypes().includes(bt)" (change)="toggleBodyType(bt)" />
+              {{ bt }}
+            </label>
+          }
+        </div>
+
+        <!-- No. of Owners -->
+        <div class="filter-group">
+          <label class="filter-group-label">No. of Owners</label>
+          @for (o of ownerOptions; track o) {
+            <label class="checkbox-label">
+              <input type="checkbox" [checked]="selectedOwners().includes(o)" (change)="toggleOwner(o)" />
+              {{ o }}
+            </label>
+          }
+        </div>
+
+        <!-- Certified Cars -->
+        <div class="filter-group">
+          <label class="filter-group-label">Certified Cars</label>
+          <label class="toggle-label">
+            <input type="checkbox" class="toggle-input" [checked]="certifiedOnly()" (change)="certifiedOnly.set($any($event.target).checked)" />
+            <span class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-text">Show Certified Only</span>
+          </label>
+        </div>
+
+        <!-- Color -->
+        <div class="filter-group">
+          <label class="filter-group-label">Color</label>
+          <div class="color-picker">
+            @for (c of colorOptions; track c.name) {
+              <button class="color-dot" [style.background]="c.hex" [class.selected]="selectedColors().includes(c.name)"
+                [title]="c.name" (click)="toggleColor(c.name)">
+              </button>
+            }
+          </div>
+        </div>
+      </aside>
+
+      <!-- ── RESULTS AREA ── -->
+      <div class="uc-results">
+        <!-- Sort & Count Bar -->
+        <div class="sort-count-bar">
+          <div class="car-count">
+            @if (loading()) {
+              <span>Loading cars...</span>
+            } @else {
+              <strong>{{ totalCount() }}</strong> used cars found
+            }
+          </div>
+          <div class="sort-area">
+            <button class="filter-toggle-btn btn-outline" (click)="sidebarOpen.set(!sidebarOpen())">
+              🔧 Filters
+              @if (activeFiltersCount() > 0) {
+                <span class="filter-badge">{{ activeFiltersCount() }}</span>
+              }
+            </button>
+            <select class="sort-select" [value]="selectedSort()" (change)="selectedSort.set($any($event.target).value)">
+              @for (s of sortOptions; track s) {
+                <option [value]="s">{{ s }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Active Filters Strip -->
+        @if (activeFiltersCount() > 0) {
+          <div class="active-filters-strip">
+            @for (f of selectedFuels(); track f) {
+              <span class="filter-chip">{{ f }} <button (click)="toggleFuel(f)">×</button></span>
+            }
+            @for (t of selectedTransmissions(); track t) {
+              <span class="filter-chip">{{ t }} <button (click)="toggleTransmission(t)">×</button></span>
+            }
+            @for (bt of selectedBodyTypes(); track bt) {
+              <span class="filter-chip">{{ bt }} <button (click)="toggleBodyType(bt)">×</button></span>
+            }
+            @for (r of selectedKmRanges(); track r) {
+              <span class="filter-chip">{{ r }} <button (click)="toggleKmRange(r)">×</button></span>
+            }
+            @for (o of selectedOwners(); track o) {
+              <span class="filter-chip">{{ o }} <button (click)="toggleOwner(o)">×</button></span>
+            }
+            @for (c of selectedColors(); track c) {
+              <span class="filter-chip">{{ c }} <button (click)="toggleColor(c)">×</button></span>
+            }
+            @if (certifiedOnly()) {
+              <span class="filter-chip">Certified <button (click)="certifiedOnly.set(false)">×</button></span>
+            }
+            @if (minBudget() > 100000) {
+              <span class="filter-chip">Min {{ formatLakh(minBudget()) }} <button (click)="minBudget.set(100000)">×</button></span>
+            }
+            @if (maxBudget() < 5000000) {
+              <span class="filter-chip">Max {{ formatLakh(maxBudget()) }} <button (click)="maxBudget.set(5000000)">×</button></span>
+            }
+            <button class="clear-strip-btn" (click)="clearAllFilters()">Clear All</button>
+          </div>
+        }
+
+        <!-- Loading State -->
+        @if (loading()) {
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Fetching best used cars for you...</p>
+          </div>
+        } @else if (displayedCars().length === 0) {
+          <div class="empty-state glass-card">
+            <div class="empty-icon">🔍</div>
+            <h3>No cars match your filters</h3>
+            <p>Try broadening your search criteria</p>
+            <button class="btn-gradient" (click)="clearAllFilters()">Clear All Filters</button>
+          </div>
+        } @else {
+
+          <!-- Car Cards Grid -->
+          <div class="cars-grid">
+            @for (car of displayedCars(); track car.id) {
+              <div class="car-card glass-card">
+                <!-- Image -->
+                <div class="car-img-wrap">
+                  <img [src]="car.image || 'assets/placeholder.svg'" [alt]="car.make + ' ' + car.model"
+                    class="car-img" (error)="$any($event.target).src='assets/placeholder.svg'" loading="lazy" />
+                  @if (car.verified) {
+                    <span class="verified-badge">✓ Certified</span>
+                  }
+                  <button class="wishlist-btn" [class.active]="wishlist().has(car.id)"
+                    (click)="$event.stopPropagation(); toggleWishlist(car.id)" title="Wishlist">
+                    {{ wishlist().has(car.id) ? '❤️' : '🤍' }}
+                  </button>
+                </div>
+
+                <!-- Info -->
+                <div class="car-info">
+                  <!-- Year + Name -->
+                  <div class="car-year-row">
+                    <span class="car-year">{{ car.year }}</span>
+                    @if (car.badge) {
+                      <span class="car-badge">{{ car.badge }}</span>
+                    }
+                  </div>
+                  <h3 class="car-name">{{ car.make }} {{ car.model }}
+                    @if (car.variant) { <span class="car-variant">{{ car.variant }}</span> }
+                  </h3>
+
+                  <!-- Price + EMI -->
+                  <div class="price-row">
+                    <span class="car-price">{{ formatLakh(car.price) }}</span>
+                    <span class="car-emi">EMI ~ {{ car.emiEstimate }}</span>
+                  </div>
+
+                  <!-- AI Price Verdict -->
+                  <div class="verdict-row">
+                    <span class="price-verdict" [class]="verdictClass(car.priceVerdict)">
+                      {{ verdictLabel(car.priceVerdict) }}
+                    </span>
+                  </div>
+
+                  <!-- Details Row -->
+                  <div class="car-details-row">
+                    <span class="detail-pill">🛞 {{ car.formattedKm }}</span>
+                    <span class="detail-pill">⛽ {{ car.fuel }}</span>
+                    <span class="detail-pill">⚙️ {{ car.transmission }}</span>
+                    @if (car.bodyType) {
+                      <span class="detail-pill">🚗 {{ car.bodyType }}</span>
+                    }
+                  </div>
+
+                  <!-- City + Owners -->
+                  <div class="meta-row">
+                    @if (car.city) {
+                      <span class="meta-pill">📍 {{ car.city }}</span>
+                    }
+                    @if (car.owners) {
+                      <span class="meta-pill">👤 {{ car.owners }}</span>
+                    }
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="card-actions">
+                    <button class="btn-gradient btn-sm" (click)="viewCar(car.id)">View Details</button>
+                    <a [routerLink]="['/emi-calculator']" class="btn-outline btn-sm">EMI Calc</a>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Load More -->
+          @if (hasMore()) {
+            <div class="load-more-wrap">
+              <button class="load-more-btn btn-outline" (click)="loadMore()">
+                Load 12 More ({{ totalCount() - pageSize() }} remaining)
+              </button>
+            </div>
+          }
+        }
+
+        <!-- Recently Viewed -->
+        @if (recentlyViewedCars().length > 0) {
+          <div class="recently-viewed">
+            <h3 class="rv-title">👁️ Recently Viewed</h3>
+            <div class="rv-cards">
+              @for (car of recentlyViewedCars(); track car.id) {
+                <div class="rv-card glass-card" (click)="viewCar(car.id)">
+                  <img [src]="car.image || 'assets/placeholder.svg'" [alt]="car.make + ' ' + car.model"
+                    class="rv-img" (error)="$any($event.target).src='assets/placeholder.svg'" loading="lazy" />
+                  <div class="rv-info">
+                    <div class="rv-name">{{ car.make }} {{ car.model }}</div>
+                    <div class="rv-price">{{ formatLakh(car.price) }}</div>
+                    <div class="rv-km">{{ car.km.toLocaleString('en-IN') }} km · {{ car.year }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

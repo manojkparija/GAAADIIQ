@@ -5,6 +5,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from db.base import Base
 from db.session import get_db
@@ -15,7 +16,7 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest_asyncio.fixture
 async def db_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(TEST_DB_URL, echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -68,7 +69,10 @@ async def _make_listing(client: AsyncClient, token: str, price: int = 1_000_000)
 @pytest.mark.asyncio
 async def test_unread_count_zero_for_new_user(client):
     token = await _register_token(client, "bell@test.com")
-    r = await client.get("/notifications/unread-count", headers={"Authorization": f"Bearer {token}"})
+    r = await client.get(
+        "/notifications/unread-count",
+        headers={"Authorization": f"Bearer {token}"},
+    )
     assert r.status_code == 200
     assert r.json()["unread_count"] == 0
 
@@ -143,7 +147,10 @@ async def test_unread_count_increments(client):
         "tenure_months": 36, "employment_type": "self_employed", "annual_income": 800000,
     }, headers={"Authorization": f"Bearer {buyer_token}"})
 
-    r = await client.get("/notifications/unread-count", headers={"Authorization": f"Bearer {seller_token}"})
+    r = await client.get(
+        "/notifications/unread-count",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
     assert r.json()["unread_count"] == 2
 
 
@@ -155,7 +162,12 @@ async def test_mark_notification_read(client):
     await client.post("/bookings", json={"listing_id": listing_id},
                       headers={"Authorization": f"Bearer {buyer_token}"})
 
-    notifs = (await client.get("/notifications", headers={"Authorization": f"Bearer {seller_token}"})).json()
+    notifs = (
+        await client.get(
+            "/notifications",
+            headers={"Authorization": f"Bearer {seller_token}"},
+        )
+    ).json()
     notif_id = notifs[0]["id"]
 
     r = await client.patch(f"/notifications/{notif_id}/read",
@@ -163,7 +175,10 @@ async def test_mark_notification_read(client):
     assert r.status_code == 200
     assert r.json()["is_read"] is True
 
-    r = await client.get("/notifications/unread-count", headers={"Authorization": f"Bearer {seller_token}"})
+    r = await client.get(
+        "/notifications/unread-count",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
     assert r.json()["unread_count"] == 0
 
 
@@ -184,7 +199,10 @@ async def test_mark_all_read(client):
     assert r.status_code == 200
     assert r.json()["marked"] is True
 
-    r = await client.get("/notifications/unread-count", headers={"Authorization": f"Bearer {seller_token}"})
+    r = await client.get(
+        "/notifications/unread-count",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
     assert r.json()["unread_count"] == 0
 
 
@@ -196,7 +214,12 @@ async def test_cannot_read_other_users_notification(client):
     await client.post("/bookings", json={"listing_id": listing_id},
                       headers={"Authorization": f"Bearer {buyer_token}"})
 
-    notifs = (await client.get("/notifications", headers={"Authorization": f"Bearer {seller_token}"})).json()
+    notifs = (
+        await client.get(
+            "/notifications",
+            headers={"Authorization": f"Bearer {seller_token}"},
+        )
+    ).json()
     notif_id = notifs[0]["id"]
 
     r = await client.patch(f"/notifications/{notif_id}/read",

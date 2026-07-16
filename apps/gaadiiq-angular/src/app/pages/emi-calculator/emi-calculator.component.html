@@ -1,0 +1,266 @@
+<div class="emi-page">
+  <div class="emi-hero">
+    <div class="container">
+      <h1>EMI <span class="gradient-text">Calculator</span></h1>
+      <p>Calculate your monthly payment and compare bank rates</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="emi-grid">
+      <!-- Controls -->
+      <div class="controls-card glass-card">
+        <h2>Loan Details</h2>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Loan Amount</span>
+            <strong>{{ fmt(loanAmount()) }}</strong>
+          </div>
+          <input type="range" min="100000" max="10000000" step="50000"
+            [ngModel]="loanAmount()" (ngModelChange)="loanAmount.set(+$event)">
+          <div class="range-ends"><span>₹1L</span><span>₹1Cr</span></div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Down Payment (optional)</span>
+            <strong>{{ fmt(downPayment()) }}</strong>
+          </div>
+          <input type="range" min="0" [max]="loanAmount()" step="10000"
+            [ngModel]="downPayment()" (ngModelChange)="downPayment.set(+$event)">
+          <div class="range-ends"><span>₹0</span><span>{{ fmt(loanAmount()) }}</span></div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Interest Rate</span>
+            <strong>{{ interestRate() }}%</strong>
+          </div>
+          <input type="range" min="6" max="18" step="0.1"
+            [ngModel]="interestRate()" (ngModelChange)="interestRate.set(+$event)">
+          <div class="range-ends"><span>6%</span><span>18%</span></div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Tenure</span>
+            <strong>{{ tenureMonths() }} months</strong>
+          </div>
+          <input type="range" min="12" max="84" step="12"
+            [ngModel]="tenureMonths()" (ngModelChange)="tenureMonths.set(+$event)">
+          <div class="range-ends"><span>12 mo</span><span>84 mo</span></div>
+        </div>
+
+        <div class="loan-summary">
+          <div class="sum-row">
+            <span>Principal</span>
+            <strong>{{ fmt(principal()) }}</strong>
+          </div>
+          <div class="sum-row highlight">
+            <span>Monthly EMI</span>
+            <strong class="emi-amount">{{ fmtExact(emi()) }}</strong>
+          </div>
+          <div class="sum-row">
+            <span>Total Interest</span>
+            <strong style="color:#FF6584">{{ fmtExact(totalInterest()) }}</strong>
+          </div>
+          <div class="sum-row">
+            <span>Total Amount</span>
+            <strong>{{ fmtExact(totalAmount()) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart + Results -->
+      <div class="results-col">
+        <!-- Donut Chart -->
+        <div class="chart-card glass-card">
+          <h3>Loan Breakdown</h3>
+          <div class="donut-wrap">
+            <svg viewBox="0 0 120 120" class="donut-svg">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#6C63FF" stroke-width="12"
+                [attr.stroke-dasharray]="principalDash() + ' ' + (donutDash() - principalDash())"
+                stroke-linecap="round" transform="rotate(-90 60 60)" class="donut-seg"/>
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#FF6584" stroke-width="12"
+                [attr.stroke-dasharray]="interestDash() + ' ' + (donutDash() - interestDash())"
+                [attr.stroke-dashoffset]="-principalDash()"
+                transform="rotate(-90 60 60)" class="donut-seg"/>
+            </svg>
+            <div class="donut-center">
+              <div class="donut-emi">{{ fmtExact(emi()) }}</div>
+              <div class="donut-label">per month</div>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><span class="dot principal"></span> Principal ({{ principalPercent() }}%)</div>
+            <div class="legend-item"><span class="dot interest"></span> Interest ({{ interestPercent() }}%)</div>
+          </div>
+        </div>
+
+        <!-- Bank Comparison -->
+        <div class="banks-card glass-card">
+          <h3>Compare Bank Rates</h3>
+          <div class="banks-list">
+            @for (bank of banks; track bank.name) {
+              <div class="bank-row"
+                [class.best]="bank.rate === 8.45"
+                [class.selected]="selectedBank() === bank.name"
+                (click)="selectBank(bank)"
+                style="cursor:pointer">
+                <div class="bank-info">
+                  <span class="bank-logo">{{ bank.logo }}</span>
+                  <div>
+                    <div class="bank-name">{{ bank.name }}</div>
+                    <div class="bank-rate">{{ bank.rate }}% p.a.</div>
+                  </div>
+                </div>
+                <div class="bank-emi">
+                  <div class="emi-val">{{ fmtExact(bankEmi(bank.rate)) }}</div>
+                  <div class="emi-label">/ month</div>
+                </div>
+                @if (selectedBank() === bank.name) {
+                  <div class="selected-badge">Selected ✓</div>
+                } @else if (bank.rate === 8.45) {
+                  <div class="best-badge">Best Rate</div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Affordability Score -->
+    <div class="afford-card glass-card">
+      <div class="afford-header">
+        <h3>🏦 Affordability <span class="gradient-text">Analysis</span></h3>
+        <p class="afford-sub">Enter your income details to see if this loan fits your financial health</p>
+      </div>
+
+      <div class="afford-grid">
+        <!-- Inputs -->
+        <div class="afford-inputs">
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>Monthly Income</span>
+              <strong class="gradient-text">{{ fmt(monthlyIncome()) }}</strong>
+            </div>
+            <input type="range" min="20000" max="500000" step="5000"
+              [ngModel]="monthlyIncome()" (ngModelChange)="monthlyIncome.set(+$event)">
+            <div class="range-ends"><span>₹20K</span><span>₹5L</span></div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>Existing EMIs</span>
+              <strong>{{ fmt(existingEmis()) }}</strong>
+            </div>
+            <input type="range" min="0" max="100000" step="1000"
+              [ngModel]="existingEmis()" (ngModelChange)="existingEmis.set(+$event)">
+            <div class="range-ends"><span>₹0</span><span>₹1L</span></div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>Monthly Expenses</span>
+              <strong>{{ fmt(monthlyExpenses()) }}</strong>
+            </div>
+            <input type="range" min="5000" max="200000" step="2500"
+              [ngModel]="monthlyExpenses()" (ngModelChange)="monthlyExpenses.set(+$event)">
+            <div class="range-ends"><span>₹5K</span><span>₹2L</span></div>
+          </div>
+        </div>
+
+        <!-- Score Panel -->
+        <div class="afford-scores">
+          <!-- Big score gauge -->
+          <div class="score-gauge">
+            <svg viewBox="0 0 120 70" class="gauge-svg">
+              <path d="M10 65 A54 54 0 0 1 110 65" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="12" stroke-linecap="round"/>
+              <path d="M10 65 A54 54 0 0 1 110 65" fill="none" [attr.stroke]="affordabilityLabel().color" stroke-width="12" stroke-linecap="round"
+                [style.stroke-dasharray]="(affordabilityScore() / 100 * 170) + ' 170'"/>
+            </svg>
+            <div class="gauge-center">
+              <div class="gauge-score" [style.color]="affordabilityLabel().color">{{ affordabilityScore() }}</div>
+              <div class="gauge-label" [style.color]="affordabilityLabel().color">{{ affordabilityLabel().label }}</div>
+            </div>
+          </div>
+
+          <!-- DTI -->
+          <div class="dti-row">
+            <div class="dti-item">
+              <div class="dti-val" [class.warn]="dtiCurrent() > 35">{{ dtiCurrent() }}%</div>
+              <div class="dti-label">Current DTI</div>
+            </div>
+            <div class="dti-arrow">→</div>
+            <div class="dti-item">
+              <div class="dti-val" [class.warn]="dtiAfter() > 40">{{ dtiAfter() }}%</div>
+              <div class="dti-label">DTI After Loan</div>
+            </div>
+            <div class="dti-ideal">
+              <span class="ideal-badge" [class.ok]="dtiAfter() <= 40" [class.over]="dtiAfter() > 40">
+                {{ dtiAfter() <= 40 ? '✓ Within safe range (≤40%)' : '⚠ Exceeds safe range (>40%)' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Metrics row -->
+          <div class="afford-metrics">
+            <div class="am-item">
+              <div class="am-icon">💳</div>
+              <div class="am-val" [class.bad]="(existingEmis() + emi()) > monthlyIncome() * 0.4">
+                {{ fmt(existingEmis() + emi()) }}
+              </div>
+              <div class="am-label">Total Monthly EMI</div>
+            </div>
+            <div class="am-item">
+              <div class="am-icon">💰</div>
+              <div class="am-val" [class.bad]="monthlySurplus() < 0" [class.good]="monthlySurplus() > 0">
+                {{ fmt(monthlySurplus()) }}
+              </div>
+              <div class="am-label">Monthly Surplus</div>
+            </div>
+            <div class="am-item">
+              <div class="am-icon">🛡️</div>
+              <div class="am-val" [class.good]="emergencyBufferOk()" [class.bad]="!emergencyBufferOk()">
+                {{ emergencyBufferOk() ? 'Adequate' : 'Tight' }}
+              </div>
+              <div class="am-label">Emergency Buffer</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Amortization Table -->
+    <div class="amort-card glass-card">
+      <h3>Amortization Schedule <span class="amort-sub">(First 12 months)</span></h3>
+      <div class="table-wrap">
+        <table class="amort-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>EMI</th>
+              <th>Principal</th>
+              <th>Interest</th>
+              <th>Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of amortization(); track row.month) {
+              <tr>
+                <td>{{ row.month }}</td>
+                <td>{{ fmt(row.emi) }}</td>
+                <td style="color:#43E97B">{{ fmt(row.principal) }}</td>
+                <td style="color:#FF6584">{{ fmt(row.interest) }}</td>
+                <td>{{ fmt(row.balance) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect x="16" y="14" width="88" height="52" rx="4" fill="none" stroke="#333" stroke-width="2"/>
+  <text x="60" y="36" font-family="serif" font-size="22" font-weight="bold" fill="#1A1A1A" text-anchor="middle" letter-spacing="4">RR</text>
+  <line x1="22" y1="48" x2="98" y2="48" stroke="#333" stroke-width="1"/>
+  <text x="60" y="58" font-family="serif" font-size="6" fill="#555" text-anchor="middle" letter-spacing="1">ROLLS·ROYCE</text>
+</svg>

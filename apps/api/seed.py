@@ -9,19 +9,18 @@ Creates a demo dealer account + 15 car listings with real images.
 Safe to run multiple times (checks for existing demo user first).
 """
 import asyncio
-import sys
-from datetime import datetime, timedelta, timezone
+import sys  # isort: skip_file
 
 from sqlalchemy import select
 
 # Add the apps/api directory to path
 sys.path.insert(0, ".")
 
-from core.database import AsyncSessionLocal
+from db.session import AsyncSessionLocal
 from core.security import hash_password
-from models.user import User
 from models.car import Car
 from models.listing import Listing
+from models.user import User
 
 DEMO_EMAIL = "demo@gaadiiq.com"
 DEMO_PASSWORD = "Demo@1234"

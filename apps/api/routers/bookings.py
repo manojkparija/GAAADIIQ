@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from core.dependencies import get_current_user
 from db.session import get_db
 from models.listing import Listing
-from models.test_drive_booking import BookingStatus, TestDriveBooking
+from models.test_drive_booking import TestDriveBooking
 from models.user import User
 from schemas.booking import BookingCreate, BookingOut, BookingStatusUpdate
 from services.notifications import notify_booking_received
@@ -23,7 +23,6 @@ async def create_booking(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    from models.car import Car  # local import avoids circular
 
     listing_result = await db.execute(
         select(Listing)

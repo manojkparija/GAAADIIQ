@@ -1,0 +1,121 @@
+<div class="bj-wrap">
+  <div class="bj-hero">
+    <div class="container">
+      <div class="bj-badge">🧭 Buyer Journey</div>
+      <h1 class="bj-title">Find Your Perfect Car</h1>
+      <p class="bj-sub">Answer a few quick questions to get your personalized recommendation.</p>
+    </div>
+  </div>
+  <div class="bj-container container">
+
+    <!-- DONE state -->
+    <ng-container *ngIf="done()">
+      <div class="bj-done glass-card">
+        <div class="done-icon">🎯</div>
+        <h2>Your Personalized Journey</h2>
+        <p class="done-sub">Based on your preferences, here's your buyer profile:</p>
+
+        <div class="profile-grid" *ngIf="profile">
+          <div class="pf-item"><span class="pf-label">💰 Budget</span><span class="pf-val">{{ profile.budget }}</span></div>
+          <div class="pf-item"><span class="pf-label">🚗 Use Case</span><span class="pf-val">{{ profile.useCase }}</span></div>
+          <div class="pf-item"><span class="pf-label">⛽ Fuel</span><span class="pf-val">{{ profile.fuelPreference }}</span></div>
+          <div class="pf-item"><span class="pf-label">⚙️ Transmission</span><span class="pf-val">{{ profile.transmission }}</span></div>
+          <div class="pf-item"><span class="pf-label">🏎️ Body Type</span><span class="pf-val">{{ profile.bodyType }}</span></div>
+          <div class="pf-item"><span class="pf-label">⭐ Priority</span><span class="pf-val">{{ profile.priority }}</span></div>
+        </div>
+
+        <div class="done-actions">
+          <button class="btn-gradient" (click)="seeMatchedCars()">See Matched Cars →</button>
+          <a routerLink="/ai-advisor" class="btn-outline">Ask AI Advisor</a>
+          <button class="btn-text" (click)="restart()">Retake Journey</button>
+        </div>
+      </div>
+
+      <!-- Milestone Roadmap -->
+      <div class="milestone-section">
+        <div class="milestone-header">
+          <h3>Your Buying <span class="gradient-text">Roadmap</span></h3>
+          <div class="milestone-progress-row">
+            <div class="ms-prog-bar">
+              <div class="ms-prog-fill" [style.width.%]="milestoneProgress()"></div>
+            </div>
+            <span class="ms-prog-label">{{ completedMilestones().length }} / {{ milestones.length }} stages complete</span>
+          </div>
+        </div>
+
+        <div class="milestones-list">
+          <div class="milestone-item" *ngFor="let m of milestones; let i = index; let last = last"
+            [class.complete]="isMilestoneComplete(m.id)"
+            [class.active]="!isMilestoneComplete(m.id) && (i === 0 || isMilestoneComplete(milestones[i-1].id))">
+
+            <div class="ms-left">
+              <div class="ms-circle" (click)="toggleMilestone(m.id)">
+                <span *ngIf="isMilestoneComplete(m.id)">✓</span>
+                <span *ngIf="!isMilestoneComplete(m.id)">{{ m.icon }}</span>
+              </div>
+              <div class="ms-connector" *ngIf="!last"></div>
+            </div>
+
+            <div class="ms-body glass-card">
+              <div class="ms-top-row">
+                <h4 class="ms-title">{{ m.title }}</h4>
+                <span class="ms-status-badge" *ngIf="isMilestoneComplete(m.id)">✓ Done</span>
+                <span class="ms-status-badge active-badge" *ngIf="!isMilestoneComplete(m.id) && (i === 0 || isMilestoneComplete(milestones[i-1].id))">▶ Up Next</span>
+              </div>
+              <p class="ms-desc">{{ m.desc }}</p>
+              <div class="ms-actions">
+                <a *ngIf="m.link" [routerLink]="m.link" class="ms-link">{{ m.linkLabel }} →</a>
+                <button class="ms-toggle" (click)="toggleMilestone(m.id)">
+                  {{ isMilestoneComplete(m.id) ? 'Mark Incomplete' : 'Mark Complete' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- QUIZ state -->
+    <ng-container *ngIf="!done()">
+      <!-- Progress -->
+      <div class="bj-progress">
+        <div class="prog-bar">
+          <div class="prog-fill" [style.width.%]="progress"></div>
+        </div>
+        <span class="prog-label">{{ currentStep() + 1 }} / {{ steps.length }}</span>
+      </div>
+
+      <!-- Question card -->
+      <div class="bj-question glass-card">
+        <div class="step-indicator">
+          <span class="step-num" *ngFor="let s of steps; let i = index"
+                [class.active]="i === currentStep()"
+                [class.done]="i < currentStep()">
+            {{ i < currentStep() ? '✓' : i + 1 }}
+          </span>
+        </div>
+
+        <h2 class="q-text">{{ question() }}</h2>
+        <p class="multi-hint">Select all that apply</p>
+
+        <div class="options-grid" [class.two-col]="step.options.length > 3">
+          <button class="option-btn"
+                  *ngFor="let opt of step.options"
+                  [class.selected]="isSelected(opt)"
+                  (click)="toggle(opt)">
+            <span class="opt-check" *ngIf="isSelected(opt)">✓</span>
+            {{ opt }}
+          </button>
+        </div>
+
+        <div class="q-nav">
+          <button class="btn-outline btn-sm" (click)="back()" *ngIf="currentStep() > 0">← Back</button>
+          <button class="btn-gradient btn-sm next-btn" (click)="next()" [disabled]="!hasSelection()">
+            {{ currentStep() === steps.length - 1 ? 'See My Results →' : 'Next →' }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

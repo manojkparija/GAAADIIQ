@@ -1,0 +1,232 @@
+<!-- ══════════════════════════════════════════════════════════════════
+     QUIZ PHASE
+══════════════════════════════════════════════════════════════════ -->
+<div class="advisor-page" *ngIf="phase() === 'quiz'">
+  <div class="advisor-hero">
+    <div class="hero-icon">🤖</div>
+    <h1>AI Car <span class="gradient-text">Advisor</span></h1>
+    <p class="hero-sub">Answer {{ totalSteps() }} smart questions and get data-driven recommendations with full cost analysis</p>
+  </div>
+
+  <div class="quiz-container">
+    <!-- Progress -->
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span class="category-chip">{{ currentStep()?.category }}</span>
+        <span class="step-count">{{ stepIdx() + 1 }} / {{ totalSteps() }}</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" [style.width.%]="progress()"></div>
+      </div>
+    </div>
+
+    <!-- Step card -->
+    <div class="step-card glass-card">
+      <div class="step-icon">{{ currentStep()?.icon }}</div>
+      <h2 class="step-title">{{ currentStep()?.title }}</h2>
+      <p class="step-sub">{{ currentStep()?.subtitle }}</p>
+      <div class="multi-hint" *ngIf="currentStep()?.multi">
+        <span>Select all that apply</span>
+      </div>
+
+      <div class="options-grid" [class.two-col]="(currentStep()?.options?.length ?? 0) > 4">
+        <button
+          class="option-btn"
+          *ngFor="let opt of currentStep()?.options"
+          [class.selected]="isSelected(opt.label)"
+          (click)="toggle(opt.label)">
+          <div class="opt-check" *ngIf="isSelected(opt.label)">✓</div>
+          <div class="opt-label">{{ opt.label }}</div>
+          <div class="opt-sub">{{ opt.sub }}</div>
+        </button>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" (click)="back()" [disabled]="stepIdx() === 0">← Back</button>
+        <button class="btn-gradient btn-next" (click)="next()" [disabled]="!canProceed()">
+          {{ stepIdx() < totalSteps() - 1 ? 'Next →' : '🚀 Find My Car' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Step dots -->
+    <div class="step-dots">
+      <div *ngFor="let s of visibleSteps(); let i = index"
+        class="dot" [class.active]="i === stepIdx()" [class.done]="i < stepIdx()"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     ANALYZING PHASE
+══════════════════════════════════════════════════════════════════ -->
+<div class="analyzing-page" *ngIf="phase() === 'analyzing'">
+  <div class="analyze-card glass-card">
+    <div class="analyze-icon">{{ analyzeMsg().icon }}</div>
+    <h2>Analyzing Your Profile</h2>
+    <p class="analyze-msg">{{ analyzeMsg().text }}</p>
+    <div class="analyze-bar-track">
+      <div class="analyze-bar-fill" [style.width.%]="analyzePct()"></div>
+    </div>
+    <div class="analyze-pct gradient-text">{{ analyzePct() }}%</div>
+    <div class="analyze-dots">
+      <div class="analyze-dot" [class.active]="analyzePct() >= 20"></div>
+      <div class="analyze-dot" [class.active]="analyzePct() >= 40"></div>
+      <div class="analyze-dot" [class.active]="analyzePct() >= 60"></div>
+      <div class="analyze-dot" [class.active]="analyzePct() >= 80"></div>
+      <div class="analyze-dot" [class.active]="analyzePct() >= 100"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     RESULTS PHASE
+══════════════════════════════════════════════════════════════════ -->
+<div class="results-page" *ngIf="phase() === 'results'">
+  <!-- Header -->
+  <div class="results-hero">
+    <div class="results-hero-icon">✨</div>
+    <h1>Your <span class="gradient-text">AI Recommendations</span></h1>
+    <p class="hero-sub">{{ results().length }} personalized matches ranked by compatibility with your profile</p>
+    <div class="results-header-actions">
+      <button class="btn-outline" (click)="restart()">← Retake Quiz</button>
+      <button class="btn-gradient" (click)="showComparison.set(!showComparison())">
+        {{ showComparison() ? 'Hide Comparison' : '⚖️ Compare Top 3' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="results-container">
+
+    <!-- ── Comparison Table ───────────────────────────────────────── -->
+    <div class="comparison-table glass-card" *ngIf="showComparison() && results().length >= 2">
+      <h3>⚖️ Side-by-Side Comparison</h3>
+      <div class="cmp-scroll">
+        <table class="cmp-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th *ngFor="let car of results().slice(0,3)">
+                <div class="cmp-car-head">
+                  <img [src]="(car.images?.length ? car.images![0] : car.image) || 'https://placehold.co/120x80/1a1f35/6C63FF?text=img'"
+                    [alt]="car.make + ' ' + car.model" referrerpolicy="no-referrer"
+                    onerror="this.onerror=null;this.src='https://placehold.co/120x80/1a1f35/6C63FF?text=img'">
+                  <div class="cmp-name">{{ car.make }} {{ car.model }}</div>
+                  <div class="match-chip" [class.high]="car.matchScore >= 80">{{ car.matchScore }}% match</div>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Price</td><td *ngFor="let c of results().slice(0,3)" class="gradient-text fw-bold">{{ fmtP(c.price) }}</td></tr>
+            <tr><td>Fuel Type</td><td *ngFor="let c of results().slice(0,3)">{{ c.fuel }}</td></tr>
+            <tr><td>Body Type</td><td *ngFor="let c of results().slice(0,3)">{{ c.bodyType }}</td></tr>
+            <tr><td>Year</td><td *ngFor="let c of results().slice(0,3)">{{ c.year }}</td></tr>
+            <tr><td>Monthly EMI</td><td *ngFor="let c of results().slice(0,3)">{{ fmtK(c.monthlyEmi) }}</td></tr>
+            <tr><td>Monthly Fuel</td><td *ngFor="let c of results().slice(0,3)">{{ fmtK(c.monthlyFuel) }}</td></tr>
+            <tr><td>5-Year TCO</td><td *ngFor="let c of results().slice(0,3)" class="gradient-text">{{ fmtP(c.fiveYearTco) }}</td></tr>
+            <tr><td>Resale (5yr)</td><td *ngFor="let c of results().slice(0,3)">{{ fmtP(c.resale5yr) }}</td></tr>
+            <tr><td>Rating</td><td *ngFor="let c of results().slice(0,3)">{{ c.rating }}★</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Recommendation Cards ──────────────────────────────────── -->
+    <div class="rec-cards">
+      <div class="rec-card glass-card" *ngFor="let car of results(); let i = index">
+
+        <!-- Rank + badges + score -->
+        <div class="rec-top-row">
+          <div class="rank-badge" [class.gold]="i===0" [class.silver]="i===1" [class.bronze]="i===2">
+            #{{ i + 1 }}
+          </div>
+          <div class="cat-badges">
+            <span class="cat-badge" *ngFor="let b of car.categoryBadges">{{ b }}</span>
+          </div>
+          <div class="match-score-ring" [class.high]="car.matchScore >= 80" [class.medium]="car.matchScore >= 65 && car.matchScore < 80">
+            <div class="score-inner">
+              <span class="score-num">{{ car.matchScore }}</span><span class="score-pct">%</span>
+              <div class="score-label">match</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Car photo + info -->
+        <div class="rec-car-info">
+          <div class="rec-img-wrap">
+            <img [src]="(car.images?.length ? car.images![0] : car.image) || 'https://placehold.co/300x190/1a1f35/6C63FF?text=img'"
+              [alt]="car.make + ' ' + car.model" referrerpolicy="no-referrer"
+              onerror="this.onerror=null;this.src='https://placehold.co/300x190/1a1f35/6C63FF?text=img'">
+          </div>
+          <div class="rec-car-meta">
+            <h3>{{ car.make }} {{ car.model }}</h3>
+            <div class="rec-sub">{{ car.variant }} · {{ car.year }} · {{ car.fuel }}</div>
+            <div class="big-price gradient-text">{{ fmtP(car.price) }}</div>
+            <div class="rec-rating">★ {{ car.rating }} · {{ car.city }}</div>
+          </div>
+        </div>
+
+        <!-- Why this car (explainable AI) -->
+        <div class="why-section" *ngIf="car.reasons.length > 0">
+          <div class="why-label">Why this car for you</div>
+          <div class="reasons-chips">
+            <span class="reason-chip" *ngFor="let r of car.reasons">✓ {{ r }}</span>
+          </div>
+        </div>
+
+        <!-- Financial breakdown -->
+        <div class="finance-grid">
+          <div class="fin-item">
+            <div class="fin-val gradient-text">{{ fmtK(car.monthlyEmi) }}</div>
+            <div class="fin-label">Monthly EMI</div>
+          </div>
+          <div class="fin-item">
+            <div class="fin-val gradient-text">{{ fmtK(car.monthlyFuel) }}</div>
+            <div class="fin-label">Monthly Fuel</div>
+          </div>
+          <div class="fin-item">
+            <div class="fin-val gradient-text">{{ fmtK(car.annualMaintenance) }}</div>
+            <div class="fin-label">Annual Maint.</div>
+          </div>
+          <div class="fin-item fin-tco">
+            <div class="fin-val">{{ fmtP(car.fiveYearTco) }}</div>
+            <div class="fin-label">5-Year TCO</div>
+          </div>
+        </div>
+
+        <!-- Pros / Cons -->
+        <div class="pros-cons">
+          <div class="pros-col">
+            <div class="pc-head pros-head">✅ Pros</div>
+            <div class="pc-item" *ngFor="let p of car.pros">{{ p }}</div>
+          </div>
+          <div class="cons-col">
+            <div class="pc-head cons-head">⚠️ Cons</div>
+            <div class="pc-item" *ngFor="let c of car.cons">{{ c }}</div>
+            <div class="pc-item muted" *ngIf="car.cons.length === 0">No major drawbacks</div>
+          </div>
+        </div>
+
+        <!-- Running stats row -->
+        <div class="cpk-row">
+          <span class="muted">Running cost</span>
+          <span class="gradient-text fw-bold">₹{{ car.costPerKm }}/km</span>
+          <span class="cpk-sep">·</span>
+          <span class="muted">5yr resale</span>
+          <span class="gradient-text fw-bold">{{ fmtP(car.resale5yr) }}</span>
+        </div>
+
+        <!-- CTA -->
+        <div class="rec-actions">
+          <a [routerLink]="['/cars', car.id]" class="btn-gradient rec-btn">View Details →</a>
+          <span class="confidence-pill" [class.high]="car.confidence === 'High'" [class.medium]="car.confidence === 'Medium'">
+            {{ car.confidence }} Confidence
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>

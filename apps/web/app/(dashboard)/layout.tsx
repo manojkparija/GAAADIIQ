@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { href: "/dashboard/listings/new", label: "Add Listing" },
   { href: "/dashboard/leads", label: "Leads" },
   { href: "/dashboard/analytics", label: "Analytics" },
-  { href: "/dashboard/launch", label: "🚀 Launch" },
+  { href: "/dashboard/launch", label: "Launch" },
 ];
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -19,22 +19,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-56 shrink-0 border-r bg-muted/30 flex flex-col pt-8 px-4 gap-1">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4 px-2">
+      {/* Sidebar — navy royal */}
+      <aside className="w-56 shrink-0 bg-primary flex flex-col pt-8 px-4 gap-0.5">
+        <p className="font-display font-semibold text-primary-foreground/40 text-[10px] uppercase tracking-[0.2em] mb-5 px-2">
           Dashboard
         </p>
         {NAV_LINKS.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="rounded-lg px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-accent hover:text-accent-foreground transition-colors"
+            className="rounded-sm px-3 py-2 text-sm font-medium text-primary-foreground/60 hover:bg-white/10 hover:text-accent transition-colors"
           >
             {link.label}
           </Link>
         ))}
-        <div className="mt-auto pb-8">
-          <p className="text-xs text-muted-foreground px-2 truncate">{session.user.email}</p>
+        <div className="mt-auto pb-8 border-t border-white/10 pt-4">
+          <p className="text-[10px] text-primary-foreground/35 px-2 truncate">{session.user.email}</p>
         </div>
       </aside>
 

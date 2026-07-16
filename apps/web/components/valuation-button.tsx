@@ -5,9 +5,19 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+interface ValuationResult {
+  ai_valuation: number | null;
+  ai_method: string | null;
+  ai_confidence: string | null;
+  ai_reasoning: string | null;
+}
+
 interface Props {
   listingId: string;
   currentValuation: number | null;
+  currentMethod?: string | null;
+  currentConfidence?: string | null;
+  currentReasoning?: string | null;
 }
 
 function formatPrice(price: number) {
@@ -15,11 +25,54 @@ function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`;
 }
 
-export default function ValuationButton({ listingId, currentValuation }: Props) {
+function MethodBadge({ method }: { method: string }) {
+  const isHeuristic = method.startsWith("heuristic");
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${
+        isHeuristic
+          ? "bg-muted text-muted-foreground"
+          : "bg-accent/15 text-accent"
+      }`}
+    >
+      {isHeuristic ? "Heuristic estimate" : "AI analysis"}
+    </span>
+  );
+}
+
+function ConfidenceDots({ confidence }: { confidence: string }) {
+  const level = confidence === "high" ? 3 : confidence === "medium" ? 2 : 1;
+  return (
+    <span className="flex items-center gap-0.5">
+      {[1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className={`inline-block w-1.5 h-1.5 rounded-full ${
+            i <= level ? "bg-accent" : "bg-border"
+          }`}
+        />
+      ))}
+      <span className="text-[10px] text-muted-foreground ml-1 capitalize">{confidence}</span>
+    </span>
+  );
+}
+
+export default function ValuationButton({
+  listingId,
+  currentValuation,
+  currentMethod,
+  currentConfidence,
+  currentReasoning,
+}: Props) {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [valuation, setValuation] = useState<number | null>(currentValuation);
+  const [result, setResult] = useState<ValuationResult>({
+    ai_valuation: currentValuation,
+    ai_method: currentMethod ?? null,
+    ai_confidence: currentConfidence ?? null,
+    ai_reasoning: currentReasoning ?? null,
+  });
   const [error, setError] = useState("");
 
   async function handleValuate() {
@@ -49,8 +102,13 @@ export default function ValuationButton({ listingId, currentValuation }: Props) 
       }
 
       const data = await res.json();
-      setValuation(data.ai_valuation);
-      router.refresh(); // revalidate server component data
+      setResult({
+        ai_valuation: data.ai_valuation,
+        ai_method: data.ai_method,
+        ai_confidence: data.ai_confidence,
+        ai_reasoning: data.ai_reasoning,
+      });
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -59,30 +117,41 @@ export default function ValuationButton({ listingId, currentValuation }: Props) 
   }
 
   return (
-    <div className="rounded-xl border p-4 bg-gradient-to-br from-primary/5 to-primary/10">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">🤖</span>
-        <h3 className="font-semibold text-sm">AI Price Valuation</h3>
+    <div className="rounded-xl border p-4 bg-card">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-accent font-display text-base">✦</span>
+        <h3 className="font-semibold text-sm">Price Valuation</h3>
       </div>
 
-      {valuation ? (
-        <div>
-          <p className="text-xl font-bold text-primary">{formatPrice(valuation)}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">AI estimated fair market value</p>
+      {result.ai_valuation ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-2xl font-bold text-primary">{formatPrice(result.ai_valuation)}</p>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {result.ai_method && <MethodBadge method={result.ai_method} />}
+            {result.ai_confidence && <ConfidenceDots confidence={result.ai_confidence} />}
+          </div>
+
+          {result.ai_reasoning && (
+            <p className="text-xs text-muted-foreground leading-relaxed border-l-2 border-accent/30 pl-2">
+              {result.ai_reasoning}
+            </p>
+          )}
+
           <Button
             variant="ghost"
             size="sm"
-            className="mt-2 text-xs h-7"
+            className="mt-1 text-xs h-7 self-start"
             onClick={handleValuate}
             disabled={loading}
           >
-            {loading ? "Re-valuating…" : "Re-run valuation"}
+            {loading ? "Re-valuating…" : "Refresh estimate"}
           </Button>
         </div>
       ) : (
         <div>
           <p className="text-sm text-muted-foreground mb-3">
-            Get an instant AI-powered fair market price estimate for this car.
+            Get a fair market price estimate based on depreciation, mileage, and market data.
           </p>
           <Button
             size="sm"
@@ -90,7 +159,7 @@ export default function ValuationButton({ listingId, currentValuation }: Props) 
             disabled={loading}
             className="w-full"
           >
-            {loading ? "Analysing…" : session ? "Get AI Valuation" : "Sign in to valuate"}
+            {loading ? "Analysing…" : session ? "Get Valuation" : "Sign in to valuate"}
           </Button>
         </div>
       )}

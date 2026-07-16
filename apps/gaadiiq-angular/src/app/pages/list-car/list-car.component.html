@@ -1,0 +1,168 @@
+<div class="list-page">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="list-container" *ngIf="!submitted()">
+    <div class="list-header">
+      <a routerLink="/" class="logo-link">⚡ <span class="gradient-text">GAADIIQ</span></a>
+      <h1>List Your Car</h1>
+      <p>Reach 50,000+ verified buyers. Free listing. AI-powered valuation.</p>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-steps">
+      <div class="step-dot" [class.active]="step() >= 1" [class.done]="step() > 1"><span>{{ step() > 1 ? '✓' : '1' }}</span></div>
+      <div class="step-line" [class.filled]="step() > 1"></div>
+      <div class="step-dot" [class.active]="step() >= 2" [class.done]="step() > 2"><span>{{ step() > 2 ? '✓' : '2' }}</span></div>
+      <div class="step-line" [class.filled]="step() > 2"></div>
+      <div class="step-dot" [class.active]="step() >= 3"><span>3</span></div>
+    </div>
+    <div class="step-labels">
+      <span>Car Details</span><span>Condition & Price</span><span>Your Info</span>
+    </div>
+
+    <!-- Step 1: Car Details -->
+    @if (step() === 1) {
+      <div class="step-card glass-card">
+        <h2>🚗 Car Details</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Make (Brand)</label>
+            <select [(ngModel)]="form.make" name="make">
+              <option value="">Select brand</option>
+              @for (m of makes; track m) { <option [value]="m">{{ m }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Model</label>
+            <input type="text" [(ngModel)]="form.model" name="model" placeholder="e.g. Swift, Creta, Nexon">
+          </div>
+          <div class="form-group">
+            <label>Variant</label>
+            <input type="text" [(ngModel)]="form.variant" name="variant" placeholder="e.g. ZXI+, SX(O)">
+          </div>
+          <div class="form-group">
+            <label>Year</label>
+            <select [(ngModel)]="form.year" name="year">
+              @for (y of years; track y) { <option [value]="y">{{ y }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Body Type</label>
+            <select [(ngModel)]="form.bodyType" name="bodyType">
+              <option value="">Select type</option>
+              @for (b of bodyTypes; track b) { <option [value]="b">{{ b }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fuel Type</label>
+            <select [(ngModel)]="form.fuel" name="fuel">
+              <option value="">Select fuel</option>
+              @for (f of fuelTypes; track f) { <option [value]="f">{{ f }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Transmission</label>
+            <select [(ngModel)]="form.transmission" name="transmission">
+              <option value="">Select transmission</option>
+              @for (t of transmissions; track t) { <option [value]="t">{{ t }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Color</label>
+            <input type="text" [(ngModel)]="form.color" name="color" placeholder="e.g. Pearl White">
+          </div>
+        </div>
+        <div class="btn-row">
+          <a routerLink="/" class="btn-outline">Cancel</a>
+          <button class="btn-gradient" (click)="nextStep()" [disabled]="!form.make || !form.model || !form.fuel">Continue →</button>
+        </div>
+      </div>
+    }
+
+    <!-- Step 2: Condition & Price -->
+    @if (step() === 2) {
+      <div class="step-card glass-card">
+        <h2>📋 Condition & Price</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>KM Driven (enter 0 for brand new)</label>
+            <input type="number" [(ngModel)]="form.km" name="km" min="0" placeholder="e.g. 25000 (0 for new)">
+          </div>
+          <div class="form-group">
+            <label>No. of Owners</label>
+            <select [(ngModel)]="form.owners" name="owners">
+              <option value="">Select</option>
+              @for (o of ownerOptions; track o) { <option [value]="o">{{ o }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" [(ngModel)]="form.city" name="city" placeholder="e.g. Mumbai">
+          </div>
+          <div class="form-group">
+            <label>Asking Price (₹)</label>
+            <input type="number" [(ngModel)]="form.price" name="price" placeholder="e.g. 750000">
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label>Description</label>
+          <textarea [(ngModel)]="form.description" name="description" rows="4" placeholder="Describe your car's condition, service history, modifications, reason for selling..."></textarea>
+        </div>
+        <div class="ai-hint">
+          🤖 <strong>AI Tip:</strong> Cars with service history and single ownership sell 23% faster at better prices.
+        </div>
+        <div class="btn-row">
+          <button class="btn-outline" (click)="prevStep()">← Back</button>
+          <button class="btn-gradient" (click)="nextStep()" [disabled]="form.km === '' || !form.price">Continue →</button>
+        </div>
+      </div>
+    }
+
+    <!-- Step 3: Contact Info -->
+    @if (step() === 3) {
+      <div class="step-card glass-card">
+        <h2>👤 Your Contact Info</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" [(ngModel)]="form.name" name="name" placeholder="Your name">
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" [(ngModel)]="form.phone" name="phone" placeholder="+91 9876543210">
+          </div>
+          <div class="form-group full-width">
+            <label>Email Address</label>
+            <input type="email" [(ngModel)]="form.email" name="email" placeholder="you@example.com">
+          </div>
+        </div>
+        <div class="guarantee-row">
+          <span>🔒 Your data is safe</span>
+          <span>📋 Free RC verification</span>
+          <span>🤖 AI valuation included</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn-outline" (click)="prevStep()">← Back</button>
+          <button class="btn-gradient" (click)="onSubmit()" [disabled]="loading() || !form.name || !form.phone">
+            {{ loading() ? 'Submitting…' : 'Submit Listing 🚀' }}
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Success State -->
+  <div class="success-card glass-card" *ngIf="submitted()">
+    <div class="success-icon">🎉</div>
+    <h2>Listing Submitted!</h2>
+    <p>Your <strong>{{ form.year }} {{ form.make }} {{ form.model }}</strong> has been listed successfully.</p>
+    <p class="success-sub">Our team will verify and publish it within 2 hours. You'll receive confirmation on {{ form.phone }}.</p>
+    <div class="success-details">
+      <div class="detail-chip">📍 {{ form.city }}</div>
+      <div class="detail-chip">💰 ₹{{ (+form.price / 100000).toFixed(1) }}L</div>
+      <div class="detail-chip">{{ +form.km === 0 ? '🆕 Brand New' : '🛣️ ' + (+form.km).toLocaleString() + ' km' }}</div>
+    </div>
+    <a routerLink="/my-listings" class="btn-gradient" style="display:inline-block;margin-top:1.5rem">View My Listings →</a>
+  </div>
+</div>

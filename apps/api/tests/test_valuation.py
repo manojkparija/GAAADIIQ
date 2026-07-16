@@ -2,20 +2,18 @@
 Valuation service and endpoint tests.
 Mocks both Ollama (LLM path) and the heuristic fallback.
 """
-from datetime import datetime, timezone
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from db.base import Base
 from db.session import get_db
 from main import app
-from models.car import BodyType, Car, FuelType, Transmission
-from models.listing import Listing, ListingType
-from models.user import User
 from services.valuation import _heuristic_valuation
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
@@ -23,7 +21,7 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest_asyncio.fixture
 async def db_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(TEST_DB_URL, echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -103,7 +101,7 @@ def _make_mock_listing(price: float, km: int, age: int, owners: int = 1,
 
 def test_heuristic_new_car_no_depreciation():
     listing = _make_mock_listing(price=1_000_000, km=0, age=0)
-    value, method = _heuristic_valuation(listing)
+    value, method, confidence, reasoning = _heuristic_valuation(listing)
     # age=0 → no time depreciation, but 1-owner penalty (3%) on used listing
     assert 950_000 <= value <= 1_000_000
     assert "heuristic" in method
@@ -111,32 +109,32 @@ def test_heuristic_new_car_no_depreciation():
 
 def test_heuristic_1_year_old():
     listing = _make_mock_listing(price=1_000_000, km=10_000, age=1)
-    value, _ = _heuristic_valuation(listing)
+    value, *_ = _heuristic_valuation(listing)
     # 15% depreciation → ~850K
     assert 800_000 <= value <= 870_000
 
 
 def test_heuristic_high_mileage_penalty():
     listing = _make_mock_listing(price=1_000_000, km=80_000, age=3)
-    value_normal, _ = _heuristic_valuation(
+    value_normal, *_ = _heuristic_valuation(
         _make_mock_listing(price=1_000_000, km=30_000, age=3)
     )
-    value_high, _ = _heuristic_valuation(listing)
+    value_high, *_ = _heuristic_valuation(listing)
     assert value_high < value_normal
 
 
 def test_heuristic_electric_premium():
     petrol = _make_mock_listing(price=1_000_000, km=20_000, age=2, fuel="petrol")
     electric = _make_mock_listing(price=1_000_000, km=20_000, age=2, fuel="electric")
-    val_p, _ = _heuristic_valuation(petrol)
-    val_e, _ = _heuristic_valuation(electric)
+    val_p, *_ = _heuristic_valuation(petrol)
+    val_e, *_ = _heuristic_valuation(electric)
     assert val_e > val_p
 
 
 def test_heuristic_floor_applied():
     """Very old, high-mileage car should not drop below 25% of asking price."""
     listing = _make_mock_listing(price=500_000, km=300_000, age=15, owners=5)
-    value, _ = _heuristic_valuation(listing)
+    value, *_ = _heuristic_valuation(listing)
     assert value >= 500_000 * 0.25
 
 
@@ -179,7 +177,9 @@ async def test_valuate_ollama_path(client: AsyncClient):
     token = await _register_token(client, "val3@test.com")
     listing_id = await _make_listing(client, token)
 
-    mock_llm_response = '{"fair_value": 980000, "confidence": "high", "reasoning": "Well maintained SUV"}'
+    mock_llm_response = (
+        '{"fair_value": 980000, "confidence": "high", "reasoning": "Well maintained SUV"}'
+    )
 
     with patch("services.valuation.httpx.AsyncClient") as mock_http:
         mock_http.return_value.__aenter__ = AsyncMock(return_value=MagicMock(
@@ -208,6 +208,7 @@ async def test_valuate_ollama_path(client: AsyncClient):
 async def test_valuate_requires_auth(client: AsyncClient):
     token = await _register_token(client, "val4@test.com")
     listing_id = await _make_listing(client, token)
+    client.cookies.clear()  # remove session cookie so the request is truly unauthenticated
     resp = await client.post(f"/listings/{listing_id}/valuate")
     assert resp.status_code in (401, 403)
 

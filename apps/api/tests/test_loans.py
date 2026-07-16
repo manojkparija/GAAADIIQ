@@ -2,10 +2,12 @@
 Tests for EMI calculator and loan inquiry endpoints.
 """
 import math
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from db.base import Base
 from db.session import get_db
@@ -16,7 +18,7 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest_asyncio.fixture
 async def db_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(TEST_DB_URL, echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -67,7 +69,9 @@ async def _make_listing(client: AsyncClient, token: str) -> str:
 @pytest.mark.asyncio
 async def test_emi_basic_calculation(client: AsyncClient):
     """Verify EMI formula: P=500000, r=10% pa, n=60 months → ~₹10624/month."""
-    resp = await client.get("/loans/emi-calculator?principal=500000&annual_rate=10&tenure_months=60")
+    resp = await client.get(
+        "/loans/emi-calculator?principal=500000&annual_rate=10&tenure_months=60"
+    )
     assert resp.status_code == 200
     data = resp.json()
     # Expected: 500000 * (10/1200) * (1 + 10/1200)^60 / ((1 + 10/1200)^60 - 1)
@@ -79,7 +83,9 @@ async def test_emi_basic_calculation(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_emi_total_payment(client: AsyncClient):
-    resp = await client.get("/loans/emi-calculator?principal=1000000&annual_rate=9&tenure_months=84")
+    resp = await client.get(
+        "/loans/emi-calculator?principal=1000000&annual_rate=9&tenure_months=84"
+    )
     assert resp.status_code == 200
     data = resp.json()
     # total_payment should equal monthly_emi * tenure_months (within rounding)
@@ -88,7 +94,9 @@ async def test_emi_total_payment(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_emi_interest_non_negative(client: AsyncClient):
-    resp = await client.get("/loans/emi-calculator?principal=300000&annual_rate=8.5&tenure_months=36")
+    resp = await client.get(
+        "/loans/emi-calculator?principal=300000&annual_rate=8.5&tenure_months=36"
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["total_interest"] > 0
@@ -97,7 +105,9 @@ async def test_emi_interest_non_negative(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_emi_down_payment_20pct(client: AsyncClient):
-    resp = await client.get("/loans/emi-calculator?principal=2000000&annual_rate=10&tenure_months=60")
+    resp = await client.get(
+        "/loans/emi-calculator?principal=2000000&annual_rate=10&tenure_months=60"
+    )
     assert resp.status_code == 200
     assert resp.json()["down_payment_20pct"] == 400000.0
 
@@ -120,7 +130,9 @@ async def test_emi_invalid_params(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_emi_no_auth_required(client: AsyncClient):
     """EMI calculator is public — no token needed."""
-    resp = await client.get("/loans/emi-calculator?principal=500000&annual_rate=10&tenure_months=60")
+    resp = await client.get(
+        "/loans/emi-calculator?principal=500000&annual_rate=10&tenure_months=60"
+    )
     assert resp.status_code == 200
 
 
@@ -151,6 +163,7 @@ async def test_create_loan_inquiry_requires_auth(client: AsyncClient):
     seller_token = await _register_token(client, "lseller2@test.com")
     listing_id = await _make_listing(client, seller_token)
 
+    client.cookies.clear()  # remove session cookie so the request is truly unauthenticated
     resp = await client.post("/loans/inquiries", json={
         "listing_id": listing_id, "loan_amount": 500000,
         "tenure_months": 48, "employment_type": "salaried", "annual_income": 600000,

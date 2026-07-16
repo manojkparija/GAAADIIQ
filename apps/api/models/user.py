@@ -1,7 +1,8 @@
 import enum
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Enum, String
+from sqlalchemy import Boolean, Enum, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base, TimestampMixin, UUIDMixin
@@ -37,6 +38,8 @@ class User(UUIDMixin, TimestampMixin, Base):
     )
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    password_reset_token: Mapped[str | None] = mapped_column(Text)
+    password_reset_expires: Mapped[datetime | None] = mapped_column()
 
     # Relationships
     dealer_profile: Mapped["Dealer | None"] = relationship(back_populates="user", uselist=False)

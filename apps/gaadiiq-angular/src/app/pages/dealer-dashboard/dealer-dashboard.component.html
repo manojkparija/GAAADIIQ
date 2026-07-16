@@ -1,0 +1,280 @@
+<div class="dd-wrap">
+  <!-- Header -->
+  <section class="dd-hero container">
+    <div class="dd-hero-left">
+      <div class="hero-badge">🏢 Dealer Intelligence</div>
+      <h1 class="dd-title">Dealer <span class="gradient-text">Dashboard</span></h1>
+      <p class="dd-sub">Real-time insights into your listings, leads, and revenue performance.</p>
+    </div>
+    <div class="dd-hero-right">
+      <div class="dealer-card glass-card" *ngIf="currentSeller()">
+        <div class="dealer-avatar">{{ sellerInitials() }}</div>
+        <div>
+          <div class="dealer-name">{{ currentSeller()!.business_name }}</div>
+          <div class="dealer-loc">📍 {{ currentSeller()!.city }}</div>
+          <div class="dealer-since">{{ currentSeller()!.name }} · ⭐ {{ currentSeller()!.rating }} ({{ currentSeller()!.total_reviews }} reviews)</div>
+        </div>
+      </div>
+      <div class="dealer-card glass-card" *ngIf="!currentSeller() && authUser()">
+        <div class="dealer-avatar">{{ authInitials() }}</div>
+        <div>
+          <div class="dealer-name">{{ authUser()!.name }}</div>
+          <div class="dealer-loc">📍 India</div>
+          <div class="dealer-since">{{ authUser()!.email }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab Bar -->
+  <div class="dd-tabs container">
+    <button class="dd-tab" [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">📊 Overview</button>
+    <button class="dd-tab" [class.active]="activeTab()==='leads'" (click)="activeTab.set('leads')">💬 AI Leads</button>
+    <button class="dd-tab" [class.active]="activeTab()==='inventory'" (click)="activeTab.set('inventory')">🚗 Inventory</button>
+    <button class="dd-tab" [class.active]="activeTab()==='analytics'" (click)="activeTab.set('analytics')">📈 Analytics</button>
+    <button class="dd-tab" [class.active]="activeTab()==='test-drives'" (click)="activeTab.set('test-drives')">
+      🗝️ Test Drives
+      <span *ngIf="pendingTestDrives().length > 0" class="td-badge">{{ pendingTestDrives().length }}</span>
+    </button>
+    <button class="dd-tab" [class.active]="activeTab()==='enquiries'" (click)="activeTab.set('enquiries')">
+      📩 Enquiries
+      <span *ngIf="enquiries().length > 0" class="td-badge">{{ enquiries().length }}</span>
+    </button>
+  </div>
+
+  <div class="dd-content container">
+
+    <!-- OVERVIEW TAB -->
+    <ng-container *ngIf="activeTab()==='overview'">
+
+      <!-- Metric Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card glass-card" *ngFor="let m of metrics">
+          <div class="mc-top">
+            <span class="mc-icon">{{ m.icon }}</span>
+            <span class="mc-change" [class.up]="m.up" [class.down]="!m.up">
+              {{ m.up ? '↑' : '↓' }} {{ m.change }}
+            </span>
+          </div>
+          <div class="mc-value">{{ m.value }}</div>
+          <div class="mc-label">{{ m.label }}</div>
+        </div>
+      </div>
+
+      <!-- AI Lead Intelligence Summary -->
+      <h2 class="section-head">🤖 AI Lead <span class="gradient-text">Intelligence</span></h2>
+      <div class="ai-lead-summary glass-card">
+        <div class="ai-summary-chips">
+          <div class="ai-sum-chip hot">
+            <span class="chip-num">{{ countGrade('A') }}</span>
+            <span class="chip-label">Grade A · Act Now</span>
+          </div>
+          <div class="ai-sum-chip warm">
+            <span class="chip-num">{{ countGrade('B') }}</span>
+            <span class="chip-label">Grade B · Follow Up</span>
+          </div>
+          <div class="ai-sum-chip cool">
+            <span class="chip-num">{{ countGrade('C') }}</span>
+            <span class="chip-label">Grade C · Nurture</span>
+          </div>
+          <div class="ai-sum-chip cold">
+            <span class="chip-num">{{ countGrade('D') }}</span>
+            <span class="chip-label">Grade D · Re-engage</span>
+          </div>
+        </div>
+        <div class="ai-top-lead">
+          <span class="atl-label">🔥 Highest Intent Lead Today</span>
+          <span class="atl-name">Deepak Rao</span>
+          <span class="atl-score">95% intent · Grade A · <em>Collect Documents</em></span>
+        </div>
+      </div>
+
+      <!-- Recent Leads preview -->
+      <h2 class="section-head" style="margin-top:2rem">Recent <span class="gradient-text">Leads</span></h2>
+      <div class="leads-table glass-card">
+        <div class="lt-row lt-header">
+          <span>Buyer</span><span>Car</span><span>Budget</span><span>Stage</span><span>Grade</span><span>Time</span>
+        </div>
+        <div class="lt-row" *ngFor="let l of leads.slice(0,4)">
+          <span class="lt-name">{{ l.name }}</span>
+          <span class="lt-car">{{ l.car }}</span>
+          <span class="lt-budget">{{ l.budget }}</span>
+          <span class="lt-stage" [ngClass]="'stage-' + l.stageColor">{{ l.stage }}</span>
+          <span class="lead-grade" [ngClass]="'grade-' + l.leadGrade">{{ l.leadGrade }}</span>
+          <span class="lt-time">{{ l.time }}</span>
+        </div>
+      </div>
+
+      <!-- Top Models -->
+      <h2 class="section-head" style="margin-top:2rem">Top <span class="gradient-text">Performing Models</span></h2>
+      <div class="top-models glass-card">
+        <div class="tm-row tm-header"><span>Model</span><span>Views</span><span>Enquiries</span><span>Conv. Rate</span></div>
+        <div class="tm-row" *ngFor="let m of topModels; let i = index">
+          <span class="tm-rank-name"><span class="tm-rank">{{ i+1 }}</span>{{ m.model }}</span>
+          <span>{{ m.views }}</span>
+          <span>{{ m.enquiries }}</span>
+          <span class="tm-rate">{{ (m.enquiries/m.views*100).toFixed(1) }}%</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- LEADS TAB -->
+    <ng-container *ngIf="activeTab()==='leads'">
+      <h2 class="section-head">AI-Scored <span class="gradient-text">Leads</span></h2>
+
+      <div class="ai-leads-list">
+        <div class="ai-lead-card glass-card" *ngFor="let l of leads">
+          <!-- Top row: name + grade + stage -->
+          <div class="alc-top">
+            <div class="alc-avatar">{{ l.name.charAt(0) }}</div>
+            <div class="alc-identity">
+              <div class="alc-name">{{ l.name }}</div>
+              <div class="alc-phone">{{ l.phone }}</div>
+            </div>
+            <span class="lead-grade lg-large" [ngClass]="'grade-' + l.leadGrade">{{ l.leadGrade }}</span>
+            <span class="lt-stage" [ngClass]="'stage-' + l.stageColor">{{ l.stage }}</span>
+          </div>
+
+          <!-- Car + budget -->
+          <div class="alc-car-row">
+            <span class="alc-car-label">🚗 {{ l.car }}</span>
+            <span class="alc-budget">{{ l.budget }}</span>
+            <span class="lt-time">{{ l.time }}</span>
+          </div>
+
+          <!-- Intent score bar -->
+          <div class="alc-intent-row">
+            <span class="intent-label">Purchase Intent</span>
+            <div class="intent-bar-track">
+              <div class="intent-bar-fill"
+                [style.width.%]="l.intentScore"
+                [class.high]="l.intentScore >= 80"
+                [class.medium]="l.intentScore >= 60 && l.intentScore < 80"
+                [class.low]="l.intentScore < 60"></div>
+            </div>
+            <span class="intent-pct" [class.high]="l.intentScore >= 80">{{ l.intentScore }}%</span>
+          </div>
+
+          <!-- AI recommendations -->
+          <div class="alc-ai-row">
+            <div class="alc-ai-chip contact">
+              <span>🕐</span> Best time: <strong>{{ l.bestContactTime }}</strong>
+            </div>
+            <div class="alc-ai-chip nba">
+              <span>⚡</span> NBA: <strong>{{ l.nba }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- INVENTORY TAB -->
+    <ng-container *ngIf="activeTab()==='inventory'">
+      <div class="inventory-cta glass-card">
+        <div class="inv-icon">🚗</div>
+        <h3>Manage Your Inventory</h3>
+        <p>Add, edit and track all your listed vehicles in one place. Monitor days on lot and price competitiveness.</p>
+        <a routerLink="/my-listings" class="btn-gradient">Go to My Listings →</a>
+      </div>
+    </ng-container>
+
+    <!-- ANALYTICS TAB -->
+    <ng-container *ngIf="activeTab()==='analytics'">
+      <h2 class="section-head">Fuel Mix <span class="gradient-text">Breakdown</span></h2>
+      <div class="fuel-chart glass-card">
+        <div class="fc-bars">
+          <div class="fc-bar-row" *ngFor="let f of fuelMix">
+            <span class="fc-label">{{ f.label }}</span>
+            <div class="fc-bar-track">
+              <div class="fc-bar-fill" [style.width.%]="f.pct" [style.background]="f.color"></div>
+            </div>
+            <span class="fc-pct">{{ f.pct }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-head" style="margin-top:2rem">Market <span class="gradient-text">Intelligence</span></h2>
+      <div class="intel-grid">
+        <div class="intel-card glass-card">
+          <div class="ic-icon">📈</div>
+          <h4>Avg. Market Price</h4>
+          <p>SUVs in Bangalore are trending 4.2% above national average this week. Adjust pricing accordingly.</p>
+        </div>
+        <div class="intel-card glass-card">
+          <div class="ic-icon">⚡</div>
+          <h4>EV Demand Surge</h4>
+          <p>Electric vehicle searches up 34% in your city. Consider stocking more EV inventory.</p>
+        </div>
+        <div class="intel-card glass-card">
+          <div class="ic-icon">🏆</div>
+          <h4>Competitive Position</h4>
+          <p>Your response time (avg 22 min) is in the top 15% of dealers. Keep it up!</p>
+        </div>
+        <div class="intel-card glass-card">
+          <div class="ic-icon">📅</div>
+          <h4>Best Time to List</h4>
+          <p>Listings posted Thursday–Friday see 28% more views over the weekend.</p>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- TEST DRIVES TAB -->
+    <ng-container *ngIf="activeTab()==='test-drives'">
+      <h2 class="section-head">Test Drive <span class="gradient-text">Requests</span></h2>
+
+      <div *ngIf="testDriveRequests().length === 0 && !currentSeller()" class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:1rem">⚠️</div>
+        <p style="margin-bottom:.5rem;font-weight:600;color:var(--text)">Seller profile not found in database</p>
+        <p>Run migration <code>005_sellers.sql</code> in Supabase SQL Editor to seed seller data, then log out and log back in.</p>
+      </div>
+      <div *ngIf="testDriveRequests().length === 0 && currentSeller()" class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:1rem">🗝️</div>
+        <p>No test drive requests yet. They will appear here as soon as buyers book.</p>
+      </div>
+
+      <div *ngIf="testDriveRequests().length > 0" class="td-table glass-card">
+        <div class="td-header">
+          <span>Buyer</span>
+          <span>Car</span>
+          <span>Date & Time</span>
+          <span>Phone</span>
+          <span>Location</span>
+          <span>Status</span>
+          <span>Received</span>
+        </div>
+        <div class="td-row" *ngFor="let r of testDriveRequests()">
+          <span class="td-name">{{ r.buyer_name }}</span>
+          <span class="td-car">{{ r.car_make }} {{ r.car_model }} {{ r.car_year }}</span>
+          <span class="td-dt">{{ r.preferred_date }} · {{ r.preferred_time }}</span>
+          <span class="td-phone"><a [href]="'tel:' + r.buyer_phone">{{ r.buyer_phone }}</a></span>
+          <span class="td-loc">{{ r.location || '—' }}</span>
+          <span class="td-status" [class.pending]="r.status === 'Pending'" [class.confirmed]="r.status === 'Confirmed'">{{ r.status }}</span>
+          <span class="td-time">{{ timeAgo(r.created_at!) }}</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ENQUIRIES TAB -->
+    <ng-container *ngIf="activeTab()==='enquiries'">
+      <h2 class="section-head">📩 Buyer <span class="gradient-text">Enquiries</span></h2>
+      <div *ngIf="enquiriesLoading()" style="padding:2rem;text-align:center;color:var(--muted)">Loading enquiries…</div>
+      <div *ngIf="!enquiriesLoading() && enquiries().length === 0" class="glass-card" style="padding:2rem;text-align:center;color:var(--muted)">
+        No enquiries yet. They'll appear here once buyers contact you through a listing.
+      </div>
+      <div *ngIf="enquiries().length > 0" class="leads-table glass-card">
+        <div class="lt-row lt-header">
+          <span>Buyer</span><span>Phone</span><span>Email</span><span>Car ID</span><span>Notes</span><span>Received</span>
+        </div>
+        <div class="lt-row" *ngFor="let e of enquiries()">
+          <span class="lt-name">{{ e.buyer_name }}</span>
+          <span><a [href]="'tel:' + e.buyer_phone" style="color:var(--primary)">{{ e.buyer_phone }}</a></span>
+          <span style="font-size:.8rem;color:var(--muted)">{{ e.buyer_email || '—' }}</span>
+          <span style="font-size:.8rem">#{{ e.car_id }}</span>
+          <span style="font-size:.78rem;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="e.notes">{{ e.notes || '—' }}</span>
+          <span class="lt-time">{{ timeAgo(e.created_at) }}</span>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

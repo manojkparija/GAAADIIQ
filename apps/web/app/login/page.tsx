@@ -15,11 +15,13 @@ function LoginForm() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (searchParams.get("registered") === "1") {
       setSuccess("Account created! Please sign in.");
     }
   }, [searchParams]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +46,7 @@ function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">
+        <div className="bg-success/10 border border-success/30 text-success text-sm px-4 py-3 rounded-lg">
           {success}
         </div>
       )}
@@ -66,9 +68,14 @@ function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-sm font-semibold">
-          Password
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="text-sm font-semibold">
+            Password
+          </label>
+          <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+            Forgot password?
+          </Link>
+        </div>
         <input
           id="password"
           type="password"
@@ -107,14 +114,14 @@ import { Suspense } from "react";
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
+    <main className="min-h-screen bg-surface-alt flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-lg border p-8">
+        <div className="bg-card rounded-2xl shadow-lg border p-8">
           <div className="text-center mb-8">
-            <Link href="/" className="inline-block font-bold text-2xl text-primary mb-4">
-              <span className="text-amber-500">⬡</span> GAADIIQ
+            <Link href="/" className="inline-block font-display font-semibold text-2xl text-primary mb-4 tracking-wide">
+              <span className="text-accent">✦</span> GAADIIQ
             </Link>
-            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <h1 className="text-2xl font-display font-semibold">Welcome back</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Sign in to your GAADIIQ account
             </p>

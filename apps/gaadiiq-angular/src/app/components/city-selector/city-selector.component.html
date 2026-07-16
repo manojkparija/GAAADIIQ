@@ -1,0 +1,48 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)">
+  <div class="modal-panel glass-card">
+
+    <div class="modal-header">
+      <h2 class="modal-title">Select your City</h2>
+      <button class="close-btn" (click)="closed.emit()">✕</button>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Type your Pincode or City"
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+        autofocus />
+    </div>
+
+    <!-- Detect location -->
+    <button class="detect-btn" (click)="detectLocation()" [disabled]="locating()">
+      <span class="detect-icon">{{ locating() ? '⏳' : '📍' }}</span>
+      <span>{{ locating() ? 'Detecting…' : 'Detect my location' }}</span>
+    </button>
+
+    <p class="loc-error" *ngIf="locationError()">{{ locationError() }}</p>
+
+    <div class="divider"></div>
+
+    <!-- Popular Cities -->
+    <p class="section-label">Popular Cities</p>
+    <div class="cities-grid">
+      <button
+        class="city-btn"
+        *ngFor="let c of filteredCities()"
+        [class.selected]="cityService.selectedCity() === c.name"
+        (click)="select(c.name)">
+        <span class="city-icon">{{ c.icon }}</span>
+        <span class="city-name">{{ c.name }}</span>
+      </button>
+    </div>
+
+    <div class="no-results" *ngIf="!filteredCities().length">
+      No cities match "<strong>{{ searchQuery() }}</strong>"
+    </div>
+
+  </div>
+</div>

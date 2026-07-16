@@ -1,0 +1,61 @@
+<ng-container *ngIf="article() as a">
+  <section class="lnd-hero">
+    <div class="container">
+      <a routerLink="/reviews-news/news" class="back-link">← News</a>
+      <div class="lnd-meta">
+        <span class="tag tag-blue">India Auto News</span>
+        <span class="lnd-date">📅 {{ news.formatDate(a.publishedAt) }}</span>
+      </div>
+      <h1 class="lnd-title">{{ a.title }}</h1>
+    </div>
+  </section>
+
+  <!-- Cover image -->
+  <div class="lnd-cover" *ngIf="a.image">
+    <img [src]="a.image" [alt]="a.title" class="cover-img" />
+  </div>
+  <div class="lnd-cover lnd-cover-placeholder" *ngIf="!a.image">
+    <span class="cover-emoji">📰</span>
+  </div>
+
+  <article class="lnd-body container">
+    <div class="lnd-card glass-card">
+      <div class="lnd-section">
+        <h2 class="section-label">Summary</h2>
+        <p class="lnd-excerpt">{{ a.description }}</p>
+      </div>
+
+      <div class="lnd-section">
+        <h2 class="section-label">What This Means for Indian Buyers</h2>
+        <p>This latest development reflects the rapidly evolving Indian automobile market. With manufacturers accelerating product launches and technology upgrades, consumers can expect greater choice, improved features, and more competitive pricing across all segments in 2026.</p>
+        <p>Industry experts suggest this will further strengthen India's position as a key global market for both traditional and electric vehicles.</p>
+      </div>
+
+      <div class="lnd-section">
+        <h2 class="section-label">Key Highlights</h2>
+        <ul class="lnd-list">
+          <li>Significant development in the Indian automobile industry</li>
+          <li>Expected to impact buyer decisions and market dynamics</li>
+          <li>Aligned with India's push towards cleaner and safer mobility</li>
+          <li>More details expected from manufacturers in the coming weeks</li>
+        </ul>
+      </div>
+
+      <div class="lnd-footer">
+        <span class="tag tag-blue">India Auto News</span>
+        <a routerLink="/reviews-news/news" class="btn-outline">← Back to News</a>
+      </div>
+    </div>
+  </article>
+</ng-container>
+
+<!-- Loading / not found -->
+<ng-container *ngIf="!article()">
+  <section class="lnd-hero container">
+    <a routerLink="/reviews-news/news" class="back-link">← News</a>
+    <div class="not-found">
+      <div class="nf-icon">📰</div>
+      <p>Loading article…</p>
+    </div>
+  </section>
+</ng-container>

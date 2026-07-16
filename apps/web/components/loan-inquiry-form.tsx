@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Building2, CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,7 +71,7 @@ export default function LoanInquiryForm({ listingId, listingPrice }: Props) {
   if (success) {
     return (
       <div className="rounded-xl border p-5 text-center space-y-2">
-        <p className="text-2xl">✅</p>
+        <CircleCheck className="h-8 w-8 mx-auto text-success" aria-hidden />
         <p className="font-semibold text-sm">Loan inquiry submitted!</p>
         <p className="text-xs text-muted-foreground">
           Our lending partners will contact you within 24 hours.
@@ -82,7 +83,7 @@ export default function LoanInquiryForm({ listingId, listingPrice }: Props) {
   return (
     <div className="rounded-xl border p-5">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-lg">🏦</span>
+        <Building2 className="h-4 w-4 text-accent" aria-hidden />
         <h3 className="font-semibold text-sm">Check Loan Eligibility</h3>
       </div>
       <p className="text-xs text-muted-foreground mb-4">

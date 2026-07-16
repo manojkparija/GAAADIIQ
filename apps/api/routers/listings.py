@@ -1,11 +1,22 @@
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    status,
+)
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from core.dependencies import get_current_user
+from core.limiter import limiter
 from db.session import get_db
 from models.car import Car
 from models.listing import Listing
@@ -14,6 +25,7 @@ from models.user import User
 from schemas.listing import ListingCreate, ListingListOut, ListingOut, ListingUpdate
 from services import storage, valuation
 from services.notifications import notify_price_drop
+from services.search_index import search_index
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -22,7 +34,9 @@ _LOAD = [selectinload(Listing.car), selectinload(Listing.seller)]
 
 
 @router.post("", response_model=ListingOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_listing(
+    request: Request,
     payload: ListingCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -38,7 +52,9 @@ async def create_listing(
     result = await db.execute(
         select(Listing).options(*_LOAD).where(Listing.id == listing.id)
     )
-    return ListingOut.model_validate(result.scalar_one())
+    full_listing = result.scalar_one()
+    await search_index.index_listing(full_listing)
+    return ListingOut.model_validate(full_listing)
 
 
 @router.get("", response_model=ListingListOut)
@@ -99,7 +115,34 @@ async def list_listings(
     listings = result.scalars().all()
 
     return ListingListOut(
-        items=[ListingOut.model_validate(l) for l in listings],
+        items=[ListingOut.model_validate(lst) for lst in listings],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/me", response_model=ListingListOut)
+async def my_listings(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return only listings owned by the authenticated seller."""
+    q = (
+        select(Listing)
+        .options(*_LOAD)
+        .where(Listing.seller_id == current_user.id)
+        .order_by(Listing.created_at.desc())
+    )
+    total_result = await db.execute(select(func.count()).select_from(q.options().order_by(None).subquery()))
+    total = total_result.scalar_one()
+
+    result = await db.execute(q.offset((page - 1) * page_size).limit(page_size))
+    listings = result.scalars().all()
+    return ListingListOut(
+        items=[ListingOut.model_validate(lst) for lst in listings],
         total=total,
         page=page,
         page_size=page_size,
@@ -240,7 +283,9 @@ async def upload_image(
 
 
 @router.post("/{listing_id}/valuate", response_model=ListingOut)
+@limiter.limit("5/minute")
 async def valuate_listing(
+    request: Request,
     listing_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
@@ -253,11 +298,14 @@ async def valuate_listing(
     if not listing:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found")
 
-    fair_value, _ = await valuation.estimate_valuation(listing)
+    fair_value, method, confidence, reasoning = await valuation.estimate_valuation(listing)
 
     from datetime import datetime, timezone
     listing.ai_valuation = fair_value
     listing.ai_valuation_at = datetime.now(timezone.utc)
+    listing.ai_method = method
+    listing.ai_confidence = confidence
+    listing.ai_reasoning = reasoning
     await db.commit()
 
     result = await db.execute(
@@ -293,6 +341,6 @@ async def similar_listings(
         .limit(5)
     )
     result = await db.execute(similar_q)
-    return [ListingOut.model_validate(l) for l in result.scalars().all()]
+    return [ListingOut.model_validate(row) for row in result.scalars().all()]
 
 

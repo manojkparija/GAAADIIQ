@@ -1,0 +1,114 @@
+<div class="pricing-page">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Header -->
+  <section class="pricing-hero container">
+    <div class="ai-badge">💎 Pricing Plans</div>
+    <h1>Simple, <span class="gradient-text">Transparent</span> Pricing</h1>
+    <p class="hero-sub">Start free. Upgrade when you're ready. No hidden charges, no surprises.</p>
+
+    <div class="billing-toggle">
+      <button [class.active]="billing()==='monthly'" (click)="billing.set('monthly')">Monthly</button>
+      <button [class.active]="billing()==='yearly'" (click)="billing.set('yearly')">
+        Yearly <span class="save-chip">Save 2 months</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Loading skeleton -->
+  <section class="plans-section container" *ngIf="loading()">
+    <div class="plans-grid">
+      <div class="plan-card glass-card skeleton" *ngFor="let _ of [1,2,3,4]"></div>
+    </div>
+  </section>
+
+  <!-- Plans Grid (DB-driven) -->
+  <section class="plans-section container" *ngIf="!loading()">
+    <div class="plans-grid">
+      <div class="plan-card glass-card" *ngFor="let p of plans()" [class.highlight]="p.highlight">
+        <div class="plan-badge" *ngIf="p.badge" [ngClass]="'badge-' + p.badge_color">{{ p.badge }}</div>
+        <div class="plan-name">{{ p.name }}</div>
+        <div class="plan-price">
+          <span class="price-amt">{{ displayPrice(p) }}</span>
+          <span class="price-period">
+            {{ p.monthly_price === 0 ? 'forever' : billing() === 'yearly' ? '/month billed annually' : '/month' }}
+          </span>
+        </div>
+        <div class="yearly-savings" *ngIf="billing() === 'yearly' && p.monthly_price > 0">
+          Save ₹{{ savings(p).toLocaleString('en-IN') }}/yr
+        </div>
+        <p class="plan-desc">{{ p.description }}</p>
+        <ul class="feature-list">
+          <li *ngFor="let f of p.features">{{ f }}</li>
+        </ul>
+        <a [routerLink]="p.cta_link" class="plan-cta"
+           [class.btn-gradient]="p.highlight"
+           [class.btn-outline]="!p.highlight"
+           (click)="trackCta(p)">
+          {{ p.cta_label }}
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Comparison Table -->
+  <section class="compare-section container">
+    <h2>Full <span class="gradient-text">Feature Comparison</span></h2>
+    <div class="compare-table glass-card">
+      <div class="ct-head">
+        <span>Feature</span>
+        <span>Free</span>
+        <span>Buyer Pro</span>
+        <span>Seller</span>
+        <span>Dealer Pro</span>
+      </div>
+      <div class="ct-row" *ngFor="let row of [
+        ['Browse listings',           '✅','✅','✅','✅'],
+        ['AI Car Advisor',            '5/day','Unlimited','5/day','Unlimited'],
+        ['Price Alerts',              '3','Unlimited','3','Unlimited'],
+        ['Car Comparison',            '2 cars','5 cars','2 cars','5 cars'],
+        ['AI Valuation',              '❌','✅','✅','✅'],
+        ['Dealer contact details',    '❌','✅','✅','✅'],
+        ['List vehicles',             '❌','❌','3 cars','Unlimited'],
+        ['Lead CRM',                  '❌','❌','Basic','Full pipeline'],
+        ['Analytics dashboard',       '❌','❌','Basic','Advanced'],
+        ['Featured placement',        '❌','❌','❌','✅'],
+        ['Bulk inventory upload',     '❌','❌','❌','✅'],
+        ['Dedicated account manager', '❌','❌','❌','✅']
+      ]">
+        <span class="ct-feature">{{ row[0] }}</span>
+        <span>{{ row[1] }}</span>
+        <span class="highlight-col">{{ row[2] }}</span>
+        <span>{{ row[3] }}</span>
+        <span>{{ row[4] }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq-section container">
+    <h2>Frequently <span class="gradient-text">Asked Questions</span></h2>
+    <div class="faq-list">
+      <div class="faq-item glass-card" *ngFor="let f of faqs; let i = index">
+        <button class="faq-q" (click)="toggleFaq(i)">
+          <span>{{ f.q }}</span>
+          <span class="faq-arrow" [class.open]="openFaq() === i">▾</span>
+        </button>
+        <div class="faq-a" [class.visible]="openFaq() === i">{{ f.a }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section class="bottom-cta container">
+    <div class="cta-card glass-card">
+      <h2>Still unsure? <span class="gradient-text">Start Free</span></h2>
+      <p>No credit card needed. Upgrade or cancel anytime.</p>
+      <div class="cta-btns">
+        <a routerLink="/register" class="btn-gradient">Create Free Account →</a>
+        <a routerLink="/ai-advisor" class="btn-outline">Try AI Advisor</a>
+      </div>
+    </div>
+  </section>
+</div>

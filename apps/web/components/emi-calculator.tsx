@@ -131,7 +131,7 @@ export default function EMICalculator({ listingPrice }: Props) {
             </div>
             <div>
               <p className="text-muted-foreground">Interest</p>
-              <p className="font-semibold text-amber-600">{formatINR(result.total_interest)}</p>
+              <p className="font-semibold text-accent">{formatINR(result.total_interest)}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Total</p>

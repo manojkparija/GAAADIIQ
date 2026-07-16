@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
+import type { ComponentType } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  Car,
+  Fuel,
+  Gauge,
+  MapPin,
+  Settings2,
+  Users,
+  Wrench,
+} from "lucide-react";
 import { getListing } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -55,12 +65,13 @@ function formatPrice(price: number) {
   return `₹${price}`;
 }
 
-const SPEC_ICONS: Record<string, string> = {
-  fuel_type: "⛽",
-  transmission: "⚙️",
-  body_type: "🚗",
-  seating_capacity: "💺",
-  engine_cc: "🔧",
+const SPEC_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+  fuel_type: Fuel,
+  transmission: Settings2,
+  body_type: Car,
+  seating_capacity: Users,
+  engine_cc: Wrench,
+  km_driven: Gauge,
 };
 
 export default async function ListingDetailPage({ params }: PageProps) {
@@ -106,7 +117,10 @@ export default async function ListingDetailPage({ params }: PageProps) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-7xl">🚗</span>
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <Car className="h-14 w-14 text-accent/70" strokeWidth={1.25} aria-hidden />
+                <span className="text-xs tracking-wide uppercase">No photo</span>
+              </div>
             )}
             <Badge
               className="absolute top-3 left-3"
@@ -115,8 +129,8 @@ export default async function ListingDetailPage({ params }: PageProps) {
               {listing.listing_type === "new" ? "New" : "Used"}
             </Badge>
             {listing.is_featured && (
-              <Badge className="absolute top-3 right-3 bg-amber-500 hover:bg-amber-500">
-                ⭐ Featured
+              <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground hover:bg-accent/90">
+                Featured
               </Badge>
             )}
           </div>
@@ -140,12 +154,18 @@ export default async function ListingDetailPage({ params }: PageProps) {
           <div className="rounded-xl border p-4 mt-2">
             <h3 className="font-semibold text-sm mb-3">Specifications</h3>
             <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-              {specs.map((s) => (
-                <div key={s.key}>
-                  <p className="text-xs text-muted-foreground">{SPEC_ICONS[s.key] ?? "•"} {s.label}</p>
-                  <p className="text-sm font-medium capitalize">{s.value}</p>
-                </div>
-              ))}
+              {specs.map((s) => {
+                const Icon = SPEC_ICONS[s.key];
+                return (
+                  <div key={s.key}>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      {Icon ? <Icon className="h-3.5 w-3.5 text-accent" aria-hidden /> : null}
+                      {s.label}
+                    </p>
+                    <p className="text-sm font-medium capitalize">{s.value}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -159,13 +179,16 @@ export default async function ListingDetailPage({ params }: PageProps) {
               {car.variant ? ` ${car.variant}` : ""}
             </h1>
             {listing.city && (
-              <p className="text-muted-foreground text-sm mt-1">📍 {listing.city}</p>
+              <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-accent" aria-hidden />
+                {listing.city}
+              </p>
             )}
 
             <div className="flex items-baseline gap-3 mt-4">
               <span className="text-3xl font-bold">{formatPrice(listing.price)}</span>
               {listing.negotiable && (
-                <span className="text-sm text-green-600 font-medium">Negotiable</span>
+                <span className="text-sm text-success font-medium">Negotiable</span>
               )}
             </div>
 
@@ -174,7 +197,13 @@ export default async function ListingDetailPage({ params }: PageProps) {
           <Separator />
 
           {/* AI Valuation — interactive client component */}
-          <ValuationButton listingId={listing.id} currentValuation={listing.ai_valuation} />
+          <ValuationButton
+            listingId={listing.id}
+            currentValuation={listing.ai_valuation}
+            currentMethod={listing.ai_method}
+            currentConfidence={listing.ai_confidence}
+            currentReasoning={listing.ai_reasoning}
+          />
 
           {/* Description */}
           {listing.description && (
@@ -203,9 +232,10 @@ export default async function ListingDetailPage({ params }: PageProps) {
           {/* Test drive CTA — links to bookings flow (Phase 12) */}
           <Link
             href={`/listings/${listing.id}/book`}
-            className={buttonVariants({ size: "lg" }) + " w-full text-center"}
+            className={buttonVariants({ size: "lg" }) + " w-full text-center inline-flex items-center justify-center gap-2"}
           >
-            🚗 Book Test Drive
+            <Car className="h-4 w-4" aria-hidden />
+            Book Test Drive
           </Link>
 
           {/* Meta */}

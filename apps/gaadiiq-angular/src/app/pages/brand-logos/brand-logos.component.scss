@@ -1,0 +1,113 @@
+.blm-page {
+  max-width: 1100px;
+  margin: 6rem auto 4rem;
+  padding: 0 1.5rem;
+}
+
+.blm-header {
+  margin-bottom: 2rem;
+  h1 { font-size: 1.8rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+  code { background: var(--card-bg); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+}
+.blm-sub { color: var(--text-muted); line-height: 1.6; }
+
+.blm-table-wrap { overflow-x: auto; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+
+.blm-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card-bg);
+
+  th {
+    background: var(--primary);
+    color: white;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(37,99,235,0.04); }
+}
+
+.blm-num { color: var(--text-muted); width: 40px; }
+
+.blm-logo-cell { width: 110px; }
+
+.blm-logo-box {
+  width: 90px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.blm-logo-img {
+  max-width: 80px;
+  max-height: 48px;
+  object-fit: contain;
+}
+
+.blm-name { font-weight: 600; }
+.blm-country { color: var(--text-muted); }
+.blm-file code {
+  font-size: 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--primary);
+}
+
+.status-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+  &.ok { background: #dcfce7; color: #16a34a; }
+}
+
+.blm-guide {
+  margin-top: 2.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+
+  h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text); }
+
+  ol {
+    padding-left: 1.4rem;
+    li {
+      color: var(--text-muted);
+      line-height: 1.8;
+      font-size: 0.9rem;
+      strong { color: var(--text); }
+      code {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 0.82em;
+        color: var(--primary);
+      }
+    }
+  }
+}

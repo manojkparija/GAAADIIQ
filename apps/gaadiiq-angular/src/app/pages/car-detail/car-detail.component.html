@@ -1,0 +1,537 @@
+<div *ngIf="!carLoaded" style="min-height:60vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem">
+  <div style="font-size:3rem">⏳</div>
+  <p style="color:var(--muted)">Loading car details...</p>
+</div>
+
+<div class="detail-page" *ngIf="carLoaded">
+  <div class="container">
+    <!-- BREADCRUMB -->
+    <div class="breadcrumb">
+      <a routerLink="/">Home</a> / <a routerLink="/listings">Browse</a> / <span>{{ car.make }} {{ car.model }}</span>
+    </div>
+
+    <div class="detail-grid">
+      <!-- LEFT: IMAGES + DETAILS -->
+      <div class="detail-left">
+        <!-- IMAGE GALLERY -->
+        <div class="gallery glass-card">
+          <div class="main-img">
+            <img [src]="(car.images || [car.image])[activeImg()]" [alt]="car.make + ' ' + car.model"
+                 referrerpolicy="no-referrer"
+                 [style.objectPosition]="((car.images || [car.image])[activeImg()] || '').includes('swift/front') ? 'center 65%' : 'center center'"
+                 onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+            <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
+            <button class="like-fab" (click)="liked.set(!liked())" [class.liked]="liked()">
+              {{ liked() ? '❤️' : '🤍' }}
+            </button>
+          </div>
+          <div class="thumbnails">
+            <div *ngFor="let img of (car.images || [car.image]); let i = index"
+              class="thumb" [class.active]="activeImg() === i" (click)="activeImg.set(i)">
+              <img [src]="img" alt="thumb" referrerpolicy="no-referrer"
+                   [style.objectPosition]="img?.includes('swift/front') ? 'center 65%' : 'center center'"
+                   onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+            </div>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs glass-card">
+          <div class="tab-nav">
+            <button [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">Overview</button>
+            <button *ngIf="isNewCar && newCarMeta" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">Variants</button>
+            <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">Specs</button>
+            <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">Features</button>
+            <button *ngIf="modelColours().length > 0" [class.active]="activeTab()==='colours'" (click)="activeTab.set('colours')">Colours</button>
+            <button [class.active]="activeTab()==='ownership'" (click)="activeTab.set('ownership')">Cost of Ownership</button>
+            <button [class.active]="activeTab()==='reviews'" (click)="activeTab.set('reviews')">Reviews ({{ reviews().length }})</button>
+          </div>
+
+          <!-- OVERVIEW -->
+          <div class="tab-content" *ngIf="activeTab()==='overview'">
+            <div class="overview-pills">
+              <div class="pill"><span>⛽</span><div><div class="pill-label">Fuel</div><div class="pill-val">{{ car.fuel }}</div></div></div>
+              <div class="pill"><span>⚙️</span><div><div class="pill-label">Gearbox</div><div class="pill-val">{{ car.transmission }}</div></div></div>
+              <div class="pill"><span>👤</span><div><div class="pill-label">Owners</div><div class="pill-val">{{ car.owners }}</div></div></div>
+              <div class="pill"><span>🎨</span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
+              <div class="pill"><span>📍</span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
+            </div>
+          </div>
+
+          <!-- VARIANTS (new cars only) -->
+          <div class="tab-content" *ngIf="activeTab()==='variants' && newCarMeta">
+            <div class="variants-header">
+              <p class="variants-sub">{{ car.make }} {{ car.model }} price starts at
+                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[0]) }}</strong> and goes up to
+                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[1]) }}</strong> (ex-showroom).
+              </p>
+              <div class="variants-filter-chips">
+                <span class="chip active">All</span>
+                <span class="chip">Petrol</span>
+                <span class="chip">CNG</span>
+                <span class="chip">Manual</span>
+                <span class="chip">Automatic</span>
+              </div>
+            </div>
+            <div class="variants-list">
+              <div class="variant-row" *ngFor="let v of newCarMeta!.variants">
+                <div class="variant-name-wrap">
+                  <span class="variant-name">{{ car.model }} {{ v.name }}</span>
+                  <span *ngIf="v.count && v.count > 1" class="variant-count-badge">View {{ v.count }} Variants</span>
+                </div>
+                <span class="variant-price gradient-text">{{ formatLakhRange(v.minPrice, v.maxPrice) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SPECS -->
+          <div class="tab-content" *ngIf="activeTab()==='specs'">
+            <div class="specs-grid">
+              <div class="spec-row" *ngFor="let spec of (car.specs || [])">
+                <span class="spec-label">{{ spec.label }}</span>
+                <span class="spec-val gradient-text">{{ spec.value }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FEATURES -->
+          <div class="tab-content" *ngIf="activeTab()==='features'">
+            <div class="features-list">
+              <div class="feature-item" *ngFor="let f of (car.features || [])">
+                <span class="check">✅</span> {{ f }}
+              </div>
+            </div>
+          </div>
+
+          <!-- COLOURS -->
+          <div class="tab-content" *ngIf="activeTab()==='colours'">
+            <p class="colours-intro">{{ car.make }} {{ car.model }} is available in {{ modelColours().length }} colour option{{ modelColours().length !== 1 ? 's' : '' }}. Select a colour to see more details.</p>
+            <div class="colour-swatches">
+              <div class="colour-swatch" *ngFor="let c of modelColours()"
+                   [class.selected]="selectedColour() === c.name"
+                   (click)="selectedColour.set(c.name)">
+                <div class="swatch-circle"
+                     [style.background]="c.hex"
+                     [style.boxShadow]="selectedColour() === c.name ? '0 0 0 3px var(--primary), 0 0 0 5px var(--glass)' : 'none'">
+                  <span *ngIf="c.name.includes('+Black Roof')" class="dual-tone-badge">Dual</span>
+                </div>
+                <div class="swatch-name">{{ c.name.replace('+Black Roof', '') }}</div>
+                <div *ngIf="c.name.includes('+Black Roof')" class="dual-tone-label">+ Black Roof</div>
+              </div>
+            </div>
+            <div class="selected-colour-info" *ngIf="selectedColour()">
+              <div class="sci-preview" [style.background]="getHex(selectedColour())">
+                <div class="sci-name" [style.color]="isLightColour(selectedColour()) ? '#1a1a2e' : '#ffffff'">{{ selectedColour() }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- OWNERSHIP COST -->
+          <div class="tab-content" *ngIf="activeTab()==='ownership'">
+            <div class="ownership-controls">
+              <div class="oc-row">
+                <label>Annual Distance: {{ annualKm().toLocaleString() }} km</label>
+                <input type="range" min="5000" max="50000" step="1000" [value]="annualKm()" (input)="annualKm.set(+$any($event.target).value)">
+              </div>
+              <div class="oc-row" *ngIf="car.fuel !== 'Electric'">
+                <label>{{ car.fuel === 'CNG' ? 'CNG Price' : 'Fuel Price' }}: ₹{{ fuelPrice() }}{{ fuelPriceUnit }}</label>
+                <input type="range" [min]="fuelPriceMin" [max]="fuelPriceMax" step="1" [value]="fuelPrice()" (input)="fuelPrice.set(+$any($event.target).value)">
+              </div>
+            </div>
+            <div class="oc-breakdown" *ngIf="ownershipCost() as oc">
+              <div class="oc-item"><span>⛽ Annual Fuel Cost</span><span class="gradient-text">₹{{ oc.fuelCost.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span>🔧 Maintenance</span><span class="gradient-text">₹{{ oc.maintenance.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span>🛡️ Insurance</span><span class="gradient-text">₹{{ oc.insurance.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span>📉 Depreciation</span><span class="gradient-text">₹{{ oc.depreciation.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-total"><span>Total Annual Cost</span><span>₹{{ oc.total.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-perkm">≈ ₹{{ oc.perKm }} per km</div>
+            </div>
+            <div class="resale-card" *ngIf="resaleValue() as rv">
+              <div style="font-weight:700;margin-bottom:0.5rem">📈 Estimated Resale Value (1 yr)</div>
+              <div class="gradient-text" style="font-size:1.5rem;font-weight:900">{{ formatPrice(rv.value) }}</div>
+              <div style="font-size:0.8rem;color:var(--muted)">Retains {{ rv.pct }}% of purchase value</div>
+            </div>
+
+            <!-- 5-Year TCO Analysis -->
+            <ng-container *ngIf="car">
+              <div class="tco-panel glass-card" style="margin-top:1.5rem;padding:1.5rem">
+                <div style="font-weight:800;font-size:1.1rem;margin-bottom:1rem">💰 5-Year Total Cost of Ownership</div>
+                <ng-container *ngIf="tco.calculateTco(car) as t">
+                  <div class="oc-item"><span>🏷️ Purchase Price</span><span>{{ tco.fmt(t.purchasePrice) }}</span></div>
+                  <div class="oc-item"><span>📋 Registration (9%)</span><span>{{ tco.fmt(t.registration) }}</span></div>
+                  <div class="oc-item"><span>🛡️ Insurance (5yr)</span><span>{{ tco.fmt(t.insurance5yr) }}</span></div>
+                  <div class="oc-item"><span>⛽ Fuel (5yr)</span><span>{{ tco.fmt(t.fuel5yr) }}</span></div>
+                  <div class="oc-item"><span>🔧 Maintenance (5yr)</span><span>{{ tco.fmt(t.maintenance5yr) }}</span></div>
+                  <div class="oc-item" style="color:#43E97B"><span>📈 Resale Value</span><span>−{{ tco.fmt(t.resaleValue) }}</span></div>
+                  <div class="oc-total"><span>Net 5-yr Cost</span><span class="gradient-text">{{ tco.fmt(t.netCost5yr) }}</span></div>
+                  <div class="oc-perkm">≈ {{ tco.fmt(t.monthlyCost) }}/month total ownership cost</div>
+                  <ng-container *ngIf="tco.calculateResale(car) as r">
+                    <div style="margin-top:1rem;padding:1rem;background:rgba(67,233,123,0.08);border-radius:10px;border:1px solid rgba(67,233,123,0.2)">
+                      <div style="font-weight:700;margin-bottom:0.5rem;color:#43E97B">📊 Depreciation Outlook</div>
+                      <div style="font-size:0.85rem;color:var(--muted)">{{ r.verdict }} · {{ r.depreciationRate }}% per year</div>
+                      <div style="display:flex;gap:1.5rem;margin-top:0.75rem;font-size:0.875rem">
+                        <div><div style="color:var(--muted);font-size:0.72rem">1 Year</div><strong>{{ tco.fmt(r.value1yr) }}</strong></div>
+                        <div><div style="color:var(--muted);font-size:0.72rem">3 Years</div><strong>{{ tco.fmt(r.value3yr) }}</strong></div>
+                        <div><div style="color:var(--muted);font-size:0.72rem">5 Years</div><strong>{{ tco.fmt(r.value5yr) }}</strong></div>
+                      </div>
+                    </div>
+                  </ng-container>
+                </ng-container>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- REVIEWS -->
+          <div class="tab-content" *ngIf="activeTab()==='reviews'">
+            <div class="reviews-header">
+              <div class="avg-rating">
+                <div class="big-num gradient-text">{{ avgRating() }}</div>
+                <div class="stars-row">{{ stars(+avgRating()).join('') }}</div>
+                <div style="font-size:0.8rem;color:var(--muted)">{{ reviews().length }} reviews</div>
+              </div>
+              <button class="btn-gradient" style="height:fit-content" (click)="showReviewForm.set(!showReviewForm())">
+                {{ showReviewForm() ? 'Cancel' : '✏️ Write Review' }}
+              </button>
+            </div>
+
+            <!-- Review form -->
+            <div class="review-form glass-card" *ngIf="showReviewForm()">
+              <h4>Your Review</h4>
+              <div class="star-select">
+                <span *ngFor="let s of [1,2,3,4,5]"
+                  (click)="userReview.rating = s"
+                  (mouseenter)="hoverRating.set(s)"
+                  (mouseleave)="hoverRating.set(0)"
+                  [class.active]="s <= (hoverRating() || userReview.rating)">★</span>
+              </div>
+              <input type="text" [(ngModel)]="userReview.name" name="rname" placeholder="Your name *">
+              <input type="text" [(ngModel)]="userReview.city" name="rcity" placeholder="City">
+              <input type="text" [(ngModel)]="userReview.title" name="rtitle" placeholder="Review title">
+              <textarea [(ngModel)]="userReview.body" name="rbody" rows="4" placeholder="Share your experience with this car... *"></textarea>
+
+              <!-- Video upload -->
+              <div class="video-upload-wrap">
+                <label class="video-upload-label">
+                  🎥 Add a video review (optional, max 50 MB)
+                  <input type="file" accept="video/*" (change)="onVideoSelected($event)" style="display:none">
+                </label>
+                <video *ngIf="videoPreviewUrl" [src]="videoPreviewUrl" controls class="video-preview"></video>
+              </div>
+
+              <div class="review-error" *ngIf="reviewError()">⚠️ {{ reviewError() }}</div>
+              <button class="btn-gradient" (click)="submitReview()" [disabled]="reviewsSvc.uploading()">
+                {{ reviewsSvc.uploading() ? 'Uploading video…' : 'Submit Review' }}
+              </button>
+            </div>
+
+            <!-- Loading -->
+            <div class="review-loading" *ngIf="reviewsSvc.loading()">Loading reviews…</div>
+
+            <!-- Success -->
+            <div class="review-success" *ngIf="reviewSubmitted()">✅ Review submitted! Thank you.</div>
+
+            <!-- Empty state -->
+            <div class="review-empty" *ngIf="!reviewsSvc.loading() && reviews().length === 0 && !reviewSubmitted()">
+              No reviews yet. Be the first to review this car!
+            </div>
+
+            <!-- Review cards -->
+            <div class="review-card" *ngFor="let r of reviews()">
+              <div class="review-top">
+                <div class="reviewer-avatar">{{ r.avatar }}</div>
+                <div>
+                  <div class="reviewer-name">{{ r.user_name }} <span class="reviewer-city">· {{ r.user_city }}</span></div>
+                  <div class="review-stars">{{ stars(r.rating).join('') }}</div>
+                </div>
+                <div class="review-date">{{ r.created_at | date:'d MMM y' }}</div>
+              </div>
+              <div class="review-title">{{ r.title }}</div>
+              <div class="review-body">{{ r.body }}</div>
+              <!-- Video review player -->
+              <div class="review-video-wrap" *ngIf="r.video_url">
+                <video [src]="r.video_url" controls class="review-video" preload="metadata"></video>
+              </div>
+              <div class="review-likes">👍 {{ r.likes }} found this helpful</div>
+            </div>
+          </div>
+        </div>
+        <!-- HIGHLIGHTS (new cars only) -->
+        <div class="highlights-card glass-card" *ngIf="isNewCar && newCarMeta">
+          <div class="section-title">⭐ Top Things to Know About {{ car.make }} {{ car.model }}</div>
+          <div class="highlights-grid">
+            <div class="highlight-item" *ngFor="let h of newCarMeta!.highlights">
+              <div class="highlight-icon">{{ h.icon }}</div>
+              <div class="highlight-title">{{ h.title }}</div>
+              <div class="highlight-caption">{{ h.caption }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LATEST UPDATES (new cars only) -->
+        <div class="updates-card glass-card" *ngIf="isNewCar && newCarMeta">
+          <div class="section-title">📰 {{ car.make }} {{ car.model }} Latest Updates</div>
+          <ul class="updates-list">
+            <li *ngFor="let u of newCarMeta!.updates" class="update-item">
+              <span class="update-dot"></span>
+              <div>
+                <div class="update-text">{{ u.text }}</div>
+                <div class="update-date">{{ u.date }}</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- COMPARE WITH SIMILAR CARS (new cars only) -->
+        <div class="similar-cars-card glass-card" *ngIf="isNewCar && similarCars().length > 0">
+          <div class="section-title">⚖️ Compare {{ car.make }} {{ car.model }} with Similar Cars</div>
+          <div class="similar-table-wrap">
+            <table class="similar-table">
+              <thead>
+                <tr>
+                  <th>Car</th>
+                  <th>Image</th>
+                  <th>Avg. Ex-Showroom Price</th>
+                  <th>User Rating</th>
+                  <th>Mileage (ARAI)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Current car row -->
+                <tr class="similar-row current-car-row">
+                  <td class="similar-car-name">{{ car.make }} {{ car.model }}</td>
+                  <td class="similar-img-cell">
+                    <img [src]="car.image" [alt]="car.make + ' ' + car.model"
+                         referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                  </td>
+                  <td>
+                    <span class="similar-price">{{ formatPrice(car.price) }}</span>
+                    <span class="similar-onwards"> onwards</span>
+                  </td>
+                  <td>
+                    <span class="similar-rating">★ {{ car.rating }}/5</span>
+                    <div class="similar-reviews">{{ car.reviews }} Ratings</div>
+                  </td>
+                  <td class="similar-mileage">{{ getMileage(car) }}</td>
+                </tr>
+                <!-- Similar cars rows -->
+                <tr class="similar-row" *ngFor="let s of similarCars()">
+                  <td class="similar-car-name">
+                    <a [routerLink]="['/car', s.id]" class="similar-link">{{ s.make }} {{ s.model }}</a>
+                    <span class="similar-arrow"> ›</span>
+                  </td>
+                  <td class="similar-img-cell">
+                    <a [routerLink]="['/car', s.id]">
+                      <img [src]="s.image" [alt]="s.make + ' ' + s.model"
+                           referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                    </a>
+                  </td>
+                  <td>
+                    <span class="similar-price">{{ formatPrice(s.price) }}</span>
+                    <span class="similar-onwards"> onwards</span>
+                  </td>
+                  <td>
+                    <span class="similar-rating">★ {{ s.rating }}/5</span>
+                    <div class="similar-reviews">{{ s.reviews }} Ratings</div>
+                  </td>
+                  <td class="similar-mileage">{{ getMileage(s) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="detail-right">
+        <!-- PRICE CARD -->
+        <div class="price-card glass-card">
+          <div class="badge-row">
+            <span class="badge badge-green">✅ Verified</span>
+            <div class="rating-row"><span>★</span> {{ car.rating }} <span style="color:var(--muted)">({{ car.reviews }} reviews)</span></div>
+          </div>
+          <h1>{{ car.make }} {{ car.model }}</h1>
+          <div style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">{{ car.variant }} · {{ car.year }}</div>
+          <ng-container *ngIf="isNewCar && newCarMeta; else singlePrice">
+            <div class="big-price gradient-text">{{ formatLakhRange(newCarMeta!.priceRange[0], newCarMeta!.priceRange[1]) }}</div>
+            <div style="color:var(--muted);font-size:0.8rem;margin-bottom:0.25rem">Ex-Showroom Price</div>
+          </ng-container>
+          <ng-template #singlePrice>
+            <div class="big-price gradient-text">{{ formatPrice(car.price) }}</div>
+          </ng-template>
+          <div style="color:var(--muted);font-size:0.85rem">EMI from ₹{{ loan.emi.toLocaleString() }}/mo · No cost EMI available</div>
+          <div class="action-btns">
+            <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem" (click)="openContactSeller()">📞 Contact Seller</button>
+            <button class="btn-outline" style="width:100%;padding:1rem;font-size:1rem" (click)="bookTestDrive()">📅 Book Test Drive</button>
+          </div>
+          <div style="display:flex;justify-content:center;gap:2rem;font-size:0.8rem;color:var(--muted)">
+            <span>🔒 Safe Deal Guarantee</span>
+            <span>📋 Free RC Check</span>
+          </div>
+        </div>
+
+        <!-- ON-ROAD PRICE -->
+        <div class="onroad-card glass-card" *ngIf="onRoadPrice() as orp">
+          <h3>🛣️ On-Road Price</h3>
+          <div class="state-select">
+            <label>State:</label>
+            <select [ngModel]="selectedState()" (ngModelChange)="selectedState.set($event)" name="state">
+              <option *ngFor="let s of states" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+          <div class="orp-row"><span>Ex-Showroom</span><span>{{ formatPrice(orp.base) }}</span></div>
+          <div class="orp-row"><span>GST (28%)</span><span>{{ formatPrice(orp.gst) }}</span></div>
+          <div class="orp-row"><span>Cess</span><span>{{ formatPrice(orp.cess) }}</span></div>
+          <div class="orp-row"><span>Registration</span><span>{{ formatPrice(orp.registration) }}</span></div>
+          <div class="orp-row"><span>Insurance</span><span>{{ formatPrice(orp.insurance) }}</span></div>
+          <div class="orp-row"><span>Handling Charges</span><span>{{ formatPrice(orp.handling) }}</span></div>
+          <div class="orp-total"><span>On-Road Price</span><span class="gradient-text">{{ formatPrice(orp.total) }}</span></div>
+        </div>
+
+        <!-- AI VALUATION CARD -->
+        <div class="ai-val-card glass-card">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
+            <span style="font-size:1.4rem">🤖</span>
+            <div>
+              <div style="font-weight:700">AI Price Analysis</div>
+              <div style="font-size:0.78rem;color:var(--muted)">{{ car.aiValuation?.confidence }}% confidence</div>
+            </div>
+            <span class="badge badge-green" style="margin-left:auto">{{ car.aiValuation?.verdict }}</span>
+          </div>
+          <div class="val-bar">
+            <div class="val-range">
+              <span style="font-size:0.8rem;color:var(--muted)">Market Min</span>
+              <span style="font-size:0.8rem;color:var(--muted)">Market Max</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill"></div>
+              <div class="bar-marker"></div>
+            </div>
+            <div class="val-range">
+              <span class="gold-text">{{ formatPrice(car.aiValuation?.marketMin || 0) }}</span>
+              <span class="gold-text">{{ formatPrice(car.aiValuation?.marketMax || 0) }}</span>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:0.75rem">
+            <span style="font-size:0.85rem;color:var(--muted)">AI Fair Value: </span>
+            <span class="gradient-text" style="font-weight:800;font-size:1.1rem">{{ formatPrice(car.aiValuation?.fairPrice || 0) }}</span>
+          </div>
+        </div>
+
+        <!-- EMI CALCULATOR -->
+        <div class="emi-card glass-card">
+          <h3>💳 EMI Calculator</h3>
+          <div class="emi-row">
+            <div class="emi-label-row"><label>Loan Amount</label><span class="emi-val">{{ formatPrice(loan.amount) }}</span></div>
+            <input type="range" min="100000" [max]="car.price" step="10000"
+              [value]="loan.amount" (input)="loan.amount=+$any($event.target).value; calcEmi()">
+          </div>
+          <div class="emi-row">
+            <div class="emi-label-row"><label>Interest Rate</label><span class="emi-val">{{ loan.rate }}% p.a.</span></div>
+            <input type="range" min="7" max="18" step="0.5"
+              [value]="loan.rate" (input)="loan.rate=+$any($event.target).value; calcEmi()">
+          </div>
+          <div class="emi-row">
+            <div class="emi-label-row"><label>Tenure</label><span class="emi-val">{{ loan.tenure }} months</span></div>
+            <input type="range" min="12" max="84" step="12"
+              [value]="loan.tenure" (input)="loan.tenure=+$any($event.target).value; calcEmi()">
+          </div>
+          <div class="emi-result">
+            <div style="color:var(--muted);font-size:0.85rem">Monthly EMI</div>
+            <div class="gradient-text" style="font-size:2rem;font-weight:900">₹{{ loan.emi.toLocaleString('en-IN') }}</div>
+          </div>
+          <ng-container *ngIf="emiBreakdown() as eb">
+            <div class="emi-breakdown">
+              <div class="emi-bar">
+                <div class="emi-bar-principal" [style.width.%]="(eb.principal / eb.total) * 100"></div>
+                <div class="emi-bar-interest" [style.width.%]="(eb.interest / eb.total) * 100"></div>
+              </div>
+              <div class="emi-bd-row"><span class="emi-dot principal"></span><span>Principal</span><span class="emi-bd-val">₹{{ eb.principal.toLocaleString('en-IN') }}</span></div>
+              <div class="emi-bd-row"><span class="emi-dot interest"></span><span>Total Interest</span><span class="emi-bd-val">₹{{ eb.interest.toLocaleString('en-IN') }}</span></div>
+              <div class="emi-bd-row total-row"><span>Total Payment</span><span class="emi-bd-val gradient-text">₹{{ eb.total.toLocaleString('en-IN') }}</span></div>
+            </div>
+          </ng-container>
+          <button class="btn-gradient" style="width:100%;margin-top:1rem">Apply for Loan →</button>
+        </div>
+
+        <!-- COMPARE CTA -->
+        <div class="compare-cta glass-card">
+          <div style="font-weight:700;margin-bottom:0.5rem">⚖️ Compare with similar cars</div>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">See how this stacks up against competition</p>
+          <a routerLink="/compare" class="btn-outline" style="width:100%;display:block;text-align:center">Open Comparison Tool</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ENQUIRY MODAL — shown to normal users instead of seller details -->
+<div class="seller-overlay" *ngIf="enquiryModalOpen()" (click)="enquiryModalOpen.set(false)">
+  <div class="seller-modal glass-card" (click)="$event.stopPropagation()">
+    <button class="seller-close" (click)="enquiryModalOpen.set(false)">✕</button>
+    <div *ngIf="!enquirySent()">
+      <h3 style="margin-bottom:0.25rem">📩 Send Enquiry</h3>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem">
+        Our team will connect you with the seller within 2 hours.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <input class="enq-input" type="text" placeholder="Your Name *" [(ngModel)]="enquiryForm.name">
+        <input class="enq-input" type="tel" placeholder="Phone Number *" [(ngModel)]="enquiryForm.phone">
+        <input class="enq-input" type="email" placeholder="Email (optional)" [(ngModel)]="enquiryForm.email">
+        <textarea class="enq-input" rows="3" placeholder="Any specific questions…" [(ngModel)]="enquiryForm.notes"></textarea>
+      </div>
+      <div *ngIf="enquiryError()" style="color:#FF6B6B;font-size:0.82rem;margin-top:0.5rem">⚠️ {{ enquiryError() }}</div>
+      <button class="btn-gradient" style="width:100%;margin-top:1rem;padding:0.9rem"
+        [disabled]="enquirySubmitting()"
+        (click)="submitEnquiry()">
+        {{ enquirySubmitting() ? 'Sending…' : 'Submit Enquiry' }}
+      </button>
+    </div>
+    <div *ngIf="enquirySent()" style="text-align:center;padding:2rem">
+      <div style="font-size:3rem">✅</div>
+      <h3 style="margin:0.75rem 0 0.5rem">Enquiry Sent!</h3>
+      <p style="color:var(--muted);font-size:0.88rem">
+        Our team will contact you within 2 hours to arrange a callback with the seller.
+      </p>
+      <button class="btn-outline" style="margin-top:1rem;padding:0.75rem 2rem"
+        (click)="enquiryModalOpen.set(false); enquirySent.set(false)">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT SELLER MODAL -->
+<div class="seller-overlay" *ngIf="sellerModalOpen()" (click)="sellerModalOpen.set(false)">
+  <div class="seller-modal glass-card" (click)="$event.stopPropagation()">
+    <button class="seller-close" (click)="sellerModalOpen.set(false)">✕</button>
+
+    <div *ngIf="!seller()" style="text-align:center;padding:2rem;color:var(--muted)">Loading seller info…</div>
+
+    <ng-container *ngIf="seller() as s">
+      <div class="seller-header">
+        <div class="seller-avatar">{{ s.name.charAt(0) }}</div>
+        <div>
+          <h3 class="seller-name">{{ s.name }}</h3>
+          <p class="seller-biz">{{ s.business_name }}</p>
+          <span *ngIf="s.verified" class="seller-verified">✅ Verified Dealer</span>
+        </div>
+      </div>
+
+      <div class="seller-rating">
+        <span class="star">★</span> {{ s.rating }} · {{ s.total_reviews }} reviews
+      </div>
+
+      <div class="seller-details">
+        <div class="seller-row"><span>📍</span><span>{{ s.address }}, {{ s.city }}</span></div>
+        <div class="seller-row"><span>✉️</span><span>{{ s.email }}</span></div>
+      </div>
+
+      <div class="seller-actions">
+        <a [href]="'tel:' + s.phone" class="btn-gradient seller-call">
+          📞 Call {{ s.phone }}
+        </a>
+        <a [href]="waLink(s.phone)" target="_blank" class="btn-whatsapp">
+          💬 WhatsApp
+        </a>
+      </div>
+    </ng-container>
+  </div>
+</div>

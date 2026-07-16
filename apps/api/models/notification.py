@@ -1,5 +1,6 @@
 import enum
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Enum, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -7,11 +8,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base, TimestampMixin, UUIDMixin
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from .user import User
-    from .listing import Listing
 
 
 class NotificationType(str, enum.Enum):

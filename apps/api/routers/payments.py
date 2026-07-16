@@ -1,22 +1,27 @@
 """
-Payment router — Razorpay integration stub.
+Payment router — Razorpay integration.
 
-When RAZORPAY_KEY_ID is set:  creates a real Razorpay order and returns the order id for
-                                the frontend to open the Razorpay checkout.
-When unset (dev/test mode):   auto-approves instantly — marks listing.is_featured=True and
-                               sets payment.status=paid — so the full flow can be tested
-                               without real credentials.
+Dev mode (environment != production AND Razorpay keys absent):
+  Payments auto-approve instantly so the full flow can be tested without credentials.
+
+Production mode (environment == production):
+  Razorpay keys MUST be present (enforced at startup via validate_production_config).
+  HMAC signature verification is ALWAYS performed on /verify; no bypass is possible.
 """
+import hashlib
+import hmac
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.dependencies import get_current_user
+from core.limiter import limiter
 from db.session import get_db
 from models.listing import Listing
 from models.payment import Payment, PaymentPurpose, PaymentStatus
@@ -48,12 +53,42 @@ SUBSCRIPTION_PRICES: dict[SubscriptionTier, int] = {
 }
 
 
+def _dev_mode() -> bool:
+    """True only in non-production environments when Razorpay keys are absent."""
+    return not settings.is_production and not settings.payments_enabled
+
+
+def _require_payments_available() -> None:
+    """Raise 503 if payments cannot be processed (production without keys is blocked at boot)."""
+    if settings.is_production and not settings.payments_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Payment processing is not configured",
+        )
+
+
+def _verify_razorpay_signature(order_id: str, payment_id: str, signature: str) -> None:
+    """Constant-time HMAC-SHA256 verification against Razorpay key secret."""
+    body = f"{order_id}|{payment_id}"
+    expected = hmac.new(
+        settings.RAZORPAY_KEY_SECRET.encode(),
+        body.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid payment signature")
+
+
 @router.post("/feature-listing", response_model=RazorpayOrderOut)
+@limiter.limit("10/minute")
 async def feature_listing(
+    request: Request,
     payload: FeatureListingRequest,
     db: DbDep,
     current_user: CurrentUser,
 ):
+    _require_payments_available()
+
     if payload.duration_days not in FEATURED_PRICES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -68,7 +103,7 @@ async def feature_listing(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found")
 
     amount_paise = FEATURED_PRICES[payload.duration_days]
-    dev_mode = not settings.RAZORPAY_KEY_ID
+    dev = _dev_mode()
 
     payment = Payment(
         user_id=current_user.id,
@@ -76,11 +111,10 @@ async def feature_listing(
         amount_paise=amount_paise,
         currency="INR",
         purpose=PaymentPurpose.featured_listing,
-        status=PaymentStatus.paid if dev_mode else PaymentStatus.pending,
+        status=PaymentStatus.paid if dev else PaymentStatus.pending,
     )
 
-    if dev_mode:
-        # Auto-approve in dev — mark listing featured
+    if dev:
         listing.is_featured = True
         payment.razorpay_order_id = f"dev_order_{uuid.uuid4().hex[:12]}"
         payment.razorpay_payment_id = f"dev_pay_{uuid.uuid4().hex[:12]}"
@@ -105,7 +139,7 @@ async def feature_listing(
         amount_paise=amount_paise,
         currency="INR",
         key_id=settings.RAZORPAY_KEY_ID or None,
-        dev_mode=dev_mode,
+        dev_mode=dev,
         listing_featured=listing.is_featured,
     )
 
@@ -118,25 +152,24 @@ async def verify_payment(
     db: DbDep,
     current_user: CurrentUser,
 ):
-    """Verify Razorpay payment signature and mark listing as featured."""
+    """Verify Razorpay HMAC signature and mark payment as paid."""
     payment = await db.get(Payment, payment_id)
     if not payment or payment.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
     if payment.status == PaymentStatus.paid:
         return {"status": "already_paid"}
 
-    if settings.RAZORPAY_KEY_ID:
-        import razorpay
-        import razorpay.errors
-        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-        try:
-            client.utility.verify_payment_signature({
-                "razorpay_order_id": payment.razorpay_order_id,
-                "razorpay_payment_id": razorpay_payment_id,
-                "razorpay_signature": razorpay_signature,
-            })
-        except razorpay.errors.SignatureVerificationError:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
+    if _dev_mode():
+        # Dev auto-approve — only reachable when not in production
+        if not payment.razorpay_order_id or not payment.razorpay_order_id.startswith("dev_"):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not a dev payment")
+    else:
+        # Production path — ALWAYS verify signature; no bypass
+        _verify_razorpay_signature(
+            payment.razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+        )
 
     payment.status = PaymentStatus.paid
     payment.razorpay_payment_id = razorpay_payment_id
@@ -150,6 +183,78 @@ async def verify_payment(
     return {"status": "paid"}
 
 
+@router.post("/webhook", status_code=status.HTTP_200_OK)
+async def razorpay_webhook(
+    request: Request,
+    db: DbDep,
+):
+    """Razorpay server-to-server webhook — more reliable than client /verify."""
+    raw_body = await request.body()
+    signature = request.headers.get("X-Razorpay-Signature", "")
+
+    if settings.payments_enabled:
+        expected = hmac.new(
+            settings.RAZORPAY_KEY_SECRET.encode(),
+            raw_body,
+            hashlib.sha256,
+        ).hexdigest()
+        if not hmac.compare_digest(expected, signature):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid webhook signature")
+
+    try:
+        event = json.loads(raw_body)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON")
+
+    if event.get("event") != "payment.captured":
+        return {"status": "ignored"}
+
+    payload_data = event.get("payload", {}).get("payment", {}).get("entity", {})
+    razorpay_order_id = payload_data.get("order_id")
+    razorpay_payment_id = payload_data.get("id")
+
+    if not razorpay_order_id:
+        return {"status": "ignored"}
+
+    result = await db.execute(
+        select(Payment).where(Payment.razorpay_order_id == razorpay_order_id)
+    )
+    payment = result.scalar_one_or_none()
+    if not payment or payment.status == PaymentStatus.paid:
+        return {"status": "already_handled"}
+
+    payment.status = PaymentStatus.paid
+    payment.razorpay_payment_id = razorpay_payment_id
+
+    if payment.listing_id and payment.purpose == PaymentPurpose.featured_listing:
+        listing = await db.get(Listing, payment.listing_id)
+        if listing:
+            listing.is_featured = True
+
+    if payment.purpose in (PaymentPurpose.subscription_pro, PaymentPurpose.subscription_dealer):
+        tier_map = {
+            PaymentPurpose.subscription_pro: SubscriptionTier.pro,
+            PaymentPurpose.subscription_dealer: SubscriptionTier.dealer,
+        }
+        tier = tier_map[payment.purpose]
+        sub_result = await db.execute(
+            select(Subscription).where(Subscription.user_id == payment.user_id)
+        )
+        sub = sub_result.scalar_one_or_none()
+        if sub:
+            sub.tier = tier
+            sub.valid_until = datetime.now(timezone.utc) + timedelta(days=30)
+        else:
+            db.add(Subscription(
+                user_id=payment.user_id,
+                tier=tier,
+                valid_until=datetime.now(timezone.utc) + timedelta(days=30),
+            ))
+
+    await db.commit()
+    return {"status": "ok"}
+
+
 @router.get("/my", response_model=list[PaymentOut])
 async def my_payments(db: DbDep, current_user: CurrentUser):
     result = await db.execute(
@@ -158,6 +263,42 @@ async def my_payments(db: DbDep, current_user: CurrentUser):
         .order_by(Payment.created_at.desc())
     )
     return result.scalars().all()
+
+
+@router.post("/{payment_id}/refund", status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def refund_payment(
+    request: Request,
+    payment_id: uuid.UUID,
+    db: DbDep,
+    current_user: CurrentUser,
+):
+    """Initiate a Razorpay refund for a paid payment owned by the current user."""
+    payment = await db.get(Payment, payment_id)
+    if not payment or payment.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+    if payment.status != PaymentStatus.paid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only paid payments can be refunded")
+    if not payment.razorpay_payment_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No Razorpay payment ID on record")
+
+    if not _dev_mode():
+        if not settings.payments_enabled:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Payment processing not configured")
+        import razorpay  # type: ignore[import]
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        client.payment.refund(payment.razorpay_payment_id, {"amount": payment.amount_paise})
+
+    payment.status = PaymentStatus.refunded
+
+    # Undo effects
+    if payment.listing_id and payment.purpose == PaymentPurpose.featured_listing:
+        listing = await db.get(Listing, payment.listing_id)
+        if listing:
+            listing.is_featured = False
+
+    await db.commit()
+    return {"status": "refunded", "payment_id": str(payment_id)}
 
 
 # ── Subscriptions ─────────────────────────────────────────────────────────────
@@ -177,29 +318,32 @@ async def my_subscription(db: DbDep, current_user: CurrentUser):
 
 
 @subs_router.post("/upgrade", response_model=RazorpayOrderOut)
+@limiter.limit("10/minute")
 async def upgrade_subscription(
+    request: Request,
     payload: SubscriptionUpgradeRequest,
     db: DbDep,
     current_user: CurrentUser,
 ):
+    _require_payments_available()
+
     if payload.tier == SubscriptionTier.free:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot upgrade to free")
 
     amount_paise = SUBSCRIPTION_PRICES.get(payload.tier, 0)
-    dev_mode = not settings.RAZORPAY_KEY_ID
+    dev = _dev_mode()
 
     payment = Payment(
         user_id=current_user.id,
         amount_paise=amount_paise,
         currency="INR",
         purpose=PaymentPurpose(f"subscription_{payload.tier.value}"),
-        status=PaymentStatus.paid if dev_mode else PaymentStatus.pending,
+        status=PaymentStatus.paid if dev else PaymentStatus.pending,
     )
 
-    if dev_mode:
+    if dev:
         payment.razorpay_order_id = f"dev_order_{uuid.uuid4().hex[:12]}"
         payment.razorpay_payment_id = f"dev_pay_{uuid.uuid4().hex[:12]}"
-        # Create or update subscription
         result = await db.execute(
             select(Subscription).where(Subscription.user_id == current_user.id)
         )
@@ -214,6 +358,16 @@ async def upgrade_subscription(
                 valid_until=datetime.now(timezone.utc) + timedelta(days=30),
             )
             db.add(sub)
+    else:
+        import razorpay  # type: ignore[import]
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        order = client.order.create({
+            "amount": amount_paise,
+            "currency": "INR",
+            "receipt": str(uuid.uuid4()),
+            "notes": {"purpose": f"subscription_{payload.tier.value}"},
+        })
+        payment.razorpay_order_id = order["id"]
 
     db.add(payment)
     await db.commit()
@@ -225,6 +379,6 @@ async def upgrade_subscription(
         amount_paise=amount_paise,
         currency="INR",
         key_id=settings.RAZORPAY_KEY_ID or None,
-        dev_mode=dev_mode,
+        dev_mode=dev,
         listing_featured=False,
     )

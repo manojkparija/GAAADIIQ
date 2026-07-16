@@ -1,0 +1,191 @@
+<div class="register-page">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="register-card glass-card">
+    <div class="reg-header">
+      <a routerLink="/" class="logo-link">⚡ <span class="gradient-text">GAADIIQ</span></a>
+    </div>
+
+    <div class="auth-tabs">
+      <a routerLink="/login" class="auth-tab">Sign In</a>
+      <button class="auth-tab active">Sign Up</button>
+    </div>
+
+    <h1 class="reg-title">Create your account</h1>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar-wrap">
+      <div class="progress-steps">
+        <div class="step-dot" [class.active]="step() >= 1" [class.done]="step() > 1">
+          <span>{{ step() > 1 ? '✓' : '1' }}</span>
+        </div>
+        <div class="step-line" [class.filled]="step() > 1"></div>
+        <div class="step-dot" [class.active]="step() >= 2" [class.done]="step() > 2">
+          <span>{{ step() > 2 ? '✓' : '2' }}</span>
+        </div>
+        @if (isCustomer()) {
+          <div class="step-line" [class.filled]="step() > 2"></div>
+          <div class="step-dot" [class.active]="step() >= 3">
+            <span>3</span>
+          </div>
+        }
+      </div>
+      <div class="step-labels">
+        <span>Personal Info</span>
+        <span>Password</span>
+        @if (isCustomer()) {
+          <span>Preferences</span>
+        }
+      </div>
+    </div>
+
+    <!-- Step 1: Personal Info + Account Type -->
+    @if (step() === 1) {
+      <div class="step-content">
+        <h2>Tell us about yourself</h2>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" placeholder="Rahul Sharma">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" placeholder="rahul@example.com">
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" placeholder="+91 9876543210">
+        </div>
+
+        <div class="form-group">
+          <label>I am signing up as</label>
+          <div class="role-picker">
+
+            <!-- Customer -->
+            <button type="button" class="role-chip" [class.selected]="accountType() === 'customer'" (click)="accountType.set('customer')">
+              <svg class="role-svg" viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Road -->
+                <rect x="5" y="42" width="70" height="8" rx="2" fill="#E2E8F0"/>
+                <rect x="18" y="45" width="10" height="2" rx="1" fill="#94A3B8"/>
+                <rect x="35" y="45" width="10" height="2" rx="1" fill="#94A3B8"/>
+                <rect x="52" y="45" width="10" height="2" rx="1" fill="#94A3B8"/>
+                <!-- Car body -->
+                <rect x="12" y="28" width="56" height="16" rx="5" fill="#3B82F6"/>
+                <!-- Car roof -->
+                <path d="M24 28 L30 16 L50 16 L56 28Z" fill="#2563EB"/>
+                <!-- Windows -->
+                <rect x="31" y="18" width="8" height="8" rx="2" fill="#BAE6FD"/>
+                <rect x="41" y="18" width="8" height="8" rx="2" fill="#BAE6FD"/>
+                <!-- Wheels -->
+                <circle cx="24" cy="44" r="6" fill="#1E293B"/>
+                <circle cx="24" cy="44" r="3" fill="#64748B"/>
+                <circle cx="56" cy="44" r="6" fill="#1E293B"/>
+                <circle cx="56" cy="44" r="3" fill="#64748B"/>
+                <!-- Headlight -->
+                <rect x="64" y="32" width="5" height="4" rx="1" fill="#FEF08A"/>
+                <!-- Tail light -->
+                <rect x="11" y="32" width="4" height="4" rx="1" fill="#FCA5A5"/>
+              </svg>
+              <span class="role-label">Customer</span>
+              <span class="role-desc">Browse &amp; buy cars</span>
+            </button>
+
+            <!-- Seller -->
+            <button type="button" class="role-chip" [class.selected]="accountType() === 'seller'" (click)="accountType.set('seller')">
+              <svg class="role-svg" viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Showroom building -->
+                <rect x="8" y="20" width="64" height="32" rx="3" fill="#F1F5F9"/>
+                <rect x="8" y="20" width="64" height="7" rx="3" fill="#10B981"/>
+                <!-- Sign text bar -->
+                <rect x="18" y="23" width="44" height="3" rx="1.5" fill="#A7F3D0"/>
+                <!-- Glass door -->
+                <rect x="30" y="35" width="20" height="17" rx="2" fill="#BAE6FD"/>
+                <line x1="40" y1="35" x2="40" y2="52" stroke="#7DD3FC" stroke-width="1"/>
+                <circle cx="36" cy="44" r="1.5" fill="#0EA5E9"/>
+                <circle cx="44" cy="44" r="1.5" fill="#0EA5E9"/>
+                <!-- Side windows -->
+                <rect x="12" y="33" width="14" height="10" rx="2" fill="#BAE6FD"/>
+                <rect x="54" y="33" width="14" height="10" rx="2" fill="#BAE6FD"/>
+                <!-- Mini car in showroom -->
+                <rect x="14" y="37" width="10" height="5" rx="2" fill="#6366F1"/>
+                <circle cx="16" cy="43" r="2" fill="#1E293B"/>
+                <circle cx="22" cy="43" r="2" fill="#1E293B"/>
+                <!-- Price tag -->
+                <rect x="56" y="13" width="18" height="10" rx="2" fill="#FEF08A" stroke="#FCD34D" stroke-width="1"/>
+                <text x="65" y="21" text-anchor="middle" font-size="6" fill="#92400E" font-weight="bold">₹</text>
+              </svg>
+              <span class="role-label">Seller</span>
+              <span class="role-desc">List &amp; sell cars</span>
+            </button>
+
+
+          </div>
+        </div>
+
+        <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
+        <button class="btn-gradient btn-full" (click)="nextStep()" [disabled]="checkingEmail()">
+          {{ checkingEmail() ? 'Checking…' : 'Continue →' }}
+        </button>
+      </div>
+    }
+
+    <!-- Step 2: Password -->
+    @if (step() === 2) {
+      <div class="step-content">
+        <h2>Set your password</h2>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" placeholder="Min 6 characters">
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <input type="password" [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)" name="confirmPassword" placeholder="Repeat password">
+        </div>
+        <div class="pass-strength">
+          <div class="bar" [style.width]="password().length > 8 ? '100%' : password().length > 5 ? '60%' : '30%'"
+               [style.background]="password().length > 8 ? '#43E97B' : password().length > 5 ? '#FFD700' : '#FF6584'"></div>
+        </div>
+        <p class="pass-hint">{{ password().length > 8 ? 'Strong password!' : password().length > 5 ? 'Medium strength' : 'Weak — add more characters' }}</p>
+        <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
+        <div class="btn-row">
+          <button class="btn-outline" (click)="prevStep()">← Back</button>
+          <button class="btn-gradient" (click)="nextStep()" [disabled]="loading()">
+            {{ isCustomer() ? 'Continue →' : (loading() ? 'Creating…' : 'Create Account 🎉') }}
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Step 3: Car Preferences (Customers only) -->
+    @if (step() === 3 && isCustomer()) {
+      <div class="step-content">
+        <h2>Your car preferences</h2>
+        <p class="hint">Select all that interest you</p>
+        <div class="pref-grid">
+          @for (p of preferences; track p) {
+            <button class="pref-chip" [class.selected]="hasPref(p)" (click)="togglePref(p)">{{ p }}</button>
+          }
+        </div>
+        <div class="form-group" style="margin-top:1.5rem">
+          <label>Budget Range</label>
+          <select [ngModel]="budget()" (ngModelChange)="budget.set($event)" name="budget">
+            <option value="">Select budget</option>
+            @for (b of budgetRanges; track b) {
+              <option [value]="b">{{ b }}</option>
+            }
+          </select>
+        </div>
+        <label class="checkbox-label" style="margin:1rem 0">
+          <input type="checkbox" [ngModel]="notifications()" (ngModelChange)="notifications.set($event)" name="notifications">
+          Get price drop alerts & new listings
+        </label>
+        <div class="btn-row">
+          <button class="btn-outline" (click)="prevStep()">← Back</button>
+          <button class="btn-gradient" (click)="onSubmit()" [disabled]="loading()">{{ loading() ? 'Creating…' : 'Create Account 🎉' }}</button>
+        </div>
+      </div>
+    }
+
+    <p class="login-link">Already have an account? <a routerLink="/login">Sign in</a></p>
+  </div>
+</div>

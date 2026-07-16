@@ -4,8 +4,9 @@ Tests for view tracking, admin endpoints, and seller analytics.
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from db.base import Base
 from db.session import get_db
@@ -17,7 +18,7 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest_asyncio.fixture
 async def db_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(TEST_DB_URL, echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -224,7 +225,10 @@ async def test_seller_analytics_with_data(client):
     await client.post("/reviews", json={"listing_id": listing_id, "rating": 4},
                       headers={"Authorization": f"Bearer {buyer_token}"})
 
-    r = await client.get("/dealers/me/analytics", headers={"Authorization": f"Bearer {seller_token}"})
+    r = await client.get(
+        "/dealers/me/analytics",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
     assert r.status_code == 200
     data = r.json()
     assert data["total_listings"] == 1

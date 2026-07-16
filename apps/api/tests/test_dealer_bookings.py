@@ -5,6 +5,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from db.base import Base
 from db.session import get_db
@@ -15,7 +16,7 @@ TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest_asyncio.fixture
 async def db_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(TEST_DB_URL, echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -169,7 +170,11 @@ async def test_create_booking(client: AsyncClient):
 
     resp = await client.post(
         "/bookings",
-        json={"listing_id": listing_id, "preferred_date": "2026-07-15", "notes": "Morning slot preferred"},
+        json={
+            "listing_id": listing_id,
+            "preferred_date": "2026-07-15",
+            "notes": "Morning slot preferred",
+        },
         headers={"Authorization": f"Bearer {buyer_token}"},
     )
     assert resp.status_code == 201
@@ -183,6 +188,7 @@ async def test_create_booking_requires_auth(client: AsyncClient):
     seller_token = await _register_token(client, "seller2@test.com")
     listing_id = await _make_listing(client, seller_token)
 
+    client.cookies.clear()  # remove session cookie so the request is truly unauthenticated
     resp = await client.post("/bookings", json={"listing_id": listing_id})
     assert resp.status_code in (401, 403)
 
@@ -230,12 +236,18 @@ async def test_received_bookings_seller_only(client: AsyncClient):
     )
 
     # Seller sees the booking
-    resp = await client.get("/bookings/received", headers={"Authorization": f"Bearer {seller_token}"})
+    resp = await client.get(
+        "/bookings/received",
+        headers={"Authorization": f"Bearer {seller_token}"},
+    )
     assert resp.status_code == 200
     assert len(resp.json()) == 1
 
     # Other user sees nothing
-    resp2 = await client.get("/bookings/received", headers={"Authorization": f"Bearer {other_token}"})
+    resp2 = await client.get(
+        "/bookings/received",
+        headers={"Authorization": f"Bearer {other_token}"},
+    )
     assert resp.status_code == 200
     assert len(resp2.json()) == 0
 

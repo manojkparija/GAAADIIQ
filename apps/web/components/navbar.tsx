@@ -2,126 +2,163 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { buttonVariants } from "@/components/ui/button";
 import SearchBar from "@/components/search-bar";
 import NotificationBell from "@/components/notification-bell";
+import ThemeToggle from "@/components/theme-toggle";
+import { User, Menu, X } from "lucide-react";
+
+const NAV_LINKS = [
+  { label: "New Cars",   href: "/listings?listing_type=new" },
+  { label: "Used Cars",  href: "/listings?listing_type=used" },
+  { label: "Electric",   href: "/listings?fuel_type=electric" },
+  { label: "Brands",     href: "/cars" },
+  { label: "Compare",    href: "/compare" },
+  { label: "Car Advisor", href: "/recommend" },
+];
 
 export default function Navbar() {
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        {/* Logo */}
-        <Link href="/" className="font-bold text-xl tracking-tight text-primary shrink-0 flex items-center gap-2">
-          <span className="text-amber-500">⬡</span>
-          <span>GAADIIQ</span>
-        </Link>
+    <header className="sticky top-0 z-40 w-full">
+      {/* ── Primary bar: navy ── */}
+      <div className="bg-primary text-primary-foreground border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 h-[52px] flex items-center gap-4">
+          {/* Logo — display serif */}
+          <Link href="/" className="shrink-0 flex items-center gap-2 font-display text-xl font-semibold tracking-wide text-primary-foreground">
+            <span className="text-accent">✦</span>
+            GAADIIQ
+          </Link>
 
-        {/* Nav links — desktop */}
-        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-          <Link href="/listings" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            Explore
-          </Link>
-          <Link href="/listings?listing_type=used" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            Used Cars
-          </Link>
-          <Link href="/listings?listing_type=new" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            New Cars
-          </Link>
-          <Link href="/listings?fuel_type=electric" className="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            Electric
-          </Link>
-        </nav>
+          {/* Search — grows to fill center */}
+          <div className="flex-1 hidden md:block">
+            <SearchBar
+              className="w-full max-w-lg mx-auto"
+              placeholder="Search brand, model, or ask AI…"
+            />
+          </div>
 
-        {/* Search bar — desktop */}
-        <SearchBar className="hidden md:block w-64 lg:w-80" placeholder="Search cars…" />
-
-        {/* Auth — desktop */}
-        <div className="hidden md:flex items-center gap-2 shrink-0">
-          {session ? (
-            <>
-              <NotificationBell />
-              <Link href="/dashboard" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-                Dashboard
-              </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className={buttonVariants({ variant: "outline", size: "sm" })}
-              >
-                Sign out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-                Sign in
-              </Link>
-              <Link
-                href="/register"
-                className={buttonVariants({ size: "sm" }) + " bg-amber-500 hover:bg-amber-400 text-slate-900"}
-              >
-                Register
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden p-2 rounded-md hover:bg-muted transition-colors"
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-label="Toggle menu"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {mobileOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
-      </div>
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t bg-white px-4 py-4 flex flex-col gap-2">
-          <SearchBar className="w-full mb-2" placeholder="Search cars…" />
-          <Link href="/listings" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-muted" onClick={() => setMobileOpen(false)}>
-            Explore All Cars
-          </Link>
-          <Link href="/listings?listing_type=used" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-muted" onClick={() => setMobileOpen(false)}>
-            Used Cars
-          </Link>
-          <Link href="/listings?listing_type=new" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-muted" onClick={() => setMobileOpen(false)}>
-            New Cars
-          </Link>
-          <Link href="/listings?fuel_type=electric" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-muted" onClick={() => setMobileOpen(false)}>
-            Electric Cars
-          </Link>
-          <div className="border-t pt-3 mt-1 flex flex-col gap-2">
+          {/* Utility */}
+          <div className="hidden md:flex items-center gap-1 shrink-0 ml-auto">
+            <ThemeToggle />
             {session ? (
               <>
-                <Link href="/dashboard" className={buttonVariants({ variant: "outline", size: "sm" }) + " w-full justify-center"} onClick={() => setMobileOpen(false)}>
+                <NotificationBell />
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-1.5 text-sm font-medium text-primary-foreground/75 hover:text-accent px-3 py-1.5 transition-colors"
+                >
+                  <User className="h-3.5 w-3.5" />
                   Dashboard
                 </Link>
                 <button
-                  onClick={() => { signOut({ callbackUrl: "/" }); setMobileOpen(false); }}
-                  className={buttonVariants({ variant: "ghost", size: "sm" }) + " w-full justify-center"}
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="text-sm text-primary-foreground/50 hover:text-primary-foreground/80 px-2 py-1.5 transition-colors"
                 >
                   Sign out
                 </button>
               </>
             ) : (
               <>
-                <Link href="/login" className={buttonVariants({ variant: "outline", size: "sm" }) + " w-full justify-center"} onClick={() => setMobileOpen(false)}>
-                  Sign in
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-primary-foreground/75 hover:text-accent px-3 py-1.5 transition-colors"
+                >
+                  Login
                 </Link>
                 <Link
                   href="/register"
-                  className={buttonVariants({ size: "sm" }) + " w-full justify-center bg-amber-500 hover:bg-amber-400 text-slate-900"}
+                  className="text-sm font-semibold bg-accent text-accent-foreground hover:bg-accent/90 px-4 py-1.5 rounded-sm transition-colors"
+                >
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden ml-auto p-1.5 text-primary-foreground/70 hover:text-accent transition-colors"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Sub-nav: category tabs on lighter navy ── */}
+      <div className="hidden md:block bg-primary/90 border-b border-white/8">
+        <div className="max-w-7xl mx-auto px-4">
+          <nav className="flex items-center h-8 text-[13px]">
+            {NAV_LINKS.map((link) => {
+              const basePath = link.href.split("?")[0];
+              const active = pathname === basePath || (basePath !== "/" && pathname.startsWith(basePath));
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`px-3.5 h-full flex items-center border-b-2 font-medium tracking-wide transition-colors whitespace-nowrap
+                    ${active
+                      ? "border-accent text-accent"
+                      : "border-transparent text-primary-foreground/55 hover:text-accent hover:border-accent/40"
+                    }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden bg-primary border-t border-white/10 px-4 py-4 flex flex-col gap-1">
+          <SearchBar className="w-full mb-3" placeholder="Search brand, model…" />
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="px-3 py-2.5 text-sm font-medium text-primary-foreground/70 hover:text-accent transition-colors"
+              onClick={() => setMobileOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <div className="border-t border-white/10 pt-3 mt-2 flex flex-col gap-2">
+            {session ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="text-sm font-medium text-center py-2.5 border border-white/20 rounded-sm text-primary-foreground/80 hover:text-accent hover:border-accent/50 transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => { signOut({ callbackUrl: "/" }); setMobileOpen(false); }}
+                  className="text-sm text-primary-foreground/50 text-center py-2"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-center py-2.5 border border-white/20 rounded-sm text-primary-foreground/80 hover:text-accent hover:border-accent/50 transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="text-sm font-semibold text-center py-2.5 bg-accent text-accent-foreground rounded-sm hover:bg-accent/90 transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   Register Free

@@ -25,7 +25,20 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserPublicOut(BaseModel):
+    """Safe public representation — no PII (email/phone).
+    Used in ListingOut and other publicly accessible responses.
+    """
+    id: uuid.UUID
+    full_name: str | None
+    role: UserRole
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class UserOut(BaseModel):
+    """Full representation returned only to the authenticated user themselves."""
     id: uuid.UUID
     email: str
     full_name: str | None
@@ -47,3 +60,19 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     user_id: uuid.UUID | None = None
     email: str | None = None
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v

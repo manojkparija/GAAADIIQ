@@ -1,0 +1,61 @@
+<div class="about-page">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Hero -->
+  <section class="about-hero container">
+    <div class="ai-badge">⚡ Our Story</div>
+    <h1>We're Making Car Buying <span class="gradient-text">Smarter for India</span></h1>
+    <p class="hero-sub">
+      GAADIIQ was born out of frustration. Our founders spent months trying to buy a used car — only to encounter fake listings, opaque pricing, and pushy dealers. So we built the platform we wished existed.
+    </p>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-section container">
+    <div class="stats-grid">
+      <div class="stat-card glass-card" *ngFor="let s of stats">
+        <div class="stat-val gradient-text">{{ s.value }}</div>
+        <div class="stat-label">{{ s.label }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mission -->
+  <section class="mission-section container">
+    <div class="mission-card glass-card">
+      <div class="mission-icon">🎯</div>
+      <h2>Our Mission</h2>
+      <p>
+        To give every Indian car buyer the same advantage that a seasoned industry insider has — real-time market intelligence, AI-powered price analysis, and verified listings — completely free.
+      </p>
+      <p>
+        For sellers and dealers, we eliminate friction: instant AI valuations, quality leads, and tools to close faster.
+      </p>
+    </div>
+  </section>
+
+  <!-- Values -->
+  <section class="values-section container">
+    <h2 class="section-title">What We <span class="gradient-text">Stand For</span></h2>
+    <div class="values-grid">
+      <div class="value-card glass-card" *ngFor="let v of values">
+        <div class="v-icon">{{ v.icon }}</div>
+        <h3>{{ v.title }}</h3>
+        <p>{{ v.desc }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="about-cta container">
+    <div class="cta-card glass-card">
+      <h2>Join <span class="gradient-text">2.5 Lakh+</span> Smart Car Buyers</h2>
+      <p>Find your perfect car with AI-powered recommendations, verified listings, and transparent pricing.</p>
+      <div class="cta-btns">
+        <a routerLink="/listings" class="btn-gradient">Browse Cars →</a>
+        <a routerLink="/register" class="btn-outline">Create Free Account</a>
+      </div>
+    </div>
+  </section>
+</div>

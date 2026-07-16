@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 function debounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: number) {
@@ -28,19 +28,21 @@ export default function SearchBar({ initialQuery = "", placeholder = "Search by 
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-  const fetchSuggestions = useCallback(
-    debounce(async (q: string) => {
-      if (q.length < 2) { setSuggestions([]); return; }
-      try {
-        const res = await fetch(`${apiUrl}/search/autocomplete?q=${encodeURIComponent(q)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSuggestions(data.suggestions ?? []);
-          setOpen(true);
-        }
-      } catch { /* silent */ }
-    }, 250),
-    [apiUrl]
+  const fetchSuggestionsRaw = useCallback(async (q: string) => {
+    if (q.length < 2) { setSuggestions([]); return; }
+    try {
+      const res = await fetch(`${apiUrl}/search/autocomplete?q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestions(data.suggestions ?? []);
+        setOpen(true);
+      }
+    } catch { /* silent */ }
+  }, [apiUrl]);
+
+  const fetchSuggestions = useMemo(
+    () => debounce((q: string) => { void fetchSuggestionsRaw(q); }, 250),
+    [fetchSuggestionsRaw]
   );
 
   useEffect(() => {

@@ -50,9 +50,8 @@ export default function ReviewForm({ listingId, onSubmitted }: Props) {
 
   if (done) {
     return (
-      <div className="rounded-xl border p-5 text-center bg-green-50 dark:bg-green-950">
-        <p className="text-2xl mb-1">⭐</p>
-        <p className="font-semibold text-green-700 dark:text-green-300">Review submitted!</p>
+      <div className="rounded-xl border p-5 text-center bg-success/10">
+        <p className="font-semibold text-success">Review submitted!</p>
         <p className="text-sm text-muted-foreground mt-0.5">Thanks for sharing your experience.</p>
       </div>
     );
@@ -75,7 +74,7 @@ export default function ReviewForm({ listingId, onSubmitted }: Props) {
                 onClick={() => setRating(s)}
                 onMouseEnter={() => setHovered(s)}
                 onMouseLeave={() => setHovered(0)}
-                className={`text-2xl transition-colors ${s <= display ? "text-amber-400" : "text-muted-foreground/30"}`}
+                className={`text-2xl transition-colors ${s <= display ? "text-accent" : "text-muted-foreground/30"}`}
               >
                 ★
               </button>

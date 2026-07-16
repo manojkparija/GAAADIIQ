@@ -1,0 +1,387 @@
+<!-- TICKER BAR -->
+<div class="ticker-bar">
+  <div class="ticker-track">
+    @for (item of tickerItems.concat(tickerItems); track item) {
+      <span>{{ item }} &nbsp;&nbsp;•&nbsp;&nbsp; </span>
+    }
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container hero-content">
+    <!-- Left: copy + search -->
+    <div class="hero-text">
+      <div class="badge badge-blue mb-4">🚘 AI Car Valuation</div>
+      <h1>
+        Know Your Car's<br>
+        <span class="gradient-text">True Market Value</span>
+      </h1>
+      <p class="hero-powered">Powered by <strong>200+ AI Signals</strong></p>
+      <p class="hero-sub">
+        Get an accurate valuation in under 30 seconds — data-driven, instant, no guesswork.
+      </p>
+
+      <!-- SEARCH BAR -->
+      <div class="hero-search glass-card">
+        <div class="search-icon">🔍</div>
+        <input
+          type="text"
+          placeholder='Try "Red SUV under 15L in Mumbai"...'
+          (input)="onSearch($event)"
+          (keyup.enter)="doSearch()"
+          style="background:transparent;border:none;box-shadow:none;padding:0;font-size:1rem"
+        />
+        <button class="btn-gradient search-btn" (click)="doSearch()">Search</button>
+      </div>
+
+      <!-- BODY TYPE CHIPS -->
+      <div class="body-chips">
+        @for (type of bodyTypes; track type) {
+          <span
+            class="chip"
+            [class.active]="activeBodyType() === type"
+            (click)="setBodyType(type)"
+          >{{ type }}</span>
+        }
+      </div>
+
+      <div class="hero-btns">
+        <button class="btn-gradient btn-lg" routerLink="/ai-advisor">Get AI Valuation 🤖</button>
+        <button class="btn-outline btn-lg" routerLink="/listings">Browse Cars</button>
+      </div>
+    </div>
+
+    <!-- Right: live valuation panel -->
+    <div class="hero-visual">
+      <div class="val-panel glass-card">
+        <!-- Panel header -->
+        <div class="vp-header">
+          <div class="vp-live-badge">
+            <span class="vp-live-dot"></span>
+            Live Analysis
+          </div>
+          <span class="vp-model">Hyundai Creta SX 2023</span>
+        </div>
+
+        <!-- Animated price chart -->
+        <div class="vp-chart-wrap">
+          <div class="vp-y-labels">
+            <span>₹16L</span><span>₹14L</span><span>₹12L</span>
+          </div>
+          <svg viewBox="0 0 280 96" class="vp-chart-svg" aria-hidden="true" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stop-color="#2563EB"/>
+                <stop offset="100%" stop-color="#7C3AED"/>
+              </linearGradient>
+              <linearGradient id="areaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stop-color="#2563EB" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid rules -->
+            <line x1="0" y1="18" x2="280" y2="18" stroke="currentColor" stroke-opacity="0.07" stroke-width="1"/>
+            <line x1="0" y1="48" x2="280" y2="48" stroke="currentColor" stroke-opacity="0.07" stroke-width="1"/>
+            <line x1="0" y1="78" x2="280" y2="78" stroke="currentColor" stroke-opacity="0.07" stroke-width="1"/>
+            <!-- Area fill -->
+            <path class="vp-area" d="M0,72 C50,66 100,54 140,44 C180,34 220,24 280,16 L280,96 L0,96 Z" fill="url(#areaGrad)"/>
+            <!-- Price line -->
+            <path class="vp-line" d="M0,72 C50,66 100,54 140,44 C180,34 220,24 280,16"
+              fill="none" stroke="url(#lineGrad)" stroke-width="2.5"
+              stroke-linecap="round" stroke-dasharray="380" stroke-dashoffset="380"/>
+            <!-- Waypoint dots -->
+            <circle cx="140" cy="44" r="3" fill="#2563EB" opacity="0" class="vp-dot vp-dot-1"/>
+            <circle cx="220" cy="24" r="3" fill="#7C3AED" opacity="0" class="vp-dot vp-dot-2"/>
+            <!-- Endpoint -->
+            <circle cx="280" cy="16" r="5"  class="vp-endpoint-core"/>
+            <circle cx="280" cy="16" r="10" class="vp-endpoint-ring"/>
+          </svg>
+          <div class="vp-x-labels">
+            <span>6 mo</span><span>3 mo</span><span>Now</span>
+          </div>
+        </div>
+
+        <!-- Price rows -->
+        <div class="vp-price-section">
+          <div class="vp-price-main">
+            <div class="vpm-label">AI Fair Value</div>
+            <div class="vpm-amount gradient-text">₹14.2L</div>
+            <div class="vpm-delta positive">↑ 2.4% vs last month</div>
+          </div>
+          <div class="vp-range-section">
+            <div class="vp-range-label">Market Range</div>
+            <div class="vp-range-row">
+              <span class="range-lo">₹12.8L</span>
+              <div class="range-track">
+                <div class="range-fill"></div>
+                <div class="range-thumb"></div>
+              </div>
+              <span class="range-hi">₹15.6L</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI confidence -->
+        <div class="vp-confidence">
+          <span class="conf-label">AI Confidence</span>
+          <div class="conf-track">
+            <div class="conf-fill" style="width:94%"></div>
+          </div>
+          <span class="conf-pct">94%</span>
+        </div>
+
+        <!-- Signal chips -->
+        <div class="vp-signals">
+          <span class="vsig good">✓ Fair Deal</span>
+          <span class="vsig">📊 High Demand</span>
+          <span class="vsig">🔋 Low Depreciation</span>
+        </div>
+      </div>
+
+      <!-- Floating stat pills -->
+      <div class="hero-stat-pill glass-card" style="top:-18px;right:-12px">
+        <span class="hsp-num gradient-text">200+</span>
+        <span class="hsp-label">AI Signals</span>
+      </div>
+      <div class="hero-stat-pill glass-card" style="bottom:24px;left:-18px">
+        <span class="hsp-num gradient-text">30s</span>
+        <span class="hsp-label">Instant Result</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS -->
+<section class="brands-section" id="brands" appScrollAnimate>
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Popular Brands</span>
+      <h2 class="section-title">Browse by <span class="gradient-text">Brand</span></h2>
+      <p class="section-sub">India's most trusted car manufacturers — all verified listings</p>
+    </div>
+    <div class="brands-grid">
+      @for (make of visibleMakes; track make.name) {
+        <a
+          [routerLink]="['/listings']"
+          [queryParams]="{make: make.name}"
+          class="brand-card glass-card"
+        >
+          <div class="brand-logo">
+            <img [src]="make.logo" [alt]="make.name" onerror="this.style.opacity='0'">
+          </div>
+          <span class="brand-name">{{ make.name }}</span>
+        </a>
+      }
+    </div>
+    <div class="brands-toggle">
+      <button class="btn-outline" (click)="showAllBrands = !showAllBrands">
+        {{ showAllBrands ? '▲ View Less Brands' : '▼ View All ' + makes.length + ' Brands' }}
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- FIND CARS BY CHOICE -->
+<section class="find-cars-section" appScrollAnimate>
+  <div class="container">
+    <div class="find-cars-card glass-card">
+      <h2 class="find-cars-title">Find The Cars Of Your Choice</h2>
+      <div class="find-cars-tabs">
+        <button
+          *ngFor="let tab of findCarsTabs"
+          class="find-tab"
+          [class.active]="findCarsTab === tab"
+          (click)="findCarsTab = tab"
+        >{{ tab }}</button>
+      </div>
+      <div class="find-cars-pills">
+        <a
+          *ngFor="let opt of activeOptions"
+          routerLink="/listings"
+          [queryParams]="opt.params"
+          class="find-pill"
+        >{{ opt.label }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SWIFT SPOTLIGHT -->
+<section class="swift-spotlight" appScrollAnimate>
+  <div class="container">
+    <div class="section-header center">
+      <span class="section-tag">⚡ Spotlight</span>
+      <h2 class="section-title">The Epic New <span class="gradient-text">Maruti Swift</span></h2>
+      <p class="section-sub">India's best-selling hatchback. Reimagined.</p>
+    </div>
+    <div class="swift-hero-wrap">
+      <img src="assets/cars/swift/front.jpg" alt="Maruti Swift front view" class="swift-hero-img" loading="lazy">
+    </div>
+    <div class="swift-gallery">
+      <img src="assets/cars/swift/trio.jpg"       alt="Swift colour range"  loading="lazy">
+      <img src="assets/cars/swift/interior.jpg"   alt="Swift interior"      loading="lazy">
+      <img src="assets/cars/swift/rear-motion.jpg" alt="Swift rear motion"  loading="lazy">
+      <img src="assets/cars/swift/steering.jpg"   alt="Swift steering"      loading="lazy">
+    </div>
+    <div class="swift-highlights">
+      <div class="swift-hl glass-card">
+        <div class="hl-icon">⛽</div>
+        <div class="hl-val">25.75 <span>km/l</span></div>
+        <div class="hl-label">Best-in-Segment Fuel Economy</div>
+      </div>
+      <div class="swift-hl glass-card">
+        <div class="hl-icon">🛡️</div>
+        <div class="hl-val">6 <span>Airbags</span></div>
+        <div class="hl-label">Standard Across All Variants</div>
+      </div>
+      <div class="swift-hl glass-card">
+        <div class="hl-icon">🌿</div>
+        <div class="hl-val">32.85 <span>km/kg</span></div>
+        <div class="hl-label">S-CNG Best-in-Segment Mileage</div>
+      </div>
+      <div class="swift-hl glass-card">
+        <div class="hl-icon">📱</div>
+        <div class="hl-val">1.2L <span>Z-Series</span></div>
+        <div class="hl-label">Future-Ready Engine</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:2.5rem">
+      <a routerLink="/listings" [queryParams]="{make:'Maruti Suzuki'}" class="btn-gradient btn-lg">Browse Swift Listings →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED CARS -->
+<section class="cars-section" appScrollAnimate>
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">🔥 Hot Picks</span>
+      <h2 class="section-title">Featured <span class="gradient-text">Listings</span></h2>
+      <p class="section-sub">Hand-picked, AI-verified listings with the best value</p>
+    </div>
+    <div class="cars-grid">
+      @for (car of featuredCars; track car.id) {
+        <app-car-card [car]="car"></app-car-card>
+      }
+    </div>
+    <div style="text-align:center;margin-top:3rem">
+      <button class="btn-gradient btn-lg" routerLink="/listings">View All 50,000+ Cars →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features" appScrollAnimate>
+  <div class="container">
+    <div class="section-header center">
+      <span class="section-tag">✨ Why GAADIIQ</span>
+      <h2 class="section-title">Your AI-Powered <span class="gradient-text">Car Co-Pilot</span></h2>
+      <p class="section-sub" style="margin:0 auto">Not just a marketplace — the smartest car-buying experience in India.</p>
+    </div>
+    <div class="features-grid">
+      @for (f of features; track f.title) {
+        <a class="feature-card glass-card" [routerLink]="f.route" style="text-decoration:none;display:block;cursor:pointer">
+          <div class="feature-icon" [style.background]="f.color + '22'" [style.borderColor]="f.color + '33'">
+            <span>{{ f.icon }}</span>
+          </div>
+          <h3>{{ f.title }}</h3>
+          <p>{{ f.desc }}</p>
+          <div class="feature-arrow" [style.color]="f.color">→</div>
+        </a>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- AI ADVISOR BANNER -->
+<section class="ai-banner" appScrollAnimate>
+  <div class="orb orb-purple" style="width:400px;height:400px;top:-100px;right:-100px;opacity:0.5"></div>
+  <div class="container ai-banner-inner">
+    <div class="ai-banner-text">
+      <span class="section-tag">🤖 AI Advisor</span>
+      <h2 class="section-title">Tell us what you want.<br>We'll find the <span class="gradient-text">perfect car.</span></h2>
+      <p class="section-sub">Answer 6 quick questions. Our AI matches you to the ideal car from 50,000+ listings — with explainable reasoning.</p>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem">
+        <button class="btn-gradient btn-lg" routerLink="/ai-advisor">Start AI Advisor 🤖</button>
+        <button class="btn-outline btn-lg" routerLink="/emi-calculator">EMI Calculator</button>
+      </div>
+    </div>
+    <div class="ai-demo glass-card">
+      <div class="ai-chat">
+        <div class="ai-bubble ai">🤖 What's your budget range?</div>
+        <div class="ai-bubble user">₹10L – ₹20L</div>
+        <div class="ai-bubble ai">🤖 Do you prefer petrol or electric?</div>
+        <div class="ai-bubble user">Electric please!</div>
+        <div class="ai-bubble ai">⚡ Found 12 perfect matches for you!</div>
+        <div class="ai-result glass-card">
+          <div style="font-weight:700">🏆 Top Match: Tata Nexon EV</div>
+          <div style="color:var(--accent);font-size:0.85rem">98% compatibility score</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section" appScrollAnimate>
+  <div class="container">
+    <div class="section-header center">
+      <span class="section-tag">💬 Reviews</span>
+      <h2 class="section-title">Loved by <span class="gradient-text">Car Buyers</span></h2>
+    </div>
+    <div class="testimonials-grid">
+      @for (t of testimonials; track t.name) {
+        <div class="testimonial-card glass-card">
+          <div class="stars">{{ '★'.repeat(t.rating) }}</div>
+          <p class="testi-text">"{{ t.text }}"</p>
+          <div class="testi-author">
+            <div class="avatar">{{ t.avatar }}</div>
+            <div>
+              <div style="font-weight:700">{{ t.name }}</div>
+              <div style="color:var(--muted);font-size:0.85rem">📍 {{ t.city }}</div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- SELL CTA -->
+<section class="cta-section" appScrollAnimate>
+  <div class="orb orb-pink" style="width:500px;height:500px;bottom:-100px;left:-100px;opacity:0.4"></div>
+  <div class="container cta-inner">
+    <h2 class="section-title">Ready to Sell? <span class="gold-text">Get the Best Price.</span></h2>
+    <p class="section-sub" style="margin:0 auto">List for free. AI valuation included. Reach thousands of verified buyers today.</p>
+    <div class="cta-btns">
+      <a routerLink="/list-car" class="btn-gold btn-lg">List Your Car Free 🚀</a>
+      <a routerLink="/listings" class="btn-outline btn-lg">Learn More</a>
+    </div>
+    <div class="cta-perks">
+      <span>✅ Free Listing</span>
+      <span>✅ AI Valuation</span>
+      <span>✅ 50K+ Buyers</span>
+      <span>✅ Zero Commission</span>
+    </div>
+  </div>
+</section>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-bottom-nav hide-desktop">
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
+    <span>🏠</span><span>Home</span>
+  </a>
+  <a routerLink="/listings" routerLinkActive="active">
+    <span>🔍</span><span>Browse</span>
+  </a>
+  <button class="fab-center btn-gradient">
+    <span style="font-size:1.4rem">⚡</span>
+  </button>
+  <a routerLink="/ai-advisor" routerLinkActive="active">
+    <span>🤖</span><span>AI</span>
+  </a>
+  <a routerLink="/login" routerLinkActive="active">
+    <span>👤</span><span>Account</span>
+  </a>
+</nav>

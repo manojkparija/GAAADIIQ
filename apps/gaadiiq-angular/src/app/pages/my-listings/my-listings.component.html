@@ -1,0 +1,83 @@
+<div class="my-listings-page">
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <h1>My Listings</h1>
+        <p>Cars you've listed for sale on Gaadiiq</p>
+      </div>
+      <a routerLink="/list-car" class="btn-gradient">+ List Another Car</a>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state glass-card" *ngIf="myListings.listings().length === 0">
+      <div class="empty-icon">🚗</div>
+      <h2>No listings yet</h2>
+      <p>You haven't listed any cars for sale. It's free and takes only 2 minutes!</p>
+      <a routerLink="/list-car" class="btn-gradient">List Your Car Free →</a>
+    </div>
+
+    <!-- Listings grid -->
+    <div class="listings-grid" *ngIf="myListings.listings().length > 0">
+      <div class="listing-card glass-card" *ngFor="let car of myListings.listings()">
+        <div class="card-top">
+          <div>
+            <h3>{{ car.year }} {{ car.make }} {{ car.model }}</h3>
+            <div class="variant">{{ car.variant }}</div>
+          </div>
+          <span class="badge" [class]="statusClass(car.status)">{{ statusLabel(car.status) }}</span>
+        </div>
+
+        <div class="car-specs">
+          <span>⛽ {{ car.fuel }}</span>
+          <span>⚙️ {{ car.transmission }}</span>
+          <span>🛣️ {{ car.km.toLocaleString() }} km</span>
+          <span>📍 {{ car.city }}</span>
+        </div>
+
+        <!-- Price section -->
+        <div class="price-section">
+          <ng-container *ngIf="editingId() !== car.id">
+            <div class="price-row">
+              <span class="price gradient-text">{{ formatPrice(car.price) }}</span>
+              <button class="btn-edit" (click)="startEdit(car)">✏️ Edit Price</button>
+            </div>
+
+            <!-- Market comparison verdict -->
+            <ng-container *ngIf="marketVerdict(car) as v">
+              <div class="market-row">
+                <span class="market-verdict" [class]="v.cls">
+                  {{ v.pct > 0 ? '🔴' : v.pct < -5 ? '🟢' : '🟡' }}
+                  {{ v.label }}
+                </span>
+                <span class="market-avg" *ngIf="marketAvg(car) as avg">
+                  Market avg: {{ formatPrice(avg) }}
+                </span>
+              </div>
+            </ng-container>
+          </ng-container>
+
+          <!-- Inline price editor -->
+          <div class="price-edit-row" *ngIf="editingId() === car.id">
+            <label class="edit-label">New Price (₹)</label>
+            <div class="edit-controls">
+              <input type="number" class="price-input" [ngModel]="editPrice()"
+                (ngModelChange)="editPrice.set($event)" placeholder="Enter price" min="10000" />
+              <button class="btn-save" (click)="savePrice(car.id)" [disabled]="saving()">
+                {{ saving() ? 'Saving…' : '✓ Save' }}
+              </button>
+              <button class="btn-cancel" (click)="cancelEdit()">✕</button>
+            </div>
+            <p class="edit-hint" *ngIf="marketAvg(car) as avg">
+              Market average for {{ car.make }} {{ car.model }}: <strong>{{ formatPrice(avg) }}</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <span class="date">Listed {{ car.createdAt | date:'d MMM yyyy' }}</span>
+          <button class="btn-remove" (click)="remove(car.id)">🗑️ Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

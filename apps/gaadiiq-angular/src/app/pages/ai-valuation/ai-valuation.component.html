@@ -1,0 +1,185 @@
+<div class="val-page">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Header -->
+  <section class="val-hero container">
+    <div class="ai-badge">🤖 AI Valuation</div>
+    <h1>What Is Your Car <span class="gradient-text">Worth Today?</span></h1>
+    <p class="hero-sub">Get an instant AI-powered market valuation based on real-time data. Free, accurate, no sign-up needed.</p>
+    <div class="trust-row">
+      <span>✅ 50,000+ valuations done</span>
+      <span>✅ Updated daily</span>
+      <span>✅ Based on actual sale prices</span>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <section class="val-form-section container" *ngIf="step() === 'form'">
+    <div class="form-card glass-card">
+      <h2>Tell us about your car</h2>
+
+      <div class="form-grid">
+        <!-- Make -->
+        <div class="form-group">
+          <label>Car Make *</label>
+          <select [(ngModel)]="form.make" (ngModelChange)="onMakeChange()">
+            <option value="">Select make</option>
+            <option *ngFor="let m of makes" [value]="m">{{ m }}</option>
+          </select>
+        </div>
+
+        <!-- Model — dropdown if catalogue has models, else text input -->
+        <div class="form-group">
+          <label>Model *</label>
+          <select *ngIf="availableModels.length > 0" [(ngModel)]="form.model" (ngModelChange)="onModelChange()">
+            <option value="">Select model</option>
+            <option *ngFor="let m of availableModels" [value]="m">{{ m }}</option>
+          </select>
+          <input *ngIf="availableModels.length === 0" type="text" [(ngModel)]="form.model" placeholder="e.g. Swift, Creta, Nexon">
+        </div>
+
+        <!-- Variant — dropdown, shown only when variants exist -->
+        <div class="form-group" *ngIf="availableVariants.length > 0">
+          <label>Variant <span class="label-tip">— affects price accuracy</span></label>
+          <select [(ngModel)]="form.variant">
+            <option value="">Select variant (optional)</option>
+            <option *ngFor="let v of availableVariants" [value]="v.name">
+              {{ v.name }} · {{ fmt(v.basePrice) }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Year *</label>
+          <select [(ngModel)]="form.year">
+            <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Kilometres Driven *</label>
+          <input type="number" [(ngModel)]="form.km" placeholder="e.g. 45000">
+        </div>
+        <div class="form-group">
+          <label>Fuel Type *</label>
+          <select [(ngModel)]="form.fuel">
+            <option value="">Select fuel</option>
+            <option *ngFor="let f of fuels" [value]="f">{{ f }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Transmission</label>
+          <select [(ngModel)]="form.transmission">
+            <option value="">Select</option>
+            <option *ngFor="let t of transmissions" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>No. of Owners *</label>
+          <select [(ngModel)]="form.owners">
+            <option value="">Select</option>
+            <option *ngFor="let o of ownerOptions" [value]="o">{{ o }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Overall Condition *</label>
+          <select [(ngModel)]="form.condition">
+            <option value="">Select condition</option>
+            <option *ngFor="let c of conditions" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-gradient val-btn" (click)="estimate()" [disabled]="!formValid || loading()">
+        <span *ngIf="!loading()">🤖 Get AI Valuation</span>
+        <span *ngIf="loading()" class="loading-dots">Analysing market data<span class="dots">...</span></span>
+      </button>
+    </div>
+
+    <!-- How it works -->
+    <div class="how-grid">
+      <div class="how-card glass-card" *ngFor="let h of [
+        {icon:'📊', title:'Market Analysis', desc:'We scan thousands of recent sale prices for your make and model.'},
+        {icon:'📉', title:'Depreciation Curve', desc:'Age, mileage, and ownership history are factored into the estimate.'},
+        {icon:'⚡', title:'Demand Signals', desc:'Fuel type, condition, and current market trends adjust your valuation.'},
+        {icon:'🎯', title:'Confidence Range', desc:'You get a low, mid, and high estimate so you know where to price.'}
+      ]">
+        <div class="how-icon">{{ h.icon }}</div>
+        <h4>{{ h.title }}</h4>
+        <p>{{ h.desc }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="result-section container" *ngIf="step() === 'result' && result() as r">
+    <div class="result-header">
+      <div class="result-car">{{ form.make }} {{ form.model }}{{ form.variant ? ' ' + form.variant : '' }} · {{ form.year }} · {{ form.fuel }}</div>
+      <h2>Your Car's <span class="gradient-text">Market Value</span></h2>
+    </div>
+
+    <div class="result-grid">
+      <!-- Price Range Card -->
+      <div class="price-range-card glass-card">
+        <div class="confidence-badge">🎯 {{ r.confidence }}% confidence</div>
+        <div class="range-row">
+          <div class="range-item low">
+            <div class="range-label">Distress Sale</div>
+            <div class="range-val">{{ fmt(r.low) }}</div>
+          </div>
+          <div class="range-item mid highlight">
+            <div class="range-label">Fair Market</div>
+            <div class="range-val gradient-text">{{ fmt(r.mid) }}</div>
+            <div class="range-sub">Best price to list</div>
+          </div>
+          <div class="range-item high">
+            <div class="range-label">Premium Ask</div>
+            <div class="range-val">{{ fmt(r.high) }}</div>
+          </div>
+        </div>
+        <div class="price-bar">
+          <div class="bar-fill"></div>
+          <div class="bar-mid-marker"></div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-card glass-card">
+        <div class="stat-row">
+          <span class="stat-label">Total Depreciation</span>
+          <span class="stat-val warn">−{{ r.depreciation }}%</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Market Trend</span>
+          <span class="stat-val">{{ r.marketTrend }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Kilometres</span>
+          <span class="stat-val">{{ (+form.km).toLocaleString('en-IN') }} km</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Ownership</span>
+          <span class="stat-val">{{ form.owners }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Condition</span>
+          <span class="stat-val">{{ form.condition }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips-card glass-card">
+      <h3>💡 Tips to Maximise Your Selling Price</h3>
+      <ul>
+        <li *ngFor="let t of r.tips">{{ t }}</li>
+      </ul>
+    </div>
+
+    <!-- CTAs -->
+    <div class="result-ctas">
+      <a routerLink="/list-car" class="btn-gradient">📋 List My Car at This Price →</a>
+      <button class="btn-outline" (click)="reset()">🔄 Value Another Car</button>
+    </div>
+  </section>
+</div>
