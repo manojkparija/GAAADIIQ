@@ -101,7 +101,7 @@ def _make_mock_listing(price: float, km: int, age: int, owners: int = 1,
 
 def test_heuristic_new_car_no_depreciation():
     listing = _make_mock_listing(price=1_000_000, km=0, age=0)
-    value, method = _heuristic_valuation(listing)
+    value, method, confidence, reasoning = _heuristic_valuation(listing)
     # age=0 → no time depreciation, but 1-owner penalty (3%) on used listing
     assert 950_000 <= value <= 1_000_000
     assert "heuristic" in method
@@ -109,32 +109,32 @@ def test_heuristic_new_car_no_depreciation():
 
 def test_heuristic_1_year_old():
     listing = _make_mock_listing(price=1_000_000, km=10_000, age=1)
-    value, _ = _heuristic_valuation(listing)
+    value, *_ = _heuristic_valuation(listing)
     # 15% depreciation → ~850K
     assert 800_000 <= value <= 870_000
 
 
 def test_heuristic_high_mileage_penalty():
     listing = _make_mock_listing(price=1_000_000, km=80_000, age=3)
-    value_normal, _ = _heuristic_valuation(
+    value_normal, *_ = _heuristic_valuation(
         _make_mock_listing(price=1_000_000, km=30_000, age=3)
     )
-    value_high, _ = _heuristic_valuation(listing)
+    value_high, *_ = _heuristic_valuation(listing)
     assert value_high < value_normal
 
 
 def test_heuristic_electric_premium():
     petrol = _make_mock_listing(price=1_000_000, km=20_000, age=2, fuel="petrol")
     electric = _make_mock_listing(price=1_000_000, km=20_000, age=2, fuel="electric")
-    val_p, _ = _heuristic_valuation(petrol)
-    val_e, _ = _heuristic_valuation(electric)
+    val_p, *_ = _heuristic_valuation(petrol)
+    val_e, *_ = _heuristic_valuation(electric)
     assert val_e > val_p
 
 
 def test_heuristic_floor_applied():
     """Very old, high-mileage car should not drop below 25% of asking price."""
     listing = _make_mock_listing(price=500_000, km=300_000, age=15, owners=5)
-    value, _ = _heuristic_valuation(listing)
+    value, *_ = _heuristic_valuation(listing)
     assert value >= 500_000 * 0.25
 
 
