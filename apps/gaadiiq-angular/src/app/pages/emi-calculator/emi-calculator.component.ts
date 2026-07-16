@@ -112,7 +112,7 @@ export class EmiCalculatorComponent {
     if (s >= 80) return { label: 'Excellent', color: '#43E97B' };
     if (s >= 60) return { label: 'Good', color: '#60A5FA' };
     if (s >= 40) return { label: 'Fair', color: '#FFD700' };
-    return { label: 'Stretched', color: '#FF6584' };
+    return { label: 'Stretched', color: '#EF4444' };
   });
 
   monthlySurplus = computed(() =>

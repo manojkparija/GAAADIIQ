@@ -1,7 +1,7 @@
 .ap-page { min-height: 100vh; background: var(--navy); padding-bottom: 4rem; }
 
 .ap-hero {
-  background: linear-gradient(135deg, #1e40af 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
   padding: 5rem 0 2.5rem;
   text-align: center;
   .ap-badge {
@@ -98,7 +98,7 @@
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #1e40af, #7C3AED); color: #fff;
+  background: linear-gradient(135deg, #1e40af, var(--teal)); color: #fff;
   border: none; border-radius: 8px; padding: 0.4rem 0.8rem;
   font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap;
   &:disabled { opacity: 0.5; cursor: not-allowed; }

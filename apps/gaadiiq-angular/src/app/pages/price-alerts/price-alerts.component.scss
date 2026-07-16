@@ -22,4 +22,4 @@
 .alert-meta { font-size:.8rem; color:var(--muted); margin-top:.25rem; }
 .alert-actions { display:flex; align-items:center; gap:.75rem; }
 .status-pill { background:rgba(67,233,123,.15); border:1px solid rgba(67,233,123,.3); color:#43e97b; border-radius:2rem; padding:.25rem .75rem; font-size:.78rem; font-weight:600; }
-.remove-btn { background:rgba(255,101,132,.15); border:1px solid rgba(255,101,132,.3); color:#ff6584; border-radius:.5rem; padding:.3rem .6rem; cursor:pointer; font-size:.85rem; }
+.remove-btn { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); border-radius:.5rem; padding:.3rem .6rem; cursor:pointer; font-size:.85rem; }

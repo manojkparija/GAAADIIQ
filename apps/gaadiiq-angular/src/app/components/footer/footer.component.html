@@ -1,13 +1,26 @@
 <footer class="footer">
   <div class="container footer-inner">
     <div class="footer-brand">
-      <div class="logo">⚡ <span class="gradient-text" style="font-family:'Space Grotesk',sans-serif;font-weight:800">GAADIIQ</span></div>
+      <div class="logo">
+        <span class="logo-mark">
+          <app-icon name="zap" [size]="13" [strokeWidth]="2.5"></app-icon>
+        </span>
+        <span class="logo-text gradient-text" style="font-family:'Outfit',sans-serif;font-weight:800">GAADIIQ</span>
+      </div>
       <p>India's AI-first automotive intelligence platform. Smarter car buying and selling for everyone.</p>
       <div class="socials">
-        <a href="#" class="social-btn">𝕏</a>
-        <a href="#" class="social-btn">in</a>
-        <a href="#" class="social-btn">f</a>
-        <a href="#" class="social-btn">📸</a>
+        <a href="#" class="social-btn" aria-label="Twitter / X">
+          <app-icon name="twitter" [size]="15"></app-icon>
+        </a>
+        <a href="#" class="social-btn" aria-label="LinkedIn">
+          <app-icon name="linkedin" [size]="15"></app-icon>
+        </a>
+        <a href="#" class="social-btn" aria-label="Facebook">
+          <app-icon name="facebook" [size]="15"></app-icon>
+        </a>
+        <a href="#" class="social-btn" aria-label="Instagram">
+          <app-icon name="instagram" [size]="15"></app-icon>
+        </a>
       </div>
     </div>
     <div class="footer-links">
@@ -42,7 +55,7 @@
     </div>
   </div>
   <div class="footer-bottom container">
-    <p>© {{ year }} GAADIIQ. All rights reserved. Made with ❤️ in India.</p>
+    <p>© {{ year }} GAADIIQ. All rights reserved. Built in India.</p>
     <div class="footer-legal">
       <a href="#">Privacy Policy</a>
       <a href="#">Terms of Service</a>

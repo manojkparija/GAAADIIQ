@@ -47,8 +47,8 @@ export class DealerDashboardComponent {
   ];
 
   fuelMix = [
-    { label: 'Petrol', pct: 42, color: '#6C63FF' },
-    { label: 'Diesel', pct: 28, color: '#FF6584' },
+    { label: 'Petrol', pct: 42, color: '#2F6BFF' },
+    { label: 'Diesel', pct: 28, color: '#EF4444' },
     { label: 'Electric', pct: 18, color: '#43E97B' },
     { label: 'CNG', pct: 8, color: '#FFD700' },
     { label: 'Hybrid', pct: 4, color: '#60A5FA' },

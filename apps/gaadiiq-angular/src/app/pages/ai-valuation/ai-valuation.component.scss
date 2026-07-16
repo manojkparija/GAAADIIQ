@@ -1,6 +1,6 @@
 .val-page { min-height: 100vh; padding: 6rem 0 4rem; position: relative; overflow: hidden; }
 .orb-1 { position:absolute; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,#00C9FF18,transparent); top:-150px; right:-100px; pointer-events:none; }
-.orb-2 { position:absolute; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,#6C63FF18,transparent); bottom:-100px; left:-100px; pointer-events:none; }
+.orb-2 { position:absolute; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,var(--primary)18,transparent); bottom:-100px; left:-100px; pointer-events:none; }
 
 // Hero
 .val-hero { text-align: center; padding-bottom: 3rem; }
@@ -64,7 +64,7 @@
 }
 .stat-label { font-size: .83rem; color: var(--muted); }
 .stat-val { font-size: .9rem; font-weight: 700; text-align: right; max-width: 60%; }
-.stat-val.warn { color: #FF6584; }
+.stat-val.warn { color: var(--danger); }
 
 .tips-card { padding: 1.75rem; margin-bottom: 2rem;
   h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }

@@ -60,13 +60,13 @@
   .cover-emoji {
     font-size: 6rem;
     z-index: 1;
-    filter: drop-shadow(0 4px 20px rgba(108,99,255,0.3));
+    filter: drop-shadow(0 4px 20px rgba(47,107,255,0.3));
   }
 
   .cover-gradient {
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at center, rgba(108,99,255,0.12) 0%, transparent 70%);
+    background: radial-gradient(ellipse at center, rgba(47,107,255,0.12) 0%, transparent 70%);
   }
 }
 
@@ -201,9 +201,9 @@
 }
 .tag-green  { background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
 .tag-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-.tag-purple { background: rgba(108,99,255,0.15);  color: #a78bfa; border: 1px solid rgba(108,99,255,0.3); }
+.tag-purple { background: rgba(47,107,255,0.15);  color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
 .tag-gold   { background: rgba(255,215,0,0.15);   color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
-.tag-red    { background: rgba(255,101,132,0.15); color: #FF6584; border: 1px solid rgba(255,101,132,0.3); }
+.tag-red    { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
 
 .cat-chip {
   font-size: 0.72rem;
@@ -216,7 +216,7 @@
 .avatar {
   width: 36px; height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1e40af, #7C3AED);
+  background: linear-gradient(135deg, #1e40af, var(--teal));
   display: flex;
   align-items: center;
   justify-content: center;

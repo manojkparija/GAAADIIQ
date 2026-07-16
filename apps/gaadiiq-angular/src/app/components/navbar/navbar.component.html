@@ -1,7 +1,9 @@
 <nav class="navbar" [class.scrolled]="scrolled()">
   <div class="nav-inner container">
     <a routerLink="/" class="logo">
-      <span class="logo-icon">⚡</span>
+      <span class="logo-mark">
+        <app-icon name="zap" [size]="14" [strokeWidth]="2.5"></app-icon>
+      </span>
       <span class="logo-text">GAADIIQ</span>
       <span class="logo-tagline hide-mobile">Buy Smarter</span>
     </a>
@@ -17,42 +19,51 @@
       <li><a routerLink="/buyer-journey" routerLinkActive="active">My Journey</a></li>
     </ul>
 
-    <!-- City selector trigger -->
     <button class="city-btn-nav hide-mobile" (click)="openCityModal()" title="Select City">
-      <span class="city-pin">📍</span>
+      <app-icon name="map-pin" [size]="14"></app-icon>
       <span class="city-label">{{ city.selectedCity() || 'Select City' }}</span>
     </button>
 
-    <button class="theme-toggle hide-mobile" (click)="theme.toggle()" [title]="theme.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
-      {{ theme.isDark() ? '☀️' : '🌙' }}
+    <button class="theme-toggle hide-mobile" (click)="theme.toggle()" [title]="theme.isDark() ? 'Switch to Light' : 'Switch to Dark'">
+      <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" [size]="15"></app-icon>
     </button>
 
     <div class="nav-actions hide-mobile">
-      <!-- Logged out -->
       <ng-container *ngIf="!auth.isLoggedIn()">
         <a routerLink="/login" class="btn-outline btn-sm">Sign In</a>
       </ng-container>
 
-      <!-- Logged in -->
       <ng-container *ngIf="auth.isLoggedIn()">
         <div class="user-menu-wrap">
           <button class="user-avatar-btn" (click)="toggleUserMenu()">
             <span class="user-avatar">{{ auth.currentUser()?.name?.charAt(0)?.toUpperCase() }}</span>
             <span class="user-name">{{ auth.currentUser()?.name }}</span>
-            <span class="chevron">▾</span>
+            <app-icon name="chevron-down" [size]="13" class="chevron"></app-icon>
           </button>
           <div class="user-dropdown" *ngIf="userMenuOpen()">
             <div class="dropdown-email">{{ auth.currentUser()?.email }}</div>
             <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
-              <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">🚗 My Listings</a>
-              <a routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">✨ List Your Car</a>
-              <a routerLink="/dealer-dashboard" (click)="userMenuOpen.set(false)" class="dropdown-item">🏢 Dealer Dashboard</a>
+              <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                <app-icon name="car" [size]="14"></app-icon> My Listings
+              </a>
+              <a routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                <app-icon name="plus" [size]="14"></app-icon> List Your Car
+              </a>
+              <a routerLink="/dealer-dashboard" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                <app-icon name="building-2" [size]="14"></app-icon> Dealer Dashboard
+              </a>
             </ng-container>
             <ng-container *ngIf="auth.isAdmin()">
-              <a routerLink="/admin/pricing" (click)="userMenuOpen.set(false)" class="dropdown-item">💰 Price Manager</a>
+              <a routerLink="/admin/pricing" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                <app-icon name="indian-rupee" [size]="14"></app-icon> Price Manager
+              </a>
             </ng-container>
-            <a routerLink="/compare" (click)="userMenuOpen.set(false)" class="dropdown-item">⚖️ Compare Cars</a>
-            <button class="dropdown-item logout" (click)="logout()">🚪 Sign Out</button>
+            <a routerLink="/compare" (click)="userMenuOpen.set(false)" class="dropdown-item">
+              <app-icon name="scale" [size]="14"></app-icon> Compare Cars
+            </a>
+            <button class="dropdown-item logout" (click)="logout()">
+              <app-icon name="log-out" [size]="14"></app-icon> Sign Out
+            </button>
           </div>
         </div>
       </ng-container>
@@ -72,22 +83,25 @@
     <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
     <a routerLink="/reviews-news" (click)="closeMenu()">Reviews &amp; News</a>
     <button class="city-btn-mobile" (click)="closeMenu(); openCityModal()">
-      📍 {{ city.selectedCity() || 'Select City' }}
+      <app-icon name="map-pin" [size]="15"></app-icon>
+      {{ city.selectedCity() || 'Select City' }}
     </button>
     <div class="mobile-theme-row">
       <span style="font-size:0.9rem;color:var(--muted)">{{ theme.isDark() ? 'Dark Mode' : 'Light Mode' }}</span>
-      <button class="theme-toggle" (click)="theme.toggle()">{{ theme.isDark() ? '☀️' : '🌙' }}</button>
+      <button class="theme-toggle" (click)="theme.toggle()">
+        <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" [size]="15"></app-icon>
+      </button>
     </div>
     <div class="mobile-btns">
       <ng-container *ngIf="!auth.isLoggedIn()">
         <a routerLink="/login" (click)="closeMenu()" class="btn-outline" style="width:100%;display:block;text-align:center">Sign In</a>
-        <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient" style="width:100%;display:block;text-align:center">List Your Car ✨</a>
+        <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient" style="width:100%;display:block;text-align:center">List Your Car</a>
       </ng-container>
       <ng-container *ngIf="auth.isLoggedIn()">
         <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
-          <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">✨ List Your Car</a>
-          <a routerLink="/dealer-dashboard" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">🏢 Dealer Dashboard</a>
-          <a *ngIf="auth.isAdmin()" routerLink="/admin/pricing" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">💰 Price Manager</a>
+          <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">List Your Car</a>
+          <a routerLink="/dealer-dashboard" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Dealer Dashboard</a>
+          <a *ngIf="auth.isAdmin()" routerLink="/admin/pricing" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Price Manager</a>
         </ng-container>
         <div style="padding:0.5rem 0;font-size:0.85rem;color:var(--muted)">{{ auth.currentUser()?.name }}</div>
         <button class="btn-outline" style="width:100%" (click)="logout(); closeMenu()">Sign Out</button>
@@ -96,5 +110,4 @@
   </div>
 </nav>
 
-<!-- City Selector Modal -->
 <app-city-selector *ngIf="cityModalOpen()" (closed)="closeCityModal()"></app-city-selector>

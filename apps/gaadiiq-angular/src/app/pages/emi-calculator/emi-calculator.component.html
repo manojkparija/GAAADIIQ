@@ -63,7 +63,7 @@
           </div>
           <div class="sum-row">
             <span>Total Interest</span>
-            <strong style="color:#FF6584">{{ fmtExact(totalInterest()) }}</strong>
+            <strong style="color:#EF4444">{{ fmtExact(totalInterest()) }}</strong>
           </div>
           <div class="sum-row">
             <span>Total Amount</span>
@@ -80,10 +80,10 @@
           <div class="donut-wrap">
             <svg viewBox="0 0 120 120" class="donut-svg">
               <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
-              <circle cx="60" cy="60" r="54" fill="none" stroke="#6C63FF" stroke-width="12"
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#2F6BFF" stroke-width="12"
                 [attr.stroke-dasharray]="principalDash() + ' ' + (donutDash() - principalDash())"
                 stroke-linecap="round" transform="rotate(-90 60 60)" class="donut-seg"/>
-              <circle cx="60" cy="60" r="54" fill="none" stroke="#FF6584" stroke-width="12"
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#EF4444" stroke-width="12"
                 [attr.stroke-dasharray]="interestDash() + ' ' + (donutDash() - interestDash())"
                 [attr.stroke-dashoffset]="-principalDash()"
                 transform="rotate(-90 60 60)" class="donut-seg"/>
@@ -254,7 +254,7 @@
                 <td>{{ row.month }}</td>
                 <td>{{ fmt(row.emi) }}</td>
                 <td style="color:#43E97B">{{ fmt(row.principal) }}</td>
-                <td style="color:#FF6584">{{ fmt(row.interest) }}</td>
+                <td style="color:#EF4444">{{ fmt(row.interest) }}</td>
                 <td>{{ fmt(row.balance) }}</td>
               </tr>
             }
