@@ -58,7 +58,7 @@ AI_FALLBACK_TOTAL = Counter(
     "ai_fallback_total",
     "Number of times heuristic fallback was used instead of Ollama",
 )
-RECOMMEND_REQUESTS_TOTAL = _Counter(
+RECOMMEND_REQUESTS_TOTAL = Counter(
     "recommend_requests_total",
     "Total calls to POST /recommend",
 )
