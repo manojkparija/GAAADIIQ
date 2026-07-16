@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { AlertTriangle, Search } from "lucide-react";
 import { getListings } from "@/lib/api";
 import ListingCard from "@/components/listing-card";
 import ListingsFilter from "@/components/listings-filter";
@@ -22,13 +23,13 @@ interface PageProps {
 
 function ListingCardSkeleton() {
   return (
-    <div className="rounded-2xl border overflow-hidden bg-white">
+    <div className="rounded-sm border overflow-hidden bg-card">
       <Skeleton className="h-48 w-full" />
       <div className="p-4 flex flex-col gap-3">
         <Skeleton className="h-4 w-3/4" />
         <div className="flex gap-2">
-          <Skeleton className="h-5 w-16 rounded-full" />
-          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-sm" />
+          <Skeleton className="h-5 w-16 rounded-sm" />
         </div>
         <div className="flex justify-between items-center pt-2 border-t">
           <Skeleton className="h-6 w-24" />
@@ -47,8 +48,8 @@ async function ListingsGrid({ filters }: { filters: ListingFilters }) {
     return (
       <div className="col-span-full py-16 text-center">
         <div className="max-w-sm mx-auto">
-          <p className="text-4xl mb-4">⚠️</p>
-          <h3 className="font-semibold text-lg mb-2">Could not load listings</h3>
+          <AlertTriangle className="h-10 w-10 mx-auto mb-4 text-accent" aria-hidden />
+          <h3 className="font-display font-semibold text-lg mb-2">Could not load listings</h3>
           <p className="text-muted-foreground text-sm">
             The API server may be starting up. Please refresh in a moment.
           </p>
@@ -61,8 +62,8 @@ async function ListingsGrid({ filters }: { filters: ListingFilters }) {
     return (
       <div className="col-span-full py-16 text-center">
         <div className="max-w-sm mx-auto">
-          <p className="text-5xl mb-4">🔍</p>
-          <h3 className="font-semibold text-lg mb-2">No listings found</h3>
+          <Search className="h-12 w-12 mx-auto mb-4 text-accent" aria-hidden />
+          <h3 className="font-display font-semibold text-lg mb-2">No listings found</h3>
           <p className="text-muted-foreground text-sm mb-4">
             Try adjusting or clearing your filters to see more results.
           </p>

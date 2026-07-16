@@ -153,7 +153,7 @@ export default function RecommendPage() {
       <ToolPageHeader
         eyebrow="Personalised Picks"
         title="Car Advisor"
-        subtitle="Answer four quick questions and we'll surface the best-matched listings for your needs and budget."
+        subtitle="Find Your Perfect Car — answer four quick questions and we'll surface the best-matched listings for your needs and budget."
         icon={<Sparkles className="h-6 w-6 text-accent" />}
       />
 

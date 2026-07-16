@@ -26,7 +26,7 @@ export default function ToolPageHeader({ eyebrow, title, subtitle, icon }: ToolP
               {title}
             </h1>
             <div className="gold-rule mt-3 mb-3" />
-            <p className="text-primary-foreground/55 text-sm max-w-xl leading-relaxed">{subtitle}</p>
+            <p className="text-primary-foreground/80 text-sm max-w-xl leading-relaxed">{subtitle}</p>
           </div>
         </div>
       </div>

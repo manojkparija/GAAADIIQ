@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { Car, ChevronRight } from "lucide-react";
 
 const POPULAR_MAKES = [
   { name: "Maruti Suzuki", short: "MS", color: "#003087" },
@@ -65,7 +65,7 @@ export default function HomePage() {
             </h1>
             {/* Gold rule */}
             <div className="gold-rule mb-5" />
-            <p className="text-primary-foreground/60 text-base mb-8 max-w-sm leading-relaxed">
+            <p className="text-primary-foreground/80 text-base mb-8 max-w-sm leading-relaxed">
               50,000+ curated listings with price valuation, loan comparison, and expert guidance.
             </p>
             <div className="flex gap-3 flex-wrap">
@@ -84,11 +84,13 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Car illustration area */}
+          {/* Hero visual — restrained mark (no emoji) */}
           <div className="shrink-0 w-full md:w-[420px] h-56 md:h-72 rounded-sm border border-white/10 bg-white/5 backdrop-blur-sm flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-7xl mb-3 opacity-80">🚗</div>
-              <p className="text-primary-foreground/30 text-xs tracking-widest uppercase">Car Imagery</p>
+            <div className="text-center flex flex-col items-center gap-3">
+              <div className="h-20 w-20 rounded-full border border-accent/40 bg-accent/10 flex items-center justify-center">
+                <Car className="h-10 w-10 text-accent" strokeWidth={1.25} aria-hidden />
+              </div>
+              <p className="text-primary-foreground/45 text-xs tracking-widest uppercase">Curated Inventory</p>
             </div>
           </div>
         </div>

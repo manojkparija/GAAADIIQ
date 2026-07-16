@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { CircleCheck } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 
 function PasswordStrength({ password }: { password: string }) {
@@ -71,7 +72,7 @@ function ResetForm() {
   if (success) {
     return (
       <div className="text-center py-4">
-        <div className="text-4xl mb-4">✅</div>
+        <CircleCheck className="h-10 w-10 mx-auto mb-4 text-success" aria-hidden />
         <p className="font-semibold mb-2">Password updated!</p>
         <p className="text-sm text-muted-foreground mb-6">
           Redirecting you to sign in…

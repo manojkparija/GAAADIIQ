@@ -65,7 +65,7 @@
   --secondary: oklch(0.93 0.008 85);
   --secondary-foreground: oklch(0.18 0.06 255);
   --muted: oklch(0.93 0.008 85);
-  --muted-foreground: oklch(0.45 0.03 255);
+  --muted-foreground: oklch(0.40 0.03 255);
   --accent: oklch(0.73 0.12 78);             /* Royal gold #C9A227 */
   --accent-foreground: oklch(0.12 0.04 255);
   --destructive: oklch(0.577 0.245 27.325);
@@ -169,13 +169,12 @@
   }
 }
 
-/* Royal gold rule utility */
-.gold-rule {
-  display: block;
-  width: 3rem;
-  height: 2px;
-  background: var(--accent);
-  border-radius: 1px;
+/* Accent text on light surfaces — darken gold slightly for AA small text */
+.text-accent-readable {
+  color: oklch(0.52 0.11 78);
+}
+.dark .text-accent-readable {
+  color: oklch(0.78 0.12 78);
 }
 
 /* Premium scroll behavior */
