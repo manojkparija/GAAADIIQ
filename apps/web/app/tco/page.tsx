@@ -162,7 +162,7 @@ export default function TCOPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Inputs */}
-          <div className="bg-card rounded-sm border panel-royal p-6 flex flex-col gap-5">
+          <div className="bg-card rounded-2xl border p-6 flex flex-col gap-5">
             <h2 className="font-semibold text-lg">Vehicle Details</h2>
 
             <NumberInput
@@ -250,17 +250,17 @@ export default function TCOPage() {
           <div className="flex flex-col gap-5">
             {/* Summary cards */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-accent/10 rounded-xl p-4 text-center border border-accent/20">
+              <div className="bg-primary/10 rounded-xl p-4 text-center">
                 <p className="text-xs text-muted-foreground mb-1">Total {inputs.yearsOwned}yr Cost</p>
-                <p className="text-xl font-display font-semibold text-accent">{formatINR(result.total)}</p>
+                <p className="text-xl font-bold text-primary">{formatINR(result.total)}</p>
               </div>
               <div className="bg-card rounded-xl border p-4 text-center">
                 <p className="text-xs text-muted-foreground mb-1">Per Year</p>
-                <p className="text-xl font-display font-semibold">{formatINR(result.perYear)}</p>
+                <p className="text-xl font-bold">{formatINR(result.perYear)}</p>
               </div>
               <div className="bg-card rounded-xl border p-4 text-center">
                 <p className="text-xs text-muted-foreground mb-1">Per KM</p>
-                <p className="text-xl font-display font-semibold">₹{result.perKm.toFixed(1)}</p>
+                <p className="text-xl font-bold">₹{result.perKm.toFixed(1)}</p>
               </div>
             </div>
 
@@ -269,7 +269,7 @@ export default function TCOPage() {
               <TrendingDown className="h-8 w-8 text-accent shrink-0" />
               <div>
                 <p className="text-sm text-muted-foreground">Estimated Resale Value after {inputs.yearsOwned} years</p>
-                <p className="text-3xl font-display font-semibold">{formatINR(result.resaleValue)}</p>
+                <p className="text-2xl font-bold">{formatINR(result.resaleValue)}</p>
               </div>
               <Badge variant="outline" className="ml-auto shrink-0">
                 {((result.resaleValue / inputs.purchasePrice) * 100).toFixed(0)}% retained
@@ -277,7 +277,7 @@ export default function TCOPage() {
             </div>
 
             {/* Cost breakdown bars */}
-            <div className="bg-card rounded-sm border panel-royal p-6 flex flex-col gap-5">
+            <div className="bg-card rounded-2xl border p-6 flex flex-col gap-5">
               <h2 className="font-semibold text-lg">Cost Breakdown</h2>
               <CostBar
                 label="Depreciation"
@@ -313,7 +313,7 @@ export default function TCOPage() {
                   <IndianRupee className="h-4 w-4" />
                   Grand Total
                 </span>
-                <span className="text-xl font-display font-semibold text-primary">{formatINR(result.total)}</span>
+                <span className="text-xl font-bold text-primary">{formatINR(result.total)}</span>
               </div>
             </div>
 

@@ -67,7 +67,7 @@ export default async function MakeListingsPage({ params }: PageProps) {
             <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
               <Car className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h1 className="text-3xl font-display font-semibold tracking-tight">{makeName} Cars</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{makeName} Cars</h1>
           </div>
           <p className="text-muted-foreground">
             {listings.length > 0

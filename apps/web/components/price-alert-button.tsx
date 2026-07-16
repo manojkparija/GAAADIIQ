@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Bell, BellOff } from "lucide-react";
 
 interface Props {
   listingId: string;
@@ -77,17 +76,7 @@ export default function PriceAlertButton({ listingId }: Props) {
           : "border-muted-foreground/30 hover:border-primary hover:text-primary"
       } disabled:opacity-50`}
     >
-      {subscribed ? (
-        <>
-          <Bell className="h-4 w-4" aria-hidden />
-          Alerting on price drop
-        </>
-      ) : (
-        <>
-          <BellOff className="h-4 w-4" aria-hidden />
-          Alert me on price drop
-        </>
-      )}
+      {subscribed ? "🔔 Alerting on price drop" : "🔕 Alert me on price drop"}
     </button>
   );
 }

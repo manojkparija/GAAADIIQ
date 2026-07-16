@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AlertTriangle, Search } from "lucide-react";
 import { getListings } from "@/lib/api";
 import ListingCard from "@/components/listing-card";
 import ListingsFilter from "@/components/listings-filter";
@@ -23,13 +22,13 @@ interface PageProps {
 
 function ListingCardSkeleton() {
   return (
-    <div className="rounded-sm border overflow-hidden bg-card">
+    <div className="rounded-2xl border overflow-hidden bg-white">
       <Skeleton className="h-48 w-full" />
       <div className="p-4 flex flex-col gap-3">
         <Skeleton className="h-4 w-3/4" />
         <div className="flex gap-2">
-          <Skeleton className="h-5 w-16 rounded-sm" />
-          <Skeleton className="h-5 w-16 rounded-sm" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-full" />
         </div>
         <div className="flex justify-between items-center pt-2 border-t">
           <Skeleton className="h-6 w-24" />
@@ -48,8 +47,8 @@ async function ListingsGrid({ filters }: { filters: ListingFilters }) {
     return (
       <div className="col-span-full py-16 text-center">
         <div className="max-w-sm mx-auto">
-          <AlertTriangle className="h-10 w-10 mx-auto mb-4 text-accent" aria-hidden />
-          <h3 className="font-display font-semibold text-lg mb-2">Could not load listings</h3>
+          <p className="text-4xl mb-4">⚠️</p>
+          <h3 className="font-semibold text-lg mb-2">Could not load listings</h3>
           <p className="text-muted-foreground text-sm">
             The API server may be starting up. Please refresh in a moment.
           </p>
@@ -62,8 +61,8 @@ async function ListingsGrid({ filters }: { filters: ListingFilters }) {
     return (
       <div className="col-span-full py-16 text-center">
         <div className="max-w-sm mx-auto">
-          <Search className="h-12 w-12 mx-auto mb-4 text-accent" aria-hidden />
-          <h3 className="font-display font-semibold text-lg mb-2">No listings found</h3>
+          <p className="text-5xl mb-4">🔍</p>
+          <h3 className="font-semibold text-lg mb-2">No listings found</h3>
           <p className="text-muted-foreground text-sm mb-4">
             Try adjusting or clearing your filters to see more results.
           </p>
@@ -108,37 +107,35 @@ export default async function ListingsPage({ searchParams }: PageProps) {
     sp.fuel_type, sp.body_type, sp.min_price, sp.max_price,
   ].filter(Boolean).length;
 
-  const title =
-    sp.listing_type === "new" ? "New Cars" :
-    sp.listing_type === "used" ? "Used Cars" :
-    sp.make ? `${sp.make} Cars` :
-    sp.fuel_type === "electric" ? "Electric Cars" :
-    "Explore All Cars";
-
   return (
-    <main className="min-h-screen surface-royal">
-      <section className="hero-navy border-b border-accent/20">
-        <div className="max-w-7xl mx-auto px-4 py-10 md:py-14">
-          <p className="text-accent text-[11px] font-semibold uppercase tracking-[0.24em] mb-3">Inventory</p>
-          <h1 className="text-3xl md:text-5xl font-display font-semibold text-primary-foreground tracking-tight">
-            {title}
+    <main className="min-h-screen bg-surface-alt">
+      {/* Page header */}
+      <div className="bg-card border-b">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold">
+            {sp.listing_type === "new" ? "New Cars" :
+             sp.listing_type === "used" ? "Used Cars" :
+             sp.make ? `${sp.make} Cars` :
+             sp.fuel_type === "electric" ? "Electric Cars" :
+             "Explore All Cars"}
           </h1>
-          <div className="gold-rule-lg anim-rule mt-4 mb-4" />
-          <p className="text-primary-foreground/70 text-sm md:text-base font-light max-w-xl">
-            Verified listings curated across India
+          <p className="text-muted-foreground text-sm mt-1">
+            Find your perfect car — verified listings across India
             {activeFilterCount > 0 && ` · ${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} applied`}
           </p>
         </div>
-      </section>
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-6">
-          <Suspense fallback={<div className="w-56 shrink-0 h-96 animate-pulse bg-card rounded-sm" />}>
+          {/* Filter sidebar */}
+          <Suspense fallback={<div className="w-56 shrink-0 h-96 animate-pulse bg-white rounded-2xl" />}>
             <ListingsFilter />
           </Suspense>
 
+          {/* Listings grid */}
           <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 content-start">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 content-start">
               <Suspense
                 fallback={Array.from({ length: 6 }).map((_, i) => (
                   <ListingCardSkeleton key={i} />

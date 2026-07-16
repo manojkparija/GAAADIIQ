@@ -54,7 +54,7 @@ function StatCard({ label, value, sub }: StatCardProps) {
   return (
     <div className="rounded-xl border p-5">
       <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
-      <p className="text-3xl font-display font-semibold mt-1">{value}</p>
+      <p className="text-3xl font-bold mt-1">{value}</p>
       {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
@@ -68,7 +68,7 @@ export default async function AnalyticsPage() {
   if (!data) {
     return (
       <div className="max-w-4xl space-y-6">
-        <h1 className="text-3xl font-display font-semibold">Analytics</h1>
+        <h1 className="text-2xl font-bold">Analytics</h1>
         <div className="rounded-xl border p-12 text-center text-muted-foreground text-sm">
           Could not load analytics. Please try again later.
         </div>
@@ -79,7 +79,7 @@ export default async function AnalyticsPage() {
   return (
     <div className="max-w-5xl space-y-8">
       <div>
-        <h1 className="text-3xl font-display font-semibold mb-1">Analytics</h1>
+        <h1 className="text-2xl font-bold mb-1">Analytics</h1>
         <p className="text-muted-foreground text-sm">Performance overview for your listings.</p>
       </div>
 
