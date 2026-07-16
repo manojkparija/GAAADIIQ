@@ -62,6 +62,9 @@ class ListingOut(BaseModel):
     is_featured: bool
     views_count: int
     ai_valuation: float | None
+    ai_method: str | None
+    ai_confidence: str | None
+    ai_reasoning: str | None
     image_urls: list[str]
     car: CarOut
     seller: UserPublicOut

@@ -174,7 +174,13 @@ export default async function ListingDetailPage({ params }: PageProps) {
           <Separator />
 
           {/* AI Valuation — interactive client component */}
-          <ValuationButton listingId={listing.id} currentValuation={listing.ai_valuation} />
+          <ValuationButton
+            listingId={listing.id}
+            currentValuation={listing.ai_valuation}
+            currentMethod={listing.ai_method}
+            currentConfidence={listing.ai_confidence}
+            currentReasoning={listing.ai_reasoning}
+          />
 
           {/* Description */}
           {listing.description && (

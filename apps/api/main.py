@@ -31,6 +31,7 @@ from routers import (  # noqa: E402
     notifications,
     payments,
     price_alerts,
+    recommend,
     reviews,
     search,
 )
@@ -45,6 +46,23 @@ _REQUEST_LATENCY = Histogram(
     "http_request_duration_seconds",
     "HTTP request latency",
     ["method", "path"],
+)
+
+# AI-specific metrics (imported by services/valuation.py and routers/recommend.py)
+from prometheus_client import Counter as _Counter, Histogram as _Histogram  # noqa: E402
+
+AI_VALUATION_LATENCY = _Histogram(
+    "ai_valuation_latency_seconds",
+    "Time spent running valuation (Ollama or heuristic)",
+    ["method"],
+)
+AI_FALLBACK_TOTAL = _Counter(
+    "ai_fallback_total",
+    "Number of times heuristic fallback was used instead of Ollama",
+)
+RECOMMEND_REQUESTS_TOTAL = _Counter(
+    "recommend_requests_total",
+    "Total calls to POST /recommend",
 )
 
 # Hide API docs in production
@@ -98,6 +116,7 @@ app.include_router(search.router)
 app.include_router(loans.router)
 app.include_router(notifications.router)
 app.include_router(price_alerts.router)
+app.include_router(recommend.router)
 app.include_router(reviews.router)
 app.include_router(payments.router)
 app.include_router(payments.subs_router)

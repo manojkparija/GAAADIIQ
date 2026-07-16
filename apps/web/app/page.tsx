@@ -66,7 +66,7 @@ export default function HomePage() {
             {/* Gold rule */}
             <div className="gold-rule mb-5" />
             <p className="text-primary-foreground/60 text-base mb-8 max-w-sm leading-relaxed">
-              50,000+ curated listings with AI valuation, loan comparison, and expert guidance.
+              50,000+ curated listings with price valuation, loan comparison, and expert guidance.
             </p>
             <div className="flex gap-3 flex-wrap">
               <Link
@@ -212,7 +212,7 @@ export default function HomePage() {
           </h2>
           <div className="gold-rule mx-auto mb-6" />
           <p className="text-primary-foreground/55 text-sm mb-8 max-w-sm mx-auto leading-relaxed">
-            List free, reach curated buyers, and get an AI valuation in seconds.
+            List free, reach curated buyers, and get a price valuation in seconds.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
@@ -262,7 +262,7 @@ export default function HomePage() {
               <ul className="space-y-1.5 text-xs">
                 <li><Link href="/compare" className="hover:text-accent transition-colors">Compare Cars</Link></li>
                 <li><Link href="/tco" className="hover:text-accent transition-colors">TCO Calculator</Link></li>
-                <li><Link href="/recommend" className="hover:text-accent transition-colors">AI Advisor</Link></li>
+                <li><Link href="/recommend" className="hover:text-accent transition-colors">Car Advisor</Link></li>
                 <li><a href="mailto:support@gaadiiq.com" className="hover:text-accent transition-colors">Contact</a></li>
               </ul>
             </div>

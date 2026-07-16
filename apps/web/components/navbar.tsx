@@ -15,7 +15,7 @@ const NAV_LINKS = [
   { label: "Electric",   href: "/listings?fuel_type=electric" },
   { label: "Brands",     href: "/cars" },
   { label: "Compare",    href: "/compare" },
-  { label: "AI Advisor", href: "/recommend" },
+  { label: "Car Advisor", href: "/recommend" },
 ];
 
 export default function Navbar() {

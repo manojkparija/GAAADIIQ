@@ -298,11 +298,14 @@ async def valuate_listing(
     if not listing:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found")
 
-    fair_value, _ = await valuation.estimate_valuation(listing)
+    fair_value, method, confidence, reasoning = await valuation.estimate_valuation(listing)
 
     from datetime import datetime, timezone
     listing.ai_valuation = fair_value
     listing.ai_valuation_at = datetime.now(timezone.utc)
+    listing.ai_method = method
+    listing.ai_confidence = confidence
+    listing.ai_reasoning = reasoning
     await db.commit()
 
     result = await db.execute(

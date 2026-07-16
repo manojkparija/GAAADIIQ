@@ -22,12 +22,18 @@ interface Answers {
   usage?: string;
 }
 
+interface RecommendedListing {
+  listing: Listing;
+  match_score: number;
+  reasons: string[];
+}
+
 const BUDGET_OPTIONS = [
-  { label: "Under ₹5 L",      value: "under_5l",  max: 500000 },
-  { label: "₹5 L – ₹10 L",   value: "5l_10l",    max: 1000000, min: 500000 },
-  { label: "₹10 L – ₹20 L",  value: "10l_20l",   max: 2000000, min: 1000000 },
-  { label: "₹20 L – ₹50 L",  value: "20l_50l",   max: 5000000, min: 2000000 },
-  { label: "Above ₹50 L",     value: "above_50l", min: 5000000 },
+  { label: "Under ₹5 L",      value: "under_5l" },
+  { label: "₹5 L – ₹10 L",   value: "5l_10l" },
+  { label: "₹10 L – ₹20 L",  value: "10l_20l" },
+  { label: "₹20 L – ₹50 L",  value: "20l_50l" },
+  { label: "Above ₹50 L",     value: "above_50l" },
 ];
 
 const FUEL_OPTIONS = [
@@ -60,21 +66,38 @@ function formatPrice(p: number) {
   return `₹${p.toLocaleString("en-IN")}`;
 }
 
-async function fetchRecommendations(answers: Answers): Promise<Listing[]> {
-  const budget = BUDGET_OPTIONS.find((b) => b.value === answers.budget);
-  const params = new URLSearchParams({ page_size: "6" });
-  if (budget?.max) params.set("max_price", String(budget.max));
-  if (budget?.min) params.set("min_price", String(budget.min));
-  if (answers.fuel && answers.fuel !== "any") params.set("fuel_type", answers.fuel);
-  if (answers.body && answers.body !== "any") params.set("body_type", answers.body);
+async function fetchRecommendations(answers: Answers): Promise<RecommendedListing[]> {
   try {
-    const res = await fetch(`${API_URL}/listings?${params.toString()}`, { cache: "no-store" });
+    const res = await fetch(`${API_URL}/recommend`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        budget: answers.budget,
+        fuel: answers.fuel,
+        body: answers.body,
+        usage: answers.usage,
+        page_size: 6,
+      }),
+      cache: "no-store",
+    });
     if (!res.ok) return [];
     const data = await res.json();
     return data.items ?? [];
   } catch {
     return [];
   }
+}
+
+function MatchScoreBadge({ score }: { score: number }) {
+  const color =
+    score >= 80 ? "bg-accent/15 text-accent border-accent/30" :
+    score >= 50 ? "bg-primary/10 text-primary border-primary/20" :
+    "bg-muted text-muted-foreground border-border";
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${color}`}>
+      {score}% match
+    </span>
+  );
 }
 
 interface OptionButtonProps {
@@ -104,7 +127,7 @@ function OptionButton({ label, Icon, selected, onClick }: OptionButtonProps) {
 export default function RecommendPage() {
   const [step, setStep] = useState<Step>("budget");
   const [answers, setAnswers] = useState<Answers>({});
-  const [results, setResults] = useState<Listing[]>([]);
+  const [results, setResults] = useState<RecommendedListing[]>([]);
   const [loading, setLoading] = useState(false);
 
   const steps: Step[] = ["budget", "fuel", "body", "usage", "results"];
@@ -114,8 +137,8 @@ export default function RecommendPage() {
   async function goToResults(finalAnswers: Answers) {
     setLoading(true);
     setStep("results");
-    const listings = await fetchRecommendations(finalAnswers);
-    setResults(listings);
+    const items = await fetchRecommendations(finalAnswers);
+    setResults(items);
     setLoading(false);
   }
 
@@ -129,8 +152,8 @@ export default function RecommendPage() {
     <main className="min-h-screen bg-background">
       <ToolPageHeader
         eyebrow="Personalised Picks"
-        title="AI Car Advisor"
-        subtitle="Answer four quick questions and we'll surface the best matches for your needs and budget."
+        title="Car Advisor"
+        subtitle="Answer four quick questions and we'll surface the best-matched listings for your needs and budget."
         icon={<Sparkles className="h-6 w-6 text-accent" />}
       />
 
@@ -234,34 +257,42 @@ export default function RecommendPage() {
               {loading ? (
                 <div className="flex flex-col items-center py-12 gap-3 text-muted-foreground">
                   <Sparkles className="h-8 w-8 animate-pulse" />
-                  <p>Finding your perfect matches…</p>
+                  <p>Finding your best matches…</p>
                 </div>
               ) : results.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Car className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                  <p className="mb-4">No exact matches — try broadening your criteria.</p>
+                  <p className="mb-4">No matches found — try broadening your criteria.</p>
                   <Button variant="outline" onClick={restart}>Adjust Preferences</Button>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {results.map((listing) => (
+                  {results.map(({ listing, match_score, reasons }) => (
                     <Link
                       key={listing.id}
                       href={`/listings/${listing.id}`}
-                      className="flex items-center gap-4 p-4 rounded-xl border hover:border-primary/50 hover:bg-muted/30 transition-colors group"
+                      className="flex items-start gap-4 p-4 rounded-xl border hover:border-primary/50 hover:bg-muted/30 transition-colors group"
                     >
                       <div className="h-16 w-20 bg-muted rounded-lg flex items-center justify-center shrink-0">
                         <Car className="h-8 w-8 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">
-                          {listing.car?.make} {listing.car?.model} ({listing.car?.year})
-                        </p>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold text-sm truncate">
+                            {listing.car?.make} {listing.car?.model} ({listing.car?.year})
+                          </p>
+                          <MatchScoreBadge score={match_score} />
+                        </div>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {listing.car?.fuel_type && <Badge variant="secondary" className="text-xs">{listing.car.fuel_type}</Badge>}
                           {listing.car?.body_type && <Badge variant="outline" className="text-xs">{listing.car.body_type}</Badge>}
                           {listing.city && <Badge variant="outline" className="text-xs">{listing.city}</Badge>}
                         </div>
+                        {reasons.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1.5 truncate">
+                            {reasons[0]}{reasons.length > 1 ? ` · ${reasons[1]}` : ""}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="font-bold text-primary">{formatPrice(listing.price)}</p>
@@ -269,7 +300,7 @@ export default function RecommendPage() {
                           <p className="text-xs text-muted-foreground">{listing.km_driven.toLocaleString("en-IN")} km</p>
                         )}
                       </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
                     </Link>
                   ))}
                   <div className="pt-2 text-center">

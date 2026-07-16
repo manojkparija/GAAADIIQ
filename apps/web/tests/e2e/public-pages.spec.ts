@@ -44,7 +44,7 @@ test("/compare page loads with add-car prompt", async ({ page }) => {
 test("/recommend page shows advisor questionnaire", async ({ page }) => {
   await page.goto("/recommend");
   await expect(page).toHaveTitle(/GAADIIQ/i);
-  await expect(page.getByText("AI Car Advisor")).toBeVisible();
+  await expect(page.getByText("Car Advisor")).toBeVisible();
   await expect(page.getByText("Find Your Perfect Car")).toBeVisible();
 });
 
