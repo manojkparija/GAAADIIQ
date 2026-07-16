@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { ARTICLES, Article } from '../reviews-news/reviews-news.component';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-article-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, IconComponent],
   templateUrl: './article-detail.component.html',
   styleUrl: './article-detail.component.scss',
 })

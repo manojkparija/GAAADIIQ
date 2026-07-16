@@ -3,11 +3,12 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule],
+  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -17,6 +18,7 @@ export class LoginComponent {
   loading = signal(false);
   showPass = signal(false);
   error = signal('');
+  socialLoading = signal<'google' | 'facebook' | null>(null);
   resetEmail = signal('');
   resetSent = signal(false);
   resetLoading = signal(false);
@@ -29,6 +31,28 @@ export class LoginComponent {
   }
 
   toggleShowPass() { this.showPass.set(!this.showPass()); }
+
+  async loginWithGoogle() {
+    this.error.set('');
+    this.socialLoading.set('google');
+    try {
+      await this.auth.loginWithGoogle();
+    } catch (e: any) {
+      this.error.set(e.message || 'Google sign-in failed. Please try again.');
+      this.socialLoading.set(null);
+    }
+  }
+
+  async loginWithFacebook() {
+    this.error.set('');
+    this.socialLoading.set('facebook');
+    try {
+      await this.auth.loginWithFacebook();
+    } catch (e: any) {
+      this.error.set(e.message || 'Facebook sign-in failed. Please try again.');
+      this.socialLoading.set(null);
+    }
+  }
 
   openResetForm(e: Event) {
     e.preventDefault();

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { CityService } from '../../services/city.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 type PriceVerdict = 'fairDeal' | 'goodPrice' | 'slightlyHigh';
 
@@ -17,7 +18,7 @@ interface UsedCarViewModel extends Car {
 @Component({
   selector: 'app-used-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   templateUrl: './used-cars.component.html',
   styleUrl: './used-cars.component.scss'
 })

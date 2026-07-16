@@ -1,6 +1,7 @@
 import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { IconComponent } from '../../components/icon/icon.component';
 
 interface AmortizationRow {
   month: number;
@@ -13,7 +14,7 @@ interface AmortizationRow {
 @Component({
   selector: 'app-emi-calculator',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   templateUrl: './emi-calculator.component.html',
   styleUrl: './emi-calculator.component.scss'
 })
@@ -112,7 +113,7 @@ export class EmiCalculatorComponent {
     if (s >= 80) return { label: 'Excellent', color: '#43E97B' };
     if (s >= 60) return { label: 'Good', color: '#60A5FA' };
     if (s >= 40) return { label: 'Fair', color: '#FFD700' };
-    return { label: 'Stretched', color: '#FF6584' };
+    return { label: 'Stretched', color: '#EF4444' };
   });
 
   monthlySurplus = computed(() =>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { CarsDataService } from '../../services/cars-data.service';
+import { IconComponent } from '../../components/icon/icon.component';
 import { BrandsService } from '../../services/brands.service';
 
 interface NewCarModel {
@@ -44,7 +45,7 @@ interface UpcomingCar {
 @Component({
   selector: 'app-new-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   templateUrl: './new-cars.component.html',
   styleUrl: './new-cars.component.scss'
 })
@@ -76,12 +77,12 @@ export class NewCarsComponent implements OnInit {
   get brands() { return this.brandsService.brands(); }
 
   bodyTypeCards = [
-    { name: 'Hatchback', icon: '🚗', desc: 'Compact & city-friendly' },
-    { name: 'Sedan', icon: '🚙', desc: 'Comfortable & stylish' },
-    { name: 'SUV', icon: '🏔️', desc: 'Powerful & versatile' },
-    { name: 'MUV', icon: '👨‍👩‍👧', desc: 'Space for the family' },
-    { name: 'Electric', icon: '⚡', desc: 'Future-ready EVs' },
-    { name: 'Luxury', icon: '💎', desc: 'Premium experience' },
+    { name: 'Hatchback', icon: 'car', desc: 'Compact & city-friendly' },
+    { name: 'Sedan', icon: 'car', desc: 'Comfortable & stylish' },
+    { name: 'SUV', icon: 'trending-up', desc: 'Powerful & versatile' },
+    { name: 'MUV', icon: 'user', desc: 'Space for the family' },
+    { name: 'Electric', icon: 'zap', desc: 'Future-ready EVs' },
+    { name: 'Luxury', icon: 'star', desc: 'Premium experience' },
   ];
 
   budgetRanges = [
@@ -111,9 +112,9 @@ export class NewCarsComponent implements OnInit {
   ];
 
   expertPicks = [
-    { category: 'Best Value', icon: '💰', make: 'Maruti Suzuki', model: 'Fronx', price: '₹7.51L', reason: 'Stellar mileage, feature-rich at this price point', badge: 'Value Pick' },
-    { category: 'Best EV', icon: '⚡', make: 'Tata', model: 'Nexon EV', price: '₹14.49L', reason: 'Longest real-world range, excellent after-sales', badge: 'EV Leader' },
-    { category: 'Best Family Car', icon: '👨‍👩‍👧', make: 'Kia', model: 'Carens', price: '₹10.49L', reason: '6/7-seater, top safety scores, premium interiors', badge: 'Family Fav' },
+    { category: 'Best Value', icon: 'bar-chart', make: 'Maruti Suzuki', model: 'Fronx', price: '₹7.51L', reason: 'Stellar mileage, feature-rich at this price point', badge: 'Value Pick' },
+    { category: 'Best EV', icon: 'zap', make: 'Tata', model: 'Nexon EV', price: '₹14.49L', reason: 'Longest real-world range, excellent after-sales', badge: 'EV Leader' },
+    { category: 'Best Family Car', icon: 'user', make: 'Kia', model: 'Carens', price: '₹10.49L', reason: '6/7-seater, top safety scores, premium interiors', badge: 'Family Fav' },
   ];
 
   notifiedCars = signal<Set<string>>(new Set());

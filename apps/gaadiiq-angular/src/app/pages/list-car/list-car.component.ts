@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { MyListingsService } from '../../services/my-listings.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-list-car',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule],
+  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
   templateUrl: './list-car.component.html',
   styleUrl: './list-car.component.scss'
 })

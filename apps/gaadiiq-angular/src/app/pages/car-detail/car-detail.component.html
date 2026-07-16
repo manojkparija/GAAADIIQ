@@ -54,7 +54,7 @@
               <div class="pill"><span>⚙️</span><div><div class="pill-label">Gearbox</div><div class="pill-val">{{ car.transmission }}</div></div></div>
               <div class="pill"><span>👤</span><div><div class="pill-label">Owners</div><div class="pill-val">{{ car.owners }}</div></div></div>
               <div class="pill"><span>🎨</span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
-              <div class="pill"><span>📍</span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
+              <div class="pill"><span><app-icon name="map-pin" [size]="14"></app-icon></span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
             </div>
           </div>
 
@@ -98,7 +98,7 @@
           <div class="tab-content" *ngIf="activeTab()==='features'">
             <div class="features-list">
               <div class="feature-item" *ngFor="let f of (car.features || [])">
-                <span class="check">✅</span> {{ f }}
+                <span class="check"><app-icon name="check" [size]="13"></app-icon></span> {{ f }}
               </div>
             </div>
           </div>
@@ -141,7 +141,7 @@
             <div class="oc-breakdown" *ngIf="ownershipCost() as oc">
               <div class="oc-item"><span>⛽ Annual Fuel Cost</span><span class="gradient-text">₹{{ oc.fuelCost.toLocaleString('en-IN') }}</span></div>
               <div class="oc-item"><span>🔧 Maintenance</span><span class="gradient-text">₹{{ oc.maintenance.toLocaleString('en-IN') }}</span></div>
-              <div class="oc-item"><span>🛡️ Insurance</span><span class="gradient-text">₹{{ oc.insurance.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span><app-icon name="shield" [size]="13"></app-icon> Insurance</span><span class="gradient-text">₹{{ oc.insurance.toLocaleString('en-IN') }}</span></div>
               <div class="oc-item"><span>📉 Depreciation</span><span class="gradient-text">₹{{ oc.depreciation.toLocaleString('en-IN') }}</span></div>
               <div class="oc-total"><span>Total Annual Cost</span><span>₹{{ oc.total.toLocaleString('en-IN') }}</span></div>
               <div class="oc-perkm">≈ ₹{{ oc.perKm }} per km</div>
@@ -155,11 +155,11 @@
             <!-- 5-Year TCO Analysis -->
             <ng-container *ngIf="car">
               <div class="tco-panel glass-card" style="margin-top:1.5rem;padding:1.5rem">
-                <div style="font-weight:800;font-size:1.1rem;margin-bottom:1rem">💰 5-Year Total Cost of Ownership</div>
+                <div style="font-weight:800;font-size:1.1rem;margin-bottom:1rem">5-Year Total Cost of Ownership</div>
                 <ng-container *ngIf="tco.calculateTco(car) as t">
                   <div class="oc-item"><span>🏷️ Purchase Price</span><span>{{ tco.fmt(t.purchasePrice) }}</span></div>
                   <div class="oc-item"><span>📋 Registration (9%)</span><span>{{ tco.fmt(t.registration) }}</span></div>
-                  <div class="oc-item"><span>🛡️ Insurance (5yr)</span><span>{{ tco.fmt(t.insurance5yr) }}</span></div>
+                  <div class="oc-item"><span><app-icon name="shield" [size]="13"></app-icon> Insurance (5yr)</span><span>{{ tco.fmt(t.insurance5yr) }}</span></div>
                   <div class="oc-item"><span>⛽ Fuel (5yr)</span><span>{{ tco.fmt(t.fuel5yr) }}</span></div>
                   <div class="oc-item"><span>🔧 Maintenance (5yr)</span><span>{{ tco.fmt(t.maintenance5yr) }}</span></div>
                   <div class="oc-item" style="color:#43E97B"><span>📈 Resale Value</span><span>−{{ tco.fmt(t.resaleValue) }}</span></div>
@@ -167,7 +167,7 @@
                   <div class="oc-perkm">≈ {{ tco.fmt(t.monthlyCost) }}/month total ownership cost</div>
                   <ng-container *ngIf="tco.calculateResale(car) as r">
                     <div style="margin-top:1rem;padding:1rem;background:rgba(67,233,123,0.08);border-radius:10px;border:1px solid rgba(67,233,123,0.2)">
-                      <div style="font-weight:700;margin-bottom:0.5rem;color:#43E97B">📊 Depreciation Outlook</div>
+                      <div style="font-weight:700;margin-bottom:0.5rem;color:#43E97B">Depreciation Outlook</div>
                       <div style="font-size:0.85rem;color:var(--muted)">{{ r.verdict }} · {{ r.depreciationRate }}% per year</div>
                       <div style="display:flex;gap:1.5rem;margin-top:0.75rem;font-size:0.875rem">
                         <div><div style="color:var(--muted);font-size:0.72rem">1 Year</div><strong>{{ tco.fmt(r.value1yr) }}</strong></div>
@@ -228,7 +228,7 @@
             <div class="review-loading" *ngIf="reviewsSvc.loading()">Loading reviews…</div>
 
             <!-- Success -->
-            <div class="review-success" *ngIf="reviewSubmitted()">✅ Review submitted! Thank you.</div>
+            <div class="review-success" *ngIf="reviewSubmitted()">Review submitted! Thank you.</div>
 
             <!-- Empty state -->
             <div class="review-empty" *ngIf="!reviewsSvc.loading() && reviews().length === 0 && !reviewSubmitted()">
@@ -257,10 +257,10 @@
         </div>
         <!-- HIGHLIGHTS (new cars only) -->
         <div class="highlights-card glass-card" *ngIf="isNewCar && newCarMeta">
-          <div class="section-title">⭐ Top Things to Know About {{ car.make }} {{ car.model }}</div>
+          <div class="section-title">Top Things to Know About {{ car.make }} {{ car.model }}</div>
           <div class="highlights-grid">
             <div class="highlight-item" *ngFor="let h of newCarMeta!.highlights">
-              <div class="highlight-icon">{{ h.icon }}</div>
+              <div class="highlight-icon"><app-icon [name]="h.icon" [size]="22"></app-icon></div>
               <div class="highlight-title">{{ h.title }}</div>
               <div class="highlight-caption">{{ h.caption }}</div>
             </div>
@@ -346,7 +346,7 @@
         <!-- PRICE CARD -->
         <div class="price-card glass-card">
           <div class="badge-row">
-            <span class="badge badge-green">✅ Verified</span>
+            <span class="badge badge-green"><app-icon name="check-circle" [size]="12"></app-icon> Verified</span>
             <div class="rating-row"><span>★</span> {{ car.rating }} <span style="color:var(--muted)">({{ car.reviews }} reviews)</span></div>
           </div>
           <h1>{{ car.make }} {{ car.model }}</h1>
@@ -390,7 +390,7 @@
         <!-- AI VALUATION CARD -->
         <div class="ai-val-card glass-card">
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
-            <span style="font-size:1.4rem">🤖</span>
+            <app-icon name="brain" [size]="22"></app-icon>
             <div>
               <div style="font-weight:700">AI Price Analysis</div>
               <div style="font-size:0.78rem;color:var(--muted)">{{ car.aiValuation?.confidence }}% confidence</div>
@@ -487,7 +487,7 @@
       </button>
     </div>
     <div *ngIf="enquirySent()" style="text-align:center;padding:2rem">
-      <div style="font-size:3rem">✅</div>
+      <div style="color:var(--teal)"><app-icon name="check-circle" [size]="48"></app-icon></div>
       <h3 style="margin:0.75rem 0 0.5rem">Enquiry Sent!</h3>
       <p style="color:var(--muted);font-size:0.88rem">
         Our team will contact you within 2 hours to arrange a callback with the seller.
@@ -511,7 +511,7 @@
         <div>
           <h3 class="seller-name">{{ s.name }}</h3>
           <p class="seller-biz">{{ s.business_name }}</p>
-          <span *ngIf="s.verified" class="seller-verified">✅ Verified Dealer</span>
+          <span *ngIf="s.verified" class="seller-verified"><app-icon name="check-circle" [size]="13"></app-icon> Verified Dealer</span>
         </div>
       </div>
 
@@ -520,7 +520,7 @@
       </div>
 
       <div class="seller-details">
-        <div class="seller-row"><span>📍</span><span>{{ s.address }}, {{ s.city }}</span></div>
+        <div class="seller-row"><span><app-icon name="map-pin" [size]="14"></app-icon></span><span>{{ s.address }}, {{ s.city }}</span></div>
         <div class="seller-row"><span>✉️</span><span>{{ s.email }}</span></div>
       </div>
 

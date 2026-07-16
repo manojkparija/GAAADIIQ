@@ -5,10 +5,10 @@
 }
 
 .emi-hero {
-  background: linear-gradient(135deg, #1e40af 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
   border-bottom: 1px solid var(--divider);
   padding: 5rem 0 2.5rem; text-align: center;
-  h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; }
+  h1 { font-family: 'Outfit', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; }
   p { color: rgba(255,255,255,0.75); margin-top: 0.5rem; }
   .gradient-text { background: linear-gradient(135deg, #ffffff, #C4B5FD); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 }
@@ -20,7 +20,7 @@
 .controls-card, .chart-card, .banks-card, .amort-card {
   background: var(--fill-soft); backdrop-filter: blur(20px);
   border: 1px solid var(--border-soft); border-radius: 20px; padding: 1.75rem;
-  h2, h3 { font-family: 'Space Grotesk', sans-serif; margin-bottom: 1.5rem; }
+  h2, h3 { font-family: 'Outfit', sans-serif; margin-bottom: 1.5rem; }
   h3 { font-size: 1.1rem; }
 }
 
@@ -33,7 +33,7 @@
   }
   input[type=range] {
     width: 100%; appearance: none; height: 4px;
-    background: linear-gradient(90deg, #1e40af, #7C3AED); border-radius: 2px;
+    background: linear-gradient(90deg, #1e40af, var(--teal)); border-radius: 2px;
     &::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: white; cursor: pointer; box-shadow: 0 0 0 3px rgba(30,64,175,0.4); }
   }
   .range-ends { display: flex; justify-content: space-between; margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-tertiary); }
@@ -47,7 +47,7 @@
   strong { color: var(--text); }
   &.highlight { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 0.5rem; padding-top: 0.75rem; }
 }
-.emi-amount { font-size: 1.3rem; background: linear-gradient(135deg, #1e40af, #7C3AED); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.emi-amount { font-size: 1.3rem; background: linear-gradient(135deg, #1e40af, var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
 .donut-wrap { position: relative; width: 180px; height: 180px; margin: 0 auto 1.5rem; }
 .donut-svg { width: 100%; height: 100%; }
@@ -58,7 +58,7 @@
 
 .chart-legend { display: flex; gap: 1.5rem; justify-content: center; }
 .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); }
-.dot { width: 10px; height: 10px; border-radius: 50%; &.principal { background: #1e40af; } &.interest { background: #7C3AED; } }
+.dot { width: 10px; height: 10px; border-radius: 50%; &.principal { background: #1e40af; } &.interest { background: var(--teal); } }
 
 .banks-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .bank-row {
@@ -76,7 +76,7 @@
 .bank-emi { text-align: right; }
 .emi-val { font-size: 1rem; font-weight: 700; color: #1e40af; }
 .emi-label { font-size: 0.7rem; color: var(--text-tertiary); }
-.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #1e40af, #7C3AED); color: var(--text); font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
+.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #1e40af, var(--teal)); color: var(--text); font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 .selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 
 /* Affordability section */
@@ -84,7 +84,7 @@
   background: var(--fill-soft); backdrop-filter: blur(20px);
   border: 1px solid var(--border-soft); border-radius: 20px; padding: 1.75rem;
   margin-bottom: 1.5rem;
-  h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; margin-bottom: 0.25rem; }
+  h3 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 0.25rem; }
 }
 .afford-header { margin-bottom: 1.5rem; .afford-sub { font-size: 0.85rem; color: var(--muted); } }
 .afford-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
@@ -108,14 +108,14 @@
   padding: 1rem; background: rgba(30,64,175,0.08); border-radius: 12px;
   border: 1px solid rgba(30,64,175,0.15);
   .dti-item { text-align: center; }
-  .dti-val { font-size: 1.4rem; font-weight: 800; &.warn { color: #FF6584; } }
+  .dti-val { font-size: 1.4rem; font-weight: 800; &.warn { color: var(--danger); } }
   .dti-label { font-size: 0.72rem; color: var(--muted); }
   .dti-arrow { font-size: 1.25rem; color: var(--muted); }
   .dti-ideal { flex: 1; }
   .ideal-badge {
     font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 50px; display: inline-block;
     &.ok { background: rgba(67,233,123,0.15); color: #43E97B; }
-    &.over { background: rgba(255,101,132,0.15); color: #FF6584; }
+    &.over { background: rgba(239,68,68,0.15); color: var(--danger); }
   }
 }
 
@@ -126,7 +126,7 @@
   border: 1px solid var(--divider); border-radius: 12px;
   .am-icon { font-size: 1.25rem; margin-bottom: 0.4rem; }
   .am-val { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem;
-    &.good { color: #43E97B; } &.bad { color: #FF6584; }
+    &.good { color: #43E97B; } &.bad { color: var(--danger); }
   }
   .am-label { font-size: 0.72rem; color: var(--muted); }
 }

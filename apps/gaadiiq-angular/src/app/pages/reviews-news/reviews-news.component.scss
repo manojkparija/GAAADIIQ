@@ -1,7 +1,7 @@
 .rn-hero {
   padding: 7rem 0 3rem;
   text-align: center;
-  background: linear-gradient(135deg, #1e40af 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
 
   .hero-badge {
     display: inline-block;
@@ -54,7 +54,7 @@
 
   &:focus-within {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(108,99,255,0.2);
+    box-shadow: 0 0 0 3px rgba(47,107,255,0.2);
   }
 
   .search-icon { font-size: 1rem; flex-shrink: 0; }
@@ -160,7 +160,7 @@
   letter-spacing: 0.05em;
 }
 .cat-badge-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-.cat-badge-purple { background: rgba(108,99,255,0.15);  color: #a78bfa; border: 1px solid rgba(108,99,255,0.3); }
+.cat-badge-purple { background: rgba(47,107,255,0.15);  color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
 .cat-badge-green  { background: rgba(67,233,123,0.15);  color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
 .cat-badge-gold   { background: rgba(255,215,0,0.15);   color: #B8860B; border: 1px solid rgba(255,215,0,0.3); }
 
@@ -169,8 +169,8 @@
 .wrc-card {
   display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
   padding: 1.5rem 2rem; flex-wrap: wrap;
-  background: linear-gradient(135deg, rgba(108,99,255,0.12), rgba(255,101,132,0.08));
-  border: 1px solid rgba(108,99,255,0.3);
+  background: linear-gradient(135deg, rgba(47,107,255,0.12), rgba(239,68,68,0.08));
+  border: 1px solid rgba(47,107,255,0.3);
 }
 .wrc-left { display: flex; align-items: center; gap: 1.25rem; }
 .wrc-icon { font-size: 2.5rem; flex-shrink: 0; }
@@ -257,14 +257,14 @@
   transition: all 0.2s;
 
   &.active, &:hover {
-    background: rgba(108,99,255,0.2);
+    background: rgba(47,107,255,0.2);
     border-color: var(--primary);
-    color: #a78bfa;
+    color: var(--teal);
   }
 
   .tab-count {
     font-size: 0.75rem;
-    background: rgba(108,99,255,0.25);
+    background: rgba(47,107,255,0.25);
     border-radius: 50px;
     padding: 0.1rem 0.45rem;
   }
@@ -342,7 +342,7 @@
 .avatar {
   width: 28px; height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1e40af, #7C3AED);
+  background: linear-gradient(135deg, #1e40af, var(--teal));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -377,9 +377,9 @@
 
 .tag-green  { background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
 .tag-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-.tag-purple { background: rgba(108,99,255,0.15);  color: #a78bfa; border: 1px solid rgba(108,99,255,0.3); }
+.tag-purple { background: rgba(47,107,255,0.15);  color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
 .tag-gold   { background: rgba(255,215,0,0.15);   color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
-.tag-red    { background: rgba(255,101,132,0.15); color: #FF6584; border: 1px solid rgba(255,101,132,0.3); }
+.tag-red    { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
 
 // ── Live News ────────────────────────────────────────────────────────────────
 .api-prompt {
@@ -394,9 +394,9 @@
 }
 
 .error-banner {
-  background: rgba(255,101,132,0.12);
-  border: 1px solid rgba(255,101,132,0.3);
-  color: #FF6584;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: var(--danger);
   border-radius: 10px;
   padding: 0.75rem 1.25rem;
   font-size: 0.88rem;

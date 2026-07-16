@@ -1,13 +1,16 @@
-<div class="car-card glass-card" [routerLink]="['/cars', car.id]">
+<div class="car-card surface-card" [routerLink]="['/cars', car.id]">
   <div class="card-img">
     <img [src]="car.image || 'assets/cars/placeholder.svg'" [alt]="car.make + ' ' + car.model" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'" [style.objectPosition]="car.image?.includes('swift/front') ? 'center 65%' : 'center center'">
     <div class="card-overlay">
       <span class="badge" [class]="car.badgeType">{{ car.badge }}</span>
-      <button class="like-btn" (click)="toggleLike($event)" [class.liked]="liked">
-        {{ liked ? '❤️' : '🤍' }}
+      <button class="like-btn" (click)="toggleLike($event)" [class.liked]="liked" aria-label="Save car">
+        <app-icon name="heart" [size]="15"></app-icon>
       </button>
     </div>
-    <div class="verified-tag" *ngIf="car.verified">✅ Verified</div>
+    <div class="verified-tag" *ngIf="car.verified">
+      <app-icon name="check-circle" [size]="11"></app-icon>
+      Verified
+    </div>
   </div>
   <div class="card-body">
     <div class="card-header">
@@ -16,7 +19,7 @@
         <div class="year-chip">{{ car.year }}</div>
       </div>
       <div class="rating">
-        <span class="star">★</span>
+        <app-icon name="star" [size]="12" class="star-icon"></app-icon>
         <span class="rating-val">{{ car.rating }}</span>
         <span class="reviews">({{ car.reviews }})</span>
       </div>
@@ -26,14 +29,29 @@
       <span class="emi">EMI ₹{{ Math.round(car.price * 0.02 / 1000) }}k/mo</span>
     </div>
     <div class="specs">
-      <span>⛽ {{ car.fuel }}</span>
-      <span>⚙️ {{ car.transmission }}</span>
-      <span>🛣️ {{ formatKm(car.km) }}</span>
+      <span class="spec-item">
+        <app-icon name="fuel" [size]="12"></app-icon>
+        {{ car.fuel }}
+      </span>
+      <span class="spec-item">
+        <app-icon name="settings" [size]="12"></app-icon>
+        {{ car.transmission }}
+      </span>
+      <span class="spec-item">
+        <app-icon name="gauge" [size]="12"></app-icon>
+        {{ formatKm(car.km) }}
+      </span>
     </div>
     <div class="ai-row">
-      <span class="ai-tag">🤖 AI: Fair Price</span>
+      <span class="ai-tag">
+        <app-icon name="sparkles" [size]="12"></app-icon>
+        Fair Price
+      </span>
       <div class="card-actions">
-        <a [routerLink]="['/cars', car.id]" [queryParams]="{tab:'reviews'}" class="btn-outline card-cta-sm" (click)="$event.stopPropagation()">✍️ Review</a>
+        <a [routerLink]="['/cars', car.id]" [queryParams]="{tab:'reviews'}" class="btn-outline card-cta-sm" (click)="$event.stopPropagation()">
+          <app-icon name="pen-line" [size]="12"></app-icon>
+          Review
+        </a>
         <button class="btn-gradient card-cta">View Details</button>
       </div>
     </div>

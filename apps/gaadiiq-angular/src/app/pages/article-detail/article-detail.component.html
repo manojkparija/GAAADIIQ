@@ -3,7 +3,7 @@
   <section class="ad-hero container">
     <a [routerLink]="['/reviews-news']" class="back-link">← Reviews &amp; News</a>
     <div class="not-found">
-      <div class="nf-icon">📰</div>
+      <div class="nf-icon"><app-icon name="list" [size]="40"></app-icon></div>
       <h1>Article not found</h1>
       <p>This article doesn't exist or may have been removed.</p>
       <a routerLink="/reviews-news" class="btn-primary">Browse all articles</a>
@@ -50,7 +50,7 @@
 
       <!-- Car model badge -->
       <div class="car-model-row" *ngIf="a.carModel">
-        <span class="car-badge">🚗 {{ a.carModel }}</span>
+        <span class="car-badge">{{ a.carModel }}</span>
       </div>
 
       <!-- Excerpt / Summary -->

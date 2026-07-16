@@ -4,13 +4,13 @@
 
   <!-- Header -->
   <section class="val-hero container">
-    <div class="ai-badge">🤖 AI Valuation</div>
+    <div class="ai-badge"><app-icon name="brain" [size]="14"></app-icon> AI Valuation</div>
     <h1>What Is Your Car <span class="gradient-text">Worth Today?</span></h1>
     <p class="hero-sub">Get an instant AI-powered market valuation based on real-time data. Free, accurate, no sign-up needed.</p>
     <div class="trust-row">
-      <span>✅ 50,000+ valuations done</span>
-      <span>✅ Updated daily</span>
-      <span>✅ Based on actual sale prices</span>
+      <span><app-icon name="check" [size]="13"></app-icon> 50,000+ valuations done</span>
+      <span><app-icon name="check" [size]="13"></app-icon> Updated daily</span>
+      <span><app-icon name="check" [size]="13"></app-icon> Based on actual sale prices</span>
     </div>
   </section>
 
@@ -91,7 +91,7 @@
       </div>
 
       <button class="btn-gradient val-btn" (click)="estimate()" [disabled]="!formValid || loading()">
-        <span *ngIf="!loading()">🤖 Get AI Valuation</span>
+        <span *ngIf="!loading()">Get AI Valuation</span>
         <span *ngIf="loading()" class="loading-dots">Analysing market data<span class="dots">...</span></span>
       </button>
     </div>
@@ -99,12 +99,12 @@
     <!-- How it works -->
     <div class="how-grid">
       <div class="how-card glass-card" *ngFor="let h of [
-        {icon:'📊', title:'Market Analysis', desc:'We scan thousands of recent sale prices for your make and model.'},
-        {icon:'📉', title:'Depreciation Curve', desc:'Age, mileage, and ownership history are factored into the estimate.'},
-        {icon:'⚡', title:'Demand Signals', desc:'Fuel type, condition, and current market trends adjust your valuation.'},
-        {icon:'🎯', title:'Confidence Range', desc:'You get a low, mid, and high estimate so you know where to price.'}
+        {icon:'bar-chart', title:'Market Analysis', desc:'We scan thousands of recent sale prices for your make and model.'},
+        {icon:'trending-up', title:'Depreciation Curve', desc:'Age, mileage, and ownership history are factored into the estimate.'},
+        {icon:'zap', title:'Demand Signals', desc:'Fuel type, condition, and current market trends adjust your valuation.'},
+        {icon:'gauge', title:'Confidence Range', desc:'You get a low, mid, and high estimate so you know where to price.'}
       ]">
-        <div class="how-icon">{{ h.icon }}</div>
+        <div class="how-icon"><app-icon [name]="h.icon" [size]="24"></app-icon></div>
         <h4>{{ h.title }}</h4>
         <p>{{ h.desc }}</p>
       </div>

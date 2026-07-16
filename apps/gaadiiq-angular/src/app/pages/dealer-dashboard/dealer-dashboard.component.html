@@ -11,15 +11,15 @@
         <div class="dealer-avatar">{{ sellerInitials() }}</div>
         <div>
           <div class="dealer-name">{{ currentSeller()!.business_name }}</div>
-          <div class="dealer-loc">📍 {{ currentSeller()!.city }}</div>
-          <div class="dealer-since">{{ currentSeller()!.name }} · ⭐ {{ currentSeller()!.rating }} ({{ currentSeller()!.total_reviews }} reviews)</div>
+          <div class="dealer-loc">{{ currentSeller()!.city }}</div>
+          <div class="dealer-since">{{ currentSeller()!.name }} · {{ currentSeller()!.rating }} ({{ currentSeller()!.total_reviews }} reviews)</div>
         </div>
       </div>
       <div class="dealer-card glass-card" *ngIf="!currentSeller() && authUser()">
         <div class="dealer-avatar">{{ authInitials() }}</div>
         <div>
           <div class="dealer-name">{{ authUser()!.name }}</div>
-          <div class="dealer-loc">📍 India</div>
+          <div class="dealer-loc">India</div>
           <div class="dealer-since">{{ authUser()!.email }}</div>
         </div>
       </div>
@@ -28,9 +28,9 @@
 
   <!-- Tab Bar -->
   <div class="dd-tabs container">
-    <button class="dd-tab" [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">📊 Overview</button>
+    <button class="dd-tab" [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">Overview</button>
     <button class="dd-tab" [class.active]="activeTab()==='leads'" (click)="activeTab.set('leads')">💬 AI Leads</button>
-    <button class="dd-tab" [class.active]="activeTab()==='inventory'" (click)="activeTab.set('inventory')">🚗 Inventory</button>
+    <button class="dd-tab" [class.active]="activeTab()==='inventory'" (click)="activeTab.set('inventory')">Inventory</button>
     <button class="dd-tab" [class.active]="activeTab()==='analytics'" (click)="activeTab.set('analytics')">📈 Analytics</button>
     <button class="dd-tab" [class.active]="activeTab()==='test-drives'" (click)="activeTab.set('test-drives')">
       🗝️ Test Drives
@@ -62,7 +62,7 @@
       </div>
 
       <!-- AI Lead Intelligence Summary -->
-      <h2 class="section-head">🤖 AI Lead <span class="gradient-text">Intelligence</span></h2>
+      <h2 class="section-head">AI Lead <span class="gradient-text">Intelligence</span></h2>
       <div class="ai-lead-summary glass-card">
         <div class="ai-summary-chips">
           <div class="ai-sum-chip hot">
@@ -83,7 +83,7 @@
           </div>
         </div>
         <div class="ai-top-lead">
-          <span class="atl-label">🔥 Highest Intent Lead Today</span>
+          <span class="atl-label">Highest Intent Lead Today</span>
           <span class="atl-name">Deepak Rao</span>
           <span class="atl-score">95% intent · Grade A · <em>Collect Documents</em></span>
         </div>
@@ -137,7 +137,7 @@
 
           <!-- Car + budget -->
           <div class="alc-car-row">
-            <span class="alc-car-label">🚗 {{ l.car }}</span>
+            <span class="alc-car-label">{{ l.car }}</span>
             <span class="alc-budget">{{ l.budget }}</span>
             <span class="lt-time">{{ l.time }}</span>
           </div>
@@ -161,7 +161,7 @@
               <span>🕐</span> Best time: <strong>{{ l.bestContactTime }}</strong>
             </div>
             <div class="alc-ai-chip nba">
-              <span>⚡</span> NBA: <strong>{{ l.nba }}</strong>
+              <app-icon name="brain" [size]="12"></app-icon> NBA: <strong>{{ l.nba }}</strong>
             </div>
           </div>
         </div>
@@ -171,7 +171,7 @@
     <!-- INVENTORY TAB -->
     <ng-container *ngIf="activeTab()==='inventory'">
       <div class="inventory-cta glass-card">
-        <div class="inv-icon">🚗</div>
+        <div class="inv-icon"><app-icon name="car" [size]="32"></app-icon></div>
         <h3>Manage Your Inventory</h3>
         <p>Add, edit and track all your listed vehicles in one place. Monitor days on lot and price competitiveness.</p>
         <a routerLink="/my-listings" class="btn-gradient">Go to My Listings →</a>
@@ -196,22 +196,22 @@
       <h2 class="section-head" style="margin-top:2rem">Market <span class="gradient-text">Intelligence</span></h2>
       <div class="intel-grid">
         <div class="intel-card glass-card">
-          <div class="ic-icon">📈</div>
+          <div class="ic-icon"><app-icon name="trending-up" [size]="22"></app-icon></div>
           <h4>Avg. Market Price</h4>
           <p>SUVs in Bangalore are trending 4.2% above national average this week. Adjust pricing accordingly.</p>
         </div>
         <div class="intel-card glass-card">
-          <div class="ic-icon">⚡</div>
+          <div class="ic-icon"><app-icon name="zap" [size]="22"></app-icon></div>
           <h4>EV Demand Surge</h4>
           <p>Electric vehicle searches up 34% in your city. Consider stocking more EV inventory.</p>
         </div>
         <div class="intel-card glass-card">
-          <div class="ic-icon">🏆</div>
+          <div class="ic-icon"><app-icon name="star" [size]="22"></app-icon></div>
           <h4>Competitive Position</h4>
           <p>Your response time (avg 22 min) is in the top 15% of dealers. Keep it up!</p>
         </div>
         <div class="intel-card glass-card">
-          <div class="ic-icon">📅</div>
+          <div class="ic-icon"><app-icon name="bell" [size]="22"></app-icon></div>
           <h4>Best Time to List</h4>
           <p>Listings posted Thursday–Friday see 28% more views over the weekend.</p>
         </div>

@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CarCardComponent } from '../../components/car-card/car-card.component';
+import { IconComponent } from '../../components/icon/icon.component';
 import { ScrollAnimateDirective } from '../../directives/scroll-animate.directive';
 import { CounterDirective } from '../../directives/counter.directive';
 import { BrandsService } from '../../services/brands.service';
@@ -16,7 +17,7 @@ interface Car {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule, FormsModule, CarCardComponent, ScrollAnimateDirective, CounterDirective],
+  imports: [RouterLink, RouterLinkActive, CommonModule, FormsModule, CarCardComponent, IconComponent, ScrollAnimateDirective, CounterDirective],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
@@ -107,12 +108,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
   ];
 
   features = [
-    { icon:'🤖', title:'AI Price Valuation', desc:'Instant AI-powered fair market valuation — real-time market data, no guesswork.', color:'#6C63FF', route:'/ai-advisor' },
-    { icon:'🏦', title:'Loan Comparison', desc:'Compare EMI from top banks. Pre-approval in minutes, best rates guaranteed.', color:'#FF6584', route:'/emi-calculator' },
-    { icon:'🔍', title:'Smart Search', desc:'Natural language search. "Red SUV under 15L near me" — we understand you.', color:'#43E97B', route:'/listings' },
-    { icon:'📊', title:'Market Intelligence', desc:'Real-time price trends, depreciation charts, and resale value forecasts.', color:'#FFD700', route:'/compare' },
-    { icon:'🔔', title:'Price Drop Alerts', desc:'Set your target price. Get notified the moment a listing drops below it.', color:'#00C9FF', route:'/price-alerts' },
-    { icon:'🚗', title:'Test Drive Booking', desc:'Book a test drive directly with the seller — from your couch, right now.', color:'#FF8C00', route:'/test-drive' },
+    { icon:'brain', title:'AI Price Valuation', desc:'Instant AI-powered fair market valuation — real-time market data, no guesswork.', color:'#2F6BFF', route:'/ai-advisor' },
+    { icon:'bank', title:'Loan Comparison', desc:'Compare EMI from top banks. Pre-approval in minutes, best rates guaranteed.', color:'#14B8A6', route:'/emi-calculator' },
+    { icon:'search', title:'Smart Search', desc:'Natural language search. "Red SUV under 15L near me" — we understand you.', color:'#10B981', route:'/listings' },
+    { icon:'bar-chart', title:'Market Intelligence', desc:'Real-time price trends, depreciation charts, and resale value forecasts.', color:'#F59E0B', route:'/compare' },
+    { icon:'bell', title:'Price Drop Alerts', desc:'Set your target price. Get notified the moment a listing drops below it.', color:'#2F6BFF', route:'/price-alerts' },
+    { icon:'car', title:'Test Drive Booking', desc:'Book a test drive directly with the seller — from your couch, right now.', color:'#14B8A6', route:'/test-drive' },
   ];
 
   testimonials = [

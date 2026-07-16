@@ -1,6 +1,7 @@
 import { Component, HostListener, signal, computed } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../icon/icon.component';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { CityService } from '../../services/city.service';
@@ -10,7 +11,7 @@ import { CitySelectorComponent } from '../city-selector/city-selector.component'
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule, CitySelectorComponent],
+  imports: [RouterLink, RouterLinkActive, CommonModule, CitySelectorComponent, IconComponent],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })

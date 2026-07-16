@@ -2,7 +2,7 @@
   "name": "GAADIIQ — India's AI-First Car Platform",
   "short_name": "GAADIIQ",
   "description": "Buy & sell cars intelligently. AI-powered valuations, loan comparisons, and 50,000+ verified listings.",
-  "theme_color": "#6C63FF",
+  "theme_color": "#2F6BFF",
   "background_color": "#0A0E1A",
   "display": "standalone",
   "scope": "./",

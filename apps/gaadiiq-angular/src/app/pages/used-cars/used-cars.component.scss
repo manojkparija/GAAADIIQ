@@ -4,7 +4,7 @@
 
 /* ── HERO ── */
 .uc-hero {
-  background: linear-gradient(135deg, #1e40af 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
   padding: 6.5rem 0 3rem;
   position: relative;
   overflow: hidden;
@@ -132,7 +132,7 @@
 
 /* ── STATS BANNER ── */
 .uc-stats-banner {
-  background: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(124,58,237,0.06));
+  background: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(20,184,166,0.06));
   border-top: 1px solid var(--border, rgba(0,0,0,0.06));
   border-bottom: 1px solid var(--border, rgba(0,0,0,0.06));
   padding: 2rem 0;
@@ -157,7 +157,7 @@
   font-size: 1.15rem;
   font-weight: 800;
   color: var(--text);
-  background: linear-gradient(135deg, #2563EB, #7C3AED);
+  background: linear-gradient(135deg, #2563EB, var(--teal));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -392,7 +392,7 @@
   transition: all 0.15s;
 
   &.active {
-    background: linear-gradient(135deg, #2563EB, #7C3AED);
+    background: linear-gradient(135deg, #2563EB, var(--teal));
     color: #fff;
     border-color: transparent;
   }
@@ -424,7 +424,7 @@
 }
 
 .toggle-input:checked + .toggle-track {
-  background: linear-gradient(135deg, #2563EB, #7C3AED);
+  background: linear-gradient(135deg, #2563EB, var(--teal));
 }
 
 .toggle-thumb {
@@ -697,7 +697,7 @@
   font-size: 0.68rem;
   font-weight: 700;
   padding: 0.15rem 0.45rem;
-  background: linear-gradient(135deg, #2563EB, #7C3AED);
+  background: linear-gradient(135deg, #2563EB, var(--teal));
   color: #fff;
   border-radius: 4px;
 }
@@ -731,7 +731,7 @@
 .car-price {
   font-size: 1.15rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #2563EB, #7C3AED);
+  background: linear-gradient(135deg, #2563EB, var(--teal));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

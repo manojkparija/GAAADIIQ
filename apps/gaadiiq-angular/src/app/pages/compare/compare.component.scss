@@ -5,17 +5,17 @@
 }
 
 .compare-hero {
-  background: linear-gradient(135deg, #1e40af 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
   border-bottom: 1px solid var(--divider);
   padding: 5rem 0 2.5rem;
   text-align: center;
-  h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; }
+  h1 { font-family: 'Outfit', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; }
   p { color: rgba(255,255,255,0.75); margin-top: 0.5rem; }
   .gradient-text { background: linear-gradient(135deg, #ffffff, #C4B5FD); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 }
 
 .car-selector { margin: 2.5rem 0;
-  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; margin-bottom: 1.5rem; }
+  h2 { font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin-bottom: 1.5rem; }
 }
 
 .cars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
@@ -86,7 +86,7 @@
   border: 1px solid var(--border-soft); border-radius: 20px;
   padding: 3rem; text-align: center;
   .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
-  h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; margin-bottom: 0.5rem; }
+  h3 { font-family: 'Outfit', sans-serif; font-size: 1.2rem; margin-bottom: 0.5rem; }
   p { color: var(--text-tertiary); font-size: 0.9rem; }
 }
 
@@ -97,7 +97,7 @@
   .slot-price { font-size:1.1rem; font-weight:900; }
   .slot-sub { font-size:0.78rem; color:var(--muted); margin-bottom:0.75rem; }
 }
-.remove-btn { position:absolute; top:0.5rem; right:0.5rem; background:rgba(255,101,132,0.2); border:none; color:#FF6584; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; justify-content:center; }
+.remove-btn { position:absolute; top:0.5rem; right:0.5rem; background:rgba(239,68,68,0.2); border:none; color:var(--danger); border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; justify-content:center; }
 .slot-empty { padding:1.5rem; min-height:200px; display:flex; flex-direction:column; gap:1rem;
   .search-wrap { position:relative; }
   input { width:100%; background: var(--fill-soft); border: 1px solid var(--border-soft); border-radius:10px; padding:0.75rem 1rem; color: var(--input-color); font-size:0.9rem; outline:none; box-sizing:border-box; &:focus{border-color:#1e40af;} }

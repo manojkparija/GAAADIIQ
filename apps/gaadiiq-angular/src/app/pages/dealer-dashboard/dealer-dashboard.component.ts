@@ -7,6 +7,7 @@ import { TestDriveService, TestDriveRequest } from '../../services/test-drive.se
 import { AuthService } from '../../services/auth.service';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 interface CarEnquiry {
   id: string; car_id: number; buyer_name: string; buyer_phone: string;
@@ -23,7 +24,7 @@ interface LeadRow {
 @Component({
   selector: 'app-dealer-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, IconComponent],
   templateUrl: './dealer-dashboard.component.html',
   styleUrl: './dealer-dashboard.component.scss',
 })
@@ -47,8 +48,8 @@ export class DealerDashboardComponent {
   ];
 
   fuelMix = [
-    { label: 'Petrol', pct: 42, color: '#6C63FF' },
-    { label: 'Diesel', pct: 28, color: '#FF6584' },
+    { label: 'Petrol', pct: 42, color: '#2F6BFF' },
+    { label: 'Diesel', pct: 28, color: '#EF4444' },
     { label: 'Electric', pct: 18, color: '#43E97B' },
     { label: 'CNG', pct: 8, color: '#FFD700' },
     { label: 'Hybrid', pct: 4, color: '#60A5FA' },

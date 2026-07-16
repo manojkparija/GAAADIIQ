@@ -4,7 +4,7 @@
 
   <div class="register-card glass-card">
     <div class="reg-header">
-      <a routerLink="/" class="logo-link">⚡ <span class="gradient-text">GAADIIQ</span></a>
+      <a routerLink="/" class="logo-link"><span class="gradient-text">GAADIIQ</span></a>
     </div>
 
     <div class="auth-tabs">
@@ -143,7 +143,7 @@
         </div>
         <div class="pass-strength">
           <div class="bar" [style.width]="password().length > 8 ? '100%' : password().length > 5 ? '60%' : '30%'"
-               [style.background]="password().length > 8 ? '#43E97B' : password().length > 5 ? '#FFD700' : '#FF6584'"></div>
+               [style.background]="password().length > 8 ? '#43E97B' : password().length > 5 ? '#FFD700' : '#EF4444'"></div>
         </div>
         <p class="pass-hint">{{ password().length > 8 ? 'Strong password!' : password().length > 5 ? 'Medium strength' : 'Weak — add more characters' }}</p>
         <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
