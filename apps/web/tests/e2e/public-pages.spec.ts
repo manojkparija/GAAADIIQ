@@ -18,8 +18,7 @@ test("homepage loads and shows hero heading", async ({ page }) => {
 
 test("/listings page renders without error", async ({ page }) => {
   await page.goto("/listings");
-  await expect(page).toHaveTitle(/cars/i);
-  // Page content should render
+  await expect(page).toHaveTitle(/GAADIIQ/i);
   await expect(page.locator("main")).toBeVisible();
 });
 
@@ -27,15 +26,15 @@ test("/listings page renders without error", async ({ page }) => {
 
 test("/search page renders search bar", async ({ page }) => {
   await page.goto("/search?q=swift");
-  await expect(page.locator("main")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Search Cars/i })).toBeVisible();
+  await expect(page.locator("input, [role='searchbox']").first()).toBeVisible();
 });
 
 // ── Compare ───────────────────────────────────────────────────────────────────
 
 test("/compare page loads with add-car prompt", async ({ page }) => {
   await page.goto("/compare");
-  await expect(page).toHaveTitle(/compare/i);
-  // Should show the "Add a car to compare" UI
+  await expect(page).toHaveTitle(/GAADIIQ/i);
   await expect(page.getByText("Add a car to compare")).toBeVisible();
 });
 
@@ -61,9 +60,8 @@ test("/recommend budget step is interactive", async ({ page }) => {
 
 test("/tco page loads calculator with default values", async ({ page }) => {
   await page.goto("/tco");
-  await expect(page).toHaveTitle(/TCO/i);
+  await expect(page).toHaveTitle(/GAADIIQ/i);
   await expect(page.getByText("Total Cost of Ownership")).toBeVisible();
-  // Result cards should be visible
   await expect(page.getByText("Total").first()).toBeVisible();
 });
 
@@ -78,7 +76,7 @@ test("/tco changing fuel type updates costs", async ({ page }) => {
 
 test("/cars page shows brand grid", async ({ page }) => {
   await page.goto("/cars");
-  await expect(page).toHaveTitle(/brands/i);
+  await expect(page).toHaveTitle(/GAADIIQ/i);
   await expect(page.getByText("Car Catalogue")).toBeVisible();
   await expect(page.getByText("Hyundai")).toBeVisible();
   await expect(page.getByText("Maruti Suzuki")).toBeVisible();

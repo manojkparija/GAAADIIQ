@@ -42,8 +42,7 @@ export default function BoostListingButton({ listingId, isFeatured, onBoostSucce
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${(session as { access_token?: string })?.access_token}`,
-        },
+          Authorization: `Bearer ${(session as { accessToken?: string } | null)?.accessToken ?? ""}`,        },
         body: JSON.stringify({ listing_id: listingId, duration_days: selected }),
       });
       if (!res.ok) {

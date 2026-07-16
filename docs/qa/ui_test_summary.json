@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-07-15 16:26 UTC",
+  "total": 98,
+  "counts": {
+    "PASS": 93,
+    "PARTIAL": 5
+  },
+  "outputs": [
+    "/workspace/docs/qa/GAADIIQ_UI_Test_Results.xlsx",
+    "/opt/cursor/artifacts/GAADIIQ_UI_Test_Results.xlsx"
+  ]
+}
