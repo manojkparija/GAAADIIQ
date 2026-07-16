@@ -91,12 +91,12 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl shadow-lg border p-8">
           <div className="text-center mb-8">
-            <Link href="/" className="inline-block font-bold text-2xl text-primary mb-4 tracking-tight">
-              GAADIIQ
+            <Link href="/" className="inline-block font-display font-semibold text-2xl text-primary mb-4 tracking-wide">
+              <span className="text-accent">✦</span> GAADIIQ
             </Link>
-            <h1 className="text-2xl font-bold">Create your account</h1>
+            <h1 className="text-2xl font-display font-semibold">Create your account</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Join India&apos;s AI-first car marketplace
+              Join India&apos;s premier car marketplace
             </p>
           </div>
 

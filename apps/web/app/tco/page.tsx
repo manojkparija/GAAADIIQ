@@ -250,9 +250,9 @@ export default function TCOPage() {
           <div className="flex flex-col gap-5">
             {/* Summary cards */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-primary/10 rounded-xl p-4 text-center">
+              <div className="bg-accent/10 rounded-xl p-4 text-center border border-accent/20">
                 <p className="text-xs text-muted-foreground mb-1">Total {inputs.yearsOwned}yr Cost</p>
-                <p className="text-xl font-bold text-primary">{formatINR(result.total)}</p>
+                <p className="text-xl font-bold text-accent">{formatINR(result.total)}</p>
               </div>
               <div className="bg-card rounded-xl border p-4 text-center">
                 <p className="text-xs text-muted-foreground mb-1">Per Year</p>
