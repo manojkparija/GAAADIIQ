@@ -113,7 +113,7 @@ export default function EMICalculator({ listingPrice }: Props) {
         <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Monthly EMI</span>
-            <span className="text-xl font-bold text-primary">{formatINR(result.monthly_emi)}</span>
+            <span className="text-xl font-display font-semibold text-primary">{formatINR(result.monthly_emi)}</span>
           </div>
 
           {/* Mini donut-like bar */}

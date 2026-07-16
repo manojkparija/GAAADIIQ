@@ -108,35 +108,37 @@ export default async function ListingsPage({ searchParams }: PageProps) {
     sp.fuel_type, sp.body_type, sp.min_price, sp.max_price,
   ].filter(Boolean).length;
 
+  const title =
+    sp.listing_type === "new" ? "New Cars" :
+    sp.listing_type === "used" ? "Used Cars" :
+    sp.make ? `${sp.make} Cars` :
+    sp.fuel_type === "electric" ? "Electric Cars" :
+    "Explore All Cars";
+
   return (
-    <main className="min-h-screen bg-surface-alt">
-      {/* Page header */}
-      <div className="bg-card border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold">
-            {sp.listing_type === "new" ? "New Cars" :
-             sp.listing_type === "used" ? "Used Cars" :
-             sp.make ? `${sp.make} Cars` :
-             sp.fuel_type === "electric" ? "Electric Cars" :
-             "Explore All Cars"}
+    <main className="min-h-screen surface-royal">
+      <section className="hero-navy border-b border-accent/20">
+        <div className="max-w-7xl mx-auto px-4 py-10 md:py-14">
+          <p className="text-accent text-[11px] font-semibold uppercase tracking-[0.24em] mb-3">Inventory</p>
+          <h1 className="text-3xl md:text-5xl font-display font-semibold text-primary-foreground tracking-tight">
+            {title}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Find your perfect car — verified listings across India
+          <div className="gold-rule-lg anim-rule mt-4 mb-4" />
+          <p className="text-primary-foreground/70 text-sm md:text-base font-light max-w-xl">
+            Verified listings curated across India
             {activeFilterCount > 0 && ` · ${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} applied`}
           </p>
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Filter sidebar */}
-          <Suspense fallback={<div className="w-56 shrink-0 h-96 animate-pulse bg-white rounded-2xl" />}>
+          <Suspense fallback={<div className="w-56 shrink-0 h-96 animate-pulse bg-card rounded-sm" />}>
             <ListingsFilter />
           </Suspense>
 
-          {/* Listings grid */}
           <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 content-start">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 content-start">
               <Suspense
                 fallback={Array.from({ length: 6 }).map((_, i) => (
                   <ListingCardSkeleton key={i} />

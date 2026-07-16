@@ -26,7 +26,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-xl border p-6 bg-card">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="text-3xl font-bold mt-1">{value}</p>
+      <p className="text-3xl font-display font-semibold mt-1">{value}</p>
     </div>
   );
 }
@@ -40,7 +40,7 @@ export default async function DashboardPage() {
     <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Overview</h1>
+          <h1 className="text-3xl font-display font-semibold">Overview</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Welcome back, {session?.user?.name ?? session?.user?.email}
           </p>

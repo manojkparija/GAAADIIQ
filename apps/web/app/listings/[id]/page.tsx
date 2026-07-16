@@ -174,21 +174,22 @@ export default async function ListingDetailPage({ params }: PageProps) {
         <div className="flex flex-col gap-5">
           {/* Title & price */}
           <div>
-            <h1 className="text-2xl font-bold leading-tight">
+            <h1 className="text-3xl md:text-4xl font-display font-semibold leading-tight tracking-tight">
               {car.year} {car.make} {car.model}
               {car.variant ? ` ${car.variant}` : ""}
             </h1>
+            <div className="gold-rule mt-3 mb-2" />
             {listing.city && (
-              <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1.5">
+              <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1.5 font-light">
                 <MapPin className="h-3.5 w-3.5 text-accent" aria-hidden />
                 {listing.city}
               </p>
             )}
 
             <div className="flex items-baseline gap-3 mt-4">
-              <span className="text-3xl font-bold">{formatPrice(listing.price)}</span>
+              <span className="text-3xl md:text-4xl font-display font-semibold tracking-tight">{formatPrice(listing.price)}</span>
               {listing.negotiable && (
-                <span className="text-sm text-success font-medium">Negotiable</span>
+                <span className="text-xs uppercase tracking-[0.14em] text-accent-readable font-medium">Negotiable</span>
               )}
             </div>
 
@@ -266,7 +267,8 @@ async function SimilarListings({ listingId }: { listingId: string }) {
 
   return (
     <section className="mt-12 border-t pt-8">
-      <h2 className="text-xl font-bold mb-6">Similar Cars</h2>
+      <h2 className="text-2xl font-display font-semibold mb-2">Similar Cars</h2>
+      <div className="gold-rule mb-6" />
       <div className="flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory">
         {similar.map((l) => (
           <div key={l.id} className="shrink-0 w-72 snap-start">

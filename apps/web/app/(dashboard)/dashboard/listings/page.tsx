@@ -40,7 +40,7 @@ export default async function MyListingsPage() {
   return (
     <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">My Listings</h1>
+        <h1 className="text-3xl font-display font-semibold">My Listings</h1>
         <Link href="/dashboard/listings/new" className={buttonVariants()}>
           + Add Listing
         </Link>

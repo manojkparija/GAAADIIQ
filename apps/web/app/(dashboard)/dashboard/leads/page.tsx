@@ -81,7 +81,7 @@ export default async function LeadsPage() {
   return (
     <div className="max-w-4xl space-y-10">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Leads</h1>
+        <h1 className="text-3xl font-display font-semibold mb-1">Leads</h1>
         <p className="text-muted-foreground text-sm">
           Test drive requests and loan inquiries on your listings.
         </p>
