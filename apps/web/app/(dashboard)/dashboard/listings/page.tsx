@@ -14,7 +14,7 @@ interface MyListingsResponse {
 async function getMyListings(token: string): Promise<MyListingsResponse> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   try {
-    const res = await fetch(`${apiUrl}/listings/me?page_size=50`, {
+    const res = await fetch(`${apiUrl}/listings?page_size=50`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -40,7 +40,7 @@ export default async function MyListingsPage() {
   return (
     <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-display font-semibold">My Listings</h1>
+        <h1 className="text-2xl font-bold">My Listings</h1>
         <Link href="/dashboard/listings/new" className={buttonVariants()}>
           + Add Listing
         </Link>

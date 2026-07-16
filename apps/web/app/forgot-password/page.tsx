@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Mail } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 
 export default function ForgotPasswordPage() {
@@ -40,40 +39,33 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-6rem)] surface-royal flex items-center justify-center px-4 py-12">
+    <main className="min-h-screen bg-surface-alt flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-card panel-royal rounded-sm p-8 md:p-10">
-          <div className="mb-8">
-            <Link href="/" className="inline-block font-display font-semibold text-2xl tracking-[0.08em] text-foreground mb-5">
-              <span className="text-accent">✦</span> GAADIIQ
+        <div className="bg-card rounded-2xl shadow-lg border p-8">
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-block font-bold text-2xl text-primary mb-4 tracking-tight">
+              GAADIIQ
             </Link>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-accent-readable font-medium mb-2">Security</p>
-            <h1 className="text-3xl font-display font-semibold">Forgot your password?</h1>
-            <div className="gold-rule mt-3 mb-3" />
-            <p className="text-sm text-muted-foreground font-light">
+            <h1 className="text-2xl font-bold">Forgot your password?</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Enter your email and we&apos;ll send you a reset link.
             </p>
           </div>
 
           {submitted ? (
             <div className="text-center py-4">
-              <div className="mx-auto mb-4 h-12 w-12 border border-accent/40 bg-accent/10 flex items-center justify-center text-accent">
-                <Mail className="h-5 w-5" aria-hidden />
-              </div>
-              <p className="font-display font-semibold text-xl mb-2">Check your inbox</p>
-              <p className="text-sm text-muted-foreground mb-6 font-light">
+              <p className="font-semibold mb-2">Check your inbox</p>
+              <p className="text-sm text-muted-foreground mb-6">
                 If an account exists for <strong>{email}</strong>, a password reset link has been sent. It expires in 1 hour.
               </p>
-              <Link href="/login" className={buttonVariants({ variant: "outline" }) + " w-full rounded-sm"}>
+              <Link href="/login" className={buttonVariants({ variant: "outline" }) + " w-full"}>
                 Back to Sign In
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Email Address
-                </label>
+                <label htmlFor="email" className="text-sm font-semibold">Email Address</label>
                 <input
                   id="email"
                   type="email"
@@ -82,12 +74,12 @@ export default function ForgotPasswordPage() {
                   placeholder="rahul@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input-royal"
+                  className="border rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                 />
               </div>
 
               {error && (
-                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-sm">
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-lg">
                   {error}
                 </div>
               )}
@@ -95,11 +87,11 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex h-10 w-full items-center justify-center rounded-sm bg-accent px-4 text-sm font-semibold tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className={buttonVariants({ size: "lg" }) + " w-full disabled:opacity-60 disabled:cursor-not-allowed"}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <span className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Sending…
                   </span>
                 ) : "Send Reset Link"}
@@ -108,9 +100,9 @@ export default function ForgotPasswordPage() {
           )}
         </div>
 
-        <p className="text-sm text-muted-foreground text-center mt-6 font-light">
+        <p className="text-sm text-muted-foreground text-center mt-6">
           Remembered it?{" "}
-          <Link href="/login" className="text-accent-readable font-semibold hover:underline">
+          <Link href="/login" className="text-primary font-semibold hover:underline">
             Sign in
           </Link>
         </p>

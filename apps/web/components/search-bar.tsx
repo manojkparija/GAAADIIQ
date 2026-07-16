@@ -15,16 +15,9 @@ interface Props {
   initialQuery?: string;
   placeholder?: string;
   className?: string;
-  /** Navy bar context: ivory field + gold CTA */
-  variant?: "default" | "navy";
 }
 
-export default function SearchBar({
-  initialQuery = "",
-  placeholder = "Search by make, model, city…",
-  className = "",
-  variant = "default",
-}: Props) {
+export default function SearchBar({ initialQuery = "", placeholder = "Search by make, model, city…", className = "" }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -48,7 +41,7 @@ export default function SearchBar({
   }, [apiUrl]);
 
   const fetchSuggestions = useMemo(
-    () => debounce(fetchSuggestionsRaw, 220),
+    () => debounce((q: string) => { void fetchSuggestionsRaw(q); }, 250),
     [fetchSuggestionsRaw]
   );
 
@@ -56,22 +49,20 @@ export default function SearchBar({
     fetchSuggestions(query);
   }, [query, fetchSuggestions]);
 
+  // Close dropdown on outside click
   useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!containerRef.current?.contains(e.target as Node)) {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
-        setActiveIdx(-1);
       }
     }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   function submit(q: string) {
-    const trimmed = q.trim();
-    if (!trimmed) return;
     setOpen(false);
-    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    if (q.trim()) router.push(`/search?q=${encodeURIComponent(q.trim())}`);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -99,19 +90,9 @@ export default function SearchBar({
     }
   }
 
-  const shell =
-    variant === "navy"
-      ? "flex rounded-sm border border-white/15 bg-[oklch(0.97_0.01_82)] shadow-none overflow-hidden"
-      : "flex rounded-sm border border-border bg-card shadow-sm overflow-hidden";
-
-  const btn =
-    variant === "navy"
-      ? "px-4 text-[13px] font-semibold tracking-wide bg-accent text-accent-foreground hover:bg-accent/90 transition-colors shrink-0"
-      : "px-4 text-[13px] font-semibold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0";
-
   return (
     <div ref={containerRef} className={`relative ${className}`}>
-      <div className={shell}>
+      <div className="flex rounded-xl border bg-background shadow-sm overflow-hidden">
         <input
           ref={inputRef}
           type="text"
@@ -120,23 +101,27 @@ export default function SearchBar({
           onChange={(e) => { setQuery(e.target.value); setActiveIdx(-1); }}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
-          className="flex-1 px-4 py-2 text-sm bg-transparent outline-none min-w-0 text-foreground placeholder:text-muted-foreground/70"
+          className="flex-1 px-4 py-2.5 text-sm bg-transparent outline-none min-w-0"
           autoComplete="off"
         />
-        <button type="button" onClick={() => submit(query)} className={btn}>
+        <button
+          type="button"
+          onClick={() => submit(query)}
+          className="px-4 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+        >
           Search
         </button>
       </div>
 
       {open && suggestions.length > 0 && (
-        <ul className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-card border border-border rounded-sm shadow-lg overflow-hidden text-sm panel-royal">
+        <ul className="absolute left-0 right-0 top-full mt-1 z-50 bg-background border rounded-xl shadow-lg overflow-hidden text-sm">
           {suggestions.map((s, i) => (
             <li
               key={s}
               onMouseDown={(e) => { e.preventDefault(); setQuery(s); submit(s); }}
               onMouseEnter={() => setActiveIdx(i)}
               className={`px-4 py-2.5 cursor-pointer transition-colors ${
-                i === activeIdx ? "bg-accent/15 text-foreground" : "hover:bg-muted"
+                i === activeIdx ? "bg-accent text-accent-foreground" : "hover:bg-muted"
               }`}
             >
               {s}

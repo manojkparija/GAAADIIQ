@@ -14,7 +14,7 @@ export default function ReviewsSection({ listingId, sellerId }: Props) {
 
   return (
     <section className="mt-12 border-t pt-8 space-y-6">
-      <h2 className="text-xl font-display font-semibold">Reviews</h2>
+      <h2 className="text-xl font-bold">Reviews</h2>
       <ReviewList listingId={listingId} sellerId={sellerId} onReviewAdded={refreshKey} />
       <ReviewForm listingId={listingId} onSubmitted={() => setRefreshKey((k) => k + 1)} />
     </section>
