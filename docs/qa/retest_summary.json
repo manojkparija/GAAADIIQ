@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-07-15 14:20 UTC",
+  "total": 208,
+  "counts": {
+    "PASS": 184,
+    "FAIL": 14,
+    "PARTIAL": 8,
+    "N/A": 1,
+    "BLOCKED": 1
+  }
+}
