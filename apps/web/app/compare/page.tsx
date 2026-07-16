@@ -3,7 +3,8 @@
 import { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Car } from "lucide-react";
+import { X, Plus, Car, GitCompareArrows } from "lucide-react";
+import ToolPageHeader from "@/components/tool-page-header";
 import type { Listing } from "@/types/listing";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -64,7 +65,7 @@ function SpecRow({ label, values }: { label: string; values: (string | number | 
         <td
           key={i}
           className={`py-3 px-4 text-sm text-center ${
-            !allSame && v != null ? "font-semibold text-emerald-600" : ""
+            !allSame && v != null ? "font-semibold text-success" : ""
           }`}
         >
           {v ?? <span className="text-muted-foreground/50">—</span>}
@@ -156,13 +157,13 @@ export default function ComparePage() {
 
   return (
     <main className="min-h-screen bg-background">
+      <ToolPageHeader
+        eyebrow="Side by Side"
+        title="Compare Cars"
+        subtitle={`Add up to ${MAX_COMPARE} cars and see every spec side by side to make the right call.`}
+        icon={<GitCompareArrows className="h-6 w-6 text-accent" />}
+      />
       <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Compare Cars</h1>
-          <p className="text-muted-foreground mt-1">
-            Compare up to {MAX_COMPARE} cars side by side to make the right choice.
-          </p>
-        </div>
 
         {/* Car selector columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
@@ -293,3 +294,4 @@ export default function ComparePage() {
     </main>
   );
 }
+

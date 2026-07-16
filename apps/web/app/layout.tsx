@@ -30,6 +30,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Prevent dark-mode flash before JS hydrates */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('gaadiiq-theme');if(t==='dark'||(t==null&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');document.documentElement.setAttribute('data-theme','dark');}}catch(e){}` }} />
+      </head>
       <body className="min-h-full flex flex-col">
           <AuthSessionProvider>
             <Navbar />

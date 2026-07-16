@@ -108,9 +108,9 @@ export default async function ListingsPage({ searchParams }: PageProps) {
   ].filter(Boolean).length;
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-surface-alt">
       {/* Page header */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <h1 className="text-2xl font-bold">
             {sp.listing_type === "new" ? "New Cars" :

@@ -141,7 +141,7 @@ export default async function AnalyticsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${l.is_active ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${l.is_active ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
                         {l.is_active ? "Active" : "Inactive"}
                       </span>
                     </td>

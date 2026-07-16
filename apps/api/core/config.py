@@ -21,10 +21,13 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379"
 
-    # Auth
-    secret_key: str = _INSECURE_SECRET
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60  # 1h (was 24h)
+    # Auth — RS256 asymmetric JWT
+    # In production set JWT_PRIVATE_KEY / JWT_PUBLIC_KEY to PEM strings (newlines as \n).
+    # In development a self-signed RSA keypair is generated on first startup if not set.
+    jwt_private_key: str = ""
+    jwt_public_key: str = ""
+    algorithm: str = "RS256"
+    access_token_expire_minutes: int = 60  # 1h
     refresh_token_expire_days: int = 30
 
     # CORS
@@ -36,6 +39,9 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket_name: str = "gaadiiq-media"
     r2_public_url: str = "https://media.gaadiiq.com"
+
+    # OpenSearch — leave blank to use Postgres full-text search
+    opensearch_url: str = ""
 
     # AI / Ollama
     ollama_base_url: str = "http://localhost:11434"
@@ -67,8 +73,8 @@ class Settings(BaseSettings):
         if not self.is_production:
             return
         errors: list[str] = []
-        if self.secret_key == _INSECURE_SECRET:
-            errors.append("SECRET_KEY must be set to a strong random value in production")
+        if not self.jwt_private_key or not self.jwt_public_key:
+            errors.append("JWT_PRIVATE_KEY and JWT_PUBLIC_KEY must be set in production (RS256 PEM strings)")
         if not self.RAZORPAY_KEY_ID or not self.RAZORPAY_KEY_SECRET:
             errors.append("RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in production")
         if not self.SMTP_HOST:

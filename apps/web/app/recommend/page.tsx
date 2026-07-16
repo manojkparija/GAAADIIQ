@@ -3,8 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Car, ChevronRight, RotateCcw, Sparkles } from "lucide-react";
+import {
+  Car, CarFront, Truck, Users, ChevronRight, RotateCcw, Sparkles,
+  Fuel, Droplets, Zap, Leaf, ArrowRightLeft,
+} from "lucide-react";
 import Link from "next/link";
+import ToolPageHeader from "@/components/tool-page-header";
 import type { Listing } from "@/types/listing";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -19,34 +23,34 @@ interface Answers {
 }
 
 const BUDGET_OPTIONS = [
-  { label: "Under ₹5 L", value: "under_5l", max: 500000 },
-  { label: "₹5 L – ₹10 L", value: "5l_10l", max: 1000000, min: 500000 },
-  { label: "₹10 L – ₹20 L", value: "10l_20l", max: 2000000, min: 1000000 },
-  { label: "₹20 L – ₹50 L", value: "20l_50l", max: 5000000, min: 2000000 },
-  { label: "Above ₹50 L", value: "above_50l", min: 5000000 },
+  { label: "Under ₹5 L",      value: "under_5l",  max: 500000 },
+  { label: "₹5 L – ₹10 L",   value: "5l_10l",    max: 1000000, min: 500000 },
+  { label: "₹10 L – ₹20 L",  value: "10l_20l",   max: 2000000, min: 1000000 },
+  { label: "₹20 L – ₹50 L",  value: "20l_50l",   max: 5000000, min: 2000000 },
+  { label: "Above ₹50 L",     value: "above_50l", min: 5000000 },
 ];
 
 const FUEL_OPTIONS = [
-  { label: "Petrol", value: "petrol", icon: "⛽" },
-  { label: "Diesel", value: "diesel", icon: "🛢️" },
-  { label: "Electric", value: "electric", icon: "⚡" },
-  { label: "Hybrid", value: "hybrid", icon: "🌿" },
-  { label: "Any", value: "any", icon: "🔄" },
+  { label: "Petrol",   value: "petrol",   Icon: Fuel },
+  { label: "Diesel",   value: "diesel",   Icon: Droplets },
+  { label: "Electric", value: "electric", Icon: Zap },
+  { label: "Hybrid",   value: "hybrid",   Icon: Leaf },
+  { label: "Any",      value: "any",      Icon: ArrowRightLeft },
 ];
 
 const BODY_OPTIONS = [
-  { label: "Hatchback", value: "hatchback", icon: "🚗" },
-  { label: "Sedan", value: "sedan", icon: "🚙" },
-  { label: "SUV", value: "suv", icon: "🚐" },
-  { label: "MPV", value: "mpv", icon: "🚌" },
-  { label: "Any", value: "any", icon: "🔄" },
+  { label: "Hatchback", value: "hatchback", Icon: Car },
+  { label: "Sedan",     value: "sedan",     Icon: CarFront },
+  { label: "SUV",       value: "suv",       Icon: Truck },
+  { label: "MPV",       value: "mpv",       Icon: Users },
+  { label: "Any",       value: "any",       Icon: ArrowRightLeft },
 ];
 
 const USAGE_OPTIONS = [
-  { label: "Daily city commute", value: "city" },
-  { label: "Long highway trips", value: "highway" },
-  { label: "Family car", value: "family" },
-  { label: "First car / budget", value: "first" },
+  { label: "Daily city commute",   value: "city" },
+  { label: "Long highway trips",   value: "highway" },
+  { label: "Family car",           value: "family" },
+  { label: "First car / budget",   value: "first" },
   { label: "Luxury / performance", value: "luxury" },
 ];
 
@@ -63,7 +67,6 @@ async function fetchRecommendations(answers: Answers): Promise<Listing[]> {
   if (budget?.min) params.set("min_price", String(budget.min));
   if (answers.fuel && answers.fuel !== "any") params.set("fuel_type", answers.fuel);
   if (answers.body && answers.body !== "any") params.set("body_type", answers.body);
-
   try {
     const res = await fetch(`${API_URL}/listings?${params.toString()}`, { cache: "no-store" });
     if (!res.ok) return [];
@@ -76,22 +79,22 @@ async function fetchRecommendations(answers: Answers): Promise<Listing[]> {
 
 interface OptionButtonProps {
   label: string;
-  icon?: string;
+  Icon?: React.ComponentType<{ className?: string }>;
   selected: boolean;
   onClick: () => void;
 }
 
-function OptionButton({ label, icon, selected, onClick }: OptionButtonProps) {
+function OptionButton({ label, Icon, selected, onClick }: OptionButtonProps) {
   return (
     <button
       onClick={onClick}
       className={`flex items-center gap-3 px-5 py-4 rounded-xl border-2 text-left transition-all w-full
         ${selected
-          ? "border-primary bg-primary/5 text-primary font-medium"
-          : "border-border hover:border-primary/50 hover:bg-muted/40"
+          ? "border-accent bg-accent/5 text-accent font-medium"
+          : "border-border hover:border-accent/50 hover:bg-muted/40"
         }`}
     >
-      {icon && <span className="text-xl">{icon}</span>}
+      {Icon && <Icon className="h-5 w-5 shrink-0" />}
       <span>{label}</span>
       {selected && <ChevronRight className="ml-auto h-4 w-4" />}
     </button>
@@ -106,7 +109,7 @@ export default function RecommendPage() {
 
   const steps: Step[] = ["budget", "fuel", "body", "usage", "results"];
   const currentIndex = steps.indexOf(step);
-  const progress = ((currentIndex) / (steps.length - 1)) * 100;
+  const progress = (currentIndex / (steps.length - 1)) * 100;
 
   async function goToResults(finalAnswers: Answers) {
     setLoading(true);
@@ -123,19 +126,15 @@ export default function RecommendPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="max-w-2xl mx-auto px-4 py-10">
-        <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-4">
-            <Sparkles className="h-4 w-4" />
-            AI Car Advisor
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Find Your Perfect Car</h1>
-          <p className="text-muted-foreground mt-2">
-            Answer a few questions and we&apos;ll recommend the best cars for you.
-          </p>
-        </div>
+    <main className="min-h-screen bg-background">
+      <ToolPageHeader
+        eyebrow="Personalised Picks"
+        title="AI Car Advisor"
+        subtitle="Answer four quick questions and we'll surface the best matches for your needs and budget."
+        icon={<Sparkles className="h-6 w-6 text-accent" />}
+      />
 
+      <div className="max-w-2xl mx-auto px-4 py-10">
         {step !== "results" && (
           <div className="mb-8">
             <div className="flex justify-between text-xs text-muted-foreground mb-2">
@@ -144,14 +143,14 @@ export default function RecommendPage() {
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary rounded-full transition-all duration-500"
+                className="h-full bg-accent rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
           </div>
         )}
 
-        <div className="bg-card rounded-2xl border shadow-sm p-6">
+        <div className="bg-card rounded-2xl border shadow-sm p-6 anim-fade-up">
           {step === "budget" && (
             <div>
               <h2 className="text-xl font-semibold mb-1">What&apos;s your budget?</h2>
@@ -162,11 +161,7 @@ export default function RecommendPage() {
                     key={opt.value}
                     label={opt.label}
                     selected={answers.budget === opt.value}
-                    onClick={() => {
-                      const next = { ...answers, budget: opt.value };
-                      setAnswers(next);
-                      setTimeout(() => setStep("fuel"), 200);
-                    }}
+                    onClick={() => { const next = { ...answers, budget: opt.value }; setAnswers(next); setTimeout(() => setStep("fuel"), 200); }}
                   />
                 ))}
               </div>
@@ -176,19 +171,15 @@ export default function RecommendPage() {
           {step === "fuel" && (
             <div>
               <h2 className="text-xl font-semibold mb-1">Preferred fuel type?</h2>
-              <p className="text-muted-foreground text-sm mb-6">Electric saves running costs; diesel suits highway.</p>
+              <p className="text-muted-foreground text-sm mb-6">Electric saves running costs; diesel suits highway driving.</p>
               <div className="flex flex-col gap-3">
                 {FUEL_OPTIONS.map((opt) => (
                   <OptionButton
                     key={opt.value}
                     label={opt.label}
-                    icon={opt.icon}
+                    Icon={opt.Icon}
                     selected={answers.fuel === opt.value}
-                    onClick={() => {
-                      const next = { ...answers, fuel: opt.value };
-                      setAnswers(next);
-                      setTimeout(() => setStep("body"), 200);
-                    }}
+                    onClick={() => { const next = { ...answers, fuel: opt.value }; setAnswers(next); setTimeout(() => setStep("body"), 200); }}
                   />
                 ))}
               </div>
@@ -204,13 +195,9 @@ export default function RecommendPage() {
                   <OptionButton
                     key={opt.value}
                     label={opt.label}
-                    icon={opt.icon}
+                    Icon={opt.Icon}
                     selected={answers.body === opt.value}
-                    onClick={() => {
-                      const next = { ...answers, body: opt.value };
-                      setAnswers(next);
-                      setTimeout(() => setStep("usage"), 200);
-                    }}
+                    onClick={() => { const next = { ...answers, body: opt.value }; setAnswers(next); setTimeout(() => setStep("usage"), 200); }}
                   />
                 ))}
               </div>
@@ -227,11 +214,7 @@ export default function RecommendPage() {
                     key={opt.value}
                     label={opt.label}
                     selected={answers.usage === opt.value}
-                    onClick={() => {
-                      const next = { ...answers, usage: opt.value };
-                      setAnswers(next);
-                      goToResults(next);
-                    }}
+                    onClick={() => { const next = { ...answers, usage: opt.value }; setAnswers(next); goToResults(next); }}
                   />
                 ))}
               </div>

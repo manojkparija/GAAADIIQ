@@ -46,7 +46,7 @@ function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">
+        <div className="bg-success/10 border border-success/30 text-success text-sm px-4 py-3 rounded-lg">
           {success}
         </div>
       )}
@@ -109,12 +109,12 @@ import { Suspense } from "react";
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
+    <main className="min-h-screen bg-surface-alt flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-lg border p-8">
+        <div className="bg-card rounded-2xl shadow-lg border p-8">
           <div className="text-center mb-8">
-            <Link href="/" className="inline-block font-bold text-2xl text-primary mb-4">
-              <span className="text-amber-500">⬡</span> GAADIIQ
+            <Link href="/" className="inline-block font-bold text-2xl text-primary mb-4 tracking-tight">
+              GAADIIQ
             </Link>
             <h1 className="text-2xl font-bold">Welcome back</h1>
             <p className="text-sm text-muted-foreground mt-1">

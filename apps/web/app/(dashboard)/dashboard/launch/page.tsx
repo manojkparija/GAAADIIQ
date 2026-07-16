@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 
 interface CheckItem {
   label: string;
@@ -35,15 +34,15 @@ const CHECKLIST: CheckItem[] = [
 const CATEGORIES = Array.from(new Set(CHECKLIST.map((c) => c.category)));
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Database: "bg-blue-100 text-blue-700",
-  Storage: "bg-violet-100 text-violet-700",
-  Auth: "bg-green-100 text-green-700",
-  API: "bg-orange-100 text-orange-700",
-  Payments: "bg-yellow-100 text-yellow-700",
-  Email: "bg-pink-100 text-pink-700",
-  AI: "bg-cyan-100 text-cyan-700",
-  Security: "bg-red-100 text-red-700",
-  SEO: "bg-emerald-100 text-emerald-700",
+  Database: "bg-chart-2/15 text-chart-2",
+  Storage:  "bg-muted text-muted-foreground",
+  Auth:     "bg-success/15 text-success",
+  API:      "bg-chart-5/15 text-chart-5",
+  Payments: "bg-accent/15 text-accent-foreground",
+  Email:    "bg-chart-3/15 text-chart-3",
+  AI:       "bg-chart-4/15 text-chart-4",
+  Security: "bg-destructive/15 text-destructive",
+  SEO:      "bg-success/15 text-success",
 };
 
 export default function LaunchChecklistPage() {

@@ -1,6 +1,5 @@
 import logging
 import time
-import warnings
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,12 +13,11 @@ from core.limiter import limiter
 # Fail fast in production if secrets are missing/default
 settings.validate_production_config()
 
-if settings.secret_key == "change-me-in-production":
-    warnings.warn(
-        "SECRET_KEY is set to the insecure default. Set the SECRET_KEY environment variable before deploying.",
-        stacklevel=1,
+if not settings.jwt_private_key and not settings.is_production:
+    logging.getLogger("gaadiiq").warning(
+        "JWT_PRIVATE_KEY not set — using ephemeral RSA keypair (tokens reset on restart). "
+        "Set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY before deploying."
     )
-    logging.getLogger("gaadiiq").warning("SECRET_KEY is using the insecure default value.")
 
 from routers import (  # noqa: E402
     admin,

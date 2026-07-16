@@ -16,7 +16,7 @@ function PasswordStrength({ password }: { password: string }) {
   return (
     <div className="flex gap-3 mt-1">
       {checks.map((c) => (
-        <span key={c.label} className={`text-xs flex items-center gap-1 ${c.ok ? "text-green-600" : "text-muted-foreground"}`}>
+        <span key={c.label} className={`text-xs flex items-center gap-1 ${c.ok ? "text-success" : "text-muted-foreground"}`}>
           {c.ok ? "✓" : "○"} {c.label}
         </span>
       ))}
@@ -87,14 +87,12 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
+    <main className="min-h-screen bg-surface-alt flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-lg border p-8">
-          {/* Header */}
+        <div className="bg-card rounded-2xl shadow-lg border p-8">
           <div className="text-center mb-8">
-            <Link href="/" className="inline-block font-bold text-2xl text-primary mb-4">
-              <span className="text-amber-500">⬡</span> GAADIIQ
+            <Link href="/" className="inline-block font-bold text-2xl text-primary mb-4 tracking-tight">
+              GAADIIQ
             </Link>
             <h1 className="text-2xl font-bold">Create your account</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -161,7 +159,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className={buttonVariants({ size: "lg" }) + " w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"}
+              className={buttonVariants({ size: "lg" }) + " w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"}
             >
               {loading ? (
                 <span className="flex items-center gap-2">

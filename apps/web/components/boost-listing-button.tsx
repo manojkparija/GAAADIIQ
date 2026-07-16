@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { Star, CheckCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 
 const DURATION_OPTIONS = [
-  { days: 7, label: "7 days", price: "₹499" },
+  { days: 7,  label: "7 days",  price: "₹499" },
   { days: 30, label: "30 days", price: "₹1,499" },
   { days: 90, label: "90 days", price: "₹3,499" },
 ];
@@ -62,18 +63,18 @@ export default function BoostListingButton({ listingId, isFeatured, onBoostSucce
 
   if (isFeatured) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full">
-        ⭐ Featured
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-accent bg-accent/10 border border-accent/30 px-2 py-1 rounded-full">
+        <Star className="h-3 w-3 fill-current" />
+        Featured
       </span>
     );
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>
-        <Button variant="outline" size="sm" className="text-amber-600 border-amber-300 hover:bg-amber-50">
-          ⭐ Boost
-        </Button>
+      <DialogTrigger className="inline-flex items-center gap-1.5 text-sm font-medium border border-accent/40 text-accent hover:bg-accent/10 rounded-md px-3 h-8 transition-colors">
+        <Star className="h-3.5 w-3.5" />
+        Boost
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -85,7 +86,7 @@ export default function BoostListingButton({ listingId, isFeatured, onBoostSucce
 
         {success ? (
           <div className="py-6 text-center">
-            <div className="text-4xl mb-2">🎉</div>
+            <CheckCircle className="h-12 w-12 text-success mx-auto mb-3" />
             <p className="font-medium">Listing boosted successfully!</p>
             <p className="text-sm text-muted-foreground mt-1">Your listing is now featured.</p>
           </div>
@@ -98,8 +99,8 @@ export default function BoostListingButton({ listingId, isFeatured, onBoostSucce
                   onClick={() => setSelected(opt.days)}
                   className={`flex justify-between items-center p-3 rounded-lg border text-left transition-colors ${
                     selected === opt.days
-                      ? "border-amber-400 bg-amber-50 text-amber-700"
-                      : "border-border hover:border-amber-200"
+                      ? "border-accent bg-accent/10 text-accent-foreground font-medium"
+                      : "border-border hover:border-accent/30"
                   }`}
                 >
                   <span className="font-medium">{opt.label}</span>
@@ -117,7 +118,11 @@ export default function BoostListingButton({ listingId, isFeatured, onBoostSucce
           ) : (
             <>
               <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleBoost} disabled={loading} className="bg-amber-500 hover:bg-amber-600 text-white">
+              <Button
+                onClick={handleBoost}
+                disabled={loading}
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+              >
                 {loading ? "Processing…" : "Boost now"}
               </Button>
             </>

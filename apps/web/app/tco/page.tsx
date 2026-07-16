@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, TrendingDown, Fuel, Shield, Wrench, IndianRupee } from "lucide-react";
+import ToolPageHeader from "@/components/tool-page-header";
 
 interface TCOInputs {
   purchasePrice: number;
@@ -151,17 +152,13 @@ export default function TCOPage() {
 
   return (
     <main className="min-h-screen bg-background">
+      <ToolPageHeader
+        eyebrow="Cost Analysis"
+        title="Total Cost of Ownership"
+        subtitle="Beyond the sticker price — understand the true multi-year cost of owning any car."
+        icon={<Calculator className="h-6 w-6 text-accent" />}
+      />
       <div className="max-w-5xl mx-auto px-4 py-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
-            <Calculator className="h-4 w-4" />
-            TCO Calculator
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Total Cost of Ownership</h1>
-          <p className="text-muted-foreground mt-1">
-            Beyond the sticker price — understand the true 5-year cost of owning a car.
-          </p>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Inputs */}
@@ -186,8 +183,8 @@ export default function TCOPage() {
                     onClick={() => setFuelType(ft)}
                     className={`px-3 py-1.5 rounded-lg text-sm border transition-all
                       ${inputs.fuelType === ft
-                        ? "border-primary bg-primary/10 text-primary font-medium"
-                        : "border-border hover:border-primary/40"}`}
+                        ? "border-accent bg-accent/10 text-accent font-medium"
+                        : "border-border hover:border-accent/40"}`}
                   >
                     {FUEL_DEFAULTS[ft].label.split(" ")[0]}
                   </button>
@@ -269,7 +266,7 @@ export default function TCOPage() {
 
             {/* Resale value */}
             <div className="bg-card rounded-xl border p-5 flex items-center gap-4">
-              <TrendingDown className="h-8 w-8 text-amber-500 shrink-0" />
+              <TrendingDown className="h-8 w-8 text-accent shrink-0" />
               <div>
                 <p className="text-sm text-muted-foreground">Estimated Resale Value after {inputs.yearsOwned} years</p>
                 <p className="text-2xl font-bold">{formatINR(result.resaleValue)}</p>
@@ -286,28 +283,28 @@ export default function TCOPage() {
                 label="Depreciation"
                 value={result.depreciation}
                 total={result.total}
-                color="bg-rose-500"
+                color="bg-chart-5"
                 icon={<TrendingDown className="h-4 w-4" />}
               />
               <CostBar
                 label="Fuel / Energy"
                 value={result.fuelCost}
                 total={result.total}
-                color="bg-amber-500"
+                color="bg-chart-1"
                 icon={<Fuel className="h-4 w-4" />}
               />
               <CostBar
                 label="Insurance"
                 value={result.insurance}
                 total={result.total}
-                color="bg-blue-500"
+                color="bg-chart-2"
                 icon={<Shield className="h-4 w-4" />}
               />
               <CostBar
                 label="Maintenance"
                 value={result.maintenance}
                 total={result.total}
-                color="bg-emerald-500"
+                color="bg-chart-4"
                 icon={<Wrench className="h-4 w-4" />}
               />
 

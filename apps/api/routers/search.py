@@ -1,11 +1,14 @@
 """
 Full-text search and autocomplete for GAADIIQ.
 
-Primary path: PostgreSQL tsvector / tsquery with ts_rank ordering.
-Fallback: ILIKE-based search (used automatically in tests via SQLite).
+Search priority:
+  1. OpenSearch (when OPENSEARCH_URL is configured and reachable)
+  2. PostgreSQL tsvector / tsquery with ts_rank ordering
+  3. ILIKE-based search (SQLite — used in tests)
 """
 import re
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import String, cast, func, or_, select
@@ -17,6 +20,7 @@ from db.session import get_db
 from models.car import Car
 from models.listing import Listing
 from schemas.listing import ListingListOut, ListingOut
+from services.search_index import search_index
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -47,6 +51,28 @@ async def full_text_search(
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
+    # ── OpenSearch primary path ────────────────────────────────────────────
+    os_ids = await search_index.search(q, page=page, page_size=page_size)
+    if os_ids is not None:
+        # Fetch the matched listings by ID in the ranked order returned by OS
+        if not os_ids:
+            return ListingListOut(items=[], total=0, page=page, page_size=page_size)
+        id_list = [UUID(i) for i in os_ids]
+        result = await db.execute(
+            select(Listing)
+            .options(*_LOAD)
+            .where(Listing.id.in_(id_list), Listing.is_active == True)  # noqa: E712
+        )
+        rows = {str(lst.id): lst for lst in result.scalars().all()}
+        items = [rows[i] for i in os_ids if i in rows]
+        return ListingListOut(
+            items=[ListingOut.model_validate(lst) for lst in items],
+            total=len(items),
+            page=page,
+            page_size=page_size,
+        )
+
+    # ── Postgres / SQLite fallback ─────────────────────────────────────────
     dialect = await _get_dialect(db)
     offset = (page - 1) * page_size
 

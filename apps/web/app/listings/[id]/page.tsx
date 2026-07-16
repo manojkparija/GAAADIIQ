@@ -115,8 +115,8 @@ export default async function ListingDetailPage({ params }: PageProps) {
               {listing.listing_type === "new" ? "New" : "Used"}
             </Badge>
             {listing.is_featured && (
-              <Badge className="absolute top-3 right-3 bg-amber-500 hover:bg-amber-500">
-                ⭐ Featured
+              <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground hover:bg-accent/90">
+                ★ Featured
               </Badge>
             )}
           </div>
@@ -165,7 +165,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
             <div className="flex items-baseline gap-3 mt-4">
               <span className="text-3xl font-bold">{formatPrice(listing.price)}</span>
               {listing.negotiable && (
-                <span className="text-sm text-green-600 font-medium">Negotiable</span>
+                <span className="text-sm text-success font-medium">Negotiable</span>
               )}
             </div>
 
