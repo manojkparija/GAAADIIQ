@@ -5,7 +5,7 @@ export const environment = {
     key: 'sb_publishable_K-cu3EbiH3uDIsonlonRmw_tqsKfp_K'
   },
   cloudinary: {
-    cloudName: 'YOUR_CLOUD_NAME',
+    cloudName: 'zrkacctu',
     uploadPreset: 'gaadiiq_cars'
   }
 };
