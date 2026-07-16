@@ -48,7 +48,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 export default function LaunchChecklistPage() {
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold mb-2">Production Launch Checklist</h1>
+      <h1 className="text-3xl font-display font-semibold mb-2">Production Launch Checklist</h1>
       <p className="text-muted-foreground mb-8">
         Complete these steps before going live. Each item maps to an environment variable or infrastructure decision.
       </p>

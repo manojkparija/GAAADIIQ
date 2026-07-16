@@ -42,11 +42,14 @@ export default function ListingsFilter() {
 
   return (
     <aside className="w-full md:w-60 shrink-0">
-      <div className="bg-white rounded-2xl border p-5 flex flex-col gap-4 sticky top-24">
+      <div className="bg-card panel-royal rounded-sm p-5 flex flex-col gap-4 sticky top-28">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold text-sm">Filters</h2>
+          <div>
+            <h2 className="font-display font-semibold text-lg tracking-wide">Filters</h2>
+            <div className="gold-rule mt-2" />
+          </div>
           {hasFilters && (
-            <button onClick={clear} className="text-xs text-primary font-semibold hover:underline">
+            <button onClick={clear} className="text-xs text-accent-readable font-semibold hover:underline">
               Clear all
             </button>
           )}

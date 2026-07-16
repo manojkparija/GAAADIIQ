@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,13 +44,13 @@ function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {success && (
-        <div className="bg-success/10 border border-success/30 text-success text-sm px-4 py-3 rounded-lg">
+        <div className="bg-success/10 border border-success/30 text-success text-sm px-4 py-3 rounded-sm">
           {success}
         </div>
       )}
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-sm font-semibold">
+        <label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Email Address
         </label>
         <input
@@ -63,16 +61,16 @@ function LoginForm() {
           placeholder="rahul@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          className="input-royal"
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <label htmlFor="password" className="text-sm font-semibold">
+          <label htmlFor="password" className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Password
           </label>
-          <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/forgot-password" className="text-xs text-accent-readable hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -84,12 +82,12 @@ function LoginForm() {
           placeholder="Your password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          className="input-royal"
         />
       </div>
 
       {error && (
-        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-lg">
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-sm">
           {error}
         </div>
       )}
@@ -97,11 +95,11 @@ function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className={buttonVariants({ size: "lg" }) + " w-full disabled:opacity-60 disabled:cursor-not-allowed"}
+        className="inline-flex h-10 w-full items-center justify-center rounded-sm bg-accent px-4 text-sm font-semibold tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? (
           <span className="flex items-center gap-2">
-            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <span className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />
             Signing in…
           </span>
         ) : "Sign In"}
@@ -110,33 +108,50 @@ function LoginForm() {
   );
 }
 
-import { Suspense } from "react";
-
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-surface-alt flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="bg-card rounded-2xl shadow-lg border p-8">
-          <div className="text-center mb-8">
-            <Link href="/" className="inline-block font-display font-semibold text-2xl text-primary mb-4 tracking-wide">
-              <span className="text-accent">✦</span> GAADIIQ
-            </Link>
-            <h1 className="text-2xl font-display font-semibold">Welcome back</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Sign in to your GAADIIQ account
-            </p>
-          </div>
-          <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
-            <LoginForm />
-          </Suspense>
+    <main className="min-h-[calc(100vh-6rem)] flex">
+      {/* Navy brand panel */}
+      <aside className="hidden md:flex w-[42%] hero-navy relative items-end p-12">
+        <div>
+          <p className="font-display text-5xl font-semibold tracking-[0.08em] text-primary-foreground mb-4">
+            <span className="text-accent">✦</span> GAADIIQ
+          </p>
+          <div className="gold-rule-lg mb-5" />
+          <p className="text-primary-foreground/65 text-sm font-light leading-relaxed max-w-xs">
+            Welcome back to India&apos;s private automotive gallery.
+          </p>
         </div>
+      </aside>
 
-        <p className="text-sm text-muted-foreground text-center mt-6">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-primary font-semibold hover:underline">
-            Register free
-          </Link>
-        </p>
+      <div className="flex-1 surface-royal flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="bg-card panel-royal rounded-sm p-8 md:p-10">
+            <div className="mb-8 md:hidden text-center">
+              <Link href="/" className="inline-block font-display font-semibold text-2xl tracking-[0.08em] text-foreground">
+                <span className="text-accent">✦</span> GAADIIQ
+              </Link>
+            </div>
+            <div className="mb-8">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-accent-readable font-medium mb-2">Account</p>
+              <h1 className="text-3xl font-display font-semibold text-foreground">Welcome back</h1>
+              <div className="gold-rule mt-3 mb-3" />
+              <p className="text-sm text-muted-foreground font-light">
+                Sign in to your GAADIIQ account
+              </p>
+            </div>
+            <Suspense fallback={<div className="h-48 animate-pulse rounded-sm bg-muted" />}>
+              <LoginForm />
+            </Suspense>
+          </div>
+
+          <p className="text-sm text-muted-foreground text-center mt-6 font-light">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="text-accent-readable font-semibold hover:underline">
+              Register free
+            </Link>
+          </p>
+        </div>
       </div>
     </main>
   );

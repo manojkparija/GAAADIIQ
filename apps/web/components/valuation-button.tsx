@@ -125,7 +125,7 @@ export default function ValuationButton({
 
       {result.ai_valuation ? (
         <div className="flex flex-col gap-2">
-          <p className="text-2xl font-bold text-primary">{formatPrice(result.ai_valuation)}</p>
+          <p className="text-3xl font-display font-semibold text-primary">{formatPrice(result.ai_valuation)}</p>
 
           <div className="flex items-center gap-2 flex-wrap">
             {result.ai_method && <MethodBadge method={result.ai_method} />}

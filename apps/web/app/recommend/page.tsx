@@ -173,7 +173,7 @@ export default function RecommendPage() {
           </div>
         )}
 
-        <div className="bg-card rounded-2xl border shadow-sm p-6 anim-fade-up">
+        <div className="bg-card rounded-sm border panel-royal p-6 anim-fade-up">
           {step === "budget" && (
             <div>
               <h2 className="text-xl font-semibold mb-1">What&apos;s your budget?</h2>
@@ -295,7 +295,7 @@ export default function RecommendPage() {
                         )}
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-bold text-primary">{formatPrice(listing.price)}</p>
+                        <p className="font-display font-semibold text-primary">{formatPrice(listing.price)}</p>
                         {listing.km_driven != null && (
                           <p className="text-xs text-muted-foreground">{listing.km_driven.toLocaleString("en-IN")} km</p>
                         )}

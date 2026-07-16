@@ -190,7 +190,7 @@ export default function ComparePage() {
                       <Badge variant="outline">{slot.listing.car?.fuel_type}</Badge>
                       <Badge variant="outline">{slot.listing.listing_type}</Badge>
                     </div>
-                    <p className="text-lg font-bold text-primary">
+                    <p className="text-lg font-display font-semibold text-primary">
                       {formatPrice(slot.listing.price)}
                     </p>
                   </div>

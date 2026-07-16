@@ -140,25 +140,27 @@ function ResetForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <main className="min-h-screen bg-surface-alt flex items-center justify-center px-4 py-12">
+    <main className="min-h-[calc(100vh-6rem)] surface-royal flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-card rounded-2xl shadow-lg border p-8">
-          <div className="text-center mb-8">
-            <Link href="/" className="inline-block font-display font-semibold text-2xl text-primary mb-4 tracking-wide">
+        <div className="bg-card panel-royal rounded-sm p-8 md:p-10">
+          <div className="mb-8">
+            <Link href="/" className="inline-block font-display font-semibold text-2xl tracking-[0.08em] text-foreground mb-5">
               <span className="text-accent">✦</span> GAADIIQ
             </Link>
-            <h1 className="text-2xl font-display font-semibold">Set new password</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-accent-readable font-medium mb-2">Security</p>
+            <h1 className="text-3xl font-display font-semibold">Set new password</h1>
+            <div className="gold-rule mt-3 mb-3" />
+            <p className="text-sm text-muted-foreground font-light">
               Choose a strong password for your account.
             </p>
           </div>
-          <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-sm bg-muted" />}>
             <ResetForm />
           </Suspense>
         </div>
 
-        <p className="text-sm text-muted-foreground text-center mt-6">
-          <Link href="/login" className="text-primary font-semibold hover:underline">
+        <p className="text-sm text-muted-foreground text-center mt-6 font-light">
+          <Link href="/login" className="text-accent-readable font-semibold hover:underline">
             Back to Sign In
           </Link>
         </p>
