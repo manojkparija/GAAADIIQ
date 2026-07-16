@@ -7,6 +7,7 @@ import { TestDriveService, TestDriveRequest } from '../../services/test-drive.se
 import { AuthService } from '../../services/auth.service';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { IconComponent } from '../../components/icon/icon.component';
 
 interface CarEnquiry {
   id: string; car_id: number; buyer_name: string; buyer_phone: string;
@@ -23,7 +24,7 @@ interface LeadRow {
 @Component({
   selector: 'app-dealer-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, IconComponent],
   templateUrl: './dealer-dashboard.component.html',
   styleUrl: './dealer-dashboard.component.scss',
 })

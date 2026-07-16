@@ -14,7 +14,7 @@
 
     <!-- Filters -->
     <div class="ap-filters glass-card">
-      <input class="search-input" type="text" placeholder="🔍 Search make, model, variant…"
+      <input class="search-input" type="text" placeholder="Search make, model, variant…"
         [ngModel]="searchQ()" (ngModelChange)="searchQ.set($event)" />
       <select class="make-select" [ngModel]="filterMake()" (ngModelChange)="filterMake.set($event)">
         <option *ngFor="let m of makes()">{{ m }}</option>
