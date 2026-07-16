@@ -147,6 +147,22 @@ export class AuthService {
     this.router.navigate(['/']);
   }
 
+  async loginWithGoogle(): Promise<void> {
+    const { error } = await this.sb.client.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async loginWithFacebook(): Promise<void> {
+    const { error } = await this.sb.client.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) throw new Error(error.message);
+  }
+
   async sendPasswordReset(email: string): Promise<void> {
     const { error } = await this.sb.client.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
