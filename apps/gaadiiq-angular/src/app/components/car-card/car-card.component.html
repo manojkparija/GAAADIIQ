@@ -1,6 +1,6 @@
 <div class="car-card surface-card" [routerLink]="['/cars', car.id]">
   <div class="card-img">
-    <img [src]="car.image || 'assets/cars/placeholder.svg'" [alt]="car.make + ' ' + car.model" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'" [style.objectPosition]="car.image?.includes('swift/front') ? 'center 65%' : 'center center'">
+    <img [src]="optimisedImage(car.image)" [alt]="car.make + ' ' + car.model" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'" style="object-position:center center">
     <div class="card-overlay">
       <span class="badge" [class]="car.badgeType">{{ car.badge }}</span>
       <button class="like-btn" (click)="toggleLike($event)" [class.liked]="liked" aria-label="Save car">

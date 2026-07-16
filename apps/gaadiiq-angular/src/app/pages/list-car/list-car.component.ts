@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { MyListingsService } from '../../services/my-listings.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { CloudinaryService, CloudinaryResult } from '../../services/cloudinary.service';
 
 @Component({
   selector: 'app-list-car',
@@ -16,9 +17,12 @@ import { IconComponent } from '../../components/icon/icon.component';
 })
 export class ListCarComponent {
   step = signal(1);
-  totalSteps = 3;
+  totalSteps = 4;
   submitted = signal(false);
   loading = signal(false);
+
+  uploadedImages = signal<CloudinaryResult[]>([]);
+  uploadLoading = signal(false);
 
   makes = ['Maruti Suzuki','Hyundai','Tata','Mahindra','Honda','Toyota','Kia','MG Motor','Ford','Volkswagen','Skoda','Renault','Nissan','BMW','Mercedes-Benz','Audi','Other'];
   fuelTypes = ['Petrol','Diesel','CNG','Electric','Hybrid'];
@@ -33,7 +37,7 @@ export class ListCarComponent {
     bodyType: ''
   };
 
-  constructor(public auth: AuthService, private myListings: MyListingsService, private router: Router, private sb: SupabaseService) {
+  constructor(public auth: AuthService, private myListings: MyListingsService, private router: Router, private sb: SupabaseService, public cloudinary: CloudinaryService) {
     const user = auth.currentUser();
     if (user) {
       this.form.name = user.name;
@@ -50,9 +54,32 @@ export class ListCarComponent {
   nextStep() { if (this.step() < this.totalSteps) this.step.update(v => v + 1); }
   prevStep() { if (this.step() > 1) this.step.update(v => v - 1); }
 
+  async openUploadWidget() {
+    this.uploadLoading.set(true);
+    try {
+      const results = await this.cloudinary.openWidget({ maxFiles: 10, folder: 'gaadiiq/cars' });
+      this.uploadedImages.update(existing => [...existing, ...results]);
+    } finally {
+      this.uploadLoading.set(false);
+    }
+  }
+
+  removeImage(index: number) {
+    this.uploadedImages.update(imgs => imgs.filter((_, i) => i !== index));
+  }
+
+  imageThumb(publicId: string) {
+    return this.cloudinary.imageUrl(publicId, 300);
+  }
+
   async onSubmit() {
     this.loading.set(true);
     const user = this.auth.currentUser();
+
+    const primaryImage = this.uploadedImages()[0];
+    const imageUrl = primaryImage
+      ? this.cloudinary.imageUrl(primaryImage.public_id, 800)
+      : null;
 
     // Insert into Supabase so customers can see the listing
     const { data: inserted } = await this.sb.client
@@ -78,6 +105,7 @@ export class ListCarComponent {
         verified: false,
         rating: 0,
         reviews: 0,
+        image_url: imageUrl,
       })
       .select('id')
       .single();

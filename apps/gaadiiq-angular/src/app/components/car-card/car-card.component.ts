@@ -33,4 +33,15 @@ export class CarCardComponent {
     if (km >= 1000) return `${(km/1000).toFixed(0)}k km`;
     return `${km} km`;
   }
+
+  /** Serve Cloudinary images at card size with auto format+quality; fall back to raw URL */
+  optimisedImage(url: string): string {
+    if (!url) return 'assets/cars/placeholder.svg';
+    const match = url.match(/res\.cloudinary\.com\/([^/]+)\/image\/upload\/(?:[^/]+\/)?(.+)/);
+    if (match) {
+      const [, cloud, publicId] = match;
+      return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_600,h_380,c_fill/${publicId}`;
+    }
+    return url;
+  }
 }
