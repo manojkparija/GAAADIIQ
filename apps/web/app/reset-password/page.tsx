@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
@@ -34,9 +34,7 @@ function ResetForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (!token) setError("Missing reset token. Please use the link from your email.");
-  }, [token]);
+  const tokenError = !token ? "Missing reset token. Please use the link from your email." : "";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -117,9 +115,9 @@ function ResetForm() {
         />
       </div>
 
-      {error && (
+      {(tokenError || error) && (
         <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-lg">
-          {error}
+          {tokenError || error}
         </div>
       )}
 
