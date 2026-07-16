@@ -19,12 +19,13 @@ from langchain_core.prompts import PromptTemplate
 from core.config import settings
 from models.listing import Listing
 
-# Lazy import to avoid circular dependency with main.py
-def _metrics():
-    from main import AI_VALUATION_LATENCY, AI_FALLBACK_TOTAL  # noqa: PLC0415
-    return AI_VALUATION_LATENCY, AI_FALLBACK_TOTAL
-
 logger = logging.getLogger(__name__)
+
+
+def _metrics():
+    # Lazy import to avoid circular dependency with main.py
+    from main import AI_FALLBACK_TOTAL, AI_VALUATION_LATENCY  # noqa: PLC0415
+    return AI_VALUATION_LATENCY, AI_FALLBACK_TOTAL
 
 # Simple circuit breaker: track consecutive Ollama failures
 _cb_failures = 0

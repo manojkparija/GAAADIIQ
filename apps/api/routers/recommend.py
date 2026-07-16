@@ -6,7 +6,6 @@ and returns the top matches with a match_score (0-100) and human-readable reason
 No LLM is used here; results are grounded in actual DB listings.
 """
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field

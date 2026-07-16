@@ -49,14 +49,12 @@ _REQUEST_LATENCY = Histogram(
 )
 
 # AI-specific metrics (imported by services/valuation.py and routers/recommend.py)
-from prometheus_client import Counter as _Counter, Histogram as _Histogram  # noqa: E402
-
-AI_VALUATION_LATENCY = _Histogram(
+AI_VALUATION_LATENCY = Histogram(
     "ai_valuation_latency_seconds",
     "Time spent running valuation (Ollama or heuristic)",
     ["method"],
 )
-AI_FALLBACK_TOTAL = _Counter(
+AI_FALLBACK_TOTAL = Counter(
     "ai_fallback_total",
     "Number of times heuristic fallback was used instead of Ollama",
 )
