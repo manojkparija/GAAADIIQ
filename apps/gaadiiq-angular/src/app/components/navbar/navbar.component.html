@@ -58,6 +58,9 @@
                 <app-icon name="indian-rupee" [size]="14"></app-icon> Price Manager
               </a>
             </ng-container>
+            <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">
+              <app-icon name="list" [size]="14"></app-icon> My Listings
+            </a>
             <a routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">
               <app-icon name="car" [size]="14"></app-icon> Sell My Car
             </a>
@@ -106,6 +109,7 @@
           <a routerLink="/dealer-dashboard" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Dealer Dashboard</a>
           <a *ngIf="auth.isAdmin()" routerLink="/admin/pricing" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Price Manager</a>
         </ng-container>
+        <a routerLink="/my-listings" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">My Listings</a>
         <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Sell My Car</a>
         <div style="padding:0.5rem 0;font-size:0.85rem;color:var(--muted)">{{ auth.currentUser()?.name }}</div>
         <button class="btn-outline" style="width:100%" (click)="logout(); closeMenu()">Sign Out</button>
