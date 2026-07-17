@@ -6,7 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { MyListingsService } from '../../services/my-listings.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { IconComponent } from '../../components/icon/icon.component';
-import { CloudinaryService, CloudinaryResult } from '../../services/cloudinary.service';
+import { ImageUploadService, UploadedImage } from '../../services/image-upload.service';
 
 interface ValuationResult { low: number; mid: number; high: number; confidence: number; tips: string[]; marketTrend: string; }
 
@@ -26,7 +26,7 @@ export class ListCarComponent {
   valuation = signal<ValuationResult | null>(null);
   valuationLoading = signal(false);
 
-  uploadedImages = signal<CloudinaryResult[]>([]);
+  uploadedImages = signal<UploadedImage[]>([]);
   uploadLoading = signal(false);
 
   makes = ['Maruti Suzuki','Hyundai','Tata','Mahindra','Honda','Toyota','Kia','MG Motor','Ford','Volkswagen','Skoda','Renault','Nissan','BMW','Mercedes-Benz','Audi','Other'];
@@ -195,7 +195,7 @@ export class ListCarComponent {
     bodyType: '', condition: ''
   };
 
-  constructor(public auth: AuthService, private myListings: MyListingsService, private router: Router, private sb: SupabaseService, public cloudinary: CloudinaryService) {
+  constructor(public auth: AuthService, private myListings: MyListingsService, private router: Router, private sb: SupabaseService, private imageUpload: ImageUploadService) {
     const user = auth.currentUser();
     if (user) {
       this.form.name = user.name;
@@ -251,7 +251,7 @@ export class ListCarComponent {
     this.uploadLoading.set(true);
     this.uploadError.set('');
     try {
-      const results = await this.cloudinary.uploadFiles(files, 'gaadiiq/cars');
+      const results = await this.imageUpload.uploadFiles(files, 'cars');
       this.uploadedImages.update(existing => [...existing, ...results]);
     } catch (e: any) {
       this.uploadError.set('Upload failed. Please check your internet connection and try again.');
@@ -265,18 +265,13 @@ export class ListCarComponent {
     this.uploadedImages.update(imgs => imgs.filter((_, i) => i !== index));
   }
 
-  imageThumb(publicId: string) {
-    return this.cloudinary.imageUrl(publicId, 300);
-  }
+  imageThumb(url: string) { return url; }
 
   async onSubmit() {
     this.loading.set(true);
     const user = this.auth.currentUser();
 
-    const primaryImage = this.uploadedImages()[0];
-    const imageUrl = primaryImage
-      ? this.cloudinary.imageUrl(primaryImage.public_id, 800)
-      : null;
+    const imageUrl = this.uploadedImages()[0]?.url ?? null;
 
     // Insert into Supabase so customers can see the listing
     const { data: inserted } = await this.sb.client

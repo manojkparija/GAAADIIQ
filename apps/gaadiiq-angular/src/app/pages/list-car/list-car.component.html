@@ -163,7 +163,7 @@
         <!-- Preview grid -->
         <div class="upload-preview-grid" *ngIf="uploadedImages().length > 0">
           <div class="upload-preview-item" *ngFor="let img of uploadedImages(); let i = index">
-            <img [src]="imageThumb(img.public_id)" [alt]="'Car photo ' + (i+1)">
+            <img [src]="imageThumb(img.url)" [alt]="'Car photo ' + (i+1)">
             <div class="preview-badge" *ngIf="i === 0">Cover</div>
             <button class="preview-remove" (click)="removeImage(i)" title="Remove">✕</button>
           </div>
