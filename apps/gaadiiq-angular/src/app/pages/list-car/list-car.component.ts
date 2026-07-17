@@ -192,7 +192,7 @@ export class ListCarComponent {
     make: '', model: '', variant: '', year: new Date().getFullYear(), km: '',
     fuel: '', transmission: '', owners: '', color: '', city: '',
     price: '', description: '', name: '', phone: '', email: '',
-    bodyType: ''
+    bodyType: '', condition: ''
   };
 
   constructor(public auth: AuthService, private myListings: MyListingsService, private router: Router, private sb: SupabaseService, public cloudinary: CloudinaryService) {
@@ -210,7 +210,7 @@ export class ListCarComponent {
   }
 
   async nextStep() {
-    if (this.step() === 1 && !this.valuation()) {
+    if (this.step() === 1 && !this.valuation() && this.form.make && this.form.model && this.form.km && this.form.owners && this.form.condition) {
       await this.fetchValuation();
     }
     if (this.step() < this.totalSteps) this.step.update(v => v + 1);
@@ -224,9 +224,9 @@ export class ListCarComponent {
       const { data, error } = await this.sb.client.functions.invoke('ai-valuation', {
         body: {
           make: this.form.make, model: this.form.model, variant: this.form.variant,
-          year: this.form.year, km: this.form.km || '20000',
+          year: this.form.year, km: this.form.km,
           fuel: this.form.fuel, transmission: this.form.transmission,
-          owners: '1st Owner', condition: 'Good',
+          owners: this.form.owners, condition: this.form.condition,
         },
       });
       if (!error && data && !data.error) {
