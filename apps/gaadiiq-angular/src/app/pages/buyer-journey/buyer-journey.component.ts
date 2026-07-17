@@ -28,7 +28,7 @@ export class BuyerJourneyComponent {
     { id: 'finance',    icon: 'calculator', title: 'Finance',       desc: 'Check EMI options, get loan pre-approval, and understand your total cost of ownership.', link: '/emi-calculator', linkLabel: 'EMI Calculator' },
     { id: 'shortlist',  icon: 'star', title: 'Shortlist',     desc: 'Narrow down to 2–3 options based on your budget, fuel preference, and lifestyle needs.',  link: '/compare',      linkLabel: 'Compare Cars' },
     { id: 'testdrive',  icon: '🗝️', title: 'Test Drive',    desc: 'Book test drives for your shortlisted cars and validate real-world comfort and features.', link: '/test-drive',   linkLabel: 'Book Test Drive' },
-    { id: 'negotiate',  icon: '🤝', title: 'Negotiate',     desc: 'Use market price data and competing offers to negotiate the best deal with your dealer.',  link: '/dealer-dashboard', linkLabel: 'Find Dealers' },
+    { id: 'negotiate',  icon: '🤝', title: 'Negotiate',     desc: 'Use market price data and competing offers to negotiate the best deal with your dealer.',  link: '/used-cars', linkLabel: 'Browse Listings' },
     { id: 'purchase',   icon: '🎉', title: 'Purchase',      desc: 'Finalize paperwork, register your vehicle, and drive home your dream car!',               link: '/listings',     linkLabel: 'Start Journey' },
   ];
 
