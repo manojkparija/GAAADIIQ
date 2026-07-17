@@ -77,8 +77,8 @@
 .pf-item {
   background: var(--fill-soft); border: 1px solid var(--glass-border); border-radius: 12px;
   padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.2rem;
-  .pf-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-  .pf-val { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+  .pf-label { font-size: 0.65rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .pf-val { font-size: 0.82rem; font-weight: 700; color: var(--text); }
 }
 
 .done-actions {
