@@ -262,3 +262,20 @@
   font-size: 0.85rem;
   margin-bottom: 1.5rem;
 }
+
+.valuation-banner {
+  margin-top: 1.5rem; padding: 1.25rem 1.5rem;
+  border: 1px solid rgba(30,64,175,0.3); border-radius: 14px;
+  background: rgba(30,64,175,0.08);
+  .val-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+  .val-tag { font-size:0.8rem; font-weight:700; color:#2F6BFF; background:rgba(47,107,255,0.12); padding:0.25rem 0.6rem; border-radius:50px; }
+  .val-conf { font-size:0.8rem; color:var(--muted); }
+  .val-range { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; margin-bottom:0.75rem; text-align:center; }
+  .val-label { font-size:0.72rem; color:var(--muted); margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.05em; }
+  .val-num { font-size:1.1rem; font-weight:800; }
+  .val-col.mid .val-num { font-size:1.4rem; color:#2F6BFF; }
+  .val-num.low { color:var(--muted); }
+  .val-num.high { color:#43E97B; }
+  .val-trend { font-size:0.82rem; color:var(--muted); margin-bottom:0.5rem; }
+  .val-tip { font-size:0.82rem; color:var(--text-secondary); background:rgba(255,255,255,0.04); border-radius:8px; padding:0.5rem 0.75rem; }
+}

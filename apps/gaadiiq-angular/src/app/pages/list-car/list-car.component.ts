@@ -8,6 +8,8 @@ import { SupabaseService } from '../../services/supabase.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { CloudinaryService, CloudinaryResult } from '../../services/cloudinary.service';
 
+interface ValuationResult { low: number; mid: number; high: number; confidence: number; tips: string[]; marketTrend: string; }
+
 @Component({
   selector: 'app-list-car',
   standalone: true,
@@ -20,6 +22,9 @@ export class ListCarComponent {
   totalSteps = 4;
   submitted = signal(false);
   loading = signal(false);
+
+  valuation = signal<ValuationResult | null>(null);
+  valuationLoading = signal(false);
 
   uploadedImages = signal<CloudinaryResult[]>([]);
   uploadLoading = signal(false);
@@ -204,8 +209,37 @@ export class ListCarComponent {
     return y;
   }
 
-  nextStep() { if (this.step() < this.totalSteps) this.step.update(v => v + 1); }
+  async nextStep() {
+    if (this.step() === 1 && !this.valuation()) {
+      await this.fetchValuation();
+    }
+    if (this.step() < this.totalSteps) this.step.update(v => v + 1);
+  }
   prevStep() { if (this.step() > 1) this.step.update(v => v - 1); }
+
+  async fetchValuation() {
+    if (!this.form.make || !this.form.model) return;
+    this.valuationLoading.set(true);
+    try {
+      const { data, error } = await this.sb.client.functions.invoke('ai-valuation', {
+        body: {
+          make: this.form.make, model: this.form.model, variant: this.form.variant,
+          year: this.form.year, km: this.form.km || '20000',
+          fuel: this.form.fuel, transmission: this.form.transmission,
+          owners: '1st Owner', condition: 'Good',
+        },
+      });
+      if (!error && data && !data.error) {
+        this.valuation.set(data as ValuationResult);
+        if (data.mid && !this.form.price) {
+          this.form.price = String(Math.round(data.mid / 1000) * 1000);
+        }
+      }
+    } catch { /* silent — valuation is optional */ }
+    finally { this.valuationLoading.set(false); }
+  }
+
+  fmt(p: number) { return p >= 100000 ? `₹${(p / 100000).toFixed(1)}L` : `₹${p.toLocaleString('en-IN')}`; }
 
   uploadError = signal('');
 
