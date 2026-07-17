@@ -30,18 +30,25 @@
         <div class="form-grid">
           <div class="form-group">
             <label>Make (Brand)</label>
-            <select [(ngModel)]="form.make" name="make">
+            <select [(ngModel)]="form.make" name="make" (ngModelChange)="onMakeChange()">
               <option value="">Select brand</option>
               @for (m of makes; track m) { <option [value]="m">{{ m }}</option> }
             </select>
           </div>
           <div class="form-group">
             <label>Model</label>
-            <input type="text" [(ngModel)]="form.model" name="model" placeholder="e.g. Swift, Creta, Nexon">
+            <select [(ngModel)]="form.model" name="model" (ngModelChange)="onModelChange()" [disabled]="!form.make || availableModels.length === 0">
+              <option value="">Select model</option>
+              @for (m of availableModels; track m) { <option [value]="m">{{ m }}</option> }
+              @if (availableModels.length === 0) { <option value="" disabled>Select a brand first</option> }
+            </select>
           </div>
           <div class="form-group">
-            <label>Variant</label>
-            <input type="text" [(ngModel)]="form.variant" name="variant" placeholder="e.g. ZXI+, SX(O)">
+            <label>Variant <span style="color:var(--muted);font-size:0.8rem">(optional)</span></label>
+            <select [(ngModel)]="form.variant" name="variant" [disabled]="!form.model || availableVariants.length === 0">
+              <option value="">Select variant</option>
+              @for (v of availableVariants; track v) { <option [value]="v">{{ v }}</option> }
+            </select>
           </div>
           <div class="form-group">
             <label>Year</label>
