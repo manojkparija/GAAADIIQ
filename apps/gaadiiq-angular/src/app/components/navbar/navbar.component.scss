@@ -28,46 +28,28 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
   text-decoration: none;
   flex-shrink: 0;
+}
 
-  .logo-mark {
-    width: 28px; height: 28px;
-    background: var(--primary);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    flex-shrink: 0;
+.logo-svg {
+  display: block;
+
+  .logo-word-main {
+    fill: var(--text);
   }
 
-  .logo-zap { color: #fff; }
-
-  .logo-text {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 800;
-    font-size: 1.35rem;
-    letter-spacing: -0.03em;
-    background: linear-gradient(135deg, var(--primary), var(--teal));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .logo-ii-a {
+    fill: #2B6BFF;
   }
 
-  .logo-tagline {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    border-left: 1px solid var(--border-soft);
-    padding-left: 0.6rem;
-    margin-left: 0.1rem;
-    line-height: 1;
-    align-self: center;
-    font-family: 'Manrope', sans-serif;
+  .logo-ii-b {
+    fill: #00D4A8;
+    opacity: 0.7;
+  }
+
+  .logo-word-iq {
+    fill: #00D4A8;
   }
 }
 

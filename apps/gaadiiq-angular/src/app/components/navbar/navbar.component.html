@@ -1,11 +1,26 @@
 <nav class="navbar" [class.scrolled]="scrolled()">
   <div class="nav-inner container">
-    <a routerLink="/" class="logo">
-      <span class="logo-mark">
-        <app-icon name="zap" [size]="14" [strokeWidth]="2.5"></app-icon>
-      </span>
-      <span class="logo-text">GAADIIQ</span>
-      <span class="logo-tagline hide-mobile">Buy Smarter</span>
+    <a routerLink="/" class="logo" aria-label="GAADIIQ — Buy Smarter">
+      <svg class="logo-svg" width="148" height="36" viewBox="0 0 148 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- G icon mark: open arc + teal crossbar with arrow tip -->
+        <circle cx="18" cy="18" r="11" stroke="#2B6BFF" stroke-width="4.5" fill="none"
+          stroke-dasharray="55.3 69.1" stroke-dashoffset="-7.5" stroke-linecap="round"/>
+        <line x1="18" y1="18" x2="29" y2="18" stroke="#00D4A8" stroke-width="4.5" stroke-linecap="round"/>
+        <polyline points="25.5,14.5 29,18 25.5,21.5" stroke="#00D4A8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <!-- GAADI in white/primary -->
+        <text x="37" y="24"
+          font-family="'Arial Black','Arial','Helvetica Neue',sans-serif"
+          font-weight="900" font-size="20" letter-spacing="-0.5"
+          class="logo-word-main">GAADI</text>
+        <!-- Twin-I bars (the II in GAADIIQ) -->
+        <rect class="logo-ii-a" x="109" y="6"  width="5"   height="24" rx="2.5"/>
+        <rect class="logo-ii-b" x="117" y="6"  width="5"   height="24" rx="2.5"/>
+        <!-- Q -->
+        <text x="125" y="24"
+          font-family="'Arial Black','Arial','Helvetica Neue',sans-serif"
+          font-weight="900" font-size="20" letter-spacing="-0.5"
+          class="logo-word-iq">Q</text>
+      </svg>
     </a>
 
     <ul class="nav-links hide-mobile">
