@@ -29,7 +29,10 @@ export class CloudinaryService {
       `https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`,
       { method: 'POST', body: fd }
     );
-    if (!res.ok) throw new Error(`Cloudinary upload failed: ${res.statusText}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `Upload failed (${res.status})`);
+    }
     const data = await res.json();
     return {
       public_id: data.public_id,
