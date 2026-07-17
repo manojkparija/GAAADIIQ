@@ -23,6 +23,17 @@ export class CarCardComponent {
 
   toggleLike(e: Event) { e.preventDefault(); e.stopPropagation(); this.liked = !this.liked; }
 
+  onImgLoad(e: Event) {
+    (e.target as HTMLImageElement).style.opacity = '1';
+  }
+
+  onImgError(e: Event) {
+    const img = e.target as HTMLImageElement;
+    img.onerror = null;
+    img.src = 'assets/cars/placeholder.svg';
+    img.style.opacity = '1';
+  }
+
   formatPrice(p: number): string {
     if (p >= 100000) return `₹${(p/100000).toFixed(1)}L`;
     return `₹${p.toLocaleString()}`;

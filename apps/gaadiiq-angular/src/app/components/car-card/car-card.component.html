@@ -2,8 +2,8 @@
   <div class="card-img">
     <img [src]="optimisedImage(car.image)" alt="" loading="eager" referrerpolicy="no-referrer"
   style="object-position:center center;opacity:0;transition:opacity 0.25s ease"
-  (load)="$event.target['style'].opacity=1"
-  onerror="this.onerror=null;this.src='assets/cars/placeholder.svg';this.style.opacity=1">
+  (load)="onImgLoad($event)"
+  (error)="onImgError($event)">
     <div class="card-overlay">
       <span class="badge" [class]="car.badgeType">{{ car.badge }}</span>
       <button class="like-btn" (click)="toggleLike($event)" [class.liked]="liked" aria-label="Save car">
