@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, effect, inject } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -28,9 +28,11 @@ export class LoginComponent {
 
   constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {
     this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
-    if (this.auth.isLoggedIn()) {
-      this.router.navigateByUrl(this.returnUrl);
-    }
+    effect(() => {
+      if (this.auth.isLoggedIn()) {
+        this.router.navigateByUrl(this.returnUrl);
+      }
+    });
   }
 
   toggleShowPass() { this.showPass.set(!this.showPass()); }
