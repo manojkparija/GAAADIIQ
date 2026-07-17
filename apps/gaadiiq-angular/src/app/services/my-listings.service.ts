@@ -38,9 +38,16 @@ export class MyListingsService {
       return;
     }
 
+    // 1. Show localStorage data immediately (no loading flash)
+    let local: MyListing[] = [];
+    try {
+      local = JSON.parse(localStorage.getItem(this.storageKey()) || '[]');
+    } catch { /* ignore */ }
+    this.listings.set(local);
+
+    // 2. Try Supabase in the background to enrich/sync
     this.loading.set(true);
     try {
-      // Fetch from Supabase as source of truth
       const { data, error } = await this.sb.client
         .from('cars')
         .select('id, make, model, variant, year, km, fuel, transmission, owners, color, city, price, body_type, seller_email, verified, created_at, image_url')
@@ -72,25 +79,16 @@ export class MyListingsService {
           createdAt: r.created_at ?? new Date().toISOString(),
           imageUrl: r.image_url ?? null,
         }));
-        // Merge: remote listings take priority; keep any local-only entries not yet in Supabase
-        const local: MyListing[] = JSON.parse(localStorage.getItem(this.storageKey()) || '[]');
+        // Merge: Supabase records take priority; keep local-only entries not yet synced
         const remoteIds = new Set(remote.map(r => r.supabaseId));
         const localOnly = local.filter(l => !l.supabaseId || !remoteIds.has(l.supabaseId));
         const merged = [...remote, ...localOnly];
         this.listings.set(merged);
         localStorage.setItem(this.storageKey(), JSON.stringify(merged));
-        return;
       }
-    } catch { /* fall through to localStorage */ }
+      // If Supabase returns empty (RLS blocking), local data already shown — don't clear it
+    } catch { /* keep local data */ }
     finally { this.loading.set(false); }
-
-    // Fallback to localStorage if Supabase fails
-    try {
-      const items: MyListing[] = JSON.parse(localStorage.getItem(this.storageKey()) || '[]');
-      this.listings.set(items);
-    } catch {
-      this.listings.set([]);
-    }
   }
 
   add(data: Omit<MyListing, 'id' | 'status' | 'createdAt'>): MyListing {
