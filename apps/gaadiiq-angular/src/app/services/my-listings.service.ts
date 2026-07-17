@@ -48,7 +48,7 @@ export class MyListingsService {
         .eq('is_seller_listing', true)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         const remote: MyListing[] = data.map((r: any) => ({
           id: String(r.id),
           supabaseId: r.id,
@@ -72,9 +72,13 @@ export class MyListingsService {
           createdAt: r.created_at ?? new Date().toISOString(),
           imageUrl: r.image_url ?? null,
         }));
-        this.listings.set(remote);
-        // Keep localStorage in sync
-        localStorage.setItem(this.storageKey(), JSON.stringify(remote));
+        // Merge: remote listings take priority; keep any local-only entries not yet in Supabase
+        const local: MyListing[] = JSON.parse(localStorage.getItem(this.storageKey()) || '[]');
+        const remoteIds = new Set(remote.map(r => r.supabaseId));
+        const localOnly = local.filter(l => !l.supabaseId || !remoteIds.has(l.supabaseId));
+        const merged = [...remote, ...localOnly];
+        this.listings.set(merged);
+        localStorage.setItem(this.storageKey(), JSON.stringify(merged));
         return;
       }
     } catch { /* fall through to localStorage */ }
