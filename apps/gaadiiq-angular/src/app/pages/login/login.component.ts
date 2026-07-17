@@ -28,6 +28,9 @@ export class LoginComponent {
 
   constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {
     this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
+    if (this.auth.isLoggedIn()) {
+      this.router.navigateByUrl(this.returnUrl);
+    }
   }
 
   toggleShowPass() { this.showPass.set(!this.showPass()); }
