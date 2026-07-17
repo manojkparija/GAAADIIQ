@@ -221,7 +221,10 @@ export class ListCarComponent {
     if (!this.form.make || !this.form.model) return;
     this.valuationLoading.set(true);
     try {
-      const { data, error } = await this.sb.client.functions.invoke('ai-valuation', {
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 8000)
+      );
+      const invoke = this.sb.client.functions.invoke('ai-valuation', {
         body: {
           make: this.form.make, model: this.form.model, variant: this.form.variant,
           year: this.form.year, km: this.form.km,
@@ -229,14 +232,56 @@ export class ListCarComponent {
           owners: this.form.owners, condition: this.form.condition,
         },
       });
+      const { data, error } = await Promise.race([invoke, timeout]) as any;
       if (!error && data && !data.error) {
         this.valuation.set(data as ValuationResult);
         if (data.mid && !this.form.price) {
           this.form.price = String(Math.round(data.mid / 1000) * 1000);
         }
+        return;
       }
-    } catch { /* silent — valuation is optional */ }
+    } catch { /* fall through to rule-based estimate */ }
     finally { this.valuationLoading.set(false); }
+
+    // Rule-based fallback so seller always gets a price suggestion
+    const est = this.ruleBasedValuation();
+    this.valuation.set(est);
+    if (!this.form.price) {
+      this.form.price = String(Math.round(est.mid / 1000) * 1000);
+    }
+  }
+
+  private ruleBasedValuation(): ValuationResult {
+    const year = +this.form.year;
+    const km = +this.form.km;
+    const age = new Date().getFullYear() - year;
+
+    // Base price by segment
+    const premiumMakes = ['BMW', 'Mercedes-Benz', 'Audi'];
+    const midMakes = ['Toyota', 'Honda', 'Kia', 'MG Motor', 'Volkswagen', 'Skoda', 'Mahindra'];
+    const base = premiumMakes.includes(this.form.make) ? 2500000
+      : midMakes.includes(this.form.make) ? 1200000
+      : 700000;
+
+    // Depreciation: ~15% year 1, ~10% thereafter
+    const depRate = age === 0 ? 1 : age === 1 ? 0.85 : Math.pow(0.90, age - 1) * 0.85;
+    // KM penalty: ₹1 per km above 20k/year average
+    const expectedKm = age * 20000;
+    const kmPenalty = Math.max(0, km - expectedKm) * 0.8;
+    // Condition multiplier
+    const condMult = this.form.condition === 'Excellent' ? 1.05
+      : this.form.condition === 'Good' ? 1.0
+      : this.form.condition === 'Fair' ? 0.88 : 0.75;
+
+    const mid = Math.round((base * depRate - kmPenalty) * condMult / 1000) * 1000;
+    const low = Math.round(mid * 0.9 / 1000) * 1000;
+    const high = Math.round(mid * 1.12 / 1000) * 1000;
+
+    return {
+      low, mid, high, confidence: 72,
+      tips: ['Add service records to get a better price', 'First-owner cars sell 20% faster'],
+      marketTrend: 'Estimated using depreciation model — AI estimate unavailable',
+    };
   }
 
   fmt(p: number) { return p >= 100000 ? `₹${(p / 100000).toFixed(1)}L` : `₹${p.toLocaleString('en-IN')}`; }
