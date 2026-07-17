@@ -8,22 +8,16 @@
       <a routerLink="/list-car" class="btn-gradient">+ List Another Car</a>
     </div>
 
-    <!-- Loading state -->
-    <div class="empty-state glass-card" *ngIf="myListings.loading()">
-      <div class="empty-icon">⏳</div>
-      <h2>Loading your listings…</h2>
-    </div>
-
-    <!-- Empty state -->
-    <div class="empty-state glass-card" *ngIf="!myListings.loading() && myListings.listings().length === 0">
+    <!-- Empty state (show only when not loading AND truly empty) -->
+    <div class="empty-state glass-card" *ngIf="myListings.listings().length === 0 && !myListings.loading()">
       <div class="empty-icon">🚗</div>
       <h2>No listings yet</h2>
       <p>You haven't listed any cars for sale. It's free and takes only 2 minutes!</p>
       <a routerLink="/list-car" class="btn-gradient">List Your Car Free →</a>
     </div>
 
-    <!-- Listings grid -->
-    <div class="listings-grid" *ngIf="!myListings.loading() && myListings.listings().length > 0">
+    <!-- Listings grid (show whenever there is data, regardless of loading) -->
+    <div class="listings-grid" *ngIf="myListings.listings().length > 0">
       <div class="listing-card glass-card" *ngFor="let car of myListings.listings()">
         <div class="card-image" *ngIf="car.imageUrl">
           <img [src]="car.imageUrl" [alt]="car.make + ' ' + car.model">

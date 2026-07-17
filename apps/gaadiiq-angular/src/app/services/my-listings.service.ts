@@ -45,15 +45,19 @@ export class MyListingsService {
     } catch { /* ignore */ }
     this.listings.set(local);
 
-    // 2. Try Supabase in the background to enrich/sync
+    // 2. Try Supabase in background to enrich/sync (5s timeout so loading never hangs)
     this.loading.set(true);
     try {
-      const { data, error } = await this.sb.client
+      const timeout = new Promise<{data: null; error: Error}>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: new Error('timeout') }), 5000)
+      );
+      const query = this.sb.client
         .from('cars')
         .select('id, make, model, variant, year, km, fuel, transmission, owners, color, city, price, body_type, seller_email, verified, created_at, image_url')
         .eq('seller_email', user.email)
         .eq('is_seller_listing', true)
         .order('created_at', { ascending: false });
+      const { data, error } = await Promise.race([query, timeout]) as any;
 
       if (!error && data && data.length > 0) {
         const remote: MyListing[] = data.map((r: any) => ({
