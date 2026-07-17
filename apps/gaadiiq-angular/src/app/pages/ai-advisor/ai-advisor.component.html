@@ -29,7 +29,7 @@
         <span>Select all that apply</span>
       </div>
 
-      <div class="options-grid" [class.two-col]="(currentStep()?.options?.length ?? 0) > 4">
+      <div class="options-grid" [class.two-col]="(currentStep()?.options?.length || 0) > 4">
         <button
           class="option-btn"
           *ngFor="let opt of currentStep()?.options"
