@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { MyListingsService } from '../../services/my-listings.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { CityService } from '../../services/city.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { ImageUploadService, UploadedImage } from '../../services/image-upload.service';
 
@@ -22,6 +23,7 @@ export class ListCarComponent {
   totalSteps = 4;
   submitted = signal(false);
   loading = signal(false);
+  submitError = signal('');
 
   valuation = signal<ValuationResult | null>(null);
   valuationLoading = signal(false);
@@ -189,18 +191,40 @@ export class ListCarComponent {
   onModelChange() { this.form.variant = ''; }
 
   form = {
-    make: '', model: '', variant: '', year: new Date().getFullYear(), km: '',
+    make: '', model: '', variant: '', year: 2020, km: '',
     fuel: '', transmission: '', owners: '', color: '', city: '',
     price: '', description: '', name: '', phone: '', email: '',
     bodyType: '', condition: ''
   };
 
-  constructor(public auth: AuthService, private myListings: MyListingsService, private router: Router, private sb: SupabaseService, private imageUpload: ImageUploadService) {
+  phoneError = signal('');
+
+  validatePhone(): boolean {
+    const digits = this.form.phone.replace(/\D/g, '');
+    if (digits.length !== 10 && !(digits.length === 12 && digits.startsWith('91'))) {
+      this.phoneError.set('Enter a valid 10-digit Indian mobile number');
+      return false;
+    }
+    this.phoneError.set('');
+    return true;
+  }
+
+  constructor(
+    public auth: AuthService,
+    private myListings: MyListingsService,
+    private router: Router,
+    private sb: SupabaseService,
+    private imageUpload: ImageUploadService,
+    private cityService: CityService,
+  ) {
     const user = auth.currentUser();
     if (user) {
       this.form.name = user.name;
       this.form.email = user.email;
     }
+    // Prefill city from navbar selection
+    const city = cityService.selectedCity();
+    if (city) this.form.city = city;
   }
 
   get years() {
@@ -350,13 +374,14 @@ export class ListCarComponent {
   imageThumb(url: string) { return url; }
 
   async onSubmit() {
+    if (!this.validatePhone()) return;
     this.loading.set(true);
+    this.submitError.set('');
     const user = this.auth.currentUser();
-
     const imageUrl = this.uploadedImages()[0]?.url ?? null;
 
-    // Insert into Supabase so customers can see the listing
-    const { data: inserted } = await this.sb.client
+    // 1. Insert car row
+    const { data: inserted, error: insertError } = await this.sb.client
       .from('cars')
       .insert({
         make: this.form.make,
@@ -370,10 +395,12 @@ export class ListCarComponent {
         color: this.form.color || null,
         city: this.form.city || null,
         price: +this.form.price,
+        description: this.form.description || null,
         body_type: this.form.bodyType || null,
         badge: 'Used',
         badge_type: 'used',
         seller_email: this.form.email,
+        seller_phone: this.form.phone || null,
         seller_id: user?.sellerId ?? null,
         is_seller_listing: true,
         verified: false,
@@ -384,7 +411,36 @@ export class ListCarComponent {
       .select('id')
       .single();
 
-    // Also save to local MyListings so seller sees it in My Listings page
+    if (insertError || !inserted) {
+      this.submitError.set('Failed to submit listing. Please try again.');
+      this.loading.set(false);
+      return;
+    }
+
+    const carId = inserted.id;
+
+    // 2. Save all uploaded images to car_images table
+    const images = this.uploadedImages();
+    if (images.length > 0) {
+      await this.sb.client.from('car_images').insert(
+        images.map((img, i) => ({ car_id: carId, url: img.url, sort_order: i }))
+      );
+    }
+
+    // 3. Save AI valuation result if available
+    const val = this.valuation();
+    if (val) {
+      await this.sb.client.from('ai_valuation').insert({
+        car_id: carId,
+        fair_price: val.mid,
+        market_min: val.low,
+        market_max: val.high,
+        verdict: val.marketTrend,
+        confidence: val.confidence,
+      });
+    }
+
+    // 4. Mirror to My Listings (localStorage) so seller sees it immediately
     this.myListings.add({
       make: this.form.make, model: this.form.model, variant: this.form.variant,
       year: this.form.year, km: +this.form.km, fuel: this.form.fuel,
@@ -392,7 +448,7 @@ export class ListCarComponent {
       color: this.form.color, city: this.form.city, price: +this.form.price,
       description: this.form.description, bodyType: this.form.bodyType,
       name: this.form.name, phone: this.form.phone, email: this.form.email,
-      supabaseId: inserted?.id ?? null,
+      supabaseId: carId,
       imageUrl: imageUrl,
     });
 
