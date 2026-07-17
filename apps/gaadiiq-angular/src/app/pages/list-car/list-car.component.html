@@ -95,13 +95,22 @@
         <h2><app-icon name="camera" [size]="22"></app-icon> Car Photos</h2>
         <p class="step-sub">Listings with photos get <strong>5× more enquiries</strong>. Upload up to 10 images.</p>
 
-        <!-- Upload button -->
-        <div class="upload-zone" (click)="openUploadWidget()" [class.uploading]="uploadLoading()">
+        <!-- Native file input (hidden) -->
+        <input type="file" id="carPhotoInput" accept="image/jpeg,image/png,image/webp"
+               multiple style="display:none" (change)="onFilesSelected($event)">
+
+        <!-- Upload zone -->
+        <label for="carPhotoInput" class="upload-zone" [class.uploading]="uploadLoading()" style="cursor:pointer;display:block">
           <div class="upload-zone-inner">
             <app-icon name="upload" [size]="36"></app-icon>
-            <p>{{ uploadLoading() ? 'Opening uploader…' : 'Click to upload photos' }}</p>
-            <span>JPG, PNG, WEBP · Max 10 MB each</span>
+            <p>{{ uploadLoading() ? 'Uploading…' : 'Click to upload photos' }}</p>
+            <span>JPG, PNG, WEBP · Max 10 MB each · Up to {{ 10 - uploadedImages().length }} more</span>
           </div>
+        </label>
+
+        <!-- Upload error -->
+        <div *ngIf="uploadError()" style="color:var(--danger);font-size:0.85rem;margin-top:0.5rem">
+          {{ uploadError() }}
         </div>
 
         <!-- Preview grid -->

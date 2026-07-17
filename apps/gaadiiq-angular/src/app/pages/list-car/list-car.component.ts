@@ -207,13 +207,23 @@ export class ListCarComponent {
   nextStep() { if (this.step() < this.totalSteps) this.step.update(v => v + 1); }
   prevStep() { if (this.step() > 1) this.step.update(v => v - 1); }
 
-  async openUploadWidget() {
+  uploadError = signal('');
+
+  async onFilesSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const files = Array.from(input.files).slice(0, 10 - this.uploadedImages().length);
+    if (!files.length) return;
     this.uploadLoading.set(true);
+    this.uploadError.set('');
     try {
-      const results = await this.cloudinary.openWidget({ maxFiles: 10, folder: 'gaadiiq/cars' });
+      const results = await this.cloudinary.uploadFiles(files, 'gaadiiq/cars');
       this.uploadedImages.update(existing => [...existing, ...results]);
+    } catch (e: any) {
+      this.uploadError.set('Upload failed. Please check your internet connection and try again.');
     } finally {
       this.uploadLoading.set(false);
+      input.value = '';
     }
   }
 
