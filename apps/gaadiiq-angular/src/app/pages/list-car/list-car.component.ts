@@ -393,6 +393,7 @@ export class ListCarComponent {
       description: this.form.description, bodyType: this.form.bodyType,
       name: this.form.name, phone: this.form.phone, email: this.form.email,
       supabaseId: inserted?.id ?? null,
+      imageUrl: imageUrl,
     });
 
     this.loading.set(false);

@@ -26,9 +26,18 @@ export class MyListingsService {
     });
   }
 
-  private storageKey(): string {
-    const email = this.auth.currentUser()?.email ?? 'guest';
-    return `gaadiiq_listings_${email}`;
+  private storageKey(email?: string): string {
+    const e = email ?? this.auth.currentUser()?.email ?? 'local';
+    return `gaadiiq_listings_${e}`;
+  }
+
+  private allStorageKeys(): string[] {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith('gaadiiq_listings_')) keys.push(k);
+    }
+    return keys;
   }
 
   async reload() {
@@ -38,10 +47,18 @@ export class MyListingsService {
       return;
     }
 
-    // 1. Show localStorage data immediately (no loading flash)
+    // 1. Show localStorage data immediately — merge ALL gaadiiq_listings_* keys
+    // (handles case where listing was saved under 'guest' or different email key)
     let local: MyListing[] = [];
     try {
-      local = JSON.parse(localStorage.getItem(this.storageKey()) || '[]');
+      const seen = new Set<string>();
+      for (const key of this.allStorageKeys()) {
+        const items: MyListing[] = JSON.parse(localStorage.getItem(key) || '[]');
+        for (const item of items) {
+          if (!seen.has(item.id)) { seen.add(item.id); local.push(item); }
+        }
+      }
+      local.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch { /* ignore */ }
     this.listings.set(local);
 
