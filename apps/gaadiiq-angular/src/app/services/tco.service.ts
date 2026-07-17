@@ -35,9 +35,19 @@ const DEPRECIATION: Record<string, number> = {
   Petrol: 0.15, Diesel: 0.13, CNG: 0.18, Electric: 0.20, Hybrid: 0.14,
 };
 
-const INSURANCE_RATE = 0.035;
 const ANNUAL_KM = 15000;
-const REG_RATE = 0.09;
+
+// IRDAI 2023-24 TP premium by engine size (proxied by price band) + 2% OD
+function insuranceFirstYear(price: number): number {
+  const tp = price < 600000 ? 2094 : price < 1500000 ? 3416 : 7897;
+  const od = Math.round(price * 0.02);
+  return tp + od;
+}
+
+// National average registration rate (used for TCO; on-road widget uses state-specific)
+function regRate(fuel: string): number {
+  return fuel === 'Electric' ? 0.00 : 0.09; // EVs exempt in most states
+}
 
 @Injectable({ providedIn: 'root' })
 export class TcoService {
@@ -45,8 +55,9 @@ export class TcoService {
   calculateTco(car: Car): TcoBreakdown {
     const fuel = car.fuel || 'Petrol';
     const price = car.price;
-    const registration = price * REG_RATE;
-    const insurance5yr = price * INSURANCE_RATE * 5 * 0.8; // avg declining premium
+    const registration = price * regRate(fuel);
+    // Insurance: year 1 full premium, years 2-5 at ~60% (no OD renewal inflation)
+    const insurance5yr = insuranceFirstYear(price) + insuranceFirstYear(price) * 0.6 * 4;
     const fuelPerKm = FUEL_COST_PER_KM[fuel] ?? 8;
     const fuel5yr = fuelPerKm * ANNUAL_KM * 5;
     const maintenance5yr = (MAINT_PER_YEAR[fuel] ?? 18000) * 5;

@@ -158,7 +158,7 @@
                 <div style="font-weight:800;font-size:1.1rem;margin-bottom:1rem">5-Year Total Cost of Ownership</div>
                 <ng-container *ngIf="tco.calculateTco(car) as t">
                   <div class="oc-item"><span>🏷️ Purchase Price</span><span>{{ tco.fmt(t.purchasePrice) }}</span></div>
-                  <div class="oc-item"><span>📋 Registration (9%)</span><span>{{ tco.fmt(t.registration) }}</span></div>
+                  <div class="oc-item"><span>📋 Registration</span><span>{{ tco.fmt(t.registration) }}</span></div>
                   <div class="oc-item"><span><app-icon name="shield" [size]="13"></app-icon> Insurance (5yr)</span><span>{{ tco.fmt(t.insurance5yr) }}</span></div>
                   <div class="oc-item"><span>⛽ Fuel (5yr)</span><span>{{ tco.fmt(t.fuel5yr) }}</span></div>
                   <div class="oc-item"><span>🔧 Maintenance (5yr)</span><span>{{ tco.fmt(t.maintenance5yr) }}</span></div>
@@ -379,10 +379,10 @@
             </select>
           </div>
           <div class="orp-row"><span>Ex-Showroom</span><span>{{ formatPrice(orp.base) }}</span></div>
-          <div class="orp-row"><span>GST (28%)</span><span>{{ formatPrice(orp.gst) }}</span></div>
-          <div class="orp-row"><span>Cess</span><span>{{ formatPrice(orp.cess) }}</span></div>
-          <div class="orp-row"><span>Registration</span><span>{{ formatPrice(orp.registration) }}</span></div>
-          <div class="orp-row"><span>Insurance</span><span>{{ formatPrice(orp.insurance) }}</span></div>
+          <div class="orp-row"><span>GST ({{ orp.gstRate }}%)</span><span>{{ formatPrice(orp.gst) }}</span></div>
+          <div class="orp-row" *ngIf="orp.cess > 0"><span>Cess ({{ orp.cessRate }}%)</span><span>{{ formatPrice(orp.cess) }}</span></div>
+          <div class="orp-row"><span>Registration ({{ orp.regRate }}%)</span><span>{{ formatPrice(orp.registration) }}</span></div>
+          <div class="orp-row"><span>Insurance (TP + OD)</span><span>{{ formatPrice(orp.insurance) }}</span></div>
           <div class="orp-row"><span>Handling Charges</span><span>{{ formatPrice(orp.handling) }}</span></div>
           <div class="orp-total"><span>On-Road Price</span><span class="gradient-text">{{ formatPrice(orp.total) }}</span></div>
         </div>

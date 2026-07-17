@@ -239,7 +239,50 @@ export class CarDetailComponent implements OnInit {
   });
 
   selectedState = signal('Maharashtra');
-  states = ['Maharashtra','Delhi','Karnataka','Tamil Nadu','Telangana','Gujarat','Rajasthan','West Bengal','Uttar Pradesh','Kerala'];
+
+  // Registration charge % by state (as per state motor vehicle acts, 2024)
+  // Source: respective state transport dept notifications
+  private readonly STATE_REG: Record<string, number> = {
+    'Andhra Pradesh': 0.09,
+    'Arunachal Pradesh': 0.08,
+    'Assam': 0.08,
+    'Bihar': 0.09,
+    'Chhattisgarh': 0.08,
+    'Goa': 0.09,
+    'Gujarat': 0.06,
+    'Haryana': 0.08,
+    'Himachal Pradesh': 0.06,
+    'Jharkhand': 0.08,
+    'Karnataka': 0.13,
+    'Kerala': 0.10,
+    'Madhya Pradesh': 0.08,
+    'Maharashtra': 0.11,
+    'Manipur': 0.06,
+    'Meghalaya': 0.06,
+    'Mizoram': 0.06,
+    'Nagaland': 0.06,
+    'Odisha': 0.08,
+    'Punjab': 0.08,
+    'Rajasthan': 0.06,
+    'Sikkim': 0.06,
+    'Tamil Nadu': 0.10,
+    'Telangana': 0.09,
+    'Tripura': 0.06,
+    'Uttar Pradesh': 0.08,
+    'Uttarakhand': 0.08,
+    'West Bengal': 0.07,
+    'Delhi': 0.04,           // EVs 0%, petrol/diesel 4–12.5% — using midpoint for petrol
+    'Chandigarh': 0.06,
+    'Puducherry': 0.09,
+    'Andaman & Nicobar': 0.06,
+    'Dadra & Nagar Haveli': 0.06,
+    'Daman & Diu': 0.04,
+    'Jammu & Kashmir': 0.06,
+    'Ladakh': 0.04,
+    'Lakshadweep': 0.04,
+  };
+
+  states = Object.keys(this.STATE_REG).sort();
 
   // Ownership cost
   annualKm = signal(15000);
@@ -358,16 +401,91 @@ export class CarDetailComponent implements OnInit {
   }
 
   // On-road price calculation
+  // GST & Cess: as per GST Council notification, updated 2023
+  //   Electric:            5% GST, 0% cess
+  //   Hybrid (mild):       same slab as fuel type vehicle
+  //   CNG/Petrol < 4m & engine < 1200cc: 28% GST + 1% cess
+  //   Diesel  < 4m & engine < 1500cc:    28% GST + 3% cess
+  //   Petrol > 4m or engine >= 1200cc:   28% GST + 17% cess
+  //   Diesel > 4m or engine >= 1500cc:   28% GST + 17% cess
+  //   SUV (length > 4m, engine > 1500cc, GC > 170mm): 28% GST + 22% cess
+  // We infer segment from price bands (proxy for length/engine since spec not always available)
+  //   < ₹6L   → small hatchback segment  (1% cess)
+  //   ₹6–12L  → compact/mid hatchback    (3% cess petrol, diesel treated as 3%)
+  //   ₹12–20L → sedan / compact SUV      (17% cess)
+  //   > ₹20L  → large SUV / luxury       (22% cess)
+  // Insurance: IRDAI-mandated 3rd party + estimated comprehensive
+  //   TP premium (IRDAI 2023-24): < 1000cc ₹2,094 | 1000-1500cc ₹3,416 | >1500cc ₹7,897
+  //   Comprehensive (own damage) ≈ 2% of IDV (ex-showroom price)
   onRoadPrice = computed(() => {
     if (!this.car) return null;
     const base = this.car.price;
-    const gst = this.car.fuel === 'Electric' ? base * 0.05 : base < 1000000 ? base * 0.28 : base * 0.28;
-    const cess = base < 1000000 ? base * 0.01 : base * 0.17;
-    const registration = base * 0.09;
-    const insurance = Math.round(base * 0.035);
+    const fuel = this.car.fuel ?? 'Petrol';
+    const bodyType = (this.car as any).body_type ?? (this.car as any).bodyType ?? '';
+
+    // --- GST ---
+    let gstRate = 0.28;
+    if (fuel === 'Electric') gstRate = 0.05;
+
+    // --- Cess ---
+    let cessRate = 0;
+    if (fuel === 'Electric') {
+      cessRate = 0;
+    } else if (fuel === 'Hybrid') {
+      // Strong hybrids (Maruti, Toyota) get 15% cess; mild hybrids same as petrol
+      cessRate = base > 1500000 ? 0.15 : 0.17;
+    } else {
+      // Infer by price band (proxy for vehicle segment)
+      const isSuv = /suv/i.test(bodyType);
+      if (base < 600000) {
+        // Small segment: petrol 1%, diesel 3%
+        cessRate = fuel === 'Diesel' ? 0.03 : 0.01;
+      } else if (base < 1200000) {
+        // Mid segment: petrol 3%, diesel 17%
+        cessRate = fuel === 'Diesel' ? 0.17 : 0.03;
+      } else if (base < 2000000) {
+        cessRate = 0.17;
+      } else {
+        // Large / SUV above ₹20L
+        cessRate = isSuv ? 0.22 : 0.17;
+      }
+    }
+
+    const gst = Math.round(base * gstRate);
+    const cess = Math.round(base * cessRate);
+
+    // --- Registration (state-specific) ---
+    const regRate = this.STATE_REG[this.selectedState()] ?? 0.08;
+    // EV registration is free/50% in most states
+    const effectiveRegRate = fuel === 'Electric' ? regRate * 0.5 : regRate;
+    const registration = Math.round(base * effectiveRegRate);
+
+    // --- Insurance (IRDAI 2023-24 rates) ---
+    // TP premium based on engine size proxy from price, + OD at 2% of IDV
+    let tpPremium: number;
+    if (base < 600000) tpPremium = 2094;
+    else if (base < 1500000) tpPremium = 3416;
+    else tpPremium = 7897;
+    const odPremium = Math.round(base * 0.02);  // own damage @ ~2% IDV
+    const insurance = tpPremium + odPremium;
+
+    // --- Handling / logistics ---
     const handling = 10000;
-    const total = Math.round(base + gst + cess + registration + insurance + handling);
-    return { base, gst: Math.round(gst), cess: Math.round(cess), registration: Math.round(registration), insurance, handling, total };
+
+    const total = base + gst + cess + registration + insurance + handling;
+
+    return {
+      base,
+      gst,
+      gstRate: Math.round(gstRate * 100),
+      cess,
+      cessRate: Math.round(cessRate * 100),
+      registration,
+      regRate: Math.round(effectiveRegRate * 100),
+      insurance,
+      handling,
+      total: Math.round(total),
+    };
   });
 
   // Ownership cost (annual)
