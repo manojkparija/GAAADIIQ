@@ -345,7 +345,7 @@ export class AiAdvisorComponent {
     const currentYear = new Date().getFullYear();
     const allCars = this.carsData.getAll();
     const all = condition === 'Brand New'
-              ? allCars.filter(c => c.km === 0 && c.year >= currentYear)
+              ? allCars.filter(c => c.km === 0 && c.year >= currentYear - 1)
               : condition === 'Certified Used'
               ? allCars.filter(c => c.isSellerListing || c.km > 0 || c.year < currentYear)
               : allCars;
