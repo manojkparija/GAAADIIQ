@@ -69,6 +69,17 @@ const LOCAL_IMAGES: Record<string, string[]> = {
   ],
 };
 
+const DEMO_USED_CARS: Car[] = [
+  { id: 9001, make: 'Maruti Suzuki', model: 'Swift', variant: 'VXi', year: 2020, price: 550000, km: 42000, fuel: 'Petrol', transmission: 'Manual', badge: 'Popular', badgeType: 'featured', image: 'assets/cars/swift/front.jpg', images: ['assets/cars/swift/front.jpg'], rating: 4.3, reviews: 128, verified: true, city: 'Mumbai', bodyType: 'Hatchback', color: 'White', owners: '1st Owner' },
+  { id: 9002, make: 'Hyundai', model: 'Creta', variant: 'SX', year: 2021, price: 1150000, km: 28000, fuel: 'Petrol', transmission: 'Automatic', badge: 'Verified', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.5, reviews: 95, verified: true, city: 'Bengaluru', bodyType: 'SUV', color: 'Grey', owners: '1st Owner' },
+  { id: 9003, make: 'Tata', model: 'Nexon', variant: 'XZ+', year: 2022, price: 1080000, km: 18500, fuel: 'Petrol', transmission: 'Manual', badge: 'Low KM', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.4, reviews: 72, verified: true, city: 'Delhi', bodyType: 'SUV', color: 'Blue', owners: '1st Owner' },
+  { id: 9004, make: 'Honda', model: 'City', variant: 'ZX CVT', year: 2019, price: 820000, km: 61000, fuel: 'Petrol', transmission: 'CVT', badge: '', badgeType: '', image: 'assets/cars/placeholder.svg', images: [], rating: 4.2, reviews: 56, verified: false, city: 'Pune', bodyType: 'Sedan', color: 'Silver', owners: '2nd Owner' },
+  { id: 9005, make: 'Mahindra', model: 'XUV700', variant: 'AX7 4WD', year: 2022, price: 2100000, km: 22000, fuel: 'Diesel', transmission: 'Automatic', badge: 'Premium', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.6, reviews: 43, verified: true, city: 'Hyderabad', bodyType: 'SUV', color: 'Black', owners: '1st Owner' },
+  { id: 9006, make: 'Toyota', model: 'Innova Crysta', variant: 'GX MT', year: 2020, price: 1350000, km: 55000, fuel: 'Diesel', transmission: 'Manual', badge: '', badgeType: '', image: 'assets/cars/placeholder.svg', images: [], rating: 4.4, reviews: 88, verified: true, city: 'Chennai', bodyType: 'MUV', color: 'White', owners: '2nd Owner' },
+  { id: 9007, make: 'Maruti Suzuki', model: 'Baleno', variant: 'Alpha', year: 2021, price: 690000, km: 33000, fuel: 'Petrol', transmission: 'Automatic', badge: '', badgeType: '', image: 'assets/cars/placeholder.svg', images: [], rating: 4.3, reviews: 61, verified: true, city: 'Ahmedabad', bodyType: 'Hatchback', color: 'Red', owners: '1st Owner' },
+  { id: 9008, make: 'Kia', model: 'Seltos', variant: 'HTX+ DCT', year: 2021, price: 1280000, km: 31000, fuel: 'Petrol', transmission: 'DCT', badge: 'Certified', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.5, reviews: 77, verified: true, city: 'Jaipur', bodyType: 'SUV', color: 'Brown', owners: '1st Owner' },
+];
+
 @Injectable({ providedIn: 'root' })
 export class CarsDataService {
   private _cars = signal<Car[]>([]);
@@ -134,7 +145,8 @@ export class CarsDataService {
         : undefined,
     }));
 
-    this._cars.set(mapped);
+    const hasUsedCars = mapped.some(c => c.isSellerListing || c.km > 0 || c.year < 2025);
+    this._cars.set(hasUsedCars ? mapped : [...mapped, ...DEMO_USED_CARS]);
     this.loading.set(false);
   }
 
