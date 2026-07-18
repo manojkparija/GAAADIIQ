@@ -2,35 +2,29 @@
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.pool import StaticPool
 
 from db.base import Base
 from db.session import get_db
 from main import app
 
-TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
-
 
 @pytest_asyncio.fixture
-async def db_engine():
-    """Per-test in-memory SQLite engine.
+async def db_engine(tmp_path):
+    """Per-test file-based SQLite engine.
 
-    Holds an explicit connection reference for the entire fixture lifetime so
-    the aiosqlite connection is not garbage-collected between requests on
-    Python 3.12+ (which would wipe the in-memory DB and cause 'no such table'
-    errors mid-test).
+    Using a real file on disk instead of in-memory SQLite avoids a Python
+    3.12 GC bug where aiosqlite connections held by StaticPool get collected
+    mid-test, dropping all tables and causing spurious 'no such table' errors.
     """
+    db_path = tmp_path / "test.db"
     engine = create_async_engine(
-        TEST_DB_URL,
+        f"sqlite+aiosqlite:///{db_path}",
         echo=False,
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
     )
-    conn = await engine.connect()
-    await conn.run_sync(Base.metadata.create_all)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield engine
-    await conn.run_sync(Base.metadata.drop_all)
-    await conn.close()
     await engine.dispose()
 
 
