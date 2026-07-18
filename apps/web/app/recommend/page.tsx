@@ -11,6 +11,12 @@ import Link from "next/link";
 import ToolPageHeader from "@/components/tool-page-header";
 import type { Listing } from "@/types/listing";
 
+interface ScoredListing {
+  listing: Listing;
+  match_score: number;
+  reasons: string[];
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Step = "budget" | "fuel" | "body" | "usage" | "results";
@@ -35,6 +41,7 @@ const FUEL_OPTIONS = [
   { label: "Diesel",   value: "diesel",   Icon: Droplets },
   { label: "Electric", value: "electric", Icon: Zap },
   { label: "Hybrid",   value: "hybrid",   Icon: Leaf },
+  { label: "CNG",      value: "cng",      Icon: Leaf },
   { label: "Any",      value: "any",      Icon: ArrowRightLeft },
 ];
 
@@ -42,7 +49,7 @@ const BODY_OPTIONS = [
   { label: "Hatchback", value: "hatchback", Icon: Car },
   { label: "Sedan",     value: "sedan",     Icon: CarFront },
   { label: "SUV",       value: "suv",       Icon: Truck },
-  { label: "MPV",       value: "mpv",       Icon: Users },
+  { label: "MPV / MUV", value: "muv",       Icon: Users },
   { label: "Any",       value: "any",       Icon: ArrowRightLeft },
 ];
 
@@ -60,18 +67,23 @@ function formatPrice(p: number) {
   return `₹${p.toLocaleString("en-IN")}`;
 }
 
-async function fetchRecommendations(answers: Answers): Promise<Listing[]> {
-  const budget = BUDGET_OPTIONS.find((b) => b.value === answers.budget);
-  const params = new URLSearchParams({ page_size: "6" });
-  if (budget?.max) params.set("max_price", String(budget.max));
-  if (budget?.min) params.set("min_price", String(budget.min));
-  if (answers.fuel && answers.fuel !== "any") params.set("fuel_type", answers.fuel);
-  if (answers.body && answers.body !== "any") params.set("body_type", answers.body);
+async function fetchRecommendations(answers: Answers): Promise<ScoredListing[]> {
   try {
-    const res = await fetch(`${API_URL}/listings?${params.toString()}`, { cache: "no-store" });
+    const res = await fetch(`${API_URL}/recommend`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        budget:    answers.budget ?? null,
+        fuel:      answers.fuel   ?? null,
+        body:      answers.body   ?? null,
+        usage:     answers.usage  ?? null,
+        page_size: 6,
+      }),
+      cache: "no-store",
+    });
     if (!res.ok) return [];
     const data = await res.json();
-    return data.items ?? [];
+    return (data.items ?? []) as ScoredListing[];
   } catch {
     return [];
   }
@@ -104,7 +116,7 @@ function OptionButton({ label, Icon, selected, onClick }: OptionButtonProps) {
 export default function RecommendPage() {
   const [step, setStep] = useState<Step>("budget");
   const [answers, setAnswers] = useState<Answers>({});
-  const [results, setResults] = useState<Listing[]>([]);
+  const [results, setResults] = useState<ScoredListing[]>([]);
   const [loading, setLoading] = useState(false);
 
   const steps: Step[] = ["budget", "fuel", "body", "usage", "results"];
@@ -244,7 +256,7 @@ export default function RecommendPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {results.map((listing) => (
+                  {results.map(({ listing, match_score, reasons }) => (
                     <Link
                       key={listing.id}
                       href={`/listings/${listing.id}`}
@@ -254,14 +266,25 @@ export default function RecommendPage() {
                         <Car className="h-8 w-8 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">
-                          {listing.car?.make} {listing.car?.model} ({listing.car?.year})
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm truncate">
+                            {listing.car?.make} {listing.car?.model} ({listing.car?.year})
+                          </p>
+                          <span className="shrink-0 text-xs font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">
+                            {match_score}%
+                          </span>
+                        </div>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {listing.car?.fuel_type && <Badge variant="secondary" className="text-xs">{listing.car.fuel_type}</Badge>}
                           {listing.car?.body_type && <Badge variant="outline" className="text-xs">{listing.car.body_type}</Badge>}
                           {listing.city && <Badge variant="outline" className="text-xs">{listing.city}</Badge>}
                         </div>
+                        {reasons.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
+                            {reasons[0]}
+                            {reasons[1] ? ` · ${reasons[1]}` : ""}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="font-bold text-primary">{formatPrice(listing.price)}</p>
