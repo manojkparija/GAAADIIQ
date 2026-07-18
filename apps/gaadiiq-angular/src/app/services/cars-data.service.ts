@@ -69,6 +69,19 @@ const LOCAL_IMAGES: Record<string, string[]> = {
   ],
 };
 
+const DEMO_NEW_CARS: Car[] = [
+  { id: 8001, make: 'Maruti Suzuki', model: 'Swift', variant: 'ZXi+', year: 2025, price: 899000, km: 0, fuel: 'Petrol', transmission: 'AMT', badge: 'Bestseller', badgeType: 'featured', image: 'assets/cars/swift/front.jpg', images: ['assets/cars/swift/front.jpg'], rating: 4.4, reviews: 312, verified: true, city: 'Mumbai', bodyType: 'Hatchback', specs: [{ label: 'Mileage', value: '24.8 kmpl' }, { label: 'Power', value: '81 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging'] },
+  { id: 8002, make: 'Hyundai', model: 'Creta', variant: 'SX Tech', year: 2025, price: 1695000, km: 0, fuel: 'Petrol', transmission: 'Automatic', badge: 'Top Rated', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.6, reviews: 210, verified: true, city: 'Delhi', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '17.4 kmpl' }, { label: 'Power', value: '138 bhp' }], features: ['Panoramic Sunroof', 'ADAS Safety', '360° Camera', '6 Airbags', 'Ventilated Seats', 'Wireless Charging'] },
+  { id: 8003, make: 'Tata', model: 'Nexon EV', variant: 'Max LR', year: 2025, price: 2099000, km: 0, fuel: 'Electric', transmission: 'Automatic', badge: 'Best EV', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.5, reviews: 175, verified: true, city: 'Bengaluru', bodyType: 'SUV', specs: [{ label: 'Range', value: '465 km' }, { label: 'Power', value: '143 bhp' }], features: ['Panoramic Sunroof', '6 Airbags', 'Connected Car', 'ADAS Safety', 'Wireless Charging'] },
+  { id: 8004, make: 'Maruti Suzuki', model: 'Grand Vitara', variant: 'Alpha+', year: 2025, price: 1899000, km: 0, fuel: 'Hybrid', transmission: 'Automatic', badge: 'Eco', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.5, reviews: 98, verified: true, city: 'Pune', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '27.97 kmpl' }, { label: 'Power', value: '115 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging', 'Ventilated Seats'] },
+  { id: 8005, make: 'Mahindra', model: 'XUV700', variant: 'AX7 AWD', year: 2025, price: 2799000, km: 0, fuel: 'Diesel', transmission: 'Automatic', badge: 'Premium', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.6, reviews: 144, verified: true, city: 'Hyderabad', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '16.1 kmpl' }, { label: 'Power', value: '182 bhp' }], features: ['Panoramic Sunroof', 'ADAS Safety', '360° Camera', '6 Airbags', 'Ventilated Seats', 'Connected Car', 'Large Touchscreen'] },
+  { id: 8006, make: 'Toyota', model: 'Innova HyCross', variant: 'VX Hybrid', year: 2025, price: 2500000, km: 0, fuel: 'Hybrid', transmission: 'Automatic', badge: 'Family', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.7, reviews: 92, verified: true, city: 'Chennai', bodyType: 'MUV', specs: [{ label: 'Mileage', value: '21.1 kmpl' }, { label: 'Power', value: '186 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging', 'Ventilated Seats'] },
+  { id: 8007, make: 'Kia', model: 'Seltos', variant: 'GTX+ DCT', year: 2025, price: 2000000, km: 0, fuel: 'Petrol', transmission: 'DCT', badge: 'Sporty', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.5, reviews: 138, verified: true, city: 'Jaipur', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '16.5 kmpl' }, { label: 'Power', value: '138 bhp' }], features: ['Panoramic Sunroof', 'ADAS Safety', '360° Camera', '6 Airbags', 'Connected Car', 'Wireless Charging'] },
+  { id: 8008, make: 'Hyundai', model: 'Venue', variant: 'SX+ iMT', year: 2025, price: 1299000, km: 0, fuel: 'Petrol', transmission: 'iMT', badge: 'Value', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.3, reviews: 187, verified: true, city: 'Ahmedabad', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '18.15 kmpl' }, { label: 'Power', value: '118 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging'] },
+  { id: 8009, make: 'Tata', model: 'Punch', variant: 'Accomplished+', year: 2025, price: 899000, km: 0, fuel: 'CNG', transmission: 'Manual', badge: 'Eco Value', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.2, reviews: 204, verified: true, city: 'Kolkata', bodyType: 'Hatchback', specs: [{ label: 'Mileage', value: '26.49 km/kg' }, { label: 'Power', value: '72 bhp' }], features: ['6 Airbags', 'Connected Car'] },
+  { id: 8010, make: 'Maruti Suzuki', model: 'Ertiga', variant: 'ZXi+', year: 2025, price: 1199000, km: 0, fuel: 'CNG', transmission: 'Manual', badge: 'Family', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.4, reviews: 156, verified: true, city: 'Delhi', bodyType: 'MUV', specs: [{ label: 'Mileage', value: '26.11 km/kg' }, { label: 'Power', value: '87 bhp' }], features: ['Sunroof', '6 Airbags'] },
+];
+
 const DEMO_USED_CARS: Car[] = [
   { id: 9001, make: 'Maruti Suzuki', model: 'Swift', variant: 'VXi', year: 2020, price: 550000, km: 42000, fuel: 'Petrol', transmission: 'Manual', badge: 'Popular', badgeType: 'featured', image: 'assets/cars/swift/front.jpg', images: ['assets/cars/swift/front.jpg'], rating: 4.3, reviews: 128, verified: true, city: 'Mumbai', bodyType: 'Hatchback', color: 'White', owners: '1st Owner' },
   { id: 9002, make: 'Hyundai', model: 'Creta', variant: 'SX', year: 2021, price: 1150000, km: 28000, fuel: 'Petrol', transmission: 'Automatic', badge: 'Verified', badgeType: 'featured', image: 'assets/cars/placeholder.svg', images: [], rating: 4.5, reviews: 95, verified: true, city: 'Bengaluru', bodyType: 'SUV', color: 'Grey', owners: '1st Owner' },
@@ -98,6 +111,7 @@ export class CarsDataService {
 
     if (error) {
       console.error('Supabase fetch error:', error);
+      this._cars.set([...DEMO_NEW_CARS, ...DEMO_USED_CARS]);
       this.loading.set(false);
       return;
     }
@@ -146,7 +160,9 @@ export class CarsDataService {
     }));
 
     const hasUsedCars = mapped.some(c => c.isSellerListing || c.km > 0 || c.year < 2025);
-    this._cars.set(hasUsedCars ? mapped : [...mapped, ...DEMO_USED_CARS]);
+    const hasNewCars = mapped.some(c => c.km === 0);
+    const withUsed = hasUsedCars ? mapped : [...mapped, ...DEMO_USED_CARS];
+    this._cars.set(hasNewCars ? withUsed : [...DEMO_NEW_CARS, ...withUsed]);
     this.loading.set(false);
   }
 
