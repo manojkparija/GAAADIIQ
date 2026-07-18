@@ -18,9 +18,7 @@ export class MyListingsComponent {
   editPrice = signal<number>(0);
   saving = signal(false);
 
-  constructor(public myListings: MyListingsService, private carsData: CarsDataService) {
-    myListings.reload();
-  }
+  constructor(public myListings: MyListingsService, private carsData: CarsDataService) {}
 
   formatPrice(p: number) {
     return p >= 10000000 ? `₹${(p / 10000000).toFixed(1)} Cr`

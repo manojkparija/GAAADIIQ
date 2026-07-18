@@ -12,8 +12,9 @@
       <div class="slot" *ngFor="let slot of [0,1,2]">
         <div class="slot-filled glass-card" *ngIf="selected()[slot] as car">
           <button class="remove-btn" (click)="removeCar(slot)">✕</button>
-          <img [src]="car.image" [alt]="car.model" referrerpolicy="no-referrer"
-               onerror="this.onerror=null;this.src='https://placehold.co/400x220/1a1f35/6C63FF?text=No+Image'">
+          <img [src]="optimisedImage(car.image)" [alt]="car.model" referrerpolicy="no-referrer"
+               style="opacity:0;transition:opacity 0.25s ease"
+               (load)="onImgLoad($event)" (error)="onImgError($event)">
           <h4>{{ car.make }} {{ car.model }}</h4>
           <div class="slot-price gradient-text">{{ formatPrice(car.price) }}</div>
           <div class="slot-sub">{{ car.year }} · {{ car.fuel }}</div>
@@ -50,8 +51,9 @@
       <div class="comp-header">
         <div class="comp-label-col">Specification</div>
         <div class="comp-car-col" *ngFor="let car of activeCars()">
-          <img [src]="car.image" [alt]="car.model" referrerpolicy="no-referrer"
-               onerror="this.onerror=null;this.src='https://placehold.co/200x130/1a1f35/6C63FF?text=img'">
+          <img [src]="optimisedImage(car.image)" [alt]="car.model" referrerpolicy="no-referrer"
+               style="opacity:0;transition:opacity 0.25s ease"
+               (load)="onImgLoad($event)" (error)="onImgError($event)">
           <div class="comp-car-name">{{ car.make }} {{ car.model }}</div>
           <div class="comp-car-price gradient-text">{{ formatPrice(car.price) }}</div>
           <a [routerLink]="['/cars', car.id]" class="btn-outline btn-sm">View Details</a>

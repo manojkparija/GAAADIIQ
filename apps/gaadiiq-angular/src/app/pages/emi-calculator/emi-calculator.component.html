@@ -157,9 +157,9 @@
               <span>Existing EMIs</span>
               <strong>{{ fmt(existingEmis()) }}</strong>
             </div>
-            <input type="range" min="0" max="100000" step="1000"
+            <input type="range" min="0" max="500000" step="5000"
               [ngModel]="existingEmis()" (ngModelChange)="existingEmis.set(+$event)">
-            <div class="range-ends"><span>₹0</span><span>₹1L</span></div>
+            <div class="range-ends"><span>₹0</span><span>₹5L</span></div>
           </div>
 
           <div class="slider-group">
@@ -213,7 +213,7 @@
               <div class="am-val" [class.bad]="(existingEmis() + emi()) > monthlyIncome() * 0.4">
                 {{ fmt(existingEmis() + emi()) }}
               </div>
-              <div class="am-label">Total Monthly EMI</div>
+              <div class="am-label">Total EMIs (Existing + Car)</div>
             </div>
             <div class="am-item">
               <div class="am-icon"><app-icon name="indian-rupee" [size]="22"></app-icon></div>

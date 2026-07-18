@@ -15,10 +15,12 @@
       <div class="step-line" [class.filled]="step() > 1"></div>
       <div class="step-dot" [class.active]="step() >= 2" [class.done]="step() > 2"><span>{{ step() > 2 ? '✓' : '2' }}</span></div>
       <div class="step-line" [class.filled]="step() > 2"></div>
-      <div class="step-dot" [class.active]="step() >= 3"><span>3</span></div>
+      <div class="step-dot" [class.active]="step() >= 3" [class.done]="step() > 3"><span>{{ step() > 3 ? '✓' : '3' }}</span></div>
+      <div class="step-line" [class.filled]="step() > 3"></div>
+      <div class="step-dot" [class.active]="step() >= 4"><span>4</span></div>
     </div>
     <div class="step-labels">
-      <span>Car Details</span><span>Condition & Price</span><span>Your Info</span>
+      <span>Car Details</span><span>Photos</span><span>Condition & Price</span><span>Your Info</span>
     </div>
 
     <!-- Step 1: Car Details -->
@@ -28,18 +30,25 @@
         <div class="form-grid">
           <div class="form-group">
             <label>Make (Brand)</label>
-            <select [(ngModel)]="form.make" name="make">
+            <select [(ngModel)]="form.make" name="make" (ngModelChange)="onMakeChange()">
               <option value="">Select brand</option>
               @for (m of makes; track m) { <option [value]="m">{{ m }}</option> }
             </select>
           </div>
           <div class="form-group">
             <label>Model</label>
-            <input type="text" [(ngModel)]="form.model" name="model" placeholder="e.g. Swift, Creta, Nexon">
+            <select [(ngModel)]="form.model" name="model" (ngModelChange)="onModelChange()" [disabled]="!form.make || availableModels.length === 0">
+              <option value="">Select model</option>
+              @for (m of availableModels; track m) { <option [value]="m">{{ m }}</option> }
+              @if (availableModels.length === 0) { <option value="" disabled>Select a brand first</option> }
+            </select>
           </div>
           <div class="form-group">
-            <label>Variant</label>
-            <input type="text" [(ngModel)]="form.variant" name="variant" placeholder="e.g. ZXI+, SX(O)">
+            <label>Variant <span style="color:var(--muted);font-size:0.8rem">(optional)</span></label>
+            <select [(ngModel)]="form.variant" name="variant" [disabled]="!form.model || availableVariants.length === 0">
+              <option value="">Select variant</option>
+              @for (v of availableVariants; track v) { <option [value]="v">{{ v }}</option> }
+            </select>
           </div>
           <div class="form-group">
             <label>Year</label>
@@ -72,30 +81,113 @@
             <label>Color</label>
             <input type="text" [(ngModel)]="form.color" name="color" placeholder="e.g. Pearl White">
           </div>
+          <div class="form-group">
+            <label>Kilometres Driven</label>
+            <input type="number" [(ngModel)]="form.km" name="km" placeholder="e.g. 45000" min="0">
+          </div>
+          <div class="form-group">
+            <label>Number of Owners</label>
+            <select [(ngModel)]="form.owners" name="owners">
+              <option value="">Select owners</option>
+              @for (o of ownerOptions; track o) { <option [value]="o">{{ o }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Car Condition</label>
+            <select [(ngModel)]="form.condition" name="condition">
+              <option value="">Select condition</option>
+              <option value="Excellent">Excellent — Like new, no issues</option>
+              <option value="Good">Good — Minor wear, fully functional</option>
+              <option value="Fair">Fair — Visible wear, needs minor work</option>
+              <option value="Needs Work">Needs Work — Major repairs needed</option>
+            </select>
+          </div>
         </div>
+        <!-- AI Valuation result (shown after fetch) -->
+        <div class="valuation-banner glass-card" *ngIf="valuation()">
+          <div class="val-header">
+            <span class="val-tag">⚡ AI Price Estimate</span>
+            <span class="val-conf">{{ valuation()!.confidence }}% confidence</span>
+          </div>
+          <div class="val-range">
+            <div class="val-col">
+              <div class="val-label">Low</div>
+              <div class="val-num low">{{ fmt(valuation()!.low) }}</div>
+            </div>
+            <div class="val-col mid">
+              <div class="val-label">Fair Price</div>
+              <div class="val-num">{{ fmt(valuation()!.mid) }}</div>
+            </div>
+            <div class="val-col">
+              <div class="val-label">High</div>
+              <div class="val-num high">{{ fmt(valuation()!.high) }}</div>
+            </div>
+          </div>
+          <div class="val-trend">{{ valuation()!.marketTrend }}</div>
+          <div class="val-tip" *ngIf="valuation()!.tips?.length">💡 {{ valuation()!.tips[0] }}</div>
+        </div>
+
         <div class="btn-row">
           <a routerLink="/" class="btn-outline">Cancel</a>
-          <button class="btn-gradient" (click)="nextStep()" [disabled]="!form.make || !form.model || !form.fuel">Continue →</button>
+          <button class="btn-gradient" (click)="nextStep()" [disabled]="!form.make || !form.model || !form.fuel || !form.km || !form.owners || !form.condition || valuationLoading()">
+            {{ valuationLoading() ? '⚡ Getting AI estimate…' : 'Continue →' }}
+          </button>
         </div>
       </div>
     }
 
-    <!-- Step 2: Condition & Price -->
+    <!-- Step 2: Photos -->
     @if (step() === 2) {
       <div class="step-card glass-card">
-        <h2>📋 Condition & Price</h2>
+        <h2><app-icon name="camera" [size]="22"></app-icon> Car Photos</h2>
+        <p class="step-sub">Listings with photos get <strong>5× more enquiries</strong>. Upload up to 10 images.</p>
+
+        <!-- Native file input (hidden) -->
+        <input type="file" id="carPhotoInput" accept="image/jpeg,image/png,image/webp"
+               multiple style="display:none" (change)="onFilesSelected($event)">
+
+        <!-- Upload zone -->
+        <label for="carPhotoInput" class="upload-zone" [class.uploading]="uploadLoading()" style="cursor:pointer;display:block">
+          <div class="upload-zone-inner">
+            <app-icon name="upload" [size]="36"></app-icon>
+            <p>{{ uploadLoading() ? 'Uploading…' : 'Click to upload photos' }}</p>
+            <span>JPG, PNG, WEBP · Max 10 MB each · Up to {{ 10 - uploadedImages().length }} more</span>
+          </div>
+        </label>
+
+        <!-- Upload error -->
+        <div *ngIf="uploadError()" style="color:var(--danger);font-size:0.85rem;margin-top:0.5rem">
+          {{ uploadError() }}
+        </div>
+
+        <!-- Preview grid -->
+        <div class="upload-preview-grid" *ngIf="uploadedImages().length > 0">
+          <div class="upload-preview-item" *ngFor="let img of uploadedImages(); let i = index">
+            <img [src]="imageThumb(img.url)" [alt]="'Car photo ' + (i+1)">
+            <div class="preview-badge" *ngIf="i === 0">Cover</div>
+            <button class="preview-remove" (click)="removeImage(i)" title="Remove">✕</button>
+          </div>
+        </div>
+
+        <div class="upload-hint" *ngIf="uploadedImages().length === 0">
+          <app-icon name="info" [size]="14"></app-icon>
+          You can skip photos and add them later from My Listings.
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-outline" (click)="prevStep()">← Back</button>
+          <button class="btn-gradient" (click)="nextStep()">
+            {{ uploadedImages().length > 0 ? 'Continue (' + uploadedImages().length + ' photos) →' : 'Skip for now →' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Step 3: Condition & Price -->
+    @if (step() === 3) {
+      <div class="step-card glass-card">
+        <h2>📋 Price & Description</h2>
         <div class="form-grid">
-          <div class="form-group">
-            <label>KM Driven (enter 0 for brand new)</label>
-            <input type="number" [(ngModel)]="form.km" name="km" min="0" placeholder="e.g. 25000 (0 for new)">
-          </div>
-          <div class="form-group">
-            <label>No. of Owners</label>
-            <select [(ngModel)]="form.owners" name="owners">
-              <option value="">Select</option>
-              @for (o of ownerOptions; track o) { <option [value]="o">{{ o }}</option> }
-            </select>
-          </div>
           <div class="form-group">
             <label>City</label>
             <input type="text" [(ngModel)]="form.city" name="city" placeholder="e.g. Mumbai">
@@ -103,6 +195,18 @@
           <div class="form-group">
             <label>Asking Price (₹)</label>
             <input type="number" [(ngModel)]="form.price" name="price" placeholder="e.g. 750000">
+          </div>
+        </div>
+        <!-- Show AI valuation hint if available -->
+        <div class="valuation-banner glass-card" *ngIf="valuation()">
+          <div class="val-header">
+            <span class="val-tag">⚡ AI Suggested Price</span>
+            <span class="val-conf">{{ valuation()!.confidence }}% confidence</span>
+          </div>
+          <div class="val-range">
+            <div class="val-col"><div class="val-label">Low</div><div class="val-num low">{{ fmt(valuation()!.low) }}</div></div>
+            <div class="val-col mid"><div class="val-label">Fair Price</div><div class="val-num">{{ fmt(valuation()!.mid) }}</div></div>
+            <div class="val-col"><div class="val-label">High</div><div class="val-num high">{{ fmt(valuation()!.high) }}</div></div>
           </div>
         </div>
         <div class="form-group full-width">
@@ -114,13 +218,13 @@
         </div>
         <div class="btn-row">
           <button class="btn-outline" (click)="prevStep()">← Back</button>
-          <button class="btn-gradient" (click)="nextStep()" [disabled]="form.km === '' || !form.price">Continue →</button>
+          <button class="btn-gradient" (click)="nextStep()" [disabled]="!form.price">Continue →</button>
         </div>
       </div>
     }
 
-    <!-- Step 3: Contact Info -->
-    @if (step() === 3) {
+    <!-- Step 4: Contact Info -->
+    @if (step() === 4) {
       <div class="step-card glass-card">
         <h2>👤 Your Contact Info</h2>
         <div class="form-grid">
@@ -130,7 +234,8 @@
           </div>
           <div class="form-group">
             <label>Phone Number</label>
-            <input type="tel" [(ngModel)]="form.phone" name="phone" placeholder="+91 9876543210">
+            <input type="tel" [(ngModel)]="form.phone" name="phone" placeholder="9876543210" (blur)="validatePhone()">
+            <span class="field-error" *ngIf="phoneError()">{{ phoneError() }}</span>
           </div>
           <div class="form-group full-width">
             <label>Email Address</label>
@@ -142,9 +247,12 @@
           <span>📋 Free RC verification</span>
           <span>🤖 AI valuation included</span>
         </div>
+        <div class="submit-error" *ngIf="submitError()">
+          ⚠️ {{ submitError() }}
+        </div>
         <div class="btn-row">
           <button class="btn-outline" (click)="prevStep()">← Back</button>
-          <button class="btn-gradient" (click)="onSubmit()" [disabled]="loading() || !form.name || !form.phone">
+          <button class="btn-gradient" (click)="onSubmit()" [disabled]="loading() || !form.name || !form.phone || !!phoneError()">
             {{ loading() ? 'Submitting…' : 'Submit Listing 🚀' }}
           </button>
         </div>

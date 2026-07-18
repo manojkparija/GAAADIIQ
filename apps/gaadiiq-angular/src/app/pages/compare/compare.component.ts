@@ -87,6 +87,24 @@ export class CompareComponent {
 
   formatPrice(p: number) { return `₹${(p/100000).toFixed(1)}L`; }
 
+  optimisedImage(url: string): string {
+    if (!url) return 'assets/cars/placeholder.svg';
+    const match = url.match(/res\.cloudinary\.com\/([^/]+)\/image\/upload\/(?:[^/]+\/)?(.+)/);
+    if (match) {
+      const [, cloud, publicId] = match;
+      return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,w_600,h_380,c_fill/${publicId}`;
+    }
+    return url;
+  }
+
+  onImgLoad(e: Event) { (e.target as HTMLImageElement).style.opacity = '1'; }
+  onImgError(e: Event) {
+    const img = e.target as HTMLImageElement;
+    img.onerror = null;
+    img.src = 'assets/cars/placeholder.svg';
+    img.style.opacity = '1';
+  }
+
   getTco(car: Car): TcoBreakdown { return this.tco.calculateTco(car); }
   tcoRows: { label: string; key: keyof TcoBreakdown }[] = [
     { label: 'Purchase Price', key: 'purchasePrice' },

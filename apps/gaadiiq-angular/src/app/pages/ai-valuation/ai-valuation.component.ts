@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { SupabaseService } from '../../services/supabase.service';
 
 interface Variant { name: string; basePrice: number; }
 interface ModelEntry { variants: Variant[]; }
@@ -125,6 +126,8 @@ const CATALOGUE: Record<string, Record<string, Variant[]>> = {
   styleUrl: './ai-valuation.component.scss',
 })
 export class AiValuationComponent {
+  constructor(private supabase: SupabaseService) {}
+
   form = {
     make: '', model: '', variant: '', year: new Date().getFullYear(),
     km: '', fuel: '', transmission: '', owners: '', condition: '',
@@ -161,12 +164,31 @@ export class AiValuationComponent {
   async estimate() {
     if (!this.formValid) return;
     this.loading.set(true);
-    await new Promise(r => setTimeout(r, 1800));
 
+    try {
+      const { data, error } = await this.supabase.client.functions.invoke('ai-valuation', {
+        body: { ...this.form },
+      });
+
+      if (error || !data || data.error) {
+        throw new Error(error?.message || data?.error || 'Unknown error');
+      }
+
+      this.result.set(data as ValuationResult);
+      this.step.set('result');
+    } catch (err) {
+      console.warn('Claude AI valuation failed, using fallback:', err);
+      this.result.set(this.fallbackValuation());
+      this.step.set('result');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  private fallbackValuation(): ValuationResult {
     const age = new Date().getFullYear() - +this.form.year;
     const km = +this.form.km;
 
-    // Use variant base price if available, else fall back to make-segment average
     const variantEntry = this.availableVariants.find(v => v.name === this.form.variant);
     const segmentFallback: Record<string, number> = {
       'BMW': 5000000, 'Mercedes-Benz': 6000000, 'Audi': 5000000,
@@ -177,51 +199,40 @@ export class AiValuationComponent {
     };
     const base = variantEntry?.basePrice ?? segmentFallback[this.form.make] ?? 900000;
 
-    // Depreciation curve: 15% yr1, 10% yr2–5, 7% yr6+
     let dep = 0;
     for (let i = 0; i < age; i++) dep += i === 0 ? 0.15 : i < 5 ? 0.10 : 0.07;
     dep = Math.min(dep, 0.75);
 
-    // km penalty: 1% per 10k km over 20k baseline
     const kmPenalty = Math.max(0, (km - 20000) / 10000) * 0.01;
-
-    // Owner penalty
     const ownerPenalty = this.form.owners === '1st Owner' ? 0 :
       this.form.owners === '2nd Owner' ? 0.05 :
       this.form.owners === '3rd Owner' ? 0.10 : 0.15;
-
-    // Condition modifier
     const condMod = this.form.condition === 'Excellent' ? 1.05 :
       this.form.condition === 'Good' ? 1.0 :
       this.form.condition === 'Fair' ? 0.92 : 0.82;
-
-    // Fuel premium
     const fuelMod = this.form.fuel === 'Electric' ? 1.08 :
       this.form.fuel === 'Hybrid' ? 1.04 : 1.0;
 
     const mid  = Math.round(base * (1 - dep - kmPenalty - ownerPenalty) * condMod * fuelMod / 1000) * 1000;
     const low  = Math.round(mid * 0.90 / 1000) * 1000;
     const high = Math.round(mid * 1.10 / 1000) * 1000;
-
     const depPct = Math.round((dep + kmPenalty + ownerPenalty) * 100);
-    const trend = this.form.fuel === 'Electric' ? '📈 EVs are in strong demand right now' :
-      this.form.fuel === 'Diesel' ? '📉 Diesel resale softening in metros' :
-      '➡️ Petrol market is stable';
 
     const tips: string[] = [];
     if (km > 80000) tips.push('High mileage — a full service record will significantly boost buyer confidence.');
     if (age >= 5) tips.push('Consider a fresh paint polish and interior detailing to improve first impression.');
     if (this.form.owners !== '1st Owner') tips.push('Highlight any warranties or extended service packages in your listing.');
     if (this.form.condition !== 'Excellent') tips.push('Minor dent/scratch repairs can add ₹20–40k to your selling price.');
-    if (!variantEntry) tips.push('Add the exact variant next time for a more precise estimate.');
-    if (tips.length === 0 || (tips.length === 1 && !variantEntry)) tips.push('Your car is in great shape — list at the high end of the range!');
+    if (tips.length === 0) tips.push('Your car is in great shape — list at the high end of the range!');
 
-    // Higher confidence when variant is known
-    const confidence = variantEntry ? 91 + Math.round(Math.random() * 6) : 78 + Math.round(Math.random() * 8);
-
-    this.result.set({ low, mid, high, confidence, depreciation: depPct, marketTrend: trend, tips });
-    this.loading.set(false);
-    this.step.set('result');
+    return {
+      low, mid, high,
+      confidence: variantEntry ? 91 + Math.round(Math.random() * 6) : 78 + Math.round(Math.random() * 8),
+      depreciation: depPct,
+      marketTrend: this.form.fuel === 'Electric' ? '📈 EVs are in strong demand right now' :
+        this.form.fuel === 'Diesel' ? '📉 Diesel resale softening in metros' : '➡️ Petrol market is stable',
+      tips,
+    };
   }
 
   reset() { this.step.set('form'); this.result.set(null); this.form = { make:'', model:'', variant:'', year: new Date().getFullYear(), km:'', fuel:'', transmission:'', owners:'', condition:'' }; }

@@ -165,12 +165,15 @@ async def recommend(
         from models.car import Car
         q = q.join(Listing.car).where(Car.fuel_type == payload.fuel)
 
-    # Hard filter: body type
+    # Hard filter: body type (mpv and muv are aliases)
     if payload.body and payload.body != "any":
         from models.car import Car as CarModel
         if not payload.fuel or payload.fuel == "any":
             q = q.join(Listing.car)
-        q = q.where(CarModel.body_type == payload.body)
+        body_values = [payload.body, "muv"] if payload.body == "mpv" else (
+            [payload.body, "mpv"] if payload.body == "muv" else [payload.body]
+        )
+        q = q.where(CarModel.body_type.in_(body_values))
 
     q = q.limit(200)  # score a reasonable candidate set
     result = await db.execute(q)

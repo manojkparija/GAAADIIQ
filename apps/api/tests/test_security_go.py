@@ -16,31 +16,13 @@ from unittest.mock import patch
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from core.config import Settings
-from db.base import Base
 from db.session import get_db
 from main import app
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
-
-
-@pytest_asyncio.fixture
-async def db_engine():
-    engine = create_async_engine(
-        TEST_DB_URL,
-        echo=False,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
 
 
 @pytest_asyncio.fixture
@@ -327,7 +309,6 @@ def test_dev_mode_helper_false_in_production():
 # ── Seed import path ──────────────────────────────────────────────────────────
 
 def test_seed_imports_async_session_local():
-    import importlib.util
     from pathlib import Path
 
     seed_path = Path(__file__).resolve().parents[1] / "seed.py"

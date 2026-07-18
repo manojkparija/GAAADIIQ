@@ -36,10 +36,10 @@ const RESALE: Record<string, number> = {
 
 const ANALYZE_MSGS = [
   { icon: 'search', text: 'Profiling your requirements...' },
-  { icon: '🧮', text: 'Evaluating 58 vehicles across 14 parameters...' },
+  { icon: '🧮', text: 'Evaluating vehicles against your answers...' },
   { icon: 'calculator', text: 'Calculating 5-year ownership costs...' },
-  { icon: 'bar-chart', text: 'Running AI recommendation engine...' },
-  { icon: '✨', text: 'Generating personalized insights...' },
+  { icon: 'bar-chart', text: 'Scoring listings against your profile...' },
+  { icon: '✨', text: 'Ranking your best matches...' },
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -250,6 +250,23 @@ export class AiAdvisorComponent {
   constructor(private carsData: CarsDataService, private seo: SeoService, private analytics: AnalyticsService) {
     seo.setPage('AI Car Advisor',
       'Answer 10 smart questions and get personalized, AI-powered car recommendations with full cost analysis.');
+    try {
+      const saved = sessionStorage.getItem('gaadiiq_advisor_quiz');
+      if (saved) {
+        const { profile, stepIdx } = JSON.parse(saved);
+        if (profile) this.profile.set(profile);
+        if (typeof stepIdx === 'number') this.stepIdx.set(stepIdx);
+      }
+    } catch {}
+  }
+
+  private saveQuiz() {
+    try {
+      sessionStorage.setItem('gaadiiq_advisor_quiz', JSON.stringify({
+        profile: this.profile(),
+        stepIdx: this.stepIdx(),
+      }));
+    } catch {}
   }
 
   toggle(option: string) {
@@ -260,16 +277,20 @@ export class AiAdvisorComponent {
       if (cur.includes(option)) return { ...p, [step.key]: cur.filter(o => o !== option) };
       return { ...p, [step.key]: [...cur, option] };
     });
+    this.saveQuiz();
   }
 
   isSelected(opt: string) { return this.currentSels().includes(opt); }
 
-  back() { if (this.stepIdx() > 0) this.stepIdx.update(v => v - 1); }
+  back() {
+    if (this.stepIdx() > 0) { this.stepIdx.update(v => v - 1); this.saveQuiz(); }
+  }
 
   next() {
     if (!this.canProceed()) return;
     if (this.stepIdx() < this.totalSteps() - 1) {
       this.stepIdx.update(v => v + 1);
+      this.saveQuiz();
     } else {
       this.runAnalysis();
     }
@@ -278,9 +299,9 @@ export class AiAdvisorComponent {
   private runAnalysis() {
     const p = this.profile();
     this.analytics.track('ai_query', {
-      budget:    (p['budget'] as string[] | undefined)?.[0],
-      fuel:      (p['fuel']   as string[] | undefined)?.[0],
-      body_type: (p['body']   as string[] | undefined)?.[0],
+      budget:    (p['budget']   as string[] | undefined)?.[0],
+      fuel:      (p['fuel']     as string[] | undefined)?.[0],
+      body_type: (p['bodyType'] as string[] | undefined)?.[0],
       query:     JSON.stringify(p),
     });
     this.phase.set('analyzing');
@@ -321,14 +342,12 @@ export class AiAdvisorComponent {
     const noFuelPref = fuels.includes('No preference') || fuels.length === 0;
 
     // Pre-filter by condition
-    // "Brand New" = 2023-2024 model year with low mileage (< 15,000 km)
-    // "Certified Used" = older model or higher mileage
     const currentYear = new Date().getFullYear();
     const allCars = this.carsData.getAll();
     const all = condition === 'Brand New'
-              ? allCars.filter(c => c.year >= currentYear - 1 && c.km < 15000)
+              ? allCars.filter(c => c.km === 0 && c.year >= currentYear)
               : condition === 'Certified Used'
-              ? allCars.filter(c => c.year < currentYear - 1 || c.km >= 15000)
+              ? allCars.filter(c => c.isSellerListing || c.km > 0 || c.year < currentYear)
               : allCars;
 
     const scored: RecommendedCar[] = all.map(car => {
@@ -519,7 +538,8 @@ export class AiAdvisorComponent {
     //   4. Cars more than 20% over budget are excluded entirely.
     let top: RecommendedCar[];
     if (noFuelPref) {
-      top = scored.slice(0, 5);
+      const hardMax = budMax === Infinity ? Infinity : budMax * 1.10;
+      top = (budMax === Infinity ? scored : scored.filter(c => c.price <= hardMax)).slice(0, 5);
     } else {
       const fuelMatch = scored.filter(c =>
         fuels.some(f => c.fuel.toLowerCase() === f.toLowerCase()));
@@ -545,7 +565,7 @@ export class AiAdvisorComponent {
       (b.features?.length || 0) / b.price - (a.features?.length || 0) / a.price);
     if (byValue[0]) byValue[0].categoryBadges.push('Best Value');
 
-    const needS = this.needSeating(p['familySize'] as string || '2 – 3 people');
+    const needS = this.needSeating((p['familySize'] as string[])?.[0] || '2 – 3 people');
     if (needS >= 6) {
       const bySeating = [...top].sort((a, b) => this.carSeating(b) - this.carSeating(a));
       if (bySeating[0] && this.carSeating(bySeating[0]) >= 6) bySeating[0].categoryBadges.push('👨‍👩‍👧 Best Family');
@@ -607,5 +627,6 @@ export class AiAdvisorComponent {
     this.profile.set({});
     this.results.set([]);
     this.showComparison.set(false);
+    try { sessionStorage.removeItem('gaadiiq_advisor_quiz'); } catch {}
   }
 }
