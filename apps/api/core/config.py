@@ -6,7 +6,7 @@ _INSECURE_SECRET = "change-me-in-production"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "GAADIIQ API"
     app_version: str = "0.1.0"
