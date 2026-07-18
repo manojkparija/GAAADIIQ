@@ -66,6 +66,7 @@ export class NewCarsComponent implements OnInit {
   selectedBodyTypes = signal<string[]>([]);
   selectedFuels = signal<string[]>([]);
   selectedTransmissions = signal<string[]>([]);
+  minBudget = signal(0);
   maxBudget = signal(10000000);
   selectedSort = signal('Popularity');
 
@@ -138,7 +139,8 @@ export class NewCarsComponent implements OnInit {
     const models: NewCarModel[] = [];
     map.forEach((cars, key) => {
       const [make, model] = key.split('||');
-      const affordable = cars.filter(c => c.price <= budget);
+      const minB = this.minBudget();
+      const affordable = cars.filter(c => c.price <= budget && c.price >= minB);
       if (affordable.length === 0) return;
       const prices = affordable.map(c => c.price);
       const rep = affordable.find(c => c.image) ?? affordable[0];
@@ -172,7 +174,7 @@ export class NewCarsComponent implements OnInit {
 
   activeFiltersCount = computed(() => {
     return this.selectedBodyTypes().length + this.selectedFuels().length + this.selectedTransmissions().length
-      + (this.maxBudget() < 10000000 ? 1 : 0);
+      + (this.maxBudget() < 10000000 || this.minBudget() > 0 ? 1 : 0);
   });
 
   ngOnInit() {}
@@ -202,9 +204,19 @@ export class NewCarsComponent implements OnInit {
     this.selectedBodyTypes.set([]);
     this.selectedFuels.set([]);
     this.selectedTransmissions.set([]);
+    this.minBudget.set(0);
     this.maxBudget.set(10000000);
     this.selectedSort.set('Popularity');
   }
+
+  activeBudgetLabel = computed(() => {
+    const min = this.minBudget();
+    const max = this.maxBudget();
+    if (min > 0 && max >= 10000000) return `Above ${this.formatLakh(min)}`;
+    if (min > 0) return `${this.formatLakh(min)} – ${this.formatLakh(max)}`;
+    if (max < 10000000) return `Under ${this.formatLakh(max)}`;
+    return null;
+  });
 
   toggleCompare(key: string) {
     const s = new Set(this.compareSet());
@@ -226,18 +238,26 @@ export class NewCarsComponent implements OnInit {
 
   navigateToBodyType(bodyType: string) {
     if (bodyType === 'Electric') {
-      this.router.navigate(['/listings'], { queryParams: { carType: 'New', fuel: 'Electric' } });
+      this.toggleFuel('Electric');
     } else if (bodyType === 'Luxury') {
-      this.router.navigate(['/listings'], { queryParams: { carType: 'New', minPrice: 3000000 } });
+      this.minBudget.set(3000000);
+      this.maxBudget.set(10000000);
     } else {
-      this.router.navigate(['/listings'], { queryParams: { carType: 'New', bodyType } });
+      this.toggleBodyType(bodyType);
     }
+    this.scrollToModels();
   }
 
   navigateToBudget(min: number, max: number) {
-    const params: Record<string, number> = { maxPrice: max };
-    if (min > 0) params['minPrice'] = min;
-    this.router.navigate(['/listings'], { queryParams: { carType: 'New', ...params } });
+    this.minBudget.set(min);
+    this.maxBudget.set(max < 100000000 ? max : 10000000);
+    this.scrollToModels();
+  }
+
+  scrollToModels() {
+    setTimeout(() => {
+      document.getElementById('popular-models')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   }
 
   formatLakh(p: number) {

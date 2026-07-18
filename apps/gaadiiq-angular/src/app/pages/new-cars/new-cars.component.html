@@ -117,7 +117,7 @@
 </section>
 
 <!-- ── POPULAR NEW MODELS + FILTER SIDEBAR ── -->
-<section class="nc-section nc-section-alt">
+<section class="nc-section nc-section-alt" id="popular-models">
   <div class="container">
     <div class="section-header">
       <h2 class="section-title">Popular <span class="gradient-text">New Car Models</span></h2>
@@ -146,9 +146,12 @@
 
         <!-- Budget Slider -->
         <div class="filter-group">
-          <label class="filter-group-label">Max Budget: <strong>{{ formatBudgetLabel(maxBudget()) }}</strong></label>
+          <label class="filter-group-label">
+            Budget:
+            <strong>{{ activeBudgetLabel() ?? ('Under ' + formatBudgetLabel(maxBudget())) }}</strong>
+          </label>
           <input type="range" class="budget-slider" min="200000" max="10000000" step="100000"
-            [value]="maxBudget()" (input)="maxBudget.set(+$any($event.target).value)" />
+            [value]="maxBudget()" (input)="maxBudget.set(+$any($event.target).value); minBudget.set(0)" />
           <div class="slider-labels">
             <span>₹2L</span><span>₹1 Cr</span>
           </div>
@@ -202,8 +205,8 @@
             @for (t of selectedTransmissions(); track t) {
               <span class="filter-chip">{{ t }} <button (click)="toggleTransmission(t)">×</button></span>
             }
-            @if (maxBudget() < 10000000) {
-              <span class="filter-chip">Under {{ formatBudgetLabel(maxBudget()) }} <button (click)="maxBudget.set(10000000)">×</button></span>
+            @if (activeBudgetLabel()) {
+              <span class="filter-chip">{{ activeBudgetLabel() }} <button (click)="minBudget.set(0); maxBudget.set(10000000)">×</button></span>
             }
           </div>
         }

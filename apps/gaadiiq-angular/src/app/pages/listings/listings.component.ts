@@ -52,6 +52,7 @@ export class ListingsComponent implements OnInit {
       if (params['carType']) this.carType.set(params['carType'] as any);
       if (params['maxPrice']) this.maxPrice.set(+params['maxPrice']);
       if (params['minPrice']) this.minPrice.set(+params['minPrice']);
+      if (params['model']) this.selectedModelFilter.set(params['model']);
       if (params['transmission']) this.selectedTransmission.set(params['transmission']);
     });
   }
@@ -71,6 +72,8 @@ export class ListingsComponent implements OnInit {
       const q = this.searchQuery().toLowerCase();
       const matchQ  = !q || `${c.make} ${c.model} ${c.variant ?? ''} ${c.city} ${c.bodyType} ${c.year} ${c.fuel} ${c.transmission} ${c.color ?? ''}`.toLowerCase().includes(q);
       const matchMake = this.selectedMake() === 'All' || c.make === this.selectedMake();
+      const modelF = this.selectedModelFilter();
+      const matchModel = !modelF || c.model === modelF;
       const matchFuel = this.selectedFuel() === 'All' || c.fuel === this.selectedFuel();
       const matchTx   = this.selectedTransmission() === 'All' || c.transmission.includes(this.selectedTransmission());
       const matchBT   = this.selectedBodyType() === 'All' || (c.bodyType ?? '').toLowerCase() === this.selectedBodyType().toLowerCase();
@@ -88,7 +91,7 @@ export class ListingsComponent implements OnInit {
       const matchRange = type !== 'Used' || range === 'All' ? true :
         range === '< 50k km' ? c.km <= 50000 : c.km > 50000;
 
-      return matchQ && matchMake && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchType && matchRange;
+      return matchQ && matchMake && matchModel && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchType && matchRange;
     });
 
     const sort = this.selectedSort();
@@ -113,6 +116,7 @@ export class ListingsComponent implements OnInit {
   });
 
   selectedModel = signal<string | null>(null);
+  selectedModelFilter = signal<string | null>(null);
 
   newCarModels = computed<NewCarModel[]>(() => {
     const make = this.selectedMake();
@@ -128,10 +132,10 @@ export class ListingsComponent implements OnInit {
     const bt = this.selectedBodyType();
     const fuel = this.selectedFuel();
     const budget = this.maxPrice();
+    const minBudget = this.minPrice();
     return Array.from(map.entries()).map(([key, cars]) => {
       const [make, model] = key.split('||');
-      // Only count/price variants within the budget
-      const affordable = cars.filter(c => c.price <= budget);
+      const affordable = cars.filter(c => c.price <= budget && c.price >= minBudget);
       if (affordable.length === 0) return null;
       const prices = affordable.map(c => c.price);
       const rep = affordable.find(c => c.image) ?? affordable[0];
