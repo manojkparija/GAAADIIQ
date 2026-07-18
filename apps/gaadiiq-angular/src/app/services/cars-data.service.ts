@@ -13,11 +13,12 @@ export interface Car {
   aiValuation?: { fairPrice: number; marketMin: number; marketMax: number; verdict: string; confidence: number };
 }
 
-// Fallback image URLs per model — used when the DB image URL fails to load.
-// Uses a working CDN URL as primary; the onerror on <img> shows placeholder.svg.
+const PLACEHOLDER = 'assets/cars/placeholder.svg';
+
+// Local / owned image fallbacks only — never hotlink third-party CDNs (they 404).
 const MODEL_IMAGE_FALLBACK: Record<string, string> = {
-  'Tata Nexon':     'https://imgd.aeplcdn.com/1200x900/n/cw/ec/199321/nexon-exterior-right-front-three-quarter-2.jpeg',
-  'Tata Nexon EV':  'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg',
+  'Maruti Suzuki Swift': 'assets/cars/swift/front.jpg',
+  'Swift': 'assets/cars/swift/front.jpg',
 };
 
 // Fallback body-type when DB body_type column is null/empty
@@ -63,10 +64,6 @@ const LOCAL_IMAGES: Record<string, string[]> = {
     'assets/cars/swift/interior.jpg',
     'assets/cars/swift/steering.jpg',
   ],
-  'Tata Nexon': [
-    'https://imgd.aeplcdn.com/1200x900/n/cw/ec/199321/nexon-exterior-right-front-three-quarter-2.jpeg',
-    'https://imgd.aeplcdn.com/1200x900/n/cw/ec/199321/nexon-exterior-right-front-three-quarter.jpeg',
-  ],
 };
 
 @Injectable({ providedIn: 'root' })
@@ -103,14 +100,23 @@ export class CarsDataService {
       transmission: row.transmission,
       badge: row.badge ?? '',
       badgeType: row.badge_type ?? '',
-      image: LOCAL_IMAGES[`${row.make} ${row.model}`]?.[0] || row.image || '',
+      image: (() => {
+        const key = `${row.make} ${row.model}`;
+        const local = LOCAL_IMAGES[key]?.[0] || MODEL_IMAGE_FALLBACK[key] || MODEL_IMAGE_FALLBACK[row.model];
+        if (local) return local;
+        const raw = row.image || '';
+        if (raw && !String(raw).includes('aeplcdn')) return raw;
+        return PLACEHOLDER;
+      })(),
       images: (() => {
-        const local = LOCAL_IMAGES[`${row.make} ${row.model}`];
+        const key = `${row.make} ${row.model}`;
+        const local = LOCAL_IMAGES[key];
         if (local) return local;
         const dbImgs = row.car_images
           ? [...row.car_images].sort((a: any, b: any) => a.sort_order - b.sort_order).map((i: any) => i.url)
           : (row.image ? [row.image] : []);
-        return dbImgs;
+        const cleaned = dbImgs.filter((u: string) => u && !String(u).includes('aeplcdn'));
+        return cleaned.length ? cleaned : [PLACEHOLDER];
       })(),
       rating: parseFloat(row.rating) || 0,
       reviews: row.reviews ?? 0,

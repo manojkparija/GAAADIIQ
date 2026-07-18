@@ -31,6 +31,8 @@ export class ListingsComponent implements OnInit {
   selectedBodyType   = signal('All');
   selectedSort       = signal('Relevance');
   selectedMake       = signal('All');
+  selectedModelName  = signal('All');
+  minPrice           = signal(0);
   maxPrice           = signal(20000000);
   minYear            = signal(2018);
   sidebarOpen        = signal(false);
@@ -41,15 +43,48 @@ export class ListingsComponent implements OnInit {
   // Used-only sub-filter: 'All' | '< 50k km' | '> 50k km'
   usedKmRange = signal<'All' | '< 50k km' | '> 50k km'>('All');
 
+  private readonly LUXURY_MIN = 3000000;
+
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['q']) this.searchQuery.set(params['q']);
       this.selectedMake.set(params['make'] || 'All');
-      this.selectedFuel.set(params['fuel'] || 'All');
-      this.selectedBodyType.set(params['bodyType'] || 'All');
+      this.selectedModelName.set(params['model'] || 'All');
+
+      // Body type special cases: Electric → fuel, Luxury → min price
+      const bt = params['bodyType'] || 'All';
+      if (bt === 'Electric') {
+        this.selectedBodyType.set('All');
+        this.selectedFuel.set(params['fuel'] || 'Electric');
+      } else if (bt === 'Luxury') {
+        this.selectedBodyType.set('All');
+        this.minPrice.set(Math.max(+params['minPrice'] || 0, this.LUXURY_MIN));
+        this.selectedFuel.set(params['fuel'] || 'All');
+      } else {
+        this.selectedBodyType.set(bt);
+        this.selectedFuel.set(params['fuel'] || 'All');
+      }
+
       if (params['carType']) this.carType.set(params['carType'] as any);
-      if (params['maxPrice']) this.maxPrice.set(+params['maxPrice']);
+      if (params['minPrice'] != null && params['minPrice'] !== '' && bt !== 'Luxury') {
+        this.minPrice.set(+params['minPrice']);
+      } else if (!params['minPrice'] && bt !== 'Luxury') {
+        this.minPrice.set(0);
+      }
+      if (params['maxPrice'] != null && params['maxPrice'] !== '') {
+        this.maxPrice.set(+params['maxPrice']);
+      } else if (!params['maxPrice']) {
+        this.maxPrice.set(20000000);
+      }
       if (params['transmission']) this.selectedTransmission.set(params['transmission']);
+
+      // Deep-link to a specific model’s variants
+      if (params['make'] && params['model']) {
+        this.carType.set('New');
+        this.selectedModel.set(`${params['make']}||${params['model']}`);
+      } else if (!params['model']) {
+        this.selectedModel.set(null);
+      }
     });
   }
 
@@ -68,10 +103,11 @@ export class ListingsComponent implements OnInit {
       const q = this.searchQuery().toLowerCase();
       const matchQ  = !q || `${c.make} ${c.model} ${c.variant ?? ''} ${c.city} ${c.bodyType} ${c.year} ${c.fuel} ${c.transmission} ${c.color ?? ''}`.toLowerCase().includes(q);
       const matchMake = this.selectedMake() === 'All' || c.make === this.selectedMake();
+      const matchModel = this.selectedModelName() === 'All' || c.model === this.selectedModelName();
       const matchFuel = this.selectedFuel() === 'All' || c.fuel === this.selectedFuel();
       const matchTx   = this.selectedTransmission() === 'All' || c.transmission.includes(this.selectedTransmission());
       const matchBT   = this.selectedBodyType() === 'All' || (c.bodyType ?? '').toLowerCase() === this.selectedBodyType().toLowerCase();
-      const matchPrice = c.price <= this.maxPrice();
+      const matchPrice = c.price >= this.minPrice() && c.price <= this.maxPrice();
       const matchYear  = c.year >= this.minYear();
 
       // Top-level New / Used split
@@ -85,7 +121,7 @@ export class ListingsComponent implements OnInit {
       const matchRange = type !== 'Used' || range === 'All' ? true :
         range === '< 50k km' ? c.km <= 50000 : c.km > 50000;
 
-      return matchQ && matchMake && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchType && matchRange;
+      return matchQ && matchMake && matchModel && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchType && matchRange;
     });
 
     const sort = this.selectedSort();
@@ -113,8 +149,11 @@ export class ListingsComponent implements OnInit {
 
   newCarModels = computed<NewCarModel[]>(() => {
     const make = this.selectedMake();
+    const modelName = this.selectedModelName();
     const newCars = this.carsData.cars().filter(c =>
-      c.km === 0 && c.year >= 2025 && (make === 'All' || c.make === make)
+      c.km === 0 && c.year >= 2025
+      && (make === 'All' || c.make === make)
+      && (modelName === 'All' || c.model === modelName)
     );
     const map = new Map<string, Car[]>();
     for (const c of newCars) {
@@ -124,17 +163,21 @@ export class ListingsComponent implements OnInit {
     }
     const bt = this.selectedBodyType();
     const fuel = this.selectedFuel();
-    const budget = this.maxPrice();
+    const minP = this.minPrice();
+    const maxP = this.maxPrice();
     return Array.from(map.entries()).map(([key, cars]) => {
       const [make, model] = key.split('||');
-      // Only count/price variants within the budget
-      const affordable = cars.filter(c => c.price <= budget);
+      const affordable = cars.filter(c => c.price >= minP && c.price <= maxP);
       if (affordable.length === 0) return null;
       const prices = affordable.map(c => c.price);
-      const rep = affordable.find(c => c.image) ?? affordable[0];
+      const rep = affordable.find(c => c.image && !String(c.image).includes('aeplcdn'))
+        ?? affordable.find(c => c.image) ?? affordable[0];
+      const image = (rep.image && !String(rep.image).includes('aeplcdn'))
+        ? rep.image
+        : (model === 'Swift' ? 'assets/cars/swift/front.jpg' : 'assets/cars/placeholder.svg');
       return {
         make, model,
-        image: rep.image,
+        image,
         minPrice: Math.min(...prices),
         maxPrice: Math.max(...prices),
         variantCount: affordable.length,
@@ -157,9 +200,14 @@ export class ListingsComponent implements OnInit {
     const sel = this.selectedModel();
     if (!sel) return [];
     const [make, model] = sel.split('||');
-    const budget = this.maxPrice();
+    const minP = this.minPrice();
+    const maxP = this.maxPrice();
     return this.carsData.cars()
-      .filter(c => c.make === make && c.model === model && c.km === 0 && c.year >= 2025 && c.price <= budget)
+      .filter(c =>
+        c.make === make && c.model === model
+        && c.km === 0 && c.year >= 2025
+        && c.price >= minP && c.price <= maxP
+      )
       .sort((a, b) => a.price - b.price);
   });
 
@@ -230,6 +278,8 @@ export class ListingsComponent implements OnInit {
     this.carType.set('All'); this.usedKmRange.set('All');
     this.selectedFuel.set('All'); this.selectedTransmission.set('All');
     this.selectedBodyType.set('All'); this.selectedMake.set('All');
-    this.maxPrice.set(20000000); this.minYear.set(2018); this.searchQuery.set('');
+    this.selectedModelName.set('All'); this.selectedModel.set(null);
+    this.minPrice.set(0); this.maxPrice.set(20000000);
+    this.minYear.set(2018); this.searchQuery.set('');
   }
 }
