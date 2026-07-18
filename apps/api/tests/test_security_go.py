@@ -327,7 +327,6 @@ def test_dev_mode_helper_false_in_production():
 # ── Seed import path ──────────────────────────────────────────────────────────
 
 def test_seed_imports_async_session_local():
-    import importlib.util
     from pathlib import Path
 
     seed_path = Path(__file__).resolve().parents[1] / "seed.py"
