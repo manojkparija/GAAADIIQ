@@ -42,7 +42,7 @@
           <div class="hero-tab-content">
             <div class="budget-quick-grid">
               @for (range of budgetRanges; track range.label) {
-                <button class="budget-pill" (click)="navigateToBudget(range.max)">{{ range.label }}</button>
+                <button class="budget-pill" (click)="navigateToBudget(range.min, range.max)">{{ range.label }}</button>
               }
             </div>
           </div>
@@ -76,7 +76,7 @@
         <button class="brand-card glass-card" (click)="navigateToBrand(brand.name)">
           <div class="brand-logo-wrap">
             <img [src]="brand.logo" [alt]="brand.name" class="brand-logo-img"
-                 onerror="this.style.opacity='0'">
+                 onerror="this.style.display='none'">
           </div>
           <span class="brand-name">{{ brand.name }}</span>
         </button>
@@ -107,7 +107,7 @@
     <h2 class="section-title">Browse by <span class="gradient-text">Budget</span></h2>
     <div class="budget-grid">
       @for (range of budgetRanges; track range.label) {
-        <button class="budget-card glass-card" (click)="navigateToBudget(range.max)">
+        <button class="budget-card glass-card" (click)="navigateToBudget(range.min, range.max)">
           <span class="budget-label">{{ range.label }}</span>
           <span class="budget-arrow">→</span>
         </button>
@@ -226,8 +226,8 @@
             @for (model of newCarModels(); track model.make + model.model) {
               <div class="model-card glass-card">
                 <div class="model-img-wrap">
-                  <img [src]="model.image || 'assets/placeholder.svg'" [alt]="model.make + ' ' + model.model"
-                    class="model-img" (error)="$any($event.target).src='assets/placeholder.svg'" loading="lazy" />
+                  <img [src]="model.image || 'assets/cars/placeholder.svg'" [alt]="model.make + ' ' + model.model"
+                    class="model-img" (error)="$any($event.target).src='assets/cars/placeholder.svg'" loading="lazy" />
                   @if (model.badge) {
                     <span class="model-badge badge-featured">{{ model.badge }}</span>
                   }
@@ -256,7 +256,10 @@
                   <div class="model-actions">
                     <a [routerLink]="['/listings']" [queryParams]="{make: model.make, model: model.model, carType: 'New'}"
                       class="btn-gradient btn-sm">View Details →</a>
-                    <a [routerLink]="['/compare']" class="btn-outline btn-sm">Compare</a>
+                    <button class="btn-outline btn-sm"
+                      (click)="toggleCompare(model.make + model.model); router.navigate(['/compare'])">
+                      {{ compareSet().has(model.make + model.model) ? '💙 Added' : 'Compare' }}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -280,7 +283,7 @@
         <div class="launch-card glass-card">
           <div class="launch-img-wrap">
             <img [src]="car.image" [alt]="car.make + ' ' + car.model"
-              class="launch-img" (error)="$any($event.target).src='assets/placeholder.svg'" loading="lazy" />
+              class="launch-img" (error)="$any($event.target).src='assets/cars/placeholder.svg'" loading="lazy" />
             @if (car.isNew) {
               <span class="launch-new-badge">NEW</span>
             }
@@ -309,7 +312,7 @@
       @for (car of upcomingCars; track car.make + car.model) {
         <div class="upcoming-card glass-card">
           <img [src]="car.image" [alt]="car.make + ' ' + car.model"
-            class="upcoming-img" (error)="$any($event.target).src='assets/placeholder.svg'" loading="lazy" />
+            class="upcoming-img" (error)="$any($event.target).src='assets/cars/placeholder.svg'" loading="lazy" />
           <div class="upcoming-info">
             <span class="upcoming-expected">Expected: {{ car.expectedDate }}</span>
             <h4 class="upcoming-name">{{ car.make }} {{ car.model }}</h4>

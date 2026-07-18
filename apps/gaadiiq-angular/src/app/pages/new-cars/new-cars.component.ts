@@ -52,7 +52,7 @@ interface UpcomingCar {
 export class NewCarsComponent implements OnInit {
   constructor(
     private carsData: CarsDataService,
-    private router: Router,
+    public router: Router,
     public brandsService: BrandsService
   ) {}
 
@@ -86,29 +86,29 @@ export class NewCarsComponent implements OnInit {
   ];
 
   budgetRanges = [
-    { label: 'Under ₹5L', max: 500000 },
-    { label: '₹5 – 10L', max: 1000000 },
-    { label: '₹10 – 15L', max: 1500000 },
-    { label: '₹15 – 20L', max: 2000000 },
-    { label: '₹20 – 30L', max: 3000000 },
-    { label: 'Above ₹30L', max: 100000000 },
+    { label: 'Under ₹5L',  min: 0,       max: 500000    },
+    { label: '₹5 – 10L',   min: 500000,  max: 1000000   },
+    { label: '₹10 – 15L',  min: 1000000, max: 1500000   },
+    { label: '₹15 – 20L',  min: 1500000, max: 2000000   },
+    { label: '₹20 – 30L',  min: 2000000, max: 3000000   },
+    { label: 'Above ₹30L', min: 3000000, max: 100000000 },
   ];
 
   newLaunches: NewLaunch[] = [
-    { make: 'Tata', model: 'Curvv', price: '₹9.99L onwards', launchDate: 'Oct 2024', bodyType: 'SUV', fuel: 'Petrol / Diesel', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/230805/curvv-exterior-right-front-three-quarter-2.jpeg', isNew: true },
-    { make: 'Mahindra', model: 'BE 6', price: '₹18.90L onwards', launchDate: 'Feb 2025', bodyType: 'SUV', fuel: 'Electric', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/239729/be-6e-exterior-right-front-three-quarter.jpeg', isNew: true },
-    { make: 'Hyundai', model: 'Creta EV', price: '₹17.99L onwards', launchDate: 'Jan 2025', bodyType: 'SUV', fuel: 'Electric', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/230921/creta-electric-exterior-right-front-three-quarter-3.jpeg', isNew: true },
-    { make: 'Skoda', model: 'Kylaq', price: '₹7.89L onwards', launchDate: 'Dec 2024', bodyType: 'SUV', fuel: 'Petrol', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/230961/kylaq-exterior-right-front-three-quarter-3.jpeg', isNew: true },
+    { make: 'Tata', model: 'Curvv', price: '₹9.99L onwards', launchDate: 'Oct 2024', bodyType: 'SUV', fuel: 'Petrol / Diesel', image: 'assets/cars/placeholder.svg', isNew: true },
+    { make: 'Mahindra', model: 'BE 6', price: '₹18.90L onwards', launchDate: 'Feb 2025', bodyType: 'SUV', fuel: 'Electric', image: 'assets/cars/placeholder.svg', isNew: true },
+    { make: 'Hyundai', model: 'Creta EV', price: '₹17.99L onwards', launchDate: 'Jan 2025', bodyType: 'SUV', fuel: 'Electric', image: 'assets/cars/placeholder.svg', isNew: true },
+    { make: 'Skoda', model: 'Kylaq', price: '₹7.89L onwards', launchDate: 'Dec 2024', bodyType: 'SUV', fuel: 'Petrol', image: 'assets/cars/placeholder.svg', isNew: true },
     { make: 'Maruti Suzuki', model: 'Swift 2024', price: '₹6.49L onwards', launchDate: 'May 2024', bodyType: 'Hatchback', fuel: 'Petrol / CNG', image: 'assets/cars/swift/front.jpg', isNew: false },
-    { make: 'Kia', model: 'Syros', price: '₹8.99L onwards', launchDate: 'Jan 2025', bodyType: 'SUV', fuel: 'Petrol / Diesel', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/240729/syros-exterior-right-front-three-quarter.jpeg', isNew: true },
+    { make: 'Kia', model: 'Syros', price: '₹8.99L onwards', launchDate: 'Jan 2025', bodyType: 'SUV', fuel: 'Petrol / Diesel', image: 'assets/cars/placeholder.svg', isNew: true },
   ];
 
   upcomingCars: UpcomingCar[] = [
-    { make: 'Tata', model: 'Sierra EV', expectedPrice: '₹25 – 30L', expectedDate: 'Q3 2026', bodyType: 'SUV', fuel: 'Electric', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg' },
-    { make: 'Mahindra', model: 'XEV 7e', expectedPrice: '₹30 – 40L', expectedDate: 'Q4 2026', bodyType: 'SUV', fuel: 'Electric', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/239729/be-6e-exterior-right-front-three-quarter.jpeg' },
-    { make: 'Toyota', model: 'Urban Cruiser', expectedPrice: '₹12 – 18L', expectedDate: 'Q2 2026', bodyType: 'SUV', fuel: 'Hybrid', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/55316/fortuner-exterior-right-front-three-quarter-2.jpeg' },
-    { make: 'Honda', model: 'Elevate Sport', expectedPrice: '₹16 – 22L', expectedDate: 'Q3 2026', bodyType: 'SUV', fuel: 'Petrol', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg' },
-    { make: 'MG', model: 'Windsor EV Pro', expectedPrice: '₹22 – 28L', expectedDate: 'Q1 2027', bodyType: 'SUV', fuel: 'Electric', image: 'https://imgd.aeplcdn.com/1200x900/n/cw/ec/199321/nexon-exterior-right-front-three-quarter-2.jpeg' },
+    { make: 'Tata', model: 'Sierra EV', expectedPrice: '₹25 – 30L', expectedDate: 'Q3 2026', bodyType: 'SUV', fuel: 'Electric', image: 'assets/cars/placeholder.svg' },
+    { make: 'Mahindra', model: 'XEV 7e', expectedPrice: '₹30 – 40L', expectedDate: 'Q4 2026', bodyType: 'SUV', fuel: 'Electric', image: 'assets/cars/placeholder.svg' },
+    { make: 'Toyota', model: 'Urban Cruiser', expectedPrice: '₹12 – 18L', expectedDate: 'Q2 2026', bodyType: 'SUV', fuel: 'Hybrid', image: 'assets/cars/placeholder.svg' },
+    { make: 'Honda', model: 'Elevate Sport', expectedPrice: '₹16 – 22L', expectedDate: 'Q3 2026', bodyType: 'SUV', fuel: 'Petrol', image: 'assets/cars/placeholder.svg' },
+    { make: 'MG', model: 'Windsor EV Pro', expectedPrice: '₹22 – 28L', expectedDate: 'Q1 2027', bodyType: 'SUV', fuel: 'Electric', image: 'assets/cars/placeholder.svg' },
   ];
 
   expertPicks = [
@@ -117,7 +117,9 @@ export class NewCarsComponent implements OnInit {
     { category: 'Best Family Car', icon: 'user', make: 'Kia', model: 'Carens', price: '₹10.49L', reason: '6/7-seater, top safety scores, premium interiors', badge: 'Family Fav' },
   ];
 
-  notifiedCars = signal<Set<string>>(new Set());
+  notifiedCars = signal<Set<string>>(
+    new Set<string>(JSON.parse(localStorage.getItem('gaadiiq_notified_cars') ?? '[]'))
+  );
 
   newCarModels = computed<NewCarModel[]>(() => {
     const newCars = this.carsData.cars().filter(c => c.km === 0 && c.year >= 2025);
@@ -208,12 +210,14 @@ export class NewCarsComponent implements OnInit {
     const s = new Set(this.compareSet());
     if (s.has(key)) s.delete(key); else s.add(key);
     this.compareSet.set(s);
+    sessionStorage.setItem('gaadiiq_compare_keys', JSON.stringify([...s]));
   }
 
   toggleNotify(key: string) {
     const s = new Set(this.notifiedCars());
     if (s.has(key)) s.delete(key); else s.add(key);
     this.notifiedCars.set(s);
+    localStorage.setItem('gaadiiq_notified_cars', JSON.stringify([...s]));
   }
 
   navigateToBrand(brand: string) {
@@ -221,11 +225,19 @@ export class NewCarsComponent implements OnInit {
   }
 
   navigateToBodyType(bodyType: string) {
-    this.router.navigate(['/listings'], { queryParams: { carType: 'New', bodyType } });
+    if (bodyType === 'Electric') {
+      this.router.navigate(['/listings'], { queryParams: { carType: 'New', fuel: 'Electric' } });
+    } else if (bodyType === 'Luxury') {
+      this.router.navigate(['/listings'], { queryParams: { carType: 'New', minPrice: 3000000 } });
+    } else {
+      this.router.navigate(['/listings'], { queryParams: { carType: 'New', bodyType } });
+    }
   }
 
-  navigateToBudget(max: number) {
-    this.router.navigate(['/listings'], { queryParams: { carType: 'New', maxPrice: max } });
+  navigateToBudget(min: number, max: number) {
+    const params: Record<string, number> = { maxPrice: max };
+    if (min > 0) params['minPrice'] = min;
+    this.router.navigate(['/listings'], { queryParams: { carType: 'New', ...params } });
   }
 
   formatLakh(p: number) {

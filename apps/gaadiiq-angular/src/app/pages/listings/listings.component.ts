@@ -33,6 +33,7 @@ export class ListingsComponent implements OnInit {
   selectedSort       = signal('Relevance');
   selectedMake       = signal('All');
   maxPrice           = signal(20000000);
+  minPrice           = signal(0);
   minYear            = signal(2018);
   sidebarOpen        = signal(false);
 
@@ -50,6 +51,7 @@ export class ListingsComponent implements OnInit {
       this.selectedBodyType.set(params['bodyType'] || 'All');
       if (params['carType']) this.carType.set(params['carType'] as any);
       if (params['maxPrice']) this.maxPrice.set(+params['maxPrice']);
+      if (params['minPrice']) this.minPrice.set(+params['minPrice']);
       if (params['transmission']) this.selectedTransmission.set(params['transmission']);
     });
   }
@@ -72,7 +74,7 @@ export class ListingsComponent implements OnInit {
       const matchFuel = this.selectedFuel() === 'All' || c.fuel === this.selectedFuel();
       const matchTx   = this.selectedTransmission() === 'All' || c.transmission.includes(this.selectedTransmission());
       const matchBT   = this.selectedBodyType() === 'All' || (c.bodyType ?? '').toLowerCase() === this.selectedBodyType().toLowerCase();
-      const matchPrice = c.price <= this.maxPrice();
+      const matchPrice = c.price <= this.maxPrice() && c.price >= this.minPrice();
       const matchYear  = c.year >= this.minYear();
 
       // Top-level New / Used split
