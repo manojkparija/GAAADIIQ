@@ -5,6 +5,7 @@ on:
     branches: [main, master, claude/gaadiiq-app-dev-abj5fo]
     paths:
       - 'apps/gaadiiq-angular/**'
+      - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
 jobs:
@@ -15,12 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: apps/gaadiiq-angular/package-lock.json
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -33,7 +32,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: apps/gaadiiq-angular
-        run: npm ci
+        run: npm install
 
       - name: Build Angular app
         working-directory: apps/gaadiiq-angular
