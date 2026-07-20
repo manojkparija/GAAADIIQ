@@ -4,8 +4,16 @@
 
 .diag-hero {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0c1a35 100%);
-  padding: 64px 0 48px;
+  padding: 64px 0 0;
   text-align: center;
+  position: relative;
+  &::after {
+    content: '';
+    display: block;
+    height: 64px;
+    background: linear-gradient(to bottom, #0c1a35 0%, var(--bg) 100%);
+    margin-top: 48px;
+  }
   .hero-badge {
     display: inline-block; background: rgba(59,130,246,0.18); color: #60A5FA;
     border: 1px solid rgba(59,130,246,0.3); border-radius: 20px;
