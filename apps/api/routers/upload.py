@@ -44,5 +44,5 @@ async def upload_image_endpoint(
             detail="Image must be under 20 MB.",
         )
 
-    url = upload_image(io.BytesIO(content), prefix="diagnosis")
+    url = upload_image(io.BytesIO(content), content_type=file.content_type or "image/jpeg", folder="diagnosis")
     return UploadResponse(url=url, filename=file.filename or "upload", size_bytes=len(content))

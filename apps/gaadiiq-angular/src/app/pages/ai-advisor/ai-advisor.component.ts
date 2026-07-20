@@ -304,6 +304,47 @@ export class AiAdvisorComponent {
     }
   }
 
+  private readonly _BUDGET_API_MAP: Record<string, string> = {
+    'Under ₹5L':    'under_5l',
+    '₹5L – ₹10L':  '5l_10l',
+    '₹10L – ₹15L': '10l_20l',
+    '₹15L – ₹20L': '10l_20l',
+    '₹20L – ₹30L': '20l_50l',
+    'Above ₹30L':  'above_50l',
+  };
+
+  private _mapToRecommendPayload(p: Record<string, string | string[]>) {
+    const budget = (p['budget'] as string[])?.[0] || '';
+    const fuels = (p['fuel'] as string[] || []);
+    const bodyTypes = (p['bodyType'] as string[] || []);
+    const usages = (p['usageType'] as string[] || []);
+
+    const fuelRaw = fuels.find(f => f !== 'No preference') || '';
+    let fuel = fuelRaw.toLowerCase();
+    if (!fuel || fuels.includes('No preference')) fuel = 'any';
+    if (fuel === 'electric') fuel = 'electric';
+    if (fuel === 'cng') fuel = 'cng';
+
+    const bodyRaw = bodyTypes.find(b => b !== 'No preference') || '';
+    let body = bodyRaw.toLowerCase();
+    if (!body || bodyTypes.includes('No preference')) body = 'any';
+    if (bodyRaw === 'Compact SUV') body = 'suv';
+    if (bodyRaw === 'MUV / MPV') body = 'mpv';
+
+    const usageFirst = usages[0] || '';
+    let usage = 'city';
+    if (usageFirst === 'Long road trips') usage = 'highway';
+    else if (usageFirst === 'Family outings' || usageFirst === 'School runs') usage = 'family';
+
+    return {
+      budget: this._BUDGET_API_MAP[budget] || undefined,
+      fuel: fuel || undefined,
+      body: body || undefined,
+      usage,
+      page_size: 10,
+    };
+  }
+
   private runAnalysis() {
     const p = this.profile();
     this.analytics.track('ai_query', {
@@ -315,6 +356,18 @@ export class AiAdvisorComponent {
     this.phase.set('analyzing');
     this.analyzeMsg.set(ANALYZE_MSGS[0]);
     this.analyzePct.set(0);
+
+    // Fire backend recommend call (non-blocking, used to boost scores)
+    const apiPayload = this._mapToRecommendPayload(p);
+    firstValueFrom(this.api.getRecommendations(apiPayload)).then(res => {
+      if (res?.items?.length) {
+        const ids = new Set<string>(res.items.map((item: any) => String(item.listing?.id || '')));
+        this.backendBoostIds.set(ids);
+      }
+    }).catch(() => {
+      // Non-fatal — falls back to client-side only
+    });
+
     let i = 0;
     const tick = () => {
       i++;
