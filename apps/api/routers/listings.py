@@ -23,9 +23,7 @@ from models.listing import Listing
 from models.price_alert import PriceAlert
 from models.user import User
 from schemas.listing import ListingCreate, ListingListOut, ListingOut, ListingUpdate
-from services import storage, valuation
-from services import embeddings as emb_service
-from services import vector_store, n8n
+from services import n8n, storage, valuation, vector_store
 from services.notifications import notify_price_drop
 from services.search_index import search_index
 
@@ -83,7 +81,7 @@ async def _index_listing(listing: Listing) -> None:
         "condition": listing.condition or "",
         "transmission": listing.car.transmission.value if listing.car and listing.car.transmission else "",
     }
-    from services.embeddings import listing_text, embed_one
+    from services.embeddings import embed_one, listing_text
     text = listing_text(payload)
     vector = embed_one(text)
     if vector:

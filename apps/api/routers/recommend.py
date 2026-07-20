@@ -215,8 +215,8 @@ async def recommend_ai(
     searches Qdrant for similar listings, then scores those candidates
     with the rule engine for explainability.
     """
-    from services.embeddings import embed_one
     from services import vector_store
+    from services.embeddings import embed_one
 
     # Build natural language query from user preferences
     parts = []
