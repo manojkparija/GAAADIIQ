@@ -163,7 +163,7 @@ export default function ValuationPage() {
         </div>
 
         <div className="flex gap-3 flex-wrap">
-          <Button asChild><Link href="/listings">Browse Listings</Link></Button>
+          <Link href="/listings" className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80 transition-colors">Browse Listings</Link>
           <Button variant="outline" onClick={reset}>Value Another Car</Button>
         </div>
       </main>
