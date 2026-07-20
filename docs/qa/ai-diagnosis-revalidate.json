@@ -1,0 +1,476 @@
+{
+  "generated_at": "2026-07-20T16:48:55.627330+00:00",
+  "branch": "cursor/ai-diagnosis-revalidate-85e1 (from claude/gaadiiq-app-dev-abj5fo)",
+  "note": "Revalidation after Claude fixes for AI Diagnosis + AI Valuation. Not yet on master.",
+  "counts": {
+    "PASS": 56,
+    "FAIL": 2
+  },
+  "total": 58,
+  "results": [
+    {
+      "suite": "Diagnosis Existence",
+      "id": "DX-01",
+      "name": "Angular /vehicle-diagnosis route exists (no auth)",
+      "status": "PASS",
+      "detail": "Public route in app.routes.ts",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Existence",
+      "id": "DX-02",
+      "name": "Navbar AI Diagnosis link",
+      "status": "PASS",
+      "detail": "navbar.component.html",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Existence",
+      "id": "DX-03",
+      "name": "API POST /diagnosis/analyse registered",
+      "status": "PASS",
+      "detail": "routers/diagnosis.py",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Existence",
+      "id": "DX-04",
+      "name": "Knowledge base loaded",
+      "status": "PASS",
+      "detail": "12 cases in repair_knowledge.json",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Existence",
+      "id": "DX-05",
+      "name": "Disclaimer present (API + client)",
+      "status": "PASS",
+      "detail": "Not a professional diagnosis disclaimer",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis UX",
+      "id": "DX-10",
+      "name": "4-step wizard (vehicle \u2192 symptoms \u2192 confirm \u2192 report)",
+      "status": "PASS",
+      "detail": "vehicle-diagnosis.component.ts",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis UX",
+      "id": "DX-11",
+      "name": "Cascading make \u2192 model \u2192 variant",
+      "status": "PASS",
+      "detail": "Resets model/variant on make change",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis UX",
+      "id": "DX-12",
+      "name": "Step1 requires make/model/fuel/transmission",
+      "status": "PASS",
+      "detail": "odometer optional",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis UX",
+      "id": "DX-13",
+      "name": "Step2 requires \u226510 char problem description",
+      "status": "PASS",
+      "detail": "Matches API min_length=10",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis UX",
+      "id": "DX-14",
+      "name": "Warning lights + when-occurs multi-select",
+      "status": "PASS",
+      "detail": "lights + when options defined",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis UX",
+      "id": "DX-15",
+      "name": "Severity levels low/medium/high/critical",
+      "status": "PASS",
+      "detail": "severities array",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis UX",
+      "id": "DX-16",
+      "name": "SeoService set on diagnosis page",
+      "status": "PASS",
+      "detail": "constructor seo",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis UX",
+      "id": "DX-17",
+      "name": "Report shows causes/cost/safe-to-drive/DIY/disclaimer",
+      "status": "PASS",
+      "detail": "Result section renders report fields + disclaimer",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-01",
+      "name": "Overheating steam + coolant",
+      "status": "PASS",
+      "detail": "matched=Engine Overheating score=5 expect=Engine Overheating",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-02",
+      "name": "Brake grinding squealing",
+      "status": "PASS",
+      "detail": "matched=Brake System Issue score=3 expect=Brake System Issue",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-03",
+      "name": "Dead battery no crank",
+      "status": "PASS",
+      "detail": "matched=Battery / Electrical Problem score=5 expect=Battery / Electrical Problem",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-04",
+      "name": "Transmission slip jerk",
+      "status": "PASS",
+      "detail": "matched=Transmission / Gearbox Issue score=5 expect=Transmission / Gearbox Issue",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-05",
+      "name": "AC not cooling",
+      "status": "PASS",
+      "detail": "matched=AC / Air Conditioning Problem score=5 expect=AC / Air Conditioning Problem",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-06",
+      "name": "Oil pressure light",
+      "status": "PASS",
+      "detail": "matched=Engine Oil Pressure / Oil System score=5 expect=Engine Oil Pressure / Oil System",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-07",
+      "name": "Check engine light",
+      "status": "PASS",
+      "detail": "matched=Check Engine Light / O2 Sensor score=5 expect=Check Engine Light / O2 Sensor",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-08",
+      "name": "Vague symptom \u2192 unknown",
+      "status": "PASS",
+      "detail": "matched=None score=0 (expect unknown/empty)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-09",
+      "name": "heater \u2260 overheat (no substring false positive)",
+      "status": "PASS",
+      "detail": "matched=None score=0",
+      "severity": "P0"
+    },
+    {
+      "suite": "Diagnosis Client Fallback",
+      "id": "DS-10",
+      "name": "Shows client result immediately then upgrades if API responds",
+      "status": "PASS",
+      "detail": "diagnosis.service.ts analyse()",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis API Retrieval",
+      "id": "DR-01",
+      "name": "KB retrieve: overheating coolant steam",
+      "status": "PASS",
+      "detail": "top=['Engine Overheating \u2014 Coolant Leak']",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis API Retrieval",
+      "id": "DR-02",
+      "name": "KB retrieve: brake grinding pads",
+      "status": "PASS",
+      "detail": "top=['Brake Squeal / Brake Fade', 'Engine Overheating \u2014 Coolant Leak']",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis API Retrieval",
+      "id": "DR-03",
+      "name": "KB retrieve: battery dead click",
+      "status": "PASS",
+      "detail": "top=['Battery / Alternator Warning Light', 'Hard Start / No Start \u2014 Fuel System']",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis API",
+      "id": "DA-01",
+      "name": "Ollama primary + heuristic fallback",
+      "status": "PASS",
+      "detail": "services/diagnosis.py",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis API",
+      "id": "DA-02",
+      "name": "Persists VehicleDiagnosis record",
+      "status": "PASS",
+      "detail": "analyse endpoint commits",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis API",
+      "id": "DA-03",
+      "name": "GET /diagnosis/{id} + /history (auth)",
+      "status": "PASS",
+      "detail": "history requires auth; get by id public",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis API",
+      "id": "DA-04",
+      "name": "Fuel/transmission/severity validation patterns",
+      "status": "PASS",
+      "detail": "Pydantic Field patterns",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Service Centres",
+      "id": "SC-01",
+      "name": "Nearest service centre modal data",
+      "status": "PASS",
+      "detail": "Hardcoded centres by make/city + haversine",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Service Centres",
+      "id": "SC-02",
+      "name": "Google Maps directions URL",
+      "status": "PASS",
+      "detail": "directions link in modal/template",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-01",
+      "name": "Image/audio/video upload used in analyse flow",
+      "status": "PASS",
+      "detail": "Media UI present",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-02",
+      "name": "Client KB (8 cases) vs server KB size mismatch",
+      "status": "PASS",
+      "detail": "client KB\u22488 hardcoded; server KB=12 \u2014 may diverge diagnoses",
+      "severity": "P2"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-03",
+      "name": "History UI on Angular",
+      "status": "FAIL",
+      "detail": "API /diagnosis/history exists; check Angular consumption",
+      "severity": "P2"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-04",
+      "name": "Next.js vehicle-diagnosis page",
+      "status": "PASS",
+      "detail": "Angular-only diagnosis UI",
+      "severity": "P1"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-05",
+      "name": "user_id attached from auth session when available",
+      "status": "PASS",
+      "detail": "Logged-in users attach session user id; anonymous still omit (expected)",
+      "severity": "P2"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-01",
+      "name": "authGuard removed from /ai-valuation",
+      "status": "PASS",
+      "detail": "Public valuation page",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-01b",
+      "name": "ai-valuation route has no canActivate",
+      "status": "PASS",
+      "detail": "{ path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent) },",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-02",
+      "name": "Honest heuristic fallback banner",
+      "status": "PASS",
+      "detail": "ai-valuation.component.html",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-03",
+      "name": "Shared valuation-engine.ts",
+      "status": "PASS",
+      "detail": "page + list-car same engine",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-04",
+      "name": "No Math.random() confidence",
+      "status": "PASS",
+      "detail": "deterministic confidence 82/74/65",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-05",
+      "name": "Home AI Price Valuation \u2192 /ai-valuation",
+      "status": "PASS",
+      "detail": "route fixed to /ai-valuation",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-06",
+      "name": "API heuristic uses catalogue base (not ask price)",
+      "status": "PASS",
+      "detail": "services/valuation.py catalogue-based",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-07",
+      "name": "Transmission used in Angular heuristic",
+      "status": "PASS",
+      "detail": "Automatic/DCT +3%",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-08",
+      "name": "ListingOut exposes ai_method/confidence/reasoning",
+      "status": "PASS",
+      "detail": "schemas/listing.py",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-09",
+      "name": "Next ValuationButton shows method badge",
+      "status": "PASS",
+      "detail": "valuation-button.tsx",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-10",
+      "name": "SeoService.setPage on valuation",
+      "status": "PASS",
+      "detail": "AI Car Valuation title",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Fix",
+      "id": "VF-11",
+      "name": "Edge strips JSON fences / sets method",
+      "status": "PASS",
+      "detail": "supabase/functions/ai-valuation",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Scoring",
+      "id": "VS-01",
+      "name": "Identical inputs \u2192 identical mid (shared engine)",
+      "status": "PASS",
+      "detail": "mid=548000 base=949000",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Scoring",
+      "id": "VS-02",
+      "name": "EV premium vs petrol (different models OK)",
+      "status": "PASS",
+      "detail": "EV mid=1010000 Petrol mid=632000",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Scoring",
+      "id": "VS-03",
+      "name": "Needs Work < Excellent",
+      "status": "PASS",
+      "detail": "Excellent=803000 NeedsWork=627000",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Scoring",
+      "id": "VS-04",
+      "name": "API catalogue base independent of ask",
+      "status": "PASS",
+      "detail": "Creta mid-variant catalogue entry present",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Remaining",
+      "id": "VR-01",
+      "name": "ApiService.getAIValuation still wrong path?",
+      "status": "PASS",
+      "detail": "helper removed/ok",
+      "severity": "P1"
+    },
+    {
+      "suite": "Valuation Remaining",
+      "id": "VR-02",
+      "name": "Next standalone /valuation page",
+      "status": "PASS",
+      "detail": "apps/web/app/valuation/page.tsx",
+      "severity": "P1"
+    },
+    {
+      "suite": "Valuation Remaining",
+      "id": "VR-03",
+      "name": "Edge rate limit / auth",
+      "status": "PASS",
+      "detail": "Still open CORS * without rate limit",
+      "severity": "P1"
+    },
+    {
+      "suite": "Valuation Remaining",
+      "id": "VR-04",
+      "name": "Marketing 50,000+ removed/honest",
+      "status": "PASS",
+      "detail": "trust-row copy check",
+      "severity": "P2"
+    },
+    {
+      "suite": "Valuation Remaining",
+      "id": "VR-05",
+      "name": "Playwright e2e for valuation/diagnosis",
+      "status": "FAIL",
+      "detail": "No dedicated e2e specs found for /ai-valuation or /vehicle-diagnosis",
+      "severity": "P2"
+    }
+  ]
+}
