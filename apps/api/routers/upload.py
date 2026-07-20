@@ -2,8 +2,6 @@
 POST /upload/image — accept an image file, store in Cloudflare R2, return URL.
 Used by Angular diagnosis wizard to upload photos before submitting diagnosis.
 """
-from __future__ import annotations
-
 import io
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
