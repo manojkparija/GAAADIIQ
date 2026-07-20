@@ -42,7 +42,7 @@ export class ApiService {
     return this.http.get<any[]>(`${this.base}/notifications`).pipe(catchError(() => of([])));
   }
 
-  uploadDiagnosisImage(file: File): Observable<{ url: string; filename: string; size_bytes: number }> {
+  uploadDiagnosisImage(file: File) {
     const form = new FormData();
     form.append('file', file);
     return this.http.post<{ url: string; filename: string; size_bytes: number }>(
@@ -52,7 +52,7 @@ export class ApiService {
 
   getRecommendations(payload: {
     budget?: string; fuel?: string; body?: string; usage?: string; page_size?: number;
-  }): Observable<any> {
+  }) {
     return this.http.post<any>(`${this.base}/recommend`, payload)
       .pipe(catchError(() => of(null)));
   }
