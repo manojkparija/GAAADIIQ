@@ -624,7 +624,45 @@ input, select, textarea {
 @media (max-width: 768px) {
   .container { padding: 0 1rem; }
   .hide-mobile { display: none !important; }
+
+  // Global mobile typography scale-down
+  .page-hero h1 { font-size: clamp(1.75rem, 7vw, 2.4rem); }
+  .section-title { font-size: clamp(1.4rem, 6vw, 1.9rem); }
+  .section-head h2 { font-size: clamp(1.35rem, 5.5vw, 1.75rem); }
+
+  // Prevent hero buttons from overflowing
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary,
+  .hero-actions .btn-gradient,
+  .hero-actions .btn-outline { width: 100%; justify-content: center; }
+
+  // Full-width buttons in card footers on mobile
+  .surface-card .btn-primary,
+  .surface-card .btn-secondary { width: 100%; }
+
+  // Prevent tables from breaking layout
+  table { display: block; overflow-x: auto; }
 }
+
+@media (max-width: 480px) {
+  .container { padding: 0 0.875rem; }
+
+  // Tighter padding on cards
+  .surface-card { padding: 1rem; }
+  .glass-card { padding: 1rem; }
+
+  // Smaller page-hero padding so content isn't buried under navbar
+  .page-hero { padding: 5rem 0 2.5rem; min-height: auto; }
+
+  // Stats / chips row: allow wrap
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+  .chip { font-size: 0.76rem; padding: 0.3rem 0.7rem; }
+
+  // Footer links: single column on very small screens
+  .footer-links { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+}
+
 @media (min-width: 769px) {
   .hide-desktop { display: none !important; }
 }

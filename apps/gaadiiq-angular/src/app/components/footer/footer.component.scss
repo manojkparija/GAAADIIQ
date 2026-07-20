@@ -96,7 +96,16 @@
 }
 
 @media (max-width: 768px) {
-  .footer-inner { grid-template-columns: 1fr; gap: 2rem; }
-  .footer-links { grid-template-columns: repeat(2, 1fr); }
+  .footer { padding: 2.5rem 0 0; }
+  .footer-inner { grid-template-columns: 1fr; gap: 2rem; padding-bottom: 2rem; }
+  .footer-links { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
   .footer-bottom { flex-direction: column; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .footer-links { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+  .link-group h4 { font-size: 0.7rem; }
+  .link-group a { font-size: 0.82rem; }
+  .footer-bottom { font-size: 0.78rem; }
+  .footer-legal { flex-wrap: wrap; justify-content: center; gap: 0.75rem !important; }
 }
