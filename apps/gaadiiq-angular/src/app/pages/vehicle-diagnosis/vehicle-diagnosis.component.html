@@ -36,18 +36,24 @@
       <div class="form-grid">
         <div class="form-group">
           <label>Manufacturer *</label>
-          <select [(ngModel)]="form.manufacturer">
+          <select [(ngModel)]="form.manufacturer" (ngModelChange)="onMakeChange()">
             <option value="">Select make</option>
             <option *ngFor="let m of makes" [value]="m">{{ m }}</option>
           </select>
         </div>
         <div class="form-group">
           <label>Model *</label>
-          <input type="text" [(ngModel)]="form.model" placeholder="e.g. Swift, Creta, Nexon" />
+          <select [(ngModel)]="form.model" [disabled]="!form.manufacturer" (ngModelChange)="onModelChange()">
+            <option value="">Select model</option>
+            <option *ngFor="let m of models" [value]="m">{{ m }}</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Variant</label>
-          <input type="text" [(ngModel)]="form.variant" placeholder="e.g. VXi, SX, XZ+" />
+          <select [(ngModel)]="form.variant" [disabled]="!form.model">
+            <option value="">Select variant (optional)</option>
+            <option *ngFor="let v of variants" [value]="v">{{ v }}</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Model Year *</label>
@@ -74,7 +80,7 @@
       </div>
 
       <div class="step-actions">
-        <button class="btn-primary" [disabled]="!step1Valid()" (click)="next()">Next — Describe Symptoms →</button>
+        <button class="btn-primary" [disabled]="!step1Valid" (click)="next()">Next — Describe Symptoms →</button>
       </div>
     </div>
 
@@ -123,7 +129,7 @@
 
       <div class="step-actions">
         <button class="btn-ghost" (click)="back()">← Back</button>
-        <button class="btn-primary" [disabled]="!step2Valid()" (click)="next()">Next — Review →</button>
+        <button class="btn-primary" [disabled]="!step2Valid" (click)="next()">Next — Review →</button>
       </div>
     </div>
 

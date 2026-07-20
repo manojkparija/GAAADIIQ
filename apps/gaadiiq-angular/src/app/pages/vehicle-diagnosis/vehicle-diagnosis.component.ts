@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -21,10 +21,62 @@ const WHEN_OPTIONS = [
   'AC On', 'Rainy / Wet Conditions', 'Always / Constantly',
 ];
 
-const MAKES = [
-  'Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'MG', 'Toyota', 'Honda', 'Mahindra',
-  'Skoda', 'Volkswagen', 'Renault', 'Nissan', 'Ford', 'Jeep', 'Isuzu', 'Other',
-];
+const MODELS_BY_MAKE: Record<string, string[]> = {
+  'Maruti Suzuki': ['Alto', 'Alto K10', 'S-Presso', 'Celerio', 'WagonR', 'Swift', 'Dzire', 'Ignis', 'Baleno', 'Fronx', 'Jimny', 'Brezza', 'Ertiga', 'XL6', 'Grand Vitara', 'Invicto', 'Ritz', 'Ciaz', 'Omni', 'Eeco'],
+  'Hyundai': ['Santro', 'Grand i10 Nios', 'i20', 'Aura', 'Verna', 'Creta', 'Alcazar', 'Tucson', 'Ioniq 5', 'Ioniq 6', 'Venue', 'Exter', 'i10'],
+  'Tata': ['Tiago', 'Tigor', 'Altroz', 'Nexon', 'Punch', 'Harrier', 'Safari', 'Curvv', 'Sierra EV', 'Avinya', 'Nexon EV', 'Tiago EV', 'Tigor EV', 'Sumo', 'Indica', 'Indigo'],
+  'Kia': ['Sonet', 'Seltos', 'Carens', 'EV6', 'EV9', 'Carnival'],
+  'MG': ['Hector', 'Hector Plus', 'Astor', 'ZS EV', 'Comet EV', 'Gloster', 'Windsor EV'],
+  'Toyota': ['Glanza', 'Rumion', 'Urban Cruiser Hyryder', 'Innova Crysta', 'Innova HyCross', 'Fortuner', 'Camry', 'Vellfire', 'Land Cruiser', 'Hilux', 'Etios', 'Corolla'],
+  'Honda': ['Amaze', 'City', 'Elevate', 'Jazz', 'WR-V', 'CR-V', 'Accord', 'Brio', 'Mobilio'],
+  'Mahindra': ['Bolero', 'Bolero Neo', 'Scorpio', 'Scorpio N', 'Scorpio Classic', 'Thar', 'XUV300', 'XUV400', 'XUV700', 'BE 6', 'XEV 9e', 'Marazzo', 'KUV100', 'TUV300', 'Verito'],
+  'Skoda': ['Kushaq', 'Slavia', 'Kodiaq', 'Superb', 'Octavia', 'Rapid', 'Fabia'],
+  'Volkswagen': ['Taigun', 'Virtus', 'Tiguan', 'Vento', 'Polo', 'Ameo'],
+  'Renault': ['Kwid', 'Triber', 'Kiger', 'Duster', 'Lodgy'],
+  'Nissan': ['Magnite', 'Kicks', 'Terrano', 'Micra', 'Sunny'],
+  'Ford': ['Figo', 'Aspire', 'Freestyle', 'EcoSport', 'Endeavour', 'Mustang'],
+  'Jeep': ['Compass', 'Meridian', 'Wrangler', 'Grand Cherokee'],
+  'Isuzu': ['D-Max', 'MU-X', 'MU-7'],
+  'Other': ['Other'],
+};
+
+const VARIANTS_BY_MODEL: Record<string, string[]> = {
+  'Swift': ['LXi', 'VXi', 'VXi AMT', 'ZXi', 'ZXi+', 'ZXi AMT', 'ZXi+ AMT'],
+  'Dzire': ['LXi', 'VXi', 'ZXi', 'ZXi+', 'VXi AMT', 'ZXi AMT', 'ZXi+ AMT'],
+  'Baleno': ['Sigma', 'Delta', 'Delta MT', 'Zeta', 'Alpha', 'Alpha MT'],
+  'WagonR': ['LXi', 'VXi', 'VXi+', 'ZXi', 'ZXi+'],
+  'Brezza': ['LXi', 'VXi', 'ZXi', 'ZXi+', 'ZXi+ Dual Tone'],
+  'Grand Vitara': ['Sigma', 'Delta', 'Zeta', 'Alpha', 'Alpha+'],
+  'Creta': ['E', 'EX', 'S', 'S(O)', 'SX', 'SX Tech', 'SX(O)', 'SX(O) Connect', 'Knight Edition'],
+  'i20': ['Era', 'Magna', 'Sportz', 'Asta', 'Asta(O)'],
+  'Venue': ['E', 'S', 'S+', 'SX', 'SX+', 'SX(O)'],
+  'Verna': ['EX', 'S', 'S+', 'SX', 'SX Tech', 'SX(O)'],
+  'Nexon': ['Smart', 'Smart+', 'Pure', 'Pure+', 'Creative', 'Creative+', 'Fearless', 'Fearless+', 'Fearless+ S'],
+  'Punch': ['Pure', 'Adventure', 'Accomplished', 'Creative'],
+  'Tiago': ['XE', 'XM', 'XM+', 'XT', 'XZ', 'XZ+'],
+  'Altroz': ['XE', 'XM', 'XM+', 'XT', 'XT+', 'XZ', 'XZ+', 'XZ+ Lux'],
+  'Harrier': ['Smart', 'Pure', 'Adventure', 'Accomplished', 'Fearless', 'Fearless+'],
+  'Safari': ['Smart', 'Pure', 'Adventure', 'Accomplished', 'Fearless', 'Fearless+'],
+  'Sonet': ['HTE', 'HTK', 'HTK+', 'HTX', 'HTX+', 'GTX+', 'X-Line'],
+  'Seltos': ['HTE', 'HTK', 'HTK+', 'HTX', 'HTX+', 'GTX', 'GTX+', 'X-Line'],
+  'Hector': ['Style', 'Smart', 'Sharp', 'Sharp Pro', 'Select Pro', 'Savvy Pro'],
+  'Fortuner': ['2.7 4x2 MT', '2.7 4x2 AT', '2.8 4x2 MT', '2.8 4x2 AT', '2.8 4x4 MT', '2.8 4x4 AT', 'Legender'],
+  'Innova Crysta': ['GX', 'VX', 'ZX'],
+  'City': ['S', 'V', 'VX', 'ZX', 'Hybrid V', 'Hybrid ZX'],
+  'Amaze': ['E', 'S', 'V', 'VX', 'SV'],
+  'Scorpio N': ['Z2', 'Z4', 'Z6', 'Z8', 'Z8 L'],
+  'Thar': ['AX (O)', 'LX', 'LX Hard Top', 'LX Hard Top Diesel AT'],
+  'XUV700': ['MX', 'AX3', 'AX5', 'AX7', 'AX7 L'],
+  'Kushaq': ['Active', 'Ambition', 'Style', 'Monte Carlo'],
+  'Taigun': ['Comfortline', 'Trendline', 'Highline', 'Topline', 'GT', 'GT Plus'],
+  'Virtus': ['Dynamic', 'Comfortline', 'Trendline', 'Highline', 'Topline', 'GT', 'GT Plus'],
+  'Magnite': ['XE', 'XL', 'XV', 'XV Premium', 'XV Premium Opt'],
+  'Kiger': ['RXE', 'RXL', 'RXT', 'RXZ', 'RXZ Dual Tone'],
+  'Ritz': ['LXi', 'VXi', 'ZXi', 'VDi', 'ZDi'],
+  'Other': ['Other'],
+};
+
+const MAKES = Object.keys(MODELS_BY_MAKE);
 
 @Component({
   selector: 'app-vehicle-diagnosis',
@@ -66,11 +118,30 @@ export class VehicleDiagnosisComponent {
 
   years = Array.from({ length: 35 }, (_, i) => new Date().getFullYear() - i);
 
-  step1Valid = computed(() =>
-    !!this.form.manufacturer && !!this.form.model && !!this.form.fuel_type && !!this.form.transmission
-  );
+  get models(): string[] {
+    return MODELS_BY_MAKE[this.form.manufacturer] ?? [];
+  }
 
-  step2Valid = computed(() => this.problemDescription.trim().length >= 10);
+  get variants(): string[] {
+    return VARIANTS_BY_MODEL[this.form.model] ?? [];
+  }
+
+  onMakeChange() {
+    this.form.model = '';
+    this.form.variant = '';
+  }
+
+  onModelChange() {
+    this.form.variant = '';
+  }
+
+  get step1Valid(): boolean {
+    return !!this.form.manufacturer && !!this.form.model && !!this.form.fuel_type && !!this.form.transmission;
+  }
+
+  get step2Valid(): boolean {
+    return this.problemDescription.trim().length >= 10;
+  }
 
   constructor(
     private seo: SeoService,
