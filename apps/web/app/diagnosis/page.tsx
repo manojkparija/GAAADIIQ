@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -305,7 +306,7 @@ export default function DiagnosisPage() {
         </div>
 
         <div className="flex gap-3 flex-wrap">
-          <Button asChild><a href="/listings">Browse Cars</a></Button>
+          <Button asChild><Link href="/listings">Browse Cars</Link></Button>
           <Button variant="outline" onClick={reset}>New Diagnosis</Button>
         </div>
       </main>

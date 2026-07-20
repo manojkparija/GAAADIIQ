@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -134,10 +135,10 @@ export default function ValuationPage() {
 
         <div className="grid grid-cols-3 gap-4 mb-6">
           {[
-            { label: "Distress Sale", value: result.low, dim: true },
+            { label: "Distress Sale", value: result.low },
             { label: "Fair Market", value: result.mid, highlight: true },
-            { label: "Premium Ask", value: result.high, dim: true },
-          ].map(({ label, value, highlight, dim }) => (
+            { label: "Premium Ask", value: result.high },
+          ].map(({ label, value, highlight }) => (
             <div key={label} className={`rounded-xl border p-4 text-center ${highlight ? "border-primary bg-primary/5" : ""}`}>
               <p className="text-xs text-muted-foreground mb-1">{label}</p>
               <p className={`font-bold ${highlight ? "text-xl text-primary" : "text-base"}`}>{fmt(value)}</p>
@@ -162,7 +163,7 @@ export default function ValuationPage() {
         </div>
 
         <div className="flex gap-3 flex-wrap">
-          <Button asChild><a href="/listings">Browse Listings</a></Button>
+          <Button asChild><Link href="/listings">Browse Listings</Link></Button>
           <Button variant="outline" onClick={reset}>Value Another Car</Button>
         </div>
       </main>
