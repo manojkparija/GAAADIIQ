@@ -538,6 +538,27 @@
   align-items: center;
 }
 
+/* All India soft banner */
+.all-india-banner {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 10px; padding: 10px 16px; margin: 0 auto; max-width: 900px;
+  font-size: 0.85rem; color: var(--text, #1e293b);
+  .banner-icon { font-size: 1.1rem; }
+  .banner-link {
+    background: none; border: none; cursor: pointer; color: #2563eb;
+    font-weight: 700; font-size: 0.85rem; text-decoration: underline; padding: 0;
+    &:hover { color: #1d4ed8; }
+  }
+}
+
+.filter-chip-city {
+  background: rgba(16,185,129,0.1);
+  border-color: rgba(16,185,129,0.3);
+  color: #059669;
+  button { color: #059669; }
+}
+
 .filter-chip {
   display: inline-flex;
   align-items: center;

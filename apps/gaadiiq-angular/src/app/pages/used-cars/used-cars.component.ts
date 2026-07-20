@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService, Car } from '../../services/cars-data.service';
-import { CityService } from '../../services/city.service';
+import { CityService, POPULAR_CITIES } from '../../services/city.service';
 import { IconComponent } from '../../components/icon/icon.component';
 
 type PriceVerdict = 'fairDeal' | 'goodPrice' | 'slightlyHigh';
@@ -13,6 +13,33 @@ interface UsedCarViewModel extends Car {
   priceVerdict: PriceVerdict;
   formattedKm: string;
   emiEstimate: string;
+}
+
+// Maps user-typed / Nominatim-returned aliases to canonical city names
+const CITY_ALIAS: Record<string, string> = {
+  'bengaluru': 'Bangalore',
+  'new town': 'Kolkata',
+  'salt lake': 'Kolkata',
+  'bidhannagar': 'Kolkata',
+  'navi mumbai': 'Mumbai',
+  'greater mumbai': 'Mumbai',
+  'gurugram': 'Delhi',
+  'gurgaon': 'Delhi',
+  'noida': 'Delhi',
+  'faridabad': 'Delhi',
+  'ghaziabad': 'Delhi',
+};
+
+/** Snap a raw city name (from geolocation or user input) to nearest popular city. */
+function snapToPopularCity(raw: string): string {
+  const lower = raw.toLowerCase().trim();
+  // Check alias map first
+  if (CITY_ALIAS[lower]) return CITY_ALIAS[lower];
+  // Check if any popular city name is contained in the raw string
+  for (const c of POPULAR_CITIES) {
+    if (lower.includes(c.name.toLowerCase())) return c.name;
+  }
+  return raw; // return as-is; heroCity will just filter normally
 }
 
 @Component({
@@ -38,17 +65,23 @@ export class UsedCarsComponent implements OnInit {
   // Hero search fields
   heroMake = signal('');
   heroModel = signal('');
-  heroBudgetMax = signal(0); // 0 = Any Budget (no max)
-  heroCity = signal(''); // empty = All India (no city filter)
+  heroBudgetMax = signal(0);
+  // heroCity drives filtering; empty = All India
+  heroCity = signal('');
 
-  cityOptions = ['Mumbai','Delhi','Bengaluru','Hyderabad','Chennai','Kolkata','Pune','Ahmedabad','Jaipur','Rourkela','Lucknow','Chandigarh','Surat','Nagpur','Indore'];
+  // When true, city filter is suppressed even if CityService has a value.
+  // Set when: (a) ngOnInit detects 0 results for the service city, (b) user clicks "Show All India".
+  // Cleared when: user explicitly types/picks a city in the hero search.
+  allIndiaOverride = signal(false);
+
+  cityOptions = ['Mumbai','Delhi','Bangalore','Hyderabad','Chennai','Kolkata','Pune','Ahmedabad','Jaipur','Rourkela','Lucknow','Chandigarh','Surat','Nagpur','Indore'];
 
   // Sidebar filters
   sidebarOpen = signal(false);
   minBudget = signal(100000);
-  maxBudget = signal(20000000); // ₹2Cr ceiling (covers virtually all used cars)
-  yearFrom = signal(2010);
-  yearTo = signal(new Date().getFullYear() + 1);
+  maxBudget = signal(20000000);
+  yearFrom = signal(2005);
+  yearTo = signal(new Date().getFullYear());
   selectedKmRanges = signal<string[]>([]);
   selectedFuels = signal<string[]>([]);
   selectedTransmissions = signal<string[]>([]);
@@ -78,7 +111,8 @@ export class UsedCarsComponent implements OnInit {
   ];
   kmRangeOptions = ['Under 20,000 km', '20,000 – 50,000 km', '50,000 – 80,000 km', 'Above 80,000 km'];
   readonly currentYear = new Date().getFullYear();
-  yearOptions = Array.from({ length: this.currentYear - 2004 }, (_, i) => 2005 + i);
+  // Include currentYear+1 so yearTo default is always visually selectable
+  yearOptions = Array.from({ length: this.currentYear - 2004 + 1 }, (_, i) => 2005 + i);
 
   readonly isUsedCar = (c: any) => c.isSellerListing || c.km > 0 || c.year < 2025;
 
@@ -96,7 +130,6 @@ export class UsedCarsComponent implements OnInit {
     return [...new Set(models)].sort();
   });
 
-  // Unfiltered count for hero badge — never reflects search state
   usedCarCount = computed(() => this.carsData.cars().filter(this.isUsedCar).length);
 
   private avgUsedPrice = computed(() => {
@@ -117,7 +150,6 @@ export class UsedCarsComponent implements OnInit {
   }
 
   private calcEmi(price: number): string {
-    // 8.5% p.a., 60 months, 10% down payment
     const principal = price * 0.9;
     const r = 0.085 / 12;
     const n = 60;
@@ -137,11 +169,29 @@ export class UsedCarsComponent implements OnInit {
     });
   }
 
+  /** Effective city filter — empty when allIndiaOverride is true */
+  effectiveCity = computed(() => this.allIndiaOverride() ? '' : this.heroCity());
+
+  /** Count of used cars matching the current heroCity (before other filters) */
+  cityCarsCount = computed(() => {
+    const city = this.heroCity().toLowerCase();
+    if (!city) return -1; // sentinel: no city filter
+    const rawUsed = this.carsData.cars().filter(this.isUsedCar);
+    return rawUsed.filter(c => (c.city ?? '').toLowerCase().includes(city)).length;
+  });
+
+  /** Show the soft "no cars in city, showing All India" banner */
+  showAllIndiaBanner = computed(() =>
+    !this.allIndiaOverride() &&
+    !!this.heroCity() &&
+    this.cityCarsCount() === 0
+  );
+
   allFilteredCars = computed<UsedCarViewModel[]>(() => {
     const rawUsed = this.carsData.cars().filter(this.isUsedCar);
     const heroMake = this.heroMake();
     const heroModel = this.heroModel().toLowerCase();
-    const heroCity = this.heroCity().toLowerCase();
+    const heroCity = this.effectiveCity().toLowerCase();
 
     let filtered = rawUsed.filter(c => {
       if (heroMake && heroMake !== 'All' && c.make !== heroMake) return false;
@@ -199,10 +249,10 @@ export class UsedCarsComponent implements OnInit {
       + (this.maxBudget() < 20000000 ? 1 : 0)
       + (this.heroMake() && this.heroMake() !== 'All' ? 1 : 0)
       + (this.heroModel() ? 1 : 0)
-      + (this.heroCity() ? 1 : 0)
+      + (this.effectiveCity() ? 1 : 0)  // chip only when city is actually filtering
       + (this.heroBudgetMax() > 0 ? 1 : 0)
-      + (this.yearFrom() > 2010 ? 1 : 0)
-      + (this.yearTo() < this.currentYear + 1 ? 1 : 0);
+      + (this.yearFrom() > 2005 ? 1 : 0)
+      + (this.yearTo() < this.currentYear ? 1 : 0);
   });
 
   recentlyViewedCars = computed<Car[]>(() => {
@@ -211,7 +261,6 @@ export class UsedCarsComponent implements OnInit {
   });
 
   ngOnInit() {
-    // Load wishlist from localStorage
     if (isPlatformBrowser(this.platformId)) {
       try {
         const stored = localStorage.getItem('gaadiiq_wishlist');
@@ -219,15 +268,27 @@ export class UsedCarsComponent implements OnInit {
       } catch {}
     }
 
-    // Prefill city from CityService if user has selected one
-    const city = this.cityService.selectedCity();
-    if (city) this.heroCity.set(city);
+    // Snap navbar city to a canonical name, then check if any cars exist there
+    const rawCity = this.cityService.selectedCity();
+    if (rawCity) {
+      const snapped = snapToPopularCity(rawCity);
+      this.heroCity.set(snapped);
+      // After data loads, check if 0 results → auto-switch to All India
+      // We use a short defer so computed signals have settled
+      setTimeout(() => {
+        if (this.cityCarsCount() === 0) {
+          this.allIndiaOverride.set(true);
+        }
+      }, 0);
+    }
 
-    // Pre-apply filters from query params
     this.route.queryParams.subscribe(params => {
       if (params['make']) this.heroMake.set(params['make']);
       if (params['model']) this.heroModel.set(params['model']);
-      if (params['city']) this.heroCity.set(params['city']);
+      if (params['city']) {
+        this.heroCity.set(snapToPopularCity(params['city']));
+        this.allIndiaOverride.set(false);
+      }
       if (params['fuel']) this.selectedFuels.set([params['fuel']]);
       if (params['bodyType']) this.selectedBodyTypes.set([params['bodyType']]);
       if (params['maxBudget']) {
@@ -244,13 +305,25 @@ export class UsedCarsComponent implements OnInit {
 
   onMaxBudget(val: number) {
     this.maxBudget.set(Math.max(val, this.minBudget() + 100000));
-    // Keep heroBudgetMax in sync when sidebar slider is used
     if (this.heroBudgetMax() > 0) this.heroBudgetMax.set(0);
   }
 
   applyHeroSearch() {
-    // Filters are already reactive — just scroll to results
+    this.allIndiaOverride.set(false); // user explicitly searched — respect heroCity
     document.querySelector('.uc-main-layout')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  onHeroCityChange(val: string) {
+    this.heroCity.set(val);
+    this.allIndiaOverride.set(false); // user is changing city — lift override
+  }
+
+  showAllIndia() {
+    this.allIndiaOverride.set(true);
+  }
+
+  filterToCity() {
+    this.allIndiaOverride.set(false);
   }
 
   loadMore() {
@@ -294,8 +367,8 @@ export class UsedCarsComponent implements OnInit {
     this.heroBudgetMax.set(0);
     this.minBudget.set(100000);
     this.maxBudget.set(20000000);
-    this.yearFrom.set(2010);
-    this.yearTo.set(this.currentYear + 1);
+    this.yearFrom.set(2005);
+    this.yearTo.set(this.currentYear);
     this.selectedKmRanges.set([]);
     this.selectedFuels.set([]);
     this.selectedTransmissions.set([]);
@@ -304,6 +377,9 @@ export class UsedCarsComponent implements OnInit {
     this.certifiedOnly.set(false);
     this.selectedColors.set([]);
     this.pageSize.set(12);
+    // Clear city from CityService so navbar city doesn't immediately re-filter
+    this.cityService.clearCity();
+    this.allIndiaOverride.set(false);
   }
 
   toggleWishlist(id: number) {

@@ -15,7 +15,7 @@
           <div class="search-field">
             <label class="search-field-label">City</label>
             <input type="text" class="search-input" placeholder="All India"
-              [value]="heroCity()" (input)="heroCity.set($any($event.target).value)" list="city-suggestions" />
+              [value]="heroCity()" (input)="onHeroCityChange($any($event.target).value)" list="city-suggestions" />
             <datalist id="city-suggestions">
               @for (c of cityOptions; track c) { <option [value]="c"></option> }
             </datalist>
@@ -58,6 +58,15 @@
     </div>
   </div>
 </section>
+
+<!-- ── ALL INDIA SOFT BANNER ── -->
+@if (showAllIndiaBanner()) {
+  <div class="all-india-banner">
+    <span class="banner-icon">📍</span>
+    <span>No used cars in <strong>{{ heroCity() }}</strong> yet — showing All India results.</span>
+    <button class="banner-link" (click)="filterToCity()">Filter to {{ heroCity() }}</button>
+  </div>
+}
 
 <!-- ── WHY BUY USED STATS ── -->
 <section class="uc-stats-banner">
@@ -127,13 +136,13 @@
           <div class="year-selects">
             <select class="year-select" [value]="yearFrom()" (change)="yearFrom.set(+$any($event.target).value)">
               @for (y of yearOptions; track y) {
-                <option [value]="y">{{ y }}</option>
+                <option [value]="y" [selected]="y === yearFrom()">{{ y }}</option>
               }
             </select>
             <span class="year-sep">to</span>
             <select class="year-select" [value]="yearTo()" (change)="yearTo.set(+$any($event.target).value)">
               @for (y of yearOptions; track y) {
-                <option [value]="y">{{ y }}</option>
+                <option [value]="y" [selected]="y === yearTo()">{{ y }}</option>
               }
             </select>
           </div>
@@ -250,6 +259,21 @@
         <!-- Active Filters Strip -->
         @if (activeFiltersCount() > 0) {
           <div class="active-filters-strip">
+            @if (effectiveCity()) {
+              <span class="filter-chip filter-chip-city">📍 {{ effectiveCity() }} <button (click)="clearAllFilters()">×</button></span>
+            }
+            @if (heroMake() && heroMake() !== 'All') {
+              <span class="filter-chip">{{ heroMake() }} <button (click)="heroMake.set('')">×</button></span>
+            }
+            @if (heroModel()) {
+              <span class="filter-chip">{{ heroModel() }} <button (click)="heroModel.set('')">×</button></span>
+            }
+            @if (yearFrom() > 2005) {
+              <span class="filter-chip">From {{ yearFrom() }} <button (click)="yearFrom.set(2005)">×</button></span>
+            }
+            @if (yearTo() < currentYear) {
+              <span class="filter-chip">To {{ yearTo() }} <button (click)="yearTo.set(currentYear)">×</button></span>
+            }
             @for (f of selectedFuels(); track f) {
               <span class="filter-chip">{{ f }} <button (click)="toggleFuel(f)">×</button></span>
             }
@@ -293,9 +317,16 @@
         } @else if (displayedCars().length === 0) {
           <div class="empty-state glass-card">
             <div class="empty-icon"><app-icon name="search" [size]="48"></app-icon></div>
-            <h3>No cars match your filters</h3>
-            <p>Try broadening your search criteria</p>
-            <button class="btn-gradient" (click)="clearAllFilters()">Clear All Filters</button>
+            @if (effectiveCity()) {
+              <h3>No used cars in {{ effectiveCity() }}</h3>
+              <p>No listings match your filters in this city</p>
+              <button class="btn-gradient" (click)="showAllIndia()">Show All India cars</button>
+              <button class="btn-outline" style="margin-top:8px" (click)="clearAllFilters()">Clear All Filters</button>
+            } @else {
+              <h3>No cars match your filters</h3>
+              <p>Try broadening your search criteria</p>
+              <button class="btn-gradient" (click)="clearAllFilters()">Clear All Filters</button>
+            }
           </div>
         } @else {
 
