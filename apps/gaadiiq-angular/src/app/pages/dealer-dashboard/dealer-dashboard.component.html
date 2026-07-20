@@ -62,30 +62,48 @@
       </div>
 
       <!-- AI Lead Intelligence Summary -->
-      <h2 class="section-head">AI Lead <span class="gradient-text">Intelligence</span></h2>
+      <h2 class="section-head">AI Lead <span class="gradient-text">Intelligence</span>
+        <span class="ollama-badge" *ngIf="sentimentSummary()?.analysed_today ?? 0 > 0">⚡ Ollama LLM</span>
+      </h2>
       <div class="ai-lead-summary glass-card">
         <div class="ai-summary-chips">
-          <div class="ai-sum-chip hot">
-            <span class="chip-num">{{ countGrade('A') }}</span>
+          <div class="ai-sum-chip hot" (click)="activeTab.set('leads'); setGradeFilter('A')" style="cursor:pointer">
+            <span class="chip-num">{{ sentimentSummary()?.grade_a ?? countGrade('A') }}</span>
             <span class="chip-label">Grade A · Act Now</span>
           </div>
-          <div class="ai-sum-chip warm">
-            <span class="chip-num">{{ countGrade('B') }}</span>
+          <div class="ai-sum-chip warm" (click)="activeTab.set('leads'); setGradeFilter('B')" style="cursor:pointer">
+            <span class="chip-num">{{ sentimentSummary()?.grade_b ?? countGrade('B') }}</span>
             <span class="chip-label">Grade B · Follow Up</span>
           </div>
-          <div class="ai-sum-chip cool">
-            <span class="chip-num">{{ countGrade('C') }}</span>
+          <div class="ai-sum-chip cool" (click)="activeTab.set('leads'); setGradeFilter('C')" style="cursor:pointer">
+            <span class="chip-num">{{ sentimentSummary()?.grade_c ?? countGrade('C') }}</span>
             <span class="chip-label">Grade C · Nurture</span>
           </div>
-          <div class="ai-sum-chip cold">
-            <span class="chip-num">{{ countGrade('D') }}</span>
+          <div class="ai-sum-chip cold" (click)="activeTab.set('leads'); setGradeFilter('D')" style="cursor:pointer">
+            <span class="chip-num">{{ sentimentSummary()?.grade_d ?? countGrade('D') }}</span>
             <span class="chip-label">Grade D · Re-engage</span>
           </div>
         </div>
-        <div class="ai-top-lead">
+        <div class="ai-top-lead" *ngIf="topLead()">
+          <span class="atl-label">🔥 Highest Intent Lead</span>
+          <span class="atl-name">{{ topLead()!.customer_name }}</span>
+          <span class="atl-score">
+            {{ topLead()!.intent_score | number:'1.0-0' }}% intent ·
+            Grade {{ topLead()!.lead_grade }} ·
+            <em>{{ topLead()!.next_best_action }}</em>
+          </span>
+        </div>
+        <div class="ai-top-lead" *ngIf="!topLead()">
           <span class="atl-label">Highest Intent Lead Today</span>
           <span class="atl-name">Deepak Rao</span>
           <span class="atl-score">95% intent · Grade A · <em>Collect Documents</em></span>
+        </div>
+        <div class="ai-avg-row" *ngIf="sentimentSummary()">
+          <span>Avg score: <strong>{{ sentimentSummary()!.avg_score }}</strong></span>
+          <span>·</span>
+          <span>Hot leads: <strong class="hot-num">{{ sentimentSummary()!.hot_leads }}</strong></span>
+          <span>·</span>
+          <span>Need follow-up: <strong>{{ sentimentSummary()!.needs_followup }}</strong></span>
         </div>
       </div>
 
@@ -120,26 +138,51 @@
 
     <!-- LEADS TAB -->
     <ng-container *ngIf="activeTab()==='leads'">
-      <h2 class="section-head">AI-Scored <span class="gradient-text">Leads</span></h2>
+      <div class="leads-header">
+        <h2 class="section-head" style="margin:0">
+          AI Purchase Intent <span class="gradient-text">Leads</span>
+          <span class="ollama-badge">⚡ Ollama LLM</span>
+        </h2>
+        <div class="grade-filters">
+          <button class="gf-btn" [class.active]="gradeFilter()===null" (click)="setGradeFilter(null)">All</button>
+          <button class="gf-btn gf-a" [class.active]="gradeFilter()==='A'" (click)="setGradeFilter('A')">A · Hot</button>
+          <button class="gf-btn gf-b" [class.active]="gradeFilter()==='B'" (click)="setGradeFilter('B')">B · Warm</button>
+          <button class="gf-btn gf-c" [class.active]="gradeFilter()==='C'" (click)="setGradeFilter('C')">C · Cool</button>
+          <button class="gf-btn gf-d" [class.active]="gradeFilter()==='D'" (click)="setGradeFilter('D')">D · Cold</button>
+        </div>
+      </div>
 
-      <div class="ai-leads-list">
-        <div class="ai-lead-card glass-card" *ngFor="let l of leads">
-          <!-- Top row: name + grade + stage -->
+      <!-- Loading -->
+      <div *ngIf="sentimentLoading()" class="sentiment-loading glass-card">
+        <div class="loading-pulse"></div>
+        <span>Ollama LLM analysing customer signals…</span>
+      </div>
+
+      <!-- Lead cards -->
+      <div class="ai-leads-list" *ngIf="!sentimentLoading()">
+        <div class="ai-lead-card glass-card" *ngFor="let l of filteredLeads()">
+
+          <!-- Top row -->
           <div class="alc-top">
-            <div class="alc-avatar">{{ l.name.charAt(0) }}</div>
-            <div class="alc-identity">
-              <div class="alc-name">{{ l.name }}</div>
-              <div class="alc-phone">{{ l.phone }}</div>
+            <div class="alc-avatar" [style.background]="sentimentSvc.gradeBg(l.lead_grade)"
+                 [style.color]="sentimentSvc.gradeColor(l.lead_grade)">
+              {{ initials(l.customer_name) }}
             </div>
-            <span class="lead-grade lg-large" [ngClass]="'grade-' + l.leadGrade">{{ l.leadGrade }}</span>
-            <span class="lt-stage" [ngClass]="'stage-' + l.stageColor">{{ l.stage }}</span>
-          </div>
-
-          <!-- Car + budget -->
-          <div class="alc-car-row">
-            <span class="alc-car-label">{{ l.car }}</span>
-            <span class="alc-budget">{{ l.budget }}</span>
-            <span class="lt-time">{{ l.time }}</span>
+            <div class="alc-identity">
+              <div class="alc-name">{{ l.customer_name }}</div>
+              <div class="alc-phone">
+                <a [href]="'tel:' + l.phone" *ngIf="l.phone">{{ l.phone }}</a>
+                <span *ngIf="!l.phone" style="color:var(--muted)">No phone</span>
+              </div>
+            </div>
+            <div class="alc-grade-block">
+              <span class="lead-grade lg-large"
+                    [style.background]="sentimentSvc.gradeBg(l.lead_grade)"
+                    [style.color]="sentimentSvc.gradeColor(l.lead_grade)">
+                {{ l.lead_grade }}
+              </span>
+              <span class="grade-label">{{ gradeLabel(l.lead_grade) }}</span>
+            </div>
           </div>
 
           <!-- Intent score bar -->
@@ -147,23 +190,82 @@
             <span class="intent-label">Purchase Intent</span>
             <div class="intent-bar-track">
               <div class="intent-bar-fill"
-                [style.width.%]="l.intentScore"
-                [class.high]="l.intentScore >= 80"
-                [class.medium]="l.intentScore >= 60 && l.intentScore < 80"
-                [class.low]="l.intentScore < 60"></div>
+                   [style.width.%]="l.intent_score"
+                   [style.background]="scoreBar(l.intent_score)"></div>
             </div>
-            <span class="intent-pct" [class.high]="l.intentScore >= 80">{{ l.intentScore }}%</span>
+            <span class="intent-pct" [style.color]="scoreBar(l.intent_score)">
+              {{ l.intent_score | number:'1.0-0' }}%
+            </span>
+          </div>
+
+          <!-- Signal chips -->
+          <div class="signal-chips">
+            <span class="sig-chip" *ngIf="l.total_enquiries > 0">💬 {{ l.total_enquiries }} enquir{{ l.total_enquiries === 1 ? 'y' : 'ies' }}</span>
+            <span class="sig-chip" *ngIf="l.total_test_drives > 0">🗝️ {{ l.total_test_drives }} test drive{{ l.total_test_drives === 1 ? '' : 's' }}</span>
+            <span class="sig-chip" *ngIf="l.predicted_purchase_window">📅 {{ l.predicted_purchase_window }}</span>
           </div>
 
           <!-- AI recommendations -->
           <div class="alc-ai-row">
             <div class="alc-ai-chip contact">
-              <span>🕐</span> Best time: <strong>{{ l.bestContactTime }}</strong>
+              🕐 <strong>{{ l.best_contact_time ?? 'Not set' }}</strong>
             </div>
             <div class="alc-ai-chip nba">
-              <app-icon name="brain" [size]="12"></app-icon> NBA: <strong>{{ l.nba }}</strong>
+              ⚡ <strong>{{ l.next_best_action ?? 'Follow up' }}</strong>
             </div>
           </div>
+
+          <!-- Actions -->
+          <div class="alc-actions">
+            <a [href]="'tel:' + l.phone" class="btn-sm btn-primary" *ngIf="l.phone">📞 Call</a>
+            <a [href]="'https://wa.me/' + l.phone?.replace(/\D/g,'')" class="btn-sm btn-whatsapp"
+               target="_blank" *ngIf="l.phone">WhatsApp</a>
+            <button class="btn-sm btn-outline" (click)="reanalyse(l)"
+                    [disabled]="analysingId() === l.user_id">
+              {{ analysingId() === l.user_id ? '⚡ Analysing…' : '🔄 Re-analyse' }}
+            </button>
+            <span class="scored-at">Scored {{ timeAgoFromDate(l.scored_at) }}</span>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div *ngIf="filteredLeads().length === 0" class="glass-card" style="padding:3rem;text-align:center;color:var(--muted)">
+          <div style="font-size:3rem;margin-bottom:1rem">🎯</div>
+          <p>No leads in this grade yet. Customer activity will be scored automatically.</p>
+        </div>
+      </div>
+
+      <!-- Detail panel (after re-analyse) -->
+      <div class="intent-detail glass-card" *ngIf="selectedLead()">
+        <div class="id-header">
+          <h3>🧠 AI Analysis: {{ selectedLead()!.customer_name }}</h3>
+          <button class="btn-icon" (click)="selectedLead.set(null)">✕</button>
+        </div>
+        <div class="id-scores">
+          <div class="id-score-row">
+            <span>Engagement</span>
+            <div class="mini-bar"><div [style.width.%]="selectedLead()!.engagement_score" style="background:#3B82F6"></div></div>
+            <span>{{ selectedLead()!.engagement_score | number:'1.0-0' }}</span>
+          </div>
+          <div class="id-score-row">
+            <span>Urgency</span>
+            <div class="mini-bar"><div [style.width.%]="selectedLead()!.urgency_score" style="background:#EF4444"></div></div>
+            <span>{{ selectedLead()!.urgency_score | number:'1.0-0' }}</span>
+          </div>
+          <div class="id-score-row">
+            <span>Budget Fit</span>
+            <div class="mini-bar"><div [style.width.%]="selectedLead()!.budget_fit_score" style="background:#10B981"></div></div>
+            <span>{{ selectedLead()!.budget_fit_score | number:'1.0-0' }}</span>
+          </div>
+          <div class="id-score-row">
+            <span>Sentiment</span>
+            <div class="mini-bar"><div [style.width.%]="selectedLead()!.sentiment_score" style="background:#8B5CF6"></div></div>
+            <span>{{ selectedLead()!.sentiment_score | number:'1.0-0' }}</span>
+          </div>
+        </div>
+        <div class="id-reasoning" *ngIf="selectedLead()!.llm_reasoning">
+          <span class="id-reason-label">{{ selectedLead()!.ollama_used ? '⚡ Ollama LLM Reasoning' : '📐 Heuristic Reasoning' }}</span>
+          <p>{{ selectedLead()!.llm_reasoning }}</p>
         </div>
       </div>
     </ng-container>

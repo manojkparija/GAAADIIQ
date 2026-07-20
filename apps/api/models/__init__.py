@@ -1,4 +1,5 @@
 from .car import Car
+from .customer_intent import CustomerActivity, CustomerIntentScore
 from .dealer import Dealer
 from .listing import Listing
 from .loan_inquiry import LoanInquiry
@@ -14,4 +15,5 @@ from .user import User
 __all__ = [
     "User", "Dealer", "Car", "Listing", "TestDriveBooking", "LoanInquiry",
     "Notification", "PriceAlert", "Review", "Payment", "Subscription", "RefreshToken",
+    "CustomerActivity", "CustomerIntentScore",
 ]

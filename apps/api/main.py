@@ -34,6 +34,7 @@ from routers import (  # noqa: E402
     recommend,
     reviews,
     search,
+    sentiment,
 )
 
 # ── Prometheus metrics ─────────────────────────────────────────────────────────
@@ -118,6 +119,7 @@ app.include_router(recommend.router)
 app.include_router(reviews.router)
 app.include_router(payments.router)
 app.include_router(payments.subs_router)
+app.include_router(sentiment.router)
 
 
 @app.get("/")
