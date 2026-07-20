@@ -303,11 +303,39 @@
 
         <!-- Actions -->
         <div class="report-actions">
-          <button class="btn-primary" (click)="bookService()">🔧 Book Service Appointment</button>
+          <button class="btn-primary" (click)="bookService()">📍 Find Nearest Service Centre</button>
           <button class="btn-ghost" (click)="reset()">+ New Diagnosis</button>
         </div>
       </ng-container>
     </div>
 
+  </div>
+</div>
+
+<!-- Service Centre Modal -->
+<div class="sc-overlay" *ngIf="serviceCenterModal()" (click)="closeServiceModal()">
+  <div class="sc-modal" (click)="$event.stopPropagation()">
+    <div class="sc-modal-header">
+      <div>
+        <h2>📍 Nearest Authorised Service Centres</h2>
+        <p class="sc-subtitle">{{ form.manufacturer }} · {{ city.selectedCity() || 'Your City' }}</p>
+      </div>
+      <button class="sc-close" (click)="closeServiceModal()">✕</button>
+    </div>
+    <div class="sc-list">
+      <div class="sc-card" *ngFor="let c of nearbyServiceCenters()">
+        <div class="sc-name">{{ c.name }}</div>
+        <div class="sc-address">📍 {{ c.address }}</div>
+        <div class="sc-hours">🕐 {{ c.hours }}</div>
+        <div class="sc-actions">
+          <a class="sc-btn sc-btn-call" [href]="'tel:' + c.phone">📞 {{ c.phone }}</a>
+          <a class="sc-btn sc-btn-map" [href]="directionsUrl(c.address)" target="_blank" rel="noopener">🗺️ Get Directions</a>
+        </div>
+      </div>
+      <div class="sc-empty" *ngIf="!nearbyServiceCenters().length">
+        <p>No service centres listed for your city. Visit the manufacturer's website to find the nearest one.</p>
+      </div>
+    </div>
+    <p class="sc-disclaimer">Listings are for reference only. Call ahead to confirm availability and book an appointment.</p>
   </div>
 </div>

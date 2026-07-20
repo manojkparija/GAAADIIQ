@@ -6,6 +6,88 @@ import { SeoService } from '../../services/seo.service';
 import { DiagnosisService, DiagnoseRequest } from '../../services/diagnosis.service';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { CityService } from '../../services/city.service';
+
+interface ServiceCenter {
+  name: string;
+  address: string;
+  phone: string;
+  hours: string;
+}
+
+const SERVICE_CENTERS: Record<string, Record<string, ServiceCenter[]>> = {
+  'Maruti Suzuki': {
+    'Mumbai': [
+      { name: 'Mandve Motors (Maruti Suzuki)', address: 'Plot No. 2, Sector 19A, Nerul, Navi Mumbai – 400706', phone: '022-27700200', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Bimal Auto Agency', address: 'Dr. Annie Besant Road, Worli, Mumbai – 400018', phone: '022-24966200', hours: 'Mon–Sat 9am–6pm' },
+    ],
+    'Delhi': [
+      { name: 'Competent Automobiles', address: 'A-1/2, Lawrence Road Industrial Area, Delhi – 110035', phone: '011-47060000', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Rohan Motors', address: 'Plot 4, Pocket 2, Sector 22, Rohini, Delhi – 110086', phone: '011-27046789', hours: 'Mon–Sat 9am–6pm' },
+    ],
+    'Bangalore': [
+      { name: 'Mandovi Motors', address: '3rd Cross, Sadashivanagar, Bangalore – 560080', phone: '080-23610101', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Indus Motors', address: 'Outer Ring Road, Marathahalli, Bangalore – 560037', phone: '080-25230101', hours: 'Mon–Sat 9am–6pm' },
+    ],
+    'Hyderabad': [
+      { name: 'Popular Maruti', address: '6-3-354/1, Rd No. 1, Banjara Hills, Hyderabad – 500034', phone: '040-23559900', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Chennai': [
+      { name: 'Akshaya Automobiles', address: '7, Arcot Road, Vadapalani, Chennai – 600026', phone: '044-43101010', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Pune': [
+      { name: 'Navnit Motors', address: 'Survey No. 28, Nagar Road, Viman Nagar, Pune – 411014', phone: '020-66013333', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'New Town': [
+      { name: 'Mandve Motors Kolkata', address: 'AA-1, Sector II, Salt Lake, Kolkata – 700091', phone: '033-23589900', hours: 'Mon–Sat 8am–7pm' },
+    ],
+  },
+  'Hyundai': {
+    'Mumbai': [
+      { name: 'Solitaire Hyundai', address: 'Plot 31, MIDC, Andheri East, Mumbai – 400093', phone: '022-42006700', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Delhi': [
+      { name: 'Kggs Hyundai', address: '1103, Main Mathura Road, Badarpur, New Delhi – 110044', phone: '011-29946000', hours: 'Mon–Sat 9am–6pm' },
+    ],
+    'Bangalore': [
+      { name: 'Trident Hyundai', address: 'No. 1, Hosur Road, Bommanahalli, Bangalore – 560068', phone: '080-49000000', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Hyderabad': [
+      { name: 'VW Hyundai', address: 'Plot 7, Ameerpet, Hyderabad – 500016', phone: '040-66360000', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Chennai': [
+      { name: 'Kun Hyundai', address: 'No. 1, GST Road, Chromepet, Chennai – 600044', phone: '044-22380000', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Pune': [
+      { name: 'Dhoot Hyundai', address: 'Survey No. 98, Nagar Road, Wagholi, Pune – 412207', phone: '020-27050000', hours: 'Mon–Sat 8am–7pm' },
+    ],
+  },
+  'Tata': {
+    'Mumbai': [
+      { name: 'Tata Motors Service Centre', address: 'Plot 46, TTC Industrial Area, Navi Mumbai – 400710', phone: '022-27694000', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Delhi': [
+      { name: 'Concorde Motors', address: 'A-24, Mohan Co-operative Industrial Estate, New Delhi – 110044', phone: '011-41625555', hours: 'Mon–Sat 9am–6pm' },
+    ],
+    'Bangalore': [
+      { name: 'Prerana Motors', address: 'No. 6, Residency Road, Bangalore – 560025', phone: '080-22117777', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Hyderabad': [
+      { name: 'Concorde Motors Hyderabad', address: '6-3-571, Rockdale Compound, Somajiguda, Hyderabad – 500082', phone: '040-23399999', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Chennai': [
+      { name: 'Tata Motors Works', address: 'No. 48, Mount Road, Chennai – 600002', phone: '044-28521234', hours: 'Mon–Sat 8am–7pm' },
+    ],
+    'Pune': [
+      { name: 'Tata Motors Authorized Service', address: 'Plot 4, Hadapsar Industrial Estate, Pune – 411013', phone: '020-26871234', hours: 'Mon–Sat 8am–7pm' },
+    ],
+  },
+};
+
+function getServiceCenters(manufacturer: string, city: string): ServiceCenter[] {
+  const byMake = SERVICE_CENTERS[manufacturer] ?? SERVICE_CENTERS['Maruti Suzuki'];
+  return byMake[city] ?? byMake[Object.keys(byMake)[0]] ?? [];
+}
 
 const WARNING_LIGHTS = [
   'Check Engine (MIL)', 'Oil Pressure', 'Battery / Charging', 'Temperature / Overheat',
@@ -143,11 +225,15 @@ export class VehicleDiagnosisComponent {
     return this.problemDescription.trim().length >= 10;
   }
 
+  serviceCenterModal = signal(false);
+  nearbyServiceCenters = signal<ServiceCenter[]>([]);
+
   constructor(
     private seo: SeoService,
     public diagSvc: DiagnosisService,
     private auth: AuthService,
     private sb: SupabaseService,
+    public city: CityService,
   ) {
     seo.setPage(
       'AI Vehicle Diagnosis',
@@ -210,7 +296,24 @@ export class VehicleDiagnosisComponent {
   }
 
   bookService() {
-    window.location.href = '/test-drive';
+    const centers = getServiceCenters(
+      this.form.manufacturer || 'Maruti Suzuki',
+      this.city.selectedCity() || 'Mumbai',
+    );
+    this.nearbyServiceCenters.set(centers);
+    this.serviceCenterModal.set(true);
+  }
+
+  closeServiceModal() {
+    this.serviceCenterModal.set(false);
+  }
+
+  callCenter(phone: string) {
+    window.location.href = `tel:${phone.replace(/[^0-9]/g, '')}`;
+  }
+
+  directionsUrl(address: string): string {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
   }
 
   formatCost(n: number): string {
