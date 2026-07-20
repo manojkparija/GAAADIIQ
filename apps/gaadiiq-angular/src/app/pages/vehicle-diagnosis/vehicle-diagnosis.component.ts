@@ -13,76 +13,94 @@ interface ServiceCenter {
   address: string;
   phone: string;
   hours: string;
+  lat: number;
+  lng: number;
+  distance?: number; // km, filled at runtime
 }
 
 const SERVICE_CENTERS: Record<string, Record<string, ServiceCenter[]>> = {
   'Maruti Suzuki': {
     'Mumbai': [
-      { name: 'Mandve Motors (Maruti Suzuki)', address: 'Plot No. 2, Sector 19A, Nerul, Navi Mumbai – 400706', phone: '022-27700200', hours: 'Mon–Sat 8am–7pm' },
-      { name: 'Bimal Auto Agency', address: 'Dr. Annie Besant Road, Worli, Mumbai – 400018', phone: '022-24966200', hours: 'Mon–Sat 9am–6pm' },
+      { name: 'Mandve Motors (Maruti Suzuki)', address: 'Plot No. 2, Sector 19A, Nerul, Navi Mumbai – 400706', phone: '022-27700200', hours: 'Mon–Sat 8am–7pm', lat: 19.0330, lng: 73.0297 },
+      { name: 'Bimal Auto Agency', address: 'Dr. Annie Besant Road, Worli, Mumbai – 400018', phone: '022-24966200', hours: 'Mon–Sat 9am–6pm', lat: 19.0096, lng: 72.8174 },
     ],
     'Delhi': [
-      { name: 'Competent Automobiles', address: 'A-1/2, Lawrence Road Industrial Area, Delhi – 110035', phone: '011-47060000', hours: 'Mon–Sat 8am–7pm' },
-      { name: 'Rohan Motors', address: 'Plot 4, Pocket 2, Sector 22, Rohini, Delhi – 110086', phone: '011-27046789', hours: 'Mon–Sat 9am–6pm' },
+      { name: 'Competent Automobiles', address: 'A-1/2, Lawrence Road Industrial Area, Delhi – 110035', phone: '011-47060000', hours: 'Mon–Sat 8am–7pm', lat: 28.7041, lng: 77.1025 },
+      { name: 'Rohan Motors', address: 'Plot 4, Pocket 2, Sector 22, Rohini, Delhi – 110086', phone: '011-27046789', hours: 'Mon–Sat 9am–6pm', lat: 28.7329, lng: 77.0888 },
     ],
     'Bangalore': [
-      { name: 'Mandovi Motors', address: '3rd Cross, Sadashivanagar, Bangalore – 560080', phone: '080-23610101', hours: 'Mon–Sat 8am–7pm' },
-      { name: 'Indus Motors', address: 'Outer Ring Road, Marathahalli, Bangalore – 560037', phone: '080-25230101', hours: 'Mon–Sat 9am–6pm' },
+      { name: 'Mandovi Motors', address: '3rd Cross, Sadashivanagar, Bangalore – 560080', phone: '080-23610101', hours: 'Mon–Sat 8am–7pm', lat: 13.0100, lng: 77.5756 },
+      { name: 'Indus Motors', address: 'Outer Ring Road, Marathahalli, Bangalore – 560037', phone: '080-25230101', hours: 'Mon–Sat 9am–6pm', lat: 12.9591, lng: 77.6974 },
     ],
     'Hyderabad': [
-      { name: 'Popular Maruti', address: '6-3-354/1, Rd No. 1, Banjara Hills, Hyderabad – 500034', phone: '040-23559900', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Popular Maruti', address: '6-3-354/1, Rd No. 1, Banjara Hills, Hyderabad – 500034', phone: '040-23559900', hours: 'Mon–Sat 8am–7pm', lat: 17.4156, lng: 78.4347 },
     ],
     'Chennai': [
-      { name: 'Akshaya Automobiles', address: '7, Arcot Road, Vadapalani, Chennai – 600026', phone: '044-43101010', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Akshaya Automobiles', address: '7, Arcot Road, Vadapalani, Chennai – 600026', phone: '044-43101010', hours: 'Mon–Sat 8am–7pm', lat: 13.0524, lng: 80.2137 },
     ],
     'Pune': [
-      { name: 'Navnit Motors', address: 'Survey No. 28, Nagar Road, Viman Nagar, Pune – 411014', phone: '020-66013333', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Navnit Motors', address: 'Survey No. 28, Nagar Road, Viman Nagar, Pune – 411014', phone: '020-66013333', hours: 'Mon–Sat 8am–7pm', lat: 18.5679, lng: 73.9143 },
     ],
     'New Town': [
-      { name: 'Mandve Motors Kolkata', address: 'AA-1, Sector II, Salt Lake, Kolkata – 700091', phone: '033-23589900', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Mandve Motors Kolkata', address: 'AA-1, Sector II, Salt Lake, Kolkata – 700091', phone: '033-23589900', hours: 'Mon–Sat 8am–7pm', lat: 22.5726, lng: 88.4099 },
     ],
   },
   'Hyundai': {
     'Mumbai': [
-      { name: 'Solitaire Hyundai', address: 'Plot 31, MIDC, Andheri East, Mumbai – 400093', phone: '022-42006700', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Solitaire Hyundai', address: 'Plot 31, MIDC, Andheri East, Mumbai – 400093', phone: '022-42006700', hours: 'Mon–Sat 8am–7pm', lat: 19.1136, lng: 72.8697 },
     ],
     'Delhi': [
-      { name: 'Kggs Hyundai', address: '1103, Main Mathura Road, Badarpur, New Delhi – 110044', phone: '011-29946000', hours: 'Mon–Sat 9am–6pm' },
+      { name: 'Kggs Hyundai', address: '1103, Main Mathura Road, Badarpur, New Delhi – 110044', phone: '011-29946000', hours: 'Mon–Sat 9am–6pm', lat: 28.5041, lng: 77.2960 },
     ],
     'Bangalore': [
-      { name: 'Trident Hyundai', address: 'No. 1, Hosur Road, Bommanahalli, Bangalore – 560068', phone: '080-49000000', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Trident Hyundai', address: 'No. 1, Hosur Road, Bommanahalli, Bangalore – 560068', phone: '080-49000000', hours: 'Mon–Sat 8am–7pm', lat: 12.8990, lng: 77.6271 },
     ],
     'Hyderabad': [
-      { name: 'VW Hyundai', address: 'Plot 7, Ameerpet, Hyderabad – 500016', phone: '040-66360000', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'VW Hyundai', address: 'Plot 7, Ameerpet, Hyderabad – 500016', phone: '040-66360000', hours: 'Mon–Sat 8am–7pm', lat: 17.4374, lng: 78.4487 },
     ],
     'Chennai': [
-      { name: 'Kun Hyundai', address: 'No. 1, GST Road, Chromepet, Chennai – 600044', phone: '044-22380000', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Kun Hyundai', address: 'No. 1, GST Road, Chromepet, Chennai – 600044', phone: '044-22380000', hours: 'Mon–Sat 8am–7pm', lat: 12.9507, lng: 80.1420 },
     ],
     'Pune': [
-      { name: 'Dhoot Hyundai', address: 'Survey No. 98, Nagar Road, Wagholi, Pune – 412207', phone: '020-27050000', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Dhoot Hyundai', address: 'Survey No. 98, Nagar Road, Wagholi, Pune – 412207', phone: '020-27050000', hours: 'Mon–Sat 8am–7pm', lat: 18.5562, lng: 74.0025 },
+    ],
+    'New Town': [
+      { name: 'Hyundai Service Kolkata', address: 'DG-5, Action Area I, New Town, Kolkata – 700156', phone: '033-40019900', hours: 'Mon–Sat 8am–7pm', lat: 22.5839, lng: 88.4788 },
     ],
   },
   'Tata': {
     'Mumbai': [
-      { name: 'Tata Motors Service Centre', address: 'Plot 46, TTC Industrial Area, Navi Mumbai – 400710', phone: '022-27694000', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Tata Motors Service Centre', address: 'Plot 46, TTC Industrial Area, Navi Mumbai – 400710', phone: '022-27694000', hours: 'Mon–Sat 8am–7pm', lat: 19.0760, lng: 73.0000 },
     ],
     'Delhi': [
-      { name: 'Concorde Motors', address: 'A-24, Mohan Co-operative Industrial Estate, New Delhi – 110044', phone: '011-41625555', hours: 'Mon–Sat 9am–6pm' },
+      { name: 'Concorde Motors', address: 'A-24, Mohan Co-operative Industrial Estate, New Delhi – 110044', phone: '011-41625555', hours: 'Mon–Sat 9am–6pm', lat: 28.5355, lng: 77.2590 },
     ],
     'Bangalore': [
-      { name: 'Prerana Motors', address: 'No. 6, Residency Road, Bangalore – 560025', phone: '080-22117777', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Prerana Motors', address: 'No. 6, Residency Road, Bangalore – 560025', phone: '080-22117777', hours: 'Mon–Sat 8am–7pm', lat: 12.9719, lng: 77.5937 },
     ],
     'Hyderabad': [
-      { name: 'Concorde Motors Hyderabad', address: '6-3-571, Rockdale Compound, Somajiguda, Hyderabad – 500082', phone: '040-23399999', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Concorde Motors Hyderabad', address: '6-3-571, Rockdale Compound, Somajiguda, Hyderabad – 500082', phone: '040-23399999', hours: 'Mon–Sat 8am–7pm', lat: 17.4318, lng: 78.4612 },
     ],
     'Chennai': [
-      { name: 'Tata Motors Works', address: 'No. 48, Mount Road, Chennai – 600002', phone: '044-28521234', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Tata Motors Works', address: 'No. 48, Mount Road, Chennai – 600002', phone: '044-28521234', hours: 'Mon–Sat 8am–7pm', lat: 13.0604, lng: 80.2496 },
     ],
     'Pune': [
-      { name: 'Tata Motors Authorized Service', address: 'Plot 4, Hadapsar Industrial Estate, Pune – 411013', phone: '020-26871234', hours: 'Mon–Sat 8am–7pm' },
+      { name: 'Tata Motors Authorized Service', address: 'Plot 4, Hadapsar Industrial Estate, Pune – 411013', phone: '020-26871234', hours: 'Mon–Sat 8am–7pm', lat: 18.5074, lng: 73.9399 },
+    ],
+    'New Town': [
+      { name: 'Tata Motors Kolkata', address: 'Plot Y-1, Block EP, Sector V, Salt Lake, Kolkata – 700091', phone: '033-40047200', hours: 'Mon–Sat 8am–7pm', lat: 22.5726, lng: 88.4350 },
     ],
   },
 };
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function getServiceCenters(manufacturer: string, city: string): ServiceCenter[] {
   const byMake = SERVICE_CENTERS[manufacturer] ?? SERVICE_CENTERS['Maruti Suzuki'];
@@ -300,8 +318,22 @@ export class VehicleDiagnosisComponent {
       this.form.manufacturer || 'Maruti Suzuki',
       this.city.selectedCity() || 'Mumbai',
     );
-    this.nearbyServiceCenters.set(centers);
     this.serviceCenterModal.set(true);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const { latitude, longitude } = pos.coords;
+          const withDist = centers
+            .map(c => ({ ...c, distance: Math.round(haversineKm(latitude, longitude, c.lat, c.lng) * 10) / 10 }))
+            .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
+          this.nearbyServiceCenters.set(withDist);
+        },
+        () => this.nearbyServiceCenters.set(centers),
+      );
+    } else {
+      this.nearbyServiceCenters.set(centers);
+    }
   }
 
   closeServiceModal() {
@@ -312,8 +344,8 @@ export class VehicleDiagnosisComponent {
     window.location.href = `tel:${phone.replace(/[^0-9]/g, '')}`;
   }
 
-  directionsUrl(address: string): string {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  directionsUrl(c: ServiceCenter): string {
+    return `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`;
   }
 
   formatCost(n: number): string {

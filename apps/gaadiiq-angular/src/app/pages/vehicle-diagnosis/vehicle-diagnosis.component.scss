@@ -243,7 +243,9 @@
   transition: border-color .15s;
   &:hover { border-color: #3B82F6; }
 }
-.sc-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.sc-name-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.sc-name { font-size: 15px; font-weight: 700; }
+.sc-distance { font-size: 12px; font-weight: 600; color: #10B981; background: rgba(16,185,129,0.12); border-radius: 20px; padding: 2px 10px; white-space: nowrap; flex-shrink: 0; }
 .sc-address { font-size: 13px; color: var(--text-muted, #6B7280); margin-bottom: 4px; line-height: 1.5; }
 .sc-hours { font-size: 12px; color: var(--text-muted, #9CA3AF); margin-bottom: 12px; }
 .sc-actions { display: flex; gap: 10px; flex-wrap: wrap; }

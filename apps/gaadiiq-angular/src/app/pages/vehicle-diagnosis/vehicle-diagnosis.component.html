@@ -324,12 +324,15 @@
     </div>
     <div class="sc-list">
       <div class="sc-card" *ngFor="let c of nearbyServiceCenters()">
-        <div class="sc-name">{{ c.name }}</div>
+        <div class="sc-name-row">
+          <div class="sc-name">{{ c.name }}</div>
+          <span class="sc-distance" *ngIf="c.distance != null">~{{ c.distance | number:'1.1-1' }} km</span>
+        </div>
         <div class="sc-address">📍 {{ c.address }}</div>
         <div class="sc-hours">🕐 {{ c.hours }}</div>
         <div class="sc-actions">
           <a class="sc-btn sc-btn-call" [href]="'tel:' + c.phone">📞 {{ c.phone }}</a>
-          <a class="sc-btn sc-btn-map" [href]="directionsUrl(c.address)" target="_blank" rel="noopener">🗺️ Get Directions</a>
+          <a class="sc-btn sc-btn-map" [href]="directionsUrl(c)" target="_blank" rel="noopener">🗺️ Get Directions</a>
         </div>
       </div>
       <div class="sc-empty" *ngIf="!nearbyServiceCenters().length">
