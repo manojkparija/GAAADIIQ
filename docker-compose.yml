@@ -41,6 +41,18 @@ services:
       retries: 6
       start_period: 30s
 
+  ollama-init:
+    image: ollama/ollama:latest
+    restart: "no"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "ollama pull llama3"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+
   api:
     build:
       context: ./apps/api

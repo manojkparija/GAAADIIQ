@@ -1,5 +1,7 @@
 import logging
+import subprocess
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +20,8 @@ if not settings.jwt_private_key and not settings.is_production:
         "JWT_PRIVATE_KEY not set — using ephemeral RSA keypair (tokens reset on restart). "
         "Set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY before deploying."
     )
+
+from services.scheduler import start_scheduler, stop_scheduler  # noqa: E402
 
 from routers import (  # noqa: E402
     admin,
@@ -64,15 +68,36 @@ RECOMMEND_REQUESTS_TOTAL = Counter(
     "Total calls to POST /recommend",
 )
 
+_log = logging.getLogger("gaadiiq")
+
 # Hide API docs in production
 _docs_url = None if settings.is_production else "/docs"
 _redoc_url = None if settings.is_production else "/redoc"
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Run DB migrations on startup
+    try:
+        result = subprocess.run(
+            ["alembic", "upgrade", "head"],
+            capture_output=True, text=True, check=True,
+        )
+        _log.info("Alembic: %s", result.stdout.strip() or "up to date")
+    except subprocess.CalledProcessError as exc:
+        _log.error("Alembic migration failed: %s", exc.stderr)
+
+    start_scheduler()
+    yield
+    stop_scheduler()
+
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     docs_url=_docs_url,
     redoc_url=_redoc_url,
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter

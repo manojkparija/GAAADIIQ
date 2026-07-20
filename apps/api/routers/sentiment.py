@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,6 +27,7 @@ from models.customer_intent import (
     CustomerIntentScore,
     LeadGrade,
 )
+from core.limiter import limiter
 from models.dealer import Dealer
 from models.user import User
 from services.sentiment import analyse_customer_intent
@@ -38,6 +39,14 @@ DB = Annotated[AsyncSession, Depends(get_db)]
 
 
 # ── Pydantic schemas ──────────────────────────────────────────────────────────
+
+class TrackPublicIn(BaseModel):
+    dealer_email: str
+    buyer_id: str
+    activity_type: ActivityType
+    duration_seconds: int | None = None
+    metadata: dict | None = None
+
 
 class TrackActivityIn(BaseModel):
     user_id: str
@@ -117,6 +126,37 @@ async def _get_dealer(db: AsyncSession, user: User) -> Dealer:
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+
+@router.post("/track-public", status_code=status.HTTP_201_CREATED)
+@limiter.limit("30/minute")
+async def track_activity_public(request: Request, body: TrackPublicIn, db: DB):
+    """
+    Unauthenticated buyer-side tracking endpoint.
+    Looks up dealer by email and records the customer activity signal.
+    Rate-limited to 30 req/min per IP.
+    """
+    # Resolve dealer via their user email
+    user_q = await db.execute(select(User).where(User.email == body.dealer_email))
+    dealer_user = user_q.scalar_one_or_none()
+    if not dealer_user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Dealer not found")
+
+    dealer_q = await db.execute(select(Dealer).where(Dealer.user_id == dealer_user.id))
+    dealer = dealer_q.scalar_one_or_none()
+    if not dealer:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Dealer profile not found")
+
+    activity = CustomerActivity(
+        user_id=body.buyer_id,
+        dealer_id=str(dealer.id),
+        activity_type=body.activity_type,
+        duration_seconds=body.duration_seconds,
+        extra_data=body.metadata,
+    )
+    db.add(activity)
+    await db.commit()
+    return {"status": "tracked"}
+
 
 @router.post("/track", status_code=status.HTTP_201_CREATED)
 async def track_activity(body: TrackActivityIn, db: DB, current_user: CurrentUser):

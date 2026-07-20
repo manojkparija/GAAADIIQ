@@ -181,6 +181,7 @@ import { SeoService } from '../../services/seo.service';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { SentimentService } from '../../services/sentiment.service';
 
 @Component({
   selector: 'app-car-detail',
@@ -343,10 +344,27 @@ export class CarDetailComponent implements OnInit {
     } else {
       this.enquirySent.set(true);
       this.enquiryForm = { name: '', phone: '', email: '', notes: '' };
+      this._trackEnquiry();
     }
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService) {
+  private async _trackListingView(): Promise<void> {
+    const buyerId = this.auth.currentUser()?.id;
+    if (!buyerId) return;
+    const seller = await this.sellersSvc.getForCar(this.car.id).catch(() => null);
+    if (!seller?.email) return;
+    this.sentimentSvc.trackPublic(seller.email, buyerId, 'listing_view');
+  }
+
+  private async _trackEnquiry(): Promise<void> {
+    const buyerId = this.auth.currentUser()?.id;
+    if (!buyerId) return;
+    const seller = await this.sellersSvc.getForCar(this.car.id).catch(() => null);
+    if (!seller?.email) return;
+    this.sentimentSvc.trackPublic(seller.email, buyerId, 'enquiry');
+  }
+
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -381,6 +399,7 @@ export class CarDetailComponent implements OnInit {
       if (this.car.color) this.selectedColour.set(this.car.color);
       this.loadReviews();
       this.seo.setCarDetail(this.car.make, this.car.model, this.car.year, this.car.price, this.car.city || 'India');
+      this._trackListingView();
       const fuel = this.car.fuel;
       if (fuel === 'Diesel') { this.fuelPrice.set(92); this.fuelPriceMin = 80; this.fuelPriceMax = 110; this.fuelPriceUnit = '/L'; }
       else if (fuel === 'CNG') { this.fuelPrice.set(85); this.fuelPriceMin = 70; this.fuelPriceMax = 110; this.fuelPriceUnit = '/kg'; }

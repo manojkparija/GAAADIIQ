@@ -6,6 +6,8 @@ import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
 import { TestDriveService } from '../../services/test-drive.service';
 import { SellersService } from '../../services/sellers.service';
+import { SentimentService } from '../../services/sentiment.service';
+import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
   selector: 'app-test-drive',
@@ -43,7 +45,9 @@ export class TestDriveComponent {
     private seo: SeoService,
     private route: ActivatedRoute,
     private testDriveSvc: TestDriveService,
-    private sellersSvc: SellersService
+    private sellersSvc: SellersService,
+    private sentimentSvc: SentimentService,
+    private sb: SupabaseService,
   ) {
     this.allCars = carsData.getAll();
     seo.setPage('Book Test Drive', 'Book a test drive for any car in our verified database. Choose your date, time, and location.');
@@ -84,6 +88,11 @@ export class TestDriveComponent {
     this.submitting.set(false);
     if (ok) {
       this.submitted.set(true);
+      const { data } = await this.sb.client.auth.getSession();
+      const buyerId = data.session?.user?.id;
+      if (buyerId) {
+        this.sentimentSvc.trackPublic(seller.email, buyerId, 'test_drive_request');
+      }
     } else {
       this.submitError.set('Booking failed — please try again or call us directly.');
     }

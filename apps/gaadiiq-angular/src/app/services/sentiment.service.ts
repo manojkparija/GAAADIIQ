@@ -125,6 +125,26 @@ export class SentimentService {
     }
   }
 
+  async trackPublic(
+    dealerEmail: string,
+    buyerId: string,
+    activityType: ActivityType,
+    durationSeconds?: number,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
+    try {
+      await this.http.post(`${this.api}/track-public`, {
+        dealer_email: dealerEmail,
+        buyer_id: buyerId,
+        activity_type: activityType,
+        duration_seconds: durationSeconds,
+        metadata,
+      }).toPromise();
+    } catch {
+      // Non-critical — swallow silently
+    }
+  }
+
   async trackActivity(
     userId: string,
     activityType: ActivityType,
