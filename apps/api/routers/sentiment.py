@@ -20,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependencies import get_current_user
+from core.limiter import limiter
 from db.session import get_db
 from models.customer_intent import (
     ActivityType,
@@ -27,7 +28,6 @@ from models.customer_intent import (
     CustomerIntentScore,
     LeadGrade,
 )
-from core.limiter import limiter
 from models.dealer import Dealer
 from models.user import User
 from services.sentiment import analyse_customer_intent

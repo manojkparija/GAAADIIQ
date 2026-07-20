@@ -21,8 +21,6 @@ if not settings.jwt_private_key and not settings.is_production:
         "Set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY before deploying."
     )
 
-from services.scheduler import start_scheduler, stop_scheduler  # noqa: E402
-
 from routers import (  # noqa: E402
     admin,
     auth,
@@ -40,6 +38,7 @@ from routers import (  # noqa: E402
     search,
     sentiment,
 )
+from services.scheduler import start_scheduler, stop_scheduler  # noqa: E402
 
 # ── Prometheus metrics ─────────────────────────────────────────────────────────
 _REQUEST_COUNT = Counter(
