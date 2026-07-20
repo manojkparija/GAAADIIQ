@@ -298,9 +298,9 @@
     appearance: none;
     -webkit-appearance: none;
     background: transparent;
-    /* pointer-events: all enables both thumb dragging AND track click-to-seek */
-    pointer-events: all;
-    cursor: pointer;
+    /* Only thumbs are interactive — avoids accidental seek when clicking track area */
+    pointer-events: none;
+    cursor: default;
     outline: none;
 
     /* Chrome/Safari: hide the built-in track entirely */
@@ -316,11 +316,13 @@
       -webkit-appearance: none;
       width: 18px;
       height: 18px;
-      margin-top: 0; /* no offset; browser centres on the 0-height track */
+      /* (track-height 0 − thumb-height 18) / 2 = −9px centres the thumb on the track */
+      margin-top: -9px;
       border-radius: 50%;
       background: var(--primary, #2563EB);
       border: 2px solid #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      pointer-events: all;
       cursor: grab;
       transition: box-shadow 0.15s;
       &:active { cursor: grabbing; box-shadow: 0 0 0 4px rgba(37,99,235,0.18); }
