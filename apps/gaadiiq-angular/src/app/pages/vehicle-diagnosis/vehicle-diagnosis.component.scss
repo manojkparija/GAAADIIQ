@@ -3,27 +3,19 @@
 .diag-page { min-height: 100vh; background: var(--bg); }
 
 .diag-hero {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0c1a35 100%);
-  padding: 64px 0 0;
+  background: linear-gradient(135deg, #1e40af 0%, #00D4A8 100%);
+  padding: 64px 0 48px;
   text-align: center;
-  position: relative;
-  &::after {
-    content: '';
-    display: block;
-    height: 64px;
-    background: linear-gradient(to bottom, #0c1a35 0%, var(--bg) 100%);
-    margin-top: 48px;
-  }
   .hero-badge {
-    display: inline-block; background: rgba(59,130,246,0.18); color: #60A5FA;
-    border: 1px solid rgba(59,130,246,0.3); border-radius: 20px;
+    display: inline-block; background: rgba(255,255,255,0.2); color: #fff;
+    border: 1px solid rgba(255,255,255,0.35); border-radius: 20px;
     padding: 4px 16px; font-size: 13px; font-weight: 600; margin-bottom: 16px;
   }
   h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; color: #fff; margin: 0 0 12px; }
-  .hero-sub { color: #94A3B8; font-size: 16px; max-width: 580px; margin: 0 auto; line-height: 1.6; }
+  .hero-sub { color: rgba(255,255,255,0.8); font-size: 16px; max-width: 580px; margin: 0 auto; line-height: 1.6; }
 }
 
-.gradient-text { background: linear-gradient(90deg, #3B82F6, #00D4A8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.gradient-text { background: linear-gradient(135deg, #ffffff, #C4B5FD); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
 .diag-body { padding: 40px 16px 80px; max-width: 780px; }
 
