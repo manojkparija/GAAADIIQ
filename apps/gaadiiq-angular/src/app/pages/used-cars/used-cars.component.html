@@ -122,10 +122,16 @@
               [style.left]="((minBudget() - 100000) / (20000000 - 100000) * 100) + '%'"
               [style.width]="((maxBudget() - minBudget()) / (20000000 - 100000) * 100) + '%'">
             </div>
-            <input type="range" class="range-input" min="100000" max="20000000" step="50000"
-              [value]="minBudget()" (input)="onMinBudget(+$any($event.target).value)" />
-            <input type="range" class="range-input" min="100000" max="20000000" step="50000"
-              [value]="maxBudget()" (input)="onMaxBudget(+$any($event.target).value)" />
+            <input type="range" class="range-input range-input-min" min="100000" max="20000000" step="50000"
+              [value]="minBudget()"
+              [style.z-index]="activeThumb() === 'min' ? 4 : 2"
+              (pointerdown)="activeThumb.set('min')"
+              (input)="onMinBudget(+$any($event.target).value)" />
+            <input type="range" class="range-input range-input-max" min="100000" max="20000000" step="50000"
+              [value]="maxBudget()"
+              [style.z-index]="activeThumb() === 'max' ? 4 : 2"
+              (pointerdown)="activeThumb.set('max')"
+              (input)="onMaxBudget(+$any($event.target).value)" />
           </div>
           <div class="range-labels"><span>₹1L</span><span>₹2 Cr</span></div>
         </div>

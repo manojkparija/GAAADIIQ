@@ -298,6 +298,9 @@ export class UsedCarsComponent implements OnInit {
     });
   }
 
+  /** Which budget thumb was last pressed — drives z-index so focused thumb is always on top */
+  activeThumb = signal<'min' | 'max'>('max');
+
   onMinBudget(val: number) {
     this.minBudget.set(Math.min(val, this.maxBudget() - 100000));
   }
