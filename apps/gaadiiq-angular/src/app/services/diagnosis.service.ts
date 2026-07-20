@@ -69,7 +69,7 @@ interface KBCase {
 const KB: KBCase[] = [
   {
     title: 'Engine Overheating',
-    symptoms: ['overheat', 'temperature', 'hot', 'coolant', 'radiator', 'steam', 'boiling', 'heat', 'ac'],
+    symptoms: ['overheat', 'overheating', 'temperature', 'coolant', 'radiator', 'steam', 'boiling', 'thermostat', 'waterpump'],
     possible_causes: ['Low coolant / coolant leak', 'Faulty thermostat', 'Failed water pump', 'Clogged radiator', 'Broken radiator fan'],
     complexity: 'Moderate', cost_min: 2000, cost_max: 18000,
     repair_time: '2-6 hours', safe_to_drive: false, risk: 'Critical',
@@ -105,7 +105,7 @@ const KB: KBCase[] = [
   },
   {
     title: 'AC / Air Conditioning Problem',
-    symptoms: ['ac', 'air', 'cool', 'cold', 'compressor', 'refrigerant', 'blower', 'smell', 'musty'],
+    symptoms: ['aircon', 'conditioning', 'compressor', 'refrigerant', 'blower', 'cooling', 'musty', 'humid', 'vent'],
     possible_causes: ['Low refrigerant', 'Faulty compressor', 'Blocked condenser', 'Clogged cabin filter'],
     complexity: 'Moderate', cost_min: 1500, cost_max: 15000,
     repair_time: '1-4 hours', safe_to_drive: true, risk: 'Low',
@@ -148,12 +148,17 @@ function clientFallback(req: DiagnoseRequest): DiagnosisReport {
     req.when_occurs.join(' ')
   ).toLowerCase();
 
-  const words = new Set(text.split(/\W+/));
+  // Exact word matching only — no substring match to avoid false positives
+  const words = new Set(text.split(/\W+/).filter(w => w.length > 1));
+
+  // Boost AC category when "AC On" is selected as when_occurs
+  const acBoost = req.when_occurs.some(w => w.toLowerCase().includes('ac'));
 
   let best: KBCase | null = null;
   let bestScore = 0;
   for (const c of KB) {
-    const score = c.symptoms.filter(s => words.has(s) || text.includes(s)).length;
+    let score = c.symptoms.filter(s => words.has(s)).length;
+    if (acBoost && c.title.includes('AC')) score += 2;
     if (score > bestScore) { bestScore = score; best = c; }
   }
 
