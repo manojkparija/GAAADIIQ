@@ -223,19 +223,20 @@ export class DiagnosisService {
     this.loading.set(true);
     this.error.set(null);
     this.report.set(null);
-    try {
-      const result = await this.http
-        .post<DiagnosisReport>(`${this.api}/analyse`, request)
-        .toPromise();
-      this.report.set(result ?? null);
-      return result ?? null;
-    } catch {
-      const fallback = clientFallback(request);
-      this.report.set(fallback);
-      return fallback;
-    } finally {
-      this.loading.set(false);
-    }
+
+    // Show client-side result immediately (no API latency / no backend required)
+    const immediate = clientFallback(request);
+    this.report.set(immediate);
+    this.loading.set(false);
+
+    // Fire-and-forget: upgrade to real AI result if the backend is available
+    this.http
+      .post<DiagnosisReport>(`${this.api}/analyse`, request)
+      .toPromise()
+      .then(result => { if (result) this.report.set(result); })
+      .catch(() => { /* keep the already-displayed client result */ });
+
+    return immediate;
   }
 
   riskColor(level: string): string {
