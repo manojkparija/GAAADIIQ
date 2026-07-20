@@ -89,16 +89,17 @@ def _make_mock_listing(price: float, km: int, age: int, owners: int = 1,
 def test_heuristic_new_car_no_depreciation():
     listing = _make_mock_listing(price=1_000_000, km=0, age=0)
     value, method, confidence, reasoning = _heuristic_valuation(listing)
-    # age=0 → no time depreciation, but 1-owner penalty (3%) on used listing
-    assert 950_000 <= value <= 1_000_000
+    # Heuristic now uses catalogue base (900k for unknown make/model), not listing.price.
+    # age=0 → no time depreciation; 1-owner used penalty (3%) → ~873k
+    assert 820_000 <= value <= 910_000
     assert "heuristic" in method
 
 
 def test_heuristic_1_year_old():
     listing = _make_mock_listing(price=1_000_000, km=10_000, age=1)
     value, *_ = _heuristic_valuation(listing)
-    # 15% depreciation → ~850K
-    assert 800_000 <= value <= 870_000
+    # 15% time dep + 3% owner penalty on 900k catalogue base → ~738k
+    assert 700_000 <= value <= 780_000
 
 
 def test_heuristic_high_mileage_penalty():
