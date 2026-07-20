@@ -182,9 +182,8 @@ export class UsedCarsComponent implements OnInit {
 
   /** Show the soft "no cars in city, showing All India" banner */
   showAllIndiaBanner = computed(() =>
-    !this.allIndiaOverride() &&
-    !!this.heroCity() &&
-    this.cityCarsCount() === 0
+    this.allIndiaOverride() &&
+    !!this.heroCity()
   );
 
   allFilteredCars = computed<UsedCarViewModel[]>(() => {

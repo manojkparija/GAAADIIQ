@@ -250,7 +250,7 @@ export class NewCarsComponent implements OnInit {
 
   navigateToBudget(min: number, max: number) {
     this.minBudget.set(min);
-    this.maxBudget.set(max < 100000000 ? max : 10000000);
+    this.maxBudget.set(max);
     this.scrollToModels();
   }
 
