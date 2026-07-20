@@ -109,6 +109,11 @@ function getServiceCenters(manufacturer: string, city: string): ServiceCenter[] 
   return byMake[city] ?? byMake[Object.keys(byMake)[0]] ?? [];
 }
 
+function getAllServiceCenters(manufacturer: string): ServiceCenter[] {
+  const byMake = SERVICE_CENTERS[manufacturer] ?? SERVICE_CENTERS['Maruti Suzuki'];
+  return Object.values(byMake).flat();
+}
+
 const WARNING_LIGHTS = [
   'Check Engine (MIL)', 'Oil Pressure', 'Battery / Charging', 'Temperature / Overheat',
   'Brake Warning', 'ABS Warning', 'Airbag / SRS', 'TPMS (Tyre Pressure)',
@@ -359,24 +364,29 @@ export class VehicleDiagnosisComponent {
   }
 
   bookService() {
-    const centers = getServiceCenters(
-      this.form.manufacturer || 'Maruti Suzuki',
-      this.city.selectedCity() || 'Mumbai',
-    );
+    const make = this.form.manufacturer || 'Maruti Suzuki';
     this.serviceCenterModal.set(true);
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
           const { latitude, longitude } = pos.coords;
-          const withDist = centers
+          // Search all cities, pick nearest 3
+          const all = getAllServiceCenters(make);
+          const withDist = all
             .map(c => ({ ...c, distance: Math.round(haversineKm(latitude, longitude, c.lat, c.lng) * 10) / 10 }))
-            .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
+            .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999))
+            .slice(0, 3);
           this.nearbyServiceCenters.set(withDist);
         },
-        () => this.nearbyServiceCenters.set(centers),
+        () => {
+          // Geolocation denied — fall back to selected/default city
+          const centers = getServiceCenters(make, this.city.selectedCity() || 'Mumbai');
+          this.nearbyServiceCenters.set(centers);
+        },
       );
     } else {
+      const centers = getServiceCenters(make, this.city.selectedCity() || 'Mumbai');
       this.nearbyServiceCenters.set(centers);
     }
   }
