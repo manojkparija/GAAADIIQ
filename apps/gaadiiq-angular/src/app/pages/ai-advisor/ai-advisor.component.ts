@@ -5,6 +5,8 @@ import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
 import { AnalyticsService } from '../../services/analytics.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { ApiService } from '../../services/api.service';
+import { firstValueFrom } from 'rxjs';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -76,6 +78,7 @@ export class AiAdvisorComponent {
   profile = signal<Record<string, string | string[]>>({});
   results = signal<RecommendedCar[]>([]);
   showComparison = signal(false);
+  backendBoostIds = signal<Set<string>>(new Set());
 
   readonly ALL_STEPS: AdvisorStep[] = [
     {
@@ -247,7 +250,12 @@ export class AiAdvisorComponent {
   });
   canProceed   = computed(() => this.currentSels().length > 0);
 
-  constructor(private carsData: CarsDataService, private seo: SeoService, private analytics: AnalyticsService) {
+  constructor(
+    private carsData: CarsDataService,
+    private seo: SeoService,
+    private analytics: AnalyticsService,
+    private api: ApiService,
+  ) {
     seo.setPage('AI Car Advisor',
       'Answer 10 smart questions and get personalized, AI-powered car recommendations with full cost analysis.');
     try {

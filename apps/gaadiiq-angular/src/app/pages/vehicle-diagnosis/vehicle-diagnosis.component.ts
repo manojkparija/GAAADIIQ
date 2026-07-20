@@ -7,6 +7,8 @@ import { DiagnosisService, DiagnoseRequest } from '../../services/diagnosis.serv
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { CityService } from '../../services/city.service';
+import { ApiService } from '../../services/api.service';
+import { firstValueFrom } from 'rxjs';
 
 interface ServiceCenter {
   name: string;
@@ -280,6 +282,7 @@ export class VehicleDiagnosisComponent {
     private auth: AuthService,
     private sb: SupabaseService,
     public city: CityService,
+    private api: ApiService,
   ) {
     seo.setPage(
       'AI Vehicle Diagnosis',
@@ -311,6 +314,17 @@ export class VehicleDiagnosisComponent {
     const { data } = await this.sb.client.auth.getSession();
     const userId = data.session?.user?.id;
 
+    // Upload images to R2 before submitting diagnosis
+    const uploadedUrls: string[] = [];
+    for (const file of this.selectedImages()) {
+      try {
+        const result = await firstValueFrom(this.api.uploadDiagnosisImage(file));
+        if (result?.url) uploadedUrls.push(result.url);
+      } catch {
+        // Non-fatal: fall back to no image URL for this file
+      }
+    }
+
     const request: DiagnoseRequest = {
       manufacturer: this.form.manufacturer,
       model: this.form.model,
@@ -324,9 +338,7 @@ export class VehicleDiagnosisComponent {
       when_occurs: this.selectedWhenOccurs(),
       severity: this.severity,
       user_id: userId,
-      image_urls: this.selectedImages().length > 0
-        ? this.selectedImages().map(f => f.name)
-        : undefined,
+      image_urls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
     };
 
     this.step.set(4);
