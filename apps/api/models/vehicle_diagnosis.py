@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import Boolean, Float, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, Boolean, Float, Integer, String, Text
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db.base import Base, TimestampMixin, UUIDMixin
@@ -26,29 +26,29 @@ class VehicleDiagnosis(UUIDMixin, TimestampMixin, Base):
 
     # Symptoms
     problem_description: Mapped[str] = mapped_column(Text, nullable=False)
-    warning_lights: Mapped[list | None] = mapped_column(JSONB)
-    when_occurs: Mapped[list | None] = mapped_column(JSONB)
+    warning_lights: Mapped[list | None] = mapped_column(JSON)
+    when_occurs: Mapped[list | None] = mapped_column(JSON)
     severity: Mapped[str] = mapped_column(String(20), nullable=False)  # low/medium/high/critical
 
     # Media (S3 keys or local paths)
-    image_urls: Mapped[list | None] = mapped_column(JSONB)
+    image_urls: Mapped[list | None] = mapped_column(JSON)
     audio_url: Mapped[str | None] = mapped_column(String(500))
     video_url: Mapped[str | None] = mapped_column(String(500))
 
     # AI output
     preliminary_diagnosis: Mapped[str | None] = mapped_column(Text)
-    possible_causes: Mapped[list | None] = mapped_column(JSONB)
+    possible_causes: Mapped[list | None] = mapped_column(JSON)
     repair_complexity: Mapped[str | None] = mapped_column(String(30))
     cost_min_inr: Mapped[int | None] = mapped_column(Integer)
     cost_max_inr: Mapped[int | None] = mapped_column(Integer)
     repair_time_estimate: Mapped[str | None] = mapped_column(String(100))
     safe_to_drive: Mapped[bool | None] = mapped_column(Boolean)
     risk_level: Mapped[str | None] = mapped_column(String(20))
-    recommended_steps: Mapped[list | None] = mapped_column(JSONB)
-    diy_fixes: Mapped[list | None] = mapped_column(JSONB)
+    recommended_steps: Mapped[list | None] = mapped_column(JSON)
+    diy_fixes: Mapped[list | None] = mapped_column(JSON)
     immediate_service_required: Mapped[bool | None] = mapped_column(Boolean)
-    preventive_maintenance: Mapped[list | None] = mapped_column(JSONB)
-    retrieved_sources: Mapped[list | None] = mapped_column(JSONB)
+    preventive_maintenance: Mapped[list | None] = mapped_column(JSON)
+    retrieved_sources: Mapped[list | None] = mapped_column(JSON)
     ollama_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     analysis_confidence: Mapped[float | None] = mapped_column(Float)
 
