@@ -63,7 +63,6 @@
 
       <!-- AI Lead Intelligence Summary -->
       <h2 class="section-head">AI Lead <span class="gradient-text">Intelligence</span>
-        <span class="ollama-badge" *ngIf="sentimentSummary()?.analysed_today ?? 0 > 0">⚡ Ollama LLM</span>
       </h2>
       <div class="ai-lead-summary glass-card">
         <div class="ai-summary-chips">
@@ -141,7 +140,6 @@
       <div class="leads-header">
         <h2 class="section-head" style="margin:0">
           AI Purchase Intent <span class="gradient-text">Leads</span>
-          <span class="ollama-badge">⚡ Ollama LLM</span>
         </h2>
         <div class="grade-filters">
           <button class="gf-btn" [class.active]="gradeFilter()===null" (click)="setGradeFilter(null)">All</button>
