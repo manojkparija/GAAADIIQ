@@ -5,9 +5,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple in-memory anon rate limiter — max 5 requests per minute per IP
+const anonBucket: Map<string, { count: number; resetAt: number }> = new Map();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = anonBucket.get(ip);
+  if (!entry || now > entry.resetAt) {
+    anonBucket.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= 5) return false;
+  entry.count++;
+  return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limit anonymous callers (no auth header)
+  const authHeader = req.headers.get('authorization') ?? '';
+  const isAuthed = authHeader.startsWith('Bearer ') && authHeader.length > 20;
+  if (!isAuthed) {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    if (!checkRateLimit(ip)) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded — please wait a minute.' }), {
+        status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   }
 
   try {
@@ -22,7 +49,6 @@ Deno.serve(async (req) => {
     }
 
     const client = new Anthropic({ apiKey });
-
     const age = new Date().getFullYear() - Number(year);
     const kmNum = Number(km);
 
@@ -33,7 +59,7 @@ Car Details:
 - Model: ${model}
 - Variant: ${variant || 'Unknown'}
 - Year: ${year} (${age} years old)
-- Kilometers Driven: ${kmNum.toLocaleString('en-IN')} km
+- Kilometres Driven: ${kmNum.toLocaleString('en-IN')} km
 - Fuel Type: ${fuel}
 - Transmission: ${transmission || 'Unknown'}
 - Number of Owners: ${owners}
@@ -44,21 +70,20 @@ Provide a JSON response with this exact structure:
   "low": <lowest fair market price in INR as integer>,
   "mid": <fair market price in INR as integer>,
   "high": <optimistic price in INR as integer>,
-  "confidence": <confidence score 70-97 as integer>,
+  "confidence": <confidence score as integer: 90 if variant known, 82 if model known, 75 otherwise>,
   "depreciation": <total depreciation percentage as integer>,
   "marketTrend": "<one emoji + short market trend observation for this specific fuel/model in India>",
   "tips": ["<tip1>", "<tip2>", "<tip3>"]
 }
 
 Rules:
-- Base your valuation on actual Indian used car market prices (CarDekho, Cars24, OLX Autos data patterns)
+- Base your valuation on actual Indian used car market prices (CarDekho, Cars24, OLX Autos patterns)
 - Account for Indian state RTO depreciation schedules
 - ${fuel === 'Electric' ? 'EVs have strong demand but battery health uncertainty — factor both in' : ''}
 - ${fuel === 'Diesel' ? 'Diesel has softening demand in metros due to BS6 and EV adoption' : ''}
 - low should be ~10-15% below mid, high should be ~10-15% above mid
-- Confidence: 90+ if variant known, 80+ if model known, 70+ otherwise
 - Tips should be specific, actionable advice for the Indian market
-- Return ONLY valid JSON, no markdown, no explanation`;
+- Return ONLY valid JSON, no markdown fences, no explanation`;
 
     const message = await client.messages.create({
       model: 'claude-opus-4-8',
@@ -67,16 +92,16 @@ Rules:
       messages: [{ role: 'user', content: prompt }],
     });
 
-    // Extract JSON from response
     const textContent = message.content.find((c: any) => c.type === 'text');
     if (!textContent || textContent.type !== 'text') {
       throw new Error('No text response from Claude');
     }
 
-    const jsonText = textContent.text.trim();
-    const valuation = JSON.parse(jsonText);
+    // Strip markdown code fences if present (```json ... ```)
+    const raw = textContent.text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    const valuation = JSON.parse(raw);
 
-    return new Response(JSON.stringify(valuation), {
+    return new Response(JSON.stringify({ ...valuation, method: 'claude' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err: any) {

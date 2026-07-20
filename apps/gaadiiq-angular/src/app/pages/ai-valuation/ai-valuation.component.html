@@ -6,11 +6,11 @@
   <section class="val-hero container">
     <div class="ai-badge"><app-icon name="brain" [size]="14"></app-icon> AI Valuation</div>
     <h1>What Is Your Car <span class="gradient-text">Worth Today?</span></h1>
-    <p class="hero-sub">Get an instant AI-powered market valuation based on real-time data. Free, accurate, no sign-up needed.</p>
+    <p class="hero-sub">Get a fair market estimate for your used car based on depreciation, mileage, and market signals. Free, no sign-up needed.</p>
     <div class="trust-row">
-      <span><app-icon name="check" [size]="13"></app-icon> 50,000+ valuations done</span>
-      <span><app-icon name="check" [size]="13"></app-icon> Updated daily</span>
-      <span><app-icon name="check" [size]="13"></app-icon> Based on actual sale prices</span>
+      <span><app-icon name="check" [size]="13"></app-icon> Catalogue-based pricing</span>
+      <span><app-icon name="check" [size]="13"></app-icon> AI-enhanced when available</span>
+      <span><app-icon name="check" [size]="13"></app-icon> Preliminary estimate — verify with a dealer</span>
     </div>
   </section>
 
@@ -113,9 +113,18 @@
 
   <!-- RESULT -->
   <section class="result-section container" *ngIf="step() === 'result' && result() as r">
+    <!-- Fallback banner — shown when AI was unavailable -->
+    <div class="fallback-banner" *ngIf="r.method === 'heuristic'">
+      <span>ℹ️</span>
+      <p><strong>Formula estimate</strong> — AI engine unavailable. This is a depreciation-model estimate, not an AI-powered analysis. Confidence is lower; consult a dealer for a precise quote.</p>
+    </div>
+
     <div class="result-header">
       <div class="result-car">{{ form.make }} {{ form.model }}{{ form.variant ? ' ' + form.variant : '' }} · {{ form.year }} · {{ form.fuel }}</div>
       <h2>Your Car's <span class="gradient-text">Market Value</span></h2>
+      <span class="method-badge" [class.badge-claude]="r.method === 'claude'" [class.badge-heuristic]="r.method === 'heuristic'">
+        {{ r.method === 'claude' ? '🤖 AI-powered' : '📐 Formula estimate' }}
+      </span>
     </div>
 
     <div class="result-grid">

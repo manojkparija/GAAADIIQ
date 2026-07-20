@@ -57,16 +57,69 @@ Respond ONLY with a JSON object in this exact format, no explanation:
 )
 
 
+# Catalogue ex-showroom base prices (₹) by model — mid-variant approximation
+_MODEL_CATALOGUE: dict[str, float] = {
+    # Maruti Suzuki
+    'swift': 749000, 'baleno': 769000, 'brezza': 949000, 'ertiga': 1049000,
+    'wagonr': 649000, 'alto k10': 399000, 'dzire': 749000, 'ciaz': 1099000,
+    's-presso': 449000, 'celerio': 649000, 'ignis': 799000, 'fronx': 849000,
+    'grand vitara': 1299000, 'jimny': 1499000,
+    # Hyundai
+    'creta': 1299000, 'venue': 949000, 'i20': 899000, 'verna': 1299000,
+    'alcazar': 1999000, 'grand i10 nios': 649000, 'aura': 799000,
+    'tucson': 2999000, 'exter': 749000,
+    # Tata
+    'nexon': 899000, 'punch': 699000, 'harrier': 1699000, 'safari': 1899000,
+    'altroz': 899000, 'tigor': 699000, 'tiago': 549000,
+    'nexon ev': 1699900, 'curvv': 999000,
+    # Mahindra
+    'scorpio n': 1549000, 'xuv700': 1799000, 'thar': 1399000,
+    'xuv300': 949000, 'bolero': 1049000,
+    # Honda
+    'city': 1399000, 'amaze': 899000, 'elevate': 1349000, 'wr-v': 1049000, 'jazz': 899000,
+    # Toyota
+    'innova crysta': 2199000, 'innova hycross': 2299000, 'fortuner': 3599000,
+    'glanza': 749000, 'urban cruiser hyryder': 1299000, 'camry': 4799000,
+    # Kia
+    'seltos': 1299000, 'sonet': 1099000, 'carens': 1299000, 'ev6': 5999000,
+    # MG
+    'hector': 1599000, 'astor': 1199000, 'zs ev': 2199000, 'gloster': 3599000,
+    # VW / Skoda
+    'taigun': 1399000, 'virtus': 1349000, 'polo': 799000,
+    'kushaq': 1399000, 'slavia': 1349000,
+    # Renault / Nissan
+    'kiger': 699000, 'triber': 699000, 'kwid': 549000, 'magnite': 699000,
+    # Luxury
+    '3 series': 4699000, '5 series': 6499000, 'x1': 4599000, 'x3': 6999000, 'x5': 9399000,
+    'c-class': 5599000, 'e-class': 7599000, 'gla': 4999000, 'glc': 6799000, 'gle': 9299000,
+    'a4': 4399000, 'a6': 5999000, 'q3': 4399000, 'q5': 5899000, 'q7': 8299000,
+}
+
+_SEGMENT_BASE: dict[str, float] = {
+    'bmw': 5000000, 'mercedes-benz': 6000000, 'audi': 5000000,
+    'toyota': 1800000, 'honda': 1200000, 'hyundai': 1200000,
+    'kia': 1200000, 'mg motor': 1500000, 'tata': 900000,
+    'mahindra': 1200000, 'maruti suzuki': 750000, 'skoda': 1500000,
+    'volkswagen': 1300000, 'renault': 700000, 'nissan': 800000,
+}
+
+
 def _heuristic_valuation(listing: Listing) -> tuple[float, str, str, str]:
     """
     Rule-based fallback when Ollama is unavailable.
-    Applies standard Indian car depreciation model.
+    Uses catalogue ex-showroom base prices — NOT listing.price — to avoid circular estimates.
     Returns (fair_value, method, confidence, reasoning).
     """
     car = listing.car
     age = datetime.now().year - car.year
 
-    base = float(listing.price)
+    model_key = (car.model or '').lower().strip()
+    make_key = (car.make or '').lower().strip()
+    base = float(
+        _MODEL_CATALOGUE.get(model_key)
+        or _SEGMENT_BASE.get(make_key)
+        or 900000
+    )
 
     if age <= 0:
         depreciation = 0.0

@@ -78,3 +78,9 @@
 .result-ctas { display: flex; gap: 1rem; flex-wrap: wrap;
   a, button { padding: .85rem 2rem; font-size: .95rem; border-radius: .75rem; font-weight: 700; text-decoration: none; cursor: pointer; }
 }
+
+.fallback-banner { display: flex; gap: .75rem; align-items: flex-start; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: .75rem; padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: .88rem; color: var(--text); p { margin: 0; } strong { color: #D97706; } }
+
+.method-badge { display: inline-block; border-radius: 2rem; padding: .2rem .75rem; font-size: .78rem; font-weight: 700; margin-top: .5rem; }
+.badge-claude { background: rgba(43,107,255,0.15); color: #2B6BFF; border: 1px solid rgba(43,107,255,0.3); }
+.badge-heuristic { background: rgba(107,114,128,0.15); color: var(--muted); border: 1px solid rgba(107,114,128,0.25); }
