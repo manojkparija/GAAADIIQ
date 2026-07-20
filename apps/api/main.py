@@ -27,6 +27,7 @@ from routers import (  # noqa: E402
     bookings,
     cars,
     dealers,
+    diagnosis,
     health,
     listings,
     loans,
@@ -144,6 +145,7 @@ app.include_router(reviews.router)
 app.include_router(payments.router)
 app.include_router(payments.subs_router)
 app.include_router(sentiment.router)
+app.include_router(diagnosis.router)
 
 
 @app.get("/")

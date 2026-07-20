@@ -1,0 +1,307 @@
+<div class="diag-page">
+  <div class="diag-hero">
+    <div class="container">
+      <div class="hero-badge">🔧 AI Repair Advisor</div>
+      <h1>Vehicle Preliminary <span class="gradient-text">Diagnosis</span></h1>
+      <p class="hero-sub">Describe your car problem and get an AI-powered preliminary assessment with repair cost estimates. Always consult a certified mechanic to confirm.</p>
+    </div>
+  </div>
+
+  <div class="container diag-body">
+
+    <!-- Progress bar -->
+    <div class="progress-wrap" *ngIf="step() <= 3">
+      <div class="progress-steps">
+        <div class="step-item" [class.active]="step() >= 1" [class.done]="step() > 1">
+          <div class="step-dot">{{ step() > 1 ? '✓' : '1' }}</div>
+          <span>Vehicle</span>
+        </div>
+        <div class="step-line" [class.filled]="step() > 1"></div>
+        <div class="step-item" [class.active]="step() >= 2" [class.done]="step() > 2">
+          <div class="step-dot">{{ step() > 2 ? '✓' : '2' }}</div>
+          <span>Symptoms</span>
+        </div>
+        <div class="step-line" [class.filled]="step() > 2"></div>
+        <div class="step-item" [class.active]="step() >= 3">
+          <div class="step-dot">3</div>
+          <span>Review</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 1: Vehicle Details ── -->
+    <div class="step-card" *ngIf="step() === 1">
+      <h2 class="step-title">Tell us about your vehicle</h2>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Manufacturer *</label>
+          <select [(ngModel)]="form.manufacturer">
+            <option value="">Select make</option>
+            <option *ngFor="let m of makes" [value]="m">{{ m }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Model *</label>
+          <input type="text" [(ngModel)]="form.model" placeholder="e.g. Swift, Creta, Nexon" />
+        </div>
+        <div class="form-group">
+          <label>Variant</label>
+          <input type="text" [(ngModel)]="form.variant" placeholder="e.g. VXi, SX, XZ+" />
+        </div>
+        <div class="form-group">
+          <label>Model Year *</label>
+          <select [(ngModel)]="form.model_year">
+            <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fuel Type *</label>
+          <div class="chip-group">
+            <button *ngFor="let f of fuelTypes" class="chip" [class.selected]="form.fuel_type === f" (click)="form.fuel_type = f" type="button">{{ f }}</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Transmission *</label>
+          <div class="chip-group">
+            <button *ngFor="let t of transmissions" class="chip" [class.selected]="form.transmission === t" (click)="form.transmission = t" type="button">{{ t }}</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Odometer Reading (km)</label>
+          <input type="number" [(ngModel)]="form.odometer_km" placeholder="e.g. 45000" min="0" />
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-primary" [disabled]="!step1Valid()" (click)="next()">Next — Describe Symptoms →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Symptoms ── -->
+    <div class="step-card" *ngIf="step() === 2">
+      <h2 class="step-title">Describe the problem</h2>
+
+      <div class="form-group">
+        <label>Describe the issue in your own words *</label>
+        <textarea [(ngModel)]="problemDescription" rows="5"
+          placeholder="e.g. When I start the car in the morning, there's a grinding noise from the front left. The car pulls to the left when braking. Started about a week ago after hitting a speed bump hard."></textarea>
+        <span class="char-count">{{ problemDescription.length }}/2000 characters (min 10)</span>
+      </div>
+
+      <div class="form-group">
+        <label>Warning lights on dashboard</label>
+        <div class="chip-group flex-wrap">
+          <button *ngFor="let light of warningLights" class="chip"
+            [class.selected]="selectedWarningLights().includes(light)"
+            (click)="toggleWarningLight(light)" type="button">{{ light }}</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>When does the issue occur?</label>
+        <div class="chip-group flex-wrap">
+          <button *ngFor="let w of whenOptions" class="chip"
+            [class.selected]="selectedWhenOccurs().includes(w)"
+            (click)="toggleWhenOccurs(w)" type="button">{{ w }}</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Severity</label>
+        <div class="severity-group">
+          <button *ngFor="let s of severities" class="severity-btn" type="button"
+            [class.selected]="severity === s.value"
+            [style.border-color]="severity === s.value ? severityColor(s.value) : ''"
+            [style.background]="severity === s.value ? severityColor(s.value) + '18' : ''"
+            (click)="severity = s.value">
+            <strong [style.color]="severityColor(s.value)">{{ s.label }}</strong>
+            <span>{{ s.desc }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-ghost" (click)="back()">← Back</button>
+        <button class="btn-primary" [disabled]="!step2Valid()" (click)="next()">Next — Review →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Review & Submit ── -->
+    <div class="step-card" *ngIf="step() === 3">
+      <h2 class="step-title">Review & submit for AI analysis</h2>
+
+      <div class="review-grid">
+        <div class="review-section">
+          <h3>🚗 Vehicle</h3>
+          <div class="review-row"><span>Make & Model</span><strong>{{ form.manufacturer }} {{ form.model }}{{ form.variant ? ' ' + form.variant : '' }}</strong></div>
+          <div class="review-row"><span>Year</span><strong>{{ form.model_year }}</strong></div>
+          <div class="review-row"><span>Fuel / Transmission</span><strong>{{ form.fuel_type }} / {{ form.transmission }}</strong></div>
+          <div class="review-row" *ngIf="form.odometer_km"><span>Odometer</span><strong>{{ form.odometer_km | number }} km</strong></div>
+        </div>
+        <div class="review-section">
+          <h3>🔧 Symptoms</h3>
+          <div class="review-row"><span>Severity</span>
+            <strong [style.color]="severityColor(severity)">{{ severity | titlecase }}</strong>
+          </div>
+          <div class="review-row" *ngIf="selectedWarningLights().length"><span>Warning Lights</span><strong>{{ selectedWarningLights().join(', ') }}</strong></div>
+          <div class="review-row" *ngIf="selectedWhenOccurs().length"><span>Occurs During</span><strong>{{ selectedWhenOccurs().join(', ') }}</strong></div>
+        </div>
+      </div>
+
+      <div class="review-desc">
+        <h3>Problem Description</h3>
+        <p>{{ problemDescription }}</p>
+      </div>
+
+      <div class="disclaimer-box">
+        <span>⚠️</span>
+        <p>This AI analysis is a <strong>preliminary assessment only</strong>. It is not a professional diagnosis. Always consult a certified mechanic before making any repair decisions.</p>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-ghost" (click)="back()">← Edit</button>
+        <button class="btn-primary" (click)="submit()">🔍 Analyse with AI</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 4: Report ── -->
+    <div class="report-section" *ngIf="step() === 4">
+
+      <!-- Loading -->
+      <div class="loading-card" *ngIf="diagSvc.loading()">
+        <div class="spinner"></div>
+        <h3>AI is analysing your vehicle…</h3>
+        <p>Searching repair knowledge base and generating preliminary diagnosis</p>
+        <div class="loading-steps">
+          <div class="ls-item">📚 Retrieving relevant repair cases</div>
+          <div class="ls-item">🧠 Analysing symptoms with AI</div>
+          <div class="ls-item">📋 Generating repair report</div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div class="error-card" *ngIf="diagSvc.error() && !diagSvc.loading()">
+        <div class="error-icon">⚠️</div>
+        <h3>Analysis unavailable</h3>
+        <p>{{ diagSvc.error() }}</p>
+        <button class="btn-primary" (click)="step.set(3)">← Try Again</button>
+      </div>
+
+      <!-- Report -->
+      <ng-container *ngIf="diagSvc.report() as report">
+        <div class="report-header">
+          <div class="report-title-row">
+            <h2>Preliminary Diagnosis Report</h2>
+            <div class="risk-badge" [style.background]="diagSvc.riskBg(report.risk_level)" [style.color]="diagSvc.riskColor(report.risk_level)">
+              {{ report.risk_level }} Risk
+            </div>
+          </div>
+          <p class="report-vehicle">{{ form.manufacturer }} {{ form.model }} {{ form.model_year }} · {{ form.fuel_type }}</p>
+          <div class="report-meta">
+            <span class="confidence-pill">{{ diagSvc.confidenceLabel(report.analysis_confidence) }} ({{ report.analysis_confidence | number:'1.0-0' }}%)</span>
+            <span class="complexity-pill" [style.color]="diagSvc.complexityColor(report.repair_complexity)">{{ report.repair_complexity }} Repair</span>
+          </div>
+        </div>
+
+        <!-- Drive warning -->
+        <div class="drive-warning" [class.danger]="!report.safe_to_drive" [class.safe]="report.safe_to_drive">
+          <span>{{ report.safe_to_drive ? '✅' : '🚫' }}</span>
+          <div>
+            <strong>{{ report.safe_to_drive ? 'Vehicle appears safe to drive with caution' : 'Do NOT drive — immediate inspection required' }}</strong>
+            <p *ngIf="report.immediate_service_required">Professional service required as soon as possible.</p>
+          </div>
+        </div>
+
+        <!-- Diagnosis summary -->
+        <div class="report-card">
+          <h3>🔍 Preliminary Diagnosis</h3>
+          <p class="diag-text">{{ report.preliminary_diagnosis }}</p>
+        </div>
+
+        <!-- Possible causes -->
+        <div class="report-card">
+          <h3>🎯 Possible Causes</h3>
+          <div class="cause-list">
+            <div class="cause-item" *ngFor="let cause of report.possible_causes">
+              <div class="cause-header">
+                <span class="cause-name">{{ cause.cause }}</span>
+                <span class="cause-pct" [style.color]="cause.confidence >= 70 ? '#EF4444' : cause.confidence >= 45 ? '#F59E0B' : '#6B7280'">{{ cause.confidence }}%</span>
+              </div>
+              <div class="conf-bar">
+                <div class="conf-fill" [style.width.%]="cause.confidence"
+                  [style.background]="cause.confidence >= 70 ? '#EF4444' : cause.confidence >= 45 ? '#F59E0B' : '#9CA3AF'"></div>
+              </div>
+              <p class="cause-exp">{{ cause.explanation }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cost & Time -->
+        <div class="report-grid">
+          <div class="report-card mini">
+            <div class="mini-icon">💰</div>
+            <div class="mini-label">Estimated Cost</div>
+            <div class="mini-value">{{ formatCost(report.cost_min_inr) }} – {{ formatCost(report.cost_max_inr) }}</div>
+          </div>
+          <div class="report-card mini">
+            <div class="mini-icon">⏱️</div>
+            <div class="mini-label">Repair Time</div>
+            <div class="mini-value">{{ report.repair_time_estimate }}</div>
+          </div>
+          <div class="report-card mini">
+            <div class="mini-icon">🔧</div>
+            <div class="mini-label">Complexity</div>
+            <div class="mini-value" [style.color]="diagSvc.complexityColor(report.repair_complexity)">{{ report.repair_complexity }}</div>
+          </div>
+        </div>
+
+        <!-- Recommended steps -->
+        <div class="report-card" *ngIf="report.recommended_steps?.length">
+          <h3>📋 Recommended Next Steps</h3>
+          <ol class="step-list">
+            <li *ngFor="let step of report.recommended_steps">{{ step }}</li>
+          </ol>
+        </div>
+
+        <!-- DIY fixes -->
+        <div class="report-card diy-card" *ngIf="report.diy_fixes?.length">
+          <h3>🛠️ Safe DIY Checks</h3>
+          <p class="diy-note">These are preliminary checks you can safely perform yourself — they are not repairs:</p>
+          <ul class="bullet-list">
+            <li *ngFor="let fix of report.diy_fixes">{{ fix }}</li>
+          </ul>
+        </div>
+
+        <!-- Preventive maintenance -->
+        <div class="report-card" *ngIf="report.preventive_maintenance?.length">
+          <h3>🛡️ Preventive Maintenance Tips</h3>
+          <ul class="bullet-list">
+            <li *ngFor="let tip of report.preventive_maintenance">{{ tip }}</li>
+          </ul>
+        </div>
+
+        <!-- Sources -->
+        <div class="report-card sources-card" *ngIf="report.retrieved_sources?.length">
+          <h3>📚 Knowledge Sources</h3>
+          <div class="source-tags">
+            <span *ngFor="let src of report.retrieved_sources" class="source-tag">{{ src }}</span>
+          </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer-box">
+          <span>⚠️</span>
+          <p>{{ report.disclaimer }}</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="report-actions">
+          <button class="btn-primary" (click)="bookService()">🔧 Book Service Appointment</button>
+          <button class="btn-ghost" (click)="reset()">+ New Diagnosis</button>
+        </div>
+      </ng-container>
+    </div>
+
+  </div>
+</div>

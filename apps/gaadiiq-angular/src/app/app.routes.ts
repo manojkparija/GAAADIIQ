@@ -26,6 +26,7 @@ export const routes: Routes = [
   { path: 'admin/pricing', loadComponent: () => import('./pages/admin-pricing/admin-pricing.component').then(m => m.AdminPricingComponent), canActivate: [sellerGuard] },
   { path: 'pricing-plans', loadComponent: () => import('./pages/pricing-plans/pricing-plans.component').then(m => m.PricingPlansComponent) },
   { path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent), canActivate: [authGuard] },
+  { path: 'vehicle-diagnosis', loadComponent: () => import('./pages/vehicle-diagnosis/vehicle-diagnosis.component').then(m => m.VehicleDiagnosisComponent) },
   { path: 'about', loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent) },
   { path: 'brand-logos', loadComponent: () => import('./pages/brand-logos/brand-logos.component').then(m => m.BrandLogosComponent) },
   { path: 'reset-password', loadComponent: () => import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent) },
