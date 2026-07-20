@@ -243,6 +243,34 @@ export class VehicleDiagnosisComponent {
     return this.problemDescription.trim().length >= 10;
   }
 
+  // Photo upload
+  selectedImages = signal<File[]>([]);
+  imageThumbs = signal<string[]>([]);
+
+  onPhotoChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files) return;
+    const files = Array.from(input.files).slice(0, 5);
+    this.selectedImages.set(files);
+    // Generate data-URL previews
+    const thumbs: string[] = [];
+    files.forEach(f => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        thumbs.push(e.target!.result as string);
+        if (thumbs.length === files.length) this.imageThumbs.set([...thumbs]);
+      };
+      reader.readAsDataURL(f);
+    });
+    if (files.length === 0) this.imageThumbs.set([]);
+  }
+
+  clearImages(event: MouseEvent) {
+    event.stopPropagation();
+    this.selectedImages.set([]);
+    this.imageThumbs.set([]);
+  }
+
   serviceCenterModal = signal(false);
   nearbyServiceCenters = signal<ServiceCenter[]>([]);
 
@@ -296,6 +324,9 @@ export class VehicleDiagnosisComponent {
       when_occurs: this.selectedWhenOccurs(),
       severity: this.severity,
       user_id: userId,
+      image_urls: this.selectedImages().length > 0
+        ? this.selectedImages().map(f => f.name)
+        : undefined,
     };
 
     this.step.set(4);
@@ -309,6 +340,8 @@ export class VehicleDiagnosisComponent {
     this.selectedWarningLights.set([]);
     this.selectedWhenOccurs.set([]);
     this.severity = 'medium';
+    this.selectedImages.set([]);
+    this.imageThumbs.set([]);
     this.diagSvc.report.set(null);
     this.diagSvc.error.set(null);
   }

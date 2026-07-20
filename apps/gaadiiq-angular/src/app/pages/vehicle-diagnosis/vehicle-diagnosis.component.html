@@ -127,6 +127,27 @@
         </div>
       </div>
 
+      <div class="form-group">
+        <label>Photos <span class="optional-label">(optional, up to 5)</span></label>
+        <div class="photo-upload-zone" (click)="photoInput.click()" [class.has-files]="selectedImages().length > 0">
+          <ng-container *ngIf="selectedImages().length === 0">
+            <span class="photo-icon">📷</span>
+            <p class="photo-hint">Tap to add photos of the issue</p>
+            <p class="photo-sub">Dashboard warning lights, visible damage, fluid leaks</p>
+          </ng-container>
+          <ng-container *ngIf="selectedImages().length > 0">
+            <div class="photo-preview-row">
+              <div class="photo-thumb" *ngFor="let thumb of imageThumbs()">
+                <img [src]="thumb" alt="Preview" />
+              </div>
+            </div>
+            <p class="photo-count">{{ selectedImages().length }} photo{{ selectedImages().length > 1 ? 's' : '' }} selected</p>
+            <button type="button" class="photo-clear" (click)="clearImages($event)">Remove all</button>
+          </ng-container>
+        </div>
+        <input #photoInput type="file" accept="image/*" multiple class="hidden-input" (change)="onPhotoChange($event)" />
+      </div>
+
       <div class="step-actions">
         <button class="btn-ghost" (click)="back()">← Back</button>
         <button class="btn-primary" [disabled]="!step2Valid" (click)="next()">Next — Review →</button>
@@ -152,6 +173,7 @@
           </div>
           <div class="review-row" *ngIf="selectedWarningLights().length"><span>Warning Lights</span><strong>{{ selectedWarningLights().join(', ') }}</strong></div>
           <div class="review-row" *ngIf="selectedWhenOccurs().length"><span>Occurs During</span><strong>{{ selectedWhenOccurs().join(', ') }}</strong></div>
+          <div class="review-row" *ngIf="selectedImages().length"><span>Photos</span><strong>{{ selectedImages().length }} selected</strong></div>
         </div>
       </div>
 
