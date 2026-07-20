@@ -200,3 +200,71 @@ async def recommend(
         total_scored=len(scored),
         request_id=str(uuid.uuid4()),
     )
+
+
+@router.post("/ai", response_model=RecommendResponse)
+@limiter.limit("20/minute")
+async def recommend_ai(
+    request: Request,
+    payload: RecommendRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Semantic search via Qdrant embeddings + rule scoring fallback.
+    Builds a natural-language query from user preferences, embeds it,
+    searches Qdrant for similar listings, then scores those candidates
+    with the rule engine for explainability.
+    """
+    from services.embeddings import embed_one
+    from services import vector_store
+
+    # Build natural language query from user preferences
+    parts = []
+    if payload.fuel and payload.fuel != "any":
+        parts.append(f"{payload.fuel} fuel")
+    if payload.body and payload.body != "any":
+        parts.append(f"{payload.body} body type")
+    if payload.budget and payload.budget in _BUDGET_BANDS:
+        band = _BUDGET_BANDS[payload.budget]
+        parts.append(f"price around {int((band['min'] + min(band['max'], 5_000_000)) / 2)}")
+    if payload.usage and payload.usage in _USAGE_SIGNALS:
+        parts.append(f"suitable for {payload.usage} use")
+    query_text = " ".join(parts) if parts else "good value used car"
+
+    vector = embed_one(query_text)
+    semantic_ids: set[int] = set()
+    if vector:
+        semantic_results = vector_store.search_listings(query_vector=vector, top_k=50)
+        semantic_ids = {r["id"] for r in semantic_results}
+
+    # Fall back to the regular rule-based recommend if Qdrant is unavailable
+    if not semantic_ids:
+        return await recommend(request, payload, db)
+
+    # Load the semantically retrieved listings from DB and score them
+    q = select(Listing).options(
+        selectinload(Listing.car), selectinload(Listing.seller)
+    ).where(
+        Listing.id.in_(semantic_ids),
+        Listing.is_active == True,  # noqa: E712
+    )
+    result = await db.execute(q)
+    listings = result.scalars().all()
+
+    scored = [
+        (listing, *_score_listing(listing, payload))
+        for listing in listings
+    ]
+    scored.sort(key=lambda x: x[1], reverse=True)
+    top = scored[:payload.page_size]
+
+    items = [
+        RecommendedListing(
+            listing=ListingOut.model_validate(listing),
+            match_score=score,
+            reasons=["Semantically matched to your requirements"] + reasons,
+        )
+        for listing, score, reasons in top
+    ]
+    _recommend_counter().inc()
+    return RecommendResponse(items=items, total_scored=len(scored), request_id=str(uuid.uuid4()))
