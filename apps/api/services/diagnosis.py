@@ -12,6 +12,8 @@ from pathlib import Path
 
 import httpx
 
+from services.vision import analyse_image_url
+
 logger = logging.getLogger("gaadiiq.diagnosis")
 
 _KNOWLEDGE_BASE: list[dict] = []
@@ -163,6 +165,7 @@ async def run_diagnosis(
     warning_lights: list[str],
     when_occurs: list[str],
     severity: str,
+    image_urls: list[str] = (),
 ) -> dict:
     """Run RAG retrieval + Ollama diagnosis. Returns structured result dict."""
 
@@ -194,6 +197,20 @@ async def run_diagnosis(
     result["retrieved_sources"] = retrieved_sources
     result["ollama_used"] = ollama_used
     result["disclaimer"] = _DISCLAIMER
+
+    # Vision analysis — run on first image if provided
+    if image_urls:
+        vision_result = await analyse_image_url(image_urls[0], context=problem_description)
+        result["vision_analysis"] = vision_result
+        # Upgrade risk_level if vision detects severe/critical damage
+        vision_severity = (vision_result.get("severity") or "").lower()
+        if vision_severity in ("severe", "critical"):
+            current_risk = (result.get("risk_level") or "").lower()
+            if current_risk not in ("high", "critical"):
+                result["risk_level"] = "High" if vision_severity == "severe" else "Critical"
+    else:
+        result["vision_analysis"] = None
+
     return result
 
 

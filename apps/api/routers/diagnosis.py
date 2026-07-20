@@ -80,6 +80,7 @@ class DiagnoseResponse(BaseModel):
     analysis_confidence: float
     disclaimer: str
     created_at: datetime
+    vision_analysis: dict | None = None
 
 
 class DiagnosisHistoryItem(BaseModel):
@@ -113,6 +114,7 @@ async def analyse_vehicle(body: DiagnoseRequest, db: DB):
         warning_lights=body.warning_lights,
         when_occurs=body.when_occurs,
         severity=body.severity,
+        image_urls=body.image_urls,
     )
 
     # Parse causes safely
@@ -175,6 +177,7 @@ async def analyse_vehicle(body: DiagnoseRequest, db: DB):
         analysis_confidence=record.analysis_confidence or 0,
         disclaimer=ai_result.get("disclaimer", ""),
         created_at=record.created_at,
+        vision_analysis=ai_result.get("vision_analysis"),
     )
 
 

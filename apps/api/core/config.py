@@ -48,6 +48,20 @@ class Settings(BaseSettings):
     valuation_model: str = "llama3"
     valuation_timeout_seconds: int = 30
 
+    # Ollama models
+    ollama_model: str = "llama3"
+    ollama_diagnosis_model: str = "llama3"
+    ollama_vision_model: str = "llava"
+    ollama_url: str = "http://localhost:11434"  # alias used by sentiment service
+
+    # Qdrant vector database
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_collection: str = "gaadiiq_listings"
+
+    # n8n workflow automation
+    n8n_webhook_url: str = ""
+    n8n_secret: str = ""
+
     # Razorpay — leave blank to use dev auto-approve (only allowed when environment != production)
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""

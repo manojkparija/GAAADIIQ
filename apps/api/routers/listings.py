@@ -24,6 +24,8 @@ from models.price_alert import PriceAlert
 from models.user import User
 from schemas.listing import ListingCreate, ListingListOut, ListingOut, ListingUpdate
 from services import storage, valuation
+from services import embeddings as emb_service
+from services import vector_store, n8n
 from services.notifications import notify_price_drop
 from services.search_index import search_index
 
@@ -38,6 +40,7 @@ _LOAD = [selectinload(Listing.car), selectinload(Listing.seller)]
 async def create_listing(
     request: Request,
     payload: ListingCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -54,7 +57,37 @@ async def create_listing(
     )
     full_listing = result.scalar_one()
     await search_index.index_listing(full_listing)
+
+    background_tasks.add_task(_index_listing, full_listing)
+    background_tasks.add_task(n8n.trigger, n8n.LISTING_CREATED, {
+        "listing_id": str(full_listing.id),
+        "make": car.make, "model": car.model,
+        "price": float(full_listing.price),
+        "city": full_listing.city,
+        "seller_email": current_user.email,
+    })
+
     return ListingOut.model_validate(full_listing)
+
+
+async def _index_listing(listing: Listing) -> None:
+    payload = {
+        "make": listing.car.make if listing.car else "",
+        "model": listing.car.model if listing.car else "",
+        "year": listing.year,
+        "fuel": listing.car.fuel_type.value if listing.car and listing.car.fuel_type else "",
+        "body_type": listing.car.body_type.value if listing.car and listing.car.body_type else "",
+        "price": float(listing.price),
+        "km": listing.km_driven,
+        "city": listing.city or "",
+        "condition": listing.condition or "",
+        "transmission": listing.car.transmission.value if listing.car and listing.car.transmission else "",
+    }
+    from services.embeddings import listing_text, embed_one
+    text = listing_text(payload)
+    vector = embed_one(text)
+    if vector:
+        vector_store.upsert_listing(listing.id, vector, payload)
 
 
 @router.get("", response_model=ListingListOut)

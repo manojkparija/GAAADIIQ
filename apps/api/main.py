@@ -38,6 +38,7 @@ from routers import (  # noqa: E402
     reviews,
     search,
     sentiment,
+    upload,
 )
 from services.scheduler import start_scheduler, stop_scheduler  # noqa: E402
 
@@ -88,6 +89,11 @@ async def lifespan(app: FastAPI):
         _log.error("Alembic migration failed: %s", exc.stderr)
 
     start_scheduler()
+
+    # Initialise vector store collection (non-fatal if Qdrant is offline)
+    from services.vector_store import ensure_collection
+    ensure_collection()
+
     yield
     stop_scheduler()
 
@@ -146,6 +152,7 @@ app.include_router(payments.router)
 app.include_router(payments.subs_router)
 app.include_router(sentiment.router)
 app.include_router(diagnosis.router)
+app.include_router(upload.router)
 
 
 @app.get("/")
