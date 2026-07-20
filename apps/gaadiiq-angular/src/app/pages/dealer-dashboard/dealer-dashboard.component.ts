@@ -197,4 +197,9 @@ export class DealerDashboardComponent {
     if (!d) return '—';
     return this.timeAgo(d);
   }
+
+  waLink(phone: string | null | undefined): string {
+    if (!phone) return '#';
+    return 'https://wa.me/' + phone.replace(/\D/g, '');
+  }
 }

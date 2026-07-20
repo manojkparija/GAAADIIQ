@@ -15,11 +15,10 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import httpx
 from langchain_community.llms.ollama import Ollama
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
@@ -32,7 +31,6 @@ from models.customer_intent import (
 from models.listing import Listing
 from models.loan_inquiry import LoanInquiry
 from models.price_alert import PriceAlert
-from models.review import Review
 from models.test_drive_booking import TestDriveBooking
 
 logger = logging.getLogger(__name__)
@@ -210,8 +208,8 @@ async def _gather_signals(
             select(Listing).where(Listing.id.in_(listing_ids[:10]))
         )
         top_cars = [
-            f"{l.car.make if l.car else ''} {l.car.model if l.car else ''}".strip()
-            for l in listings_q.scalars().all()
+            f"{row.car.make if row.car else ''} {row.car.model if row.car else ''}".strip()
+            for row in listings_q.scalars().all()
         ]
 
     # Test drives

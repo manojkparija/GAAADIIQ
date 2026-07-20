@@ -13,11 +13,10 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
-    SmallInteger,
     String,
     Text,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from db.base import Base, TimestampMixin, UUIDMixin
 

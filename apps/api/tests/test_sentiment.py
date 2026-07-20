@@ -211,7 +211,7 @@ async def test_leads_appear_after_analyse(client):
     resp = await client.get("/sentiment/leads", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
     leads = resp.json()
-    assert any(l["user_id"] == buyer_id for l in leads)
+    assert any(lead["user_id"] == buyer_id for lead in leads)
 
 
 @pytest.mark.asyncio

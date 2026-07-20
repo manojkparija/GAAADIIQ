@@ -218,7 +218,7 @@
           <!-- Actions -->
           <div class="alc-actions">
             <a [href]="'tel:' + l.phone" class="btn-sm btn-primary" *ngIf="l.phone">📞 Call</a>
-            <a [href]="'https://wa.me/' + l.phone?.replace(/\D/g,'')" class="btn-sm btn-whatsapp"
+            <a [href]="waLink(l.phone)" class="btn-sm btn-whatsapp"
                target="_blank" *ngIf="l.phone">WhatsApp</a>
             <button class="btn-sm btn-outline" (click)="reanalyse(l)"
                     [disabled]="analysingId() === l.user_id">
