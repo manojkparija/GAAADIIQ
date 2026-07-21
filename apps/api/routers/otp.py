@@ -12,6 +12,8 @@ Implementation notes:
 """
 from __future__ import annotations
 
+import logging
+import os
 import random
 import string
 import time
@@ -21,9 +23,6 @@ from pydantic import BaseModel, Field
 
 from core.config import settings
 from core.limiter import limiter
-
-import logging
-import os
 
 logger = logging.getLogger("gaadiiq.otp")
 

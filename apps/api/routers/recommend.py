@@ -374,7 +374,6 @@ def _rule_based_response(message: str, ctx: dict) -> str:
     """Simple keyword-based fallback when Ollama is unavailable."""
     msg = message.lower()
     budget = ctx.get("budget", "")
-    fuel   = ctx.get("fuel", "")
 
     if any(w in msg for w in ["emi", "loan", "finance"]):
         return (

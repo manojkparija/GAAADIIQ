@@ -220,7 +220,7 @@ async def dealer_directory(
     Public dealer directory — searchable by city/name/brand.
     No auth required; used by the dealer directory page and service-centre finder.
     """
-    from sqlalchemy import or_, ilike
+    from sqlalchemy import or_
     stmt = select(Dealer).where(Dealer.is_active == True)  # noqa: E712
 
     if city:

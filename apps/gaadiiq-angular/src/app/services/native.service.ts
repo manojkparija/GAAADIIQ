@@ -154,7 +154,7 @@ export class NativeService {
     }
     await PushNotifications.register();
     return new Promise(resolve => {
-      PushNotifications.addListener('registration', token => resolve(token.value));
+      PushNotifications.addListener('registration', (token: { value: string }) => resolve(token.value));
       PushNotifications.addListener('registrationError', () => resolve(null));
     });
   }

@@ -15,7 +15,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
 from core.dependencies import get_current_user
 from core.limiter import limiter
 from db.session import get_db
