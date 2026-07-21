@@ -1,0 +1,41 @@
+id,severity,area,screen,category,problem
+MOB-001,BLOCKER,Platform,iOS,Missing Feature,No iOS Capacitor project exists; only Android WebView shell under apps/gaadiiq-angular/android.
+MOB-002,BLOCKER,Architecture,Auth (all),Security/Architecture,"Dual auth stacks: Angular uses Supabase Auth; FastAPI uses RS256 JWT. Mobile UI does not obtain FastAPI tokens, so many API routes (payments, loans inquiries, notifications, diagnosis history) are unreachable or broken from the app."
+MOB-003,BLOCKER,Payments,Pricing Plans / Feature Listing,Missing Feature,No Razorpay checkout wired in Angular despite API /payments/* and marketing copy claiming UPI/cards/EMI via Razorpay.
+MOB-004,BLOCKER,Mobile Native,App shell,Architecture,"Capacitor app is a bare WebView wrap: no Camera, Geolocation, Push, Preferences, or Filesystem plugins; package.json has no cap sync/run scripts."
+MOB-005,CRITICAL,Security,AndroidManifest,Security,"android:allowBackup=""true"" allows ADB backup of WebView data including localStorage (wishlist, journey, possibly session fragments)."
+MOB-006,CRITICAL,Security,Network,Security,No SSL/certificate pinning and no Network Security Config; MITM on user devices possible for API/Supabase traffic.
+MOB-007,CRITICAL,Security,AI Diagnosis API,Security,GET /diagnosis/{id} is unauthenticated → IDOR: anyone with UUID can read another user's diagnosis (vehicle + symptoms).
+MOB-008,CRITICAL,Security,AI modules,AI/Security,User-controlled text interpolated into LLM prompts with no sanitisation/injection fence — prompt injection risk; HLD claims sanitisation but code lacks it.
+MOB-009,CRITICAL,Auth,Registration / Login,Missing Feature,OTP / phone SMS authentication does not exist. Register may collect phone but AuthService.register() never uses verifyOtp.
+MOB-010,CRITICAL,Permissions,City / Diagnosis geolocation,Security/Mobile,App uses navigator.geolocation but AndroidManifest declares only INTERNET — no ACCESS_FINE_LOCATION / COARSE.
+MOB-011,CRITICAL,Auth Bridge,API calls,API,ApiService.submitLoanInquiry hits /loans/inquiry but API exposes /loans/inquiries — broken loan lead capture.
+MOB-012,CRITICAL,RBAC,Dealer/Admin,Security,sellerGuard is client-side only. FastAPI dealer endpoints use soft Dealer-row checks; any user can POST /dealers/register. Role enums diverge (seller vs dealer).
+MOB-013,HIGH,Features,Insurance,Missing Feature,No insurance enquiry API or partner quote flow; only client-side premium estimates / marketing.
+MOB-014,HIGH,Features,AI Chat,Missing Feature / AI,Ask GAADIIQ / POST /recommend/ai-chat (SSE) from LLD is not implemented.
+MOB-015,HIGH,Features,Push Notifications,Missing Feature,No FCM/APNs Capacitor push plugin; in-app notifications API unused by primary Supabase auth path.
+MOB-016,HIGH,AI Advisor,/ai-advisor,AI,Angular advisor uses local heuristic scoring; not wired to POST /recommend. Diverges from Next.js advisor.
+MOB-017,HIGH,Data,Wishlist / Price Alerts / Reviews,Reliability,"Wishlist, price alerts, recently viewed persist only in localStorage — lost on reinstall, not cross-device."
+MOB-018,HIGH,Uploads,List Car / Diagnosis,Security,Audio/video/document upload unsupported. List-car uses Cloudinary unsigned preset (abuse risk). Upload MIME allowlist only; vision may fetch arbitrary image_urls (SSRF).
+MOB-019,HIGH,Rate Limit,API,Security/Performance,SlowAPI rate limits disabled unless environment==production; diagnosis/analyse not limited; /metrics public.
+MOB-020,HIGH,Database,Intent / Diagnosis models,Database,customer_activities/intent_scores FK columns String(36) vs UUID PKs; vehicle_diagnoses.user_id nullable without FK.
+MOB-021,HIGH,CORS,API,API,Default allowed_origins is localhost:3000; Capacitor/Android and Angular :4200 may be blocked against production API.
+MOB-022,HIGH,Testing,Mobile QA,Quality,Only 1 Angular unit spec (boilerplate broken); no Appium/Detox against Capacitor; Android instrumented tests still Capacitor sample package names.
+MOB-023,MEDIUM,UX,Used Cars Budget Slider,UI/UX,"Dual-range slider: WebKit thumb misalignment (no margin-top), no z-index swap when thumbs overlap, track not clickable."
+MOB-024,MEDIUM,UX,Used Cars,UI/UX,showAllIndiaBanner requires !allIndiaOverride so amber banner never shows after auto-override for empty cities.
+MOB-025,MEDIUM,Features,New Cars,Functional,New Cars P0 fixes (Above ₹30L applyBudget) live on cursor/fix-new-cars-module-85e1 and are NOT merged into Claude tip.
+MOB-026,MEDIUM,Features,EV / TCO,Missing Feature,No dedicated EV calculator screen; TCO service exists but weak mobile discovery.
+MOB-027,MEDIUM,Features,Dealer Search / Service History,Missing Feature,No dealer directory search; service booking only opens maps to static SERVICE_CENTERS; no service history.
+MOB-028,MEDIUM,A11y,Global,Accessibility,Sparse ARIA; many outline:none without :focus-visible; no TalkBack/VoiceOver pass; contrast not systematically verified.
+MOB-029,MEDIUM,Performance,Listings / Images,Performance,Listing grids without virtual scroll; no measured startup/FPS/memory on device.
+MOB-030,MEDIUM,Offline,Global,Reliability,No true offline mode; SW precaches shell only; forms fail opaquely offline; no queue/retry.
+MOB-031,MEDIUM,EMI,EMI Calculator,Business Rules,Bank rates are hardcoded stubs; client EMI not using GET /loans/emi-calculator.
+MOB-032,MEDIUM,Sentiment,Dealer Dashboard,Security/Privacy,Public sentiment track endpoint forgeable; no customer consent UX.
+MOB-033,MEDIUM,Compatibility,Devices,Compatibility,minSdk 24 but product asks Android 12+ validation; foldable/tablet/landscape untested; no iPad.
+MOB-034,LOW,Code Quality,Android tests,Quality,Instrumented tests still reference com.getcapacitor.myapp / ExampleUnitTest.
+MOB-035,LOW,UX,Used Cars empty state,UI/UX,No AI Advisor CTA when filters yield 0 results; no URL write-back for filters.
+MOB-036,LOW,AI Diagnosis,History,Functional,API /diagnosis/history exists but Angular wizard has no history UI.
+MOB-037,LOW,Security,Root/Jailbreak,Security,No root/jailbreak detection or Play Integrity on release builds.
+MOB-038,LOW,Config,Environments,Maintainability,.env.example documents HS256 SECRET_KEY while API uses RS256 PEMs.
+MOB-039,LOW,Payments Webhook,API,Security,"When Razorpay keys unset, webhook verification may be open — dangerous if mis-deployed."
+MOB-040,LOW,Profile,Settings,Missing Feature,No dedicated Settings/Profile edit screen; no DPDP delete-account flow.
