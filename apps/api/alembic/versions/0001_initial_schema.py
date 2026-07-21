@@ -15,73 +15,35 @@ branch_labels = None
 depends_on = None
 
 
+def _create_enum(name: str, values: str) -> str:
+    return (
+        f"DO $$ BEGIN CREATE TYPE {name} AS ENUM ({values}); "
+        f"EXCEPTION WHEN duplicate_object THEN null; END $$"
+    )
+
+
 def upgrade() -> None:
     # ── Enums ──────────────────────────────────────────────────────────────────
-    fuel_type = postgresql.ENUM(
-        "petrol", "diesel", "electric", "cng", "hybrid", name="fuel_type", create_type=False
-    )
-    fuel_type.create(op.get_bind(), checkfirst=True)
-
-    transmission = postgresql.ENUM(
-        "manual", "automatic", "amt", "cvt", "dct", name="transmission", create_type=False
-    )
-    transmission.create(op.get_bind(), checkfirst=True)
-
-    body_type = postgresql.ENUM(
-        "hatchback", "sedan", "suv", "muv", "coupe", "convertible", name="body_type", create_type=False
-    )
-    body_type.create(op.get_bind(), checkfirst=True)
-
-    user_role = postgresql.ENUM(
-        "buyer", "seller", "dealer", "admin", name="user_role", create_type=False
-    )
-    user_role.create(op.get_bind(), checkfirst=True)
-
-    listing_type = postgresql.ENUM("new", "used", name="listing_type", create_type=False)
-    listing_type.create(op.get_bind(), checkfirst=True)
-
-    listing_condition = postgresql.ENUM(
-        "excellent", "good", "fair", "poor", name="listing_condition", create_type=False
-    )
-    listing_condition.create(op.get_bind(), checkfirst=True)
-
-    booking_status = postgresql.ENUM(
-        "pending", "confirmed", "cancelled", "completed", name="booking_status", create_type=False
-    )
-    booking_status.create(op.get_bind(), checkfirst=True)
-
-    loan_status = postgresql.ENUM(
-        "submitted", "processing", "approved", "rejected", name="loan_status", create_type=False
-    )
-    loan_status.create(op.get_bind(), checkfirst=True)
-
-    employment_type = postgresql.ENUM(
-        "salaried", "self_employed", "business", name="employment_type", create_type=False
-    )
-    employment_type.create(op.get_bind(), checkfirst=True)
-
-    notification_type = postgresql.ENUM(
-        "booking_received", "booking_confirmed", "booking_cancelled",
-        "loan_inquiry_received", "price_drop", "listing_viewed", "system",
-        name="notification_type", create_type=False,
-    )
-    notification_type.create(op.get_bind(), checkfirst=True)
-
-    payment_status = postgresql.ENUM(
-        "pending", "paid", "failed", "refunded", name="payment_status", create_type=False
-    )
-    payment_status.create(op.get_bind(), checkfirst=True)
-
-    payment_purpose = postgresql.ENUM(
-        "featured_listing", "subscription_pro", "subscription_dealer",
-        name="payment_purpose", create_type=False,
-    )
-    payment_purpose.create(op.get_bind(), checkfirst=True)
-
-    subscription_tier = postgresql.ENUM(
-        "free", "pro", "dealer", name="subscription_tier", create_type=False
-    )
-    subscription_tier.create(op.get_bind(), checkfirst=True)
+    op.execute(_create_enum("fuel_type", "'petrol','diesel','electric','cng','hybrid'"))
+    op.execute(_create_enum("transmission", "'manual','automatic','amt','cvt','dct'"))
+    op.execute(_create_enum("body_type", "'hatchback','sedan','suv','muv','coupe','convertible'"))
+    op.execute(_create_enum("user_role", "'buyer','seller','dealer','admin'"))
+    op.execute(_create_enum("listing_type", "'new','used'"))
+    op.execute(_create_enum("listing_condition", "'excellent','good','fair','poor'"))
+    op.execute(_create_enum("booking_status", "'pending','confirmed','cancelled','completed'"))
+    op.execute(_create_enum("loan_status", "'submitted','processing','approved','rejected'"))
+    op.execute(_create_enum("employment_type", "'salaried','self_employed','business'"))
+    op.execute(_create_enum(
+        "notification_type",
+        "'booking_received','booking_confirmed','booking_cancelled',"
+        "'loan_inquiry_received','price_drop','listing_viewed','system'",
+    ))
+    op.execute(_create_enum("payment_status", "'pending','paid','failed','refunded'"))
+    op.execute(_create_enum(
+        "payment_purpose",
+        "'featured_listing','subscription_pro','subscription_dealer'",
+    ))
+    op.execute(_create_enum("subscription_tier", "'free','pro','dealer'"))
 
     # ── Tables ─────────────────────────────────────────────────────────────────
     op.create_table(
@@ -280,4 +242,4 @@ def downgrade() -> None:
         "employment_type", "loan_status", "booking_status", "listing_condition",
         "listing_type", "user_role", "body_type", "transmission", "fuel_type",
     ]:
-        sa.Enum(name=enum_name).drop(op.get_bind(), checkfirst=True)
+        op.execute(f"DROP TYPE IF EXISTS {enum_name} CASCADE")
