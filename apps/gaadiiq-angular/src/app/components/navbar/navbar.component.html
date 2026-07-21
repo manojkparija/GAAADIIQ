@@ -58,6 +58,9 @@
           </button>
           <div class="user-dropdown" *ngIf="userMenuOpen()">
             <div class="dropdown-email">{{ auth.currentUser()?.email }}</div>
+            <a routerLink="/profile" (click)="userMenuOpen.set(false)" class="dropdown-item">
+              <app-icon name="user" [size]="14"></app-icon> My Profile
+            </a>
             <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
               <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="car" [size]="14"></app-icon> My Listings

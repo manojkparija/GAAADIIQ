@@ -689,3 +689,30 @@ input, select, textarea {
 }
 [data-theme="dark"] .orb { opacity: 1; }
 @media (prefers-color-scheme: dark) { .orb { opacity: 1; } }
+
+// ── Accessibility: focus-visible (MOB-028) ───────────────────────────────────
+// Remove outline only when using mouse; keyboard users always see a ring.
+*:focus:not(:focus-visible) { outline: none; }
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+// Buttons already have outline:none from browser reset — re-add for keyboard
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+// Reduced motion — respect OS preference
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.dependencies import get_current_user
+from core.dependencies import get_current_user, get_seller_user
 from core.limiter import limiter
 from db.session import get_db
 from models.customer_intent import (
@@ -35,6 +35,7 @@ from services.sentiment import analyse_customer_intent
 router = APIRouter(prefix="/sentiment", tags=["sentiment"])
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+SellerUser  = Annotated[User, Depends(get_seller_user)]
 DB = Annotated[AsyncSession, Depends(get_db)]
 
 
@@ -188,7 +189,7 @@ async def analyse_customer(
     user_id: str,
     body: AnalyseIn,
     db: DB,
-    current_user: CurrentUser,
+    current_user: SellerUser,
 ):
     """
     Trigger (or refresh) an AI intent analysis for a specific customer.
@@ -236,7 +237,7 @@ async def analyse_customer(
 @router.get("/leads", response_model=list[LeadOut])
 async def list_leads(
     db: DB,
-    current_user: CurrentUser,
+    current_user: SellerUser,
     grade: str | None = Query(None, description="Filter by grade A/B/C/D"),
     min_score: float = Query(0, ge=0, le=100),
     limit: int = Query(50, ge=1, le=200),
@@ -283,7 +284,7 @@ async def list_leads(
 
 
 @router.get("/leads/{user_id}", response_model=IntentScoreOut)
-async def get_lead_detail(user_id: str, db: DB, current_user: CurrentUser):
+async def get_lead_detail(user_id: str, db: DB, current_user: SellerUser):
     """Full intent report for a single customer."""
     dealer = await _get_dealer(db, current_user)
 
@@ -325,7 +326,7 @@ async def get_lead_detail(user_id: str, db: DB, current_user: CurrentUser):
 
 
 @router.get("/summary", response_model=SummaryOut)
-async def get_summary(db: DB, current_user: CurrentUser):
+async def get_summary(db: DB, current_user: SellerUser):
     """Dashboard KPIs for the sentiment panel."""
     dealer = await _get_dealer(db, current_user)
     now = datetime.now(timezone.utc)
