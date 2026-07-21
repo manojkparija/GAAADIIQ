@@ -90,7 +90,7 @@ async def lifespan(app: FastAPI):
         )
         _log.info("Alembic: %s", result.stdout.strip() or "up to date")
     except subprocess.CalledProcessError as exc:
-        _log.error("Alembic migration failed: %s", exc.stderr)
+        _log.error("Alembic migration failed stdout=%s stderr=%s", exc.stdout, exc.stderr)
 
     start_scheduler()
 

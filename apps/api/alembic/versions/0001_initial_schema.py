@@ -121,6 +121,9 @@ def upgrade() -> None:
         sa.Column("views_count", sa.Integer, default=0, nullable=False),
         sa.Column("ai_valuation", sa.Numeric(12, 2)),
         sa.Column("ai_valuation_at", sa.DateTime(timezone=True)),
+        sa.Column("ai_method", sa.String(64)),
+        sa.Column("ai_confidence", sa.String(16)),
+        sa.Column("ai_reasoning", sa.Text),
     )
     op.create_index("ix_listings_city_type", "listings", ["city", "listing_type"])
     op.create_index("ix_listings_car_id", "listings", ["car_id"])
