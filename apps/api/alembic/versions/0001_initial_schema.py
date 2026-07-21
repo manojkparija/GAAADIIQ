@@ -22,6 +22,26 @@ _ENUM_NAMES = [
     "payment_status", "payment_purpose", "subscription_tier",
 ]
 
+# Pre-built Enum objects with create_type=False so SQLAlchemy never tries to
+# re-create types we already created explicitly with op.execute below.
+_fuel_type = sa.Enum("petrol", "diesel", "electric", "cng", "hybrid", name="fuel_type", create_type=False)
+_transmission = sa.Enum("manual", "automatic", "amt", "cvt", "dct", name="transmission", create_type=False)
+_body_type = sa.Enum("hatchback", "sedan", "suv", "muv", "coupe", "convertible", name="body_type", create_type=False)
+_user_role = sa.Enum("buyer", "seller", "dealer", "admin", name="user_role", create_type=False)
+_listing_type = sa.Enum("new", "used", name="listing_type", create_type=False)
+_listing_condition = sa.Enum("excellent", "good", "fair", "poor", name="listing_condition", create_type=False)
+_booking_status = sa.Enum("pending", "confirmed", "cancelled", "completed", name="booking_status", create_type=False)
+_loan_status = sa.Enum("submitted", "processing", "approved", "rejected", name="loan_status", create_type=False)
+_employment_type = sa.Enum("salaried", "self_employed", "business", name="employment_type", create_type=False)
+_notification_type = sa.Enum(
+    "booking_received", "booking_confirmed", "booking_cancelled",
+    "loan_inquiry_received", "price_drop", "listing_viewed", "system",
+    name="notification_type", create_type=False,
+)
+_payment_status = sa.Enum("pending", "paid", "failed", "refunded", name="payment_status", create_type=False)
+_payment_purpose = sa.Enum("featured_listing", "subscription_pro", "subscription_dealer", name="payment_purpose", create_type=False)
+_subscription_tier = sa.Enum("free", "pro", "dealer", name="subscription_tier", create_type=False)
+
 
 def upgrade() -> None:
     # ── Enums ──────────────────────────────────────────────────────────────────
@@ -59,9 +79,9 @@ def upgrade() -> None:
         sa.Column("model", sa.String(100), nullable=False),
         sa.Column("variant", sa.String(100)),
         sa.Column("year", sa.SmallInteger, nullable=False),
-        sa.Column("fuel_type", sa.Enum("petrol", "diesel", "electric", "cng", "hybrid", name="fuel_type")),
-        sa.Column("transmission", sa.Enum("manual", "automatic", "amt", "cvt", "dct", name="transmission")),
-        sa.Column("body_type", sa.Enum("hatchback", "sedan", "suv", "muv", "coupe", "convertible", name="body_type")),
+        sa.Column("fuel_type", _fuel_type),
+        sa.Column("transmission", _transmission),
+        sa.Column("body_type", _body_type),
         sa.Column("seating_capacity", sa.SmallInteger),
         sa.Column("engine_cc", sa.SmallInteger),
     )
@@ -78,7 +98,7 @@ def upgrade() -> None:
         sa.Column("hashed_password", sa.String(255)),
         sa.Column("full_name", sa.String(255)),
         sa.Column("phone", sa.String(20)),
-        sa.Column("role", sa.Enum("buyer", "seller", "dealer", "admin", name="user_role"), default="buyer", nullable=False),
+        sa.Column("role", _user_role, default="buyer", nullable=False),
         sa.Column("is_verified", sa.Boolean, default=False, nullable=False),
         sa.Column("is_active", sa.Boolean, default=True, nullable=False),
     )
@@ -105,14 +125,14 @@ def upgrade() -> None:
         sa.Column("car_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("cars.id"), nullable=False),
         sa.Column("seller_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("dealer_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("dealers.id"), nullable=True),
-        sa.Column("listing_type", sa.Enum("new", "used", name="listing_type"), nullable=False),
+        sa.Column("listing_type", _listing_type, nullable=False),
         sa.Column("price", sa.Numeric(12, 2), nullable=False),
         sa.Column("negotiable", sa.Boolean, default=False, nullable=False),
         sa.Column("km_driven", sa.Integer),
         sa.Column("registration_year", sa.SmallInteger),
         sa.Column("registration_state", sa.String(50)),
         sa.Column("owners_count", sa.SmallInteger),
-        sa.Column("condition", sa.Enum("excellent", "good", "fair", "poor", name="listing_condition")),
+        sa.Column("condition", _listing_condition),
         sa.Column("city", sa.String(100)),
         sa.Column("description", sa.Text),
         sa.Column("image_urls", postgresql.JSON, default=list, nullable=False),
@@ -141,7 +161,7 @@ def upgrade() -> None:
         sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("preferred_date", sa.Date),
         sa.Column("preferred_time", sa.Time),
-        sa.Column("status", sa.Enum("pending", "confirmed", "cancelled", "completed", name="booking_status"), default="pending", nullable=False),
+        sa.Column("status", _booking_status, default="pending", nullable=False),
         sa.Column("notes", sa.Text),
     )
 
@@ -154,9 +174,9 @@ def upgrade() -> None:
         sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("loan_amount", sa.Numeric(12, 2)),
         sa.Column("tenure_months", sa.SmallInteger),
-        sa.Column("employment_type", sa.Enum("salaried", "self_employed", "business", name="employment_type")),
+        sa.Column("employment_type", _employment_type),
         sa.Column("annual_income", sa.Numeric(12, 2)),
-        sa.Column("status", sa.Enum("submitted", "processing", "approved", "rejected", name="loan_status"), default="submitted", nullable=False),
+        sa.Column("status", _loan_status, default="submitted", nullable=False),
         sa.Column("partner_ref", sa.String(100)),
     )
 
@@ -166,11 +186,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False, index=True),
-        sa.Column("type", sa.Enum(
-            "booking_received", "booking_confirmed", "booking_cancelled",
-            "loan_inquiry_received", "price_drop", "listing_viewed", "system",
-            name="notification_type",
-        ), nullable=False),
+        sa.Column("type", _notification_type, nullable=False),
         sa.Column("title", sa.String(200), nullable=False),
         sa.Column("body", sa.Text),
         sa.Column("listing_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("listings.id"), nullable=True),
@@ -213,8 +229,8 @@ def upgrade() -> None:
         sa.Column("listing_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("listings.id"), nullable=True),
         sa.Column("amount_paise", sa.Integer, nullable=False),
         sa.Column("currency", sa.String(3), default="INR", nullable=False),
-        sa.Column("status", sa.Enum("pending", "paid", "failed", "refunded", name="payment_status"), default="pending", nullable=False),
-        sa.Column("purpose", sa.Enum("featured_listing", "subscription_pro", "subscription_dealer", name="payment_purpose"), nullable=False),
+        sa.Column("status", _payment_status, default="pending", nullable=False),
+        sa.Column("purpose", _payment_purpose, nullable=False),
         sa.Column("razorpay_order_id", sa.String(100)),
         sa.Column("razorpay_payment_id", sa.String(100)),
     )
@@ -225,7 +241,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False, index=True),
-        sa.Column("tier", sa.Enum("free", "pro", "dealer", name="subscription_tier"), default="free", nullable=False),
+        sa.Column("tier", _subscription_tier, default="free", nullable=False),
         sa.Column("valid_until", sa.DateTime(timezone=True)),
         sa.UniqueConstraint("user_id", name="uq_subscription_user"),
     )
