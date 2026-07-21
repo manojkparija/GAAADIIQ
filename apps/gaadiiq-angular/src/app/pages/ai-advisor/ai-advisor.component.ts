@@ -589,6 +589,16 @@ export class AiAdvisorComponent {
       };
     });
 
+    // Apply backend boost: cars recommended by POST /recommend get +20 pts (MOB-016)
+    const boostIds = this.backendBoostIds();
+    if (boostIds.size > 0) {
+      for (const car of scored) {
+        if (boostIds.has(String(car.id))) {
+          car.matchScore = Math.min(100, car.matchScore + 20);
+        }
+      }
+    }
+
     // Sort all by score
     scored.sort((a, b) => b.matchScore - a.matchScore);
 
