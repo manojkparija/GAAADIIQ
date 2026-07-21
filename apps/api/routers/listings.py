@@ -72,7 +72,7 @@ async def _index_listing(listing: Listing) -> None:
     payload = {
         "make": listing.car.make if listing.car else "",
         "model": listing.car.model if listing.car else "",
-        "year": listing.year,
+        "year": listing.car.year if listing.car else None,
         "fuel": listing.car.fuel_type.value if listing.car and listing.car.fuel_type else "",
         "body_type": listing.car.body_type.value if listing.car and listing.car.body_type else "",
         "price": float(listing.price),

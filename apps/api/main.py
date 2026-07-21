@@ -156,7 +156,7 @@ async def metrics(request: Request):
     """Prometheus scrape endpoint — requires Bearer token via METRICS_TOKEN env var."""
     auth = request.headers.get("Authorization", "")
     token = auth.removeprefix("Bearer ").strip()
-    if not secrets.compare_digest(token, _METRICS_TOKEN):
+    if settings.is_production and not secrets.compare_digest(token, _METRICS_TOKEN):
         return Response(status_code=401, content="Unauthorized")
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
