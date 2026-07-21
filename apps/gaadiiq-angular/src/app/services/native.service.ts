@@ -118,6 +118,30 @@ export class NativeService {
     localStorage.removeItem(key);
   }
 
+  // ── Root / Jailbreak detection (MOB-037) ─────────────────────────────────
+
+  /**
+   * Heuristic root/jailbreak detection using device feature signals.
+   * Returns true if the device is likely rooted/jailbroken.
+   * NOTE: This is a best-effort client-side check — it can be bypassed
+   * on a rooted device. For production, integrate @capacitor-community/device-security
+   * or use Play Integrity API (Android) / DeviceCheck (iOS) for stronger attestation.
+   */
+  async isRootedOrJailbroken(): Promise<boolean> {
+    if (!this.isNative) return false;
+    try {
+      // Check via @capacitor/device — SafetyNet/Play Integrity must be integrated separately
+      const { Device } = await import('@capacitor/device');
+      const info = await Device.getInfo();
+      // Emulator detection (common on rooted test setups)
+      if (info.isVirtual) return true;
+      // Additional heuristics can be plugged in here
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   // ── Push Notifications (register token) ───────────────────────────────────
 
   async registerPush(): Promise<string | null> {

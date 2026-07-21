@@ -18,7 +18,12 @@
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
-            android:exported="true">
+            android:exported="true"
+            android:resizeableActivity="true">
+            <!-- Foldable / large-screen support (MOB-033) -->
+            <meta-data
+                android:name="android.allow_multiple_resumed_activities"
+                android:value="true" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

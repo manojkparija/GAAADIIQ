@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CarsDataService, Car } from '../../services/cars-data.service';
@@ -7,6 +7,7 @@ import { AnalyticsService } from '../../services/analytics.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { ApiService } from '../../services/api.service';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -79,6 +80,73 @@ export class AiAdvisorComponent {
   results = signal<RecommendedCar[]>([]);
   showComparison = signal(false);
   backendBoostIds = signal<Set<string>>(new Set());
+
+  // AI chat (MOB-014)
+  chatOpen   = signal(false);
+  chatInput  = signal('');
+  chatBusy   = signal(false);
+  chatMessages = signal<{ role: 'user' | 'ai'; text: string }[]>([]);
+
+  openChat()  { this.chatOpen.set(true); }
+  closeChat() { this.chatOpen.set(false); }
+
+  async sendChat(msg: string): Promise<void> {
+    const text = msg.trim();
+    if (!text || this.chatBusy()) return;
+    this.chatMessages.update(m => [...m, { role: 'user', text }]);
+    this.chatInput.set('');
+    this.chatBusy.set(true);
+
+    const p = this.profile();
+    const context = {
+      budget:   ((p['budget'] as string[])?.[0] ?? ''),
+      fuel:     ((p['fuel']   as string[])?.[0] ?? ''),
+      usage:    ((p['usageType'] as string[])?.[0] ?? ''),
+    };
+
+    let aiText = '';
+    this.chatMessages.update(m => [...m, { role: 'ai', text: '' }]);
+
+    try {
+      const resp = await fetch(`${environment.apiUrl}/recommend/ai-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, context }),
+      });
+
+      const reader = resp.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error('No stream');
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6);
+          if (payload === '[DONE]') break;
+          try {
+            const { token } = JSON.parse(payload);
+            aiText += token;
+            this.chatMessages.update(m => {
+              const copy = [...m];
+              copy[copy.length - 1] = { role: 'ai', text: aiText };
+              return copy;
+            });
+          } catch {}
+        }
+      }
+    } catch {
+      this.chatMessages.update(m => {
+        const copy = [...m];
+        copy[copy.length - 1] = { role: 'ai', text: 'Sorry, I could not connect to the AI. Please try again.' };
+        return copy;
+      });
+    } finally {
+      this.chatBusy.set(false);
+    }
+  }
 
   readonly ALL_STEPS: AdvisorStep[] = [
     {

@@ -237,4 +237,40 @@
     </div>
 
   </div>
+
+  <!-- AI Chat button (MOB-014) -->
+  <button class="chat-fab" (click)="openChat()" *ngIf="!chatOpen()" aria-label="Ask AI Advisor">
+    ✨ Ask AI
+  </button>
+
+  <!-- AI Chat panel -->
+  <div class="chat-panel glass-card" *ngIf="chatOpen()">
+    <div class="chat-header">
+      <span>🤖 AI Advisor Chat</span>
+      <button (click)="closeChat()" aria-label="Close chat">✕</button>
+    </div>
+    <div class="chat-messages">
+      <div *ngFor="let m of chatMessages()" class="chat-msg" [class.user]="m.role==='user'" [class.ai]="m.role==='ai'">
+        <span class="msg-bubble">{{ m.text }}<span *ngIf="m.role==='ai' && chatBusy() && m === chatMessages()[chatMessages().length-1]" class="typing-cursor">▊</span></span>
+      </div>
+      <div *ngIf="chatMessages().length === 0" class="chat-welcome">
+        Hi! I'm your AI Car Advisor. Ask me anything about buying a car in India.
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <input
+        class="chat-input"
+        [value]="chatInput()"
+        (input)="chatInput.set($any($event.target).value)"
+        (keydown.enter)="sendChat(chatInput())"
+        placeholder="Ask about budget, EMI, EVs…"
+        [disabled]="chatBusy()"
+        aria-label="Chat message"
+      />
+      <button class="chat-send" (click)="sendChat(chatInput())" [disabled]="chatBusy() || !chatInput().trim()">
+        {{ chatBusy() ? '…' : '→' }}
+      </button>
+    </div>
+  </div>
+
 </div>

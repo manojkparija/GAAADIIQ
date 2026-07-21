@@ -1,9 +1,12 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { SeoService } from '../../services/seo.service';
 import { SubscriptionService, SubscriptionPlan } from '../../services/subscription.service';
 import { AnalyticsService } from '../../services/analytics.service';
+import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-pricing-plans',
@@ -13,14 +16,23 @@ import { AnalyticsService } from '../../services/analytics.service';
   styleUrl: './pricing-plans.component.scss',
 })
 export class PricingPlansComponent implements OnInit {
-  readonly subs    = inject(SubscriptionService);
+  readonly subs      = inject(SubscriptionService);
   readonly analytics = inject(AnalyticsService);
+  readonly auth      = inject(AuthService);
+  readonly http      = inject(HttpClient);
 
-  billing  = signal<'monthly' | 'yearly'>('monthly');
-  openFaq  = signal<number | null>(null);
+  billing      = signal<'monthly' | 'yearly'>('monthly');
+  openFaq      = signal<number | null>(null);
+  checkoutBusy = signal(false);
 
-  plans    = computed(() => this.subs.plans());
-  loading  = computed(() => this.subs.loading());
+  plans   = computed(() => this.subs.plans());
+  loading = computed(() => this.subs.loading());
+
+  /** Plan IDs (from Supabase) that map to Razorpay subscription tiers */
+  private readonly TIER_MAP: Record<string, string> = {
+    buyer_pro: 'pro',
+    dealer_pro: 'dealer',
+  };
 
   faqs = [
     { q: 'Can I cancel anytime?', a: 'Yes. Cancel anytime from your account settings — no questions asked, no lock-in periods.' },
@@ -51,5 +63,82 @@ export class PricingPlansComponent implements OnInit {
 
   savings(plan: SubscriptionPlan): number {
     return (plan.monthly_price - plan.yearly_price) * 12;
+  }
+
+  async checkout(plan: SubscriptionPlan): Promise<void> {
+    const tier = this.TIER_MAP[plan.id];
+    if (!tier) {
+      // Free plan or unknown — navigate to register
+      window.location.href = plan.cta_link;
+      return;
+    }
+    if (!this.auth.isLoggedIn()) {
+      window.location.href = '/login';
+      return;
+    }
+    if (this.checkoutBusy()) return;
+    this.checkoutBusy.set(true);
+    this.analytics.track('plan_checkout_started', { plan_id: plan.id, tier });
+
+    try {
+      const order: any = await this.http
+        .post(`${environment.apiUrl}/subscriptions/upgrade`, { tier })
+        .toPromise();
+
+      if (order.dev_mode) {
+        alert(`✅ Dev mode — subscription activated (no payment needed).`);
+        this.checkoutBusy.set(false);
+        return;
+      }
+
+      const rzp = await this._loadRazorpay(order);
+      rzp.open();
+    } catch (err: any) {
+      const msg = err?.error?.detail ?? 'Could not start checkout. Please try again.';
+      alert(msg);
+      this.checkoutBusy.set(false);
+    }
+  }
+
+  private _loadRazorpay(order: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const existing = document.getElementById('rzp-script');
+      const boot = () => {
+        const options = {
+          key: order.key_id,
+          amount: order.amount_paise,
+          currency: order.currency ?? 'INR',
+          name: 'GAADIIQ',
+          description: 'Subscription upgrade',
+          order_id: order.razorpay_order_id,
+          theme: { color: '#2B6BFF' },
+          handler: async (response: any) => {
+            try {
+              await this.http.post(`${environment.apiUrl}/payments/verify`, {
+                payment_id: order.payment_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }).toPromise();
+              this.analytics.track('plan_checkout_success', { plan_id: order.payment_id });
+              alert('✅ Payment successful! Your plan has been upgraded.');
+            } catch {
+              alert('Payment received but verification failed. Contact support.');
+            } finally {
+              this.checkoutBusy.set(false);
+            }
+          },
+          modal: { ondismiss: () => this.checkoutBusy.set(false) },
+        };
+        resolve(new (window as any).Razorpay(options));
+      };
+
+      if (existing) { boot(); return; }
+      const s = document.createElement('script');
+      s.id = 'rzp-script';
+      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      s.onload = boot;
+      s.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+      document.head.appendChild(s);
+    });
   }
 }

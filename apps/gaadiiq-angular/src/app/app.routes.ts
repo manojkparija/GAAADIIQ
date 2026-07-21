@@ -31,5 +31,6 @@ export const routes: Routes = [
   { path: 'brand-logos', loadComponent: () => import('./pages/brand-logos/brand-logos.component').then(m => m.BrandLogosComponent) },
   { path: 'reset-password', loadComponent: () => import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent) },
   { path: 'profile', loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent), canActivate: [authGuard] },
+  { path: 'ev-calculator', loadComponent: () => import('./pages/ev-calculator/ev-calculator.component').then(m => m.EvCalculatorComponent) },
   { path: '**', redirectTo: '' },
 ];
