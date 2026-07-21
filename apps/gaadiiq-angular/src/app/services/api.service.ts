@@ -32,13 +32,28 @@ export class ApiService {
   register(data: any): Observable<any> {
     return this.http.post<any>(`${this.base}/auth/register`, data).pipe(catchError(() => of(null)));
   }
-  getAIValuation(carId: string | number): Observable<any> {
-    return this.http.get<any>(`${this.base}/ai/valuation/${carId}`).pipe(catchError(() => of(null)));
+  valuateListing(listingId: string): Observable<any> {
+    return this.http.post<any>(`${this.base}/listings/${listingId}/valuate`, {}).pipe(catchError(() => of(null)));
   }
   submitLoanInquiry(data: any): Observable<any> {
-    return this.http.post<any>(`${this.base}/loans/inquiry`, data).pipe(catchError(() => of(null)));
+    return this.http.post<any>(`${this.base}/loans/inquiries`, data).pipe(catchError(() => of(null)));
   }
   getNotifications(): Observable<any[]> {
     return this.http.get<any[]>(`${this.base}/notifications`).pipe(catchError(() => of([])));
+  }
+
+  uploadDiagnosisImage(file: File) {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ url: string; filename: string; size_bytes: number }>(
+      `${this.base}/upload/image`, form
+    ).pipe(catchError(() => of(null as any)));
+  }
+
+  getRecommendations(payload: {
+    budget?: string; fuel?: string; body?: string; usage?: string; page_size?: number;
+  }) {
+    return this.http.post<any>(`${this.base}/recommend`, payload)
+      .pipe(catchError(() => of(null)));
   }
 }

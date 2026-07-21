@@ -5,6 +5,14 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+interface ValuationData {
+  mid: number;
+  low?: number;
+  high?: number;
+  method?: 'claude' | 'ollama' | 'heuristic';
+  confidence?: number;
+}
+
 interface Props {
   listingId: string;
   currentValuation: number | null;
@@ -20,6 +28,7 @@ export default function ValuationButton({ listingId, currentValuation }: Props) 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [valuation, setValuation] = useState<number | null>(currentValuation);
+  const [valuationData, setValuationData] = useState<ValuationData | null>(null);
   const [error, setError] = useState("");
 
   async function handleValuate() {
@@ -49,7 +58,8 @@ export default function ValuationButton({ listingId, currentValuation }: Props) 
       }
 
       const data = await res.json();
-      setValuation(data.ai_valuation);
+      setValuation(data.ai_valuation ?? data.mid ?? null);
+      setValuationData(data);
       router.refresh(); // revalidate server component data
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -68,7 +78,26 @@ export default function ValuationButton({ listingId, currentValuation }: Props) 
       {valuation ? (
         <div>
           <p className="text-xl font-bold text-primary">{formatPrice(valuation)}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">AI estimated fair market value</p>
+          {valuationData?.low && valuationData?.high && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {formatPrice(valuationData.low)} – {formatPrice(valuationData.high)} range
+            </p>
+          )}
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              valuationData?.method === 'claude' || valuationData?.method === 'ollama'
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+            }`}>
+              {valuationData?.method === 'claude' ? '🤖 AI' : valuationData?.method === 'ollama' ? '🦙 AI' : '📐 Formula'}
+            </span>
+            {valuationData?.confidence && (
+              <span className="text-xs text-muted-foreground">{valuationData.confidence}% confidence</span>
+            )}
+          </div>
+          {valuationData?.method === 'heuristic' && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Formula estimate — AI unavailable</p>
+          )}
           <Button
             variant="ghost"
             size="sm"

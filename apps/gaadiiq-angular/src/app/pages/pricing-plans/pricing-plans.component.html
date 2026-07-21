@@ -42,12 +42,13 @@
         <ul class="feature-list">
           <li *ngFor="let f of p.features">{{ f }}</li>
         </ul>
-        <a [routerLink]="p.cta_link" class="plan-cta"
+        <button class="plan-cta"
            [class.btn-gradient]="p.highlight"
            [class.btn-outline]="!p.highlight"
-           (click)="trackCta(p)">
-          {{ p.cta_label }}
-        </a>
+           [disabled]="checkoutBusy()"
+           (click)="trackCta(p); checkout(p)">
+          {{ checkoutBusy() ? 'Processing…' : p.cta_label }}
+        </button>
       </div>
     </div>
   </section>

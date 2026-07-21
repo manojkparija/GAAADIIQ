@@ -1,0 +1,146 @@
+<div class="ev-calc-page container">
+  <div class="page-header">
+    <div class="ai-badge">EV vs Petrol</div>
+    <h1>Total Cost of <span class="gradient-text">Ownership Calculator</span></h1>
+    <p class="hero-sub">Compare real 5-year costs including fuel, insurance, maintenance &amp; FAME-II subsidy.</p>
+  </div>
+
+  <div class="calc-grid">
+    <!-- EV Inputs -->
+    <div class="input-card glass-card">
+      <h3>⚡ Electric Vehicle</h3>
+      <label>
+        <span>EV On-Road Price</span>
+        <div class="input-wrap">
+          <span class="rupee">₹</span>
+          <input type="number" [ngModel]="evPrice()" (ngModelChange)="evPrice.set($event)" min="500000" step="10000" />
+        </div>
+        <small>{{ fmtP(evPrice()) }}</small>
+      </label>
+      <label>
+        <span>Battery Range (km per charge)</span>
+        <input type="range" [ngModel]="evRangeKm()" (ngModelChange)="evRangeKm.set($event)" min="100" max="700" step="10" />
+        <small>{{ evRangeKm() }} km</small>
+      </label>
+      <label>
+        <span>Charging Cost (₹ per 100 km)</span>
+        <input type="range" [ngModel]="chargingCostPer100km()" (ngModelChange)="chargingCostPer100km.set($event)" min="50" max="300" step="5" />
+        <small>₹{{ chargingCostPer100km() }}/100km</small>
+      </label>
+      <label>
+        <span>Annual Maintenance</span>
+        <input type="range" [ngModel]="evMaintPerYr()" (ngModelChange)="evMaintPerYr.set($event)" min="2000" max="25000" step="500" />
+        <small>{{ fmtP(evMaintPerYr()) }}/yr</small>
+      </label>
+      <div class="subsidy-badge" *ngIf="fameSubsidy() > 0">
+        🎉 FAME-II Subsidy: −{{ fmtP(fameSubsidy()) }}
+      </div>
+      <div class="effective-price">Effective Price: <strong>{{ fmtP(effectiveEvPrice()) }}</strong></div>
+    </div>
+
+    <!-- Petrol Inputs -->
+    <div class="input-card glass-card">
+      <h3>⛽ Petrol Vehicle</h3>
+      <label>
+        <span>Petrol Car On-Road Price</span>
+        <div class="input-wrap">
+          <span class="rupee">₹</span>
+          <input type="number" [ngModel]="petrolPrice()" (ngModelChange)="petrolPrice.set($event)" min="300000" step="10000" />
+        </div>
+        <small>{{ fmtP(petrolPrice()) }}</small>
+      </label>
+      <label>
+        <span>Fuel Efficiency (km/l)</span>
+        <input type="range" [ngModel]="mileageKmpl()" (ngModelChange)="mileageKmpl.set($event)" min="8" max="30" step="0.5" />
+        <small>{{ mileageKmpl() }} km/l</small>
+      </label>
+      <label>
+        <span>Current Petrol Price (₹/litre)</span>
+        <input type="range" [ngModel]="petrolPriceL()" (ngModelChange)="petrolPriceL.set($event)" min="80" max="140" step="1" />
+        <small>₹{{ petrolPriceL() }}/litre</small>
+      </label>
+      <label>
+        <span>Annual Maintenance</span>
+        <input type="range" [ngModel]="petrolMaintPerYr()" (ngModelChange)="petrolMaintPerYr.set($event)" min="5000" max="40000" step="500" />
+        <small>{{ fmtP(petrolMaintPerYr()) }}/yr</small>
+      </label>
+    </div>
+
+    <!-- Common Inputs -->
+    <div class="input-card glass-card">
+      <h3>🚗 Driving Profile</h3>
+      <label>
+        <span>Daily Distance</span>
+        <input type="range" [ngModel]="dailyKm()" (ngModelChange)="dailyKm.set($event)" min="10" max="200" step="5" />
+        <small>{{ dailyKm() }} km/day · {{ (annualKm() / 1000).toFixed(0) }}K km/yr</small>
+      </label>
+      <label>
+        <span>Comparison Period</span>
+        <input type="range" [ngModel]="years()" (ngModelChange)="years.set($event)" min="1" max="10" step="1" />
+        <small>{{ years() }} year{{ years() > 1 ? 's' : '' }}</small>
+      </label>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-section glass-card">
+    <h2>{{ tco().label }} Comparison</h2>
+    <div class="result-grid">
+      <div class="result-col ev-col">
+        <div class="result-label">⚡ EV Total Cost</div>
+        <div class="result-val ev">{{ fmtP(tco().evTotal) }}</div>
+        <div class="result-sub">{{ fmtP(monthlyCostEv()) }}/month avg</div>
+      </div>
+      <div class="vs-divider">VS</div>
+      <div class="result-col petrol-col">
+        <div class="result-label">⛽ Petrol Total Cost</div>
+        <div class="result-val petrol">{{ fmtP(tco().petrolTotal) }}</div>
+        <div class="result-sub">{{ fmtP(monthlyCostPetrol()) }}/month avg</div>
+      </div>
+    </div>
+
+    <div class="verdict" [class.ev-wins]="tco().saving > 0" [class.petrol-wins]="tco().saving < 0">
+      <ng-container *ngIf="tco().saving > 0">
+        ✅ EV saves you <strong>{{ fmtP(tco().saving) }}</strong> over {{ years() }} years
+        <span *ngIf="tco().breakEvenMonths < 120">
+          · Break-even in <strong>{{ tco().breakEvenMonths }} months</strong>
+        </span>
+      </ng-container>
+      <ng-container *ngIf="tco().saving < 0">
+        ⚠️ Petrol is <strong>{{ fmtP(-tco().saving) }}</strong> cheaper over {{ years() }} years at current usage
+      </ng-container>
+      <ng-container *ngIf="tco().saving === 0">
+        Both options cost the same over {{ years() }} years
+      </ng-container>
+    </div>
+
+    <div class="breakdown-grid">
+      <div class="breakdown-item">
+        <span>Annual Fuel Cost (EV)</span>
+        <strong>{{ fmtP(evAnnualFuel()) }}/yr</strong>
+      </div>
+      <div class="breakdown-item">
+        <span>Annual Fuel Cost (Petrol)</span>
+        <strong>{{ fmtP(petrolAnnualFuel()) }}/yr</strong>
+      </div>
+      <div class="breakdown-item">
+        <span>Annual Maintenance (EV)</span>
+        <strong>{{ fmtP(evMaintPerYr()) }}/yr</strong>
+      </div>
+      <div class="breakdown-item">
+        <span>Annual Maintenance (Petrol)</span>
+        <strong>{{ fmtP(petrolMaintPerYr()) }}/yr</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <a routerLink="/ai-advisor" class="btn-gradient">Get AI Car Recommendations →</a>
+    <a routerLink="/emi-calculator" class="btn-outline">Calculate EMI</a>
+  </div>
+
+  <p class="disclaimer">
+    Calculations are indicative. Actual costs vary by usage, electricity tariff, petrol prices, and insurer.
+    FAME-II eligibility subject to government guidelines.
+  </p>
+</div>

@@ -1,6 +1,7 @@
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
+from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
@@ -225,3 +226,21 @@ async def reset_password(
     await db.commit()
 
     return {"detail": "Password updated successfully. You can now sign in."}
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_account(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """
+    DPDP Act 2023 compliant account deletion — soft-deletes the user row
+    (sets is_active=False, anonymises PII) rather than a hard DELETE so
+    audit logs and FK references remain intact.
+    """
+    current_user.is_active = False
+    current_user.email = f"deleted_{current_user.id}@deleted.gaadiiq.com"
+    current_user.full_name = "Deleted User"
+    current_user.phone = None
+    current_user.hashed_password = None
+    await db.commit()

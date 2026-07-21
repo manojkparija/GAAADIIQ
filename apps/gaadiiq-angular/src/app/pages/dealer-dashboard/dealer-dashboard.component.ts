@@ -7,6 +7,7 @@ import { TestDriveService, TestDriveRequest } from '../../services/test-drive.se
 import { AuthService } from '../../services/auth.service';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { SentimentService, Lead, IntentScore, LeadGrade } from '../../services/sentiment.service';
 import { IconComponent } from '../../components/icon/icon.component';
 
 interface CarEnquiry {
@@ -65,6 +66,22 @@ export class DealerDashboardComponent {
 
   activeTab = signal<'overview' | 'leads' | 'inventory' | 'analytics' | 'test-drives' | 'enquiries'>('overview');
 
+  // ── Sentiment / AI Leads ────────────────────────────────────────────────
+  sentimentLeads = this.sentimentSvc.leads;
+  sentimentSummary = this.sentimentSvc.summary;
+  sentimentLoading = this.sentimentSvc.loading;
+  analysingId = this.sentimentSvc.analysingId;
+  selectedLead = signal<IntentScore | null>(null);
+  gradeFilter = signal<LeadGrade | null>(null);
+
+  filteredLeads = computed(() => {
+    const f = this.gradeFilter();
+    return f ? this.sentimentLeads().filter(l => l.lead_grade === f) : this.sentimentLeads();
+  });
+
+  hotLeadCount = computed(() => this.sentimentLeads().filter(l => l.intent_score >= 80).length);
+  topLead = computed(() => this.sentimentLeads()[0] ?? null);
+
   enquiries = signal<CarEnquiry[]>([]);
   enquiriesLoading = signal(false);
 
@@ -87,9 +104,11 @@ export class DealerDashboardComponent {
 
   constructor(seo: SeoService, private testDriveSvc: TestDriveService,
               private auth: AuthService, private sellersSvc: SellersService,
-              private sb: SupabaseService) {
+              private sb: SupabaseService, public sentimentSvc: SentimentService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
     this.loadSellerInfo();
+    this.sentimentSvc.loadLeads();
+    this.sentimentSvc.loadSummary();
   }
 
   private async loadSellerInfo() {
@@ -149,5 +168,38 @@ export class DealerDashboardComponent {
 
   countGrade(grade: 'A' | 'B' | 'C' | 'D') {
     return this.leads.filter(l => l.leadGrade === grade).length;
+  }
+
+  // Sentiment helpers
+  async reanalyse(lead: Lead) {
+    const result = await this.sentimentSvc.analyseCustomer(lead.user_id, lead.customer_name);
+    if (result) this.selectedLead.set(result);
+  }
+
+  setGradeFilter(grade: LeadGrade | null) { this.gradeFilter.set(grade); }
+
+  gradeLabel(grade: LeadGrade): string {
+    return { A: 'Act Now', B: 'Follow Up', C: 'Nurture', D: 'Re-engage' }[grade];
+  }
+
+  scoreBar(score: number): string {
+    if (score >= 80) return 'var(--danger, #EF4444)';
+    if (score >= 60) return '#F59E0B';
+    if (score >= 40) return '#3B82F6';
+    return 'var(--muted)';
+  }
+
+  initials(name: string): string {
+    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  timeAgoFromDate(d: string | null): string {
+    if (!d) return '—';
+    return this.timeAgo(d);
+  }
+
+  waLink(phone: string | null | undefined): string {
+    if (!phone) return '#';
+    return 'https://wa.me/' + phone.replace(/\D/g, '');
   }
 }

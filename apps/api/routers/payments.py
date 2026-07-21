@@ -192,15 +192,7 @@ async def razorpay_webhook(
     raw_body = await request.body()
     signature = request.headers.get("X-Razorpay-Signature", "")
 
-    if settings.payments_enabled:
-        expected = hmac.new(
-            settings.RAZORPAY_KEY_SECRET.encode(),
-            raw_body,
-            hashlib.sha256,
-        ).hexdigest()
-        if not hmac.compare_digest(expected, signature):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid webhook signature")
-
+    # Parse event first so non-capture events can be acknowledged before key checks
     try:
         event = json.loads(raw_body)
     except Exception:
@@ -208,6 +200,18 @@ async def razorpay_webhook(
 
     if event.get("event") != "payment.captured":
         return {"status": "ignored"}
+
+    # Only payment.captured events need keys and signature verification (MOB-039)
+    if not settings.payments_enabled:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Payments not configured")
+
+    expected = hmac.new(
+        settings.RAZORPAY_KEY_SECRET.encode(),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid webhook signature")
 
     payload_data = event.get("payload", {}).get("payment", {}).get("entity", {})
     razorpay_order_id = payload_data.get("order_id")

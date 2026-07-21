@@ -1,10 +1,13 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
 import { AnalyticsService } from '../../services/analytics.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { ApiService } from '../../services/api.service';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -76,6 +79,74 @@ export class AiAdvisorComponent {
   profile = signal<Record<string, string | string[]>>({});
   results = signal<RecommendedCar[]>([]);
   showComparison = signal(false);
+  backendBoostIds = signal<Set<string>>(new Set());
+
+  // AI chat (MOB-014)
+  chatOpen   = signal(false);
+  chatInput  = signal('');
+  chatBusy   = signal(false);
+  chatMessages = signal<{ role: 'user' | 'ai'; text: string }[]>([]);
+
+  openChat()  { this.chatOpen.set(true); }
+  closeChat() { this.chatOpen.set(false); }
+
+  async sendChat(msg: string): Promise<void> {
+    const text = msg.trim();
+    if (!text || this.chatBusy()) return;
+    this.chatMessages.update(m => [...m, { role: 'user', text }]);
+    this.chatInput.set('');
+    this.chatBusy.set(true);
+
+    const p = this.profile();
+    const context = {
+      budget:   ((p['budget'] as string[])?.[0] ?? ''),
+      fuel:     ((p['fuel']   as string[])?.[0] ?? ''),
+      usage:    ((p['usageType'] as string[])?.[0] ?? ''),
+    };
+
+    let aiText = '';
+    this.chatMessages.update(m => [...m, { role: 'ai', text: '' }]);
+
+    try {
+      const resp = await fetch(`${environment.apiUrl}/recommend/ai-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, context }),
+      });
+
+      const reader = resp.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error('No stream');
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6);
+          if (payload === '[DONE]') break;
+          try {
+            const { token } = JSON.parse(payload);
+            aiText += token;
+            this.chatMessages.update(m => {
+              const copy = [...m];
+              copy[copy.length - 1] = { role: 'ai', text: aiText };
+              return copy;
+            });
+          } catch {}
+        }
+      }
+    } catch {
+      this.chatMessages.update(m => {
+        const copy = [...m];
+        copy[copy.length - 1] = { role: 'ai', text: 'Sorry, I could not connect to the AI. Please try again.' };
+        return copy;
+      });
+    } finally {
+      this.chatBusy.set(false);
+    }
+  }
 
   readonly ALL_STEPS: AdvisorStep[] = [
     {
@@ -247,7 +318,12 @@ export class AiAdvisorComponent {
   });
   canProceed   = computed(() => this.currentSels().length > 0);
 
-  constructor(private carsData: CarsDataService, private seo: SeoService, private analytics: AnalyticsService) {
+  constructor(
+    private carsData: CarsDataService,
+    private seo: SeoService,
+    private analytics: AnalyticsService,
+    private api: ApiService,
+  ) {
     seo.setPage('AI Car Advisor',
       'Answer 10 smart questions and get personalized, AI-powered car recommendations with full cost analysis.');
     try {
@@ -296,6 +372,47 @@ export class AiAdvisorComponent {
     }
   }
 
+  private readonly _BUDGET_API_MAP: Record<string, string> = {
+    'Under ₹5L':    'under_5l',
+    '₹5L – ₹10L':  '5l_10l',
+    '₹10L – ₹15L': '10l_20l',
+    '₹15L – ₹20L': '10l_20l',
+    '₹20L – ₹30L': '20l_50l',
+    'Above ₹30L':  'above_50l',
+  };
+
+  private _mapToRecommendPayload(p: Record<string, string | string[]>) {
+    const budget = (p['budget'] as string[])?.[0] || '';
+    const fuels = (p['fuel'] as string[] || []);
+    const bodyTypes = (p['bodyType'] as string[] || []);
+    const usages = (p['usageType'] as string[] || []);
+
+    const fuelRaw = fuels.find(f => f !== 'No preference') || '';
+    let fuel = fuelRaw.toLowerCase();
+    if (!fuel || fuels.includes('No preference')) fuel = 'any';
+    if (fuel === 'electric') fuel = 'electric';
+    if (fuel === 'cng') fuel = 'cng';
+
+    const bodyRaw = bodyTypes.find(b => b !== 'No preference') || '';
+    let body = bodyRaw.toLowerCase();
+    if (!body || bodyTypes.includes('No preference')) body = 'any';
+    if (bodyRaw === 'Compact SUV') body = 'suv';
+    if (bodyRaw === 'MUV / MPV') body = 'mpv';
+
+    const usageFirst = usages[0] || '';
+    let usage = 'city';
+    if (usageFirst === 'Long road trips') usage = 'highway';
+    else if (usageFirst === 'Family outings' || usageFirst === 'School runs') usage = 'family';
+
+    return {
+      budget: this._BUDGET_API_MAP[budget] || undefined,
+      fuel: fuel || undefined,
+      body: body || undefined,
+      usage,
+      page_size: 10,
+    };
+  }
+
   private runAnalysis() {
     const p = this.profile();
     this.analytics.track('ai_query', {
@@ -307,6 +424,18 @@ export class AiAdvisorComponent {
     this.phase.set('analyzing');
     this.analyzeMsg.set(ANALYZE_MSGS[0]);
     this.analyzePct.set(0);
+
+    // Fire backend recommend call (non-blocking, used to boost scores)
+    const apiPayload = this._mapToRecommendPayload(p);
+    firstValueFrom(this.api.getRecommendations(apiPayload)).then(res => {
+      if (res?.items?.length) {
+        const ids = new Set<string>(res.items.map((item: any) => String(item.listing?.id || '')));
+        this.backendBoostIds.set(ids);
+      }
+    }).catch(() => {
+      // Non-fatal — falls back to client-side only
+    });
+
     let i = 0;
     const tick = () => {
       i++;
@@ -527,6 +656,16 @@ export class AiAdvisorComponent {
         categoryBadges: [] as string[],
       };
     });
+
+    // Apply backend boost: cars recommended by POST /recommend get +20 pts (MOB-016)
+    const boostIds = this.backendBoostIds();
+    if (boostIds.size > 0) {
+      for (const car of scored) {
+        if (boostIds.has(String(car.id))) {
+          car.matchScore = Math.min(100, car.matchScore + 20);
+        }
+      }
+    }
 
     // Sort all by score
     scored.sort((a, b) => b.matchScore - a.matchScore);

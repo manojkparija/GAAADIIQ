@@ -1,3 +1,4 @@
+import os
 import sys
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,8 +16,17 @@ class Settings(BaseSettings):
     # "development" | "staging" | "production"
     environment: str = "development"
 
-    # Database
+    # Database — Railway provides postgresql:// but asyncpg requires postgresql+asyncpg://
     database_url: str = "postgresql+asyncpg://user:password@localhost:5432/gaadiiq"
+
+    @property
+    def async_database_url(self) -> str:
+        url = self.database_url
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        return url
 
     # Redis
     redis_url: str = "redis://localhost:6379"
@@ -30,8 +40,17 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60  # 1h
     refresh_token_expire_days: int = 30
 
-    # CORS
-    allowed_origins: list[str] = ["http://localhost:3000"]
+    # CORS — includes Capacitor Android scheme, Angular dev server, and production domains
+    allowed_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:4200",
+        "https://localhost:4200",
+        "capacitor://localhost",
+        "ionic://localhost",
+        "https://gaadiiq.com",
+        "https://www.gaadiiq.com",
+        "https://app.gaadiiq.com",
+    ]
 
     # Cloudflare R2 (S3-compatible)
     r2_endpoint_url: str = ""
@@ -48,6 +67,21 @@ class Settings(BaseSettings):
     valuation_model: str = "llama3"
     valuation_timeout_seconds: int = 30
 
+    # Ollama models
+    ollama_model: str = "llama3"
+    ollama_diagnosis_model: str = "llama3"
+    ollama_vision_model: str = "llava"
+    ollama_url: str = "http://localhost:11434"  # alias used by sentiment service
+
+    # Qdrant vector database
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_collection: str = "gaadiiq_listings"
+    qdrant_api_key: str = ""  # set QDRANT_API_KEY in production
+
+    # n8n workflow automation
+    n8n_webhook_url: str = ""
+    n8n_secret: str = ""
+
     # Razorpay — leave blank to use dev auto-approve (only allowed when environment != production)
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
@@ -61,16 +95,6 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASS: str = ""
     SMTP_FROM: str = "noreply@gaadiiq.com"
-
-    @property
-    def async_database_url(self) -> str:
-        """Return a postgresql+asyncpg:// URL regardless of what DATABASE_URL contains."""
-        url = self.database_url
-        if url.startswith("postgresql://"):
-            url = "postgresql+asyncpg://" + url[len("postgresql://"):]
-        elif url.startswith("postgres://"):
-            url = "postgresql+asyncpg://" + url[len("postgres://"):]
-        return url
 
     @property
     def is_production(self) -> bool:
@@ -92,6 +116,10 @@ class Settings(BaseSettings):
             errors.append("RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in production")
         if not self.SMTP_HOST:
             errors.append("SMTP_HOST must be configured in production")
+        if not self.qdrant_api_key:
+            errors.append("QDRANT_API_KEY must be set in production")
+        if not os.environ.get("METRICS_TOKEN"):
+            errors.append("METRICS_TOKEN must be set in production")
         if errors:
             print("FATAL: production configuration errors:", file=sys.stderr)
             for e in errors:

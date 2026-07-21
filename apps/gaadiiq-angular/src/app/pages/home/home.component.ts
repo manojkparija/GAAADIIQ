@@ -7,6 +7,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { ScrollAnimateDirective } from '../../directives/scroll-animate.directive';
 import { CounterDirective } from '../../directives/counter.directive';
 import { BrandsService } from '../../services/brands.service';
+import { AuthService } from '../../services/auth.service';
 
 interface Car {
   id: number; make: string; model: string; year: number; price: number;
@@ -25,7 +26,22 @@ export class HomeComponent implements OnInit, AfterViewInit {
   searchQuery = signal('');
   activeBodyType = signal('All');
 
-  constructor(private router: Router, public brandsService: BrandsService) {}
+  accountSheetOpen = signal(false);
+
+  constructor(private router: Router, public brandsService: BrandsService, public auth: AuthService) {}
+
+  openAccountSheet() {
+    if (this.auth.isLoggedIn()) {
+      this.accountSheetOpen.set(true);
+    } else {
+      this.router.navigate(['/login']);
+    }
+  }
+
+  async signOut() {
+    this.accountSheetOpen.set(false);
+    await this.auth.logout();
+  }
   activeStat = signal(0);
 
   stats = [
@@ -108,7 +124,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   ];
 
   features = [
-    { icon:'brain', title:'AI Price Valuation', desc:'Instant AI-powered fair market valuation — real-time market data, no guesswork.', color:'#2F6BFF', route:'/ai-advisor' },
+    { icon:'brain', title:'AI Price Valuation', desc:'Instant fair market valuation — depreciation model + AI analysis when available.', color:'#2F6BFF', route:'/ai-valuation' },
     { icon:'bank', title:'Loan Comparison', desc:'Compare EMI from top banks. Pre-approval in minutes, best rates guaranteed.', color:'#14B8A6', route:'/emi-calculator' },
     { icon:'search', title:'Smart Search', desc:'Natural language search. "Red SUV under 15L near me" — we understand you.', color:'#10B981', route:'/listings' },
     { icon:'bar-chart', title:'Market Intelligence', desc:'Real-time price trends, depreciation charts, and resale value forecasts.', color:'#F59E0B', route:'/compare' },

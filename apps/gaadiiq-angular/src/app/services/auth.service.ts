@@ -5,6 +5,7 @@ import { SupabaseService } from './supabase.service';
 export type UserRole = 'user' | 'seller' | 'admin';
 
 export interface AuthUser {
+  id?: string;
   email: string;
   name: string;
   role: UserRole;
@@ -35,7 +36,9 @@ export class AuthService {
 
   private async hydrateUser(email: string): Promise<void> {
     const { role, sellerId, name } = await this.fetchProfile(email);
-    this.currentUser.set({ email, name, role, sellerId });
+    const { data } = await this.sb.client.auth.getSession();
+    const id = data.session?.user?.id;
+    this.currentUser.set({ id, email, name, role, sellerId });
   }
 
   private async fetchProfile(email: string): Promise<{ role: UserRole; sellerId?: number; name: string }> {
@@ -81,7 +84,8 @@ export class AuthService {
       // Supabase returns "Invalid login credentials" for wrong password or unknown email
       throw new Error('Incorrect email or password. Please try again.');
     }
-    // onAuthStateChange fires and calls hydrateUser
+    // AUTH-03: hydrate synchronously so currentUser is non-null before caller navigates
+    await this.hydrateUser(email);
   }
 
   async register(

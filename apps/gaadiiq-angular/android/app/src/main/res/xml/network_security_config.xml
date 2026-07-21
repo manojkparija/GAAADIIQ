@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Config — enforces HTTPS-only for all connections.
+  Cleartext (HTTP) traffic is blocked except to localhost (dev only).
+  Trust only the system CA store — no user-installed CAs honoured in release builds.
+-->
+<network-security-config>
+    <!-- Production: system CAs only, no cleartext -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Allow cleartext to localhost/emulator for local dev builds only -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">10.0.0.2</domain>
+    </domain-config>
+</network-security-config>

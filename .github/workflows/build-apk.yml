@@ -1,0 +1,58 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, master, claude/gaadiiq-app-dev-abj5fo]
+    paths:
+      - 'apps/gaadiiq-angular/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: apps/gaadiiq-angular
+        run: npm install
+
+      - name: Build Angular app
+        working-directory: apps/gaadiiq-angular
+        run: npx ng build --configuration production
+
+      - name: Sync Capacitor
+        working-directory: apps/gaadiiq-angular
+        run: npx cap sync android
+
+      - name: Grant Gradle execute permission
+        working-directory: apps/gaadiiq-angular/android
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        working-directory: apps/gaadiiq-angular/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaadiiq-debug-apk
+          path: apps/gaadiiq-angular/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7

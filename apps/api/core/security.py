@@ -47,10 +47,11 @@ def _ephemeral_keys() -> tuple[str, str]:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         ).decode()
-    except ImportError:
-        # cryptography not installed — fall back to HS256 for dev only
-        _ephemeral_private = settings.jwt_private_key or "dev-fallback-secret"
-        _ephemeral_public = settings.jwt_public_key or "dev-fallback-secret"
+    except ImportError as exc:
+        raise RuntimeError(
+            "The 'cryptography' package is required for JWT signing. "
+            "Install it with: pip install cryptography"
+        ) from exc
     return _ephemeral_private, _ephemeral_public
 
 
@@ -65,14 +66,7 @@ def _verifying_key() -> str:
 
 
 def _algorithm() -> str:
-    """RS256 when RSA keys are available; HS256 fallback for dev without cryptography lib."""
-    if settings.jwt_private_key and settings.jwt_public_key:
-        return "RS256"
-    try:
-        import cryptography  # noqa: F401
-        return "RS256"
-    except ImportError:
-        return "HS256"
+    return "RS256"
 
 
 def hash_password(plain: str) -> str:

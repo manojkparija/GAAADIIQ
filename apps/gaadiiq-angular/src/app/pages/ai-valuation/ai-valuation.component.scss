@@ -28,10 +28,11 @@
 .dots { animation: blink 1.2s step-start infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-// How it works
+// How it works — LAY-011: 2-col at tablet, 1-col at phone
 .how-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.25rem; max-width: 800px; margin: 0 auto; }
 @media(max-width:900px) { .how-grid { grid-template-columns: repeat(2,1fr); } }
-@media(max-width:500px) { .how-grid { grid-template-columns: 1fr; } }
+@media(max-width:768px) { .how-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:480px) { .how-grid { grid-template-columns: 1fr; } }
 .how-card { padding: 1.5rem; text-align: center;
   .how-icon { font-size: 2rem; margin-bottom: .75rem; }
   h4 { font-size: .9rem; font-weight: 700; margin-bottom: .5rem; }
@@ -78,3 +79,9 @@
 .result-ctas { display: flex; gap: 1rem; flex-wrap: wrap;
   a, button { padding: .85rem 2rem; font-size: .95rem; border-radius: .75rem; font-weight: 700; text-decoration: none; cursor: pointer; }
 }
+
+.fallback-banner { display: flex; gap: .75rem; align-items: flex-start; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: .75rem; padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: .88rem; color: var(--text); p { margin: 0; } strong { color: #D97706; } }
+
+.method-badge { display: inline-block; border-radius: 2rem; padding: .2rem .75rem; font-size: .78rem; font-weight: 700; margin-top: .5rem; }
+.badge-claude { background: rgba(43,107,255,0.15); color: #2B6BFF; border: 1px solid rgba(43,107,255,0.3); }
+.badge-heuristic { background: rgba(107,114,128,0.15); color: var(--muted); border: 1px solid rgba(107,114,128,0.25); }

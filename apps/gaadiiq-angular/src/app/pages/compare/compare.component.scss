@@ -43,20 +43,67 @@
   p { font-size: 0.8rem; color: var(--muted); }
 }
 
-.comparison-table-wrap { margin-top: 2rem; border-radius: 20px; overflow: hidden; border: 1px solid var(--border-soft); }
+// LAY-002: comparison table wraps in a horizontal scroll container on mobile
+.comparison-table-wrap {
+  margin-top: 2rem;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
 
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+  }
+}
+
+// LAY-002/003: sticky header respects notch; columns have readable min-widths on mobile
 .sticky-header {
   display: grid;
   grid-template-columns: 200px repeat(3, 1fr);
   background: rgba(30,64,175,0.15);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-soft);
-  position: sticky; top: 64px; z-index: 10;
-  .spec-label-col { padding: 1.5rem; color: var(--muted); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; }
-  .car-col { padding: 1.25rem; text-align: center;
+  position: sticky;
+  top: var(--nav-offset, 64px); // LAY-007
+  z-index: 10;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 110px repeat(3, minmax(130px, 1fr));
+    top: var(--nav-offset, 56px);
+  }
+
+  .spec-label-col {
+    padding: 1.5rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    // LAY-003: first column sticky within horizontal scroll
+    position: sticky;
+    left: 0;
+    background: rgba(14, 20, 40, 0.95);
+    backdrop-filter: blur(12px);
+    z-index: 5;
+
+    @media (max-width: 768px) { padding: 1rem 0.75rem; font-size: 0.78rem; }
+  }
+
+  .car-col {
+    padding: 1.25rem;
+    text-align: center;
+    min-width: 130px;
+
     img { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 0.75rem; }
     h3 { font-size: 0.95rem; font-weight: 700; }
     .car-price { font-size: 0.85rem; color: #1e40af; font-weight: 600; }
+
+    @media (max-width: 768px) {
+      padding: 0.75rem;
+      img { height: 70px; }
+      h3 { font-size: 0.82rem; }
+    }
   }
 }
 
@@ -68,9 +115,26 @@
   border-bottom: 1px solid var(--divider);
   &:last-child { border-bottom: none; }
   &.price-row .spec-val { font-weight: 700; color: #1e40af; }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 110px repeat(3, minmax(130px, 1fr));
+  }
 }
 
-.spec-label { padding: 1rem 1.5rem; color: var(--muted); font-size: 0.85rem; display: flex; align-items: center; }
+.spec-label {
+  padding: 1rem 1.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  // LAY-003: sticky label column in scroll region
+  position: sticky;
+  left: 0;
+  background: var(--navy);
+  z-index: 4;
+
+  @media (max-width: 768px) { padding: 0.75rem; font-size: 0.78rem; }
+}
 
 .spec-val {
   padding: 1rem; text-align: center; font-size: 0.9rem;

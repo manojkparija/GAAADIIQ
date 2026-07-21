@@ -162,3 +162,14 @@
     }
   }
 }
+
+@media (max-width: 480px) {
+  .car-card {
+    .card-img { height: 180px; }
+    .card-body { padding: 0.9rem 1rem 1rem; }
+    .price-row .price { font-size: 1.25rem; }
+    .card-header h3 { font-size: 0.9rem; }
+    .specs { gap: 0.5rem; }
+    .ai-row { flex-wrap: wrap; gap: 0.4rem; }
+  }
+}

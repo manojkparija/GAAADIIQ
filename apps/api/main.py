@@ -1,5 +1,9 @@
 import logging
+import os
+import secrets
+import subprocess
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,16 +29,22 @@ from routers import (  # noqa: E402
     bookings,
     cars,
     dealers,
+    diagnosis,
     health,
+    insurance,
     listings,
     loans,
     notifications,
+    otp,
     payments,
     price_alerts,
     recommend,
     reviews,
     search,
+    sentiment,
+    upload,
 )
+from services.scheduler import start_scheduler, stop_scheduler  # noqa: E402
 
 # ── Prometheus metrics ─────────────────────────────────────────────────────────
 _REQUEST_COUNT = Counter(
@@ -63,15 +73,41 @@ RECOMMEND_REQUESTS_TOTAL = Counter(
     "Total calls to POST /recommend",
 )
 
+_log = logging.getLogger("gaadiiq")
+
 # Hide API docs in production
 _docs_url = None if settings.is_production else "/docs"
 _redoc_url = None if settings.is_production else "/redoc"
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Run DB migrations on startup
+    try:
+        result = subprocess.run(
+            ["alembic", "upgrade", "head"],
+            capture_output=True, text=True, check=True,
+        )
+        _log.info("Alembic: %s", result.stdout.strip() or "up to date")
+    except subprocess.CalledProcessError as exc:
+        _log.error("Alembic migration failed: %s", exc.stderr)
+
+    start_scheduler()
+
+    # Initialise vector store collection (non-fatal if Qdrant is offline)
+    from services.vector_store import ensure_collection
+    ensure_collection()
+
+    yield
+    stop_scheduler()
+
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     docs_url=_docs_url,
     redoc_url=_redoc_url,
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter
@@ -81,9 +117,27 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
 )
+
+# Prometheus scrape token — set METRICS_TOKEN env var in production;
+# falls back to a random per-process token in dev (logged at startup).
+_METRICS_TOKEN: str = os.environ.get("METRICS_TOKEN", "") or secrets.token_hex(32)
+if not os.environ.get("METRICS_TOKEN"):
+    _log.warning("METRICS_TOKEN not set — /metrics uses ephemeral token (changes on restart)")
+
+
+@app.middleware("http")
+async def _security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self)"
+    if settings.is_production:
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+    return response
 
 
 @app.middleware("http")
@@ -98,13 +152,18 @@ async def _metrics_middleware(request: Request, call_next):
 
 
 @app.get("/metrics", include_in_schema=False)
-async def metrics():
-    """Prometheus scrape endpoint — restrict to internal network in production."""
+async def metrics(request: Request):
+    """Prometheus scrape endpoint — requires Bearer token via METRICS_TOKEN env var."""
+    auth = request.headers.get("Authorization", "")
+    token = auth.removeprefix("Bearer ").strip()
+    if settings.is_production and not secrets.compare_digest(token, _METRICS_TOKEN):
+        return Response(status_code=401, content="Unauthorized")
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(otp.router)
 app.include_router(admin.router)
 app.include_router(cars.router)
 app.include_router(listings.router)
@@ -118,6 +177,10 @@ app.include_router(recommend.router)
 app.include_router(reviews.router)
 app.include_router(payments.router)
 app.include_router(payments.subs_router)
+app.include_router(sentiment.router)
+app.include_router(diagnosis.router)
+app.include_router(upload.router)
+app.include_router(insurance.router)
 
 
 @app.get("/")

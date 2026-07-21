@@ -141,6 +141,7 @@
               <div class="nc-card-price">
                 {{ formatPriceLakh(m.minPrice) }}
                 <span *ngIf="m.maxPrice > m.minPrice"> – {{ formatPriceLakh(m.maxPrice) }}</span>
+                <span *ngIf="m.maxPrice <= m.minPrice"> onwards</span>
                 <span class="nc-card-price-note">ex-showroom</span>
               </div>
               <div class="nc-card-footer">

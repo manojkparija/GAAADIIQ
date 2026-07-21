@@ -40,3 +40,9 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Capacitor Android build outputs
+/android/.gradle
+/android/app/build
+/android/build
+/android/local.properties

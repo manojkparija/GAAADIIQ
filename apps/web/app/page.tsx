@@ -233,6 +233,7 @@ export default function HomePage() {
                 <li><Link href="/compare" className="hover:text-white transition-colors">Compare Cars</Link></li>
                 <li><Link href="/tco" className="hover:text-white transition-colors">TCO Calculator</Link></li>
                 <li><Link href="/recommend" className="hover:text-white transition-colors">AI Advisor</Link></li>
+                <li><Link href="/diagnosis" className="hover:text-white transition-colors">AI Diagnosis</Link></li>
                 <li><a href="mailto:support@gaadiiq.com" className="hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>

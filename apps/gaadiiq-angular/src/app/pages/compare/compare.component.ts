@@ -1,11 +1,13 @@
-import { Component, signal, computed } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, signal, computed, OnInit } from '@angular/core';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { TcoService, TcoBreakdown } from '../../services/tco.service';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
+
+const COMPARE_KEY = 'gaadiiq_compare_keys';
 
 @Component({
   selector: 'app-compare',
@@ -14,7 +16,7 @@ import { IconComponent } from '../../components/icon/icon.component';
   templateUrl: './compare.component.html',
   styleUrl: './compare.component.scss'
 })
-export class CompareComponent {
+export class CompareComponent implements OnInit {
   searchA = signal(''); searchB = signal(''); searchC = signal('');
   selected = signal<(Car | null)[]>([null, null, null]);
   showDropdown = signal<number>(-1);
@@ -31,8 +33,44 @@ export class CompareComponent {
     { label: 'City', key: 'city', format: (v: any) => String(v) || '—', higher: null },
   ];
 
-  constructor(public carsData: CarsDataService, private seo: SeoService, public tco: TcoService) {
+  constructor(
+    public carsData: CarsDataService,
+    private seo: SeoService,
+    public tco: TcoService,
+    private route: ActivatedRoute,
+  ) {
     seo.setPage('Compare Cars', 'Compare up to 3 cars side by side. Specs, features, price, AI valuation — all in one place.');
+  }
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      let keys: string[] = [];
+      if (params['keys']) {
+        keys = String(params['keys']).split(',').map(k => k.trim()).filter(Boolean);
+      } else {
+        try {
+          const raw = sessionStorage.getItem(COMPARE_KEY);
+          if (raw) keys = JSON.parse(raw);
+        } catch { /* ignore */ }
+      }
+      if (!keys.length) return;
+
+      const cars = this.carsData.cars();
+      const picked: (Car | null)[] = [null, null, null];
+      let slot = 0;
+      for (const key of keys) {
+        if (slot >= 3) break;
+        const [make, model] = key.split('||');
+        const car = cars.find(c =>
+          c.make === make && c.model === model && c.km === 0 && c.year >= 2025
+        ) ?? cars.find(c => c.make === make && c.model === model);
+        if (car) {
+          picked[slot] = car;
+          slot++;
+        }
+      }
+      if (slot > 0) this.selected.set(picked);
+    });
   }
 
   search(slot: number) {
