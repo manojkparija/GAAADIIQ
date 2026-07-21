@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect x="30" y="5" width="60" height="70" rx="4" fill="#CC0000"/>
+  <rect x="32" y="7" width="56" height="32" rx="3" fill="#CC0000"/>
+  <text x="60" y="26" font-family="Arial,sans-serif" font-size="6" fill="#DAA520" text-anchor="middle" letter-spacing="1">FERRARI</text>
+  <rect x="42" y="30" width="36" height="1" fill="#DAA520"/>
+  <ellipse cx="60" cy="50" rx="14" ry="18" fill="#DAA520"/>
+  <path d="M52,46 L68,46 L60,64 Z" fill="#CC0000"/>
+  <line x1="60" y1="36" x2="60" y2="46" stroke="#CC0000" stroke-width="3"/>
+</svg>
