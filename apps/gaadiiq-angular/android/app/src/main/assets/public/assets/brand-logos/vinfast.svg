@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <rect x="5" y="5" width="110" height="70" rx="4" fill="#1A1A6E"/>
+  <text x="60" y="30" font-family="Arial,sans-serif" font-size="7" fill="white" text-anchor="middle" letter-spacing="3">VINFAST</text>
+  <path d="M30,38 L60,60 L90,38 L80,38 L60,54 L40,38 Z" fill="white"/>
+</svg>
