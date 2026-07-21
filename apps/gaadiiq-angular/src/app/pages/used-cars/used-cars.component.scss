@@ -302,6 +302,8 @@
     pointer-events: none;
     cursor: default;
     outline: none;
+    /* z-index baseline; [style.z-index] binding sets 2 or 4 dynamically (MOB-023) */
+    z-index: 2;
 
     /* Chrome/Safari: hide the built-in track entirely */
     &::-webkit-slider-runnable-track {

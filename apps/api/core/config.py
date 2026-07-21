@@ -30,8 +30,17 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60  # 1h
     refresh_token_expire_days: int = 30
 
-    # CORS
-    allowed_origins: list[str] = ["http://localhost:3000"]
+    # CORS — includes Capacitor Android scheme, Angular dev server, and production domains
+    allowed_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:4200",
+        "https://localhost:4200",
+        "capacitor://localhost",
+        "ionic://localhost",
+        "https://gaadiiq.com",
+        "https://www.gaadiiq.com",
+        "https://app.gaadiiq.com",
+    ]
 
     # Cloudflare R2 (S3-compatible)
     r2_endpoint_url: str = ""

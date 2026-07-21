@@ -16,6 +16,20 @@ from services.vision import analyse_image_url
 
 logger = logging.getLogger("gaadiiq.diagnosis")
 
+# ── Prompt injection fence ────────────────────────────────────────────────────
+_INJECTION_PATTERN = re.compile(
+    r"(ignore\s+(previous|all|prior)|forget\s+(your|all)|you\s+are\s+now|"
+    r"system\s*prompt|<\s*/?system\s*>|<\s*/?instruction|"
+    r"\[/?INST\]|###\s*instruction|act\s+as\s+(a\s+)?new)",
+    re.IGNORECASE,
+)
+
+def _sanitise(text: str, max_len: int = 2000) -> str:
+    """Strip prompt-injection attempts and truncate to max_len."""
+    text = text[:max_len]
+    text = _INJECTION_PATTERN.sub("[REDACTED]", text)
+    return text
+
 _KNOWLEDGE_BASE: list[dict] = []
 _KB_PATH = Path(__file__).parent.parent / "data" / "repair_knowledge.json"
 
@@ -91,6 +105,14 @@ def _build_prompt(
     severity: str,
     retrieved_cases: list[dict],
 ) -> str:
+    # Sanitise all user-supplied text to prevent prompt injection (MOB-008)
+    manufacturer = _sanitise(manufacturer, 100)
+    model        = _sanitise(model, 100)
+    variant      = _sanitise(variant, 100) if variant else variant
+    problem_description = _sanitise(problem_description, 2000)
+    warning_lights = [_sanitise(w, 80) for w in warning_lights]
+    when_occurs    = [_sanitise(w, 80) for w in when_occurs]
+
     vehicle = f"{model_year} {manufacturer} {model}" + (f" {variant}" if variant else "")
     odo_str = f"{odometer_km:,} km" if odometer_km else "unknown"
     cases_text = ""

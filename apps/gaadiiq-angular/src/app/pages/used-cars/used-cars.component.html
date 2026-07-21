@@ -330,8 +330,11 @@
               <button class="btn-outline" style="margin-top:8px" (click)="clearAllFilters()">Clear All Filters</button>
             } @else {
               <h3>No cars match your filters</h3>
-              <p>Try broadening your search criteria</p>
+              <p>Try broadening your search criteria — or let AI find the best match for you.</p>
               <button class="btn-gradient" (click)="clearAllFilters()">Clear All Filters</button>
+              <a routerLink="/ai-advisor" class="btn-outline" style="margin-top:8px;display:inline-block">
+                ✨ Try AI Advisor
+              </a>
             }
           </div>
         } @else {

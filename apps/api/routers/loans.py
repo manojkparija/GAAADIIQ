@@ -17,6 +17,24 @@ from services.notifications import notify_loan_inquiry_received
 router = APIRouter(prefix="/loans", tags=["loans"])
 
 
+# ── Bank rates (used by Angular EMI calculator to avoid hard-coded stubs) ────
+
+_BANK_RATES = [
+    {"name": "SBI",           "rate": 8.45, "logo": "🏦"},
+    {"name": "HDFC Bank",     "rate": 8.75, "logo": "🏛"},
+    {"name": "ICICI Bank",    "rate": 8.85, "logo": "💳"},
+    {"name": "Axis Bank",     "rate": 9.00, "logo": "🔵"},
+    {"name": "Kotak Mahindra","rate": 8.65, "logo": "🟠"},
+    {"name": "Bank of Baroda","rate": 8.55, "logo": "🏦"},
+    {"name": "PNB",           "rate": 8.70, "logo": "🔶"},
+]
+
+@router.get("/bank-rates")
+async def get_bank_rates():
+    """Return indicative auto-loan interest rates by bank (MOB-031)."""
+    return {"banks": _BANK_RATES, "note": "Rates are indicative; contact bank for confirmed offer."}
+
+
 # ── EMI calculator ────────────────────────────────────────────────────────────
 
 @router.get("/emi-calculator", response_model=EMIResult)

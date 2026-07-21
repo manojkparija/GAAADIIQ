@@ -15,6 +15,25 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
   },
+  plugins: {
+    Camera: {
+      // Prompt user for camera & photo library access
+      promptLabelHeader: 'GAADIIQ needs photo access',
+      promptLabelCancel: 'Cancel',
+      promptLabelPhoto: 'Choose from Library',
+      promptLabelPicture: 'Take Photo',
+    },
+    Geolocation: {
+      // Uses ACCESS_FINE_LOCATION declared in AndroidManifest
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon_config_sample',
+      iconColor: '#2F6BFF',
+    },
+  },
 };
 
 export default config;

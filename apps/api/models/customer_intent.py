@@ -13,9 +13,9 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
-    String,
     Text,
 )
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from db.base import Base, TimestampMixin, UUIDMixin
@@ -48,13 +48,13 @@ class CustomerActivity(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "customer_activities"
 
     user_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=False), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     dealer_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("dealers.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=False), ForeignKey("dealers.id", ondelete="CASCADE"), nullable=False, index=True
     )
     listing_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("listings.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=False), ForeignKey("listings.id", ondelete="SET NULL"), nullable=True
     )
     activity_type: Mapped[ActivityType] = mapped_column(
         Enum(ActivityType), nullable=False
@@ -74,10 +74,10 @@ class CustomerIntentScore(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "customer_intent_scores"
 
     user_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=False), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     dealer_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("dealers.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=False), ForeignKey("dealers.id", ondelete="CASCADE"), nullable=False
     )
 
     # Score 0–100

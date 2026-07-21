@@ -11,12 +11,13 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependencies import get_current_user
+from core.limiter import limiter
 from db.session import get_db
 from models.user import User
 from models.vehicle_diagnosis import VehicleDiagnosis
@@ -97,7 +98,8 @@ class DiagnosisHistoryItem(BaseModel):
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.post("/analyse", response_model=DiagnoseResponse, status_code=status.HTTP_201_CREATED)
-async def analyse_vehicle(body: DiagnoseRequest, db: DB):
+@limiter.limit("5/minute;20/hour")
+async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
     """
     Submit vehicle symptoms and receive an AI-powered preliminary diagnosis.
     No authentication required — open to all users.
@@ -207,8 +209,12 @@ async def get_history(db: DB, current_user: Annotated[User, Depends(get_current_
 
 
 @router.get("/{diagnosis_id}", response_model=DiagnoseResponse)
-async def get_diagnosis(diagnosis_id: str, db: DB):
-    """Retrieve a saved diagnosis report by ID."""
+async def get_diagnosis(
+    diagnosis_id: str,
+    db: DB,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """Retrieve a saved diagnosis report — owner-only (fixes IDOR MOB-007)."""
     try:
         did = uuid.UUID(diagnosis_id)
     except ValueError:
@@ -218,6 +224,10 @@ async def get_diagnosis(diagnosis_id: str, db: DB):
     record = q.scalar_one_or_none()
     if not record:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Diagnosis report not found")
+
+    # Enforce ownership — prevent IDOR
+    if record.user_id and str(record.user_id) != str(current_user.id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Access denied")
 
     return DiagnoseResponse(
         id=str(record.id),

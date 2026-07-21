@@ -1,6 +1,8 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { IconComponent } from '../../components/icon/icon.component';
 
 interface AmortizationRow {
@@ -18,12 +20,15 @@ interface AmortizationRow {
   templateUrl: './emi-calculator.component.html',
   styleUrl: './emi-calculator.component.scss'
 })
-export class EmiCalculatorComponent {
+export class EmiCalculatorComponent implements OnInit {
+  private readonly http = inject(HttpClient);
+
   loanAmount = signal(1000000);
   interestRate = signal(8.5);
   tenureMonths = signal(60);
   downPayment = signal(0);
 
+  // Loaded from GET /loans/emi-calculator; stubs are shown until API responds (MOB-031)
   banks = [
     { name: 'SBI', rate: 8.45, logo: '🏦' },
     { name: 'HDFC Bank', rate: 8.75, logo: '🏛' },
@@ -33,6 +38,20 @@ export class EmiCalculatorComponent {
   ];
 
   selectedBank = signal('SBI');
+
+  ngOnInit() {
+    this.http.get<any>(`${environment.apiUrl}/loans/bank-rates`).subscribe({
+      next: res => {
+        if (res?.banks?.length) {
+          this.banks = res.banks;
+          // Refresh selected rate with first bank from API
+          this.interestRate.set(this.banks[0].rate);
+          this.selectedBank.set(this.banks[0].name);
+        }
+      },
+      error: () => { /* keep stub rates on API failure */ },
+    });
+  }
 
   // Affordability inputs
   monthlyIncome = signal(80000);

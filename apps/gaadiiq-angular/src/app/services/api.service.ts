@@ -36,7 +36,7 @@ export class ApiService {
     return this.http.post<any>(`${this.base}/listings/${listingId}/valuate`, {}).pipe(catchError(() => of(null)));
   }
   submitLoanInquiry(data: any): Observable<any> {
-    return this.http.post<any>(`${this.base}/loans/inquiry`, data).pipe(catchError(() => of(null)));
+    return this.http.post<any>(`${this.base}/loans/inquiries`, data).pipe(catchError(() => of(null)));
   }
   getNotifications(): Observable<any[]> {
     return this.http.get<any[]>(`${this.base}/notifications`).pipe(catchError(() => of([])));

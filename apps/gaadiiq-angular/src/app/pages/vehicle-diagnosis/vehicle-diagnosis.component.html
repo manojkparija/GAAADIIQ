@@ -4,8 +4,41 @@
       <div class="hero-badge">🔧 AI Repair Advisor</div>
       <h1>Vehicle Preliminary <span class="gradient-text">Diagnosis</span></h1>
       <p class="hero-sub">Describe your car problem and get an AI-powered preliminary assessment with repair cost estimates. Always consult a certified mechanic to confirm.</p>
+      @if (auth.currentUser()) {
+        <button class="btn btn-ghost btn-sm history-btn" (click)="openHistory()">📋 My Diagnosis History</button>
+      }
     </div>
   </div>
+
+  <!-- ── History panel (MOB-036) ─────────────────────────────────────────── -->
+  @if (showHistory()) {
+    <div class="history-overlay" (click)="closeHistory()">
+      <div class="history-panel" (click)="$event.stopPropagation()">
+        <div class="history-header">
+          <h2>Past Diagnoses</h2>
+          <button class="close-btn" (click)="closeHistory()">✕</button>
+        </div>
+        @if (historyLoading()) {
+          <div class="history-loading">Loading…</div>
+        } @else if (history().length === 0) {
+          <div class="history-empty">No past diagnoses found.</div>
+        } @else {
+          <div class="history-list">
+            @for (h of history(); track h.id) {
+              <div class="history-item">
+                <div class="history-meta">
+                  <span class="history-date">{{ h.created_at | date:'dd MMM yyyy, h:mm a' }}</span>
+                  <span class="history-risk" [style.color]="diagSvc.riskColor(h.risk_level)">{{ h.risk_level }}</span>
+                </div>
+                <div class="history-diag">{{ h.preliminary_diagnosis }}</div>
+                <div class="history-cost">₹{{ h.cost_min_inr | number }} – ₹{{ h.cost_max_inr | number }} &nbsp;·&nbsp; {{ h.repair_complexity }}</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
 
   <div class="container diag-body">
 

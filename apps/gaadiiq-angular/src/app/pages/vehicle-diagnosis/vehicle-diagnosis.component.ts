@@ -281,6 +281,11 @@ export class VehicleDiagnosisComponent {
   serviceCenterModal = signal(false);
   nearbyServiceCenters = signal<ServiceCenter[]>([]);
 
+  // Diagnosis history (MOB-036)
+  showHistory = signal(false);
+  history = signal<any[]>([]);
+  historyLoading = signal(false);
+
   constructor(
     private seo: SeoService,
     public diagSvc: DiagnosisService,
@@ -294,6 +299,17 @@ export class VehicleDiagnosisComponent {
       'Describe your car problem and get an instant AI-powered preliminary diagnosis with repair cost estimates.',
     );
   }
+
+  openHistory() {
+    this.showHistory.set(true);
+    this.historyLoading.set(true);
+    this.diagSvc.getHistory().subscribe({
+      next: h => { this.history.set(h); this.historyLoading.set(false); },
+      error: () => { this.history.set([]); this.historyLoading.set(false); },
+    });
+  }
+
+  closeHistory() { this.showHistory.set(false); }
 
   toggleWarningLight(light: string) {
     this.selectedWarningLights.update(list =>

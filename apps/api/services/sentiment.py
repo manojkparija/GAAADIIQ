@@ -35,6 +35,19 @@ from models.test_drive_booking import TestDriveBooking
 
 logger = logging.getLogger(__name__)
 
+# ── Prompt injection fence ────────────────────────────────────────────────────
+_INJECTION_PATTERN = re.compile(
+    r"(ignore\s+(previous|all|prior)|forget\s+(your|all)|you\s+are\s+now|"
+    r"system\s*prompt|<\s*/?system\s*>|<\s*/?instruction|"
+    r"\[/?INST\]|###\s*instruction|act\s+as\s+(a\s+)?new)",
+    re.IGNORECASE,
+)
+
+def _sanitise(text: str, max_len: int = 500) -> str:
+    """Strip prompt-injection attempts and truncate."""
+    text = str(text)[:max_len]
+    return _INJECTION_PATTERN.sub("[REDACTED]", text)
+
 # ── Circuit breaker (mirrors valuation.py pattern) ────────────────────────────
 _cb_failures = 0
 _cb_open_until: float = 0.0
@@ -260,7 +273,7 @@ async def _gather_signals(
         for a in enquiry_acts
         if a.extra_data and a.extra_data.get("notes")
     ]
-    enquiry_notes = "; ".join(notes[:3]) if notes else "No notes available"
+    enquiry_notes = "; ".join(_sanitise(n) for n in notes[:3]) if notes else "No notes available"
 
     budget_signals = [
         a.extra_data.get("budget", "")

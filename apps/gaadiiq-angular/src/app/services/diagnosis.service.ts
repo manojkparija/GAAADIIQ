@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface PossibleCause {
@@ -261,5 +262,10 @@ export class DiagnosisService {
     if (score >= 60) return 'Moderate Confidence';
     if (score >= 40) return 'Low Confidence';
     return 'Uncertain';
+  }
+
+  /** Fetch the logged-in user's past diagnosis reports (MOB-036). */
+  getHistory(): Observable<DiagnosisReport[]> {
+    return this.http.get<DiagnosisReport[]>(`${this.api}/history`);
   }
 }

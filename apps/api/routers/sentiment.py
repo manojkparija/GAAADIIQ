@@ -46,6 +46,8 @@ class TrackPublicIn(BaseModel):
     activity_type: ActivityType
     duration_seconds: int | None = None
     metadata: dict | None = None
+    # Customer must explicitly consent to activity tracking (MOB-032)
+    consent: bool = False
 
 
 class TrackActivityIn(BaseModel):
@@ -132,9 +134,11 @@ async def _get_dealer(db: AsyncSession, user: User) -> Dealer:
 async def track_activity_public(request: Request, body: TrackPublicIn, db: DB):
     """
     Unauthenticated buyer-side tracking endpoint.
-    Looks up dealer by email and records the customer activity signal.
-    Rate-limited to 30 req/min per IP.
+    Requires customer consent flag (MOB-032). Rate-limited to 30 req/min per IP.
     """
+    if not body.consent:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Customer consent is required for activity tracking")
+
     # Resolve dealer via their user email
     user_q = await db.execute(select(User).where(User.email == body.dealer_email))
     dealer_user = user_q.scalar_one_or_none()
