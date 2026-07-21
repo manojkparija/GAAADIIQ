@@ -14,12 +14,15 @@ Feed Claude **one wave at a time**. Do not paste all 40 into one session.
 | Wave | Issues | Goal |
 |------|--------|------|
 | **0 — Master context** | — | Paste once at start of each Claude session |
+| **0.5 — Mobile layout (DO THIS BEFORE FEATURES)** | LAY-001…012 | Fix phone fit/alignment — see `Mobile_Layout_Alignment_Audit.md` |
 | **1 — P0 Security & Auth** | MOB-002, 005, 006, 007, 008, 010, 011, 012, 039 | Unblock API + stop data leaks |
 | **2 — P0 Product blockers** | MOB-003, 004, 009 | Payments, native shell, OTP |
 | **3 — P0 Platform** | MOB-001 | iOS (or explicitly defer with Android-only beta label) |
 | **4 — P1 Features** | MOB-013–022 | Insurance, chat, push, advisor, uploads, DB, CORS, tests |
 | **5 — P2 Polish** | MOB-023–033 | Slider, New Cars merge, a11y, offline, EMI |
 | **6 — P3 Cleanup** | MOB-034–040 | Tests template, empty CTA, history UI, settings |
+
+> **User report:** many screens do not fit in the mobile WebView. Prior audit did **not** device-test alignment. Use Wave **0.5** first.
 
 ---
 
