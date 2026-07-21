@@ -1,6 +1,30 @@
 """Tests for insurance router (MOB-013, MOB-022)."""
 import pytest
-from httpx import AsyncClient
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from db.session import get_db
+from main import app
+
+
+@pytest_asyncio.fixture
+async def client(db_engine):
+    session_factory = async_sessionmaker(db_engine, expire_on_commit=False, class_=AsyncSession)
+
+    async def override_get_db():
+        async with session_factory() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
+    app.dependency_overrides[get_db] = override_get_db
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        yield c
+    app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
