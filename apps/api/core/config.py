@@ -16,8 +16,17 @@ class Settings(BaseSettings):
     # "development" | "staging" | "production"
     environment: str = "development"
 
-    # Database
+    # Database — Railway provides postgresql:// but asyncpg requires postgresql+asyncpg://
     database_url: str = "postgresql+asyncpg://user:password@localhost:5432/gaadiiq"
+
+    @property
+    def async_database_url(self) -> str:
+        url = self.database_url
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        return url
 
     # Redis
     redis_url: str = "redis://localhost:6379"
