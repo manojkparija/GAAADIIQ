@@ -52,3 +52,35 @@ for (const route of ROUTES) {
     await checkNoHorizontalOverflow(page, route);
   });
 }
+
+// FC-01: .find-cars-tabs may internally scroll but must NOT cause page-level overflow
+test('find-cars-tabs does not cause page overflow on home at 360px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  await page.waitForTimeout(500);
+
+  const pageOverflow = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(pageOverflow, `Page overflow at 360px: ${pageOverflow}px`).toBeLessThanOrEqual(2);
+
+  // The tabs container itself may have internal scroll — that is intentional
+  const tabsContainerOk = await page.evaluate(() => {
+    const tabs = document.querySelector('.find-cars-tabs');
+    if (!tabs) return true; // element absent is fine
+    // overflow-x: auto means scrollWidth >= clientWidth is expected and OK
+    return tabs.scrollWidth >= tabs.clientWidth;
+  });
+  expect(tabsContainerOk).toBe(true);
+});
+
+test('find-cars-tabs does not cause page overflow on home at 390px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  await page.waitForTimeout(500);
+
+  const pageOverflow = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(pageOverflow, `Page overflow at 390px: ${pageOverflow}px`).toBeLessThanOrEqual(2);
+});

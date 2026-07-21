@@ -372,6 +372,7 @@
 }
 
 // ── Find Cars section ────────────────────────────────────────────────────────
+// FC-04: section padding clears bottom nav on mobile
 .find-cars-section { padding: 2rem 0 3rem; }
 
 .find-cars-card {
@@ -385,11 +386,17 @@
   color: var(--text);
 }
 
+// FC-01: tabs scroll horizontally on narrow phones
 .find-cars-tabs {
   display: flex;
   gap: 0;
   border-bottom: 2px solid var(--divider);
   margin-bottom: 1.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  &::-webkit-scrollbar { display: none; }
 }
 
 .find-tab {
@@ -402,6 +409,8 @@
   cursor: pointer;
   position: relative;
   white-space: nowrap;
+  flex-shrink: 0;
+  scroll-snap-align: start;
   transition: color 0.2s;
 
   &::after {
@@ -429,7 +438,8 @@
 }
 
 .find-pill {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   padding: 0.45rem 1.2rem;
   border-radius: 8px;
   border: 1.5px solid var(--glass-border);
@@ -446,6 +456,19 @@
     border-color: var(--primary);
     color: var(--primary);
   }
+}
+
+// FC-02/FC-03: mobile spacing
+@media (max-width: 768px) {
+  .find-cars-card { padding: 1.25rem 1rem; }
+  .find-cars-title { font-size: 1.1rem; margin-bottom: 1rem; }
+  .find-tab { padding: 0.55rem 0.85rem; font-size: 0.82rem; }
+  .find-pill { padding: 0.5rem 0.9rem; font-size: 0.8rem; min-height: 44px; }
+}
+
+@media (max-width: 480px) {
+  .find-cars-card { padding: 1rem 0.85rem; border-radius: 12px; }
+  .find-cars-title { font-size: 1.05rem; }
 }
 
 /* CARS GRID */
