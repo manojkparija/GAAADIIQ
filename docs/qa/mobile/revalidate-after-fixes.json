@@ -1,0 +1,199 @@
+{
+  "generated_at": "2026-07-21T09:58:27.922632+00:00",
+  "branch": "claude/gaadiiq-app-dev-abj5fo @ ad3102b",
+  "counts": {
+    "PASS": 15,
+    "FAIL": 8
+  },
+  "total": 23,
+  "results": [
+    {
+      "suite": "Layout",
+      "id": "LAY-001",
+      "name": "Safe-area + viewport-fit",
+      "status": "PASS",
+      "detail": "index.html + styles tokens",
+      "severity": "P0"
+    },
+    {
+      "suite": "Layout",
+      "id": "LAY-002",
+      "name": "Compare horizontal scroll",
+      "status": "PASS",
+      "detail": "compare.component.scss",
+      "severity": "P0"
+    },
+    {
+      "suite": "Layout",
+      "id": "LAY-003",
+      "name": "Advisor/compare sticky/min widths",
+      "status": "PASS",
+      "detail": "compare scss mobile",
+      "severity": "P1"
+    },
+    {
+      "suite": "Layout",
+      "id": "LAY-004",
+      "name": "Home brands 3/2 col",
+      "status": "PASS",
+      "detail": "home media queries",
+      "severity": "P0"
+    },
+    {
+      "suite": "Layout",
+      "id": "LAY-005",
+      "name": "No body overflow-x:hidden crutch",
+      "status": "FAIL",
+      "detail": "styles.scss",
+      "severity": "P1"
+    },
+    {
+      "suite": "Layout",
+      "id": "LAY-006",
+      "name": "Used-cars filter sheet",
+      "status": "PASS",
+      "detail": "used-cars drawer",
+      "severity": "P0"
+    },
+    {
+      "suite": "Layout",
+      "id": "LAY-007",
+      "name": "--nav-offset used",
+      "status": "PASS",
+      "detail": "styles tokens",
+      "severity": "P1"
+    },
+    {
+      "suite": "Layout",
+      "id": "LAY-009",
+      "name": "Dual-range thumb centering",
+      "status": "PASS",
+      "detail": "used-cars scss",
+      "severity": "P1"
+    },
+    {
+      "suite": "Layout",
+      "id": "LAY-010",
+      "name": "Valuation how-grid phone cols",
+      "status": "PASS",
+      "detail": "ai-valuation scss",
+      "severity": "P2"
+    },
+    {
+      "suite": "Layout",
+      "id": "LAY-012",
+      "name": "Playwright mobile layout e2e",
+      "status": "PASS",
+      "detail": "apps/gaadiiq-angular/e2e/mobile-layout.spec.ts",
+      "severity": "P1"
+    },
+    {
+      "suite": "Auth UX",
+      "id": "AUTH-01",
+      "name": "Bottom nav Account auth-aware",
+      "status": "FAIL",
+      "detail": "mobile-bottom-nav always links Account\u2192/login; no Sign Out / profile when logged in",
+      "severity": "P0"
+    },
+    {
+      "suite": "Auth UX",
+      "id": "AUTH-02",
+      "name": "Bottom nav safe-area padding",
+      "status": "FAIL",
+      "detail": "bottom nav padding ignores --safe-bottom",
+      "severity": "P1"
+    },
+    {
+      "suite": "Auth UX",
+      "id": "AUTH-03",
+      "name": "login() awaits hydrate before navigate",
+      "status": "FAIL",
+      "detail": "login relies on onAuthStateChange race; may leave Sign In visible briefly/permanently if hydrate slow",
+      "severity": "P1"
+    },
+    {
+      "suite": "Auth UX",
+      "id": "AUTH-04",
+      "name": "Logged-in user hitting /login redirected",
+      "status": "PASS",
+      "detail": "login effect",
+      "severity": "P1"
+    },
+    {
+      "suite": "Find Cars",
+      "id": "FC-01",
+      "name": "Tabs scroll/wrap on mobile",
+      "status": "FAIL",
+      "detail": "find-tab nowrap; find-cars-tabs no overflow-x",
+      "severity": "P0"
+    },
+    {
+      "suite": "Find Cars",
+      "id": "FC-02",
+      "name": "Find-cars mobile media rules",
+      "status": "FAIL",
+      "detail": "No @media under find-cars section for padding/title/pills",
+      "severity": "P0"
+    },
+    {
+      "suite": "Find Cars",
+      "id": "FC-03",
+      "name": "Card padding reduced on phone",
+      "status": "FAIL",
+      "detail": "find-cars-card padding 2rem fixed; title 1.3rem; pills nowrap \u2014 cramped on narrow screens",
+      "severity": "P1"
+    },
+    {
+      "suite": "Find Cars",
+      "id": "FC-04",
+      "name": "Section clears bottom nav",
+      "status": "FAIL",
+      "detail": "page content may sit under fixed bottom nav; check global padding",
+      "severity": "P2"
+    },
+    {
+      "suite": "Find Cars",
+      "id": "FC-05",
+      "name": "Home page bottom padding for FAB nav",
+      "status": "PASS",
+      "detail": "check last sections",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Security",
+      "id": "MOB-005",
+      "name": "allowBackup false",
+      "status": "PASS",
+      "detail": "AndroidManifest",
+      "severity": "P0"
+    },
+    {
+      "suite": "Security",
+      "id": "MOB-007",
+      "name": "diagnosis GET auth",
+      "status": "PASS",
+      "detail": "diagnosis.py",
+      "severity": "P0"
+    },
+    {
+      "suite": "API",
+      "id": "MOB-011",
+      "name": "loans/inquiries path",
+      "status": "PASS",
+      "detail": "api.service.ts",
+      "severity": "P0"
+    },
+    {
+      "suite": "Auth",
+      "id": "MOB-002",
+      "name": "auth interceptor present",
+      "status": "PASS",
+      "detail": "[PosixPath('apps/gaadiiq-angular/src/app/interceptors'), PosixPath('apps/gaadiiq-angular/src/app/interceptors/auth.interceptor.ts'), PosixPath('apps/gaadiiq-angular/src/app/interceptors/auth.interceptor.spec.ts')]",
+      "severity": "P0"
+    }
+  ],
+  "user_bugs": [
+    "AUTH-01 bottom nav Account always /login",
+    "FC Find Cars tabs not phone aligned"
+  ]
+}
