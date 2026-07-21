@@ -19,6 +19,8 @@ export type EventType =
   | 'journey_retake'
   | 'plan_viewed'
   | 'plan_cta_clicked'
+  | 'plan_checkout_started'
+  | 'plan_checkout_success'
   | 'login'
   | 'register'
   | 'logout';

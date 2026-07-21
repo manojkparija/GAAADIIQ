@@ -19,8 +19,8 @@ export class ProfileComponent {
 
   user = this.auth.currentUser;
 
-  fullName  = signal(this.user()?.full_name ?? '');
-  phone     = signal(this.user()?.phone ?? '');
+  fullName  = signal(this.user()?.name ?? '');
+  phone     = signal('');
   saving    = signal(false);
   saveMsg   = signal('');
   deleteConfirm = signal(false);

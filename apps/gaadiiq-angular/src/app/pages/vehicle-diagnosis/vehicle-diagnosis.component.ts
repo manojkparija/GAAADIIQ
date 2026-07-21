@@ -289,7 +289,7 @@ export class VehicleDiagnosisComponent {
   constructor(
     private seo: SeoService,
     public diagSvc: DiagnosisService,
-    private auth: AuthService,
+    protected auth: AuthService,
     private sb: SupabaseService,
     public city: CityService,
     private api: ApiService,
