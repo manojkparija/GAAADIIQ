@@ -1,3 +1,4 @@
+import os
 import sys
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -66,6 +67,7 @@ class Settings(BaseSettings):
     # Qdrant vector database
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "gaadiiq_listings"
+    qdrant_api_key: str = ""  # set QDRANT_API_KEY in production
 
     # n8n workflow automation
     n8n_webhook_url: str = ""
@@ -105,6 +107,10 @@ class Settings(BaseSettings):
             errors.append("RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in production")
         if not self.SMTP_HOST:
             errors.append("SMTP_HOST must be configured in production")
+        if not self.qdrant_api_key:
+            errors.append("QDRANT_API_KEY must be set in production")
+        if not os.environ.get("METRICS_TOKEN"):
+            errors.append("METRICS_TOKEN must be set in production")
         if errors:
             print("FATAL: production configuration errors:", file=sys.stderr)
             for e in errors:

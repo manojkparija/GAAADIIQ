@@ -13,7 +13,8 @@ VECTOR_SIZE = 384  # matches bge-small-en-v1.5
 def _client():
     try:
         from qdrant_client import QdrantClient
-        return QdrantClient(url=settings.qdrant_url, timeout=10)
+        api_key = settings.qdrant_api_key or None
+        return QdrantClient(url=settings.qdrant_url, api_key=api_key, timeout=10)
     except Exception as exc:
         logger.warning("Qdrant client unavailable: %s", exc)
         return None

@@ -50,7 +50,7 @@ def _transform(raw: bytes) -> bytes:
         return raw
 
     img = Image.open(io.BytesIO(raw))
-    img = img.convert("RGB")  # drop alpha; WebP supports it but R2 serves consistently as RGB
+    img = img.convert("RGB")  # drop alpha and EXIF metadata (RGB conversion strips Exif)
 
     # Resize if either dimension exceeds the cap
     w, h = img.size

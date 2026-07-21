@@ -185,7 +185,9 @@ async def track_activity(body: TrackActivityIn, db: DB, current_user: CurrentUse
 
 
 @router.post("/analyse/{user_id}", response_model=IntentScoreOut)
+@limiter.limit("10/minute")
 async def analyse_customer(
+    request: Request,
     user_id: str,
     body: AnalyseIn,
     db: DB,

@@ -3,6 +3,9 @@ import subprocess
 import time
 from contextlib import asynccontextmanager
 
+import os
+import secrets
+
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
@@ -115,9 +118,27 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
 )
+
+# Prometheus scrape token — set METRICS_TOKEN env var in production;
+# falls back to a random per-process token in dev (logged at startup).
+_METRICS_TOKEN: str = os.environ.get("METRICS_TOKEN", "") or secrets.token_hex(32)
+if not os.environ.get("METRICS_TOKEN"):
+    _log.warning("METRICS_TOKEN not set — /metrics uses ephemeral token (changes on restart)")
+
+
+@app.middleware("http")
+async def _security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self)"
+    if settings.is_production:
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+    return response
 
 
 @app.middleware("http")
@@ -132,8 +153,12 @@ async def _metrics_middleware(request: Request, call_next):
 
 
 @app.get("/metrics", include_in_schema=False)
-async def metrics():
-    """Prometheus scrape endpoint — restrict to internal network in production."""
+async def metrics(request: Request):
+    """Prometheus scrape endpoint — requires Bearer token via METRICS_TOKEN env var."""
+    auth = request.headers.get("Authorization", "")
+    token = auth.removeprefix("Bearer ").strip()
+    if not secrets.compare_digest(token, _METRICS_TOKEN):
+        return Response(status_code=401, content="Unauthorized")
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
