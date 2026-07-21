@@ -15,35 +15,39 @@ branch_labels = None
 depends_on = None
 
 
-def _create_enum(name: str, values: str) -> str:
-    return (
-        f"DO $$ BEGIN CREATE TYPE {name} AS ENUM ({values}); "
-        f"EXCEPTION WHEN duplicate_object THEN null; END $$"
-    )
+_ENUM_NAMES = [
+    "fuel_type", "transmission", "body_type", "user_role",
+    "listing_type", "listing_condition", "booking_status",
+    "loan_status", "employment_type", "notification_type",
+    "payment_status", "payment_purpose", "subscription_tier",
+]
 
 
 def upgrade() -> None:
     # ── Enums ──────────────────────────────────────────────────────────────────
-    op.execute(_create_enum("fuel_type", "'petrol','diesel','electric','cng','hybrid'"))
-    op.execute(_create_enum("transmission", "'manual','automatic','amt','cvt','dct'"))
-    op.execute(_create_enum("body_type", "'hatchback','sedan','suv','muv','coupe','convertible'"))
-    op.execute(_create_enum("user_role", "'buyer','seller','dealer','admin'"))
-    op.execute(_create_enum("listing_type", "'new','used'"))
-    op.execute(_create_enum("listing_condition", "'excellent','good','fair','poor'"))
-    op.execute(_create_enum("booking_status", "'pending','confirmed','cancelled','completed'"))
-    op.execute(_create_enum("loan_status", "'submitted','processing','approved','rejected'"))
-    op.execute(_create_enum("employment_type", "'salaried','self_employed','business'"))
-    op.execute(_create_enum(
-        "notification_type",
+    # Drop any pre-existing enums from partial migrations (safe: tables not yet created).
+    for name in _ENUM_NAMES:
+        op.execute(sa.text(f"DROP TYPE IF EXISTS {name} CASCADE"))
+
+    op.execute(sa.text("CREATE TYPE fuel_type AS ENUM ('petrol','diesel','electric','cng','hybrid')"))
+    op.execute(sa.text("CREATE TYPE transmission AS ENUM ('manual','automatic','amt','cvt','dct')"))
+    op.execute(sa.text("CREATE TYPE body_type AS ENUM ('hatchback','sedan','suv','muv','coupe','convertible')"))
+    op.execute(sa.text("CREATE TYPE user_role AS ENUM ('buyer','seller','dealer','admin')"))
+    op.execute(sa.text("CREATE TYPE listing_type AS ENUM ('new','used')"))
+    op.execute(sa.text("CREATE TYPE listing_condition AS ENUM ('excellent','good','fair','poor')"))
+    op.execute(sa.text("CREATE TYPE booking_status AS ENUM ('pending','confirmed','cancelled','completed')"))
+    op.execute(sa.text("CREATE TYPE loan_status AS ENUM ('submitted','processing','approved','rejected')"))
+    op.execute(sa.text("CREATE TYPE employment_type AS ENUM ('salaried','self_employed','business')"))
+    op.execute(sa.text(
+        "CREATE TYPE notification_type AS ENUM ("
         "'booking_received','booking_confirmed','booking_cancelled',"
-        "'loan_inquiry_received','price_drop','listing_viewed','system'",
+        "'loan_inquiry_received','price_drop','listing_viewed','system')"
     ))
-    op.execute(_create_enum("payment_status", "'pending','paid','failed','refunded'"))
-    op.execute(_create_enum(
-        "payment_purpose",
-        "'featured_listing','subscription_pro','subscription_dealer'",
+    op.execute(sa.text("CREATE TYPE payment_status AS ENUM ('pending','paid','failed','refunded')"))
+    op.execute(sa.text(
+        "CREATE TYPE payment_purpose AS ENUM ('featured_listing','subscription_pro','subscription_dealer')"
     ))
-    op.execute(_create_enum("subscription_tier", "'free','pro','dealer'"))
+    op.execute(sa.text("CREATE TYPE subscription_tier AS ENUM ('free','pro','dealer')"))
 
     # ── Tables ─────────────────────────────────────────────────────────────────
     op.create_table(
@@ -237,9 +241,5 @@ def downgrade() -> None:
     op.drop_table("users")
     op.drop_table("cars")
 
-    for enum_name in [
-        "subscription_tier", "payment_purpose", "payment_status", "notification_type",
-        "employment_type", "loan_status", "booking_status", "listing_condition",
-        "listing_type", "user_role", "body_type", "transmission", "fuel_type",
-    ]:
-        op.execute(f"DROP TYPE IF EXISTS {enum_name} CASCADE")
+    for enum_name in reversed(_ENUM_NAMES):
+        op.execute(sa.text(f"DROP TYPE IF EXISTS {enum_name} CASCADE"))
