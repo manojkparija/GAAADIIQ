@@ -204,3 +204,47 @@ async def seller_analytics(
         overall_avg_rating=overall_avg,
         listings=listing_analytics,
     )
+
+
+# ── Public Dealer Directory (MOB-027) ─────────────────────────────────────────
+
+@router.get("/directory")
+async def dealer_directory(
+    city: str | None = None,
+    query: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Public dealer directory — searchable by city/name/brand.
+    No auth required; used by the dealer directory page and service-centre finder.
+    """
+    from sqlalchemy import or_, ilike
+    stmt = select(Dealer).where(Dealer.is_active == True)  # noqa: E712
+
+    if city:
+        stmt = stmt.where(func.lower(Dealer.city) == city.strip().lower())
+    if query:
+        pattern = f"%{query.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Dealer.name.ilike(pattern),
+                Dealer.brand.ilike(pattern),
+                Dealer.city.ilike(pattern),
+            )
+        )
+
+    total_result = await db.execute(select(func.count()).select_from(stmt.subquery()))
+    total = total_result.scalar_one()
+
+    stmt = stmt.order_by(Dealer.name).offset(offset).limit(min(limit, 50))
+    result = await db.execute(stmt)
+    dealers = result.scalars().all()
+
+    return {
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "dealers": [DealerOut.model_validate(d) for d in dealers],
+    }

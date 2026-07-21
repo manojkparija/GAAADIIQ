@@ -26,5 +26,26 @@
         ]
       }
     }
+  ],
+  "dataGroups": [
+    {
+      "name": "api-listings",
+      "urls": ["/api/listings/**", "/api/cars/**", "/api/recommend/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 100,
+        "maxAge": "10m",
+        "timeout": "5s"
+      }
+    },
+    {
+      "name": "api-static",
+      "urls": ["/api/health", "/api/loans/bank-rates"],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxSize": 20,
+        "maxAge": "1h"
+      }
+    }
   ]
 }

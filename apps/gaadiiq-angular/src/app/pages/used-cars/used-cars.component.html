@@ -412,13 +412,9 @@
             }
           </div>
 
-          <!-- Load More -->
+          <!-- Infinite scroll sentinel (MOB-029) -->
           @if (hasMore()) {
-            <div class="load-more-wrap">
-              <button class="load-more-btn btn-outline" (click)="loadMore()">
-                Load 12 More ({{ totalCount() - pageSize() }} remaining)
-              </button>
-            </div>
+            <div #scrollSentinel class="scroll-sentinel" aria-hidden="true"></div>
           }
         }
 

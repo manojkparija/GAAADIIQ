@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, PLATFORM_ID, Inject } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild, PLATFORM_ID, Inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -49,7 +49,7 @@ function snapToPopularCity(raw: string): string {
   templateUrl: './used-cars.component.html',
   styleUrl: './used-cars.component.scss'
 })
-export class UsedCarsComponent implements OnInit {
+export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly Math = Math;
 
   constructor(
@@ -326,6 +326,24 @@ export class UsedCarsComponent implements OnInit {
 
   filterToCity() {
     this.allIndiaOverride.set(false);
+  }
+
+  // Infinite scroll sentinel (MOB-029)
+  @ViewChild('scrollSentinel') scrollSentinel?: ElementRef<HTMLElement>;
+  private _observer?: IntersectionObserver;
+
+  ngAfterViewInit() {
+    if (!isPlatformBrowser(this.platformId) || !this.scrollSentinel) return;
+    this._observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting && this.hasMore()) {
+        this.loadMore();
+      }
+    }, { rootMargin: '200px' });
+    this._observer.observe(this.scrollSentinel.nativeElement);
+  }
+
+  ngOnDestroy() {
+    this._observer?.disconnect();
   }
 
   loadMore() {
