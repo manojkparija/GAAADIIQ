@@ -674,7 +674,9 @@
   .hero-content { grid-template-columns: 1fr; gap: 2rem; }
   .hero-visual { display: none; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-  .brands-grid { grid-template-columns: repeat(4, 1fr); }
+  // LAY-004: 3 columns on mobile; brand-card min tap size 44px
+  .brands-grid { grid-template-columns: repeat(3, 1fr); }
+  .brand-card { min-height: 44px; padding: 0.85rem 0.5rem; }
 
   .cars-grid { grid-template-columns: 1fr; }
   .features-grid { grid-template-columns: 1fr; }
@@ -684,7 +686,9 @@
 
 @media (max-width: 480px) {
   .hero { padding: 4.5rem 0 2.5rem; }
-  .brands-grid { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+  // LAY-004: 2 columns on smallest phones
+  .brands-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+  .brand-card { min-height: 44px; }
   .ticker-bar { margin-top: 56px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }

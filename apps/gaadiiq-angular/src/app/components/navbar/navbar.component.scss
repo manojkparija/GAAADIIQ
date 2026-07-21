@@ -3,7 +3,11 @@
   top: 0; left: 0; right: 0;
   z-index: 1000;
   transition: all 0.3s ease;
-  padding: 0.6rem 0;
+  // LAY-001: push content below status bar / notch
+  padding-top: max(0.6rem, var(--safe-top));
+  padding-bottom: 0.6rem;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
   background: var(--glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -117,6 +121,8 @@
 .mobile-menu {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
+  // LAY-001: account for home indicator at bottom
+  padding-bottom: var(--safe-bottom);
   background: var(--navy);
   backdrop-filter: blur(20px);
   display: flex;

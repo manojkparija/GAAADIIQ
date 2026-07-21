@@ -185,7 +185,7 @@
   }
 }
 
-/* ── SIDEBAR ── */
+/* ── SIDEBAR / BOTTOM SHEET (LAY-006) ── */
 .uc-sidebar {
   position: sticky;
   top: 80px;
@@ -197,11 +197,88 @@
   scrollbar-color: rgba(0,0,0,0.15) transparent;
 
   @media (max-width: 960px) {
-    display: none;
-    position: relative;
-    top: 0;
-    max-height: none;
-    &.open { display: block; }
+    // Bottom sheet: fixed overlay, slides up from bottom
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 200;
+    max-height: 90vh;
+    border-radius: 20px 20px 0 0;
+    padding: 1.25rem 1.25rem calc(1.25rem + var(--safe-bottom, 0px));
+    background: var(--navy);
+    border-top: 1px solid var(--border-soft);
+    transform: translateY(105%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    visibility: hidden;
+
+    &.open {
+      transform: translateY(0);
+      visibility: visible;
+    }
+  }
+}
+
+// Backdrop for bottom sheet
+.filter-backdrop {
+  display: none;
+
+  @media (max-width: 960px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+
+    &.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+  }
+}
+
+// Sheet drag handle
+.sheet-handle {
+  display: none;
+
+  @media (max-width: 960px) {
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--muted);
+    opacity: 0.4;
+    margin: 0 auto 1rem;
+  }
+}
+
+// Close button inside sheet
+.sheet-close-btn {
+  display: none;
+
+  @media (max-width: 960px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--fill-soft);
+    border: 1px solid var(--border-soft);
+    cursor: pointer;
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1;
   }
 }
 
@@ -528,6 +605,7 @@
   cursor: pointer;
 }
 
+// LAY-006: Filter button always reachable — sticky bar on mobile
 .filter-toggle-btn {
   display: none;
   font-size: 0.82rem;
@@ -536,6 +614,22 @@
   gap: 0.4rem;
 
   @media (max-width: 960px) { display: flex; }
+}
+
+.mobile-filter-bar {
+  display: none;
+
+  @media (max-width: 960px) {
+    display: flex;
+    position: sticky;
+    bottom: calc(0px + var(--safe-bottom, 0px));
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    background: var(--navy);
+    border-top: 1px solid var(--border-soft);
+    gap: 0.75rem;
+    justify-content: center;
+  }
 }
 
 .filter-badge {

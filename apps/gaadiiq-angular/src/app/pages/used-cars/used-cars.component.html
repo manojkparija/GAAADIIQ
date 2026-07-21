@@ -101,8 +101,13 @@
   <div class="container">
     <div class="uc-layout">
 
-      <!-- ── FILTER SIDEBAR ── -->
+      <!-- LAY-006: backdrop for bottom sheet -->
+      <div class="filter-backdrop" [class.open]="sidebarOpen()" (click)="sidebarOpen.set(false)"></div>
+
+      <!-- ── FILTER SIDEBAR / BOTTOM SHEET ── -->
       <aside class="uc-sidebar glass-card" [class.open]="sidebarOpen()">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close-btn" (click)="sidebarOpen.set(false)" aria-label="Close filters">✕</button>
         <div class="sidebar-header">
           <h3 class="sidebar-title">Filters</h3>
           @if (activeFiltersCount() > 0) {

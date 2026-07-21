@@ -28,10 +28,11 @@
 .dots { animation: blink 1.2s step-start infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-// How it works
+// How it works — LAY-011: 2-col at tablet, 1-col at phone
 .how-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.25rem; max-width: 800px; margin: 0 auto; }
 @media(max-width:900px) { .how-grid { grid-template-columns: repeat(2,1fr); } }
-@media(max-width:500px) { .how-grid { grid-template-columns: 1fr; } }
+@media(max-width:768px) { .how-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:480px) { .how-grid { grid-template-columns: 1fr; } }
 .how-card { padding: 1.5rem; text-align: center;
   .how-icon { font-size: 2rem; margin-bottom: .75rem; }
   h4 { font-size: .9rem; font-weight: 700; margin-bottom: .5rem; }
