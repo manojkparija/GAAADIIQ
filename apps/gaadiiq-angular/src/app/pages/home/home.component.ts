@@ -7,6 +7,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { ScrollAnimateDirective } from '../../directives/scroll-animate.directive';
 import { CounterDirective } from '../../directives/counter.directive';
 import { BrandsService } from '../../services/brands.service';
+import { AuthService } from '../../services/auth.service';
 
 interface Car {
   id: number; make: string; model: string; year: number; price: number;
@@ -25,7 +26,22 @@ export class HomeComponent implements OnInit, AfterViewInit {
   searchQuery = signal('');
   activeBodyType = signal('All');
 
-  constructor(private router: Router, public brandsService: BrandsService) {}
+  accountSheetOpen = signal(false);
+
+  constructor(private router: Router, public brandsService: BrandsService, public auth: AuthService) {}
+
+  openAccountSheet() {
+    if (this.auth.isLoggedIn()) {
+      this.accountSheetOpen.set(true);
+    } else {
+      this.router.navigate(['/login']);
+    }
+  }
+
+  async signOut() {
+    this.accountSheetOpen.set(false);
+    await this.auth.logout();
+  }
   activeStat = signal(0);
 
   stats = [

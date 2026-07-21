@@ -363,7 +363,7 @@
   </div>
 </section>
 
-<!-- MOBILE BOTTOM NAV -->
+<!-- MOBILE BOTTOM NAV (AUTH-01) -->
 <nav class="mobile-bottom-nav hide-desktop">
   <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
     <app-icon name="home" [size]="20"></app-icon>
@@ -380,8 +380,46 @@
     <app-icon name="brain" [size]="20"></app-icon>
     <span>AI</span>
   </a>
-  <a routerLink="/login" routerLinkActive="active">
-    <app-icon name="user" [size]="20"></app-icon>
-    <span>Account</span>
-  </a>
+  @if (auth.isLoggedIn()) {
+    <!-- Logged in: open account sheet -->
+    <button class="nav-account-btn" [class.active]="accountSheetOpen()" (click)="openAccountSheet()">
+      <app-icon name="user" [size]="20"></app-icon>
+      <span>Account</span>
+    </button>
+  } @else {
+    <!-- Logged out: go to login -->
+    <a routerLink="/login" routerLinkActive="active">
+      <app-icon name="user" [size]="20"></app-icon>
+      <span>Sign In</span>
+    </a>
+  }
 </nav>
+
+<!-- ACCOUNT BOTTOM SHEET (AUTH-01) -->
+@if (accountSheetOpen()) {
+  <div class="account-sheet-backdrop" (click)="accountSheetOpen.set(false)"></div>
+  <div class="account-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-user-info">
+      <div class="sheet-avatar">{{ (auth.currentUser()?.name ?? auth.currentUser()?.email ?? 'U')[0].toUpperCase() }}</div>
+      <div>
+        <div class="sheet-name">{{ auth.currentUser()?.name ?? 'User' }}</div>
+        <div class="sheet-email">{{ auth.currentUser()?.email }}</div>
+      </div>
+    </div>
+    <nav class="sheet-links">
+      <a routerLink="/profile" (click)="accountSheetOpen.set(false)">
+        <app-icon name="user" [size]="18"></app-icon> My Profile
+      </a>
+      <a routerLink="/my-listings" (click)="accountSheetOpen.set(false)">
+        <app-icon name="list" [size]="18"></app-icon> My Listings
+      </a>
+      <a routerLink="/sell" (click)="accountSheetOpen.set(false)">
+        <app-icon name="tag" [size]="18"></app-icon> Sell My Car
+      </a>
+      <button class="sheet-signout" (click)="signOut()">
+        <app-icon name="log-out" [size]="18"></app-icon> Sign Out
+      </button>
+    </nav>
+  </div>
+}

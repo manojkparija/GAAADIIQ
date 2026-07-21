@@ -84,7 +84,8 @@ export class AuthService {
       // Supabase returns "Invalid login credentials" for wrong password or unknown email
       throw new Error('Incorrect email or password. Please try again.');
     }
-    // onAuthStateChange fires and calls hydrateUser
+    // AUTH-03: hydrate synchronously so currentUser is non-null before caller navigates
+    await this.hydrateUser(email);
   }
 
   async register(
