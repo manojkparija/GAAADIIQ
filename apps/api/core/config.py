@@ -97,16 +97,6 @@ class Settings(BaseSettings):
     SMTP_FROM: str = "noreply@gaadiiq.com"
 
     @property
-    def async_database_url(self) -> str:
-        """Return a postgresql+asyncpg:// URL regardless of what DATABASE_URL contains."""
-        url = self.database_url
-        if url.startswith("postgresql://"):
-            url = "postgresql+asyncpg://" + url[len("postgresql://"):]
-        elif url.startswith("postgres://"):
-            url = "postgresql+asyncpg://" + url[len("postgres://"):]
-        return url
-
-    @property
     def is_production(self) -> bool:
         return self.environment == "production"
 
