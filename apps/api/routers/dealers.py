@@ -221,7 +221,7 @@ async def dealer_directory(
     No auth required; used by the dealer directory page and service-centre finder.
     """
     from sqlalchemy import or_
-    stmt = select(Dealer).where(Dealer.is_active == True)  # noqa: E712
+    stmt = select(Dealer)
 
     if city:
         stmt = stmt.where(func.lower(Dealer.city) == city.strip().lower())
@@ -229,8 +229,7 @@ async def dealer_directory(
         pattern = f"%{query.strip()}%"
         stmt = stmt.where(
             or_(
-                Dealer.name.ilike(pattern),
-                Dealer.brand.ilike(pattern),
+                Dealer.business_name.ilike(pattern),
                 Dealer.city.ilike(pattern),
             )
         )
@@ -238,7 +237,7 @@ async def dealer_directory(
     total_result = await db.execute(select(func.count()).select_from(stmt.subquery()))
     total = total_result.scalar_one()
 
-    stmt = stmt.order_by(Dealer.name).offset(offset).limit(min(limit, 50))
+    stmt = stmt.order_by(Dealer.business_name).offset(offset).limit(min(limit, 50))
     result = await db.execute(stmt)
     dealers = result.scalars().all()
 

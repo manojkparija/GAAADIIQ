@@ -69,7 +69,7 @@ async def get_admin_user(current_user: User = Depends(get_current_user)) -> User
 
 async def get_seller_user(current_user: User = Depends(get_current_user)) -> User:
     """Require seller OR admin role — server-side guard (MOB-012)."""
-    if current_user.role.value not in ("seller", "admin"):
+    if current_user.role.value not in ("seller", "dealer", "admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Dealer/seller access required",
