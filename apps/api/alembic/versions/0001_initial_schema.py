@@ -15,25 +15,35 @@ branch_labels = None
 depends_on = None
 
 
+def _create_enum(name: str, values: str) -> str:
+    return (
+        f"DO $$ BEGIN CREATE TYPE {name} AS ENUM ({values}); "
+        f"EXCEPTION WHEN duplicate_object THEN null; END $$"
+    )
+
+
 def upgrade() -> None:
     # ── Enums ──────────────────────────────────────────────────────────────────
-    op.execute("CREATE TYPE IF NOT EXISTS fuel_type AS ENUM ('petrol', 'diesel', 'electric', 'cng', 'hybrid')")
-    op.execute("CREATE TYPE IF NOT EXISTS transmission AS ENUM ('manual', 'automatic', 'amt', 'cvt', 'dct')")
-    op.execute("CREATE TYPE IF NOT EXISTS body_type AS ENUM ('hatchback', 'sedan', 'suv', 'muv', 'coupe', 'convertible')")
-    op.execute("CREATE TYPE IF NOT EXISTS user_role AS ENUM ('buyer', 'seller', 'dealer', 'admin')")
-    op.execute("CREATE TYPE IF NOT EXISTS listing_type AS ENUM ('new', 'used')")
-    op.execute("CREATE TYPE IF NOT EXISTS listing_condition AS ENUM ('excellent', 'good', 'fair', 'poor')")
-    op.execute("CREATE TYPE IF NOT EXISTS booking_status AS ENUM ('pending', 'confirmed', 'cancelled', 'completed')")
-    op.execute("CREATE TYPE IF NOT EXISTS loan_status AS ENUM ('submitted', 'processing', 'approved', 'rejected')")
-    op.execute("CREATE TYPE IF NOT EXISTS employment_type AS ENUM ('salaried', 'self_employed', 'business')")
-    op.execute(
-        "CREATE TYPE IF NOT EXISTS notification_type AS ENUM ("
-        "'booking_received', 'booking_confirmed', 'booking_cancelled', "
-        "'loan_inquiry_received', 'price_drop', 'listing_viewed', 'system')"
-    )
-    op.execute("CREATE TYPE IF NOT EXISTS payment_status AS ENUM ('pending', 'paid', 'failed', 'refunded')")
-    op.execute("CREATE TYPE IF NOT EXISTS payment_purpose AS ENUM ('featured_listing', 'subscription_pro', 'subscription_dealer')")
-    op.execute("CREATE TYPE IF NOT EXISTS subscription_tier AS ENUM ('free', 'pro', 'dealer')")
+    op.execute(_create_enum("fuel_type", "'petrol','diesel','electric','cng','hybrid'"))
+    op.execute(_create_enum("transmission", "'manual','automatic','amt','cvt','dct'"))
+    op.execute(_create_enum("body_type", "'hatchback','sedan','suv','muv','coupe','convertible'"))
+    op.execute(_create_enum("user_role", "'buyer','seller','dealer','admin'"))
+    op.execute(_create_enum("listing_type", "'new','used'"))
+    op.execute(_create_enum("listing_condition", "'excellent','good','fair','poor'"))
+    op.execute(_create_enum("booking_status", "'pending','confirmed','cancelled','completed'"))
+    op.execute(_create_enum("loan_status", "'submitted','processing','approved','rejected'"))
+    op.execute(_create_enum("employment_type", "'salaried','self_employed','business'"))
+    op.execute(_create_enum(
+        "notification_type",
+        "'booking_received','booking_confirmed','booking_cancelled',"
+        "'loan_inquiry_received','price_drop','listing_viewed','system'",
+    ))
+    op.execute(_create_enum("payment_status", "'pending','paid','failed','refunded'"))
+    op.execute(_create_enum(
+        "payment_purpose",
+        "'featured_listing','subscription_pro','subscription_dealer'",
+    ))
+    op.execute(_create_enum("subscription_tier", "'free','pro','dealer'"))
 
     # ── Tables ─────────────────────────────────────────────────────────────────
     op.create_table(
