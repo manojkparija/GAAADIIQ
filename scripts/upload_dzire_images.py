@@ -315,9 +315,25 @@ IMAGES: list[dict] = [
 
 
 def login(api_url: str, email: str, password: str) -> str:
-    resp = requests.post(f"{api_url}/auth/login", json={"email": email, "password": password}, timeout=15)
-    resp.raise_for_status()
-    return resp.json()["access_token"]
+    url = f"{api_url}/auth/login"
+    resp = requests.post(url, json={"email": email, "password": password}, timeout=15)
+    if resp.status_code != 200:
+        raise SystemExit(
+            f"Login failed — HTTP {resp.status_code}\n"
+            f"URL: {url}\n"
+            f"Response: {resp.text[:500]}"
+        )
+    try:
+        data = resp.json()
+    except Exception:
+        raise SystemExit(
+            f"Login response is not JSON (wrong API URL?)\n"
+            f"URL: {url}\n"
+            f"Response: {resp.text[:500]}"
+        )
+    if "access_token" not in data:
+        raise SystemExit(f"No access_token in response: {data}")
+    return data["access_token"]
 
 
 def upload_image(api_url: str, token: str, image_path: Path) -> str:
