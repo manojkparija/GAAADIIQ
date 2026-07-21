@@ -26,7 +26,11 @@ def upgrade() -> None:
     op.execute("CREATE TYPE IF NOT EXISTS booking_status AS ENUM ('pending', 'confirmed', 'cancelled', 'completed')")
     op.execute("CREATE TYPE IF NOT EXISTS loan_status AS ENUM ('submitted', 'processing', 'approved', 'rejected')")
     op.execute("CREATE TYPE IF NOT EXISTS employment_type AS ENUM ('salaried', 'self_employed', 'business')")
-    op.execute("CREATE TYPE IF NOT EXISTS notification_type AS ENUM ('booking_received', 'booking_confirmed', 'booking_cancelled', 'loan_inquiry_received', 'price_drop', 'listing_viewed', 'system')")
+    op.execute(
+        "CREATE TYPE IF NOT EXISTS notification_type AS ENUM ("
+        "'booking_received', 'booking_confirmed', 'booking_cancelled', "
+        "'loan_inquiry_received', 'price_drop', 'listing_viewed', 'system')"
+    )
     op.execute("CREATE TYPE IF NOT EXISTS payment_status AS ENUM ('pending', 'paid', 'failed', 'refunded')")
     op.execute("CREATE TYPE IF NOT EXISTS payment_purpose AS ENUM ('featured_listing', 'subscription_pro', 'subscription_dealer')")
     op.execute("CREATE TYPE IF NOT EXISTS subscription_tier AS ENUM ('free', 'pro', 'dealer')")
