@@ -5,9 +5,9 @@ shared storage backend (so limits work across multiple API workers/replicas).
 In dev/test the limiter is disabled entirely, which means every decorated
 endpoint still accepts an unlimited number of requests — no Redis required.
 """
-from starlette.requests import Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from starlette.requests import Request
 
 from core.config import settings
 
