@@ -133,15 +133,7 @@
   .emi-row { margin-bottom: 1rem; label { font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 0.4rem; } }
   .emi-val { font-weight: 700; font-size: 0.95rem; margin-top: 0.25rem; }
   .emi-result { text-align: center; padding: 1rem; background: var(--glass); border-radius: 12px; margin: 1rem 0; }
-  input[type=range] {
-    -webkit-appearance: none; appearance: none;
-    padding: 0; border: none; box-shadow: none; background: transparent;
-    height: 4px; cursor: pointer;
-    &::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
-    &::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--primary), var(--secondary)); border: none; }
-    &::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: #F7C948; border: 2px solid #fff; box-shadow: 0 0 6px rgba(247,201,72,0.4); cursor: pointer; }
-    &::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #F7C948; border: 2px solid #fff; box-shadow: 0 0 6px rgba(247,201,72,0.4); cursor: pointer; }
-  }
+  input[type=range] { width: 100%; }
 }
 
 @media (max-width: 1024px) {
@@ -151,7 +143,7 @@
 
 /* Ownership Cost */
 .ownership-controls { margin-bottom: 1.5rem; }
-.oc-row { margin-bottom: 1rem; label { display:block; font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem; } input[type=range] { width:100%; -webkit-appearance:none; appearance:none; background:transparent; height:4px; border:none; cursor:pointer; &::-webkit-slider-runnable-track { height:4px; border-radius:2px; background:linear-gradient(90deg, var(--primary), var(--secondary)); } &::-moz-range-track { height:4px; border-radius:2px; background:linear-gradient(90deg, var(--primary), var(--secondary)); border:none; } &::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; margin-top:-7px; border-radius:50%; background:#F7C948; border:2px solid #fff; box-shadow:0 0 6px rgba(247,201,72,0.4); cursor:pointer; } &::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:#F7C948; border:2px solid #fff; } } }
+.oc-row { margin-bottom: 1rem; label { display:block; font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem; } input[type=range] { width:100%; } }
 .oc-breakdown { display:flex; flex-direction:column; gap:0.75rem; }
 .oc-item { display:flex; justify-content:space-between; font-size:0.9rem; padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.06); }
 .oc-total { display:flex; justify-content:space-between; font-weight:800; font-size:1.05rem; padding:0.75rem 0; border-top:2px solid rgba(47,107,255,0.3); margin-top:0.5rem; }

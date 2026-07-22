@@ -31,13 +31,7 @@
   .slider-label { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary);
     strong { color: var(--text); }
   }
-  input[type=range] {
-    width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: transparent; border: none;
-    &::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #1e40af, var(--teal)); }
-    &::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #1e40af, var(--teal)); border: none; }
-    &::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: #F7C948; border: 2px solid #fff; cursor: pointer; box-shadow: 0 0 0 3px rgba(247,201,72,0.35); }
-    &::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #F7C948; border: 2px solid #fff; }
-  }
+  input[type=range] { width: 100%; }
   .range-ends { display: flex; justify-content: space-between; margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-tertiary); }
 }
 
