@@ -114,7 +114,7 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
   // Include currentYear+1 so yearTo default is always visually selectable
   yearOptions = Array.from({ length: this.currentYear - 2004 + 1 }, (_, i) => 2005 + i);
 
-  readonly isUsedCar = (c: any) => c.isSellerListing || c.km > 0 || c.year < 2025;
+  readonly isUsedCar = (c: any) => c.isSellerListing || c.km > 0 || c.year < 2024;
 
   makes = computed(() => {
     const usedCars = this.carsData.cars().filter(this.isUsedCar);

@@ -206,7 +206,7 @@ export class ListingsComponent implements OnInit {
     return this.carsData.cars()
       .filter(c =>
         c.make === make && c.model === model
-        && c.km === 0 && c.year >= 2025
+        && c.km === 0 && c.year >= 2024
         && c.price >= minP && c.price <= maxP
       )
       .sort((a, b) => a.price - b.price);
