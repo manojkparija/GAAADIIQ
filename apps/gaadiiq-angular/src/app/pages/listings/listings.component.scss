@@ -148,10 +148,11 @@
   &::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 18px; height: 18px;
+    margin-top: -7px;
     border-radius: 50%;
-    background: var(--primary);
+    background: #F7C948;
     border: 2px solid #fff;
-    box-shadow: 0 0 8px rgba(47,107,255,0.6);
+    box-shadow: 0 0 8px rgba(247,201,72,0.5);
     cursor: pointer;
   }
 }
