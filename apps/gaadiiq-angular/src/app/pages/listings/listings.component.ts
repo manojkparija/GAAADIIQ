@@ -275,6 +275,11 @@ export class ListingsComponent implements OnInit {
     return `₹${p}`;
   }
 
+  sliderBg(val: number, min: number, max: number): string {
+    const pct = Math.round(((val - min) / (max - min)) * 100);
+    return `linear-gradient(90deg, var(--primary) ${pct}%, rgba(255,255,255,0.12) ${pct}%)`;
+  }
+
   clearAll() {
     this.carType.set('All'); this.usedKmRange.set('All');
     this.selectedFuel.set('All'); this.selectedTransmission.set('All');
