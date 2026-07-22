@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://gaadiiq-production.up.railway.app',
+  apiUrl: 'https://gaadiiq-api.onrender.com',
   supabase: {
     url: 'https://gnhixykdvnuoxeccntjo.supabase.co',
     key: 'sb_publishable_K-cu3EbiH3uDIsonlonRmw_tqsKfp_K'
