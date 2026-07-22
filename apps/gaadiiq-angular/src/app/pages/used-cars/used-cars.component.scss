@@ -398,13 +398,13 @@
       /* (track-height 0 − thumb-height 18) / 2 = −9px centres the thumb on the track */
       margin-top: -9px;
       border-radius: 50%;
-      background: var(--primary, #2563EB);
+      background: #F7C948;
       border: 2px solid #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,0.25);
       pointer-events: all;
       cursor: grab;
       transition: box-shadow 0.15s;
-      &:active { cursor: grabbing; box-shadow: 0 0 0 4px rgba(37,99,235,0.18); }
+      &:active { cursor: grabbing; box-shadow: 0 0 0 4px rgba(247,201,72,0.35); }
     }
 
     /* Firefox: hide the built-in track */
@@ -418,7 +418,7 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: var(--primary, #2563EB);
+      background: #F7C948;
       border: 2px solid #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,0.25);
       cursor: grab;
