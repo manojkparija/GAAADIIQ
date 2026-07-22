@@ -95,7 +95,7 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
   pageSize = signal(12);
 
   // Wishlist
-  wishlist = signal<Set<number>>(new Set());
+  wishlist = signal<Set<string>>(new Set());
 
   // Options
   fuelOptions = ['Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'];
@@ -419,13 +419,13 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
   private trackView(id: string) {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
-      const stored = JSON.parse(localStorage.getItem('gaadiiq_recently_viewed') ?? '[]') as number[];
+      const stored = JSON.parse(localStorage.getItem('gaadiiq_recently_viewed') ?? '[]') as string[];
       const updated = [id, ...stored.filter(x => x !== id)].slice(0, 3);
       localStorage.setItem('gaadiiq_recently_viewed', JSON.stringify(updated));
     } catch {}
   }
 
-  private getRecentlyViewed(): number[] {
+  private getRecentlyViewed(): string[] {
     if (!isPlatformBrowser(this.platformId)) return [];
     try {
       return JSON.parse(localStorage.getItem('gaadiiq_recently_viewed') ?? '[]');
