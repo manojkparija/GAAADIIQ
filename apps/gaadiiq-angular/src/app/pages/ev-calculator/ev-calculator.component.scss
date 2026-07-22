@@ -19,7 +19,7 @@
   label {
     display: block; margin-bottom: 1.1rem;
     span { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 0.35rem; }
-    input[type=range] { width: 100%; -webkit-appearance: none; appearance: none; background: transparent; height: 4px; border: none; cursor: pointer; &::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--primary), var(--secondary)); } &::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--primary), var(--secondary)); border: none; } &::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: #F7C948; border: 2px solid #fff; box-shadow: 0 0 6px rgba(247,201,72,0.4); cursor: pointer; } &::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #F7C948; border: 2px solid #fff; } }
+    input[type=range] { width: 100%; }
     input[type=number] {
       flex: 1; border: 1px solid var(--border); border-radius: 0.5rem;
       padding: 0.4rem 0.6rem; background: var(--bg); color: var(--text); font-size: 0.9rem;

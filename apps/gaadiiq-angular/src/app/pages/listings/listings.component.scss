@@ -134,45 +134,8 @@
 }
 
 .price-range {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  height: 4px;
-  border: none;
-  box-shadow: none;
-  padding: 0;
   width: 100%;
   margin: 0.75rem 0;
-  cursor: pointer;
-  &::-webkit-slider-runnable-track {
-    height: 4px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-  }
-  &::-moz-range-track {
-    height: 4px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-    border: none;
-  }
-  &::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px; height: 18px;
-    margin-top: -7px;
-    border-radius: 50%;
-    background: #F7C948;
-    border: 2px solid #fff;
-    box-shadow: 0 0 8px rgba(247,201,72,0.5);
-    cursor: pointer;
-  }
-  &::-moz-range-thumb {
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: #F7C948;
-    border: 2px solid #fff;
-    box-shadow: 0 0 8px rgba(247,201,72,0.5);
-    cursor: pointer;
-  }
 }
 
 .cars-grid {

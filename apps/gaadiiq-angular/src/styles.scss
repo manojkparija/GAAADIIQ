@@ -325,23 +325,25 @@ a { text-decoration: none; color: inherit; }
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: var(--primary);
+  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 11px;
   padding: 0.75rem 1.75rem;
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
   font-family: 'Manrope', sans-serif;
   letter-spacing: -0.01em;
+  box-shadow: 0 2px 12px rgba(37,99,235,0.28);
   &:hover {
-    background: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(47,107,255,0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(37,99,235,0.38);
+    filter: brightness(1.08);
   }
-  &:active { transform: translateY(0); }
+  &:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(37,99,235,0.22); }
+  &:focus-visible { outline: 3px solid #FFD700; outline-offset: 2px; }
 }
 
 // Sharp secondary
@@ -353,18 +355,22 @@ a { text-decoration: none; color: inherit; }
   background: transparent;
   color: var(--text);
   border: 1.5px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: 11px;
   padding: 0.75rem 1.75rem;
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition: border-color 0.22s, color 0.22s, background 0.22s, transform 0.22s, box-shadow 0.22s;
   &:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: rgba(47,107,255,0.06);
+    border-color: #2563EB;
+    color: #2563EB;
+    background: rgba(37,99,235,0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.12);
   }
+  &:active { transform: translateY(0); }
+  &:focus-visible { outline: 3px solid #FFD700; outline-offset: 2px; }
 }
 
 // Aliases for legacy class names — updated to new radius
@@ -373,21 +379,25 @@ a { text-decoration: none; color: inherit; }
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: var(--gradient);
+  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 11px;
   padding: 0.75rem 1.75rem;
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.22s ease;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
   font-family: 'Manrope', sans-serif;
   letter-spacing: -0.01em;
+  box-shadow: 0 2px 12px rgba(37,99,235,0.28);
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(47,107,255,0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(37,99,235,0.38);
+    filter: brightness(1.08);
   }
+  &:active { transform: translateY(0); }
+  &:focus-visible { outline: 3px solid #FFD700; outline-offset: 2px; }
 }
 
 .btn-outline {
@@ -398,7 +408,7 @@ a { text-decoration: none; color: inherit; }
   background: transparent;
   color: var(--text);
   border: 1.5px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: 11px;
   padding: 0.75rem 1.75rem;
   font-weight: 700;
   font-size: 0.95rem;
@@ -406,11 +416,14 @@ a { text-decoration: none; color: inherit; }
   font-family: 'Manrope', sans-serif;
   transition: all 0.22s ease;
   &:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: rgba(47,107,255,0.06);
-    transform: translateY(-1px);
+    border-color: #2563EB;
+    color: #2563EB;
+    background: rgba(37,99,235,0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.14);
   }
+  &:active { transform: translateY(0); }
+  &:focus-visible { outline: 3px solid #FFD700; outline-offset: 2px; }
 }
 
 .btn-gold {
@@ -692,54 +705,75 @@ input, select, textarea {
   }
 }
 
-// ── LAY-009: dual-range slider thumb centering + overlap z-index ──────────────
+// ── Global slider — premium blue-to-teal, white thumb with yellow glow ────────
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  height: 4px;
+  height: 6px;
   background: transparent;
   outline: none;
+  cursor: pointer;
 
+  // Chrome / Safari track
   &::-webkit-slider-runnable-track {
-    height: 4px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    box-shadow: 0 1px 4px rgba(37,99,235,0.25);
   }
 
+  // Firefox track
   &::-moz-range-track {
-    height: 4px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
     border: none;
+    box-shadow: 0 1px 4px rgba(37,99,235,0.25);
   }
 
+  // Chrome / Safari thumb — white with yellow glow
   &::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #F7C948;
+    background: #fff;
     cursor: pointer;
-    margin-top: -8px; // centres thumb on the 4px track
-    border: 2px solid #fff;
-    box-shadow: 0 2px 6px rgba(247,201,72,0.5);
+    margin-top: -7px; // centres 20px thumb on 6px track: (6-20)/2 = -7
+    border: 2.5px solid #FFD700;
+    box-shadow: 0 0 0 3px rgba(255,215,0,0.25), 0 2px 8px rgba(0,0,0,0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
     position: relative;
     z-index: 2;
   }
 
+  // Firefox thumb
   &::-moz-range-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #F7C948;
+    background: #fff;
     cursor: pointer;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 6px rgba(247,201,72,0.5);
+    border: 2.5px solid #FFD700;
+    box-shadow: 0 0 0 3px rgba(255,215,0,0.25), 0 2px 8px rgba(0,0,0,0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  // Hover / drag feedback
+  &:hover::-webkit-slider-thumb,
+  &:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 5px rgba(255,215,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
+  }
+  &:hover::-moz-range-thumb,
+  &:active::-moz-range-thumb {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 5px rgba(255,215,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
   }
 
   // When two range inputs overlap (dual-range), the active/focused one wins
-  &:focus::-webkit-slider-thumb { z-index: 3; }
+  &:focus::-webkit-slider-thumb { z-index: 3; box-shadow: 0 0 0 5px rgba(255,215,0,0.4), 0 4px 12px rgba(0,0,0,0.22); }
   &:active::-webkit-slider-thumb { z-index: 3; }
 }
 
