@@ -53,7 +53,7 @@ export class TestDriveComponent {
     seo.setPage('Book Test Drive', 'Book a test drive for any car in our verified database. Choose your date, time, and location.');
     this.route.queryParams.subscribe(params => {
       if (params['carId']) {
-        const car = this.allCars.find(c => c.id === +params['carId']);
+        const car = this.allCars.find(c => String(c.id) === String(params['carId']));
         if (car) this.selectedCar.set(car);
       }
     });
