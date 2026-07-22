@@ -23,7 +23,7 @@ interface NewCarModel {
   rating: number;
   reviews: number;
   badge: string;
-  representativeId: number;
+  representativeId: string;
 }
 
 interface NewLaunch {

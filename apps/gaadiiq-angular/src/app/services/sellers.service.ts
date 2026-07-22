@@ -57,7 +57,7 @@ export class SellersService {
     return data;
   }
 
-  async getForCar(carId: number): Promise<Seller> {
+  async getForCar(carId: string): Promise<Seller> {
     if (this.cache.has(carId)) return this.cache.get(carId)!;
 
     // Try to find a mapped seller; fall back to round-robin from sellers table

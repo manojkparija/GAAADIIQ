@@ -3,7 +3,7 @@ import { SupabaseService } from './supabase.service';
 
 export interface TestDriveRequest {
   id?: number;
-  car_id: number;
+  car_id: string;
   car_make: string;
   car_model: string;
   car_year: number;
