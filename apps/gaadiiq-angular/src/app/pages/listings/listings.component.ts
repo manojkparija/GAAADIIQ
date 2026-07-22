@@ -114,8 +114,8 @@ export class ListingsComponent implements OnInit {
       // Top-level New / Used split
       const type = this.carType();
       const matchType = type === 'All' ? true :
-        type === 'New'  ? c.km === 0 && c.year >= 2025 :
-        /* Used */ c.km > 0 || c.year < 2025;
+        type === 'New'  ? c.km === 0 && c.year >= 2024 :
+        /* Used */ c.km > 0 || c.year < 2024;
 
       // Used km sub-range
       const range = this.usedKmRange();
@@ -136,13 +136,13 @@ export class ListingsComponent implements OnInit {
   newCount  = computed(() => {
     const make = this.selectedMake();
     return this.carsData.cars().filter(c =>
-      c.km === 0 && c.year >= 2025 && (make === 'All' || c.make === make)
+      c.km === 0 && c.year >= 2024 && (make === 'All' || c.make === make)
     ).length;
   });
   usedCount = computed(() => {
     const make = this.selectedMake();
     return this.carsData.cars().filter(c =>
-      (c.km > 0 || c.year < 2025) && (make === 'All' || c.make === make)
+      (c.km > 0 || c.year < 2024) && (make === 'All' || c.make === make)
     ).length;
   });
 
@@ -152,7 +152,7 @@ export class ListingsComponent implements OnInit {
     const make = this.selectedMake();
     const modelName = this.selectedModelName();
     const newCars = this.carsData.cars().filter(c =>
-      c.km === 0 && c.year >= 2025
+      c.km === 0 && c.year >= 2024
       && (make === 'All' || c.make === make)
       && (modelName === 'All' || c.model === modelName)
     );
