@@ -11,7 +11,7 @@ interface NewCarModel {
   minPrice: number; maxPrice: number;
   variantCount: number; bodyType: string; fuel: string;
   rating: number; reviews: number; badge: string;
-  representativeId: number;
+  representativeId: string;
 }
 
 @Component({

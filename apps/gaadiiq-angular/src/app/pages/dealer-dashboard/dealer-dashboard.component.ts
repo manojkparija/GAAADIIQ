@@ -11,7 +11,7 @@ import { SentimentService, Lead, IntentScore, LeadGrade } from '../../services/s
 import { IconComponent } from '../../components/icon/icon.component';
 
 interface CarEnquiry {
-  id: string; car_id: number; buyer_name: string; buyer_phone: string;
+  id: string; car_id: string; buyer_name: string; buyer_phone: string;
   buyer_email: string | null; notes: string | null; created_at: string;
 }
 
