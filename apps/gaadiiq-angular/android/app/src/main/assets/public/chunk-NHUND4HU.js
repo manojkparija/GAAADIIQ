@@ -1,0 +1,1 @@
+import{a,b,c}from"./chunk-AWPGWZ6L.js";import"./chunk-ZVLYFSNO.js";import"./chunk-ZNOKIDLN.js";import"./chunk-423X6RWU.js";import"./chunk-RBMXEN27.js";import"./chunk-KXJOM2IF.js";import"./chunk-7D2IRRKE.js";export{a as ARTICLES,b as CATEGORY_META,c as ReviewsNewsComponent};

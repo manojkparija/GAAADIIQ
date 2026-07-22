@@ -1,0 +1,9 @@
+{
+	"appId": "com.gaadiiq.app",
+	"appName": "GAADIIQ",
+	"webDir": "dist/gaadiiq-angular/browser",
+	"android": {},
+	"server": {
+		"androidScheme": "https"
+	}
+}

@@ -15,73 +15,59 @@ branch_labels = None
 depends_on = None
 
 
+_ENUM_NAMES = [
+    "fuel_type", "transmission", "body_type", "user_role",
+    "listing_type", "listing_condition", "booking_status",
+    "loan_status", "employment_type", "notification_type",
+    "payment_status", "payment_purpose", "subscription_tier",
+]
+
+# Pre-built Enum objects with create_type=False so SQLAlchemy never tries to
+# re-create types we already created explicitly with op.execute below.
+_fuel_type = sa.Enum("petrol", "diesel", "electric", "cng", "hybrid", name="fuel_type", create_type=False)
+_transmission = sa.Enum("manual", "automatic", "amt", "cvt", "dct", name="transmission", create_type=False)
+_body_type = sa.Enum("hatchback", "sedan", "suv", "muv", "coupe", "convertible", name="body_type", create_type=False)
+_user_role = sa.Enum("buyer", "seller", "dealer", "admin", name="user_role", create_type=False)
+_listing_type = sa.Enum("new", "used", name="listing_type", create_type=False)
+_listing_condition = sa.Enum("excellent", "good", "fair", "poor", name="listing_condition", create_type=False)
+_booking_status = sa.Enum("pending", "confirmed", "cancelled", "completed", name="booking_status", create_type=False)
+_loan_status = sa.Enum("submitted", "processing", "approved", "rejected", name="loan_status", create_type=False)
+_employment_type = sa.Enum("salaried", "self_employed", "business", name="employment_type", create_type=False)
+_notification_type = sa.Enum(
+    "booking_received", "booking_confirmed", "booking_cancelled",
+    "loan_inquiry_received", "price_drop", "listing_viewed", "system",
+    name="notification_type", create_type=False,
+)
+_payment_status = sa.Enum("pending", "paid", "failed", "refunded", name="payment_status", create_type=False)
+_payment_purpose = sa.Enum("featured_listing", "subscription_pro", "subscription_dealer", name="payment_purpose", create_type=False)
+_subscription_tier = sa.Enum("free", "pro", "dealer", name="subscription_tier", create_type=False)
+
+
 def upgrade() -> None:
     # ── Enums ──────────────────────────────────────────────────────────────────
-    fuel_type = postgresql.ENUM(
-        "petrol", "diesel", "electric", "cng", "hybrid", name="fuel_type", create_type=False
-    )
-    fuel_type.create(op.get_bind(), checkfirst=True)
+    # Drop any pre-existing enums from partial migrations (safe: tables not yet created).
+    for name in _ENUM_NAMES:
+        op.execute(sa.text(f"DROP TYPE IF EXISTS {name} CASCADE"))
 
-    transmission = postgresql.ENUM(
-        "manual", "automatic", "amt", "cvt", "dct", name="transmission", create_type=False
-    )
-    transmission.create(op.get_bind(), checkfirst=True)
-
-    body_type = postgresql.ENUM(
-        "hatchback", "sedan", "suv", "muv", "coupe", "convertible", name="body_type", create_type=False
-    )
-    body_type.create(op.get_bind(), checkfirst=True)
-
-    user_role = postgresql.ENUM(
-        "buyer", "seller", "dealer", "admin", name="user_role", create_type=False
-    )
-    user_role.create(op.get_bind(), checkfirst=True)
-
-    listing_type = postgresql.ENUM("new", "used", name="listing_type", create_type=False)
-    listing_type.create(op.get_bind(), checkfirst=True)
-
-    listing_condition = postgresql.ENUM(
-        "excellent", "good", "fair", "poor", name="listing_condition", create_type=False
-    )
-    listing_condition.create(op.get_bind(), checkfirst=True)
-
-    booking_status = postgresql.ENUM(
-        "pending", "confirmed", "cancelled", "completed", name="booking_status", create_type=False
-    )
-    booking_status.create(op.get_bind(), checkfirst=True)
-
-    loan_status = postgresql.ENUM(
-        "submitted", "processing", "approved", "rejected", name="loan_status", create_type=False
-    )
-    loan_status.create(op.get_bind(), checkfirst=True)
-
-    employment_type = postgresql.ENUM(
-        "salaried", "self_employed", "business", name="employment_type", create_type=False
-    )
-    employment_type.create(op.get_bind(), checkfirst=True)
-
-    notification_type = postgresql.ENUM(
-        "booking_received", "booking_confirmed", "booking_cancelled",
-        "loan_inquiry_received", "price_drop", "listing_viewed", "system",
-        name="notification_type", create_type=False,
-    )
-    notification_type.create(op.get_bind(), checkfirst=True)
-
-    payment_status = postgresql.ENUM(
-        "pending", "paid", "failed", "refunded", name="payment_status", create_type=False
-    )
-    payment_status.create(op.get_bind(), checkfirst=True)
-
-    payment_purpose = postgresql.ENUM(
-        "featured_listing", "subscription_pro", "subscription_dealer",
-        name="payment_purpose", create_type=False,
-    )
-    payment_purpose.create(op.get_bind(), checkfirst=True)
-
-    subscription_tier = postgresql.ENUM(
-        "free", "pro", "dealer", name="subscription_tier", create_type=False
-    )
-    subscription_tier.create(op.get_bind(), checkfirst=True)
+    op.execute(sa.text("CREATE TYPE fuel_type AS ENUM ('petrol','diesel','electric','cng','hybrid')"))
+    op.execute(sa.text("CREATE TYPE transmission AS ENUM ('manual','automatic','amt','cvt','dct')"))
+    op.execute(sa.text("CREATE TYPE body_type AS ENUM ('hatchback','sedan','suv','muv','coupe','convertible')"))
+    op.execute(sa.text("CREATE TYPE user_role AS ENUM ('buyer','seller','dealer','admin')"))
+    op.execute(sa.text("CREATE TYPE listing_type AS ENUM ('new','used')"))
+    op.execute(sa.text("CREATE TYPE listing_condition AS ENUM ('excellent','good','fair','poor')"))
+    op.execute(sa.text("CREATE TYPE booking_status AS ENUM ('pending','confirmed','cancelled','completed')"))
+    op.execute(sa.text("CREATE TYPE loan_status AS ENUM ('submitted','processing','approved','rejected')"))
+    op.execute(sa.text("CREATE TYPE employment_type AS ENUM ('salaried','self_employed','business')"))
+    op.execute(sa.text(
+        "CREATE TYPE notification_type AS ENUM ("
+        "'booking_received','booking_confirmed','booking_cancelled',"
+        "'loan_inquiry_received','price_drop','listing_viewed','system')"
+    ))
+    op.execute(sa.text("CREATE TYPE payment_status AS ENUM ('pending','paid','failed','refunded')"))
+    op.execute(sa.text(
+        "CREATE TYPE payment_purpose AS ENUM ('featured_listing','subscription_pro','subscription_dealer')"
+    ))
+    op.execute(sa.text("CREATE TYPE subscription_tier AS ENUM ('free','pro','dealer')"))
 
     # ── Tables ─────────────────────────────────────────────────────────────────
     op.create_table(
@@ -93,9 +79,9 @@ def upgrade() -> None:
         sa.Column("model", sa.String(100), nullable=False),
         sa.Column("variant", sa.String(100)),
         sa.Column("year", sa.SmallInteger, nullable=False),
-        sa.Column("fuel_type", sa.Enum("petrol", "diesel", "electric", "cng", "hybrid", name="fuel_type")),
-        sa.Column("transmission", sa.Enum("manual", "automatic", "amt", "cvt", "dct", name="transmission")),
-        sa.Column("body_type", sa.Enum("hatchback", "sedan", "suv", "muv", "coupe", "convertible", name="body_type")),
+        sa.Column("fuel_type", _fuel_type),
+        sa.Column("transmission", _transmission),
+        sa.Column("body_type", _body_type),
         sa.Column("seating_capacity", sa.SmallInteger),
         sa.Column("engine_cc", sa.SmallInteger),
     )
@@ -112,7 +98,7 @@ def upgrade() -> None:
         sa.Column("hashed_password", sa.String(255)),
         sa.Column("full_name", sa.String(255)),
         sa.Column("phone", sa.String(20)),
-        sa.Column("role", sa.Enum("buyer", "seller", "dealer", "admin", name="user_role"), default="buyer", nullable=False),
+        sa.Column("role", _user_role, default="buyer", nullable=False),
         sa.Column("is_verified", sa.Boolean, default=False, nullable=False),
         sa.Column("is_active", sa.Boolean, default=True, nullable=False),
     )
@@ -139,14 +125,14 @@ def upgrade() -> None:
         sa.Column("car_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("cars.id"), nullable=False),
         sa.Column("seller_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("dealer_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("dealers.id"), nullable=True),
-        sa.Column("listing_type", sa.Enum("new", "used", name="listing_type"), nullable=False),
+        sa.Column("listing_type", _listing_type, nullable=False),
         sa.Column("price", sa.Numeric(12, 2), nullable=False),
         sa.Column("negotiable", sa.Boolean, default=False, nullable=False),
         sa.Column("km_driven", sa.Integer),
         sa.Column("registration_year", sa.SmallInteger),
         sa.Column("registration_state", sa.String(50)),
         sa.Column("owners_count", sa.SmallInteger),
-        sa.Column("condition", sa.Enum("excellent", "good", "fair", "poor", name="listing_condition")),
+        sa.Column("condition", _listing_condition),
         sa.Column("city", sa.String(100)),
         sa.Column("description", sa.Text),
         sa.Column("image_urls", postgresql.JSON, default=list, nullable=False),
@@ -155,6 +141,9 @@ def upgrade() -> None:
         sa.Column("views_count", sa.Integer, default=0, nullable=False),
         sa.Column("ai_valuation", sa.Numeric(12, 2)),
         sa.Column("ai_valuation_at", sa.DateTime(timezone=True)),
+        sa.Column("ai_method", sa.String(64)),
+        sa.Column("ai_confidence", sa.String(16)),
+        sa.Column("ai_reasoning", sa.Text),
     )
     op.create_index("ix_listings_city_type", "listings", ["city", "listing_type"])
     op.create_index("ix_listings_car_id", "listings", ["car_id"])
@@ -172,7 +161,7 @@ def upgrade() -> None:
         sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("preferred_date", sa.Date),
         sa.Column("preferred_time", sa.Time),
-        sa.Column("status", sa.Enum("pending", "confirmed", "cancelled", "completed", name="booking_status"), default="pending", nullable=False),
+        sa.Column("status", _booking_status, default="pending", nullable=False),
         sa.Column("notes", sa.Text),
     )
 
@@ -185,9 +174,9 @@ def upgrade() -> None:
         sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("loan_amount", sa.Numeric(12, 2)),
         sa.Column("tenure_months", sa.SmallInteger),
-        sa.Column("employment_type", sa.Enum("salaried", "self_employed", "business", name="employment_type")),
+        sa.Column("employment_type", _employment_type),
         sa.Column("annual_income", sa.Numeric(12, 2)),
-        sa.Column("status", sa.Enum("submitted", "processing", "approved", "rejected", name="loan_status"), default="submitted", nullable=False),
+        sa.Column("status", _loan_status, default="submitted", nullable=False),
         sa.Column("partner_ref", sa.String(100)),
     )
 
@@ -197,11 +186,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False, index=True),
-        sa.Column("type", sa.Enum(
-            "booking_received", "booking_confirmed", "booking_cancelled",
-            "loan_inquiry_received", "price_drop", "listing_viewed", "system",
-            name="notification_type",
-        ), nullable=False),
+        sa.Column("type", _notification_type, nullable=False),
         sa.Column("title", sa.String(200), nullable=False),
         sa.Column("body", sa.Text),
         sa.Column("listing_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("listings.id"), nullable=True),
@@ -244,8 +229,8 @@ def upgrade() -> None:
         sa.Column("listing_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("listings.id"), nullable=True),
         sa.Column("amount_paise", sa.Integer, nullable=False),
         sa.Column("currency", sa.String(3), default="INR", nullable=False),
-        sa.Column("status", sa.Enum("pending", "paid", "failed", "refunded", name="payment_status"), default="pending", nullable=False),
-        sa.Column("purpose", sa.Enum("featured_listing", "subscription_pro", "subscription_dealer", name="payment_purpose"), nullable=False),
+        sa.Column("status", _payment_status, default="pending", nullable=False),
+        sa.Column("purpose", _payment_purpose, nullable=False),
         sa.Column("razorpay_order_id", sa.String(100)),
         sa.Column("razorpay_payment_id", sa.String(100)),
     )
@@ -256,7 +241,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False, index=True),
-        sa.Column("tier", sa.Enum("free", "pro", "dealer", name="subscription_tier"), default="free", nullable=False),
+        sa.Column("tier", _subscription_tier, default="free", nullable=False),
         sa.Column("valid_until", sa.DateTime(timezone=True)),
         sa.UniqueConstraint("user_id", name="uq_subscription_user"),
     )
@@ -275,9 +260,5 @@ def downgrade() -> None:
     op.drop_table("users")
     op.drop_table("cars")
 
-    for enum_name in [
-        "subscription_tier", "payment_purpose", "payment_status", "notification_type",
-        "employment_type", "loan_status", "booking_status", "listing_condition",
-        "listing_type", "user_role", "body_type", "transmission", "fuel_type",
-    ]:
-        sa.Enum(name=enum_name).drop(op.get_bind(), checkfirst=True)
+    for enum_name in reversed(_ENUM_NAMES):
+        op.execute(sa.text(f"DROP TYPE IF EXISTS {enum_name} CASCADE"))

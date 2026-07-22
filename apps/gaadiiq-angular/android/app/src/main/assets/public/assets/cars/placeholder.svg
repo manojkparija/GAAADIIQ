@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220" viewBox="0 0 400 220">
+  <rect width="400" height="220" fill="#0B1220"/>
+  <g transform="translate(164, 72)" stroke="#2F6BFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h18a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/>
+    <path d="M14 17H10"/>
+    <circle cx="7.5" cy="17.5" r="2.5"/>
+    <circle cx="16.5" cy="17.5" r="2.5"/>
+    <path d="m3 9 2-4h14l2 4"/>
+  </g>
+  <text x="200" y="135" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#2F6BFF" font-weight="600">No Image Available</text>
+</svg>

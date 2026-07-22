@@ -381,9 +381,9 @@ export class CarDetailComponent implements OnInit {
     }
   }
 
-  private resolveCar(id: number) {
+  private resolveCar(id: string | number) {
     if (this.carLoaded) return;
-    const found = this.carsData.getById(id);
+    const found = this.carsData.getById(String(id));
     const all = this.carsData.getAll();
     if (found) {
       this.car = found;

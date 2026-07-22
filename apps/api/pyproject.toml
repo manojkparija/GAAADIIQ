@@ -5,6 +5,8 @@ python_classes = ["Test*Suite", "Test*Case"]
 
 [tool.ruff]
 line-length = 150
+
+[tool.ruff.lint]
 select = ["E", "F", "I"]
 
 [tool.mypy]
