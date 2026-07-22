@@ -10,7 +10,7 @@ import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 
 interface Car {
-  id: number; make: string; model: string; year: number; price: number;
+  id: string; make: string; model: string; year: number; price: number;
   km: number; fuel: string; transmission: string; badge: string; badgeType: string;
   image: string; rating: number; reviews: number; verified: boolean;
 }

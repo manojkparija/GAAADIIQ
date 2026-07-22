@@ -213,7 +213,7 @@ export class CarDetailComponent implements OnInit {
     if (!this.car) return [];
     const all = this.carsData.cars();
     const seen = new Set<string>();
-    const result: { name: string; hex: string; variantId: number }[] = [];
+    const result: { name: string; hex: string; variantId: string }[] = [];
     all.filter(c => c.make === this.car.make && c.model === this.car.model)
        .forEach(c => {
          if (c.color && !seen.has(c.color)) {
