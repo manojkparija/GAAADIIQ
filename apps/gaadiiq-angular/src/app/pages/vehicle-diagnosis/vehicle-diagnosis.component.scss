@@ -57,7 +57,17 @@
     padding: 10px 14px; border: 1.5px solid var(--border, #e5e7eb); border-radius: 10px;
     font-size: 14px; background: var(--bg); color: var(--text);
     accent-color: #2563EB;
-    &:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    &:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15), 0 1px 4px rgba(0,0,0,0.05); }
+    &:hover:not(:focus) { border-color: rgba(37,99,235,0.4); }
+  }
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232563EB' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
   }
   textarea { resize: vertical; font-family: inherit; }
   &:has(.chip-group), &:has(.severity-group) { grid-column: 1 / -1; }
@@ -254,9 +264,14 @@
 .sc-btn {
   padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
   text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  color: #fff; border: none; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.22);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  &:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(37,99,235,0.32); filter: brightness(1.07); }
 }
-.sc-btn-call { background: #EFF6FF; color: #2563EB; &:hover { background: #DBEAFE; } }
-.sc-btn-map  { background: #F0FDF4; color: #16A34A; &:hover { background: #DCFCE7; } }
+.sc-btn-call { }
+.sc-btn-map  { }
 .sc-empty { text-align: center; padding: 24px 0; color: var(--text-muted, #6B7280); font-size: 14px; }
 .sc-disclaimer {
   font-size: 12px; color: var(--text-muted, #9CA3AF); text-align: center;
@@ -291,8 +306,7 @@
   .sc-modal { background: #1e293b; }
   .sc-card { border-color: rgba(255,255,255,0.08); &:hover { border-color: #2563EB; } }
   .sc-close { background: #0f172a; }
-  .sc-btn-call { background: rgba(37,99,235,0.15); }
-  .sc-btn-map  { background: rgba(22,163,74,0.15); }
+  .sc-btn-call, .sc-btn-map { background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%); }
   .step-card, .report-card, .report-header, .loading-card, .error-card {
     background: #1e293b; border-color: rgba(255,255,255,0.08);
   }
