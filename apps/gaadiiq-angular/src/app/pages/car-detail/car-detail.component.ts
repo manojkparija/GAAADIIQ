@@ -591,7 +591,7 @@ export class CarDetailComponent implements OnInit {
   formatPrice(p: number) { return p >= 100000 ? `₹${(p / 100000).toFixed(1)}L` : `₹${p.toLocaleString()}`; }
   stars(n: number) { return Array.from({length: 5}, (_, i) => i < n ? '★' : '☆'); }
 
-  get isNewCar() { return this.car?.km === 0 && this.car?.year >= 2025; }
+  get isNewCar() { return this.car?.km === 0 && this.car?.year >= 2024; }
   get newCarMeta(): NewCarMeta | null {
     if (!this.isNewCar) return null;
     const key = `${this.car.make} ${this.car.model}`;
@@ -610,7 +610,7 @@ export class CarDetailComponent implements OnInit {
     const result: Car[] = [];
     const candidates = all
       .filter(c =>
-        c.km === 0 && c.year >= 2025 &&
+        c.km === 0 && c.year >= 2024 &&
         !(c.make === this.car.make && c.model === this.car.model) &&
         (c.bodyType === this.car.bodyType || Math.abs(c.price - this.car.price) < 500000)
       )

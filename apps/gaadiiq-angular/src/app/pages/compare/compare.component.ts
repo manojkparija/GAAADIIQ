@@ -62,7 +62,7 @@ export class CompareComponent implements OnInit {
         if (slot >= 3) break;
         const [make, model] = key.split('||');
         const car = cars.find(c =>
-          c.make === make && c.model === model && c.km === 0 && c.year >= 2025
+          c.make === make && c.model === model && c.km === 0 && c.year >= 2024
         ) ?? cars.find(c => c.make === make && c.model === model);
         if (car) {
           picked[slot] = car;
