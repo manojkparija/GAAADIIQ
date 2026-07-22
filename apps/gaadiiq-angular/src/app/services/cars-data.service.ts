@@ -44,17 +44,15 @@ const LOCAL_IMAGES: Record<string, string[]> = {
     'assets/cars/swift/interior.jpg',
     'assets/cars/swift/steering.jpg',
   ],
-};
-
-// External CDN images for models without local assets
-const EXTERNAL_IMAGES: Record<string, string[]> = {
   'Maruti Suzuki Dzire': [
-    'https://imgd.aeplcdn.com/664x374/n/cw/ec/155009/dzire-exterior-right-front-three-quarter-3.jpeg?isig=0&q=80',
-    'https://imgd.aeplcdn.com/664x374/n/cw/ec/155009/dzire-exterior-left-rear-three-quarter.jpeg?isig=0&q=80',
-    'https://imgd.aeplcdn.com/664x374/n/cw/ec/155009/dzire-exterior-front.jpeg?isig=0&q=80',
-    'https://imgd.aeplcdn.com/664x374/n/cw/ec/155009/dzire-interior-dashboard-1.jpeg?isig=0&q=80',
+    'assets/cars/dzire/front.jpg',
+    'assets/cars/dzire/top.jpg',
+    'assets/cars/dzire/face.jpg',
   ],
 };
+
+// External CDN images (fallback for models without local assets)
+const EXTERNAL_IMAGES: Record<string, string[]> = {};
 
 const MODEL_IMAGE_FALLBACK: Record<string, string> = {
   'Maruti Suzuki Swift': 'assets/cars/swift/front.jpg',
