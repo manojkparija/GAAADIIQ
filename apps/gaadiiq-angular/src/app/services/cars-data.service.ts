@@ -46,6 +46,16 @@ const LOCAL_IMAGES: Record<string, string[]> = {
   ],
 };
 
+// External CDN images for models without local assets
+const EXTERNAL_IMAGES: Record<string, string[]> = {
+  'Maruti Suzuki Dzire': [
+    'https://imgd.aeplcdn.com/664x374/n/cw/ec/155009/dzire-exterior-right-front-three-quarter-3.jpeg?isig=0&q=80',
+    'https://imgd.aeplcdn.com/664x374/n/cw/ec/155009/dzire-exterior-left-rear-three-quarter.jpeg?isig=0&q=80',
+    'https://imgd.aeplcdn.com/664x374/n/cw/ec/155009/dzire-exterior-front.jpeg?isig=0&q=80',
+    'https://imgd.aeplcdn.com/664x374/n/cw/ec/155009/dzire-interior-dashboard-1.jpeg?isig=0&q=80',
+  ],
+};
+
 const MODEL_IMAGE_FALLBACK: Record<string, string> = {
   'Maruti Suzuki Swift': 'assets/cars/swift/front.jpg',
   'Swift': 'assets/cars/swift/front.jpg',
@@ -67,6 +77,30 @@ const BODY_LABEL: Record<string, string> = {
   muv: 'MUV', coupe: 'Coupe', convertible: 'Convertible',
 };
 
+// Model-level specs/features enrichment (sourced from official brochures)
+const MODEL_SPECS: Record<string, (variant: string, fuel: string) => { specs: {label:string;value:string}[]; features: string[] }> = {
+  'Maruti Suzuki Dzire': (variant, fuel) => {
+    const isAMT = variant.includes('AMT');
+    const isCNG = fuel === 'CNG';
+    const isZXiPlus = variant.includes('ZXi+');
+    const isZXi = variant.includes('ZXi');
+    const mileage = isCNG ? '33.73 km/kg' : isAMT ? '25.71 km/l' : '24.79 km/l';
+    const specs = [
+      { label: 'Engine', value: '1.2L Z-Series' },
+      { label: 'Power', value: '81.58 PS' },
+      { label: 'Torque', value: '111.7 Nm' },
+      { label: 'Mileage', value: mileage },
+      { label: 'Transmission', value: isAMT ? 'AGS (AMT)' : '5-Speed MT' },
+      { label: 'Boot Space', value: '382 L' },
+      { label: 'Fuel', value: isCNG ? 'Petrol + CNG' : 'Petrol' },
+    ];
+    const features = ['6 Airbags', 'Suzuki Connect', 'ESP + Hill Hold'];
+    if (isZXi || isZXiPlus) features.push('SmartPlay Pro+', 'Wireless Charger', 'LED Headlamps', 'Cruise Control');
+    if (isZXiPlus) features.push('Electric Sunroof', '360° Camera', 'Auto Climate Control', 'Rear AC Vent');
+    return { specs, features };
+  },
+};
+
 // Demo fallback — shown only when the API is unreachable
 const DEMO_NEW_CARS: Car[] = [
   { id: 'd8001', make: 'Maruti Suzuki', model: 'Swift', variant: 'ZXi+', year: 2025, price: 899000, km: 0, fuel: 'Petrol', transmission: 'AMT', badge: 'Bestseller', badgeType: 'featured', image: 'assets/cars/swift/front.jpg', images: ['assets/cars/swift/front.jpg'], rating: 4.4, reviews: 312, verified: true, city: 'Mumbai', bodyType: 'Hatchback', specs: [{ label: 'Mileage', value: '24.8 kmpl' }, { label: 'Power', value: '81 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging'] },
@@ -85,9 +119,11 @@ function mapListing(lst: ApiListing): Car {
   const car = lst.car;
   const makeModel = `${car.make} ${car.model}`;
   const localImgs = LOCAL_IMAGES[makeModel];
-  const apiImgs = (lst.image_urls ?? []).filter(u => u && !u.includes('aeplcdn'));
+  const externalImgs = EXTERNAL_IMAGES[makeModel];
+  const apiImgs = (lst.image_urls ?? []).filter(u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'));
 
   const images = localImgs?.length ? localImgs
+               : externalImgs?.length ? externalImgs
                : apiImgs.length ? apiImgs
                : [PLACEHOLDER];
   const image = images[0];
@@ -124,11 +160,17 @@ function mapListing(lst: ApiListing): Car {
     owners,
     isSellerListing: lst.listing_type === 'used',
     sellerEmail: lst.seller?.email,
-    specs: car.engine_cc ? [
-      { label: 'Engine', value: `${car.engine_cc} cc` },
-      ...(car.seating_capacity ? [{ label: 'Seating', value: `${car.seating_capacity} seats` }] : []),
-    ] : [],
-    features: [],
+    ...(() => {
+      const enrichFn = MODEL_SPECS[makeModel];
+      if (enrichFn) return enrichFn(car.variant ?? '', FUEL_LABEL[car.fuel_type ?? ''] ?? '');
+      return {
+        specs: car.engine_cc ? [
+          { label: 'Engine', value: `${car.engine_cc} cc` },
+          ...(car.seating_capacity ? [{ label: 'Seating', value: `${car.seating_capacity} seats` }] : []),
+        ] : [],
+        features: [] as string[],
+      };
+    })(),
     aiValuation: lst.ai_valuation ? {
       fairPrice: lst.ai_valuation, marketMin: lst.ai_valuation * 0.95,
       marketMax: lst.ai_valuation * 1.05, verdict: 'Fair', confidence: 0.8,
