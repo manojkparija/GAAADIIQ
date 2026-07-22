@@ -256,7 +256,7 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   recentlyViewedCars = computed<Car[]>(() => {
     const ids = this.getRecentlyViewed();
-    return ids.map(id => this.carsData.cars().find(c => c.id === id)).filter((c): c is Car => !!c);
+    return ids.map(id => this.carsData.cars().find(c => String(c.id) === String(id))).filter((c): c is Car => !!c);
   });
 
   ngOnInit() {
@@ -402,7 +402,7 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.allIndiaOverride.set(false);
   }
 
-  toggleWishlist(id: number) {
+  toggleWishlist(id: string) {
     const s = new Set(this.wishlist());
     if (s.has(id)) s.delete(id); else s.add(id);
     this.wishlist.set(s);
@@ -411,12 +411,12 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  viewCar(id: number) {
+  viewCar(id: string) {
     this.trackView(id);
     this.router.navigate(['/cars', id]);
   }
 
-  private trackView(id: number) {
+  private trackView(id: string) {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
       const stored = JSON.parse(localStorage.getItem('gaadiiq_recently_viewed') ?? '[]') as number[];
