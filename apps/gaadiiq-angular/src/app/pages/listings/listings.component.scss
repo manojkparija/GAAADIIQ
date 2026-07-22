@@ -136,7 +136,7 @@
 .price-range {
   -webkit-appearance: none;
   appearance: none;
-  background: linear-gradient(90deg, var(--primary) 50%, rgba(255,255,255,0.12) 50%);
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
   height: 4px;
   border-radius: 2px;
   border: none;

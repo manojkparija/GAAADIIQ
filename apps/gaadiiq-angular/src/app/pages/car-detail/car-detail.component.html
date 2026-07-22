@@ -131,13 +131,11 @@
             <div class="ownership-controls">
               <div class="oc-row">
                 <label>Annual Distance: {{ annualKm().toLocaleString() }} km</label>
-                <input type="range" min="5000" max="50000" step="1000" [value]="annualKm()" (input)="annualKm.set(+$any($event.target).value)"
-                  [style.background]="sliderBg(annualKm(), 5000, 50000)">
+                <input type="range" min="5000" max="50000" step="1000" [value]="annualKm()" (input)="annualKm.set(+$any($event.target).value)">
               </div>
               <div class="oc-row" *ngIf="car.fuel !== 'Electric'">
                 <label>{{ car.fuel === 'CNG' ? 'CNG Price' : 'Fuel Price' }}: ₹{{ fuelPrice() }}{{ fuelPriceUnit }}</label>
-                <input type="range" [min]="fuelPriceMin" [max]="fuelPriceMax" step="1" [value]="fuelPrice()" (input)="fuelPrice.set(+$any($event.target).value)"
-                  [style.background]="sliderBg(fuelPrice(), fuelPriceMin, fuelPriceMax)">
+                <input type="range" [min]="fuelPriceMin" [max]="fuelPriceMax" step="1" [value]="fuelPrice()" (input)="fuelPrice.set(+$any($event.target).value)">
               </div>
             </div>
             <div class="oc-breakdown" *ngIf="ownershipCost() as oc">
@@ -425,20 +423,17 @@
           <div class="emi-row">
             <div class="emi-label-row"><label>Loan Amount</label><span class="emi-val">{{ formatPrice(loan.amount) }}</span></div>
             <input type="range" min="100000" [max]="car.price" step="10000"
-              [value]="loan.amount" (input)="loan.amount=+$any($event.target).value; calcEmi()"
-              [style.background]="sliderBg(loan.amount, 100000, car.price)">
+              [value]="loan.amount" (input)="loan.amount=+$any($event.target).value; calcEmi()">
           </div>
           <div class="emi-row">
             <div class="emi-label-row"><label>Interest Rate</label><span class="emi-val">{{ loan.rate }}% p.a.</span></div>
             <input type="range" min="7" max="18" step="0.5"
-              [value]="loan.rate" (input)="loan.rate=+$any($event.target).value; calcEmi()"
-              [style.background]="sliderBg(loan.rate, 7, 18)">
+              [value]="loan.rate" (input)="loan.rate=+$any($event.target).value; calcEmi()">
           </div>
           <div class="emi-row">
             <div class="emi-label-row"><label>Tenure</label><span class="emi-val">{{ loan.tenure }} months</span></div>
             <input type="range" min="12" max="84" step="12"
-              [value]="loan.tenure" (input)="loan.tenure=+$any($event.target).value; calcEmi()"
-              [style.background]="sliderBg(loan.tenure, 12, 84)">
+              [value]="loan.tenure" (input)="loan.tenure=+$any($event.target).value; calcEmi()">
           </div>
           <div class="emi-result">
             <div style="color:var(--muted);font-size:0.85rem">Monthly EMI</div>
