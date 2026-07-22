@@ -33,11 +33,11 @@
     background: var(--bg);
   }
   span { font-size: 12px; color: var(--text-muted, #9CA3AF); white-space: nowrap; }
-  &.active .step-dot { border-color: #3B82F6; color: #3B82F6; }
-  &.done .step-dot { background: #3B82F6; border-color: #3B82F6; color: #fff; }
+  &.active .step-dot { border-color: #2563EB; color: #2563EB; }
+  &.done .step-dot { background: linear-gradient(135deg, #2563EB, #14B8A6); border-color: #2563EB; color: #fff; }
   &.done span, &.active span { color: var(--text); }
 }
-.step-line { flex: 1; height: 2px; background: var(--border, #e5e7eb); max-width: 80px; margin: 0 4px; margin-bottom: 22px; &.filled { background: #3B82F6; } }
+.step-line { flex: 1; height: 2px; background: var(--border, #e5e7eb); max-width: 80px; margin: 0 4px; margin-bottom: 22px; &.filled { background: linear-gradient(90deg, #2563EB, #14B8A6); } }
 
 /* Cards */
 .step-card {
@@ -56,7 +56,8 @@
   input, select, textarea {
     padding: 10px 14px; border: 1.5px solid var(--border, #e5e7eb); border-radius: 10px;
     font-size: 14px; background: var(--bg); color: var(--text);
-    &:focus { outline: none; border-color: #3B82F6; }
+    accent-color: #2563EB;
+    &:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
   }
   textarea { resize: vertical; font-family: inherit; }
   &:has(.chip-group), &:has(.severity-group) { grid-column: 1 / -1; }
@@ -69,8 +70,8 @@
   padding: 6px 14px; border: 1.5px solid var(--border, #e5e7eb); border-radius: 20px;
   font-size: 13px; font-weight: 500; cursor: pointer; background: var(--bg);
   color: var(--text); transition: all .15s;
-  &:hover { border-color: #3B82F6; color: #3B82F6; }
-  &.selected { background: #3B82F6; border-color: #3B82F6; color: #fff; }
+  &:hover { border-color: #2563EB; color: #2563EB; }
+  &.selected { background: linear-gradient(90deg, #2563EB, #14B8A6); border-color: #2563EB; color: #fff; }
 }
 
 /* Severity */
@@ -87,17 +88,18 @@
 /* Step actions */
 .step-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; flex-wrap: wrap; }
 .btn-primary {
-  padding: 12px 28px; background: #3B82F6; color: #fff; border: none;
-  border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
-  transition: background .15s;
-  &:hover { background: #2563EB; }
-  &:disabled { opacity: .5; cursor: not-allowed; }
+  padding: 12px 28px; background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%); color: #fff; border: none;
+  border-radius: 11px; font-size: 15px; font-weight: 600; cursor: pointer;
+  box-shadow: 0 2px 12px rgba(37,99,235,0.28); transition: transform .15s, box-shadow .15s, filter .15s;
+  &:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(37,99,235,0.38); filter: brightness(1.08); }
+  &:focus-visible { outline: 3px solid #FFD700; outline-offset: 2px; }
+  &:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 }
 .btn-ghost {
   padding: 12px 24px; background: transparent; color: var(--text);
   border: 1.5px solid var(--border, #e5e7eb); border-radius: 10px;
   font-size: 15px; font-weight: 600; cursor: pointer;
-  &:hover { border-color: #3B82F6; color: #3B82F6; }
+  &:hover { border-color: #2563EB; color: #2563EB; }
 }
 
 /* Review step */
@@ -138,7 +140,7 @@
 }
 .spinner {
   width: 48px; height: 48px; border: 4px solid var(--border, #e5e7eb);
-  border-top-color: #3B82F6; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto;
+  border-top-color: #2563EB; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-steps { display: flex; flex-direction: column; gap: 10px; }
@@ -164,7 +166,7 @@
   .report-meta { display: flex; gap: 10px; flex-wrap: wrap; }
 }
 .risk-badge { padding: 5px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; border: 1px solid currentColor; }
-.confidence-pill { background: rgba(59,130,246,0.1); color: #3B82F6; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.confidence-pill { background: rgba(59,130,246,0.1); color: #2563EB; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
 .complexity-pill { font-size: 12px; font-weight: 600; padding: 4px 12px; background: var(--bg-alt, #f9fafb); border-radius: 12px; }
 
 .drive-warning {
@@ -241,7 +243,7 @@
 .sc-card {
   border: 1px solid var(--border, #e5e7eb); border-radius: 12px; padding: 16px;
   transition: border-color .15s;
-  &:hover { border-color: #3B82F6; }
+  &:hover { border-color: #2563EB; }
 }
 .sc-name-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .sc-name { font-size: 15px; font-weight: 700; }
@@ -267,7 +269,7 @@
 .photo-upload-zone {
   border: 2px dashed var(--border, #e5e7eb); border-radius: 12px;
   padding: 24px 16px; text-align: center; cursor: pointer; transition: border-color 0.2s;
-  &:hover, &.has-files { border-color: #3B82F6; }
+  &:hover, &.has-files { border-color: #2563EB; }
   .photo-icon { font-size: 28px; display: block; margin-bottom: 8px; }
   .photo-hint { font-size: 14px; font-weight: 500; margin: 0 0 4px; }
   .photo-sub { font-size: 12px; color: var(--text-muted, #9CA3AF); margin: 0; }
@@ -279,7 +281,7 @@
   width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border, #e5e7eb);
   img { width: 100%; height: 100%; object-fit: cover; }
 }
-.photo-count { font-size: 13px; font-weight: 600; color: #3B82F6; margin: 0 0 4px; }
+.photo-count { font-size: 13px; font-weight: 600; color: #2563EB; margin: 0 0 4px; }
 .photo-clear {
   font-size: 12px; color: #EF4444; background: none; border: none; cursor: pointer; padding: 0;
   &:hover { text-decoration: underline; }
@@ -287,7 +289,7 @@
 
 @media (prefers-color-scheme: dark) {
   .sc-modal { background: #1e293b; }
-  .sc-card { border-color: rgba(255,255,255,0.08); &:hover { border-color: #3B82F6; } }
+  .sc-card { border-color: rgba(255,255,255,0.08); &:hover { border-color: #2563EB; } }
   .sc-close { background: #0f172a; }
   .sc-btn-call { background: rgba(37,99,235,0.15); }
   .sc-btn-map  { background: rgba(22,163,74,0.15); }

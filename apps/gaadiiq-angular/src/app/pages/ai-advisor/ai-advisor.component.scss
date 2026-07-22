@@ -179,14 +179,14 @@
   color: var(--text);
 
   &:hover {
-    border-color: rgba(30,64,175,0.5);
-    background: rgba(30,64,175,0.06);
+    border-color: rgba(37,99,235,0.5);
+    background: rgba(37,99,235,0.06);
     transform: translateY(-1px);
   }
 
   &.selected {
-    border-color: #1e40af;
-    background: rgba(30,64,175,0.15);
+    border-color: #2563EB;
+    background: rgba(37,99,235,0.12);
   }
 
   .opt-check {
@@ -195,7 +195,7 @@
     right: 0.75rem;
     width: 20px;
     height: 20px;
-    background: linear-gradient(135deg, #1e40af, var(--teal));
+    background: linear-gradient(135deg, #2563EB, #14B8A6);
     border-radius: 50%;
     display: flex;
     align-items: center;
