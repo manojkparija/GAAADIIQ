@@ -149,7 +149,7 @@ export class NewCarsComponent implements OnInit {
   });
 
   newCarModels = computed<NewCarModel[]>(() => {
-    const newCars = this.carsData.cars().filter(c => c.km === 0 && c.year >= 2025);
+    const newCars = this.carsData.cars().filter(c => c.km === 0 && c.year >= 2024);
     const map = new Map<string, typeof newCars>();
     for (const c of newCars) {
       const key = `${c.make}||${c.model}`;
