@@ -589,11 +589,6 @@ export class CarDetailComponent implements OnInit {
   waLink(phone: string) { return 'https://wa.me/' + phone.replace(/[^0-9]/g, ''); }
 
   formatPrice(p: number) { return p >= 100000 ? `₹${(p / 100000).toFixed(1)}L` : `₹${p.toLocaleString()}`; }
-
-  sliderBg(val: number, min: number, max: number): string {
-    const pct = Math.round(((val - min) / (max - min)) * 100);
-    return `linear-gradient(90deg, var(--primary) ${pct}%, rgba(255,255,255,0.12) ${pct}%)`;
-  }
   stars(n: number) { return Array.from({length: 5}, (_, i) => i < n ? '★' : '☆'); }
 
   get isNewCar() { return this.car?.km === 0 && this.car?.year >= 2024; }
