@@ -9,12 +9,18 @@ import re
 from pathlib import Path
 from typing import Optional
 
+import os
+
 import httpx
 
 from models import ExtractedVehicle, ExtractedImage
 from pdf_parser import PageImage
 
 logger = logging.getLogger(__name__)
+
+# Base URL used to build absolute image URLs returned to the frontend.
+# Set BACKEND_URL env var when running behind a reverse proxy or on a remote server.
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8001")
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 # Vision models tried in preference order; first available wins at runtime
@@ -60,13 +66,13 @@ def _phash(img_bytes: bytes) -> str:
 
 
 def _save_image(img: PageImage, job_id: str) -> str:
-    """Save image bytes to temp dir, return local URL path."""
+    """Save image bytes to temp dir, return absolute URL loadable by the frontend."""
     job_dir = IMAGES_DIR / job_id
     job_dir.mkdir(parents=True, exist_ok=True)
     fname = f"page{img.page_num}_{_phash(img.data)}.{img.ext}"
     fpath = job_dir / fname
     fpath.write_bytes(img.data)
-    return f"/tmp-images/{job_id}/{fname}"
+    return f"{BACKEND_URL}/tmp-images/{job_id}/{fname}"
 
 
 def _nearby_text(page_images: list[PageImage], img: PageImage, pages_text: dict[int, str]) -> str:

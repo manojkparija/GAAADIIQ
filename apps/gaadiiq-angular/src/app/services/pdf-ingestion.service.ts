@@ -157,6 +157,33 @@ export class PdfIngestionService {
     });
   }
 
+  private async _renderPdfPages(file: File): Promise<string[]> {
+    try {
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'assets/pdf.worker.min.mjs';
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const urls: string[] = [];
+
+      const pagesToRender = Math.min(pdf.numPages, 5); // render up to 5 pages
+      for (let i = 1; i <= pagesToRender; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1.8 }); // higher scale = better quality
+        const canvas = document.createElement('canvas');
+        canvas.width  = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d')!, viewport }).promise;
+        const blob = await new Promise<Blob>(res => canvas.toBlob(b => res(b!), 'image/jpeg', 0.88));
+        urls.push(URL.createObjectURL(blob));
+      }
+      return urls;
+    } catch (e) {
+      console.warn('PDF page render failed:', e);
+      return [];
+    }
+  }
+
   private async _uploadMockPipeline(file: File, entry: UploadProgress, listingType: 'new' | 'used'): Promise<void> {
     const jobId = crypto.randomUUID();
     const stages: ExtractionStatus[] = [
@@ -195,9 +222,14 @@ export class PdfIngestionService {
       this.jobs.update(list => list.map(j => j.id === jobId ? { ...job } : j));
     }
 
-    const isImage = file.type.startsWith('image/');
-    const imageUrl = isImage ? URL.createObjectURL(file) : undefined;
-    const demoVehicles = this._generateDemoVehicles(file.name, jobId, listingType, imageUrl);
+    // Gather image URLs: use uploaded image directly, or render PDF pages
+    let pageUrls: string[] = [];
+    if (file.type.startsWith('image/')) {
+      pageUrls = [URL.createObjectURL(file)];
+    } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      pageUrls = await this._renderPdfPages(file);
+    }
+    const demoVehicles = this._generateDemoVehicles(file.name, jobId, listingType, pageUrls);
     job.vehicles = demoVehicles;
     job.vehicles_found = demoVehicles.length;
     job.status = 'AWAITING_REVIEW';
@@ -213,7 +245,7 @@ export class PdfIngestionService {
     filename: string,
     jobId: string,
     listingType: 'new' | 'used',
-    imageUrl?: string,
+    pageUrls: string[] = [],
   ): ExtractedVehicle[] {
     const name = filename.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
     const words = name.split(' ').filter(Boolean);
@@ -230,15 +262,6 @@ export class PdfIngestionService {
       { variant: 'ZXi',     fuel: 'Petrol', tx: 'Manual', price: 849000,  bhp: 89.7, kmpl: 23.2, score: 85 },
       { variant: 'ZXi AMT', fuel: 'Petrol', tx: 'AMT',   price: 899000,  bhp: 89.7, kmpl: 22.6, score: 88 },
     ];
-
-    const demoImageObj = imageUrl ? [{
-      id: crypto.randomUUID(),
-      url: imageUrl,
-      colour: null,
-      match_confidence: 1.0,
-      matched_variant: `${make} ${model}`,
-      page_num: 1,
-    }] : [];
 
     return variants.map((v, idx) => ({
       id: crypto.randomUUID(),
@@ -262,7 +285,15 @@ export class PdfIngestionService {
         { label: 'Airbags', value: '6' },
         { label: 'Warranty', value: isUsed ? 'As-is' : '2 years / 40,000 km' },
       ],
-      images: idx === 0 ? demoImageObj : [],
+      // Distribute page renders: vehicle 0 gets page 0, vehicle 1 gets page 1, etc.
+      images: pageUrls[idx] ? [{
+        id: crypto.randomUUID(),
+        url: pageUrls[idx],
+        colour: null,
+        match_confidence: 1.0,
+        matched_variant: `${make} ${model} ${v.variant}`,
+        page_num: idx + 1,
+      }] : [],
       quality_score: v.score,
       confidence: { make: 0.95, model: 0.93, price_inr: 0.88 },
       status: (v.score >= 75 ? 'READY' : 'NEEDS_REVIEW') as 'READY' | 'NEEDS_REVIEW' | 'INCOMPLETE',
