@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { sellerGuard } from './guards/seller.guard';
 import { authGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent) },
@@ -24,6 +25,7 @@ export const routes: Routes = [
   { path: 'buyer-journey', loadComponent: () => import('./pages/buyer-journey/buyer-journey.component').then(m => m.BuyerJourneyComponent) },
   { path: 'dealer-dashboard', loadComponent: () => import('./pages/dealer-dashboard/dealer-dashboard.component').then(m => m.DealerDashboardComponent), canActivate: [sellerGuard] },
   { path: 'admin/pricing', loadComponent: () => import('./pages/admin-pricing/admin-pricing.component').then(m => m.AdminPricingComponent), canActivate: [sellerGuard] },
+  { path: 'admin/pdf-ingestion', loadComponent: () => import('./pages/admin-pdf-ingestion/admin-pdf-ingestion.component').then(m => m.AdminPdfIngestionComponent), canActivate: [adminGuard] },
   { path: 'pricing-plans', loadComponent: () => import('./pages/pricing-plans/pricing-plans.component').then(m => m.PricingPlansComponent) },
   { path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent) },
   { path: 'vehicle-diagnosis', loadComponent: () => import('./pages/vehicle-diagnosis/vehicle-diagnosis.component').then(m => m.VehicleDiagnosisComponent) },
