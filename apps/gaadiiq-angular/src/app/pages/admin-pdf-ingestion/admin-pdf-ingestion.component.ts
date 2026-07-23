@@ -165,6 +165,12 @@ export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
 
   get job(): IngestionJob { return this.svc.selectedJob()!; }
 
+  updateDraftField(key: string, type: string, event: Event) {
+    const raw = (event.target as HTMLInputElement).value;
+    const val = type === 'number' ? +raw : raw;
+    this.editDraft.update(d => ({ ...d, [key]: val }));
+  }
+
   trackJob(_: number, j: IngestionJob) { return j.id; }
   trackVehicle(_: number, v: ExtractedVehicle) { return v.id; }
   trackImage(_: number, i: ExtractedImage) { return i.id; }

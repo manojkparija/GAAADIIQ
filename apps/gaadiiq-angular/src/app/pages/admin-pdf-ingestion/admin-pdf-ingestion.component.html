@@ -309,7 +309,7 @@
                             <label class="ef-label">{{ field.label }}</label>
                             <input class="ef-input" [type]="field.type"
                               [value]="$any(editDraft())[field.key] ?? ''"
-                              (input)="editDraft.update(d => ({...d, [field.key]: field.type==='number' ? +$any($event.target).value : $any($event.target).value}))" />
+                              (input)="updateDraftField(field.key, field.type, $event)" />
                           </div>
                         }
                       </div>
