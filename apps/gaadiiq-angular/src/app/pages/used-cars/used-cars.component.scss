@@ -445,10 +445,14 @@
   flex: 1;
   padding: 0.4rem 0.5rem;
   border-radius: 8px;
-  border: 1px solid var(--border, rgba(0,0,0,0.12));
+  border: 1.5px solid #2563EB;
   background: var(--navy);
   color: var(--text);
   font-size: 0.82rem;
+  accent-color: #2563EB;
+  &:focus { outline: none; border-color: #14B8A6; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
+  option { background: var(--navy, #0a0e1a); color: var(--text); }
+  option:checked { background: #2563EB; color: #fff; }
 }
 
 .year-sep {
@@ -739,6 +743,37 @@
   .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
   h3 { font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
   p { color: var(--muted); margin-bottom: 1.25rem; }
+
+  .btn-gradient {
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.75rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+    transition: opacity 0.2s, transform 0.2s;
+    &:hover { opacity: 0.92; transform: translateY(-1px); }
+  }
+
+  .btn-outline {
+    display: inline-block;
+    padding: 0.75rem 1.75rem;
+    border-radius: 10px;
+    border: 1.5px solid #2563EB;
+    color: #2563EB;
+    background: transparent;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    &:hover { background: rgba(37,99,235,0.08); }
+  }
 }
 
 /* ── CAR CARDS GRID ── */
