@@ -9,6 +9,7 @@ import { SupabaseService } from '../../services/supabase.service';
 import { CityService } from '../../services/city.service';
 import { ApiService } from '../../services/api.service';
 import { firstValueFrom } from 'rxjs';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 interface ServiceCenter {
   name: string;
@@ -188,7 +189,7 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
 @Component({
   selector: 'app-vehicle-diagnosis',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent],
   templateUrl: './vehicle-diagnosis.component.html',
   styleUrl: './vehicle-diagnosis.component.scss',
 })
@@ -198,7 +199,7 @@ export class VehicleDiagnosisComponent {
 
   // Step 1 — Vehicle details
   form = {
-    manufacturer: '', model: '', variant: '', model_year: new Date().getFullYear() - 2,
+    manufacturer: '', model: '', variant: '', model_year: String(new Date().getFullYear() - 2),
     fuel_type: '', transmission: '', odometer_km: null as number | null,
   };
 
@@ -223,7 +224,7 @@ export class VehicleDiagnosisComponent {
     { value: 'critical', label: 'Critical', desc: 'Dangerous — do not drive' },
   ];
 
-  years = Array.from({ length: 35 }, (_, i) => new Date().getFullYear() - i);
+  years = Array.from({ length: 35 }, (_, i) => String(new Date().getFullYear() - i));
 
   get models(): string[] {
     return MODELS_BY_MAKE[this.form.manufacturer] ?? [];
@@ -350,7 +351,7 @@ export class VehicleDiagnosisComponent {
       manufacturer: this.form.manufacturer,
       model: this.form.model,
       variant: this.form.variant || undefined,
-      model_year: this.form.model_year,
+      model_year: Number(this.form.model_year),
       fuel_type: this.form.fuel_type,
       transmission: this.form.transmission,
       odometer_km: this.form.odometer_km ?? undefined,
@@ -368,7 +369,7 @@ export class VehicleDiagnosisComponent {
 
   reset() {
     this.step.set(1);
-    this.form = { manufacturer: '', model: '', variant: '', model_year: new Date().getFullYear() - 2, fuel_type: '', transmission: '', odometer_km: null };
+    this.form = { manufacturer: '', model: '', variant: '', model_year: String(new Date().getFullYear() - 2), fuel_type: '', transmission: '', odometer_km: null };
     this.problemDescription = '';
     this.selectedWarningLights.set([]);
     this.selectedWhenOccurs.set([]);

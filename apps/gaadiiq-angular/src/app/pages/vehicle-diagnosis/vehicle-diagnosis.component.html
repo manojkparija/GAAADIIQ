@@ -69,30 +69,39 @@
       <div class="form-grid">
         <div class="form-group">
           <label>Manufacturer *</label>
-          <select [(ngModel)]="form.manufacturer" (ngModelChange)="onMakeChange()">
-            <option value="">Select make</option>
-            <option *ngFor="let m of makes" [value]="m">{{ m }}</option>
-          </select>
+          <app-custom-select
+            [(ngModel)]="form.manufacturer"
+            (ngModelChange)="onMakeChange()"
+            [options]="makes"
+            placeholder="Select make">
+          </app-custom-select>
         </div>
         <div class="form-group">
           <label>Model *</label>
-          <select [(ngModel)]="form.model" [disabled]="!form.manufacturer" (ngModelChange)="onModelChange()">
-            <option value="">Select model</option>
-            <option *ngFor="let m of models" [value]="m">{{ m }}</option>
-          </select>
+          <app-custom-select
+            [(ngModel)]="form.model"
+            (ngModelChange)="onModelChange()"
+            [options]="models"
+            [disabled]="!form.manufacturer"
+            placeholder="Select model">
+          </app-custom-select>
         </div>
         <div class="form-group">
           <label>Variant</label>
-          <select [(ngModel)]="form.variant" [disabled]="!form.model">
-            <option value="">Select variant (optional)</option>
-            <option *ngFor="let v of variants" [value]="v">{{ v }}</option>
-          </select>
+          <app-custom-select
+            [(ngModel)]="form.variant"
+            [options]="variants"
+            [disabled]="!form.model"
+            placeholder="Select variant (optional)">
+          </app-custom-select>
         </div>
         <div class="form-group">
           <label>Model Year *</label>
-          <select [(ngModel)]="form.model_year">
-            <option *ngFor="let y of years" [value]="y">{{ y }}</option>
-          </select>
+          <app-custom-select
+            [(ngModel)]="form.model_year"
+            [options]="years"
+            placeholder="Select year">
+          </app-custom-select>
         </div>
         <div class="form-group">
           <label>Fuel Type *</label>

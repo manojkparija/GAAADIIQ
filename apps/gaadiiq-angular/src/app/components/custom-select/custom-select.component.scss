@@ -1,0 +1,66 @@
+.cs-wrap {
+  position: relative;
+  width: 100%;
+
+  &.disabled .cs-trigger { opacity: 0.5; cursor: not-allowed; }
+  &.open .cs-trigger { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  &.open .cs-arrow { transform: rotate(180deg); color: #2563EB; }
+}
+
+.cs-trigger {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border: 1.5px solid var(--border, #e5e7eb); border-radius: 10px;
+  font-size: 14px; background: var(--bg, #fff); color: var(--text, #111);
+  cursor: pointer; text-align: left; gap: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+
+  &:hover:not(:disabled) { border-color: rgba(37,99,235,0.4); }
+}
+
+.cs-value { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-value.placeholder { color: var(--text-muted, #9CA3AF); }
+
+.cs-arrow {
+  flex-shrink: 0; color: var(--text-muted, #6B7280);
+  transition: transform 0.2s, color 0.2s;
+  display: flex; align-items: center;
+}
+
+.cs-dropdown {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 200;
+  background: var(--bg, #fff); border: 1.5px solid #2563EB;
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 8px 28px rgba(37,99,235,0.18), 0 2px 8px rgba(0,0,0,0.08);
+  max-height: 260px; overflow-y: auto;
+}
+
+.cs-option {
+  padding: 10px 14px; font-size: 14px; cursor: pointer; transition: background 0.12s, color 0.12s;
+  color: var(--text, #111);
+
+  &.placeholder-opt { color: var(--text-muted, #9CA3AF); }
+
+  &:hover {
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    color: #fff;
+  }
+
+  &.selected {
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    color: #fff; font-weight: 600;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .cs-trigger { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
+  .cs-dropdown { background: #1e293b; border-color: #2563EB; }
+  .cs-option { color: #e2e8f0; }
+}
+:root[data-theme="dark"] {
+  .cs-trigger { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
+  .cs-dropdown { background: #1e293b; border-color: #2563EB; }
+  .cs-option { color: #e2e8f0; }
+}
