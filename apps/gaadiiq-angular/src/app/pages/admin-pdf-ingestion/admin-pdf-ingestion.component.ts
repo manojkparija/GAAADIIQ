@@ -82,14 +82,16 @@ export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
     input.value = '';
   }
 
-  private async handleFiles(files: File[]) {
+  private handleFiles(files: File[]) {
+    this.svc.setPendingFiles(files);
+    // Modal will appear; upload starts after category is selected
+  }
+
+  async selectCategory(type: 'new' | 'used') {
+    const count = this.svc.pendingFiles().length;
+    await this.svc.startUploadWithCategory(type);
     this.activeTab.set('jobs');
-    try {
-      await this.svc.uploadFiles(files);
-      this.toast(`${files.length} file${files.length > 1 ? 's' : ''} queued for processing`);
-    } catch {
-      this.toast('Upload failed — check file size or try again', true);
-    }
+    this.toast(`${count} file${count > 1 ? 's' : ''} queued as ${type === 'new' ? 'New Cars' : 'Used Cars'}`);
   }
 
   cancelUpload(filename: string) {

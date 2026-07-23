@@ -355,6 +355,50 @@
   color: var(--text); cursor: pointer;
 }
 
+/* ── Category Modal ── */
+.cat-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.cat-modal {
+  background: var(--bg); border-radius: 1.25rem;
+  padding: 2.5rem 2rem; max-width: 560px; width: 100%;
+  text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,.3);
+}
+.cat-modal-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+.cat-modal-title { font-size: 1.4rem; font-weight: 700; margin: 0 0 .4rem; color: var(--text); }
+.cat-modal-sub {
+  font-size: .875rem; color: var(--muted); margin: 0 0 1.75rem;
+  line-height: 1.6;
+}
+.cat-options {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;
+}
+.cat-option {
+  border: 2px solid var(--border); border-radius: .875rem;
+  padding: 1.25rem 1rem; background: var(--bg2); cursor: pointer;
+  transition: border-color .2s, box-shadow .2s, transform .15s;
+  text-align: center;
+  &:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+}
+.cat-new:hover { border-color: var(--blue); }
+.cat-used:hover { border-color: var(--amber); }
+.cat-opt-icon { font-size: 2rem; display: block; margin-bottom: .5rem; }
+.cat-opt-label { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
+.cat-opt-desc { font-size: .75rem; color: var(--muted); line-height: 1.4; }
+.cat-file-count { font-size: .8rem; color: var(--muted); margin-bottom: .75rem; }
+.cat-cancel { font-size: .8rem; }
+
+/* ── Job listing-type badge ── */
+.job-badges { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.job-listing-badge {
+  font-size: .68rem; font-weight: 600; padding: .2rem .55rem;
+  border-radius: 999px; white-space: nowrap;
+}
+.badge-new { background: rgba(37,99,235,.12); color: #2563EB; }
+.badge-used { background: rgba(245,158,11,.12); color: #D97706; }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .pi-page { grid-template-columns: 1fr; }

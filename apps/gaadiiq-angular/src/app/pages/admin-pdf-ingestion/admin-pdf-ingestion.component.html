@@ -3,6 +3,36 @@
   <div class="pi-toast">{{ toastMsg() }}</div>
 }
 
+<!-- ── CATEGORY SELECTION MODAL ── -->
+@if (svc.pendingFiles().length) {
+  <div class="cat-overlay">
+    <div class="cat-modal">
+      <div class="cat-modal-icon">📂</div>
+      <h2 class="cat-modal-title">Select Vehicle Category</h2>
+      <p class="cat-modal-sub">
+        This selection is required before AI processing begins.
+        All extracted variants will be stored under the chosen category.
+      </p>
+      <div class="cat-options">
+        <button class="cat-option cat-new" (click)="selectCategory('new')">
+          <span class="cat-opt-icon">🚗</span>
+          <div class="cat-opt-label">New Car</div>
+          <div class="cat-opt-desc">Brand-new vehicles from manufacturers or dealerships</div>
+        </button>
+        <button class="cat-option cat-used" (click)="selectCategory('used')">
+          <span class="cat-opt-icon">🔄</span>
+          <div class="cat-opt-label">Used Car</div>
+          <div class="cat-opt-desc">Pre-owned, second-hand or certified resale vehicles</div>
+        </button>
+      </div>
+      <div class="cat-file-count">
+        {{ svc.pendingFiles().length }} file{{ svc.pendingFiles().length > 1 ? 's' : '' }} ready to upload
+      </div>
+      <button class="btn-ghost cat-cancel" (click)="svc.clearPendingFiles()">Cancel</button>
+    </div>
+  </div>
+}
+
 <!-- ── PAGE SHELL ── -->
 <div class="pi-page">
 
@@ -137,9 +167,17 @@
                     {{ job.created_at | date:'dd MMM, HH:mm' }}
                   </div>
                 </div>
-                <div class="job-status-badge" [style.background]="job.status === 'AWAITING_REVIEW' ? 'rgba(245,158,11,.15)' : job.status === 'APPROVED' ? 'rgba(16,185,129,.15)' : 'rgba(100,116,139,.12)'"
-                  [style.color]="job.status === 'AWAITING_REVIEW' ? '#F59E0B' : job.status === 'APPROVED' ? '#10B981' : '#94A3B8'">
-                  {{ job.status.replace('_',' ') }}
+                <div class="job-badges">
+                  @if (job.listing_type) {
+                    <span class="job-listing-badge" [class.badge-new]="job.listing_type === 'new'" [class.badge-used]="job.listing_type === 'used'">
+                      {{ job.listing_type === 'new' ? '🚗 New Car' : '🔄 Used Car' }}
+                    </span>
+                  }
+                  <div class="job-status-badge"
+                    [style.background]="job.status === 'AWAITING_REVIEW' ? 'rgba(245,158,11,.15)' : job.status === 'APPROVED' ? 'rgba(16,185,129,.15)' : 'rgba(100,116,139,.12)'"
+                    [style.color]="job.status === 'AWAITING_REVIEW' ? '#F59E0B' : job.status === 'APPROVED' ? '#10B981' : '#94A3B8'">
+                    {{ job.status.replace('_',' ') }}
+                  </div>
                 </div>
               </div>
 

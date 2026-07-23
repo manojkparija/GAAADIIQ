@@ -129,6 +129,7 @@ class IngestionJob(BaseModel):
     completed_at:   Optional[str]    = None
     error:          Optional[str]    = None
     vehicles:       list[ExtractedVehicle] = []
+    listing_type:   str              = "new"   # "new" | "used"
 
 
 class ApproveRequest(BaseModel):
