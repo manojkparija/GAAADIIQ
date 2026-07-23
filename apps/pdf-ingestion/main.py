@@ -127,12 +127,12 @@ async def _run_pipeline_async(job_id: str, pdf_path: Path) -> None:
 
 @app.post("/api/pdf-ingestion/upload")
 async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
-    if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
 
     content = await file.read()
-    if len(content) > 50 * 1024 * 1024:  # 50 MB limit
-        raise HTTPException(status_code=413, detail="File too large (max 50 MB)")
+    if len(content) > 10 * 1024 * 1024 * 1024:  # 10 GB limit
+        raise HTTPException(status_code=413, detail="File too large (max 10 GB)")
 
     job_id = str(uuid.uuid4())
     pdf_path = UPLOAD_DIR / f"{job_id}.pdf"

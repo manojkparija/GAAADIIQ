@@ -1,5 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpEventType, HttpRequest } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -71,12 +72,20 @@ export class PdfIngestionService {
   uploadQueue  = signal<UploadProgress[]>([]);
   selectedJob  = signal<IngestionJob | null>(null);
 
+  private _uploadSubs = new Map<string, Subscription>();
+
   // ── Upload ──────────────────────────────────────────────────────────────
 
   async uploadFiles(files: File[]): Promise<void> {
     for (const file of files) {
       await this.uploadSingle(file);
     }
+  }
+
+  cancelUpload(filename: string): void {
+    this._uploadSubs.get(filename)?.unsubscribe();
+    this._uploadSubs.delete(filename);
+    this.uploadQueue.update(q => q.filter(e => e.filename !== filename));
   }
 
   private async uploadSingle(file: File): Promise<void> {
@@ -91,7 +100,7 @@ export class PdfIngestionService {
       const entry: UploadProgress = { jobId: '', filename: file.name, progress: 0 };
       this.uploadQueue.update(q => [...q, entry]);
 
-      this.http.request(req).subscribe({
+      const sub = this.http.request(req).subscribe({
         next: event => {
           if (event.type === HttpEventType.UploadProgress && event.total) {
             entry.progress = Math.round(100 * event.loaded / event.total);
@@ -102,11 +111,13 @@ export class PdfIngestionService {
             entry.jobId = job.id;
             this.jobs.update(j => [job, ...j]);
             this.uploadQueue.update(q => q.filter(e => e.filename !== file.name));
+            this._uploadSubs.delete(file.name);
             resolve();
           }
         },
-        error: err => { reject(err); },
+        error: err => { this._uploadSubs.delete(file.name); reject(err); },
       });
+      this._uploadSubs.set(file.name, sub);
     });
   }
 
