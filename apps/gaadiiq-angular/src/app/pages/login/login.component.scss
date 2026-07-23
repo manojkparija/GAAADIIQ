@@ -39,8 +39,8 @@
 .login-header {
   text-align: center;
   margin-bottom: 1.5rem;
-  .logo-link { font-size: 1.5rem; font-weight: 800; font-family: 'Outfit', sans-serif; text-decoration: none; color: var(--text); }
-  .gradient-text { background: linear-gradient(135deg, #1e40af, var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .logo-link { text-decoration: none; display: inline-flex; justify-content: center; }
+  .auth-logo-svg { display: block; margin: 0 auto; }
 }
 
 .auth-tabs {
