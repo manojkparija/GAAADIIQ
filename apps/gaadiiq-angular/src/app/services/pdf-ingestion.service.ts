@@ -160,7 +160,7 @@ export class PdfIngestionService {
   private async _renderPdfPages(file: File): Promise<string[]> {
     try {
       const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'assets/pdf.worker.min.mjs';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `${location.origin}/assets/pdf.worker.min.mjs`;
 
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
