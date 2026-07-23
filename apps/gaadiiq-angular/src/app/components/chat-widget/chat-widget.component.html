@@ -1,5 +1,5 @@
 <!-- Floating action button -->
-<button class="chat-fab" (click)="chat.toggle()" [class.open]="chat.isOpen()" aria-label="Open AI Chat Assistant">
+<button class="chat-fab" (click)="chat.toggle()" [class.open]="chat.isOpen()" aria-label="Chat with ARIA — GAADIIQ AI Assistant">
   <span class="fab-icon" *ngIf="!chat.isOpen()">
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
       <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.07 21.07a1 1 0 001.06 1.06l3.902-1.367A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" fill="currentColor" opacity=".15"/>
@@ -34,7 +34,7 @@
         </svg>
         <div class="chat-status">
           <span class="status-dot"></span>
-          {{ chat.isTyping() ? 'Typing…' : 'AI Assistant · Online' }}
+          {{ chat.isTyping() ? 'ARIA is typing…' : 'ARIA · Auto Recommendation & Intelligent Assistant' }}
         </div>
       </div>
     </div>
@@ -159,7 +159,7 @@
       class="chat-input"
       [(ngModel)]="inputText"
       (keydown)="onKey($event)"
-      placeholder="Ask about cars, diagnose issues…"
+      placeholder="Ask ARIA about cars, diagnose issues…"
       rows="1"
       maxlength="500"
       [disabled]="chat.isTyping()"
@@ -171,5 +171,5 @@
       </svg>
     </button>
   </div>
-  <div class="chat-footer">Powered by GAADIIQ AI · <a routerLink="/vehicle-diagnosis" (click)="chat.close()">Full Diagnosis</a> · <a routerLink="/ai-advisor" (click)="chat.close()">Car Advisor</a></div>
+  <div class="chat-footer">ARIA by GAADIIQ · <a routerLink="/vehicle-diagnosis" (click)="chat.close()">Full Diagnosis</a> · <a routerLink="/ai-advisor" (click)="chat.close()">Car Advisor</a></div>
 </div>

@@ -121,7 +121,7 @@ function fillDiagnosisField(state: Partial<DiagnoseRequest>, userText: string): 
 
 function greetingResponse(): { text: string; rich: RichContent[] } {
   return {
-    text: 'Hi there! 👋 I\'m **GAADI**, your AI car assistant. I can help you with:\n\n🚗 **Car Recommendations** — Find the perfect car for your needs and budget\n🔧 **Vehicle Diagnosis** — Troubleshoot car problems step by step\n📋 **Car Information** — Specs, prices, features and comparisons\n\nWhat can I help you with today?',
+    text: 'Hi there! 👋 I\'m **ARIA** — GAADIIQ\'s Auto Recommendation & Intelligent Assistant. I can help you with:\n\n🚗 **Car Recommendations** — Find the perfect car for your needs and budget\n🔧 **Vehicle Diagnosis** — Troubleshoot car problems step by step\n📋 **Car Information** — Specs, prices, features and comparisons\n\nWhat can I help you with today?',
     rich: [{
       type: 'suggested_prompts',
       prompts: [
@@ -137,7 +137,7 @@ function greetingResponse(): { text: string; rich: RichContent[] } {
 function generalResponse(text: string): string {
   const lower = text.toLowerCase();
   if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey') || lower.includes('namaste')) {
-    return 'Hello! 😊 I\'m GAADI, your AI car assistant. How can I help you today? I can recommend cars, diagnose vehicle issues, or answer any car-related questions!';
+    return 'Hello! 😊 I\'m ARIA, your AI car assistant from GAADIIQ. How can I help you today? I can recommend cars, diagnose vehicle issues, or answer any car-related questions!';
   }
   if (lower.includes('thank')) {
     return 'You\'re welcome! 😊 Feel free to ask if you have more questions about cars or vehicle issues.';
