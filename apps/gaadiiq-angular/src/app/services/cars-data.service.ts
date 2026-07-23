@@ -219,4 +219,10 @@ export class CarsDataService {
   getAll(): Car[] { return this._cars(); }
 
   getById(id: string): Car | undefined { return this._cars().find(c => c.id === id); }
+
+  addApprovedVehicle(car: Car): void {
+    // Avoid duplicates by id
+    if (this._cars().some(c => c.id === car.id)) return;
+    this._cars.update(list => [car, ...list]);
+  }
 }

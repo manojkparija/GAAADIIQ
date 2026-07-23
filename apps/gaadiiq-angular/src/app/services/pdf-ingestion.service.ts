@@ -2,6 +2,7 @@ import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpEventType, HttpRequest } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { CarsDataService, Car } from './cars-data.service';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,6 +67,7 @@ export interface UploadProgress { jobId: string; filename: string; progress: num
 @Injectable({ providedIn: 'root' })
 export class PdfIngestionService {
   private http = inject(HttpClient);
+  private carsData = inject(CarsDataService);
   private base = `${environment.apiUrl ?? 'http://localhost:8001'}/api/pdf-ingestion`;
 
   jobs         = signal<IngestionJob[]>([]);
@@ -115,7 +117,11 @@ export class PdfIngestionService {
             resolve();
           }
         },
-        error: err => { this._uploadSubs.delete(file.name); reject(err); },
+        error: err => {
+          this._uploadSubs.delete(file.name);
+          this.uploadQueue.update(q => q.filter(e => e.filename !== file.name));
+          reject(err);
+        },
       });
       this._uploadSubs.set(file.name, sub);
     });
@@ -142,6 +148,36 @@ export class PdfIngestionService {
   async approveVehicle(jobId: string, vehicleId: string, patch?: Partial<ExtractedVehicle>): Promise<void> {
     await this.http.post(`${this.base}/jobs/${jobId}/vehicles/${vehicleId}/approve`, patch ?? {}).toPromise();
     await this.pollJob(jobId);
+    // Push approved vehicle into New Cars listing immediately
+    const job = this.jobs().find(j => j.id === jobId);
+    const v = job?.vehicles.find(v => v.id === vehicleId);
+    if (v) this.carsData.addApprovedVehicle(this._vehicleToCar(v));
+  }
+
+  private _vehicleToCar(v: ExtractedVehicle): Car {
+    const image = v.images.find(i => i.matched_variant)?.url
+      ?? v.images[0]?.url
+      ?? 'assets/cars/placeholder.svg';
+    return {
+      id: v.id,
+      make: v.make ?? 'Unknown',
+      model: v.model ?? 'Unknown',
+      variant: v.variant ?? undefined,
+      year: v.year ?? new Date().getFullYear(),
+      price: v.price_inr ?? 0,
+      km: 0,
+      fuel: v.fuel_type ?? 'Petrol',
+      transmission: v.transmission ?? 'Manual',
+      badge: 'New',
+      badgeType: 'new',
+      image,
+      images: v.images.map(i => i.url),
+      rating: 4.0,
+      reviews: 0,
+      verified: true,
+      bodyType: v.body_type ?? undefined,
+      specs: v.specs,
+    };
   }
 
   async rejectVehicle(jobId: string, vehicleId: string, reason?: string): Promise<void> {
