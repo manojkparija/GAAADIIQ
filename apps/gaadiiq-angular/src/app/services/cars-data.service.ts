@@ -35,30 +35,6 @@ interface ApiListResponse { items: ApiListing[]; total: number; page: number; pa
 // ── Local assets ───────────────────────────────────────────────────────────────
 const PLACEHOLDER = 'assets/cars/placeholder.svg';
 
-const LOCAL_IMAGES: Record<string, string[]> = {
-  'Maruti Suzuki Swift': [
-    'assets/cars/swift/front.jpg',
-    'assets/cars/swift/trio.jpg',
-    'assets/cars/swift/rear-motion.jpg',
-    'assets/cars/swift/rear.jpg',
-    'assets/cars/swift/interior.jpg',
-    'assets/cars/swift/steering.jpg',
-  ],
-  'Maruti Suzuki Dzire': [
-    'assets/cars/dzire/front.jpg',
-    'assets/cars/dzire/top.jpg',
-    'assets/cars/dzire/face.jpg',
-  ],
-};
-
-// External CDN images (fallback for models without local assets)
-const EXTERNAL_IMAGES: Record<string, string[]> = {};
-
-const MODEL_IMAGE_FALLBACK: Record<string, string> = {
-  'Maruti Suzuki Swift': 'assets/cars/swift/front.jpg',
-  'Swift': 'assets/cars/swift/front.jpg',
-};
-
 // Fuel-type label normalisation (API uses lowercase enum values)
 const FUEL_LABEL: Record<string, string> = {
   petrol: 'Petrol', diesel: 'Diesel', electric: 'Electric',
@@ -101,13 +77,13 @@ const MODEL_SPECS: Record<string, (variant: string, fuel: string) => { specs: {l
 
 // Demo fallback — shown only when the API is unreachable
 const DEMO_NEW_CARS: Car[] = [
-  { id: 'd8001', make: 'Maruti Suzuki', model: 'Swift', variant: 'ZXi+', year: 2025, price: 899000, km: 0, fuel: 'Petrol', transmission: 'AMT', badge: 'Bestseller', badgeType: 'featured', image: 'assets/cars/swift/front.jpg', images: ['assets/cars/swift/front.jpg'], rating: 4.4, reviews: 312, verified: true, city: 'Mumbai', bodyType: 'Hatchback', specs: [{ label: 'Mileage', value: '24.8 kmpl' }, { label: 'Power', value: '81 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging'] },
+  { id: 'd8001', make: 'Maruti Suzuki', model: 'Swift', variant: 'ZXi+', year: 2025, price: 899000, km: 0, fuel: 'Petrol', transmission: 'AMT', badge: 'Bestseller', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.4, reviews: 312, verified: true, city: 'Mumbai', bodyType: 'Hatchback', specs: [{ label: 'Mileage', value: '24.8 kmpl' }, { label: 'Power', value: '81 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging'] },
   { id: 'd8002', make: 'Hyundai', model: 'Creta', variant: 'SX Tech', year: 2025, price: 1695000, km: 0, fuel: 'Petrol', transmission: 'Automatic', badge: 'Top Rated', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.6, reviews: 210, verified: true, city: 'Delhi', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '17.4 kmpl' }, { label: 'Power', value: '138 bhp' }], features: ['Panoramic Sunroof', 'ADAS Safety', '360° Camera', '6 Airbags'] },
   { id: 'd8003', make: 'Tata', model: 'Nexon EV', variant: 'Max LR', year: 2025, price: 2099000, km: 0, fuel: 'Electric', transmission: 'Automatic', badge: 'Best EV', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.5, reviews: 175, verified: true, city: 'Bengaluru', bodyType: 'SUV', specs: [{ label: 'Range', value: '465 km' }, { label: 'Power', value: '143 bhp' }], features: ['Panoramic Sunroof', '6 Airbags', 'Connected Car'] },
 ];
 
 const DEMO_USED_CARS: Car[] = [
-  { id: 'd9001', make: 'Maruti Suzuki', model: 'Swift', variant: 'VXi', year: 2020, price: 550000, km: 42000, fuel: 'Petrol', transmission: 'Manual', badge: 'Popular', badgeType: 'featured', image: 'assets/cars/swift/front.jpg', images: ['assets/cars/swift/front.jpg'], rating: 4.3, reviews: 128, verified: true, city: 'Mumbai', bodyType: 'Hatchback', color: 'White', owners: '1st Owner' },
+  { id: 'd9001', make: 'Maruti Suzuki', model: 'Swift', variant: 'VXi', year: 2020, price: 550000, km: 42000, fuel: 'Petrol', transmission: 'Manual', badge: 'Popular', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.3, reviews: 128, verified: true, city: 'Mumbai', bodyType: 'Hatchback', color: 'White', owners: '1st Owner' },
   { id: 'd9002', make: 'Hyundai', model: 'Creta', variant: 'SX', year: 2021, price: 1150000, km: 28000, fuel: 'Petrol', transmission: 'Automatic', badge: 'Verified', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.5, reviews: 95, verified: true, city: 'Bengaluru', bodyType: 'SUV', color: 'Grey', owners: '1st Owner' },
   { id: 'd9003', make: 'Tata', model: 'Nexon', variant: 'XZ+', year: 2022, price: 1080000, km: 18500, fuel: 'Petrol', transmission: 'Manual', badge: 'Low KM', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.4, reviews: 72, verified: true, city: 'Delhi', bodyType: 'SUV', color: 'Blue', owners: '1st Owner' },
 ];
@@ -116,14 +92,9 @@ const DEMO_USED_CARS: Car[] = [
 function mapListing(lst: ApiListing): Car {
   const car = lst.car;
   const makeModel = `${car.make} ${car.model}`;
-  const localImgs = LOCAL_IMAGES[makeModel];
-  const externalImgs = EXTERNAL_IMAGES[makeModel];
   const apiImgs = (lst.image_urls ?? []).filter(u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'));
 
-  const images = localImgs?.length ? localImgs
-               : externalImgs?.length ? externalImgs
-               : apiImgs.length ? apiImgs
-               : [PLACEHOLDER];
+  const images = apiImgs.length ? apiImgs : [PLACEHOLDER];
   const image = images[0];
 
   const badge = lst.is_featured ? 'Featured'
