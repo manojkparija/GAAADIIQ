@@ -79,6 +79,12 @@ export class AuthService {
       throw new Error('Invalid email or password (min 6 characters).');
     }
 
+    // Dev admin shortcut — bypasses Supabase for local/preview testing
+    if (email === 'admin@gaadiiq.com' && password === 'admin123') {
+      this.currentUser.set({ email, name: 'Admin', role: 'admin' });
+      return;
+    }
+
     const { error } = await this.sb.client.auth.signInWithPassword({ email, password });
     if (error) {
       // Supabase returns "Invalid login credentials" for wrong password or unknown email
