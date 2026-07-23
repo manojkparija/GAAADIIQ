@@ -145,17 +145,19 @@
         <div class="filter-group">
           <label class="filter-group-label">Year</label>
           <div class="year-selects">
-            <select class="year-select" [value]="yearFrom()" (change)="yearFrom.set(+$any($event.target).value)">
-              @for (y of yearOptions; track y) {
-                <option [value]="y" [selected]="y === yearFrom()">{{ y }}</option>
-              }
-            </select>
+            <app-custom-select
+              [options]="yearOptionStrs"
+              [ngModel]="yearFromStr()"
+              (ngModelChange)="onYearFromChange($event)"
+              placeholder="From">
+            </app-custom-select>
             <span class="year-sep">to</span>
-            <select class="year-select" [value]="yearTo()" (change)="yearTo.set(+$any($event.target).value)">
-              @for (y of yearOptions; track y) {
-                <option [value]="y" [selected]="y === yearTo()">{{ y }}</option>
-              }
-            </select>
+            <app-custom-select
+              [options]="yearOptionStrs"
+              [ngModel]="yearToStr()"
+              (ngModelChange)="onYearToChange($event)"
+              placeholder="To">
+            </app-custom-select>
           </div>
         </div>
 

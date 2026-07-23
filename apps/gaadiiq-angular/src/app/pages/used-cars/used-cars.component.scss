@@ -441,18 +441,9 @@
   gap: 0.5rem;
 }
 
-.year-select {
+.year-selects app-custom-select {
   flex: 1;
-  padding: 0.4rem 0.5rem;
-  border-radius: 8px;
-  border: 1.5px solid #2563EB;
-  background: var(--navy);
-  color: var(--text);
-  font-size: 0.82rem;
-  accent-color: #2563EB;
-  &:focus { outline: none; border-color: #14B8A6; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
-  option { background: var(--navy, #0a0e1a); color: var(--text); }
-  option:checked { background: #2563EB; color: #fff; }
+  min-width: 0;
 }
 
 .year-sep {
