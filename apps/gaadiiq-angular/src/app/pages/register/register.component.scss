@@ -66,7 +66,8 @@
   transition: all 0.2s;
   display: block;
 
-  &.active, &:hover { background: var(--card-bg, #fff); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  &.active { background: linear-gradient(135deg, #1a6bcc, #00b4ac); color: #fff; box-shadow: 0 2px 8px rgba(0,180,172,0.3); }
+  &:hover:not(.active) { background: var(--card-bg, #fff); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
 }
 
 .reg-title {
