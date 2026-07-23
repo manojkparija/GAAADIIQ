@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -126,30 +126,38 @@ async def _run_pipeline_async(job_id: str, pdf_path: Path) -> None:
 # ── Upload ────────────────────────────────────────────────────────────────────
 
 @app.post("/api/pdf-ingestion/upload")
-async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+async def upload_pdf(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    listing_type: str = Form("new"),
+):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
+    if listing_type not in ("new", "used"):
+        listing_type = "new"
 
     content = await file.read()
     if len(content) > 10 * 1024 * 1024 * 1024:  # 10 GB limit
         raise HTTPException(status_code=413, detail="File too large (max 10 GB)")
 
     job_id = str(uuid.uuid4())
-    pdf_path = UPLOAD_DIR / f"{job_id}.pdf"
-    pdf_path.write_bytes(content)
+    ext = Path(file.filename).suffix or ".bin"
+    upload_path = UPLOAD_DIR / f"{job_id}{ext}"
+    upload_path.write_bytes(content)
 
     job = IngestionJob(
         id=job_id,
         filename=file.filename,
         file_size=len(content),
         created_at=_now(),
+        listing_type=listing_type,
     )
     _jobs[job_id] = job
 
-    background_tasks.add_task(_run_pipeline_async, job_id, pdf_path)
+    background_tasks.add_task(_run_pipeline_async, job_id, upload_path)
 
-    logger.info(f"Queued job {job_id} for {file.filename} ({len(content)//1024} KB)")
-    return {"job_id": job_id, "status": job.status}
+    logger.info(f"Queued job {job_id} for {file.filename} ({len(content)//1024} KB) [{listing_type}]")
+    return job
 
 
 # ── Jobs ──────────────────────────────────────────────────────────────────────

@@ -16,8 +16,9 @@ from pdf_parser import PageImage
 
 logger = logging.getLogger(__name__)
 
-OLLAMA_URL   = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llava"          # multimodal vision model
+OLLAMA_URL = "http://localhost:11434/api/generate"
+# Vision models tried in preference order; first available wins at runtime
+VISION_MODELS = ["qwen2.5-vl", "qwen2-vl", "llava-llama3", "llava"]
 IMAGES_DIR   = Path("/tmp/gaadiiq-pdf-images")
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -81,37 +82,63 @@ def _nearby_text(page_images: list[PageImage], img: PageImage, pages_text: dict[
     return text[start:end]
 
 
+def _available_vision_model() -> Optional[str]:
+    """Return first Ollama vision model that is available locally."""
+    try:
+        resp = httpx.get("http://localhost:11434/api/tags", timeout=5)
+        if resp.status_code != 200:
+            return None
+        installed = {m["name"].split(":")[0] for m in resp.json().get("models", [])}
+        for m in VISION_MODELS:
+            if m in installed:
+                return m
+    except Exception:
+        pass
+    return None
+
+
 def _ask_llm_which_variant(img_bytes: bytes, nearby_text: str, variants: list[str]) -> tuple[Optional[str], float]:
-    """Ask Ollama llava: which variant does this image show?"""
+    """Ask Ollama vision model: which vehicle variant does this image show?"""
     import base64
+
+    model = _available_vision_model()
+    if not model:
+        logger.debug("No Ollama vision model available — skipping LLM matching")
+        return None, 0.0
+
     try:
         img_b64 = base64.b64encode(img_bytes).decode()
         variant_list = "\n".join(f"- {v}" for v in variants)
         prompt = (
-            f"Looking at this car image and the nearby text below, "
-            f"which of these vehicle variants does the image most likely show?\n\n"
-            f"Variants:\n{variant_list}\n\n"
-            f"Nearby text:\n{nearby_text[:400]}\n\n"
-            f"Reply with ONLY the variant name exactly as listed, or 'unknown' if unclear."
+            "You are an automotive image classifier. Examine this car photograph from a "
+            "product brochure or spec sheet, along with surrounding text context.\n\n"
+            f"Available vehicle variants:\n{variant_list}\n\n"
+            f"Surrounding text (for context):\n{nearby_text[:600]}\n\n"
+            "Which variant does this image show? Reply with ONLY the exact variant name "
+            "from the list above, or reply 'unknown' if you cannot determine it confidently."
         )
         payload = {
-            "model": OLLAMA_MODEL,
+            "model": model,
             "prompt": prompt,
             "images": [img_b64],
             "stream": False,
-            "options": {"temperature": 0.0},
+            "options": {"temperature": 0.0, "num_predict": 50},
         }
-        resp = httpx.post(OLLAMA_URL, json=payload, timeout=60)
+        resp = httpx.post(OLLAMA_URL, json=payload, timeout=90)
         resp.raise_for_status()
         answer = resp.json().get("response", "").strip()
 
-        # Match answer to known variant
+        # Exact match first
+        for v in variants:
+            if v.lower() == answer.lower():
+                return v, 0.92
+        # Partial match
         for v in variants:
             if v.lower() in answer.lower():
-                return v, 0.85
+                return v, 0.82
         return None, 0.0
     except Exception as e:
-        logger.warning(f"LLM image matching failed: {e}")
+        logger.warning(f"LLM image matching failed ({model}): {e}")
         return None, 0.0
 
 
