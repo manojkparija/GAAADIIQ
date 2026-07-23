@@ -307,6 +307,31 @@
           </div>
         </div>
 
+        <!-- How to Fix -->
+        <div class="report-card fix-card" *ngIf="report.fix_solutions?.length">
+          <h3>🔩 How to Fix or Bypass the Issue</h3>
+          <p class="fix-intro">3 approaches from quick self-help to professional repair — always confirm with a certified mechanic.</p>
+          <div class="fix-grid">
+            <div class="fix-solution" *ngFor="let fix of report.fix_solutions; let i = index">
+              <div class="fix-header">
+                <span class="fix-num">{{ i + 1 }}</span>
+                <div class="fix-meta">
+                  <span class="fix-title">{{ fix.title }}</span>
+                  <span class="fix-badge"
+                    [class.diy]="fix.difficulty === 'DIY'"
+                    [class.mechanic]="fix.difficulty === 'Mechanic'"
+                    [class.specialist]="fix.difficulty === 'Specialist'">
+                    {{ fix.difficulty === 'DIY' ? '🔧 DIY' : fix.difficulty === 'Mechanic' ? '🏪 Mechanic' : '⚙️ Specialist' }}
+                  </span>
+                </div>
+              </div>
+              <ol class="fix-steps">
+                <li *ngFor="let step of fix.steps">{{ step }}</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
         <!-- Cost & Time -->
         <div class="report-grid">
           <div class="report-card mini">
