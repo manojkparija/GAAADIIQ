@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,7 +13,6 @@ from typing import Optional
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 from models import (
     ApproveRequest,
@@ -125,6 +125,10 @@ async def _run_pipeline_async(job_id: str, pdf_path: Path) -> None:
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024 * 1024  # 10 GB
+CHUNK_SIZE       = 4 * 1024 * 1024           # 4 MB read buffer
+
+
 @app.post("/api/pdf-ingestion/upload")
 async def upload_pdf(
     background_tasks: BackgroundTasks,
@@ -136,19 +140,34 @@ async def upload_pdf(
     if listing_type not in ("new", "used"):
         listing_type = "new"
 
-    content = await file.read()
-    if len(content) > 10 * 1024 * 1024 * 1024:  # 10 GB limit
-        raise HTTPException(status_code=413, detail="File too large (max 10 GB)")
-
     job_id = str(uuid.uuid4())
     ext = Path(file.filename).suffix or ".bin"
     upload_path = UPLOAD_DIR / f"{job_id}{ext}"
-    upload_path.write_bytes(content)
+
+    # Stream to disk in chunks — avoids loading large files into RAM
+    file_size = 0
+    try:
+        with upload_path.open("wb") as out:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                file_size += len(chunk)
+                if file_size > MAX_UPLOAD_BYTES:
+                    out.close()
+                    upload_path.unlink(missing_ok=True)
+                    raise HTTPException(status_code=413, detail="File too large (max 10 GB)")
+                out.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as e:
+        upload_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail=f"Upload failed: {e}")
 
     job = IngestionJob(
         id=job_id,
         filename=file.filename,
-        file_size=len(content),
+        file_size=file_size,
         created_at=_now(),
         listing_type=listing_type,
     )
@@ -156,7 +175,7 @@ async def upload_pdf(
 
     background_tasks.add_task(_run_pipeline_async, job_id, upload_path)
 
-    logger.info(f"Queued job {job_id} for {file.filename} ({len(content)//1024} KB) [{listing_type}]")
+    logger.info(f"Queued job {job_id} for {file.filename} ({file_size // 1024} KB) [{listing_type}]")
     return job
 
 

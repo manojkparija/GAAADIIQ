@@ -83,6 +83,13 @@ export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
   }
 
   private handleFiles(files: File[]) {
+    // Warn about very large files — browsers buffer FormData in RAM before sending
+    const MAX_WARN_MB = 500;
+    const large = files.filter(f => f.size > MAX_WARN_MB * 1024 * 1024);
+    if (large.length) {
+      const names = large.map(f => `${f.name} (${(f.size / 1024 / 1024 / 1024).toFixed(1)} GB)`).join(', ');
+      this.toast(`⚠ Large file(s): ${names}. Files over 500 MB may fail in-browser. Use the backend CLI for very large PDFs.`);
+    }
     this.svc.setPendingFiles(files);
     // Modal will appear; upload starts after category is selected
   }
