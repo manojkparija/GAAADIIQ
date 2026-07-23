@@ -71,13 +71,13 @@ export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
   @HostListener('dragleave') onDragLeave() { this.dragOver.set(false); }
   @HostListener('drop', ['$event']) onDrop(e: DragEvent) {
     e.preventDefault(); this.dragOver.set(false);
-    const files = Array.from(e.dataTransfer?.files ?? []).filter(f => f.type === 'application/pdf');
+    const files = Array.from(e.dataTransfer?.files ?? []);
     if (files.length) this.handleFiles(files);
   }
 
   onFileSelect(e: Event) {
     const input = e.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []).filter(f => f.type === 'application/pdf');
+    const files = Array.from(input.files ?? []);
     if (files.length) this.handleFiles(files);
     input.value = '';
   }
@@ -86,10 +86,15 @@ export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
     this.activeTab.set('jobs');
     try {
       await this.svc.uploadFiles(files);
-      this.toast(`${files.length} PDF${files.length > 1 ? 's' : ''} queued for processing`);
+      this.toast(`${files.length} file${files.length > 1 ? 's' : ''} queued for processing`);
     } catch {
       this.toast('Upload failed — check file size or try again', true);
     }
+  }
+
+  cancelUpload(filename: string) {
+    this.svc.cancelUpload(filename);
+    this.toast(`Upload cancelled: ${filename}`);
   }
 
   // ── Review actions ─────────────────────────────────────────────────────

@@ -11,7 +11,7 @@
     <div class="pi-brand">
       <span class="pi-brand-icon">📑</span>
       <div>
-        <div class="pi-brand-name">PDF Ingestion</div>
+        <div class="pi-brand-name">File Ingestion</div>
         <div class="pi-brand-sub">Admin · AI Pipeline</div>
       </div>
     </div>
@@ -49,22 +49,22 @@
     ════════════════════════════════ -->
     @if (activeTab() === 'upload') {
       <div class="pi-section-hdr">
-        <h1 class="pi-title">Upload PDF Brochures</h1>
-        <p class="pi-subtitle">Upload one or multiple automobile PDFs — the AI pipeline extracts all vehicle data automatically.</p>
+        <h1 class="pi-title">Upload Files</h1>
+        <p class="pi-subtitle">Upload automobile brochures, PDFs, images, spreadsheets or documents — the AI pipeline extracts all vehicle data automatically.</p>
       </div>
 
       <!-- Drop zone -->
       <div class="drop-zone" [class.drag-over]="dragOver()">
         <div class="drop-inner">
-          <div class="drop-icon">📄</div>
-          <div class="drop-heading">Drag & drop PDF files here</div>
-          <div class="drop-sub">Brochures · Price lists · Spec sheets · Catalogues</div>
+          <div class="drop-icon">📁</div>
+          <div class="drop-heading">Drag & drop files here</div>
+          <div class="drop-sub">Brochures · Price lists · Spec sheets · Catalogues · Images · Spreadsheets</div>
           <button class="btn-upload" (click)="fileInput.click()">
             Choose Files
           </button>
-          <input #fileInput type="file" accept=".pdf,application/pdf"
+          <input #fileInput type="file" accept="*/*"
             multiple hidden (change)="onFileSelect($event)" />
-          <div class="drop-limits">PDF only · Max 50 MB per file · Up to 20 files per batch</div>
+          <div class="drop-limits">All file types accepted · Max 10 GB per file · Up to 20 files per batch</div>
         </div>
       </div>
 
@@ -79,6 +79,7 @@
                 <div class="uq-bar" [style.width.%]="u.progress"></div>
               </div>
               <span class="uq-pct">{{ u.progress }}%</span>
+              <button class="uq-cancel" title="Cancel upload" (click)="cancelUpload(u.filename)">✕</button>
             </div>
           }
         </div>

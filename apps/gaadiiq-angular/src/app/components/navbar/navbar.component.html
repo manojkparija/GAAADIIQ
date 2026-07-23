@@ -77,7 +77,7 @@
                 <app-icon name="indian-rupee" [size]="14"></app-icon> Price Manager
               </a>
               <a routerLink="/admin/pdf-ingestion" (click)="userMenuOpen.set(false)" class="dropdown-item">
-                <app-icon name="file-text" [size]="14"></app-icon> PDF Ingestion
+                <app-icon name="file-text" [size]="14"></app-icon> File Ingestion
               </a>
             </ng-container>
             <a routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">
@@ -127,7 +127,7 @@
           <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">List Your Car</a>
           <a routerLink="/dealer-dashboard" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Dealer Dashboard</a>
           <a *ngIf="auth.isAdmin()" routerLink="/admin/pricing" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Price Manager</a>
-          <a *ngIf="auth.isAdmin()" routerLink="/admin/pdf-ingestion" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">PDF Ingestion</a>
+          <a *ngIf="auth.isAdmin()" routerLink="/admin/pdf-ingestion" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">File Ingestion</a>
           <a routerLink="/my-listings" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">My Listings</a>
         </ng-container>
         <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Sell My Car</a>
