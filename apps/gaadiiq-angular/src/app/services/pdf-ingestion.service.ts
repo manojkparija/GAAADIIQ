@@ -186,7 +186,9 @@ export class PdfIngestionService {
     }
 
     // Generate demo vehicles from filename
-    const demoVehicles = this._generateDemoVehicles(file.name, jobId);
+    const isImage = file.type.startsWith('image/');
+    const imageUrl = isImage ? URL.createObjectURL(file) : undefined;
+    const demoVehicles = this._generateDemoVehicles(file.name, jobId, imageUrl);
     job.vehicles = demoVehicles;
     job.vehicles_found = demoVehicles.length;
     job.status = 'AWAITING_REVIEW';
@@ -198,7 +200,7 @@ export class PdfIngestionService {
 
   private _delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
-  private _generateDemoVehicles(filename: string, jobId: string): ExtractedVehicle[] {
+  private _generateDemoVehicles(filename: string, jobId: string, imageUrl?: string): ExtractedVehicle[] {
     const name = filename.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
     const words = name.split(' ').filter(Boolean);
     const make  = words[0] ?? 'Maruti Suzuki';
@@ -233,7 +235,14 @@ export class PdfIngestionService {
         { label: 'Airbags', value: '6' },
         { label: 'Warranty', value: '2 years / 40,000 km' },
       ],
-      images: [],
+      images: imageUrl ? [{
+        id: crypto.randomUUID(),
+        url: imageUrl,
+        colour: null,
+        match_confidence: 1.0,
+        matched_variant: `${make} ${model} ${v.variant}`,
+        page_num: 1,
+      }] : [],
       quality_score: v.score,
       confidence: { make: 0.95, model: 0.93, price_inr: 0.88 },
       status: v.score >= 75 ? 'READY' : 'NEEDS_REVIEW',
