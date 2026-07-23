@@ -441,9 +441,17 @@
   gap: 0.5rem;
 }
 
-.year-selects app-custom-select {
+.year-select {
   flex: 1;
   min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  appearance: auto;
 }
 
 .year-sep {
