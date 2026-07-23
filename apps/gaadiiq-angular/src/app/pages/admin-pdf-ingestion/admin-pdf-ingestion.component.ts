@@ -163,6 +163,8 @@ export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
     this.toastTimer = setTimeout(() => this.toastMsg.set(''), 3500);
   }
 
+  get job(): IngestionJob { return this.svc.selectedJob()!; }
+
   trackJob(_: number, j: IngestionJob) { return j.id; }
   trackVehicle(_: number, v: ExtractedVehicle) { return v.id; }
   trackImage(_: number, i: ExtractedImage) { return i.id; }
