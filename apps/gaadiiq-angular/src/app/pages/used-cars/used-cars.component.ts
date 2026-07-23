@@ -6,7 +6,6 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { CityService, POPULAR_CITIES } from '../../services/city.service';
 import { IconComponent } from '../../components/icon/icon.component';
-import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 type PriceVerdict = 'fairDeal' | 'goodPrice' | 'slightlyHigh';
 
@@ -46,7 +45,7 @@ function snapToPopularCity(raw: string): string {
 @Component({
   selector: 'app-used-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   templateUrl: './used-cars.component.html',
   styleUrl: './used-cars.component.scss'
 })
@@ -83,8 +82,6 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
   maxBudget = signal(20000000);
   yearFrom = signal(2005);
   yearTo = signal(new Date().getFullYear());
-  yearFromStr = signal('2005');
-  yearToStr = signal(String(new Date().getFullYear()));
   selectedKmRanges = signal<string[]>([]);
   selectedFuels = signal<string[]>([]);
   selectedTransmissions = signal<string[]>([]);
@@ -116,10 +113,6 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly currentYear = new Date().getFullYear();
   // Include currentYear+1 so yearTo default is always visually selectable
   yearOptions = Array.from({ length: this.currentYear - 2004 + 1 }, (_, i) => 2005 + i);
-  yearOptionStrs = this.yearOptions.map(String);
-
-  onYearFromChange(v: string) { this.yearFromStr.set(v); this.yearFrom.set(Number(v)); }
-  onYearToChange(v: string)   { this.yearToStr.set(v);   this.yearTo.set(Number(v)); }
 
   readonly isUsedCar = (c: any) => c.isSellerListing || c.km > 0 || c.year < 2024;
 
@@ -394,8 +387,8 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.heroBudgetMax.set(0);
     this.minBudget.set(100000);
     this.maxBudget.set(20000000);
-    this.yearFrom.set(2005); this.yearFromStr.set('2005');
-    this.yearTo.set(this.currentYear); this.yearToStr.set(String(this.currentYear));
+    this.yearFrom.set(2005);
+    this.yearTo.set(this.currentYear);
     this.selectedKmRanges.set([]);
     this.selectedFuels.set([]);
     this.selectedTransmissions.set([]);
