@@ -1,0 +1,353 @@
+<!-- ── TOAST ── -->
+@if (toastMsg()) {
+  <div class="pi-toast">{{ toastMsg() }}</div>
+}
+
+<!-- ── PAGE SHELL ── -->
+<div class="pi-page">
+
+  <!-- SIDEBAR -->
+  <aside class="pi-sidebar">
+    <div class="pi-brand">
+      <span class="pi-brand-icon">📑</span>
+      <div>
+        <div class="pi-brand-name">PDF Ingestion</div>
+        <div class="pi-brand-sub">Admin · AI Pipeline</div>
+      </div>
+    </div>
+
+    <nav class="pi-nav">
+      <button class="pi-nav-item" [class.active]="activeTab()==='upload'" (click)="activeTab.set('upload')">
+        <span>⬆️</span> Upload
+      </button>
+      <button class="pi-nav-item" [class.active]="activeTab()==='jobs'" (click)="activeTab.set('jobs')">
+        <span>⚙️</span> Jobs
+        @if (pendingJobs().length) {
+          <span class="pi-badge">{{ pendingJobs().length }}</span>
+        }
+      </button>
+      <button class="pi-nav-item" [class.active]="activeTab()==='review'"
+        (click)="activeTab.set('review')" [disabled]="!svc.selectedJob()">
+        <span>👁️</span> Review
+        @if (svc.selectedJob()) {
+          <span class="pi-badge pi-badge-amber">{{ svc.selectedJob()!.vehicles.length }}</span>
+        }
+      </button>
+    </nav>
+
+    <div class="pi-admin-tag">
+      <span class="pi-admin-dot"></span>
+      {{ auth.currentUser()?.name ?? 'Admin' }}
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main class="pi-main">
+
+    <!-- ═══════════════════════════════
+         TAB: UPLOAD
+    ════════════════════════════════ -->
+    @if (activeTab() === 'upload') {
+      <div class="pi-section-hdr">
+        <h1 class="pi-title">Upload PDF Brochures</h1>
+        <p class="pi-subtitle">Upload one or multiple automobile PDFs — the AI pipeline extracts all vehicle data automatically.</p>
+      </div>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" [class.drag-over]="dragOver()">
+        <div class="drop-inner">
+          <div class="drop-icon">📄</div>
+          <div class="drop-heading">Drag & drop PDF files here</div>
+          <div class="drop-sub">Brochures · Price lists · Spec sheets · Catalogues</div>
+          <button class="btn-upload" (click)="fileInput.nativeElement.click()">
+            Choose Files
+          </button>
+          <input #fileInput type="file" accept=".pdf,application/pdf"
+            multiple hidden (change)="onFileSelect($event)" />
+          <div class="drop-limits">PDF only · Max 50 MB per file · Up to 20 files per batch</div>
+        </div>
+      </div>
+
+      <!-- Upload queue -->
+      @if (svc.uploadQueue().length) {
+        <div class="upload-queue">
+          <div class="uq-title">Uploading…</div>
+          @for (u of svc.uploadQueue(); track u.filename) {
+            <div class="uq-row">
+              <span class="uq-name">{{ u.filename }}</span>
+              <div class="uq-bar-wrap">
+                <div class="uq-bar" [style.width.%]="u.progress"></div>
+              </div>
+              <span class="uq-pct">{{ u.progress }}%</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- What the pipeline does -->
+      <div class="pipeline-info">
+        <div class="pi-info-title">What happens after upload</div>
+        <div class="pi-steps-row">
+          @for (step of [
+            {n:'01',icon:'📄',t:'PDF Parsed',d:'Text + tables extracted. Scanned pages run through Tesseract OCR'},
+            {n:'02',icon:'🧠',t:'AI Extracts Data',d:'Ollama LLM reads each chunk and outputs structured JSON per variant'},
+            {n:'03',icon:'🖼️',t:'Images Matched',d:'Every embedded image matched to the correct vehicle variant'},
+            {n:'04',icon:'✅',t:'Validated',d:'Pydantic schema check, duplicate detect, quality score assigned'},
+            {n:'05',icon:'👁️',t:'You Review',d:'Approve, edit, or reject each extracted record before publishing'},
+            {n:'06',icon:'🚀',t:'Published',d:'Approved records written to PostgreSQL + images uploaded to CDN'}
+          ]; track step.n) {
+            <div class="pi-step">
+              <div class="pi-step-num">{{ step.n }}</div>
+              <div class="pi-step-icon">{{ step.icon }}</div>
+              <div class="pi-step-t">{{ step.t }}</div>
+              <div class="pi-step-d">{{ step.d }}</div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ═══════════════════════════════
+         TAB: JOBS
+    ════════════════════════════════ -->
+    @if (activeTab() === 'jobs') {
+      <div class="pi-section-hdr">
+        <h1 class="pi-title">Processing Jobs</h1>
+        <p class="pi-subtitle">Each uploaded PDF becomes a job. Jobs auto-refresh every 4 seconds.</p>
+      </div>
+
+      @if (!svc.jobs().length) {
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div>No jobs yet — upload a PDF to get started.</div>
+          <button class="btn-primary" (click)="activeTab.set('upload')">Upload PDF →</button>
+        </div>
+      } @else {
+        <div class="jobs-list">
+          @for (job of svc.jobs(); track job.id; let i = $index) {
+            <div class="job-card" [class.job-active]="svc.selectedJob()?.id === job.id">
+              <div class="job-top">
+                <span class="job-status-icon">{{ jobStatusIcon(job.status) }}</span>
+                <div class="job-info">
+                  <div class="job-name">{{ job.filename }}</div>
+                  <div class="job-meta">
+                    {{ svc.formatSize(job.file_size) }} ·
+                    {{ job.vehicles_found }} vehicle{{ job.vehicles_found !== 1 ? 's' : '' }} found ·
+                    {{ job.created_at | date:'dd MMM, HH:mm' }}
+                  </div>
+                </div>
+                <div class="job-status-badge" [style.background]="job.status === 'AWAITING_REVIEW' ? 'rgba(245,158,11,.15)' : job.status === 'APPROVED' ? 'rgba(16,185,129,.15)' : 'rgba(100,116,139,.12)'"
+                  [style.color]="job.status === 'AWAITING_REVIEW' ? '#F59E0B' : job.status === 'APPROVED' ? '#10B981' : '#94A3B8'">
+                  {{ job.status.replace('_',' ') }}
+                </div>
+              </div>
+
+              <!-- Progress bar for active jobs -->
+              @if (!['AWAITING_REVIEW','APPROVED','REJECTED','FAILED'].includes(job.status)) {
+                <div class="job-progress-wrap">
+                  <div class="job-progress-bar" [style.width.%]="job.progress"></div>
+                </div>
+              }
+
+              @if (job.error) {
+                <div class="job-error">{{ job.error }}</div>
+              }
+
+              @if (job.status === 'AWAITING_REVIEW') {
+                <button class="btn-review" (click)="openReview(job)">
+                  Review {{ job.vehicles_found }} Records →
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- ═══════════════════════════════
+         TAB: REVIEW
+    ════════════════════════════════ -->
+    @if (activeTab() === 'review' && svc.selectedJob()) {
+      @let job = svc.selectedJob()!;
+
+      <div class="pi-section-hdr">
+        <div>
+          <h1 class="pi-title">Review Extracted Data</h1>
+          <p class="pi-subtitle">Source: <strong>{{ job.filename }}</strong> · {{ job.vehicles.length }} records extracted</p>
+        </div>
+        <button class="btn-bulk-approve"
+          [disabled]="!readyToApprove().length"
+          (click)="bulkApprove(job)">
+          ✓ Approve All READY ({{ readyToApprove().length }})
+        </button>
+      </div>
+
+      <!-- Summary row -->
+      <div class="review-summary">
+        <div class="rs-pill rs-ready">
+          <span>{{ readyToApprove().length }}</span> READY
+        </div>
+        <div class="rs-pill rs-review">
+          <span>{{ needsReview().length }}</span> NEEDS REVIEW
+        </div>
+        <div class="rs-pill rs-incomplete">
+          <span>{{ incomplete().length }}</span> INCOMPLETE
+        </div>
+        @if (unmatchedImages().length) {
+          <div class="rs-pill rs-images">
+            <span>{{ unmatchedImages().length }}</span> unmatched images
+          </div>
+        }
+      </div>
+
+      <!-- Vehicle table -->
+      <div class="review-table-wrap">
+        <table class="review-table">
+          <thead>
+            <tr>
+              <th>Vehicle</th>
+              <th>Price</th>
+              <th>Fuel · Trans</th>
+              <th>Power · Mileage</th>
+              <th>Quality</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (v of job.vehicles; track v.id) {
+              <!-- Normal row -->
+              @if (editingId() !== v.id) {
+                <tr [class.row-ready]="v.status==='READY'"
+                    [class.row-review]="v.status==='NEEDS_REVIEW'"
+                    [class.row-incomplete]="v.status==='INCOMPLETE'">
+                  <td>
+                    <div class="rv-vehicle">
+                      @if (v.images.length) {
+                        <img [src]="v.images[0].url" class="rv-thumb" alt="" (error)="$any($event.target).style.display='none'" />
+                      }
+                      <div>
+                        <div class="rv-name">{{ v.make }} {{ v.model }}</div>
+                        <div class="rv-variant">{{ v.variant ?? '—' }} · {{ v.year ?? '—' }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="rv-price">{{ formatPrice(v.price_inr) }}</td>
+                  <td>
+                    <div class="rv-tags">
+                      @if (v.fuel_type) { <span class="rv-tag">{{ v.fuel_type }}</span> }
+                      @if (v.transmission) { <span class="rv-tag">{{ v.transmission }}</span> }
+                    </div>
+                  </td>
+                  <td>
+                    <div class="rv-spec">
+                      {{ v.power_bhp ? v.power_bhp + ' bhp' : '—' }} ·
+                      {{ v.mileage_kmpl ? v.mileage_kmpl + ' kmpl' : '—' }}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="quality-bar-wrap">
+                      <div class="quality-bar" [style.background]="confidenceBar(v.quality_score / 100)"></div>
+                      <span class="quality-num" [style.color]="svc.qualityColour(v.quality_score)">{{ v.quality_score }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-chip" [style.background]="statusColour(v.status) + '22'" [style.color]="statusColour(v.status)">
+                      {{ v.status.replace('_',' ') }}
+                    </span>
+                    @if (v.duplicate_of) {
+                      <div class="dup-warning">⚠ Possible duplicate</div>
+                    }
+                  </td>
+                  <td>
+                    <div class="rv-actions">
+                      <button class="act-btn act-approve" (click)="approve(job, v)" title="Approve & publish">✓</button>
+                      <button class="act-btn act-edit" (click)="startEdit(v)" title="Edit">✎</button>
+                      <button class="act-btn act-reject" (click)="reject(job, v)" title="Reject">✕</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Inline expanded specs -->
+                @if (v.specs.length || v.colours.length) {
+                  <tr class="specs-row">
+                    <td colspan="7">
+                      <div class="specs-row-inner">
+                        @for (s of v.specs.slice(0,6); track s.label) {
+                          <div class="spec-chip"><span class="sc-label">{{ s.label }}</span>{{ s.value }}</div>
+                        }
+                        @for (c of v.colours; track c) {
+                          <div class="spec-chip colour-chip">🎨 {{ c }}</div>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+
+              <!-- Edit row -->
+              @if (editingId() === v.id) {
+                <tr class="edit-row">
+                  <td colspan="7">
+                    <div class="edit-form">
+                      <div class="edit-form-title">✎ Editing: {{ v.make }} {{ v.model }} {{ v.variant }}</div>
+                      <div class="edit-grid">
+                        @for (field of [
+                          {key:'make',label:'Make',type:'text'},
+                          {key:'model',label:'Model',type:'text'},
+                          {key:'variant',label:'Variant',type:'text'},
+                          {key:'year',label:'Year',type:'number'},
+                          {key:'price_inr',label:'Price (₹)',type:'number'},
+                          {key:'fuel_type',label:'Fuel Type',type:'text'},
+                          {key:'transmission',label:'Transmission',type:'text'},
+                          {key:'engine_cc',label:'Engine CC',type:'number'},
+                          {key:'power_bhp',label:'Power (bhp)',type:'number'},
+                          {key:'torque_nm',label:'Torque (Nm)',type:'number'},
+                          {key:'mileage_kmpl',label:'Mileage (kmpl)',type:'number'},
+                          {key:'seating',label:'Seating',type:'number'}
+                        ]; track field.key) {
+                          <div class="edit-field">
+                            <label class="ef-label">{{ field.label }}</label>
+                            <input class="ef-input" [type]="field.type"
+                              [value]="$any(editDraft())[field.key] ?? ''"
+                              (input)="editDraft.update(d => ({...d, [field.key]: field.type==='number' ? +$any($event.target).value : $any($event.target).value}))" />
+                          </div>
+                        }
+                      </div>
+                      <div class="edit-actions">
+                        <button class="btn-primary" (click)="saveEdit(job)">Save Changes</button>
+                        <button class="btn-ghost" (click)="cancelEdit()">Cancel</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Unmatched images -->
+      @if (unmatchedImages().length) {
+        <div class="unmatched-section">
+          <div class="unmatched-title">🖼️ Unmatched Images — assign to a vehicle</div>
+          <div class="unmatched-grid">
+            @for (img of unmatchedImages(); track img.id) {
+              <div class="unmatched-card">
+                <img [src]="img.url" class="unmatched-img" alt="Unmatched" (error)="$any($event.target).src='/assets/placeholder.jpg'" />
+                <div class="unmatched-info">Page {{ img.page_num }}</div>
+                <select class="unmatched-select" (change)="assignImage(job, $any($event.target).value, img.id)">
+                  <option value="">Assign to…</option>
+                  @for (v of job.vehicles; track v.id) {
+                    <option [value]="v.id">{{ v.make }} {{ v.model }} {{ v.variant }}</option>
+                  }
+                </select>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+
+  </main>
+</div>
