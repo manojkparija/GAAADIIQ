@@ -822,6 +822,15 @@ a:focus-visible,
   border-radius: 4px;
 }
 
+// Auth page logo SVG classes (inline SVG, not encapsulated)
+.auth-logo-svg {
+  display: block;
+  .al-main { fill: var(--text); }
+  .al-ii-a  { fill: #2B6BFF; }
+  .al-ii-b  { fill: #00D4A8; opacity: 0.7; }
+  .al-iq    { fill: #00D4A8; }
+}
+
 // Reduced motion — respect OS preference
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
