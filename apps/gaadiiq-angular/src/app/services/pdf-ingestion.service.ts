@@ -173,7 +173,7 @@ export class PdfIngestionService {
         const canvas = document.createElement('canvas');
         canvas.width  = viewport.width;
         canvas.height = viewport.height;
-        await page.render({ canvasContext: canvas.getContext('2d')!, viewport }).promise;
+        await page.render({ canvasContext: canvas.getContext('2d')!, canvas, viewport }).promise;
         const blob = await new Promise<Blob>(res => canvas.toBlob(b => res(b!), 'image/jpeg', 0.88));
         urls.push(URL.createObjectURL(blob));
       }
