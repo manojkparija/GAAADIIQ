@@ -63,11 +63,46 @@ const ADVISOR_KEYWORDS = [
 ];
 
 const CAR_INFO_KEYWORDS = [
-  'price of', 'cost of', 'specs', 'features', 'mileage', 'range', 'seating',
+  // spec query terms
+  'hp', 'bhp', 'nm', 'torque', 'horsepower', 'power output', 'top speed',
+  '0-100', 'acceleration', 'cc', 'displacement', 'engine capacity', 'rpm',
+  'fuel economy', 'mileage', 'range', 'kmpl', 'km/l',
+  // generic info patterns
+  'price of', 'cost of', 'specs', 'features', 'seating',
   'tell me about', 'info about', 'details of', 'specification', 'review',
-  'swift', 'dzire', 'creta', 'nexon', 'brezza', 'seltos', 'venue', 'punch',
-  'alto', 'wagon r', 'baleno', 'i20', 'grand i10', 'city', 'amaze', 'tiago',
-  'tigor', 'altroz', 'harrier', 'safari', 'fortuner', 'innova', 'ertiga',
+  'what is the', 'tell me the', 'how much power', 'how fast',
+  // Maruti
+  'swift', 'dzire', 'baleno', 'wagon r', 'alto', 'vitara', 'ertiga', 'brezza', 'xl6', 's-presso',
+  // Hyundai
+  'creta', 'venue', 'i20', 'grand i10', 'alcazar', 'tucson', 'ioniq', 'aura', 'xcent',
+  // Tata
+  'nexon', 'punch', 'harrier', 'safari', 'altroz', 'tiago', 'tigor', 'curvv',
+  // Honda
+  'city', 'amaze', 'jazz', 'wrv', 'elevate', 'accord', 'civic',
+  // Kia
+  'seltos', 'sonet', 'carens', 'ev6', 'carnival',
+  // MG
+  'hector', 'astor', 'gloster', 'zs ev', 'comet',
+  // Toyota
+  'fortuner', 'innova', 'urban cruiser', 'camry', 'vellfire', 'hilux',
+  // Mahindra
+  'scorpio', 'thar', 'xuv', 'be6', 'bolero', 'marazzo',
+  // Nissan
+  'nissan', 'magnite', 'kicks', 'x-trail', 'tekton', 'gt-r', 'leaf',
+  // Renault
+  'renault', 'duster', 'kiger', 'triber',
+  // Volkswagen / Skoda
+  'volkswagen', 'vw', 'skoda', 'virtus', 'slavia', 'kushaq', 'taigun', 'polo', 'vento',
+  // Jeep
+  'jeep', 'compass', 'meridian', 'wrangler',
+  // Kia / others
+  'ford', 'figo', 'aspire', 'ecosport',
+];
+
+const CAR_BRANDS = [
+  'maruti', 'suzuki', 'hyundai', 'tata', 'honda', 'kia', 'mg', 'mahindra',
+  'toyota', 'nissan', 'renault', 'volkswagen', 'skoda', 'jeep', 'ford',
+  'bmw', 'mercedes', 'audi', 'volvo', 'jaguar', 'land rover', 'porsche', 'lexus',
 ];
 
 function detectIntent(text: string): IntentType {
@@ -75,10 +110,11 @@ function detectIntent(text: string): IntentType {
   const diagScore = DIAGNOSIS_KEYWORDS.filter(k => lower.includes(k)).length;
   const advScore  = ADVISOR_KEYWORDS.filter(k => lower.includes(k)).length;
   const infoScore = CAR_INFO_KEYWORDS.filter(k => lower.includes(k)).length;
+  const brandHit  = CAR_BRANDS.some(b => lower.includes(b));
 
   if (diagScore > advScore && diagScore > 0) return 'vehicle_diagnosis';
   if (advScore > 0) return 'car_advisor';
-  if (infoScore > 0) return 'car_info';
+  if (infoScore > 0 || brandHit) return 'car_info';
   return 'general';
 }
 
@@ -402,10 +438,30 @@ export class ChatService {
     this.hideTyping();
 
     if (matches.length === 0) {
-      this.pushAssistant(
-        'I couldn\'t find that specific car in my database. Could you tell me the make and model? For example: "Tell me about the Hyundai Creta" or "Maruti Swift specs".',
-        [{ type: 'suggested_prompts', prompts: ['Tell me about Maruti Swift', 'Hyundai Creta specs', 'Tata Nexon price'] }],
-      );
+      // Try to extract the car name for a more helpful response
+      const words = lower.split(/\s+/);
+      const brandWord = words.find(w => CAR_BRANDS.includes(w));
+      const carMention = brandWord
+        ? text.substring(lower.indexOf(brandWord))
+        : null;
+
+      const isSpecQuery = /\b(hp|bhp|nm|torque|power|cc|top speed|0[-–]100|acceleration|mileage|kmpl)\b/.test(lower);
+
+      if (isSpecQuery && carMention) {
+        this.pushAssistant(
+          `I don't have **${carMention.trim()}** in my local database yet, so I can't give you its exact specs.\n\n` +
+          `For accurate HP and torque figures, I'd recommend checking:\n` +
+          `• The manufacturer's official website\n` +
+          `• CarWale / CarDekho spec pages\n\n` +
+          `I can help you compare similar cars I do know about — would you like that?`,
+          [{ type: 'suggested_prompts', prompts: ['Show me similar cars', 'Compare SUVs', 'Recommend a car like this'] }],
+        );
+      } else {
+        this.pushAssistant(
+          'I couldn\'t find that specific car in my database. Could you tell me the make and model? For example: "Tell me about the Hyundai Creta" or "Maruti Swift specs".',
+          [{ type: 'suggested_prompts', prompts: ['Tell me about Maruti Swift', 'Hyundai Creta specs', 'Tata Nexon price'] }],
+        );
+      }
       return;
     }
 
