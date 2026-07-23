@@ -76,9 +76,9 @@
             <div class="uq-row">
               <span class="uq-name">{{ u.filename }}</span>
               <div class="uq-bar-wrap">
-                <div class="uq-bar" [style.width.%]="u.progress"></div>
+                <div class="uq-bar" [class.uq-bar-pulse]="u.progress === 100" [style.width.%]="u.progress"></div>
               </div>
-              <span class="uq-pct">{{ u.progress }}%</span>
+              <span class="uq-pct">{{ u.progress === 100 ? 'Processing…' : u.progress + '%' }}</span>
               <button class="uq-cancel" title="Cancel upload" (click)="cancelUpload(u.filename)">✕</button>
             </div>
           }
