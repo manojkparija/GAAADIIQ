@@ -1,6 +1,6 @@
 import {
   Component, signal, computed, inject, OnInit, OnDestroy,
-  ChangeDetectionStrategy, HostListener, ElementRef, ViewChild,
+  ChangeDetectionStrategy, HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,8 +19,6 @@ import { AuthService } from '../../services/auth.service';
 export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
   svc   = inject(PdfIngestionService);
   auth  = inject(AuthService);
-
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   // UI state
   dragOver      = signal(false);
