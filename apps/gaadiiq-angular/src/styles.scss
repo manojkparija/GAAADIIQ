@@ -624,10 +624,16 @@ a { text-decoration: none; color: inherit; }
   transition: all 0.18s;
   white-space: nowrap;
   font-family: 'Manrope', sans-serif;
-  &:hover, &.active {
-    background: rgba(47,107,255,0.10);
-    border-color: var(--primary);
-    color: var(--primary);
+  &:hover {
+    background: rgba(37,99,235,0.10);
+    border-color: #2563EB;
+    color: #2563EB;
+  }
+  &.active {
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(37,99,235,0.28);
   }
 }
 
