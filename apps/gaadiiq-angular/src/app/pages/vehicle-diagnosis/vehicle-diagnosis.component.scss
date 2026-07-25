@@ -478,3 +478,73 @@
 .btn-ghost.speaking {
   border-color: #EF4444; color: #EF4444; background: rgba(239,68,68,0.08);
 }
+
+// ── Voice: retry badge & dismiss error ───────────────────────────────────────
+
+.retry-badge {
+  display: inline-block; padding: 1px 8px; border-radius: 20px; font-size: 11px;
+  background: rgba(239,68,68,0.15); color: #EF4444; font-weight: 700;
+  margin-left: 8px; vertical-align: middle;
+}
+
+.voice-dismiss {
+  display: flex; align-items: flex-start; gap: 6px;
+  padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
+  background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35);
+  color: #F59E0B; cursor: pointer; text-align: left; line-height: 1.5;
+  width: 100%; max-width: 500px;
+  &:hover { background: rgba(245,158,11,0.18); }
+}
+
+// ── Confidence indicator ──────────────────────────────────────────────────────
+
+.conf-indicator {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--muted); padding: 4px 0;
+}
+
+.conf-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #6B7280; flex-shrink: 0;
+  &.high { background: #10B981; }
+  &.low { background: #F59E0B; }
+}
+
+.conf-warn { color: #F59E0B; font-style: italic; }
+
+// ── TTS playback bar ─────────────────────────────────────────────────────────
+
+.tts-bar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  padding: 12px 16px; border-radius: 12px; margin: 16px 0 4px;
+  background: var(--fill-soft, rgba(0,0,0,0.04));
+  border: 1px solid var(--border-soft, #e5e7eb);
+}
+
+.tts-status {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted);
+}
+
+.tts-icon {
+  font-size: 18px; transition: filter 0.3s;
+  &.active { animation: tts-pulse 1.2s ease infinite; }
+}
+
+@keyframes tts-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0px rgba(0,212,168,0)); }
+  50% { filter: drop-shadow(0 0 6px rgba(0,212,168,0.8)); }
+}
+
+.tts-controls {
+  display: flex; align-items: center; gap: 6px;
+}
+
+.tts-btn {
+  width: 34px; height: 34px; border-radius: 8px; font-size: 16px;
+  border: 1px solid var(--border, #e5e7eb); background: var(--card-bg, #fff);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--text); transition: all 0.15s;
+  &:hover { border-color: #00D4A8; background: rgba(0,212,168,0.08); }
+  &.mute-btn.muted {
+    border-color: #EF4444; background: rgba(239,68,68,0.08); color: #EF4444;
+  }
+}
