@@ -132,8 +132,49 @@
 
       <div class="form-group">
         <label>Describe the issue in your own words *</label>
+
+        <!-- Voice input toolbar -->
+        <div class="voice-toolbar" *ngIf="voice.supported">
+          <div class="voice-lang-wrap">
+            <button type="button" class="voice-lang-btn" (click)="voiceLangOpen.set(!voiceLangOpen())" [class.open]="voiceLangOpen()">
+              🌐 {{ voice.selectedLanguage().native }}
+              <span class="lang-arrow">▾</span>
+            </button>
+            <div class="voice-lang-dropdown" *ngIf="voiceLangOpen()">
+              <button *ngFor="let lang of voiceLanguages" type="button" class="lang-option"
+                [class.selected]="voice.selectedLanguage().code === lang.code"
+                (click)="selectVoiceLang(lang)">
+                <span class="lang-native">{{ lang.native }}</span>
+                <span class="lang-label">{{ lang.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="mic-btn"
+            [class.listening]="voice.state() === 'listening'"
+            [class.processing]="voice.state() === 'processing'"
+            [class.error]="voice.state() === 'error'"
+            (click)="toggleVoice()"
+            [title]="voice.state() === 'listening' ? 'Stop recording' : 'Start voice input'">
+            <span class="mic-icon" *ngIf="voice.state() !== 'listening'">🎤</span>
+            <span class="mic-icon recording-pulse" *ngIf="voice.state() === 'listening'">🔴</span>
+            <span class="mic-label">
+              {{ voice.state() === 'listening' ? 'Tap to stop' :
+                 voice.state() === 'processing' ? 'Processing…' : 'Speak' }}
+            </span>
+          </button>
+
+          <span class="voice-hint" *ngIf="voice.state() === 'listening'">Listening… speak clearly</span>
+          <span class="voice-error" *ngIf="voice.state() === 'error'">{{ voice.errorMessage() }}</span>
+        </div>
+
+        <!-- Interim live transcription -->
+        <div class="interim-text" *ngIf="voice.interimText()">
+          <span class="interim-label">Hearing:</span> {{ voice.interimText() }}
+        </div>
+
         <textarea [(ngModel)]="problemDescription" rows="5"
-          placeholder="e.g. When I start the car in the morning, there's a grinding noise from the front left. The car pulls to the left when braking. Started about a week ago after hitting a speed bump hard."></textarea>
+          [placeholder]="voice.supported ? 'Tap 🎤 above to describe by voice, or type here…' : 'e.g. When I start the car in the morning, there\'s a grinding noise from the front left…'"></textarea>
         <span class="char-count">{{ problemDescription.length }}/2000 characters (min 10)</span>
       </div>
 
@@ -393,6 +434,11 @@
         <!-- Actions -->
         <div class="report-actions">
           <button class="btn-primary" (click)="bookService()">📍 Find Nearest Service Centre</button>
+          <button class="btn-ghost" *ngIf="voice.synthSupported"
+            (click)="toggleTts(report.preliminary_diagnosis + '. ' + report.recommended_steps.join('. '))"
+            [class.speaking]="isSpeaking()">
+            {{ isSpeaking() ? '🔇 Stop' : '🔊 Listen' }}
+          </button>
           <button class="btn-ghost" (click)="reset()">+ New Diagnosis</button>
         </div>
       </ng-container>
