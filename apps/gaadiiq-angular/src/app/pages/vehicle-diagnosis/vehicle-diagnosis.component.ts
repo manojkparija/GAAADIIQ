@@ -1,4 +1,4 @@
-import { Component, signal, OnDestroy } from '@angular/core';
+import { Component, signal, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -291,7 +291,6 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   // Voice input
   voiceLanguages = VOICE_LANGUAGES;
   voiceLangOpen = signal(false);
-  isSpeaking = signal(false);
 
   constructor(
     private seo: SeoService,
@@ -306,6 +305,15 @@ export class VehicleDiagnosisComponent implements OnDestroy {
       'AI Vehicle Diagnosis',
       'Describe your car problem and get an instant AI-powered preliminary diagnosis with repair cost estimates.',
     );
+
+    // Auto-play TTS when a new diagnosis report arrives (respects mute preference)
+    effect(() => {
+      const report = this.diagSvc.report();
+      if (report && this.step() === 4 && !this.diagSvc.loading()) {
+        const ttsText = this._buildTtsText(report);
+        this.voice.speak(ttsText);
+      }
+    });
   }
 
   openHistory() {
@@ -447,6 +455,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     if (this.voice.state() === 'listening') {
       this.voice.stop();
     } else {
+      this.voice.dismissError();
       this.voice.start((finalText: string) => {
         this.problemDescription = (this.problemDescription + finalText).slice(0, 2000);
       });
@@ -458,21 +467,20 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     this.voiceLangOpen.set(false);
   }
 
-  toggleTts(text: string) {
-    if (this.isSpeaking()) {
-      this.voice.stopSpeaking();
-      this.isSpeaking.set(false);
-    } else {
-      this.isSpeaking.set(true);
-      this.voice.speak(text, this.voice.selectedLanguage().code);
-      // SpeechSynthesisUtterance has no reliable onend in all browsers; reset after estimate
-      const words = text.split(' ').length;
-      setTimeout(() => this.isSpeaking.set(false), Math.max(8000, words * 400));
+  private _buildTtsText(report: any): string {
+    const parts: string[] = [
+      `Preliminary diagnosis: ${report.preliminary_diagnosis}`,
+    ];
+    if (report.safe_to_drive === false) {
+      parts.push('Warning: Do not drive. Immediate professional inspection required.');
     }
+    if (report.recommended_steps?.length) {
+      parts.push('Recommended next steps: ' + report.recommended_steps.join('. '));
+    }
+    return parts.join('. ');
   }
 
   ngOnDestroy() {
-    this.voice.stop();
-    this.voice.stopSpeaking();
+    this.voice.destroy();
   }
 }
