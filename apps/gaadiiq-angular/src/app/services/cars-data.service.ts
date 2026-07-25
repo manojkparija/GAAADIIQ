@@ -35,6 +35,32 @@ interface ApiListResponse { items: ApiListing[]; total: number; page: number; pa
 // ── Local assets ───────────────────────────────────────────────────────────────
 const PLACEHOLDER = 'assets/cars/placeholder.svg';
 
+/**
+ * Local images keyed by "Make Model" (lower-case).
+ *
+ * Used for both API listings and the demo fallback, so cars render the same
+ * way whether or not the backend is reachable. Drop real photographs in at
+ * these paths (any extension — update the entry) and nothing else changes.
+ *
+ * These are placeholder illustrations, not vehicle photographs.
+ */
+const LOCAL_IMAGES: Record<string, string[]> = {
+  'maruti suzuki swift': ['assets/cars/maruti-swift/front.svg', 'assets/cars/maruti-swift/side.svg'],
+  'hyundai creta':       ['assets/cars/hyundai-creta/front.svg', 'assets/cars/hyundai-creta/side.svg'],
+  'tata nexon':          ['assets/cars/tata-nexon/front.svg', 'assets/cars/tata-nexon/side.svg'],
+  'kia seltos':          ['assets/cars/kia-seltos/front.svg', 'assets/cars/kia-seltos/side.svg'],
+  'mahindra xuv700':     ['assets/cars/mahindra-xuv700/front.svg', 'assets/cars/mahindra-xuv700/side.svg'],
+};
+
+/** Local images for a make/model, or null when we have none. */
+function localImagesFor(make: string, model: string): string[] | null {
+  const exact = LOCAL_IMAGES[`${make} ${model}`.toLowerCase().trim()];
+  if (exact) return exact;
+  // "Nexon EV" should fall back to the Nexon images rather than a placeholder.
+  const base = LOCAL_IMAGES[`${make} ${model.split(' ')[0]}`.toLowerCase().trim()];
+  return base ?? null;
+}
+
 // Fuel-type label normalisation (API uses lowercase enum values)
 const FUEL_LABEL: Record<string, string> = {
   petrol: 'Petrol', diesel: 'Diesel', electric: 'Electric',
@@ -75,26 +101,43 @@ const MODEL_SPECS: Record<string, (variant: string, fuel: string) => { specs: {l
   },
 };
 
+/** Local images for a demo car; falls back to the generic placeholder. */
+function img(makeModel: string): string[] {
+  const [make, ...rest] = makeModel.split(' ');
+  return LOCAL_IMAGES[makeModel.toLowerCase()]
+      ?? localImagesFor(make, rest.join(' '))
+      ?? [PLACEHOLDER];
+}
+
 // Demo fallback — shown only when the API is unreachable
 const DEMO_NEW_CARS: Car[] = [
-  { id: 'd8001', make: 'Maruti Suzuki', model: 'Swift', variant: 'ZXi+', year: 2025, price: 899000, km: 0, fuel: 'Petrol', transmission: 'AMT', badge: 'Bestseller', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.4, reviews: 312, verified: true, city: 'Mumbai', bodyType: 'Hatchback', specs: [{ label: 'Mileage', value: '24.8 kmpl' }, { label: 'Power', value: '81 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging'] },
-  { id: 'd8002', make: 'Hyundai', model: 'Creta', variant: 'SX Tech', year: 2025, price: 1695000, km: 0, fuel: 'Petrol', transmission: 'Automatic', badge: 'Top Rated', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.6, reviews: 210, verified: true, city: 'Delhi', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '17.4 kmpl' }, { label: 'Power', value: '138 bhp' }], features: ['Panoramic Sunroof', 'ADAS Safety', '360° Camera', '6 Airbags'] },
-  { id: 'd8003', make: 'Tata', model: 'Nexon EV', variant: 'Max LR', year: 2025, price: 2099000, km: 0, fuel: 'Electric', transmission: 'Automatic', badge: 'Best EV', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.5, reviews: 175, verified: true, city: 'Bengaluru', bodyType: 'SUV', specs: [{ label: 'Range', value: '465 km' }, { label: 'Power', value: '143 bhp' }], features: ['Panoramic Sunroof', '6 Airbags', 'Connected Car'] },
+  { id: 'd8001', make: 'Maruti Suzuki', model: 'Swift', variant: 'ZXi+', year: 2025, price: 899000, km: 0, fuel: 'Petrol', transmission: 'AMT', badge: 'Bestseller', badgeType: 'featured', image: img('Maruti Suzuki Swift')[0], images: img('Maruti Suzuki Swift'), rating: 4.4, reviews: 312, verified: true, city: 'Mumbai', bodyType: 'Hatchback', specs: [{ label: 'Mileage', value: '24.8 kmpl' }, { label: 'Power', value: '81 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging'] },
+  { id: 'd8002', make: 'Hyundai', model: 'Creta', variant: 'SX Tech', year: 2025, price: 1695000, km: 0, fuel: 'Petrol', transmission: 'Automatic', badge: 'Top Rated', badgeType: 'featured', image: img('Hyundai Creta')[0], images: img('Hyundai Creta'), rating: 4.6, reviews: 210, verified: true, city: 'Delhi', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '17.4 kmpl' }, { label: 'Power', value: '138 bhp' }], features: ['Panoramic Sunroof', 'ADAS Safety', '360° Camera', '6 Airbags'] },
+  { id: 'd8003', make: 'Tata', model: 'Nexon EV', variant: 'Max LR', year: 2025, price: 2099000, km: 0, fuel: 'Electric', transmission: 'Automatic', badge: 'Best EV', badgeType: 'featured', image: img('Tata Nexon EV')[0], images: img('Tata Nexon EV'), rating: 4.5, reviews: 175, verified: true, city: 'Bengaluru', bodyType: 'SUV', specs: [{ label: 'Range', value: '465 km' }, { label: 'Power', value: '143 bhp' }], features: ['Panoramic Sunroof', '6 Airbags', 'Connected Car'] },
+  { id: 'd8004', make: 'Kia', model: 'Seltos', variant: 'GTX+', year: 2025, price: 1985000, km: 0, fuel: 'Petrol', transmission: 'DCT', badge: 'New', badgeType: 'featured', image: img('Kia Seltos')[0], images: img('Kia Seltos'), rating: 4.5, reviews: 143, verified: true, city: 'Hyderabad', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '17.0 kmpl' }, { label: 'Power', value: '158 bhp' }], features: ['Panoramic Sunroof', 'ADAS Safety', 'Ventilated Seats'] },
+  { id: 'd8005', make: 'Mahindra', model: 'XUV700', variant: 'AX7 L', year: 2025, price: 2640000, km: 0, fuel: 'Diesel', transmission: 'Automatic', badge: '7-Seater', badgeType: 'featured', image: img('Mahindra XUV700')[0], images: img('Mahindra XUV700'), rating: 4.6, reviews: 268, verified: true, city: 'Pune', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '16.5 kmpl' }, { label: 'Power', value: '182 bhp' }], features: ['ADAS Safety', 'Panoramic Sunroof', '7 Seats', '6 Airbags'] },
 ];
 
 const DEMO_USED_CARS: Car[] = [
-  { id: 'd9001', make: 'Maruti Suzuki', model: 'Swift', variant: 'VXi', year: 2020, price: 550000, km: 42000, fuel: 'Petrol', transmission: 'Manual', badge: 'Popular', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.3, reviews: 128, verified: true, city: 'Mumbai', bodyType: 'Hatchback', color: 'White', owners: '1st Owner' },
-  { id: 'd9002', make: 'Hyundai', model: 'Creta', variant: 'SX', year: 2021, price: 1150000, km: 28000, fuel: 'Petrol', transmission: 'Automatic', badge: 'Verified', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.5, reviews: 95, verified: true, city: 'Bengaluru', bodyType: 'SUV', color: 'Grey', owners: '1st Owner' },
-  { id: 'd9003', make: 'Tata', model: 'Nexon', variant: 'XZ+', year: 2022, price: 1080000, km: 18500, fuel: 'Petrol', transmission: 'Manual', badge: 'Low KM', badgeType: 'featured', image: PLACEHOLDER, images: [], rating: 4.4, reviews: 72, verified: true, city: 'Delhi', bodyType: 'SUV', color: 'Blue', owners: '1st Owner' },
+  { id: 'd9001', make: 'Maruti Suzuki', model: 'Swift', variant: 'VXi', year: 2020, price: 550000, km: 42000, fuel: 'Petrol', transmission: 'Manual', badge: 'Popular', badgeType: 'featured', image: img('Maruti Suzuki Swift')[0], images: img('Maruti Suzuki Swift'), rating: 4.3, reviews: 128, verified: true, city: 'Mumbai', bodyType: 'Hatchback', color: 'White', owners: '1st Owner' },
+  { id: 'd9002', make: 'Hyundai', model: 'Creta', variant: 'SX', year: 2021, price: 1150000, km: 28000, fuel: 'Petrol', transmission: 'Automatic', badge: 'Verified', badgeType: 'featured', image: img('Hyundai Creta')[0], images: img('Hyundai Creta'), rating: 4.5, reviews: 95, verified: true, city: 'Bengaluru', bodyType: 'SUV', color: 'Grey', owners: '1st Owner' },
+  { id: 'd9003', make: 'Tata', model: 'Nexon', variant: 'XZ+', year: 2022, price: 1080000, km: 18500, fuel: 'Petrol', transmission: 'Manual', badge: 'Low KM', badgeType: 'featured', image: img('Tata Nexon')[0], images: img('Tata Nexon'), rating: 4.4, reviews: 72, verified: true, city: 'Delhi', bodyType: 'SUV', color: 'Blue', owners: '1st Owner' },
+  { id: 'd9004', make: 'Kia', model: 'Seltos', variant: 'HTX', year: 2021, price: 1290000, km: 31000, fuel: 'Petrol', transmission: 'Manual', badge: 'Verified', badgeType: 'featured', image: img('Kia Seltos')[0], images: img('Kia Seltos'), rating: 4.4, reviews: 88, verified: true, city: 'Hyderabad', bodyType: 'SUV', color: 'Red', owners: '1st Owner' },
+  { id: 'd9005', make: 'Mahindra', model: 'XUV700', variant: 'AX5', year: 2022, price: 1875000, km: 24000, fuel: 'Diesel', transmission: 'Manual', badge: 'Low KM', badgeType: 'featured', image: img('Mahindra XUV700')[0], images: img('Mahindra XUV700'), rating: 4.5, reviews: 61, verified: true, city: 'Pune', bodyType: 'SUV', color: 'Silver', owners: '1st Owner' },
 ];
 
 // ── Mapping helper ─────────────────────────────────────────────────────────────
 function mapListing(lst: ApiListing): Car {
   const car = lst.car;
   const makeModel = `${car.make} ${car.model}`;
+  // Known-dead hosts are stripped: media.gaadiiq.com is not serving, and
+  // picsum URLs are seed placeholders rather than real vehicle photos.
   const apiImgs = (lst.image_urls ?? []).filter(u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'));
 
-  const images = apiImgs.length ? apiImgs : [PLACEHOLDER];
+  // Prefer real API images; otherwise use a local illustration for this
+  // model, and only fall back to the generic placeholder when we have neither.
+  const images = apiImgs.length ? apiImgs
+               : (localImagesFor(car.make, car.model) ?? [PLACEHOLDER]);
   const image = images[0];
 
   const badge = lst.is_featured ? 'Featured'
