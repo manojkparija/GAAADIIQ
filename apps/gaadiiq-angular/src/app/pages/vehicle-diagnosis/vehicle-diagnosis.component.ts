@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { CityService } from '../../services/city.service';
 import { ApiService } from '../../services/api.service';
+import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../services/voice-diagnosis.service';
 import { firstValueFrom } from 'rxjs';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
@@ -193,7 +194,7 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
   templateUrl: './vehicle-diagnosis.component.html',
   styleUrl: './vehicle-diagnosis.component.scss',
 })
-export class VehicleDiagnosisComponent {
+export class VehicleDiagnosisComponent implements OnDestroy {
   step = signal(1);
   totalSteps = 4;
 
@@ -287,6 +288,11 @@ export class VehicleDiagnosisComponent {
   history = signal<any[]>([]);
   historyLoading = signal(false);
 
+  // Voice input
+  voiceLanguages = VOICE_LANGUAGES;
+  voiceLangOpen = signal(false);
+  isSpeaking = signal(false);
+
   constructor(
     private seo: SeoService,
     public diagSvc: DiagnosisService,
@@ -294,6 +300,7 @@ export class VehicleDiagnosisComponent {
     private sb: SupabaseService,
     public city: CityService,
     private api: ApiService,
+    public voice: VoiceDiagnosisService,
   ) {
     seo.setPage(
       'AI Vehicle Diagnosis',
@@ -432,5 +439,40 @@ export class VehicleDiagnosisComponent {
 
   severityColor(s: string): string {
     return { low: '#10B981', medium: '#F59E0B', high: '#EF4444', critical: '#7C3AED' }[s] ?? '#6B7280';
+  }
+
+  // ── Voice input ──────────────────────────────────────────────────────────
+
+  toggleVoice() {
+    if (this.voice.state() === 'listening') {
+      this.voice.stop();
+    } else {
+      this.voice.start((finalText: string) => {
+        this.problemDescription = (this.problemDescription + finalText).slice(0, 2000);
+      });
+    }
+  }
+
+  selectVoiceLang(lang: VoiceLanguage) {
+    this.voice.selectLanguage(lang);
+    this.voiceLangOpen.set(false);
+  }
+
+  toggleTts(text: string) {
+    if (this.isSpeaking()) {
+      this.voice.stopSpeaking();
+      this.isSpeaking.set(false);
+    } else {
+      this.isSpeaking.set(true);
+      this.voice.speak(text, this.voice.selectedLanguage().code);
+      // SpeechSynthesisUtterance has no reliable onend in all browsers; reset after estimate
+      const words = text.split(' ').length;
+      setTimeout(() => this.isSpeaking.set(false), Math.max(8000, words * 400));
+    }
+  }
+
+  ngOnDestroy() {
+    this.voice.stop();
+    this.voice.stopSpeaking();
   }
 }
