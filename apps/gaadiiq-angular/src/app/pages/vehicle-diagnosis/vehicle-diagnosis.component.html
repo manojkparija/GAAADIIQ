@@ -261,6 +261,46 @@
         <input #photoInput type="file" accept="image/*" multiple class="hidden-input" (change)="onPhotoChange($event)" />
       </div>
 
+      <!-- Audio recording (TC-F-12) -->
+      <div class="form-group">
+        <label>Sound recording <span class="optional-label">(optional)</span></label>
+        <div class="photo-upload-zone" (click)="audioInput.click()" [class.has-files]="selectedAudio()">
+          <ng-container *ngIf="!selectedAudio()">
+            <span class="photo-icon">🎧</span>
+            <p class="photo-hint">Tap to attach a recording of the noise</p>
+            <p class="photo-sub">Engine knock, brake squeal, rattle — max 25 MB</p>
+          </ng-container>
+          <ng-container *ngIf="selectedAudio() as af">
+            <span class="photo-icon">🎵</span>
+            <p class="photo-count">{{ af.name }} ({{ formatBytes(af.size) }})</p>
+            <button type="button" class="photo-clear" (click)="clearAudio($event)">Remove</button>
+          </ng-container>
+        </div>
+        <input #audioInput type="file" accept="audio/*" class="hidden-input" (change)="onAudioChange($event)" />
+      </div>
+
+      <!-- Video clip (TC-F-13) -->
+      <div class="form-group">
+        <label>Video clip <span class="optional-label">(optional)</span></label>
+        <div class="photo-upload-zone" (click)="videoInput.click()" [class.has-files]="selectedVideo()">
+          <ng-container *ngIf="!selectedVideo()">
+            <span class="photo-icon">🎥</span>
+            <p class="photo-hint">Tap to attach a short video of the issue</p>
+            <p class="photo-sub">Smoke, warning lights, unusual movement — max 75 MB</p>
+          </ng-container>
+          <ng-container *ngIf="selectedVideo() as vf">
+            <span class="photo-icon">🎬</span>
+            <p class="photo-count">{{ vf.name }} ({{ formatBytes(vf.size) }})</p>
+            <button type="button" class="photo-clear" (click)="clearVideo($event)">Remove</button>
+          </ng-container>
+        </div>
+        <input #videoInput type="file" accept="video/*" class="hidden-input" (change)="onVideoChange($event)" />
+      </div>
+
+      <div class="media-error" *ngIf="mediaError()" role="alert" aria-live="assertive">
+        ⚠️ {{ mediaError() }}
+      </div>
+
       <div class="step-actions">
         <button class="btn-ghost" (click)="back()">← Back</button>
         <button class="btn-primary" [disabled]="!step2Valid" (click)="next()">Next — Review →</button>

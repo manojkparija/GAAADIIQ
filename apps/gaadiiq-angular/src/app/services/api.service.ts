@@ -50,6 +50,24 @@ export class ApiService {
     ).pipe(catchError(() => of(null as any)));
   }
 
+  /** Upload an audio recording of the fault (TC-F-12). */
+  uploadDiagnosisAudio(file: File) {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ url: string; filename: string; size_bytes: number }>(
+      `${this.base}/upload/audio`, form
+    ).pipe(catchError(() => of(null as any)));
+  }
+
+  /** Upload a short video of the fault (TC-F-13). */
+  uploadDiagnosisVideo(file: File) {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ url: string; filename: string; size_bytes: number }>(
+      `${this.base}/upload/video`, form
+    ).pipe(catchError(() => of(null as any)));
+  }
+
   getRecommendations(payload: {
     budget?: string; fuel?: string; body?: string; usage?: string; page_size?: number;
   }) {

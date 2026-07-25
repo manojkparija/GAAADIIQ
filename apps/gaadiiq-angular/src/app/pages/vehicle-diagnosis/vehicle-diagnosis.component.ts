@@ -281,6 +281,56 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     this.imageThumbs.set([]);
   }
 
+  // ── Audio / video attachments (TC-F-12, TC-F-13) ─────────────────────────
+
+  selectedAudio = signal<File | null>(null);
+  selectedVideo = signal<File | null>(null);
+
+  // Kept in step with the server-side caps in routers/upload.py.
+  private readonly MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+  private readonly MAX_VIDEO_BYTES = 75 * 1024 * 1024;
+
+  mediaError = signal('');
+
+  onAudioChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (file && file.size > this.MAX_AUDIO_BYTES) {
+      this.mediaError.set('Audio must be under 25 MB.');
+      input.value = '';
+      return;
+    }
+    this.mediaError.set('');
+    this.selectedAudio.set(file);
+  }
+
+  onVideoChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (file && file.size > this.MAX_VIDEO_BYTES) {
+      this.mediaError.set('Video must be under 75 MB.');
+      input.value = '';
+      return;
+    }
+    this.mediaError.set('');
+    this.selectedVideo.set(file);
+  }
+
+  clearAudio(event: MouseEvent) {
+    event.stopPropagation();
+    this.selectedAudio.set(null);
+  }
+
+  clearVideo(event: MouseEvent) {
+    event.stopPropagation();
+    this.selectedVideo.set(null);
+  }
+
+  formatBytes(n: number): string {
+    if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    return `${Math.round(n / 1024)} KB`;
+  }
+
   serviceCenterModal = signal(false);
   nearbyServiceCenters = signal<ServiceCenter[]>([]);
 
@@ -365,6 +415,25 @@ export class VehicleDiagnosisComponent implements OnDestroy {
       }
     }
 
+    // Upload audio / video attachments (non-fatal: a failed upload must not
+    // block the diagnosis itself).
+    let audioUrl: string | undefined;
+    let videoUrl: string | undefined;
+    const audioFile = this.selectedAudio();
+    if (audioFile) {
+      try {
+        const res = await firstValueFrom(this.api.uploadDiagnosisAudio(audioFile));
+        audioUrl = res?.url;
+      } catch { /* proceed without the recording */ }
+    }
+    const videoFile = this.selectedVideo();
+    if (videoFile) {
+      try {
+        const res = await firstValueFrom(this.api.uploadDiagnosisVideo(videoFile));
+        videoUrl = res?.url;
+      } catch { /* proceed without the clip */ }
+    }
+
     const request: DiagnoseRequest = {
       manufacturer: this.form.manufacturer,
       model: this.form.model,
@@ -379,6 +448,8 @@ export class VehicleDiagnosisComponent implements OnDestroy {
       severity: this.severity,
       user_id: userId,
       image_urls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+      audio_url: audioUrl,
+      video_url: videoUrl,
       detected_language: this._voiceDetectedLang !== 'en-IN' ? this._voiceDetectedLang : undefined,
     };
 
@@ -395,6 +466,9 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     this.severity = 'medium';
     this.selectedImages.set([]);
     this.imageThumbs.set([]);
+    this.selectedAudio.set(null);
+    this.selectedVideo.set(null);
+    this.mediaError.set('');
     this.diagSvc.report.set(null);
     this.diagSvc.error.set(null);
   }

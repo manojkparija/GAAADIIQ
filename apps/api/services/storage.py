@@ -90,6 +90,34 @@ def upload_image(file: BinaryIO, content_type: str, folder: str = "listings") ->
     return f"{settings.r2_public_url}/{key}"
 
 
+def upload_media(file: BinaryIO, content_type: str, extension: str, folder: str = "diagnosis") -> str:
+    """
+    Store an audio/video file verbatim.
+
+    Unlike upload_image(), the bytes are not transcoded — Pillow cannot process
+    A/V, and re-encoding would need ffmpeg. Callers must validate the content
+    type and magic bytes before calling.
+    """
+    raw = file.read()
+    key = f"{folder}/{uuid.uuid4()}.{extension.lstrip('.')}"
+
+    if not _r2_available():
+        # Dev / test mode — no credentials configured; return a placeholder URL
+        return f"https://media.gaadiiq.com/{key}"
+
+    try:
+        _r2_client().upload_fileobj(
+            io.BytesIO(raw),
+            settings.r2_bucket_name,
+            key,
+            ExtraArgs={"ContentType": content_type, "ACL": "public-read"},
+        )
+    except (BotoCoreError, ClientError) as exc:
+        raise RuntimeError(f"Media upload failed: {exc}") from exc
+
+    return f"{settings.r2_public_url}/{key}"
+
+
 def delete_image(url: str) -> None:
     if not _r2_available():
         return

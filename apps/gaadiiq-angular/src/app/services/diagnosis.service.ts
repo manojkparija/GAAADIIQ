@@ -50,6 +50,8 @@ export interface DiagnoseRequest {
   when_occurs: string[];
   severity: string;
   image_urls?: string[];
+  audio_url?: string;
+  video_url?: string;
   user_id?: string;
   detected_language?: string;
 }
