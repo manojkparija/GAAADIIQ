@@ -34,5 +34,8 @@ export const routes: Routes = [
   { path: 'reset-password', loadComponent: () => import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent) },
   { path: 'profile', loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent), canActivate: [authGuard] },
   { path: 'ev-calculator', loadComponent: () => import('./pages/ev-calculator/ev-calculator.component').then(m => m.EvCalculatorComponent) },
+  { path: 'privacy-policy', loadComponent: () => import('./pages/privacy-policy/privacy-policy.component').then(m => m.PrivacyPolicyComponent) },
+  { path: 'terms-of-service', loadComponent: () => import('./pages/terms-of-service/terms-of-service.component').then(m => m.TermsOfServiceComponent) },
+  { path: 'cookie-policy', loadComponent: () => import('./pages/cookie-policy/cookie-policy.component').then(m => m.CookiePolicyComponent) },
   { path: '**', redirectTo: '' },
 ];
