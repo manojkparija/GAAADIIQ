@@ -42,6 +42,14 @@
       <button class="vm-lang-change" (click)="step.set('select-language')">Change</button>
     </div>
 
+    <!-- Captured so far -->
+    <div class="vm-captured" *ngIf="capturedChips().length > 0">
+      <span class="vm-captured-label">Captured</span>
+      <div class="vm-chips">
+        <span class="vm-chip" *ngFor="let c of capturedChips()">✓ {{ c.value }}</span>
+      </div>
+    </div>
+
     <!-- AI message bubble -->
     <div class="vm-ai-bubble" *ngIf="aiMessage()">
       <p>{{ aiMessage() }}</p>

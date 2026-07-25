@@ -31,7 +31,10 @@ interface Message {
 /** Localized conversation prompts, keyed by language code. */
 interface Prompts {
   greeting: string;
+  /** Asked when nothing was captured from the last utterance. */
   askField: (label: string) => string;
+  /** Asked after capturing something — acknowledges it, then asks for the next field. */
+  gotThenAsk: (got: string, label: string) => string;
   confirm: (summary: string) => string;
   thanks: string;
   fields: Record<string, string>;
@@ -41,6 +44,7 @@ const PROMPTS: Record<string, Prompts> = {
   'en-IN': {
     greeting: 'Hello! Please tell me about your vehicle — the brand, model, year, fuel type and transmission.',
     askField: (l) => `I didn't catch the ${l}. Could you please tell me that?`,
+    gotThenAsk: (g, l) => `Got ${g}. And the ${l}?`,
     confirm: (s) => `Got it — ${s}. Now please describe the problem with your vehicle.`,
     thanks: 'Thank you! Sending your details for AI diagnosis now.',
     fields: {
@@ -51,6 +55,7 @@ const PROMPTS: Record<string, Prompts> = {
   'hi-IN': {
     greeting: 'नमस्ते! कृपया अपनी गाड़ी के बारे में बताइए — ब्रांड, मॉडल, साल, फ्यूल टाइप और ट्रांसमिशन।',
     askField: (l) => `मुझे ${l} समझ नहीं आया। कृपया दोबारा बताइए।`,
+    gotThenAsk: (g, l) => `${g} मिल गया। और ${l}?`,
     confirm: (s) => `ठीक है — ${s}। अब कृपया अपनी गाड़ी की समस्या बताइए।`,
     thanks: 'धन्यवाद! आपकी जानकारी AI डायग्नोसिस के लिए भेजी जा रही है।',
     fields: {
@@ -61,6 +66,7 @@ const PROMPTS: Record<string, Prompts> = {
   'bn-IN': {
     greeting: 'নমস্কার! অনুগ্রহ করে আপনার গাড়ি সম্পর্কে বলুন — ব্র্যান্ড, মডেল, বছর, জ্বালানি এবং ট্রান্সমিশন।',
     askField: (l) => `আমি ${l} বুঝতে পারিনি। অনুগ্রহ করে আবার বলুন।`,
+    gotThenAsk: (g, l) => `${g} পেয়েছি। এবার ${l}?`,
     confirm: (s) => `ঠিক আছে — ${s}। এখন আপনার গাড়ির সমস্যা বলুন।`,
     thanks: 'ধন্যবাদ! আপনার তথ্য AI ডায়াগনোসিসের জন্য পাঠানো হচ্ছে।',
     fields: {
@@ -71,6 +77,7 @@ const PROMPTS: Record<string, Prompts> = {
   'ta-IN': {
     greeting: 'வணக்கம்! உங்கள் வாகனத்தைப் பற்றி கூறுங்கள் — பிராண்ட், மாடல், ஆண்டு, எரிபொருள் மற்றும் டிரான்ஸ்மிஷன்.',
     askField: (l) => `எனக்கு ${l} புரியவில்லை. மீண்டும் கூறுங்கள்.`,
+    gotThenAsk: (g, l) => `${g} கிடைத்தது. இப்போது ${l}?`,
     confirm: (s) => `சரி — ${s}. இப்போது உங்கள் வாகனத்தின் பிரச்சனையைக் கூறுங்கள்.`,
     thanks: 'நன்றி! உங்கள் விவரங்கள் AI நோயறிதலுக்கு அனுப்பப்படுகிறது.',
     fields: {
@@ -81,6 +88,7 @@ const PROMPTS: Record<string, Prompts> = {
   'te-IN': {
     greeting: 'నమస్కారం! దయచేసి మీ వాహనం గురించి చెప్పండి — బ్రాండ్, మోడల్, సంవత్సరం, ఇంధనం మరియు ట్రాన్స్‌మిషన్.',
     askField: (l) => `నాకు ${l} అర్థం కాలేదు. దయచేసి మళ్లీ చెప్పండి.`,
+    gotThenAsk: (g, l) => `${g} వచ్చింది. ఇప్పుడు ${l}?`,
     confirm: (s) => `సరే — ${s}. ఇప్పుడు మీ వాహన సమస్యను వివరించండి.`,
     thanks: 'ధన్యవాదాలు! మీ వివరాలు AI నిర్ధారణ కోసం పంపబడుతున్నాయి.',
     fields: {
@@ -91,6 +99,7 @@ const PROMPTS: Record<string, Prompts> = {
   'mr-IN': {
     greeting: 'नमस्कार! कृपया तुमच्या गाडीबद्दल सांगा — ब्रँड, मॉडेल, वर्ष, इंधन आणि ट्रान्समिशन.',
     askField: (l) => `मला ${l} समजले नाही. कृपया पुन्हा सांगा.`,
+    gotThenAsk: (g, l) => `${g} मिळाले. आता ${l}?`,
     confirm: (s) => `ठीक आहे — ${s}. आता तुमच्या गाडीची समस्या सांगा.`,
     thanks: 'धन्यवाद! तुमची माहिती AI निदानासाठी पाठवली जात आहे.',
     fields: {
@@ -133,6 +142,18 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
     const msgs = this.messages();
     const last = [...msgs].reverse().find(m => m.role === 'ai');
     return last?.text ?? '';
+  });
+
+  /** Captured vehicle fields, for the progress chips. */
+  readonly capturedChips = computed(() => {
+    const v = this.vehicleInfo() as any;
+    const order = ['manufacturer', 'model', 'variant', 'model_year', 'fuel_type', 'transmission', 'odometer_km'];
+    return order
+      .filter(k => v[k])
+      .map(k => ({
+        key: k,
+        value: k === 'odometer_km' ? `${Number(v[k]).toLocaleString()} km` : String(v[k]),
+      }));
   });
 
   /** Prompts in the language the user picked. */
@@ -210,8 +231,16 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   }
 
   private _applyExtracted(info: any) {
-    const merged = { ...this.vehicleInfo(), ...info };
+    const before = this.vehicleInfo() as any;
+    const merged = { ...before, ...info };
     delete merged.missing;
+
+    // What this utterance actually added — used to acknowledge it out loud so
+    // the user can tell a captured answer from an ignored one.
+    const gained = Object.keys(merged)
+      .filter(k => merged[k] && !before[k])
+      .map(k => merged[k]);
+
     this.vehicleInfo.set(merged);
 
     // Compute missing from the fully accumulated info, not just this utterance
@@ -219,7 +248,7 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
     const missing = required.filter(f => !merged[f]);
 
     if (missing.length > 0) {
-      this._askMissingFields(missing);
+      this._askMissingFields(missing, gained.join(', '));
     } else {
       this._confirmVehicle();
     }
@@ -229,7 +258,7 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   private _fieldRetries = 0;
   private _lastAskedField = '';
 
-  private _askMissingFields(missing: string[]) {
+  private _askMissingFields(missing: string[], gained = '') {
     const field = missing[0];
 
     // Track repeats so a field the speech engine keeps mangling doesn't trap
@@ -254,7 +283,13 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
     }
 
     const label = this.p.fields[field] ?? field;
-    this._aiSay(this.p.askField(label), () => {
+    // Acknowledge what was just captured, so a successful answer never reads
+    // as "I didn't catch that".
+    const prompt = gained
+      ? this.p.gotThenAsk(gained, label)
+      : this.p.askField(label);
+
+    this._aiSay(prompt, () => {
       this.step.set('capture-vehicle');
       this.voice.start((text) => {
         this.voice.stop();

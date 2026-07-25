@@ -206,6 +206,38 @@
   color: var(--vm-accent);
 }
 
+// ── Captured chips ───────────────────────────────────────────────────────────
+
+.vm-captured {
+  margin: 0 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vm-captured-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vm-sub);
+}
+
+.vm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vm-chip {
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: rgba(63, 185, 80, 0.15);
+  border: 1px solid rgba(63, 185, 80, 0.35);
+  color: #56d364;
+}
+
 // ── AI bubble ─────────────────────────────────────────────────────────────────
 
 .vm-ai-bubble {
