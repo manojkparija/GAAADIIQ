@@ -51,6 +51,7 @@ export interface DiagnoseRequest {
   severity: string;
   image_urls?: string[];
   user_id?: string;
+  detected_language?: string;
 }
 
 const DISCLAIMER =

@@ -1,0 +1,269 @@
+:host {
+  --vm-bg: #0d1117;
+  --vm-surface: #161b22;
+  --vm-border: #30363d;
+  --vm-accent: #58a6ff;
+  --vm-danger: #f85149;
+  --vm-text: #e6edf3;
+  --vm-sub: #8b949e;
+  --vm-ai-bg: #1c2128;
+  --vm-user-bg: #0d419d;
+}
+
+.vm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+
+  &.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+
+.vm-panel {
+  background: var(--vm-bg);
+  border: 1px solid var(--vm-border);
+  border-radius: 20px;
+  width: min(480px, 95vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.vm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--vm-border);
+}
+
+.vm-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--vm-text);
+  letter-spacing: 0.02em;
+}
+
+.vm-close {
+  background: none;
+  border: none;
+  color: var(--vm-sub);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover { color: var(--vm-text); background: var(--vm-border); }
+}
+
+// ── Visual / Waveform ────────────────────────────────────────────────────────
+
+.vm-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px 20px;
+  gap: 12px;
+  position: relative;
+}
+
+.vm-pulse-ring {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid var(--vm-accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  .listening & {
+    opacity: 1;
+    animation: pulse-ring 1.4s ease-out infinite;
+  }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.9); opacity: 0.6; }
+  70%  { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.vm-mic-icon {
+  font-size: 2.8rem;
+  z-index: 1;
+
+  .listening & {
+    animation: mic-pop 0.8s ease infinite alternate;
+  }
+}
+
+@keyframes mic-pop {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+
+.vm-status-label {
+  font-size: 0.85rem;
+  color: var(--vm-sub);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  .listening & { color: var(--vm-accent); }
+}
+
+// ── Language badge ────────────────────────────────────────────────────────────
+
+.vm-lang-badge {
+  margin: 0 20px 8px;
+  padding: 6px 12px;
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: var(--vm-accent);
+  text-align: center;
+}
+
+// ── AI bubble ─────────────────────────────────────────────────────────────────
+
+.vm-ai-bubble {
+  margin: 0 20px 12px;
+  background: var(--vm-ai-bg);
+  border: 1px solid var(--vm-border);
+  border-radius: 12px;
+  padding: 14px 40px 14px 16px;
+  color: var(--vm-text);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  position: relative;
+
+  p { margin: 0; }
+}
+
+.vm-replay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 1; }
+}
+
+// ── Transcript ────────────────────────────────────────────────────────────────
+
+.vm-transcript {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vm-msg {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 85%;
+
+  &--ai {
+    background: var(--vm-ai-bg);
+    color: var(--vm-text);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+
+  &--user {
+    background: var(--vm-user-bg);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+}
+
+// ── Interim / Error ───────────────────────────────────────────────────────────
+
+.vm-interim {
+  margin: 0 20px 8px;
+  font-size: 0.85rem;
+  color: var(--vm-sub);
+  font-style: italic;
+  min-height: 20px;
+}
+
+.vm-error {
+  margin: 0 20px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  border-radius: 8px;
+  font-size: 0.83rem;
+  color: var(--vm-danger);
+
+  button {
+    background: none;
+    border: none;
+    color: var(--vm-danger);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+.vm-actions {
+  padding: 16px 20px;
+  border-top: 1px solid var(--vm-border);
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.vm-btn {
+  padding: 12px 28px;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:active { transform: scale(0.97); }
+
+  &--primary {
+    background: var(--vm-accent);
+    color: #000;
+
+    &:hover { opacity: 0.88; }
+  }
+
+  &--danger {
+    background: rgba(248, 81, 73, 0.15);
+    color: var(--vm-danger);
+    border: 1px solid rgba(248, 81, 73, 0.35);
+
+    &:hover { background: rgba(248, 81, 73, 0.25); }
+  }
+}

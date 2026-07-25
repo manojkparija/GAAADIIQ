@@ -21,7 +21,7 @@ from core.limiter import limiter
 from db.session import get_db
 from models.user import User
 from models.vehicle_diagnosis import VehicleDiagnosis
-from services.diagnosis import run_diagnosis
+from services.diagnosis import extract_vehicle_info_from_transcript, run_diagnosis
 
 router = APIRouter(prefix="/diagnosis", tags=["diagnosis"])
 
@@ -54,6 +54,9 @@ class DiagnoseRequest(BaseModel):
 
     # Optional auth
     user_id: str | None = None
+
+    # Language detected from user's voice input
+    detected_language: str | None = None
 
 
 class PossibleCause(BaseModel):
@@ -117,6 +120,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         when_occurs=body.when_occurs,
         severity=body.severity,
         image_urls=body.image_urls,
+        response_language=body.detected_language or "en-IN",
     )
 
     # Parse causes safely
@@ -181,6 +185,18 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         created_at=record.created_at,
         vision_analysis=ai_result.get("vision_analysis"),
     )
+
+
+class VoiceExtractRequest(BaseModel):
+    transcript: str = Field(..., min_length=3, max_length=500)
+
+
+@router.post("/voice/extract")
+@limiter.limit("20/minute")
+async def voice_extract(request: Request, body: VoiceExtractRequest):
+    """Extract structured vehicle info from a spoken transcript using Ollama."""
+    extracted = await extract_vehicle_info_from_transcript(body.transcript)
+    return extracted
 
 
 @router.get("/history", response_model=list[DiagnosisHistoryItem])

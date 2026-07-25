@@ -9,6 +9,7 @@ import { SupabaseService } from '../../services/supabase.service';
 import { CityService } from '../../services/city.service';
 import { ApiService } from '../../services/api.service';
 import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../services/voice-diagnosis.service';
+import { VoiceModeComponent, VoiceSessionResult } from '../../components/voice-mode/voice-mode.component';
 import { firstValueFrom } from 'rxjs';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
@@ -190,7 +191,7 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
 @Component({
   selector: 'app-vehicle-diagnosis',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent],
   templateUrl: './vehicle-diagnosis.component.html',
   styleUrl: './vehicle-diagnosis.component.scss',
 })
@@ -291,6 +292,8 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   // Voice input
   voiceLanguages = VOICE_LANGUAGES;
   voiceLangOpen = signal(false);
+  showVoiceMode = signal(false);
+  private _voiceDetectedLang = 'en-IN';
 
   constructor(
     private seo: SeoService,
@@ -376,6 +379,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
       severity: this.severity,
       user_id: userId,
       image_urls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+      detected_language: this._voiceDetectedLang !== 'en-IN' ? this._voiceDetectedLang : undefined,
     };
 
     this.step.set(4);
@@ -449,7 +453,42 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     return { low: '#10B981', medium: '#F59E0B', high: '#EF4444', critical: '#7C3AED' }[s] ?? '#6B7280';
   }
 
-  // ── Voice input ──────────────────────────────────────────────────────────
+  // ── Voice Mode ────────────────────────────────────────────────────────────
+
+  openVoiceMode() {
+    this.showVoiceMode.set(true);
+  }
+
+  onVoiceCompleted(result: VoiceSessionResult) {
+    this.showVoiceMode.set(false);
+    this._voiceDetectedLang = result.detectedLanguage;
+
+    const v = result.vehicleInfo as any;
+    if (v.manufacturer) this.form.manufacturer = v.manufacturer;
+    if (v.model) this.form.model = v.model;
+    if (v.variant) this.form.variant = v.variant;
+    if (v.model_year) this.form.model_year = String(v.model_year);
+    if (v.fuel_type) this.form.fuel_type = v.fuel_type;
+    if (v.transmission) this.form.transmission = v.transmission;
+    if (v.odometer_km) this.form.odometer_km = v.odometer_km;
+
+    if (result.problemDescription) {
+      this.problemDescription = result.problemDescription;
+    }
+
+    // Jump to confirmation step if vehicle info is complete enough
+    if (v.manufacturer && v.model && v.fuel_type && v.transmission) {
+      this.step.set(3);
+    } else {
+      this.step.set(1);
+    }
+  }
+
+  onVoiceCancelled() {
+    this.showVoiceMode.set(false);
+  }
+
+  // ── Voice input (Step 2 mic) ──────────────────────────────────────────────
 
   toggleVoice() {
     if (this.voice.state() === 'listening') {

@@ -4,11 +4,23 @@
       <div class="hero-badge">🔧 AI Repair Advisor</div>
       <h1>Vehicle Preliminary <span class="gradient-text">Diagnosis</span></h1>
       <p class="hero-sub">Describe your car problem and get an AI-powered preliminary assessment with repair cost estimates. Always consult a certified mechanic to confirm.</p>
-      @if (auth.currentUser()) {
-        <button class="btn btn-ghost btn-sm history-btn" (click)="openHistory()">📋 My Diagnosis History</button>
-      }
+      <div class="hero-actions">
+        @if (auth.currentUser()) {
+          <button class="btn btn-ghost btn-sm history-btn" (click)="openHistory()">📋 My Diagnosis History</button>
+        }
+        <button class="btn btn-voice" (click)="openVoiceMode()" *ngIf="voice.supported">
+          🎤 Voice Diagnosis
+        </button>
+      </div>
     </div>
   </div>
+
+  <!-- Voice Mode overlay -->
+  <app-voice-mode
+    *ngIf="showVoiceMode()"
+    (completed)="onVoiceCompleted($event)"
+    (cancelled)="onVoiceCancelled()"
+  ></app-voice-mode>
 
   <!-- ── History panel (MOB-036) ─────────────────────────────────────────── -->
   @if (showHistory()) {

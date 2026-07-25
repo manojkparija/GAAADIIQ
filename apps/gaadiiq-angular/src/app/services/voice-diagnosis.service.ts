@@ -1,4 +1,5 @@
 import { Injectable, signal, NgZone } from '@angular/core';
+import { detectLanguageFromText } from '../utils/vehicle-info-extractor';
 
 export interface VoiceLanguage {
   code: string;
@@ -45,6 +46,7 @@ export class VoiceDiagnosisService {
 
   // Language
   selectedLanguage = signal<VoiceLanguage>(VOICE_LANGUAGES[0]);
+  autoDetectedLanguage = signal<VoiceLanguage | null>(null);
 
   private recognition: any = null;
   private onFinal?: (text: string) => void;
@@ -67,6 +69,18 @@ export class VoiceDiagnosisService {
   selectLanguage(lang: VoiceLanguage) {
     this.selectedLanguage.set(lang);
     localStorage.setItem(LANG_KEY, lang.code);
+  }
+
+  /** Auto-detect language from spoken text and update selectedLanguage if non-English detected. */
+  autoDetectLanguage(text: string): VoiceLanguage {
+    const code = detectLanguageFromText(text);
+    const lang = VOICE_LANGUAGES.find(l => l.code === code) ?? VOICE_LANGUAGES[0];
+    this.autoDetectedLanguage.set(code !== 'en-IN' ? lang : null);
+    if (code !== 'en-IN') {
+      this.selectedLanguage.set(lang);
+      // Update recognition language for next recording session
+    }
+    return lang;
   }
 
   // ── STT ──────────────────────────────────────────────────────────────────

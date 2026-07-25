@@ -37,6 +37,21 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_DIAGNOSIS_MODEL", "llama3")
 OLLAMA_TIMEOUT = 120.0
 
+# Language codes → full names used in Ollama translation prompts
+_LANG_NAMES: dict[str, str] = {
+    "en-IN": "English",
+    "hi-IN": "Hindi",
+    "bn-IN": "Bengali",
+    "ta-IN": "Tamil",
+    "te-IN": "Telugu",
+    "kn-IN": "Kannada",
+    "ml-IN": "Malayalam",
+    "mr-IN": "Marathi",
+    "gu-IN": "Gujarati",
+    "pa-IN": "Punjabi",
+    "or-IN": "Odia",
+}
+
 _DISCLAIMER = (
     "⚠️ IMPORTANT DISCLAIMER: This is a preliminary AI-assisted assessment only. "
     "It is NOT a professional diagnosis. Results may be inaccurate or incomplete. "
@@ -175,6 +190,87 @@ Rules:
 - Respond with valid JSON only, no additional text"""
 
 
+async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
+    """Translate key diagnosis text fields to target_lang using Ollama."""
+    lang_name = _LANG_NAMES.get(target_lang, "English")
+    if lang_name == "English":
+        return result
+
+    fields = {
+        "preliminary_diagnosis": result.get("preliminary_diagnosis", ""),
+        "recommended_steps": result.get("recommended_steps", []),
+        "diy_fixes": result.get("diy_fixes", []),
+        "preventive_maintenance": result.get("preventive_maintenance", []),
+        "possible_causes": [
+            {"cause": c.get("cause", ""), "explanation": c.get("explanation", "")}
+            for c in result.get("possible_causes", [])
+        ],
+    }
+
+    prompt = (
+        f"Translate the following automotive diagnosis text to {lang_name}. "
+        "Keep technical terms in English where appropriate (e.g., OBD-II, ABS, EGR, coolant, brake pad). "
+        "Return ONLY valid JSON with the same keys and structure as the input.\n\n"
+        + json.dumps(fields, ensure_ascii=False)
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                f"{OLLAMA_BASE_URL}/api/generate",
+                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "format": "json"},
+            )
+            resp.raise_for_status()
+            translated: dict = json.loads(resp.json().get("response", "{}"))
+
+        if translated.get("preliminary_diagnosis"):
+            result["preliminary_diagnosis"] = translated["preliminary_diagnosis"]
+        if translated.get("recommended_steps"):
+            result["recommended_steps"] = translated["recommended_steps"]
+        if translated.get("diy_fixes"):
+            result["diy_fixes"] = translated["diy_fixes"]
+        if translated.get("preventive_maintenance"):
+            result["preventive_maintenance"] = translated["preventive_maintenance"]
+        if translated.get("possible_causes"):
+            for i, tc in enumerate(translated["possible_causes"]):
+                if i < len(result.get("possible_causes", [])):
+                    result["possible_causes"][i]["cause"] = tc.get("cause", result["possible_causes"][i].get("cause", ""))
+                    result["possible_causes"][i]["explanation"] = tc.get("explanation", result["possible_causes"][i].get("explanation", ""))
+    except Exception as exc:
+        logger.warning("Translation to %s failed, keeping English: %s", lang_name, exc)
+
+    return result
+
+
+async def extract_vehicle_info_from_transcript(transcript: str) -> dict:
+    """Use Ollama to parse a natural-language vehicle description into structured fields."""
+    sanitised = _sanitise(transcript, 500)
+    prompt = (
+        "Extract vehicle information from this spoken description and return a JSON object. "
+        "Only include fields that are clearly mentioned. "
+        "Valid fuel_type values: Petrol, Diesel, CNG, Electric, Hybrid, LPG. "
+        "Valid transmission values: Manual, Automatic, CVT, DCT, AMT. "
+        "Return ONLY valid JSON.\n\n"
+        f'Description: "{sanitised}"\n\n'
+        "JSON structure:\n"
+        '{"manufacturer": "", "model": "", "variant": "", "model_year": null, '
+        '"fuel_type": "", "transmission": "", "odometer_km": null}'
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{OLLAMA_BASE_URL}/api/generate",
+                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "format": "json"},
+            )
+            resp.raise_for_status()
+            extracted: dict = json.loads(resp.json().get("response", "{}"))
+        return {k: v for k, v in extracted.items() if v not in (None, "", 0)}
+    except Exception as exc:
+        logger.warning("Vehicle info extraction failed: %s", exc)
+        return {}
+
+
 async def run_diagnosis(
     manufacturer: str,
     model: str,
@@ -188,6 +284,7 @@ async def run_diagnosis(
     when_occurs: list[str],
     severity: str,
     image_urls: list[str] = (),
+    response_language: str = "en-IN",
 ) -> dict:
     """Run RAG retrieval + Ollama diagnosis. Returns structured result dict."""
 
@@ -219,6 +316,10 @@ async def run_diagnosis(
     result["retrieved_sources"] = retrieved_sources
     result["ollama_used"] = ollama_used
     result["disclaimer"] = _DISCLAIMER
+
+    # Translate diagnosis fields to target language (for voice/multilingual mode)
+    if response_language and response_language != "en-IN":
+        result = await _translate_diagnosis(result, response_language)
 
     # Vision analysis — run on first image if provided
     if image_urls:
