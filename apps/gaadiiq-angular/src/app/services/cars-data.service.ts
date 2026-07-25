@@ -111,10 +111,20 @@ function img(makeModel: string): string[] {
 }
 
 /**
- * Below this many real listings, development builds pad the catalogue with
- * demo cars so grids, filters and galleries have something to work against.
+ * Below this many distinct make+model combinations, development builds pad the
+ * catalogue with demo cars so grids, filters and galleries have something to
+ * work against.
+ *
+ * Counting distinct models rather than listings matters: the catalogue can hold
+ * plenty of rows and still be a single car repeated, which leaves every
+ * model-grouped view ("N models available") and every brand filter empty.
  */
-const DEMO_MIN_RESULTS = 6;
+const DEMO_MIN_MODELS = 4;
+
+/** Key used to tell whether a demo car duplicates a real listing. */
+function modelKey(make: string, model: string): string {
+  return `${make} ${model}`.toLowerCase().trim();
+}
 
 // Demo fallback — shown when the API is unreachable or returns too little
 const DEMO_NEW_CARS: Car[] = [
@@ -231,15 +241,26 @@ export class CarsDataService {
       // be exercised against a realistic number of results. They are never
       // shown in production, where a real listing count is the honest signal
       // and fabricated cars alongside real ones would mislead buyers.
-      const needsFiller = !environment.production && all.length < DEMO_MIN_RESULTS;
-      this._cars.set(
-        all.length && !needsFiller ? all
-        : needsFiller ? [...all, ...DEMO_NEW_CARS, ...DEMO_USED_CARS]
-        : [...DEMO_NEW_CARS, ...DEMO_USED_CARS]
-      );
+      const realModels = new Set(all.map(c => modelKey(c.make, c.model)));
+      const needsFiller = !environment.production && realModels.size < DEMO_MIN_MODELS;
+
+      if (!needsFiller) {
+        // Either the catalogue is varied enough, or this is production, where a
+        // thin real catalogue is the honest signal and fabricated cars beside
+        // real ones would mislead buyers.
+        this._cars.set(all.length ? all : []);
+      } else {
+        // Keep every real listing, and add only demo models the catalogue does
+        // not already carry, so a real car is never shadowed by a fake one.
+        const filler = [...DEMO_NEW_CARS, ...DEMO_USED_CARS]
+          .filter(c => !realModels.has(modelKey(c.make, c.model)));
+        this._cars.set([...all, ...filler]);
+      }
     } catch (err) {
       console.error('API fetch error — falling back to demo data:', err);
-      this._cars.set([...DEMO_NEW_CARS, ...DEMO_USED_CARS]);
+      // Same rule as above: demo cars are a development aid, never something a
+      // real buyer sees. In production an outage shows an empty catalogue.
+      this._cars.set(environment.production ? [] : [...DEMO_NEW_CARS, ...DEMO_USED_CARS]);
     } finally {
       this.loading.set(false);
     }
