@@ -4,7 +4,11 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../services/voice-diagnosis.service';
+import {
+  VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage,
+  CONSENT_VERSION, VOICE_RETENTION_NOTICE,
+} from '../../services/voice-diagnosis.service';
+import { ServerSttService } from '../../services/server-stt.service';
 import { extractVehicleInfo, ExtractedVehicleInfo } from '../../utils/vehicle-info-extractor';
 import { environment } from '../../../environments/environment';
 
@@ -182,8 +186,18 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   @Output() cancelled = new EventEmitter<void>();
 
   readonly voice = inject(VoiceDiagnosisService);
+  readonly serverStt = inject(ServerSttService);
   private zone = inject(NgZone);
   private http = inject(HttpClient);
+
+  readonly retentionNotice = VOICE_RETENTION_NOTICE;
+  readonly consentVersion = CONSENT_VERSION;
+
+  /**
+   * True when the browser cannot transcribe locally, so capture goes through
+   * MediaRecorder → POST /diagnosis/stt instead of the Web Speech API.
+   */
+  readonly useServerStt = ServerSttService.browserSttUnusable();
 
   step = signal<ConversationStep>('select-language');
   messages = signal<Message[]>([]);
@@ -193,6 +207,18 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
   readonly languages = VOICE_LANGUAGES;
   readonly isListening = computed(() => this.voice.state() === 'listening');
+
+  /** Capturing on whichever engine this client uses. */
+  readonly isCapturing = computed(() =>
+    this.useServerStt ? this.serverStt.recording() : this.voice.state() === 'listening'
+  );
+
+  readonly captureStatus = computed(() => {
+    if (this.serverStt.uploading()) return 'Transcribing…';
+    if (this.isCapturing()) return this.useServerStt ? 'Recording…' : 'Listening…';
+    if (this.voice.speakingState() === 'speaking') return 'Speaking…';
+    return 'Tap mic to speak';
+  });
   readonly isSelectingLanguage = computed(() => this.step() === 'select-language');
   readonly isAskingConsent = computed(() => this.step() === 'consent');
   /** True while a pre-conversation screen (consent / language) is showing. */
@@ -231,10 +257,25 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
   // ── Public API ───────────────────────────────────────────────────────────
 
-  /** User accepted the microphone consent notice. */
-  grantConsent() {
+  /**
+   * User accepted the consent notice. In-app consent and OS permission are
+   * separate gates — record the decision, then request the platform
+   * permission and surface a failure explicitly rather than proceeding into
+   * a capture that cannot work (BR-AND-01).
+   */
+  async grantConsent() {
     this.voice.recordConsent(true);
+    const ok = await this.voice.ensureMicPermission();
+    if (!ok) return;  // error message + settings guidance already shown
     this.step.set('select-language');
+  }
+
+  /** Retry after the user has changed the permission in OS/browser settings. */
+  async retryPermission() {
+    this.voice.dismissError();
+    this.voice.permissionDenied.set(false);
+    const ok = await this.voice.ensureMicPermission();
+    if (ok) this.step.set('select-language');
   }
 
   /** User declined — close the overlay without capturing anything. */
@@ -273,7 +314,7 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   }
 
   cancel() {
-    this.voice.stop();
+    this._stopListening();
     this.voice.stopSpeaking();
     this.cancelled.emit();
   }
@@ -283,12 +324,56 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
     if (msg) this.voice.speak(msg);
   }
 
+  // ── Capture abstraction (browser STT vs server STT) ───────────────────────
+
+  /** Pending completion for a server-STT recording, resolved by finishRecording(). */
+  private _sttCallback: ((text: string) => void) | null = null;
+
+  /**
+   * Capture one utterance, using whichever engine this client supports.
+   *
+   * Browser STT ends on its own silence detection. MediaRecorder has no VAD,
+   * so the server path is user-terminated — the UI shows a Stop control while
+   * `serverStt.recording()` is true.
+   */
+  private _listen(onResult: (text: string) => void) {
+    if (!this.useServerStt) {
+      this.voice.start(onResult);
+      return;
+    }
+    this._sttCallback = onResult;
+    void this.serverStt.start().then((ok) => {
+      if (!ok) {
+        this.zone.run(() => this._sttCallback = null);
+      }
+    });
+  }
+
+  /** Stop the server-STT recording, transcribe it, and resume the conversation. */
+  async finishRecording() {
+    const cb = this._sttCallback;
+    this._sttCallback = null;
+    const result = await this.serverStt.stopAndTranscribe(this.detectedLanguage());
+    if (result?.text && cb) {
+      this.zone.run(() => cb(result.text));
+    }
+  }
+
+  private _stopListening() {
+    if (this.useServerStt) {
+      this.serverStt.cancel();
+      this._sttCallback = null;
+    } else {
+      this.voice.stop();
+    }
+  }
+
   // ── Conversation flow ────────────────────────────────────────────────────
 
   private _listenForVehicle() {
     this.step.set('capture-vehicle');
-    this.voice.start((text) => {
-      this.voice.stop();
+    this._listen((text) => {
+      this._stopListening();
       this._addMessage('user', text);
 
       // In auto-detect mode the first utterance decides the language; after
@@ -393,8 +478,8 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
     this._aiSay(prompt, () => {
       this.step.set('capture-vehicle');
-      this.voice.start((text) => {
-        this.voice.stop();
+      this._listen((text) => {
+        this._stopListening();
         this._addMessage('user', text);
         this._extractAndMerge(text);
       });
@@ -415,8 +500,8 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
   private _listenForProblem() {
     this.step.set('capture-problem');
-    this.voice.start((text) => {
-      this.voice.stop();
+    this._listen((text) => {
+      this._stopListening();
       this._addMessage('user', text);
       this.problemDescription.set(text.trim());
       this._finish();
@@ -473,7 +558,10 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    // Release the mic on both paths — a live MediaRecorder stream would keep
+    // the OS recording indicator on after the overlay closes.
     this.voice.stop();
+    this.serverStt.cancel();
     this.voice.stopSpeaking();
   }
 }

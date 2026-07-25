@@ -14,19 +14,34 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.dependencies import get_current_user
 from core.limiter import limiter
 from db.session import get_db
 from models.user import User
 from models.vehicle_diagnosis import VehicleDiagnosis
-from services.diagnosis import extract_vehicle_info_from_transcript, run_diagnosis
+from services.diagnosis import _LANG_NAMES, extract_vehicle_info_from_transcript, run_diagnosis
+from services.stt import (
+    STTError,
+    STTUnavailable,
+    estimate_duration_seconds,
+    stt_enabled,
+    transcribe,
+)
 
 router = APIRouter(prefix="/diagnosis", tags=["diagnosis"])
+
+# Formats MediaRecorder and native pickers realistically produce.
+_STT_ALLOWED_TYPES = {
+    "audio/webm", "audio/ogg", "audio/mpeg", "audio/mp4",
+    "audio/wav", "audio/x-wav", "audio/aac", "audio/3gpp",
+    "audio/webm;codecs=opus", "audio/ogg;codecs=opus",
+}
 
 DB = Annotated[AsyncSession, Depends(get_db)]
 OptionalUser = Annotated[User | None, Depends(lambda: None)]
@@ -188,6 +203,71 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         created_at=record.created_at,
         vision_analysis=ai_result.get("vision_analysis"),
     )
+
+
+class SttResponse(BaseModel):
+    text: str
+    language: str
+    provider: str
+    confidence: float | None = None
+
+
+@router.post("/stt", response_model=SttResponse)
+@limiter.limit("15/minute;100/hour")
+async def speech_to_text(
+    request: Request,
+    file: UploadFile = File(...),
+    language: str = Form("en-IN"),
+):
+    """
+    Server-side transcription fallback (BR-API-01, BR-VA-01).
+
+    Used when the client has no usable Web Speech API — Android WebView,
+    Safari, Firefox. Audio is transcribed and discarded; nothing is persisted
+    by this endpoint.
+    """
+    if not stt_enabled():
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Server-side speech recognition is not configured.",
+        )
+
+    content_type = file.content_type or ""
+    if content_type not in _STT_ALLOWED_TYPES:
+        raise HTTPException(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "Unsupported audio format.",
+        )
+
+    audio = await file.read()
+    if not audio:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Empty audio file.")
+    if len(audio) > settings.stt_max_bytes:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            f"Audio must be under {settings.stt_max_bytes // (1024 * 1024)} MB.",
+        )
+
+    # Duration cap where measurable (BR-IR-04). Compressed formats report None;
+    # the byte cap above is the backstop for those.
+    duration = estimate_duration_seconds(audio, content_type)
+    if duration is not None and duration > settings.stt_max_audio_seconds:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            f"Audio must be under {settings.stt_max_audio_seconds} seconds.",
+        )
+
+    if language not in _LANG_NAMES:
+        language = "en-IN"
+
+    try:
+        result = await transcribe(audio, content_type=content_type, language=language)
+    except STTUnavailable as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    except STTError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+
+    return SttResponse(**result)
 
 
 class VoiceExtractRequest(BaseModel):

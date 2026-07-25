@@ -73,6 +73,17 @@ class Settings(BaseSettings):
     ollama_vision_model: str = "llava"
     ollama_url: str = "http://localhost:11434"  # alias used by sentiment service
 
+    # Server-side speech-to-text (BR-API-01) — fallback for WebViews and
+    # browsers without the Web Speech API. Provider is selected by
+    # STT_PROVIDER; "none" disables the endpoint (503).
+    stt_provider: str = "none"          # none | whisper | openai | google | azure
+    stt_api_key: str = ""
+    stt_api_url: str = ""               # self-hosted Whisper / custom gateway
+    stt_model: str = "whisper-1"
+    stt_timeout_seconds: int = 45
+    stt_max_audio_seconds: int = 60     # BR-IR-04 duration cap
+    stt_max_bytes: int = 25 * 1024 * 1024
+
     # Qdrant vector database
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "gaadiiq_listings"

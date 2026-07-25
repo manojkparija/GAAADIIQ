@@ -12,17 +12,49 @@
       <div class="vm-consent">
         <div class="vm-consent-icon" aria-hidden="true">🎙️</div>
         <h3 class="vm-consent-title">Microphone access</h3>
-        <p class="vm-consent-body">
-          Voice diagnosis uses your microphone to capture what you say about your
-          vehicle. Speech is transcribed by your browser and only the resulting
-          text is sent for diagnosis — no audio recording is stored or uploaded.
+
+        <dl class="vm-consent-terms">
+          <dt>Why</dt>
+          <dd>
+            To let you describe your vehicle and its problem by speaking instead
+            of typing — useful when you cannot safely use the keyboard.
+          </dd>
+
+          <dt>What happens to your voice</dt>
+          <dd>
+            {{ useServerStt
+              ? 'Your device cannot transcribe speech on its own, so the recording is sent to our server, converted to text, and deleted immediately.'
+              : 'Speech is transcribed by your browser. The audio never leaves your device — only the resulting text is sent.' }}
+          </dd>
+
+          <dt>How long we keep it</dt>
+          <dd>{{ retentionNotice }}</dd>
+        </dl>
+
+        <p class="vm-consent-links">
+          <a href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>
+          <span aria-hidden="true">·</span>
+          <span class="vm-consent-version">Notice v{{ consentVersion }}</span>
         </p>
+
+        <!-- Permission failure: always explicit, never a silent no-op -->
+        <div class="vm-error" *ngIf="voice.permissionDenied()" role="alert" aria-live="assertive">
+          <span>⚠️ {{ voice.errorMessage() }}</span>
+        </div>
+
         <div class="vm-consent-actions">
-          <button class="vm-btn vm-btn--primary" (click)="grantConsent()">
-            Allow microphone
-          </button>
+          <button
+            *ngIf="!voice.permissionDenied()"
+            class="vm-btn vm-btn--primary"
+            (click)="grantConsent()"
+          >Allow microphone</button>
+          <button
+            *ngIf="voice.permissionDenied()"
+            class="vm-btn vm-btn--primary"
+            (click)="retryPermission()"
+          >I've enabled it — try again</button>
           <button class="vm-btn vm-btn--ghost" (click)="declineConsent()">
-            Not now
+            Not now — I'll type instead
           </button>
         </div>
       </div>
@@ -52,12 +84,24 @@
     <ng-container *ngIf="!isSetup()">
 
     <!-- Waveform / Mic indicator -->
-    <div class="vm-visual" [class.listening]="isListening()">
+    <div class="vm-visual" [class.listening]="isCapturing()">
       <div class="vm-pulse-ring" aria-hidden="true"></div>
-      <div class="vm-mic-icon" aria-hidden="true">{{ isListening() ? '🎙️' : '🔇' }}</div>
-      <div class="vm-status-label" role="status" aria-live="polite">
-        {{ isListening() ? 'Listening…' : (voice.speakingState() === 'speaking' ? 'Speaking…' : 'Tap mic to speak') }}
-      </div>
+      <div class="vm-mic-icon" aria-hidden="true">{{ isCapturing() ? '🎙️' : '🔇' }}</div>
+      <div class="vm-status-label" role="status" aria-live="polite">{{ captureStatus() }}</div>
+    </div>
+
+    <!-- Server-STT recording control: MediaRecorder has no silence detection,
+         so the user ends the recording explicitly. -->
+    <div class="vm-record-bar" *ngIf="useServerStt && serverStt.recording()">
+      <span class="vm-record-timer">{{ serverStt.elapsed() }}s / 60s</span>
+      <button class="vm-btn vm-btn--primary vm-btn--sm" (click)="finishRecording()">
+        ⏹ Done speaking
+      </button>
+    </div>
+
+    <div class="vm-error" *ngIf="serverStt.errorMessage()" role="alert" aria-live="assertive">
+      <span>⚠️ {{ serverStt.errorMessage() }}</span>
+      <button (click)="serverStt.errorMessage.set('')" aria-label="Dismiss error">✕</button>
     </div>
 
     <!-- Active language + change control -->

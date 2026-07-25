@@ -10,7 +10,9 @@ from pydantic import BaseModel
 from core.dependencies import get_current_user
 from core.limiter import limiter
 from models.user import User
+from core.config import settings
 from services.storage import upload_image, upload_media
+from services.stt import estimate_duration_seconds
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -139,6 +141,16 @@ async def _store_av(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail=f"File content does not match a supported {kind} format.",
         )
+
+    # Duration cap for audio (BR-IR-04). Only measurable without decoding for
+    # WAV; compressed formats return None and rely on the byte cap above.
+    if kind == "audio":
+        duration = estimate_duration_seconds(content, file.content_type or "")
+        if duration is not None and duration > settings.stt_max_audio_seconds:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Audio must be under {settings.stt_max_audio_seconds} seconds.",
+            )
 
     ct = file.content_type or ""
     url = upload_media(

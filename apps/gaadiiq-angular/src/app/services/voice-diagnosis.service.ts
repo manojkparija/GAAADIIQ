@@ -28,9 +28,23 @@ const MUTE_KEY = 'gq_voice_muted';
 const LANG_KEY = 'gq_voice_lang';
 const CONSENT_KEY = 'gq_voice_consent';
 
-/** Audit record of an explicit microphone consent decision (TC-S-05). */
+/**
+ * Consent notice version. Bump when the purpose, retention period or data
+ * handling changes — a stored consent at an older version is not valid for
+ * the new terms and the user is re-asked (BR-SEC-04).
+ */
+export const CONSENT_VERSION = 1;
+
+/** How long voice-derived data is kept; surfaced in the consent notice. */
+export const VOICE_RETENTION_NOTICE =
+  'Audio is transcribed and immediately discarded — recordings are never stored. ' +
+  'The resulting text is kept with your diagnosis so you can review it later, ' +
+  'and is deleted when you delete that diagnosis.';
+
+/** Audit record of an explicit microphone consent decision (BR-SEC-01/04). */
 export interface MicConsentRecord {
   granted: boolean;
+  version: number;  // CONSENT_VERSION at the time of the decision
   at: string;       // ISO timestamp
   language: string; // language active when consent was given
 }
@@ -81,19 +95,25 @@ export class VoiceDiagnosisService {
 
   // ── Microphone consent ────────────────────────────────────────────────────
 
-  /** True once the user has explicitly granted mic access for voice diagnosis. */
+  /**
+   * True only when consent was granted AND against the current notice version.
+   * A stored consent from an older version does not cover revised terms, so
+   * the user is asked again (BR-SEC-04).
+   */
   hasConsent(): boolean {
-    return this.micConsent()?.granted === true;
+    const c = this.micConsent();
+    return c?.granted === true && c.version === CONSENT_VERSION;
   }
 
   /**
    * Record an explicit consent decision. Persisted so the prompt is shown once,
    * and emitted as an audit event so consent is provably logged before any
-   * audio capture begins (TC-S-05).
+   * audio capture begins (BR-SEC-01).
    */
   recordConsent(granted: boolean): MicConsentRecord {
     const record: MicConsentRecord = {
       granted,
+      version: CONSENT_VERSION,
       at: new Date().toISOString(),
       language: this.selectedLanguage().code,
     };
@@ -110,6 +130,58 @@ export class VoiceDiagnosisService {
   revokeConsent() {
     this.micConsent.set(null);
     try { localStorage.removeItem(CONSENT_KEY); } catch { /* ignore */ }
+  }
+
+  // ── OS-level microphone permission (BR-AND-01) ────────────────────────────
+
+  /** True when running inside the Capacitor Android/iOS shell. */
+  readonly isNativeShell = typeof window !== 'undefined' &&
+    !!(window as any).Capacitor?.isNativePlatform?.();
+
+  permissionDenied = signal(false);
+
+  /**
+   * Request OS microphone permission before starting capture.
+   *
+   * In-app consent (recordConsent) and OS permission are different gates: the
+   * user can accept our notice and still have the platform block the mic. This
+   * surfaces that case explicitly rather than failing silently.
+   *
+   * Returns true when the mic is usable.
+   */
+  async ensureMicPermission(): Promise<boolean> {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      // No getUserMedia: the Web Speech API triggers its own prompt, so let
+      // the caller proceed and surface any error through the STT error map.
+      return true;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Release immediately — this call is only a permission probe.
+      stream.getTracks().forEach(t => t.stop());
+      this.permissionDenied.set(false);
+      return true;
+    } catch (err: any) {
+      const name = err?.name ?? '';
+      this.permissionDenied.set(true);
+      this.state.set('error');
+      this.errorMessage.set(this._permissionErrorMessage(name));
+      return false;
+    }
+  }
+
+  /** Actionable guidance for a permission failure — never a silent failure. */
+  private _permissionErrorMessage(errorName: string): string {
+    if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+      return 'No microphone was found. Connect a microphone and try again.';
+    }
+    if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+      return 'Your microphone is in use by another app. Close it and try again.';
+    }
+    // NotAllowedError / PermissionDeniedError, and anything unrecognised.
+    return this.isNativeShell
+      ? 'Microphone access is blocked. Open Settings → Apps → GAADIIQ → Permissions and enable Microphone, then try again.'
+      : 'Microphone access is blocked. Tap the lock icon in the address bar, allow Microphone, then reload the page.';
   }
 
   // ── Language ──────────────────────────────────────────────────────────────

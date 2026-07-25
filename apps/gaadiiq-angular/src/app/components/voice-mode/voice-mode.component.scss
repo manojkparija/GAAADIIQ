@@ -100,6 +100,66 @@
   gap: 10px;
 }
 
+.vm-consent-terms {
+  margin: 0 0 16px;
+  text-align: left;
+
+  dt {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--vm-accent);
+    margin-top: 12px;
+  }
+
+  dd {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--vm-sub);
+  }
+}
+
+.vm-consent-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  font-size: 0.78rem;
+
+  a { color: var(--vm-accent); }
+}
+
+.vm-consent-version { color: var(--vm-sub); }
+
+// ── Server-STT recording bar ─────────────────────────────────────────────────
+
+.vm-record-bar {
+  margin: 0 20px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  border-radius: 12px;
+}
+
+.vm-record-timer {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--vm-danger);
+  font-variant-numeric: tabular-nums;
+}
+
+.vm-btn--sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
 // ── Language picker ──────────────────────────────────────────────────────────
 
 .vm-lang-picker {
