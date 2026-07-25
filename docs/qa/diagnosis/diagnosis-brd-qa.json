@@ -1,15 +1,16 @@
 {
-  "generated_at": "2026-07-25T13:53:16.092148+00:00",
+  "generated_at": "2026-07-25T13:56:48.504294+00:00",
   "brd_readiness_score": 63,
+  "code_tip": "claude/gaadiiq-app-dev-abj5fo",
   "requirement_counts": {
     "PASS": 31,
     "FAIL": 14,
     "PARTIAL": 19
   },
   "test_counts": {
-    "PASS": 17,
-    "FAIL": 17,
-    "PARTIAL": 5
+    "PASS": 23,
+    "FAIL": 18,
+    "PARTIAL": 6
   },
   "recommendation": "NO-GO for full BRD; CONDITIONAL for manual+image MVP",
   "requirements": [
@@ -19,8 +20,9 @@
       "priority": "Must Have",
       "requirement": "Manual vehicle information entry",
       "status": "PASS",
-      "evidence": "Angular Step 1 form",
-      "gap": "\u2014"
+      "evidence": "Angular Step 1 form (make/model/year/fuel/transmission)",
+      "gap": "\u2014",
+      "justification": "Baseline path for users who prefer typing"
     },
     {
       "id": "BR-VI-02",
@@ -28,8 +30,9 @@
       "priority": "Must Have",
       "requirement": "Voice-based vehicle information entry",
       "status": "PASS",
-      "evidence": "voice-mode overlay + STT",
-      "gap": "\u2014"
+      "evidence": "voice-mode overlay + Web Speech STT",
+      "gap": "\u2014",
+      "justification": "Hands-free capture for drivers / literacy barriers"
     },
     {
       "id": "BR-VI-03",
@@ -37,8 +40,9 @@
       "priority": "Must Have",
       "requirement": "Auto-extract vehicle details from speech",
       "status": "PASS",
-      "evidence": "vehicle-info-extractor + /voice/extract",
-      "gap": "\u2014"
+      "evidence": "vehicle-info-extractor + POST /diagnosis/voice/extract",
+      "gap": "\u2014",
+      "justification": "Reduce form friction after speech"
     },
     {
       "id": "BR-VI-04",
@@ -46,8 +50,9 @@
       "priority": "Must Have",
       "requirement": "Auto-fill of vehicle information",
       "status": "PASS",
-      "evidence": "onVoiceCompleted merges form",
-      "gap": "\u2014"
+      "evidence": "onVoiceCompleted merges into form signals",
+      "gap": "\u2014",
+      "justification": "Keep single source of truth for review step"
     },
     {
       "id": "BR-VI-05",
@@ -55,8 +60,9 @@
       "priority": "Must Have",
       "requirement": "Intelligent validation",
       "status": "PASS",
-      "evidence": "step1Valid + Pydantic",
-      "gap": "\u2014"
+      "evidence": "step1Valid + Pydantic DiagnoseRequest",
+      "gap": "\u2014",
+      "justification": "Prevent invalid analyse payloads"
     },
     {
       "id": "BR-VI-06",
@@ -64,8 +70,9 @@
       "priority": "Must Have",
       "requirement": "Missing information prompts",
       "status": "PASS",
-      "evidence": "voice-mode _askMissingFields",
-      "gap": "\u2014"
+      "evidence": "voice-mode _askMissingFields TTS loop",
+      "gap": "\u2014",
+      "justification": "Complete mandatory vehicle fields before analyse"
     },
     {
       "id": "BR-IR-01",
@@ -73,8 +80,9 @@
       "priority": "Must Have",
       "requirement": "Report issue using text",
       "status": "PASS",
-      "evidence": "Step 2 textarea",
-      "gap": "\u2014"
+      "evidence": "Step 2 textarea problem_description",
+      "gap": "\u2014",
+      "justification": "Primary symptom capture"
     },
     {
       "id": "BR-IR-02",
@@ -82,8 +90,9 @@
       "priority": "Must Have",
       "requirement": "Report issue using voice",
       "status": "PASS",
-      "evidence": "Step 2 mic + overlay",
-      "gap": "\u2014"
+      "evidence": "Step 2 mic toolbar + overlay problem phase",
+      "gap": "\u2014",
+      "justification": "Speak symptoms in native language"
     },
     {
       "id": "BR-IR-03",
@@ -91,8 +100,9 @@
       "priority": "Must Have",
       "requirement": "Upload vehicle images",
       "status": "PASS",
-      "evidence": "POST /upload/image",
-      "gap": "\u2014"
+      "evidence": "POST /upload/image \u2192 image_urls",
+      "gap": "\u2014",
+      "justification": "Visual context for vision + mechanic handoff"
     },
     {
       "id": "BR-IR-04",
@@ -100,8 +110,9 @@
       "priority": "Must Have",
       "requirement": "Upload audio recordings",
       "status": "FAIL",
-      "evidence": "Schema audio_url only",
-      "gap": "No UI/API upload"
+      "evidence": "DB/schema audio_url exists; unused",
+      "gap": "No POST /upload/audio or Step 2 UI",
+      "justification": "Engine noise / rattles improve diagnosis"
     },
     {
       "id": "BR-IR-05",
@@ -109,8 +120,9 @@
       "priority": "Must Have",
       "requirement": "Upload videos",
       "status": "FAIL",
-      "evidence": "Schema video_url only",
-      "gap": "No video upload"
+      "evidence": "DB/schema video_url exists; unused",
+      "gap": "No video upload API/UI",
+      "justification": "Capture intermittent symptoms"
     },
     {
       "id": "BR-IR-06",
@@ -118,8 +130,9 @@
       "priority": "Must Have",
       "requirement": "Select dashboard warning lights",
       "status": "PASS",
-      "evidence": "WARNING_LIGHTS chips",
-      "gap": "\u2014"
+      "evidence": "WARNING_LIGHTS chips in Step 2",
+      "gap": "\u2014",
+      "justification": "Structured symptom signals"
     },
     {
       "id": "BR-IR-07",
@@ -127,8 +140,9 @@
       "priority": "Should Have",
       "requirement": "Add maintenance history",
       "status": "FAIL",
-      "evidence": "Not in form/API",
-      "gap": "No maintenance_history field"
+      "evidence": "Not in form/API/model",
+      "gap": "Add maintenance_history JSON field",
+      "justification": "Prior service context"
     },
     {
       "id": "BR-ML-01",
@@ -136,8 +150,9 @@
       "priority": "Must Have",
       "requirement": "Automatic language detection",
       "status": "PARTIAL",
-      "evidence": "detectLanguageFromText unwired",
-      "gap": "Wire autoDetect into voice session"
+      "evidence": "detectLanguageFromText exists client-side",
+      "gap": "Wire Auto-detect toggle into voice session",
+      "justification": "Users may not know BCP-47 codes"
     },
     {
       "id": "BR-ML-02",
@@ -145,8 +160,9 @@
       "priority": "Must Have",
       "requirement": "Support major Indian languages",
       "status": "PASS",
-      "evidence": "11 VOICE_LANGUAGES",
-      "gap": "Prompts fully localized for 6 only"
+      "evidence": "11 VOICE_LANGUAGES in picker",
+      "gap": "PROMPTS fully localized for 6 only",
+      "justification": "India language coverage"
     },
     {
       "id": "BR-ML-03",
@@ -155,7 +171,8 @@
       "requirement": "Preserve user language in conversation",
       "status": "PASS",
       "evidence": "gq_voice_lang + detected_language",
-      "gap": "\u2014"
+      "gap": "\u2014",
+      "justification": "Consistent journey language"
     },
     {
       "id": "BR-ML-04",
@@ -164,7 +181,8 @@
       "requirement": "AI responses match user language",
       "status": "PARTIAL",
       "evidence": "_translate_diagnosis via Ollama",
-      "gap": "Quality untested; may stay EN"
+      "gap": "Golden-set QA; English fallback banner",
+      "justification": "Trust for non-English users"
     },
     {
       "id": "BR-VA-01",
@@ -172,8 +190,9 @@
       "priority": "Must Have",
       "requirement": "Speech-to-Text",
       "status": "PARTIAL",
-      "evidence": "Browser Web Speech only",
-      "gap": "No server STT; WebView risk"
+      "evidence": "Browser Web Speech API only",
+      "gap": "Server STT + MediaRecorder for WebView",
+      "justification": "Production Android/iOS reliability"
     },
     {
       "id": "BR-VA-02",
@@ -182,7 +201,8 @@
       "requirement": "Text-to-Speech",
       "status": "PARTIAL",
       "evidence": "speechSynthesis only",
-      "gap": "No server TTS"
+      "gap": "Optional server TTS; keep client fallback",
+      "justification": "Playback on devices with weak voices"
     },
     {
       "id": "BR-VA-03",
@@ -190,8 +210,9 @@
       "priority": "Must Have",
       "requirement": "Live transcription",
       "status": "PASS",
-      "evidence": "interimText UI",
-      "gap": "\u2014"
+      "evidence": "interimText in voice overlay",
+      "gap": "\u2014",
+      "justification": "User confidence while speaking"
     },
     {
       "id": "BR-VA-04",
@@ -200,7 +221,8 @@
       "requirement": "Voice playback",
       "status": "PASS",
       "evidence": "Auto-speak report + TTS bar",
-      "gap": "\u2014"
+      "gap": "\u2014",
+      "justification": "Listen to diagnosis"
     },
     {
       "id": "BR-VA-05",
@@ -208,8 +230,9 @@
       "priority": "Should Have",
       "requirement": "Replay",
       "status": "PASS",
-      "evidence": "replaySpeaking",
-      "gap": "\u2014"
+      "evidence": "replaySpeaking()",
+      "gap": "\u2014",
+      "justification": "Re-hear instructions"
     },
     {
       "id": "BR-VA-06",
@@ -217,8 +240,9 @@
       "priority": "Should Have",
       "requirement": "Pause",
       "status": "PASS",
-      "evidence": "pauseSpeaking",
-      "gap": "\u2014"
+      "evidence": "pauseSpeaking()",
+      "gap": "\u2014",
+      "justification": "Interruptible playback"
     },
     {
       "id": "BR-VA-07",
@@ -226,8 +250,9 @@
       "priority": "Should Have",
       "requirement": "Stop",
       "status": "PASS",
-      "evidence": "stop STT/TTS",
-      "gap": "\u2014"
+      "evidence": "stop STT/TTS controls",
+      "gap": "\u2014",
+      "justification": "Immediate silence"
     },
     {
       "id": "BR-VA-08",
@@ -236,7 +261,8 @@
       "requirement": "Hands-free mode",
       "status": "PARTIAL",
       "evidence": "Auto-listen after TTS",
-      "gap": "No always-on driving mode"
+      "gap": "Always-on driving mode",
+      "justification": "Parked/driving safety"
     },
     {
       "id": "BR-VA-09",
@@ -244,8 +270,9 @@
       "priority": "Should Have",
       "requirement": "Driver-friendly interaction",
       "status": "PARTIAL",
-      "evidence": "Large overlay",
-      "gap": "No driving mode; RECORD_AUDIO gap"
+      "evidence": "Large overlay UI",
+      "gap": "Driving mode + RECORD_AUDIO",
+      "justification": "Large targets, reduced glances"
     },
     {
       "id": "BR-AI-01",
@@ -253,8 +280,9 @@
       "priority": "Must Have",
       "requirement": "Ollama LLM integration",
       "status": "PASS",
-      "evidence": "services/diagnosis.py",
-      "gap": "\u2014"
+      "evidence": "services/diagnosis.py run_diagnosis",
+      "gap": "\u2014",
+      "justification": "Primary LLM path"
     },
     {
       "id": "BR-AI-02",
@@ -262,8 +290,9 @@
       "priority": "Must Have",
       "requirement": "RAG knowledge base",
       "status": "PARTIAL",
-      "evidence": "Keyword KB 12 cases",
-      "gap": "Not vector RAG for diagnosis"
+      "evidence": "Keyword match on repair_knowledge.json (12 cases)",
+      "gap": "Vector RAG over KB (Qdrant/BGE unused)",
+      "justification": "Grounded repair advice"
     },
     {
       "id": "BR-AI-03",
@@ -272,7 +301,8 @@
       "requirement": "Root cause prediction",
       "status": "PASS",
       "evidence": "possible_causes[]",
-      "gap": "\u2014"
+      "gap": "\u2014",
+      "justification": "Core diagnosis value"
     },
     {
       "id": "BR-AI-04",
@@ -281,7 +311,8 @@
       "requirement": "Severity prediction",
       "status": "PASS",
       "evidence": "risk_level",
-      "gap": "\u2014"
+      "gap": "\u2014",
+      "justification": "Urgency signalling"
     },
     {
       "id": "BR-AI-05",
@@ -289,8 +320,9 @@
       "priority": "Must Have",
       "requirement": "Safe-to-drive recommendation",
       "status": "PASS",
-      "evidence": "safe_to_drive UI",
-      "gap": "\u2014"
+      "evidence": "safe_to_drive + UI warning",
+      "gap": "\u2014",
+      "justification": "Safety-critical output"
     },
     {
       "id": "BR-AI-06",
@@ -298,8 +330,9 @@
       "priority": "Must Have",
       "requirement": "Estimated repair cost",
       "status": "PASS",
-      "evidence": "cost_min/max INR",
-      "gap": "\u2014"
+      "evidence": "cost_min_inr / cost_max_inr",
+      "gap": "\u2014",
+      "justification": "Budget transparency"
     },
     {
       "id": "BR-AI-07",
@@ -308,7 +341,8 @@
       "requirement": "Estimated repair duration",
       "status": "PASS",
       "evidence": "repair_time_estimate",
-      "gap": "\u2014"
+      "gap": "\u2014",
+      "justification": "Time planning"
     },
     {
       "id": "BR-AI-08",
@@ -316,8 +350,9 @@
       "priority": "Must Have",
       "requirement": "Recommended next steps",
       "status": "PASS",
-      "evidence": "recommended_steps + DIY",
-      "gap": "\u2014"
+      "evidence": "recommended_steps + How to Fix",
+      "gap": "\u2014",
+      "justification": "Actionable guidance"
     },
     {
       "id": "BR-AI-09",
@@ -326,7 +361,8 @@
       "requirement": "Preventive maintenance suggestions",
       "status": "PASS",
       "evidence": "preventive_maintenance",
-      "gap": "\u2014"
+      "gap": "\u2014",
+      "justification": "Upsell prevention"
     },
     {
       "id": "BR-AI-10",
@@ -335,7 +371,8 @@
       "requirement": "Follow-up questions when required",
       "status": "PARTIAL",
       "evidence": "Missing-field asks only",
-      "gap": "No post-diagnosis follow-ups"
+      "gap": "Post-diagnosis follow_up_questions[]",
+      "justification": "Improve low-confidence cases"
     },
     {
       "id": "BR-UX-01",
@@ -343,8 +380,9 @@
       "priority": "Must Have",
       "requirement": "Mobile-first design",
       "status": "PARTIAL",
-      "evidence": "Responsive SCSS",
-      "gap": "Not dedicated mobile shell"
+      "evidence": "Responsive SCSS + layout e2e",
+      "gap": "Dedicated mobile shell polish",
+      "justification": "Primary usage is phone"
     },
     {
       "id": "BR-UX-02",
@@ -352,8 +390,9 @@
       "priority": "Must Have",
       "requirement": "Progress indicators",
       "status": "PASS",
-      "evidence": "Steps 1\u20133",
-      "gap": "\u2014"
+      "evidence": "Steps 1\u20133 wizard progress",
+      "gap": "\u2014",
+      "justification": "Orient user in flow"
     },
     {
       "id": "BR-UX-03",
@@ -361,8 +400,9 @@
       "priority": "Must Have",
       "requirement": "Conversation history",
       "status": "PARTIAL",
-      "evidence": "In-session + API history",
-      "gap": "No Angular history UI / conversation DB"
+      "evidence": "Past Diagnoses panel + GET /history",
+      "gap": "No multi-turn conversation DB/UI; open-by-id weak",
+      "justification": "Revisit prior advice"
     },
     {
       "id": "BR-UX-04",
@@ -371,7 +411,8 @@
       "requirement": "Voice/Text switching",
       "status": "PASS",
       "evidence": "Mode selector Step 1",
-      "gap": "\u2014"
+      "gap": "\u2014",
+      "justification": "User preference"
     },
     {
       "id": "BR-UX-05",
@@ -379,8 +420,9 @@
       "priority": "Must Have",
       "requirement": "Error handling",
       "status": "PASS",
-      "evidence": "STT + diag error cards",
-      "gap": "\u2014"
+      "evidence": "STT + diagnosis error cards",
+      "gap": "\u2014",
+      "justification": "Recoverable failures"
     },
     {
       "id": "BR-UX-06",
@@ -388,8 +430,9 @@
       "priority": "Should Have",
       "requirement": "Offline handling",
       "status": "PARTIAL",
-      "evidence": "clientFallback",
-      "gap": "Web Speech needs network"
+      "evidence": "clientFallback when API down",
+      "gap": "Offline banner; STT needs network",
+      "justification": "Low-connectivity India"
     },
     {
       "id": "BR-SEC-01",
@@ -397,8 +440,9 @@
       "priority": "Must Have",
       "requirement": "Microphone permissions",
       "status": "PARTIAL",
-      "evidence": "Browser not-allowed string",
-      "gap": "Android RECORD_AUDIO + consent UX"
+      "evidence": "Browser not-allowed string only",
+      "gap": "Android RECORD_AUDIO + Capacitor helper",
+      "justification": "OS-level mic access"
     },
     {
       "id": "BR-SEC-02",
@@ -406,8 +450,9 @@
       "priority": "Must Have",
       "requirement": "Voice data encryption",
       "status": "PARTIAL",
-      "evidence": "TLS assumed",
-      "gap": "No recording at-rest design"
+      "evidence": "TLS in transit assumed",
+      "gap": "At-rest encryption design for recordings",
+      "justification": "Protect voice PII"
     },
     {
       "id": "BR-SEC-03",
@@ -415,8 +460,9 @@
       "priority": "Must Have",
       "requirement": "Secure storage",
       "status": "PARTIAL",
-      "evidence": "Postgres + R2 images",
-      "gap": "Transcripts not stored"
+      "evidence": "Postgres + R2 for images",
+      "gap": "Transcripts not stored securely",
+      "justification": "Controlled retention"
     },
     {
       "id": "BR-SEC-04",
@@ -424,8 +470,9 @@
       "priority": "Must Have",
       "requirement": "User consent for voice processing",
       "status": "FAIL",
-      "evidence": "Generic privacy only",
-      "gap": "No mic consent gate"
+      "evidence": "Generic privacy pages only",
+      "gap": "Pre-STT consent modal (purpose/retention)",
+      "justification": "DPDP / lawful processing"
     },
     {
       "id": "BR-SEC-05",
@@ -433,8 +480,9 @@
       "priority": "Must Have",
       "requirement": "Delete recordings",
       "status": "FAIL",
-      "evidence": "Nothing persisted",
-      "gap": "Need retention + delete API"
+      "evidence": "Nothing voice-persisted yet",
+      "gap": "Retention + DELETE voice APIs",
+      "justification": "User control of biometric-adjacent data"
     },
     {
       "id": "BR-SEC-06",
@@ -442,8 +490,9 @@
       "priority": "Must Have",
       "requirement": "Privacy compliance (DPDP)",
       "status": "PARTIAL",
-      "evidence": "Disclaimer pages",
-      "gap": "No diagnosis delete UX"
+      "evidence": "Disclaimer copy",
+      "gap": "Diagnosis/voice delete UX",
+      "justification": "India DPDP Act readiness"
     },
     {
       "id": "BR-PERF-01",
@@ -451,8 +500,9 @@
       "priority": "Must Have",
       "requirement": "Fast response time",
       "status": "PARTIAL",
-      "evidence": "Fallback fast",
-      "gap": "Ollama unbounded"
+      "evidence": "Heuristic fallback fast",
+      "gap": "Ollama timeout \u22648s \u2192 fallback",
+      "justification": "Perceived performance"
     },
     {
       "id": "BR-PERF-02",
@@ -460,8 +510,9 @@
       "priority": "Should Have",
       "requirement": "High STT accuracy",
       "status": "PARTIAL",
-      "evidence": "Browser STT + retry",
-      "gap": "No benchmarks"
+      "evidence": "Browser STT + noisy retry",
+      "gap": "WER benchmarks per language",
+      "justification": "Voice trust"
     },
     {
       "id": "BR-PERF-03",
@@ -470,7 +521,8 @@
       "requirement": "High AI response accuracy",
       "status": "PARTIAL",
       "evidence": "KB+Ollama",
-      "gap": "No golden-set tests"
+      "gap": "Golden-set fixtures in CI",
+      "justification": "Safety + usefulness"
     },
     {
       "id": "BR-API-01",
@@ -479,7 +531,8 @@
       "requirement": "STT API",
       "status": "FAIL",
       "evidence": "Browser-only",
-      "gap": "POST /diagnosis/stt needed"
+      "gap": "POST /diagnosis/stt (multipart)",
+      "justification": "WebView production path"
     },
     {
       "id": "BR-API-02",
@@ -488,7 +541,8 @@
       "requirement": "TTS API",
       "status": "FAIL",
       "evidence": "Browser-only",
-      "gap": "Server TTS optional"
+      "gap": "POST /diagnosis/tts optional",
+      "justification": "Consistent voice quality"
     },
     {
       "id": "BR-API-03",
@@ -496,8 +550,9 @@
       "priority": "Should Have",
       "requirement": "Language detection API",
       "status": "FAIL",
-      "evidence": "Client-only",
-      "gap": "POST /diagnosis/detect-language"
+      "evidence": "Client-only heuristic",
+      "gap": "POST /diagnosis/detect-language",
+      "justification": "Server-side lang detect"
     },
     {
       "id": "BR-API-04",
@@ -505,8 +560,9 @@
       "priority": "Should Have",
       "requirement": "Translation API",
       "status": "PARTIAL",
-      "evidence": "Internal translate",
-      "gap": "Not standalone"
+      "evidence": "Internal _translate_diagnosis",
+      "gap": "Not standalone endpoint",
+      "justification": "Reuse across modules"
     },
     {
       "id": "BR-API-05",
@@ -515,7 +571,8 @@
       "requirement": "AI Diagnosis API",
       "status": "PASS",
       "evidence": "POST /diagnosis/analyse",
-      "gap": "\u2014"
+      "gap": "\u2014",
+      "justification": "Core backend"
     },
     {
       "id": "BR-API-06",
@@ -524,7 +581,8 @@
       "requirement": "Image upload API",
       "status": "PASS",
       "evidence": "POST /upload/image",
-      "gap": "\u2014"
+      "gap": "\u2014",
+      "justification": "Media pipeline"
     },
     {
       "id": "BR-API-07",
@@ -533,7 +591,8 @@
       "requirement": "Audio upload API",
       "status": "FAIL",
       "evidence": "Missing",
-      "gap": "POST /upload/audio"
+      "gap": "POST /upload/audio",
+      "justification": "Persist engine audio"
     },
     {
       "id": "BR-DB-01",
@@ -542,7 +601,8 @@
       "requirement": "Voice transcript storage",
       "status": "FAIL",
       "evidence": "Missing",
-      "gap": "voice_transcripts table"
+      "gap": "voice_transcripts (consent-gated)",
+      "justification": "Audit + improve STT"
     },
     {
       "id": "BR-DB-02",
@@ -550,8 +610,9 @@
       "priority": "Must Have",
       "requirement": "Conversation history storage",
       "status": "FAIL",
-      "evidence": "In-memory only",
-      "gap": "diagnosis_conversations"
+      "evidence": "In-session memory only",
+      "gap": "diagnosis_conversations",
+      "justification": "Multi-turn persistence"
     },
     {
       "id": "BR-DB-03",
@@ -559,8 +620,9 @@
       "priority": "Must Have",
       "requirement": "AI diagnosis history",
       "status": "PASS",
-      "evidence": "vehicle_diagnoses",
-      "gap": "Angular history UI gap"
+      "evidence": "vehicle_diagnoses + Past Diagnoses UI",
+      "gap": "\u2014",
+      "justification": "User revisit"
     },
     {
       "id": "BR-DB-04",
@@ -569,7 +631,8 @@
       "requirement": "Audit logs",
       "status": "FAIL",
       "evidence": "Missing",
-      "gap": "diagnosis_audit_events"
+      "gap": "diagnosis_audit_events",
+      "justification": "Compliance + debug"
     },
     {
       "id": "BR-TEST-01",
@@ -577,8 +640,9 @@
       "priority": "Must Have",
       "requirement": "Automated diagnosis tests",
       "status": "FAIL",
-      "evidence": "No test_diagnosis.py",
-      "gap": "Critical QA gap"
+      "evidence": "No test_diagnosis.py / extractor specs",
+      "gap": "Add pytest + unit tests",
+      "justification": "Prevent regressions"
     },
     {
       "id": "BR-AND-01",
@@ -586,8 +650,9 @@
       "priority": "Must Have",
       "requirement": "Android RECORD_AUDIO permission",
       "status": "FAIL",
-      "evidence": "Manifest gap for mic",
-      "gap": "Add permission + plugin"
+      "evidence": "Manifest has CAMERA/location only",
+      "gap": "Add RECORD_AUDIO + runtime request",
+      "justification": "APK mic required"
     }
   ],
   "tests": [
@@ -722,10 +787,10 @@
     {
       "suite": "Functional",
       "id": "TC-F-17",
-      "name": "Angular diagnosis history UI",
-      "status": "FAIL",
-      "detail": "API only",
-      "severity": "P1"
+      "name": "Angular Past Diagnoses history UI",
+      "status": "PASS",
+      "detail": "history-panel on Claude tip",
+      "severity": "\u2014"
     },
     {
       "suite": "Functional",
@@ -784,6 +849,30 @@
       "severity": "P2"
     },
     {
+      "suite": "Functional",
+      "id": "TC-F-25",
+      "name": "Open past diagnosis by id from history",
+      "status": "PARTIAL",
+      "detail": "List only; no detail navigation",
+      "severity": "P2"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-26",
+      "name": "Guest can analyse without login",
+      "status": "PASS",
+      "detail": "Public analyse + rate limit",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-27",
+      "name": "detected_language sent on analyse",
+      "status": "PASS",
+      "detail": "Claude Angular + DiagnoseRequest",
+      "severity": "\u2014"
+    },
+    {
       "suite": "Security",
       "id": "TC-S-01",
       "name": "Unauth GET diagnosis denied",
@@ -816,6 +905,14 @@
       "severity": "P1"
     },
     {
+      "suite": "Security",
+      "id": "TC-S-05",
+      "name": "Mic consent logged before STT",
+      "status": "FAIL",
+      "detail": "No consent event",
+      "severity": "P0"
+    },
+    {
       "suite": "Performance",
       "id": "TC-P-01",
       "name": "Analyse p95 with fallback",
@@ -832,11 +929,27 @@
       "severity": "P1"
     },
     {
+      "suite": "Performance",
+      "id": "TC-P-03",
+      "name": "Image upload \u226410MB reject",
+      "status": "PASS",
+      "detail": "upload validation path",
+      "severity": "\u2014"
+    },
+    {
       "suite": "A11y",
       "id": "TC-A-01",
       "name": "Voice overlay SR labels",
       "status": "PARTIAL",
       "detail": "Audit incomplete",
+      "severity": "P2"
+    },
+    {
+      "suite": "A11y",
+      "id": "TC-A-02",
+      "name": "aria-live for interim transcript",
+      "status": "FAIL",
+      "detail": "Missing",
       "severity": "P2"
     },
     {
@@ -888,6 +1001,14 @@
       "severity": "P2"
     },
     {
+      "suite": "Integration",
+      "id": "TC-I-03",
+      "name": "voice/extract then autofill",
+      "status": "PASS",
+      "detail": "Claude tip path",
+      "severity": "\u2014"
+    },
+    {
       "suite": "Usability",
       "id": "TC-U-01",
       "name": "Manual vs Voice mode clear",
@@ -901,6 +1022,14 @@
       "name": "Disclaimer before submit",
       "status": "PASS",
       "detail": "Step 3",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Usability",
+      "id": "TC-U-03",
+      "name": "safe_to_drive=false banner prominence",
+      "status": "PASS",
+      "detail": "Report warning UI",
       "severity": "\u2014"
     }
   ]

@@ -1,65 +1,65 @@
-id,area,priority,requirement,status,evidence,gap
-BR-VI-01,Vehicle Info,Must Have,Manual vehicle information entry,PASS,Angular Step 1 form,—
-BR-VI-02,Vehicle Info,Must Have,Voice-based vehicle information entry,PASS,voice-mode overlay + STT,—
-BR-VI-03,Vehicle Info,Must Have,Auto-extract vehicle details from speech,PASS,vehicle-info-extractor + /voice/extract,—
-BR-VI-04,Vehicle Info,Must Have,Auto-fill of vehicle information,PASS,onVoiceCompleted merges form,—
-BR-VI-05,Vehicle Info,Must Have,Intelligent validation,PASS,step1Valid + Pydantic,—
-BR-VI-06,Vehicle Info,Must Have,Missing information prompts,PASS,voice-mode _askMissingFields,—
-BR-IR-01,Issue Reporting,Must Have,Report issue using text,PASS,Step 2 textarea,—
-BR-IR-02,Issue Reporting,Must Have,Report issue using voice,PASS,Step 2 mic + overlay,—
-BR-IR-03,Issue Reporting,Must Have,Upload vehicle images,PASS,POST /upload/image,—
-BR-IR-04,Issue Reporting,Must Have,Upload audio recordings,FAIL,Schema audio_url only,No UI/API upload
-BR-IR-05,Issue Reporting,Must Have,Upload videos,FAIL,Schema video_url only,No video upload
-BR-IR-06,Issue Reporting,Must Have,Select dashboard warning lights,PASS,WARNING_LIGHTS chips,—
-BR-IR-07,Issue Reporting,Should Have,Add maintenance history,FAIL,Not in form/API,No maintenance_history field
-BR-ML-01,Multilingual,Must Have,Automatic language detection,PARTIAL,detectLanguageFromText unwired,Wire autoDetect into voice session
-BR-ML-02,Multilingual,Must Have,Support major Indian languages,PASS,11 VOICE_LANGUAGES,Prompts fully localized for 6 only
-BR-ML-03,Multilingual,Must Have,Preserve user language in conversation,PASS,gq_voice_lang + detected_language,—
-BR-ML-04,Multilingual,Must Have,AI responses match user language,PARTIAL,_translate_diagnosis via Ollama,Quality untested; may stay EN
-BR-VA-01,Voice AI,Must Have,Speech-to-Text,PARTIAL,Browser Web Speech only,No server STT; WebView risk
-BR-VA-02,Voice AI,Must Have,Text-to-Speech,PARTIAL,speechSynthesis only,No server TTS
-BR-VA-03,Voice AI,Must Have,Live transcription,PASS,interimText UI,—
-BR-VA-04,Voice AI,Should Have,Voice playback,PASS,Auto-speak report + TTS bar,—
-BR-VA-05,Voice AI,Should Have,Replay,PASS,replaySpeaking,—
-BR-VA-06,Voice AI,Should Have,Pause,PASS,pauseSpeaking,—
-BR-VA-07,Voice AI,Should Have,Stop,PASS,stop STT/TTS,—
-BR-VA-08,Voice AI,Should Have,Hands-free mode,PARTIAL,Auto-listen after TTS,No always-on driving mode
-BR-VA-09,Voice AI,Should Have,Driver-friendly interaction,PARTIAL,Large overlay,No driving mode; RECORD_AUDIO gap
-BR-AI-01,AI Diagnosis,Must Have,Ollama LLM integration,PASS,services/diagnosis.py,—
-BR-AI-02,AI Diagnosis,Must Have,RAG knowledge base,PARTIAL,Keyword KB 12 cases,Not vector RAG for diagnosis
-BR-AI-03,AI Diagnosis,Must Have,Root cause prediction,PASS,possible_causes[],—
-BR-AI-04,AI Diagnosis,Must Have,Severity prediction,PASS,risk_level,—
-BR-AI-05,AI Diagnosis,Must Have,Safe-to-drive recommendation,PASS,safe_to_drive UI,—
-BR-AI-06,AI Diagnosis,Must Have,Estimated repair cost,PASS,cost_min/max INR,—
-BR-AI-07,AI Diagnosis,Must Have,Estimated repair duration,PASS,repair_time_estimate,—
-BR-AI-08,AI Diagnosis,Must Have,Recommended next steps,PASS,recommended_steps + DIY,—
-BR-AI-09,AI Diagnosis,Should Have,Preventive maintenance suggestions,PASS,preventive_maintenance,—
-BR-AI-10,AI Diagnosis,Should Have,Follow-up questions when required,PARTIAL,Missing-field asks only,No post-diagnosis follow-ups
-BR-UX-01,UX,Must Have,Mobile-first design,PARTIAL,Responsive SCSS,Not dedicated mobile shell
-BR-UX-02,UX,Must Have,Progress indicators,PASS,Steps 1–3,—
-BR-UX-03,UX,Must Have,Conversation history,PARTIAL,In-session + API history,No Angular history UI / conversation DB
-BR-UX-04,UX,Must Have,Voice/Text switching,PASS,Mode selector Step 1,—
-BR-UX-05,UX,Must Have,Error handling,PASS,STT + diag error cards,—
-BR-UX-06,UX,Should Have,Offline handling,PARTIAL,clientFallback,Web Speech needs network
-BR-SEC-01,Security,Must Have,Microphone permissions,PARTIAL,Browser not-allowed string,Android RECORD_AUDIO + consent UX
-BR-SEC-02,Security,Must Have,Voice data encryption,PARTIAL,TLS assumed,No recording at-rest design
-BR-SEC-03,Security,Must Have,Secure storage,PARTIAL,Postgres + R2 images,Transcripts not stored
-BR-SEC-04,Security,Must Have,User consent for voice processing,FAIL,Generic privacy only,No mic consent gate
-BR-SEC-05,Security,Must Have,Delete recordings,FAIL,Nothing persisted,Need retention + delete API
-BR-SEC-06,Security,Must Have,Privacy compliance (DPDP),PARTIAL,Disclaimer pages,No diagnosis delete UX
-BR-PERF-01,Performance,Must Have,Fast response time,PARTIAL,Fallback fast,Ollama unbounded
-BR-PERF-02,Performance,Should Have,High STT accuracy,PARTIAL,Browser STT + retry,No benchmarks
-BR-PERF-03,Performance,Must Have,High AI response accuracy,PARTIAL,KB+Ollama,No golden-set tests
-BR-API-01,API,Must Have,STT API,FAIL,Browser-only,POST /diagnosis/stt needed
-BR-API-02,API,Must Have,TTS API,FAIL,Browser-only,Server TTS optional
-BR-API-03,API,Should Have,Language detection API,FAIL,Client-only,POST /diagnosis/detect-language
-BR-API-04,API,Should Have,Translation API,PARTIAL,Internal translate,Not standalone
-BR-API-05,API,Must Have,AI Diagnosis API,PASS,POST /diagnosis/analyse,—
-BR-API-06,API,Must Have,Image upload API,PASS,POST /upload/image,—
-BR-API-07,API,Must Have,Audio upload API,FAIL,Missing,POST /upload/audio
-BR-DB-01,Database,Must Have,Voice transcript storage,FAIL,Missing,voice_transcripts table
-BR-DB-02,Database,Must Have,Conversation history storage,FAIL,In-memory only,diagnosis_conversations
-BR-DB-03,Database,Must Have,AI diagnosis history,PASS,vehicle_diagnoses,Angular history UI gap
-BR-DB-04,Database,Should Have,Audit logs,FAIL,Missing,diagnosis_audit_events
-BR-TEST-01,Quality,Must Have,Automated diagnosis tests,FAIL,No test_diagnosis.py,Critical QA gap
-BR-AND-01,Mobile,Must Have,Android RECORD_AUDIO permission,FAIL,Manifest gap for mic,Add permission + plugin
+id,area,priority,requirement,status,evidence,gap,justification
+BR-VI-01,Vehicle Info,Must Have,Manual vehicle information entry,PASS,Angular Step 1 form (make/model/year/fuel/transmission),—,Baseline path for users who prefer typing
+BR-VI-02,Vehicle Info,Must Have,Voice-based vehicle information entry,PASS,voice-mode overlay + Web Speech STT,—,Hands-free capture for drivers / literacy barriers
+BR-VI-03,Vehicle Info,Must Have,Auto-extract vehicle details from speech,PASS,vehicle-info-extractor + POST /diagnosis/voice/extract,—,Reduce form friction after speech
+BR-VI-04,Vehicle Info,Must Have,Auto-fill of vehicle information,PASS,onVoiceCompleted merges into form signals,—,Keep single source of truth for review step
+BR-VI-05,Vehicle Info,Must Have,Intelligent validation,PASS,step1Valid + Pydantic DiagnoseRequest,—,Prevent invalid analyse payloads
+BR-VI-06,Vehicle Info,Must Have,Missing information prompts,PASS,voice-mode _askMissingFields TTS loop,—,Complete mandatory vehicle fields before analyse
+BR-IR-01,Issue Reporting,Must Have,Report issue using text,PASS,Step 2 textarea problem_description,—,Primary symptom capture
+BR-IR-02,Issue Reporting,Must Have,Report issue using voice,PASS,Step 2 mic toolbar + overlay problem phase,—,Speak symptoms in native language
+BR-IR-03,Issue Reporting,Must Have,Upload vehicle images,PASS,POST /upload/image → image_urls,—,Visual context for vision + mechanic handoff
+BR-IR-04,Issue Reporting,Must Have,Upload audio recordings,FAIL,DB/schema audio_url exists; unused,No POST /upload/audio or Step 2 UI,Engine noise / rattles improve diagnosis
+BR-IR-05,Issue Reporting,Must Have,Upload videos,FAIL,DB/schema video_url exists; unused,No video upload API/UI,Capture intermittent symptoms
+BR-IR-06,Issue Reporting,Must Have,Select dashboard warning lights,PASS,WARNING_LIGHTS chips in Step 2,—,Structured symptom signals
+BR-IR-07,Issue Reporting,Should Have,Add maintenance history,FAIL,Not in form/API/model,Add maintenance_history JSON field,Prior service context
+BR-ML-01,Multilingual,Must Have,Automatic language detection,PARTIAL,detectLanguageFromText exists client-side,Wire Auto-detect toggle into voice session,Users may not know BCP-47 codes
+BR-ML-02,Multilingual,Must Have,Support major Indian languages,PASS,11 VOICE_LANGUAGES in picker,PROMPTS fully localized for 6 only,India language coverage
+BR-ML-03,Multilingual,Must Have,Preserve user language in conversation,PASS,gq_voice_lang + detected_language,—,Consistent journey language
+BR-ML-04,Multilingual,Must Have,AI responses match user language,PARTIAL,_translate_diagnosis via Ollama,Golden-set QA; English fallback banner,Trust for non-English users
+BR-VA-01,Voice AI,Must Have,Speech-to-Text,PARTIAL,Browser Web Speech API only,Server STT + MediaRecorder for WebView,Production Android/iOS reliability
+BR-VA-02,Voice AI,Must Have,Text-to-Speech,PARTIAL,speechSynthesis only,Optional server TTS; keep client fallback,Playback on devices with weak voices
+BR-VA-03,Voice AI,Must Have,Live transcription,PASS,interimText in voice overlay,—,User confidence while speaking
+BR-VA-04,Voice AI,Should Have,Voice playback,PASS,Auto-speak report + TTS bar,—,Listen to diagnosis
+BR-VA-05,Voice AI,Should Have,Replay,PASS,replaySpeaking(),—,Re-hear instructions
+BR-VA-06,Voice AI,Should Have,Pause,PASS,pauseSpeaking(),—,Interruptible playback
+BR-VA-07,Voice AI,Should Have,Stop,PASS,stop STT/TTS controls,—,Immediate silence
+BR-VA-08,Voice AI,Should Have,Hands-free mode,PARTIAL,Auto-listen after TTS,Always-on driving mode,Parked/driving safety
+BR-VA-09,Voice AI,Should Have,Driver-friendly interaction,PARTIAL,Large overlay UI,Driving mode + RECORD_AUDIO,"Large targets, reduced glances"
+BR-AI-01,AI Diagnosis,Must Have,Ollama LLM integration,PASS,services/diagnosis.py run_diagnosis,—,Primary LLM path
+BR-AI-02,AI Diagnosis,Must Have,RAG knowledge base,PARTIAL,Keyword match on repair_knowledge.json (12 cases),Vector RAG over KB (Qdrant/BGE unused),Grounded repair advice
+BR-AI-03,AI Diagnosis,Must Have,Root cause prediction,PASS,possible_causes[],—,Core diagnosis value
+BR-AI-04,AI Diagnosis,Must Have,Severity prediction,PASS,risk_level,—,Urgency signalling
+BR-AI-05,AI Diagnosis,Must Have,Safe-to-drive recommendation,PASS,safe_to_drive + UI warning,—,Safety-critical output
+BR-AI-06,AI Diagnosis,Must Have,Estimated repair cost,PASS,cost_min_inr / cost_max_inr,—,Budget transparency
+BR-AI-07,AI Diagnosis,Must Have,Estimated repair duration,PASS,repair_time_estimate,—,Time planning
+BR-AI-08,AI Diagnosis,Must Have,Recommended next steps,PASS,recommended_steps + How to Fix,—,Actionable guidance
+BR-AI-09,AI Diagnosis,Should Have,Preventive maintenance suggestions,PASS,preventive_maintenance,—,Upsell prevention
+BR-AI-10,AI Diagnosis,Should Have,Follow-up questions when required,PARTIAL,Missing-field asks only,Post-diagnosis follow_up_questions[],Improve low-confidence cases
+BR-UX-01,UX,Must Have,Mobile-first design,PARTIAL,Responsive SCSS + layout e2e,Dedicated mobile shell polish,Primary usage is phone
+BR-UX-02,UX,Must Have,Progress indicators,PASS,Steps 1–3 wizard progress,—,Orient user in flow
+BR-UX-03,UX,Must Have,Conversation history,PARTIAL,Past Diagnoses panel + GET /history,No multi-turn conversation DB/UI; open-by-id weak,Revisit prior advice
+BR-UX-04,UX,Must Have,Voice/Text switching,PASS,Mode selector Step 1,—,User preference
+BR-UX-05,UX,Must Have,Error handling,PASS,STT + diagnosis error cards,—,Recoverable failures
+BR-UX-06,UX,Should Have,Offline handling,PARTIAL,clientFallback when API down,Offline banner; STT needs network,Low-connectivity India
+BR-SEC-01,Security,Must Have,Microphone permissions,PARTIAL,Browser not-allowed string only,Android RECORD_AUDIO + Capacitor helper,OS-level mic access
+BR-SEC-02,Security,Must Have,Voice data encryption,PARTIAL,TLS in transit assumed,At-rest encryption design for recordings,Protect voice PII
+BR-SEC-03,Security,Must Have,Secure storage,PARTIAL,Postgres + R2 for images,Transcripts not stored securely,Controlled retention
+BR-SEC-04,Security,Must Have,User consent for voice processing,FAIL,Generic privacy pages only,Pre-STT consent modal (purpose/retention),DPDP / lawful processing
+BR-SEC-05,Security,Must Have,Delete recordings,FAIL,Nothing voice-persisted yet,Retention + DELETE voice APIs,User control of biometric-adjacent data
+BR-SEC-06,Security,Must Have,Privacy compliance (DPDP),PARTIAL,Disclaimer copy,Diagnosis/voice delete UX,India DPDP Act readiness
+BR-PERF-01,Performance,Must Have,Fast response time,PARTIAL,Heuristic fallback fast,Ollama timeout ≤8s → fallback,Perceived performance
+BR-PERF-02,Performance,Should Have,High STT accuracy,PARTIAL,Browser STT + noisy retry,WER benchmarks per language,Voice trust
+BR-PERF-03,Performance,Must Have,High AI response accuracy,PARTIAL,KB+Ollama,Golden-set fixtures in CI,Safety + usefulness
+BR-API-01,API,Must Have,STT API,FAIL,Browser-only,POST /diagnosis/stt (multipart),WebView production path
+BR-API-02,API,Must Have,TTS API,FAIL,Browser-only,POST /diagnosis/tts optional,Consistent voice quality
+BR-API-03,API,Should Have,Language detection API,FAIL,Client-only heuristic,POST /diagnosis/detect-language,Server-side lang detect
+BR-API-04,API,Should Have,Translation API,PARTIAL,Internal _translate_diagnosis,Not standalone endpoint,Reuse across modules
+BR-API-05,API,Must Have,AI Diagnosis API,PASS,POST /diagnosis/analyse,—,Core backend
+BR-API-06,API,Must Have,Image upload API,PASS,POST /upload/image,—,Media pipeline
+BR-API-07,API,Must Have,Audio upload API,FAIL,Missing,POST /upload/audio,Persist engine audio
+BR-DB-01,Database,Must Have,Voice transcript storage,FAIL,Missing,voice_transcripts (consent-gated),Audit + improve STT
+BR-DB-02,Database,Must Have,Conversation history storage,FAIL,In-session memory only,diagnosis_conversations,Multi-turn persistence
+BR-DB-03,Database,Must Have,AI diagnosis history,PASS,vehicle_diagnoses + Past Diagnoses UI,—,User revisit
+BR-DB-04,Database,Should Have,Audit logs,FAIL,Missing,diagnosis_audit_events,Compliance + debug
+BR-TEST-01,Quality,Must Have,Automated diagnosis tests,FAIL,No test_diagnosis.py / extractor specs,Add pytest + unit tests,Prevent regressions
+BR-AND-01,Mobile,Must Have,Android RECORD_AUDIO permission,FAIL,Manifest has CAMERA/location only,Add RECORD_AUDIO + runtime request,APK mic required
