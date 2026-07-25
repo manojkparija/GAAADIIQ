@@ -371,6 +371,19 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   showVoiceMode = signal(false);
   private _voiceDetectedLang = 'en-IN';
 
+  /**
+   * How this diagnosis was entered. Drives whether the report is spoken
+   * unprompted: 'voice' auto-plays, 'manual' stays silent until the user
+   * asks for audio.
+   */
+  inputMode = signal<'manual' | 'voice'>('manual');
+
+  /** User explicitly chose the typed form. */
+  chooseManualMode() {
+    this.inputMode.set('manual');
+    this.voice.stopSpeaking();
+  }
+
   constructor(
     private seo: SeoService,
     public diagSvc: DiagnosisService,
@@ -389,10 +402,14 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     // Auto-play TTS when a new diagnosis report arrives (respects mute preference)
     effect(() => {
       const report = this.diagSvc.report();
-      if (report && this.step() === 4 && !this.diagSvc.loading()) {
-        const ttsText = this._buildTtsText(report);
-        this.voice.speak(ttsText);
-      }
+      if (!report || this.step() !== 4 || this.diagSvc.loading()) return;
+
+      // Only speak the report unprompted when the user chose the voice flow.
+      // Someone who filled the form by hand is looking at the screen — reading
+      // it aloud at them is intrusive. They can still tap play on the TTS bar.
+      if (this.inputMode() !== 'voice') return;
+
+      this.voice.speak(this._buildTtsText(report));
     });
   }
 
@@ -629,6 +646,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     this.selectedAudio.set(null);
     this.selectedVideo.set(null);
     this.mediaError.set('');
+    this.inputMode.set('manual');
     this.maintenanceHistory.set([]);
     this.newMaintItem = ''; this.newMaintDate = ''; this.newMaintOdo = null;
     this.diagSvc.report.set(null);
@@ -692,6 +710,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   // ── Voice Mode ────────────────────────────────────────────────────────────
 
   openVoiceMode() {
+    this.inputMode.set('voice');
     this.showVoiceMode.set(true);
   }
 
@@ -721,7 +740,10 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   }
 
   onVoiceCancelled() {
+    // Backing out of voice mode means finishing by hand — don't then read
+    // the report aloud unprompted.
     this.showVoiceMode.set(false);
+    this.inputMode.set('manual');
   }
 
   // ── Voice input (Step 2 mic) ──────────────────────────────────────────────
@@ -774,6 +796,19 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   async retryDiagnosis() {
     this.voice.stopSpeaking();
     await this.submit();
+  }
+
+  /**
+   * Speak the current report on demand. Needed because the manual flow never
+   * auto-plays, so the replay control has nothing buffered to replay.
+   */
+  playReport() {
+    const report = this.diagSvc.report();
+    if (!report) return;
+    // An explicit tap on Listen overrides a stale mute preference; leaving it
+    // muted would make the button appear broken.
+    if (this.voice.muted()) this.voice.toggleMute();
+    this.voice.speak(this._buildTtsText(report));
   }
 
   private _buildTtsText(report: any): string {

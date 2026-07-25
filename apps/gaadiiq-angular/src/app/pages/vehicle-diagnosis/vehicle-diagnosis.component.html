@@ -198,14 +198,26 @@
     <div class="step-card" *ngIf="step() === 1">
 
       <!-- Input mode selector -->
-      <div class="input-mode-selector">
-        <button class="mode-btn mode-btn--text mode-btn--active">
-          ✏️ Fill Manually
-        </button>
-        <button class="mode-btn mode-btn--voice" (click)="openVoiceMode()" *ngIf="voice.supported">
-          🎤 Use Voice
-        </button>
+      <div class="input-mode-selector" role="group" aria-label="How would you like to enter details?">
+        <button
+          class="mode-btn mode-btn--text"
+          [class.mode-btn--active]="inputMode() === 'manual'"
+          [attr.aria-pressed]="inputMode() === 'manual'"
+          (click)="chooseManualMode()"
+        >✏️ Fill Manually</button>
+        <button
+          class="mode-btn mode-btn--voice"
+          [class.mode-btn--active]="inputMode() === 'voice'"
+          [attr.aria-pressed]="inputMode() === 'voice'"
+          (click)="openVoiceMode()"
+          *ngIf="voice.supported"
+        >🎤 Use Voice</button>
       </div>
+      <p class="input-mode-hint">
+        {{ inputMode() === 'voice'
+          ? 'Your report will be read aloud when it is ready.'
+          : 'Your report will be shown on screen. You can play it aloud if you want to.' }}
+      </p>
 
       <h2 class="step-title">Tell us about your vehicle</h2>
 
@@ -711,10 +723,16 @@
             <span class="tts-label">
               {{ voice.speakingState() === 'speaking' ? 'Playing diagnosis…' :
                  voice.speakingState() === 'paused' ? 'Paused' :
-                 voice.muted() ? 'Voice muted' : 'Voice ready' }}
+                 voice.muted() ? 'Voice muted' :
+                 inputMode() === 'voice' ? 'Voice ready' : 'Listen to this report' }}
             </span>
           </div>
           <div class="tts-controls">
+            <!-- Play — the entry point when nothing has been spoken yet, which
+                 is always the case in the manual flow. -->
+            <button type="button" class="tts-btn tts-btn--play" title="Read the diagnosis aloud"
+              *ngIf="voice.speakingState() === 'idle'"
+              (click)="playReport()">▶ Listen</button>
             <!-- Pause / Resume -->
             <button type="button" class="tts-btn" title="Pause"
               *ngIf="voice.speakingState() === 'speaking'"

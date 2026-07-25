@@ -41,6 +41,21 @@
   &--voice {
     background: linear-gradient(90deg, #2563EB, #14B8A6);
   }
+
+  /* Active mode is marked with a ring, not a different fill — both buttons
+     keep the brand gradient. */
+  &--active {
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.35), 0 2px 8px rgba(20,184,166,0.2);
+  }
+
+  &:not(.mode-btn--active) { opacity: 0.72; }
+}
+
+.input-mode-hint {
+  margin: -18px 0 24px;
+  font-size: 12px;
+  color: var(--text-muted, #6B7280);
+  text-align: center;
 }
 
 /* Translation failure banner (BR-ML-04) */
@@ -692,3 +707,5 @@
   &:hover { border-color: #00D4A8; background: rgba(0,212,168,0.08); }
   &.mute-btn.muted { border-color: #EF4444; background: rgba(239,68,68,0.08); color: #EF4444; }
 }
+
+.tts-btn--play { font-weight: 700; white-space: nowrap; }
