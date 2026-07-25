@@ -154,6 +154,10 @@ def _retrieve_relevant_cases(
     return [c for _, c in scored[:top_k]]
 
 
+class _SkipOllama(Exception):
+    """Internal sentinel: Gemini already produced a result."""
+
+
 # ── Semantic retrieval (BR-AI-02) ────────────────────────────────────────────
 #
 # Keyword overlap misses paraphrases: "juddering when I brake" shares no terms
@@ -425,6 +429,47 @@ def _normalise_follow_ups(result: dict) -> dict:
     return result
 
 
+async def _call_gemini(prompt: str) -> dict:
+    """
+    Run the diagnosis prompt through Gemini Flash (paid tier).
+
+    Raises on any failure so the caller can fall back to Ollama — a paid user
+    should get a slightly worse answer, never no answer.
+    """
+    from core.config import settings
+
+    url = (
+        f"{settings.gemini_api_url.rstrip('/')}/models/"
+        f"{settings.gemini_model}:generateContent"
+    )
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            # Low temperature: this is safety guidance, not creative writing.
+            "temperature": 0.2,
+            "responseMimeType": "application/json",
+        },
+    }
+
+    async with httpx.AsyncClient(timeout=settings.gemini_timeout_seconds) as client:
+        resp = await client.post(
+            url,
+            params={"key": settings.gemini_api_key},
+            json=payload,
+        )
+        resp.raise_for_status()
+        body = resp.json()
+
+    candidates = body.get("candidates") or []
+    if not candidates:
+        raise ValueError("Gemini returned no candidates")
+    parts = (candidates[0].get("content") or {}).get("parts") or []
+    text = "".join(p.get("text", "") for p in parts).strip()
+    if not text:
+        raise ValueError("Gemini returned empty text")
+    return json.loads(text)
+
+
 async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
     """
     Translate key diagnosis text fields to target_lang using Ollama.
@@ -544,8 +589,15 @@ async def run_diagnosis(
     image_urls: list[str] = (),
     maintenance_history: list[dict] | None = None,
     response_language: str = "en-IN",
+    model_tier: str = "free",
 ) -> dict:
-    """Run RAG retrieval + Ollama diagnosis. Returns structured result dict."""
+    """
+    Run RAG retrieval + LLM diagnosis. Returns a structured result dict.
+
+    model_tier selects the engine: "premium" (paid users and admins) tries
+    Gemini Flash first, "free" goes straight to Ollama. Degradation is always
+    downward and never fatal — Gemini → Ollama → heuristic.
+    """
 
     retrieved, retrieval_method = _retrieve_cases(
         problem_description, warning_lights, when_occurs, fuel_type
@@ -562,8 +614,21 @@ async def run_diagnosis(
     result: dict = {}
     started = time.perf_counter()
     fallback_reason: str | None = None
+    engine = "heuristic"
+
+    # Premium tier: try Gemini first. Any failure falls through to Ollama
+    # below, so a paid user never ends up worse off than a free one.
+    if model_tier == "premium":
+        try:
+            result = await _call_gemini(prompt)
+            engine = "gemini"
+        except Exception as exc:
+            fallback_reason = f"gemini:{type(exc).__name__}"
+            logger.warning("Gemini diagnosis failed, falling back to Ollama: %s", exc)
 
     try:
+        if engine == "gemini":
+            raise _SkipOllama
         async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
             resp = await client.post(
                 f"{OLLAMA_BASE_URL}/api/generate",
@@ -573,6 +638,9 @@ async def run_diagnosis(
             raw = resp.json().get("response", "")
             result = json.loads(raw)
             ollama_used = True
+            engine = "ollama"
+    except _SkipOllama:
+        pass  # Gemini already produced a result
     except httpx.TimeoutException:
         fallback_reason = "timeout"
         logger.warning(
@@ -580,7 +648,7 @@ async def run_diagnosis(
         )
         result = _heuristic_fallback(retrieved, severity, fuel_type)
     except Exception as exc:
-        fallback_reason = type(exc).__name__
+        fallback_reason = fallback_reason or type(exc).__name__
         logger.warning("Ollama diagnosis failed, using heuristic fallback: %s", exc)
         result = _heuristic_fallback(retrieved, severity, fuel_type)
 
@@ -593,6 +661,8 @@ async def run_diagnosis(
             "event": "diagnosis_latency",
             "elapsed_ms": elapsed_ms,
             "ollama_used": ollama_used,
+            "engine": engine,
+            "model_tier": model_tier,
             "fallback_reason": fallback_reason,
             "timeout_s": OLLAMA_TIMEOUT,
             "retrieved_cases": len(retrieved),
@@ -602,6 +672,8 @@ async def run_diagnosis(
         },
     )
     result["latency_ms"] = elapsed_ms
+    result["engine"] = engine
+    result["model_tier"] = model_tier
 
     result["retrieved_sources"] = retrieved_sources
     result["ollama_used"] = ollama_used

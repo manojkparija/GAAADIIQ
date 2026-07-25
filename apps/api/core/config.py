@@ -84,6 +84,13 @@ class Settings(BaseSettings):
     stt_max_audio_seconds: int = 60     # BR-IR-04 duration cap
     stt_max_bytes: int = 25 * 1024 * 1024
 
+    # Gemini — higher-quality diagnosis for paid users and admins. Ollama is
+    # the free tier. Leave the key blank and everyone falls back to Ollama.
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
+    gemini_api_url: str = "https://generativelanguage.googleapis.com/v1beta"
+    gemini_timeout_seconds: float = 15.0
+
     # Optional server-side TTS (BR-API-02). "none" disables it and the client
     # falls back to the browser's speechSynthesis, which is the default path.
     tts_provider: str = "none"          # none | google | azure

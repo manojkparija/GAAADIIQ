@@ -26,6 +26,7 @@ from db.session import get_db
 from models.user import User
 from models.vehicle_diagnosis import VehicleDiagnosis
 from services.diagnosis import _LANG_NAMES, extract_vehicle_info_from_transcript, run_diagnosis
+from services.llm_tier import resolve_tier
 from services.stt import (
     STTError,
     STTUnavailable,
@@ -121,6 +122,9 @@ class DiagnoseResponse(BaseModel):
     # BR-ML-04 — true when a non-English response was requested but the text
     # is still English, so the client can say so instead of silently misleading.
     translation_failed: bool = False
+    # Which engine produced this: gemini (paid/admin) | ollama | heuristic.
+    engine: str = "heuristic"
+    model_tier: str = "free"
 
 
 class DiagnosisHistoryItem(BaseModel):
@@ -148,6 +152,11 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
     Submit vehicle symptoms and receive an AI-powered preliminary diagnosis.
     No authentication required — open to all users.
     """
+    # Model tier is resolved server-side from the caller's role/subscription —
+    # never from the request body, or a free user could ask for the paid model.
+    requester_id = uuid.UUID(body.user_id) if body.user_id else None
+    tier = await resolve_tier(db, requester_id)
+
     ai_result = await run_diagnosis(
         manufacturer=body.manufacturer,
         model=body.model,
@@ -163,6 +172,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         image_urls=body.image_urls,
         maintenance_history=body.maintenance_history,
         response_language=body.detected_language or "en-IN",
+        model_tier=tier.value,
     )
 
     # Parse causes safely
@@ -230,6 +240,8 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         follow_up_questions=ai_result.get("follow_up_questions", []),
         needs_more_info=ai_result.get("needs_more_info", False),
         translation_failed=ai_result.get("translation_failed", False),
+        engine=ai_result.get("engine", "heuristic"),
+        model_tier=ai_result.get("model_tier", "free"),
     )
 
 
