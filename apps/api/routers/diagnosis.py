@@ -5,7 +5,10 @@ POST /diagnosis/analyse   — submit symptoms, get AI diagnosis report
 GET  /diagnosis/{id}      — retrieve a saved diagnosis report
 GET  /diagnosis/history   — list the current user's past diagnoses (auth required)
 """
-from __future__ import annotations
+# NOTE: deliberately NOT using `from __future__ import annotations`.
+# PEP 563 turns annotations into strings, and slowapi's @limiter.limit wrapper
+# leaves FastAPI unable to resolve them — it then treats the Pydantic body and
+# the DB dependency as query parameters, so every request 422s.
 
 import uuid
 from datetime import datetime
