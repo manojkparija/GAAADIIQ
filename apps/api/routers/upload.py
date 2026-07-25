@@ -7,10 +7,10 @@ import io
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
 
+from core.config import settings
 from core.dependencies import get_current_user
 from core.limiter import limiter
 from models.user import User
-from core.config import settings
 from services.storage import upload_image, upload_media
 from services.stt import estimate_duration_seconds
 
