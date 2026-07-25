@@ -55,6 +55,7 @@ export interface DiagnoseRequest {
   when_occurs: string[];
   severity: string;
   image_urls?: string[];
+  maintenance_history?: {item: string; date?: string; odometer_km?: number}[];
   audio_url?: string;
   video_url?: string;
   user_id?: string;
@@ -337,5 +338,24 @@ export class DiagnosisService {
    */
   getDiagnosis(id: string): Observable<DiagnosisReport> {
     return this.http.get<DiagnosisReport>(`${this.api}/${id}`);
+  }
+
+  /** Delete one of the caller's own reports (BR-SEC-05). */
+  deleteDiagnosis(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.api}/${id}`);
+  }
+
+  /** Erase all stored voice transcripts and conversations (BR-SEC-06, DPDP). */
+  deleteVoiceData(): Observable<{ transcripts_deleted: number; conversations_deleted: number }> {
+    return this.http.delete<{ transcripts_deleted: number; conversations_deleted: number }>(
+      `${this.api}/voice/data`
+    );
+  }
+
+  /** Record a mic consent decision server-side (BR-SEC-01). */
+  recordConsent(granted: boolean, consentVersion: number, language: string): Observable<any> {
+    return this.http.post(`${this.api}/voice/consent`, {
+      granted, consent_version: consentVersion, language,
+    });
   }
 }

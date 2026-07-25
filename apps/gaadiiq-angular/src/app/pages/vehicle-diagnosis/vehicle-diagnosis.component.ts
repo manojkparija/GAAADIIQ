@@ -281,6 +281,31 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     this.imageThumbs.set([]);
   }
 
+  // ── Maintenance history (BR-IR-07) ────────────────────────────────────────
+
+  maintenanceHistory = signal<{ item: string; date: string; odometer_km: number | null }[]>([]);
+  newMaintItem = '';
+  newMaintDate = '';
+  newMaintOdo: number | null = null;
+
+  addMaintenanceEntry() {
+    const item = this.newMaintItem.trim();
+    if (!item) return;
+    // Server caps at 20; stop here so the request cannot 422.
+    if (this.maintenanceHistory().length >= 20) return;
+    this.maintenanceHistory.update(list => [
+      ...list,
+      { item, date: this.newMaintDate.trim(), odometer_km: this.newMaintOdo },
+    ]);
+    this.newMaintItem = '';
+    this.newMaintDate = '';
+    this.newMaintOdo = null;
+  }
+
+  removeMaintenanceEntry(index: number) {
+    this.maintenanceHistory.update(list => list.filter((_, i) => i !== index));
+  }
+
   // ── Audio / video attachments (TC-F-12, TC-F-13) ─────────────────────────
 
   selectedAudio = signal<File | null>(null);
@@ -413,6 +438,72 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     });
   }
 
+  // ── DPDP controls (BR-SEC-05, BR-SEC-06) ──────────────────────────────────
+
+  deleteBusy = signal(false);
+  deleteMessage = signal('');
+  confirmDeleteId = signal<string | null>(null);
+  confirmVoiceWipe = signal(false);
+
+  askDeleteDiagnosis(id: string) {
+    this.confirmDeleteId.set(id);
+    this.deleteMessage.set('');
+  }
+
+  cancelDelete() {
+    this.confirmDeleteId.set(null);
+    this.confirmVoiceWipe.set(false);
+  }
+
+  /** Delete one saved report, then refresh the list (BR-SEC-05). */
+  confirmDeleteDiagnosis() {
+    const id = this.confirmDeleteId();
+    if (!id) return;
+    this.deleteBusy.set(true);
+    this.diagSvc.deleteDiagnosis(id).subscribe({
+      next: () => {
+        this.deleteBusy.set(false);
+        this.confirmDeleteId.set(null);
+        this.historyDetail.set(null);
+        this.deleteMessage.set('Diagnosis deleted.');
+        this.openHistory();
+      },
+      error: () => {
+        this.deleteBusy.set(false);
+        this.confirmDeleteId.set(null);
+        this.deleteMessage.set('Could not delete that diagnosis. Please try again.');
+      },
+    });
+  }
+
+  askVoiceWipe() {
+    this.confirmVoiceWipe.set(true);
+    this.deleteMessage.set('');
+  }
+
+  /** Erase all stored voice data and revoke consent locally too (BR-SEC-06). */
+  confirmVoiceDataWipe() {
+    this.deleteBusy.set(true);
+    this.diagSvc.deleteVoiceData().subscribe({
+      next: (res) => {
+        this.deleteBusy.set(false);
+        this.confirmVoiceWipe.set(false);
+        // Server consent is revoked; clear the local copy so the notice is
+        // shown again before any further capture.
+        this.voice.revokeConsent();
+        this.deleteMessage.set(
+          `Deleted ${res.transcripts_deleted} voice transcript(s) across ` +
+          `${res.conversations_deleted} conversation(s). Microphone consent has been withdrawn.`
+        );
+      },
+      error: () => {
+        this.deleteBusy.set(false);
+        this.confirmVoiceWipe.set(false);
+        this.deleteMessage.set('Could not delete your voice data. Please try again.');
+      },
+    });
+  }
+
   /** Back to the list without closing the panel. */
   closeHistoryDetail() {
     this.historyDetail.set(null);
@@ -491,6 +582,13 @@ export class VehicleDiagnosisComponent implements OnDestroy {
       warning_lights: this.selectedWarningLights(),
       when_occurs: this.selectedWhenOccurs(),
       severity: this.severity,
+      maintenance_history: this.maintenanceHistory().length
+        ? this.maintenanceHistory().map(m => ({
+            item: m.item,
+            ...(m.date ? { date: m.date } : {}),
+            ...(m.odometer_km ? { odometer_km: m.odometer_km } : {}),
+          }))
+        : undefined,
       user_id: userId,
       image_urls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
       audio_url: audioUrl,
@@ -514,6 +612,8 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     this.selectedAudio.set(null);
     this.selectedVideo.set(null);
     this.mediaError.set('');
+    this.maintenanceHistory.set([]);
+    this.newMaintItem = ''; this.newMaintDate = ''; this.newMaintOdo = null;
     this.diagSvc.report.set(null);
     this.diagSvc.error.set(null);
   }

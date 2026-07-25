@@ -80,6 +80,20 @@
               <button class="btn-ghost" (click)="voice.stopSpeaking()" *ngIf="voice.speakingState() !== 'idle'">
                 ⏹ Stop
               </button>
+              <button class="btn-danger-ghost" (click)="askDeleteDiagnosis(d.id)">
+                🗑 Delete
+              </button>
+            </div>
+
+            <!-- BR-SEC-05 confirmation — deletion is irreversible -->
+            <div class="danger-confirm" *ngIf="confirmDeleteId() === d.id" role="alertdialog">
+              <p>Delete this diagnosis permanently? This cannot be undone.</p>
+              <div class="danger-actions">
+                <button class="btn-danger" [disabled]="deleteBusy()" (click)="confirmDeleteDiagnosis()">
+                  {{ deleteBusy() ? 'Deleting…' : 'Yes, delete' }}
+                </button>
+                <button class="btn-ghost" [disabled]="deleteBusy()" (click)="cancelDelete()">Cancel</button>
+              </div>
             </div>
 
             <p class="hd-disclaimer">{{ d.disclaimer }}</p>
@@ -89,6 +103,33 @@
         } @else {
           <div class="history-detail-error" *ngIf="historyDetailError()" role="alert">
             ⚠️ {{ historyDetailError() }}
+          </div>
+
+          <div class="delete-message" *ngIf="deleteMessage()" role="status" aria-live="polite">
+            {{ deleteMessage() }}
+          </div>
+
+          <!-- BR-SEC-06 — DPDP erasure of all voice data -->
+          <div class="dpdp-panel">
+            <div class="dpdp-copy">
+              <strong>Your voice data</strong>
+              <p>
+                Delete every stored transcript from your voice diagnoses. Audio recordings are
+                never kept — only the text. This also withdraws microphone consent.
+              </p>
+            </div>
+            <button class="btn-danger-ghost" *ngIf="!confirmVoiceWipe()" (click)="askVoiceWipe()">
+              Delete my voice data
+            </button>
+            <div class="danger-confirm" *ngIf="confirmVoiceWipe()" role="alertdialog">
+              <p>Delete all stored voice transcripts? This cannot be undone.</p>
+              <div class="danger-actions">
+                <button class="btn-danger" [disabled]="deleteBusy()" (click)="confirmVoiceDataWipe()">
+                  {{ deleteBusy() ? 'Deleting…' : 'Yes, delete everything' }}
+                </button>
+                <button class="btn-ghost" [disabled]="deleteBusy()" (click)="cancelDelete()">Cancel</button>
+              </div>
+            </div>
           </div>
 
           @if (historyLoading()) {
@@ -330,6 +371,41 @@
           </ng-container>
         </div>
         <input #photoInput type="file" accept="image/*" multiple class="hidden-input" (change)="onPhotoChange($event)" />
+      </div>
+
+      <!-- Recent service history (BR-IR-07) -->
+      <div class="form-group maint-group">
+        <label>Recent service history <span class="optional-label">(optional)</span></label>
+        <p class="maint-hint">
+          A part replaced recently can change the diagnosis — add anything done in the last few months.
+        </p>
+
+        <ul class="maint-list" *ngIf="maintenanceHistory().length">
+          <li *ngFor="let m of maintenanceHistory(); let i = index">
+            <span class="maint-item">{{ m.item }}</span>
+            <span class="maint-meta">
+              {{ m.date }}<span *ngIf="m.date && m.odometer_km"> · </span>
+              <span *ngIf="m.odometer_km">{{ m.odometer_km | number }} km</span>
+            </span>
+            <button type="button" class="maint-remove" (click)="removeMaintenanceEntry(i)"
+                    [attr.aria-label]="'Remove ' + m.item">✕</button>
+          </li>
+        </ul>
+
+        <div class="maint-add">
+          <input type="text" [(ngModel)]="newMaintItem" [ngModelOptions]="{standalone: true}"
+                 placeholder="e.g. Brake pads replaced" maxlength="120" />
+          <input type="text" [(ngModel)]="newMaintDate" [ngModelOptions]="{standalone: true}"
+                 placeholder="When (e.g. May 2026)" maxlength="40" />
+          <input type="number" [(ngModel)]="newMaintOdo" [ngModelOptions]="{standalone: true}"
+                 placeholder="km" min="0" />
+          <button type="button" class="maint-add-btn"
+                  [disabled]="!newMaintItem.trim() || maintenanceHistory().length >= 20"
+                  (click)="addMaintenanceEntry()">+ Add</button>
+        </div>
+        <p class="maint-full" *ngIf="maintenanceHistory().length >= 20">
+          Maximum of 20 entries reached.
+        </p>
       </div>
 
       <!-- Audio recording (TC-F-12) -->

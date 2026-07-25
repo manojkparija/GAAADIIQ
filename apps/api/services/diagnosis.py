@@ -6,8 +6,10 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import re
+import time
 from pathlib import Path
 
 import httpx
@@ -75,7 +77,13 @@ _KB_PATH = Path(__file__).parent.parent / "data" / "repair_knowledge.json"
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_DIAGNOSIS_MODEL", "llama3")
-OLLAMA_TIMEOUT = 120.0
+
+# NFR-P1 — a driver at the roadside will not wait two minutes. Past this we
+# serve the heuristic fallback, which is degraded but immediate. Tunable via
+# OLLAMA_DIAGNOSIS_TIMEOUT for slower self-hosted models.
+OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_DIAGNOSIS_TIMEOUT", "8"))
+OLLAMA_TRANSLATE_TIMEOUT = float(os.getenv("OLLAMA_TRANSLATE_TIMEOUT", "8"))
+OLLAMA_EXTRACT_TIMEOUT = float(os.getenv("OLLAMA_EXTRACT_TIMEOUT", "6"))
 
 # Language codes → full names used in Ollama translation prompts
 _LANG_NAMES: dict[str, str] = {
@@ -146,6 +154,115 @@ def _retrieve_relevant_cases(
     return [c for _, c in scored[:top_k]]
 
 
+# ── Semantic retrieval (BR-AI-02) ────────────────────────────────────────────
+#
+# Keyword overlap misses paraphrases: "juddering when I brake" shares no terms
+# with "brake disc warped", so the most relevant case is never retrieved.
+# Embeddings close that gap. The KB is a small local file, so the index lives
+# in memory — a Qdrant round-trip would cost more than it saves at this size.
+#
+# Every step degrades to keyword retrieval rather than failing: fastembed is an
+# optional dependency and must not be required to diagnose a vehicle.
+
+_KB_VECTORS: list[list[float]] | None = None
+_KB_VECTORS_BUILT = False
+
+# Below this cosine similarity a "match" is noise; fall back to keywords.
+_MIN_SEMANTIC_SIMILARITY = 0.25
+
+
+def _case_text(case: dict) -> str:
+    """Flatten a KB case into the text used to embed it."""
+    return " ".join([
+        case.get("title", ""),
+        " ".join(case.get("symptoms", [])),
+        " ".join(case.get("possible_causes", [])),
+    ]).strip()
+
+
+def _build_kb_index() -> list[list[float]] | None:
+    """Embed the knowledge base once. None means semantic search is unavailable."""
+    global _KB_VECTORS, _KB_VECTORS_BUILT
+    if _KB_VECTORS_BUILT:
+        return _KB_VECTORS
+
+    _KB_VECTORS_BUILT = True  # set first: a failure must not retry on every call
+    kb = _load_knowledge_base()
+    if not kb:
+        _KB_VECTORS = None
+        return None
+
+    try:
+        from services.embeddings import embed_texts
+        vectors = embed_texts([_case_text(c) for c in kb])
+    except Exception as exc:
+        logger.info("Semantic KB index unavailable, using keyword retrieval: %s", exc)
+        vectors = None
+
+    if vectors and len(vectors) == len(kb):
+        _KB_VECTORS = vectors
+        logger.info("Semantic KB index built over %d cases", len(kb))
+    else:
+        _KB_VECTORS = None
+    return _KB_VECTORS
+
+
+def _cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(y * y for y in b))
+    if na == 0 or nb == 0:
+        return 0.0
+    return dot / (na * nb)
+
+
+def _retrieve_semantic(query: str, top_k: int = 4) -> list[dict] | None:
+    """Embedding retrieval. None means unavailable — the caller uses keywords."""
+    vectors = _build_kb_index()
+    if not vectors:
+        return None
+
+    try:
+        from services.embeddings import embed_one
+        qv = embed_one(query)
+    except Exception:
+        return None
+    if not qv:
+        return None
+
+    kb = _load_knowledge_base()
+    scored = [
+        (_cosine(qv, vec), case)
+        for vec, case in zip(vectors, kb)
+    ]
+    scored.sort(key=lambda x: x[0], reverse=True)
+    hits = [c for score, c in scored[:top_k] if score >= _MIN_SEMANTIC_SIMILARITY]
+    return hits or None
+
+
+def _retrieve_cases(
+    description: str,
+    warning_lights: list[str],
+    when_occurs: list[str],
+    fuel_type: str,
+    top_k: int = 4,
+) -> tuple[list[dict], str]:
+    """
+    Retrieve KB cases, preferring semantic search (BR-AI-02).
+
+    Returns (cases, method) so the caller can log which path served the query.
+    """
+    query = " ".join([
+        description, " ".join(warning_lights or []), " ".join(when_occurs or []),
+    ]).strip()
+
+    semantic = _retrieve_semantic(query, top_k=top_k)
+    if semantic:
+        return semantic, "semantic"
+
+    return _retrieve_relevant_cases(description, warning_lights, when_occurs, fuel_type, top_k), "keyword"
+
+
 def _build_prompt(
     manufacturer: str,
     model: str,
@@ -159,6 +276,7 @@ def _build_prompt(
     when_occurs: list[str],
     severity: str,
     retrieved_cases: list[dict],
+    maintenance_history: list[dict] | None = None,
 ) -> str:
     # Sanitise all user-supplied text to prevent prompt injection (MOB-008)
     manufacturer = _sanitise(manufacturer, 100)
@@ -181,6 +299,24 @@ def _build_prompt(
             f"DIY checks: {'; '.join(c.get('diy', []))}\n"
         )
 
+    # Recent service history (BR-IR-07) — user-supplied, so sanitised like any
+    # other free text. A part replaced last week reframes a symptom entirely.
+    history_text = ""
+    for entry in (maintenance_history or [])[:20]:
+        if not isinstance(entry, dict):
+            continue
+        item = _sanitise(str(entry.get("item", "")), 120).strip()
+        if not item:
+            continue
+        when = _sanitise(str(entry.get("date", "")), 40).strip()
+        odo = entry.get("odometer_km")
+        bits = [item]
+        if when:
+            bits.append(f"on {when}")
+        if isinstance(odo, int) and odo > 0:
+            bits.append(f"at {odo:,} km")
+        history_text += f"- {' '.join(bits)}\n"
+
     intro = "You are an expert automotive diagnostic AI advisor for Indian vehicles."
     intro += " Analyze the following vehicle problem and provide a structured preliminary diagnosis."
     intro += (
@@ -200,6 +336,9 @@ REPORTED PROBLEM:
 <user_report>
 {problem_description}
 </user_report>
+
+RECENT SERVICE HISTORY (reported by the owner):
+{history_text if history_text else "None reported"}
 
 Warning lights on dashboard: {', '.join(warning_lights) if warning_lights else 'None reported'}
 Issue occurs during: {', '.join(when_occurs) if when_occurs else 'Not specified'}
@@ -321,7 +460,7 @@ async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
     )
 
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=OLLAMA_TRANSLATE_TIMEOUT) as client:
             resp = await client.post(
                 f"{OLLAMA_BASE_URL}/api/generate",
                 json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "format": "json"},
@@ -377,7 +516,7 @@ async def extract_vehicle_info_from_transcript(transcript: str) -> dict:
     )
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=OLLAMA_EXTRACT_TIMEOUT) as client:
             resp = await client.post(
                 f"{OLLAMA_BASE_URL}/api/generate",
                 json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "format": "json"},
@@ -403,20 +542,26 @@ async def run_diagnosis(
     when_occurs: list[str],
     severity: str,
     image_urls: list[str] = (),
+    maintenance_history: list[dict] | None = None,
     response_language: str = "en-IN",
 ) -> dict:
     """Run RAG retrieval + Ollama diagnosis. Returns structured result dict."""
 
-    retrieved = _retrieve_relevant_cases(problem_description, warning_lights, when_occurs, fuel_type)
+    retrieved, retrieval_method = _retrieve_cases(
+        problem_description, warning_lights, when_occurs, fuel_type
+    )
     retrieved_sources = [c.get("source", c.get("title", "")) for c in retrieved]
 
     prompt = _build_prompt(
         manufacturer, model, variant, model_year, fuel_type, transmission,
         odometer_km, problem_description, warning_lights, when_occurs, severity, retrieved,
+        maintenance_history,
     )
 
     ollama_used = False
     result: dict = {}
+    started = time.perf_counter()
+    fallback_reason: str | None = None
 
     try:
         async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
@@ -428,9 +573,35 @@ async def run_diagnosis(
             raw = resp.json().get("response", "")
             result = json.loads(raw)
             ollama_used = True
+    except httpx.TimeoutException:
+        fallback_reason = "timeout"
+        logger.warning(
+            "Ollama diagnosis timed out after %.1fs, using heuristic fallback", OLLAMA_TIMEOUT
+        )
+        result = _heuristic_fallback(retrieved, severity, fuel_type)
     except Exception as exc:
+        fallback_reason = type(exc).__name__
         logger.warning("Ollama diagnosis failed, using heuristic fallback: %s", exc)
         result = _heuristic_fallback(retrieved, severity, fuel_type)
+
+    # NFR-P1 — structured latency record for every diagnosis, so slow paths and
+    # fallback rates are measurable without reading prose logs.
+    elapsed_ms = round((time.perf_counter() - started) * 1000, 1)
+    logger.info(
+        "diagnosis_latency",
+        extra={
+            "event": "diagnosis_latency",
+            "elapsed_ms": elapsed_ms,
+            "ollama_used": ollama_used,
+            "fallback_reason": fallback_reason,
+            "timeout_s": OLLAMA_TIMEOUT,
+            "retrieved_cases": len(retrieved),
+            "retrieval_method": retrieval_method,
+            "response_language": response_language,
+            "has_images": bool(image_urls),
+        },
+    )
+    result["latency_ms"] = elapsed_ms
 
     result["retrieved_sources"] = retrieved_sources
     result["ollama_used"] = ollama_used

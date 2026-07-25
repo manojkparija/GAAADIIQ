@@ -680,3 +680,86 @@ class TestDiagnosisAccessControlSuite:
         r = await client.get("/diagnosis/not-a-uuid")
         # 400 once authenticated; 401/403 if the auth gate fires first.
         assert r.status_code in (400, 401, 403)
+
+
+# ── Semantic retrieval (BR-AI-02) ────────────────────────────────────────────
+
+class TestSemanticRetrievalSuite:
+    """Embeddings are an optional dependency; keyword retrieval must still work."""
+
+    def setup_method(self):
+        import services.diagnosis as d
+        d._KB_VECTORS = None
+        d._KB_VECTORS_BUILT = False
+
+    def test_falls_back_to_keyword_without_embeddings(self):
+        import services.diagnosis as d
+        with patch("services.embeddings.embed_texts", return_value=None):
+            cases, method = d._retrieve_cases(
+                "engine knocking noise", ["Check Engine (MIL)"], ["Acceleration"], "Petrol"
+            )
+        assert method == "keyword"
+        assert isinstance(cases, list)
+
+    def test_falls_back_when_embedding_import_fails(self):
+        import services.diagnosis as d
+        with patch("services.embeddings.embed_texts", side_effect=ImportError("no fastembed")):
+            _, method = d._retrieve_cases("brake noise", [], [], "Petrol")
+        assert method == "keyword"
+
+    def test_uses_semantic_when_available(self):
+        import services.diagnosis as d
+        kb = d._load_knowledge_base()
+        if not kb:
+            pytest.skip("knowledge base is empty in this environment")
+
+        # Query vector identical to the first case → cosine 1.0.
+        vec = [1.0] + [0.0] * 383
+        others = [[0.0, 1.0] + [0.0] * 382 for _ in range(len(kb) - 1)]
+        with patch("services.embeddings.embed_texts", return_value=[vec] + others):
+            with patch("services.embeddings.embed_one", return_value=vec):
+                cases, method = d._retrieve_cases("anything at all", [], [], "Petrol")
+        assert method == "semantic"
+        assert cases[0] is kb[0]
+
+    def test_low_similarity_falls_back_to_keyword(self):
+        # A weak nearest neighbour is noise, not a match.
+        import services.diagnosis as d
+        kb = d._load_knowledge_base()
+        if not kb:
+            pytest.skip("knowledge base is empty in this environment")
+
+        orthogonal = [[0.0, 1.0] + [0.0] * 382 for _ in kb]
+        query = [1.0] + [0.0] * 383
+        with patch("services.embeddings.embed_texts", return_value=orthogonal):
+            with patch("services.embeddings.embed_one", return_value=query):
+                _, method = d._retrieve_cases("engine knocking", [], [], "Petrol")
+        assert method == "keyword"
+
+    def test_index_is_built_once(self):
+        import services.diagnosis as d
+        with patch("services.embeddings.embed_texts", return_value=None) as embed:
+            d._build_kb_index()
+            d._build_kb_index()
+            d._build_kb_index()
+        assert embed.call_count <= 1
+
+    def test_cosine_bounds(self):
+        import services.diagnosis as d
+        a = [1.0, 0.0, 0.0]
+        assert d._cosine(a, [1.0, 0.0, 0.0]) == pytest.approx(1.0)
+        assert d._cosine(a, [0.0, 1.0, 0.0]) == pytest.approx(0.0)
+        assert d._cosine(a, [0.0, 0.0, 0.0]) == 0.0
+
+    @pytest.mark.asyncio
+    async def test_run_diagnosis_works_without_embeddings(self):
+        # The baseline path must not depend on an optional package.
+        with patch("services.embeddings.embed_texts", return_value=None):
+            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+                r = await run_diagnosis(
+                    manufacturer="Maruti Suzuki", model="Swift", variant=None, model_year=2022,
+                    fuel_type="Petrol", transmission="Manual", odometer_km=45000,
+                    problem_description="Knocking sound when accelerating hard",
+                    warning_lights=[], when_occurs=[], severity="high",
+                )
+        assert r["preliminary_diagnosis"]

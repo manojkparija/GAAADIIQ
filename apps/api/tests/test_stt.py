@@ -275,3 +275,99 @@ class TestSttEndpointSuite:
                 "/diagnosis/stt", files={"file": ("a.webm", WEBM, "audio/webm")}
             )
         assert r.status_code == 422
+
+
+# ── Server-side TTS (BR-API-02) ──────────────────────────────────────────────
+
+class TestTtsSuite:
+    """Optional by design — the browser's speechSynthesis is the default path."""
+
+    @pytest.fixture
+    def google_tts(self, monkeypatch):
+        monkeypatch.setattr(settings, "tts_provider", "google")
+        monkeypatch.setattr(settings, "tts_api_key", "g-key")
+        monkeypatch.setattr(settings, "tts_api_url", "")
+        yield
+
+    def test_disabled_by_default(self, monkeypatch):
+        from services.tts import tts_enabled
+        monkeypatch.setattr(settings, "tts_provider", "none")
+        assert tts_enabled() is False
+
+    @pytest.mark.asyncio
+    async def test_raises_when_no_provider(self, monkeypatch):
+        from services.tts import TTSUnavailable, synthesize
+        monkeypatch.setattr(settings, "tts_provider", "none")
+        with pytest.raises(TTSUnavailable):
+            await synthesize("hello")
+
+    @pytest.mark.asyncio
+    async def test_rejects_empty_text(self, google_tts):
+        from services.tts import TTSError, synthesize
+        with pytest.raises(TTSError):
+            await synthesize("   ")
+
+    @pytest.mark.asyncio
+    async def test_google_returns_audio(self, google_tts):
+        from services.tts import synthesize
+        with patch("httpx.AsyncClient", return_value=_mock_http({"audioContent": "QUJD"})):
+            r = await synthesize("Brake pads are worn", "hi-IN")
+        assert r["audio_base64"] == "QUJD"
+        assert r["provider"] == "google"
+        assert r["language"] == "hi-IN"
+
+    @pytest.mark.asyncio
+    async def test_missing_audio_is_an_error(self, google_tts):
+        from services.tts import TTSError, synthesize
+        with patch("httpx.AsyncClient", return_value=_mock_http({})):
+            with pytest.raises(TTSError):
+                await synthesize("hello")
+
+    @pytest.mark.asyncio
+    async def test_google_requires_key(self, monkeypatch):
+        from services.tts import TTSUnavailable, synthesize
+        monkeypatch.setattr(settings, "tts_provider", "google")
+        monkeypatch.setattr(settings, "tts_api_key", "")
+        with pytest.raises(TTSUnavailable):
+            await synthesize("hello")
+
+    @pytest.mark.asyncio
+    async def test_long_text_is_truncated_not_rejected(self, google_tts, monkeypatch):
+        from services.tts import synthesize
+        monkeypatch.setattr(settings, "tts_max_chars", 50)
+        with patch("httpx.AsyncClient", return_value=_mock_http({"audioContent": "QUJD"})):
+            r = await synthesize("x" * 500)
+        assert r["audio_base64"] == "QUJD"
+
+    def test_ssml_metacharacters_are_escaped(self):
+        # Report text containing < or & must not break the SSML document.
+        from services.tts import _escape_ssml
+        out = _escape_ssml('brake & <clutch> "worn"')
+        assert "&amp;" in out and "&lt;" in out and "&quot;" in out
+        assert "<clutch>" not in out
+
+    @pytest.mark.asyncio
+    async def test_endpoint_returns_503_when_disabled(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "tts_provider", "none")
+        r = await client.post("/diagnosis/tts", json={"text": "hello", "language": "en-IN"})
+        assert r.status_code == 503
+
+    @pytest.mark.asyncio
+    async def test_endpoint_synthesizes_when_enabled(self, client, google_tts):
+        with patch("httpx.AsyncClient", return_value=_mock_http({"audioContent": "QUJD"})):
+            r = await client.post(
+                "/diagnosis/tts", json={"text": "Brake pads worn", "language": "hi-IN"}
+            )
+        assert r.status_code == 200
+        assert r.json()["audio_base64"] == "QUJD"
+
+    @pytest.mark.asyncio
+    async def test_endpoint_rejects_empty_text(self, client, google_tts):
+        r = await client.post("/diagnosis/tts", json={"text": "", "language": "en-IN"})
+        assert r.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_endpoint_falls_back_to_english_for_unknown_language(self, client, google_tts):
+        with patch("httpx.AsyncClient", return_value=_mock_http({"audioContent": "QUJD"})):
+            r = await client.post("/diagnosis/tts", json={"text": "hi", "language": "xx-YY"})
+        assert r.json()["language"] == "en-IN"

@@ -30,6 +30,10 @@ class VehicleDiagnosis(UUIDMixin, TimestampMixin, Base):
     when_occurs: Mapped[list | None] = mapped_column(JSON)
     severity: Mapped[str] = mapped_column(String(20), nullable=False)  # low/medium/high/critical
 
+    # Recent service/repair history the user reported (BR-IR-07). Free-form
+    # entries: [{"item": "...", "date": "...", "odometer_km": 0}]
+    maintenance_history: Mapped[list | None] = mapped_column(JSON)
+
     # Media (S3 keys or local paths)
     image_urls: Mapped[list | None] = mapped_column(JSON)
     audio_url: Mapped[str | None] = mapped_column(String(500))

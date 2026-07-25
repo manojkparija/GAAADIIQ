@@ -33,6 +33,15 @@ from services.stt import (
     stt_enabled,
     transcribe,
 )
+from services.tts import TTSError, TTSUnavailable, synthesize, tts_enabled
+from services.voice_store import (
+    EVENT_CONSENT_DECLINED,
+    EVENT_CONSENT_GRANTED,
+    EVENT_CONSENT_REVOKED,
+    delete_diagnosis,
+    delete_voice_data,
+    record_audit_event,
+)
 
 router = APIRouter(prefix="/diagnosis", tags=["diagnosis"])
 
@@ -64,6 +73,9 @@ class DiagnoseRequest(BaseModel):
     warning_lights: list[str] = Field(default_factory=list)
     when_occurs: list[str] = Field(default_factory=list)
     severity: str = Field(..., pattern="^(low|medium|high|critical)$")
+
+    # Recent service/repair history (BR-IR-07)
+    maintenance_history: list[dict] = Field(default_factory=list, max_length=20)
 
     # Optional media (URLs after client uploads to storage)
     image_urls: list[str] = Field(default_factory=list, max_length=5)
@@ -149,6 +161,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         when_occurs=body.when_occurs,
         severity=body.severity,
         image_urls=body.image_urls,
+        maintenance_history=body.maintenance_history,
         response_language=body.detected_language or "en-IN",
     )
 
@@ -170,6 +183,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         warning_lights=body.warning_lights or None,
         when_occurs=body.when_occurs or None,
         severity=body.severity,
+        maintenance_history=body.maintenance_history or None,
         image_urls=body.image_urls or None,
         audio_url=body.audio_url,
         video_url=body.video_url,
@@ -217,6 +231,97 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         needs_more_info=ai_result.get("needs_more_info", False),
         translation_failed=ai_result.get("translation_failed", False),
     )
+
+
+# ── Consent + DPDP erasure (BR-SEC-01/05/06, BR-DB-04) ───────────────────────
+
+class ConsentRequest(BaseModel):
+    granted: bool
+    consent_version: int = Field(1, ge=1, le=1000)
+    language: str = Field("en-IN", max_length=10)
+
+
+class ConsentResponse(BaseModel):
+    granted: bool
+    consent_version: int
+    recorded_at: datetime
+
+
+@router.post("/voice/consent", response_model=ConsentResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("20/minute")
+async def record_voice_consent(
+    request: Request,
+    body: ConsentRequest,
+    db: DB,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """
+    Record a microphone consent decision server-side (BR-SEC-01).
+
+    The client also stores this locally so the prompt is shown once; this is
+    the durable, auditable copy, and it is what gates transcript persistence.
+    """
+    event = await record_audit_event(
+        db,
+        event_type=EVENT_CONSENT_GRANTED if body.granted else EVENT_CONSENT_DECLINED,
+        user_id=current_user.id,
+        consent_version=body.consent_version,
+        language=body.language,
+    )
+    await db.commit()
+    return ConsentResponse(
+        granted=body.granted,
+        consent_version=body.consent_version,
+        recorded_at=event.occurred_at,
+    )
+
+
+class VoiceDataDeletionResponse(BaseModel):
+    transcripts_deleted: int
+    conversations_deleted: int
+
+
+@router.delete("/voice/data", response_model=VoiceDataDeletionResponse)
+@limiter.limit("5/minute")
+async def delete_my_voice_data(
+    request: Request,
+    db: DB,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """
+    Erase all stored voice transcripts and conversations (BR-SEC-06, DPDP).
+
+    Also revokes consent, so nothing new is written until the user opts in
+    again. The audit trail is retained as evidence the erasure occurred.
+    """
+    result = await delete_voice_data(db, current_user.id)
+    await record_audit_event(
+        db, event_type=EVENT_CONSENT_REVOKED, user_id=current_user.id
+    )
+    await db.commit()
+    return VoiceDataDeletionResponse(**result)
+
+
+@router.delete("/{diagnosis_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
+async def delete_diagnosis_report(
+    request: Request,
+    diagnosis_id: str,
+    db: DB,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """Delete one of the caller's own diagnosis reports (BR-SEC-05)."""
+    try:
+        did = uuid.UUID(diagnosis_id)
+    except ValueError:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid diagnosis ID")
+
+    deleted = await delete_diagnosis(db, did, current_user.id)
+    if not deleted:
+        # Not found and not-yours are deliberately indistinguishable here, so
+        # this cannot be used to probe for others' report IDs.
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Diagnosis report not found")
+    return None
 
 
 class SttResponse(BaseModel):
@@ -282,6 +387,45 @@ async def speech_to_text(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 
     return SttResponse(**result)
+
+
+class TtsRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=3000)
+    language: str = Field("en-IN", max_length=10)
+
+
+class TtsResponse(BaseModel):
+    audio_base64: str
+    content_type: str
+    provider: str
+    voice: str
+    language: str
+
+
+@router.post("/tts", response_model=TtsResponse)
+@limiter.limit("20/minute")
+async def text_to_speech(request: Request, body: TtsRequest):
+    """
+    Optional server-side speech synthesis (BR-API-02).
+
+    503 means "not configured" — the client falls back to the browser's
+    speechSynthesis, which is the normal path on most platforms.
+    """
+    if not tts_enabled():
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Server-side speech synthesis is not configured.",
+        )
+
+    language = body.language if body.language in _LANG_NAMES else "en-IN"
+    try:
+        result = await synthesize(body.text, language=language)
+    except TTSUnavailable as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    except TTSError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+
+    return TtsResponse(**result)
 
 
 class VoiceExtractRequest(BaseModel):

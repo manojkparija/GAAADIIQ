@@ -84,6 +84,14 @@ class Settings(BaseSettings):
     stt_max_audio_seconds: int = 60     # BR-IR-04 duration cap
     stt_max_bytes: int = 25 * 1024 * 1024
 
+    # Optional server-side TTS (BR-API-02). "none" disables it and the client
+    # falls back to the browser's speechSynthesis, which is the default path.
+    tts_provider: str = "none"          # none | google | azure
+    tts_api_key: str = ""
+    tts_api_url: str = ""
+    tts_timeout_seconds: int = 20
+    tts_max_chars: int = 3000
+
     # Qdrant vector database
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "gaadiiq_listings"
