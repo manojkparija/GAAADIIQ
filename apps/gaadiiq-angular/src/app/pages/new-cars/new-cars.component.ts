@@ -119,7 +119,7 @@ export class NewCarsComponent implements OnInit {
     { make: 'Mahindra', model: 'BE 6', price: '₹18.90L onwards', launchDate: 'Feb 2025', launchAt: new Date('2025-02-01'), bodyType: 'SUV', fuel: 'Electric', image: PLACEHOLDER, isNew: true },
     { make: 'Hyundai', model: 'Creta EV', price: '₹17.99L onwards', launchDate: 'Jan 2025', launchAt: new Date('2025-01-15'), bodyType: 'SUV', fuel: 'Electric', image: PLACEHOLDER, isNew: true },
     { make: 'Skoda', model: 'Kylaq', price: '₹7.89L onwards', launchDate: 'Dec 2024', launchAt: new Date('2024-12-10'), bodyType: 'SUV', fuel: 'Petrol', image: PLACEHOLDER, isNew: true },
-    { make: 'Maruti Suzuki', model: 'Swift', price: '₹6.49L onwards', launchDate: 'May 2024', launchAt: new Date('2024-05-01'), bodyType: 'Hatchback', fuel: 'Petrol / CNG', image: 'assets/cars/swift/front.jpg', isNew: true },
+    { make: 'Maruti Suzuki', model: 'Swift', price: '₹6.49L onwards', launchDate: 'May 2024', launchAt: new Date('2024-05-01'), bodyType: 'Hatchback', fuel: 'Petrol / CNG', image: 'assets/cars/maruti-swift/front.svg', isNew: true },
     { make: 'Kia', model: 'Syros', price: '₹8.99L onwards', launchDate: 'Jan 2025', launchAt: new Date('2025-01-20'), bodyType: 'SUV', fuel: 'Petrol / Diesel', image: PLACEHOLDER, isNew: true },
   ];
 
@@ -266,7 +266,7 @@ export class NewCarsComponent implements OnInit {
 
   private resolveImage(make: string, model: string, raw?: string): string {
     const key = `${make} ${model}`;
-    if (key === 'Maruti Suzuki Swift' || model === 'Swift') return 'assets/cars/swift/front.jpg';
+    if (key === 'Maruti Suzuki Swift' || model === 'Swift') return 'assets/cars/maruti-swift/front.svg';
     if (raw && !raw.includes('aeplcdn') && raw.trim()) return raw;
     return PLACEHOLDER;
   }

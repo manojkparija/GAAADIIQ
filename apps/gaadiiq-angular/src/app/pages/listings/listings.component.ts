@@ -175,7 +175,7 @@ export class ListingsComponent implements OnInit {
         ?? affordable.find(c => c.image) ?? affordable[0];
       const image = (rep.image && !String(rep.image).includes('aeplcdn'))
         ? rep.image
-        : (model === 'Swift' ? 'assets/cars/swift/front.jpg' : 'assets/cars/placeholder.svg');
+        : (model === 'Swift' ? 'assets/cars/maruti-swift/front.svg' : 'assets/cars/placeholder.svg');
       return {
         make, model,
         image,
@@ -220,7 +220,7 @@ export class ListingsComponent implements OnInit {
   }
 
   swiftGallery = [
-    { src: 'assets/cars/swift/front.jpg',      label: 'Front View',     pos: 'center 65%' },
+    { src: 'assets/cars/maruti-swift/front.svg',      label: 'Front View',     pos: 'center 65%' },
     { src: 'assets/cars/swift/rear-wide.jpg',  label: 'Side & Rear',    pos: 'center 85%' },
     { src: 'assets/cars/swift/trio.jpg',       label: 'Colour Range',   pos: 'center center' },
     { src: 'assets/cars/swift/interior.jpg',   label: 'Interior',       pos: 'center center' },
