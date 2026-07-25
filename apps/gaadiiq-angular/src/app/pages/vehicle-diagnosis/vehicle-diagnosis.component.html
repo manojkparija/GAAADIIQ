@@ -4,14 +4,9 @@
       <div class="hero-badge">🔧 AI Repair Advisor</div>
       <h1>Vehicle Preliminary <span class="gradient-text">Diagnosis</span></h1>
       <p class="hero-sub">Describe your car problem and get an AI-powered preliminary assessment with repair cost estimates. Always consult a certified mechanic to confirm.</p>
-      <div class="hero-actions">
-        @if (auth.currentUser()) {
-          <button class="btn btn-ghost btn-sm history-btn" (click)="openHistory()">📋 My Diagnosis History</button>
-        }
-        <button class="btn btn-voice" (click)="openVoiceMode()" *ngIf="voice.supported">
-          🎤 Voice Diagnosis
-        </button>
-      </div>
+      @if (auth.currentUser()) {
+        <button class="btn btn-ghost btn-sm history-btn" (click)="openHistory()">📋 My Diagnosis History</button>
+      }
     </div>
   </div>
 
@@ -76,6 +71,17 @@
 
     <!-- ── STEP 1: Vehicle Details ── -->
     <div class="step-card" *ngIf="step() === 1">
+
+      <!-- Input mode selector -->
+      <div class="input-mode-selector">
+        <button class="mode-btn mode-btn--text mode-btn--active">
+          ✏️ Fill Manually
+        </button>
+        <button class="mode-btn mode-btn--voice" (click)="openVoiceMode()" *ngIf="voice.supported">
+          🎤 Use Voice
+        </button>
+      </div>
+
       <h2 class="step-title">Tell us about your vehicle</h2>
 
       <div class="form-grid">
