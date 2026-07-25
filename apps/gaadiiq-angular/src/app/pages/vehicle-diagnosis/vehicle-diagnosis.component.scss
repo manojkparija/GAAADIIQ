@@ -36,9 +36,9 @@
   }
 
   &--voice {
-    border-color: #7C3AED; color: #7C3AED;
-    background: rgba(124,58,237,0.05);
-    &:hover { background: rgba(124,58,237,0.12); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(124,58,237,0.2); }
+    border-color: #14B8A6; color: #14B8A6;
+    background: rgba(20,184,166,0.06);
+    &:hover { background: rgba(20,184,166,0.14); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(20,184,166,0.25); }
     &:active { transform: translateY(0); }
   }
 }
