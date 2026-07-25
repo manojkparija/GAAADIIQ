@@ -139,7 +139,10 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
     delete merged.missing;
     this.vehicleInfo.set(merged);
 
-    const missing: string[] = info.missing ?? [];
+    // Compute missing from the fully accumulated info, not just this utterance
+    const required = ['manufacturer', 'model', 'model_year', 'fuel_type', 'transmission'];
+    const missing = required.filter(f => !merged[f]);
+
     if (missing.length > 0) {
       this._askMissingFields(missing);
     } else {

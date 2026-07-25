@@ -15,6 +15,7 @@ export interface ExtractedVehicleInfo {
 }
 
 const MAKES: Record<string, string> = {
+  // English
   maruti: 'Maruti Suzuki', suzuki: 'Maruti Suzuki', 'maruti suzuki': 'Maruti Suzuki',
   hyundai: 'Hyundai', honda: 'Honda', tata: 'Tata', mahindra: 'Mahindra',
   toyota: 'Toyota', kia: 'Kia', renault: 'Renault', nissan: 'Nissan',
@@ -23,9 +24,43 @@ const MAKES: Record<string, string> = {
   'mercedes benz': 'Mercedes-Benz', audi: 'Audi', volvo: 'Volvo',
   bajaj: 'Bajaj', hero: 'Hero', royal: 'Royal Enfield', 'royal enfield': 'Royal Enfield',
   tvs: 'TVS', yamaha: 'Yamaha', ktm: 'KTM', isuzu: 'Isuzu', force: 'Force Motors',
+  // Hindi (Devanagari)
+  'मारुति': 'Maruti Suzuki', 'मारुती': 'Maruti Suzuki', 'मारुति सुजुकी': 'Maruti Suzuki',
+  'मारुती सुजुकी': 'Maruti Suzuki', 'सुजुकी': 'Maruti Suzuki',
+  'हुंडई': 'Hyundai', 'ह्युंडई': 'Hyundai',
+  'होंडा': 'Honda', 'हौंडा': 'Honda',
+  'टाटा': 'Tata',
+  'महिंद्रा': 'Mahindra', 'महींद्रा': 'Mahindra',
+  'टोयोटा': 'Toyota', 'टोयोटो': 'Toyota',
+  'किआ': 'Kia', 'केआ': 'Kia',
+  'रेनो': 'Renault', 'रेनॉल्ट': 'Renault',
+  'निसान': 'Nissan',
+  'फोर्ड': 'Ford',
+  'जीप': 'Jeep',
+  'बीएमडब्ल्यू': 'BMW',
+  'मर्सिडीज': 'Mercedes-Benz', 'मर्सडीज': 'Mercedes-Benz',
+  'ऑडी': 'Audi',
+  'स्कोडा': 'Skoda',
+  'वोक्सवैगन': 'Volkswagen',
+  'एमजी': 'MG',
+  'बजाज': 'Bajaj',
+  'यामाहा': 'Yamaha',
+  'हीरो': 'Hero',
+  'रॉयल एनफील्ड': 'Royal Enfield', 'रॉयल': 'Royal Enfield',
+  // Tamil
+  'மாருதி': 'Maruti Suzuki', 'சுசுகி': 'Maruti Suzuki',
+  'ஹூண்டாய்': 'Hyundai', 'ஹோண்டா': 'Honda', 'டாடா': 'Tata',
+  'மஹிந்திரா': 'Mahindra', 'டொயோட்டா': 'Toyota', 'கியா': 'Kia',
+  // Bengali
+  'মারুতি': 'Maruti Suzuki', 'হুন্ডাই': 'Hyundai', 'হোন্ডা': 'Honda',
+  'টাটা': 'Tata', 'মাহিন্দ্রা': 'Mahindra', 'টয়োটা': 'Toyota',
+  // Telugu
+  'మారుతి': 'Maruti Suzuki', 'హ్యుండాయ్': 'Hyundai', 'హోండా': 'Honda',
+  'టాటా': 'Tata', 'మహీంద్రా': 'Mahindra', 'టొయోటా': 'Toyota',
 };
 
 const MODELS: Record<string, string> = {
+  // English
   swift: 'Swift', baleno: 'Baleno', brezza: 'Brezza', dzire: 'Dzire', alto: 'Alto',
   wagon: 'WagonR', wagonr: 'WagonR', ertiga: 'Ertiga', vitara: 'Vitara Brezza',
   creta: 'Creta', i20: 'i20', venue: 'Venue', alcazar: 'Alcazar', tucson: 'Tucson',
@@ -47,6 +82,18 @@ const MODELS: Record<string, string> = {
   bullet: 'Bullet', 'classic 350': 'Classic 350', himalayan: 'Himalayan', meteor: 'Meteor 350',
   apache: 'Apache', jupiter: 'Jupiter', ntorq: 'NTORQ',
   duke: 'Duke', adventure: 'Adventure 390',
+  // Hindi model names
+  'स्विफ्ट': 'Swift', 'बलेनो': 'Baleno', 'ब्रेजा': 'Brezza', 'डिजायर': 'Dzire',
+  'अल्टो': 'Alto', 'वैगनआर': 'WagonR', 'एर्टिगा': 'Ertiga',
+  'क्रेटा': 'Creta', 'वेन्यू': 'Venue', 'नेक्सन': 'Nexon', 'पंच': 'Punch',
+  'हैरियर': 'Harrier', 'सफारी': 'Safari', 'स्कॉर्पियो': 'Scorpio',
+  'थार': 'Thar', 'बोलेरो': 'Bolero', 'फॉर्च्यूनर': 'Fortuner', 'इनोवा': 'Innova',
+  'सिटी': 'City', 'अमेज': 'Amaze', 'सेल्टोस': 'Seltos', 'सोनेट': 'Sonet',
+  // Bengali model names
+  'সুইফট': 'Swift', 'বালেনো': 'Baleno', 'ব্রেজা': 'Brezza',
+  'ক্রেটা': 'Creta', 'নেক্সন': 'Nexon', 'পাঞ্চ': 'Punch',
+  // Tamil model names
+  'ஸ்விஃப்ட்': 'Swift', 'க்ரெட்டா': 'Creta', 'நெக்ஸான்': 'Nexon',
 };
 
 const FUEL_MAP: Record<string, string> = {
@@ -56,6 +103,13 @@ const FUEL_MAP: Record<string, string> = {
   electric: 'Electric', ev: 'Electric', battery: 'Electric',
   hybrid: 'Hybrid',
   lpg: 'LPG',
+  // Hindi
+  'पेट्रोल': 'Petrol', 'डीजल': 'Diesel', 'सीएनजी': 'CNG',
+  'इलेक्ट्रिक': 'Electric', 'हाइब्रिड': 'Hybrid',
+  // Bengali
+  'পেট্রোল': 'Petrol', 'ডিজেল': 'Diesel',
+  // Tamil
+  'பெட்ரோல்': 'Petrol', 'டீசல்': 'Diesel',
 };
 
 const TRANSMISSION_MAP: Record<string, string> = {
@@ -64,6 +118,10 @@ const TRANSMISSION_MAP: Record<string, string> = {
   cvt: 'CVT',
   dct: 'DCT', 'dual clutch': 'DCT',
   amt: 'AMT', 'auto gear': 'AMT', 'ags': 'AMT',
+  // Hindi
+  'मैनुअल': 'Manual', 'ऑटोमैटिक': 'Automatic', 'ऑटोमेटिक': 'Automatic',
+  // Bengali
+  'ম্যানুয়াল': 'Manual', 'অটোমেটিক': 'Automatic',
 };
 
 function normalise(text: string): string {
@@ -91,18 +149,29 @@ function extractOdometer(text: string): number | undefined {
   return undefined;
 }
 
+/** Match key against both the ASCII-normalised text and the original (for non-Latin scripts). */
+function matchesAny(key: string, norm: string, original: string): boolean {
+  // ASCII key: check normalised text
+  if (/^[\x00-\x7F]+$/.test(key)) return norm.includes(key);
+  // Non-ASCII (Devanagari, Bengali, Tamil…): check original text directly
+  return original.includes(key);
+}
+
 export function extractVehicleInfo(transcript: string): ExtractedVehicleInfo {
   const norm = normalise(transcript);
+  const orig = transcript; // keep original for script-aware matching
   const result: ExtractedVehicleInfo = { missing: [] };
 
-  // Manufacturer
-  for (const [key, value] of Object.entries(MAKES)) {
-    if (norm.includes(key)) { result.manufacturer = value; break; }
+  // Manufacturer — try longer keys first (e.g. "मारुति सुजुकी" before "मारुति")
+  const makeKeys = Object.keys(MAKES).sort((a, b) => b.length - a.length);
+  for (const key of makeKeys) {
+    if (matchesAny(key, norm, orig)) { result.manufacturer = MAKES[key]; break; }
   }
 
-  // Model
-  for (const [key, value] of Object.entries(MODELS)) {
-    if (norm.includes(key)) { result.model = value; break; }
+  // Model — longer keys first
+  const modelKeys = Object.keys(MODELS).sort((a, b) => b.length - a.length);
+  for (const key of modelKeys) {
+    if (matchesAny(key, norm, orig)) { result.model = MODELS[key]; break; }
   }
 
   // Year
@@ -110,12 +179,12 @@ export function extractVehicleInfo(transcript: string): ExtractedVehicleInfo {
 
   // Fuel
   for (const [key, value] of Object.entries(FUEL_MAP)) {
-    if (norm.includes(key)) { result.fuel_type = value; break; }
+    if (matchesAny(key, norm, orig)) { result.fuel_type = value; break; }
   }
 
   // Transmission
   for (const [key, value] of Object.entries(TRANSMISSION_MAP)) {
-    if (norm.includes(key)) { result.transmission = value; break; }
+    if (matchesAny(key, norm, orig)) { result.transmission = value; break; }
   }
 
   // Odometer
