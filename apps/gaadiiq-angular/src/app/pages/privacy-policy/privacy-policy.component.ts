@@ -18,7 +18,7 @@ import { CommonModule } from '@angular/common';
     <section>
       <h2>1. Who We Are</h2>
       <p>GAADIIQ ("we", "our", "us") is an AI-first automotive intelligence platform operated by GAADIIQ Technologies Pvt. Ltd., registered in India. We help users discover, compare, buy, and sell vehicles smarter.</p>
-      <p>Contact us at: <a href="mailto:privacy@gaadiiq.com">privacy@gaadiiq.com</a></p>
+      <p>Contact us at: <a href="mailto:privacy&#64;gaadiiq.com">privacy&#64;gaadiiq.com</a></p>
     </section>
 
     <section>
@@ -96,7 +96,7 @@ import { CommonModule } from '@angular/common';
         <li>Nominate a representative to exercise rights on your behalf.</li>
         <li>Lodge a complaint with the Data Protection Board of India.</li>
       </ul>
-      <p>To exercise these rights, email <a href="mailto:privacy@gaadiiq.com">privacy@gaadiiq.com</a>. We respond within 30 days.</p>
+      <p>To exercise these rights, email <a href="mailto:privacy&#64;gaadiiq.com">privacy&#64;gaadiiq.com</a>. We respond within 30 days.</p>
     </section>
 
     <section>

@@ -30,7 +30,7 @@ import { CommonModule } from '@angular/common';
       <ul>
         <li>You are responsible for maintaining the confidentiality of your account credentials.</li>
         <li>You are responsible for all activity that occurs under your account.</li>
-        <li>Notify us immediately at <a href="mailto:support@gaadiiq.com">support@gaadiiq.com</a> if you suspect unauthorised access.</li>
+        <li>Notify us immediately at <a href="mailto:support&#64;gaadiiq.com">support&#64;gaadiiq.com</a> if you suspect unauthorised access.</li>
         <li>You may not create accounts on behalf of others without authorisation.</li>
         <li>We reserve the right to suspend or terminate accounts that violate these Terms.</li>
       </ul>
@@ -105,7 +105,7 @@ import { CommonModule } from '@angular/common';
 
     <section>
       <h2>13. Contact</h2>
-      <p>Questions about these Terms? Email us at <a href="mailto:legal@gaadiiq.com">legal@gaadiiq.com</a> or write to:<br>GAADIIQ Technologies Pvt. Ltd., Bengaluru, Karnataka, India.</p>
+      <p>Questions about these Terms? Email us at <a href="mailto:legal&#64;gaadiiq.com">legal&#64;gaadiiq.com</a> or write to:<br>GAADIIQ Technologies Pvt. Ltd., Bengaluru, Karnataka, India.</p>
     </section>
 
   </div>

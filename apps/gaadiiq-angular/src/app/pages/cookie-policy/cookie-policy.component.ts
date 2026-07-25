@@ -112,7 +112,7 @@ import { CommonModule } from '@angular/common';
 
     <section>
       <h2>8. Contact</h2>
-      <p>Questions about cookies? Email <a href="mailto:privacy@gaadiiq.com">privacy@gaadiiq.com</a></p>
+      <p>Questions about cookies? Email <a href="mailto:privacy&#64;gaadiiq.com">privacy&#64;gaadiiq.com</a></p>
     </section>
 
   </div>
