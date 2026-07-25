@@ -138,22 +138,40 @@ function extractYear(text: string): number | undefined {
   return undefined;
 }
 
+/**
+ * Parse an odometer reading. Must be given the ORIGINAL transcript, not the
+ * normalised one: normalise() strips the separators these patterns depend on,
+ * turning "1,20,000" into "1 20 000" and "1.5 lakh" into "1 5 lakh".
+ */
 function extractOdometer(text: string): number | undefined {
-  // "50,000 km", "50000 kms", "50k km", "one lakh km"
-  const km = text.match(/(\d[\d,]*)\s*k(?:ms?|ilometers?|ilometres?)/i);
-  if (km) return parseInt(km[1].replace(/,/g, ''), 10);
-  const kAbbr = text.match(/(\d+)\s*k\b/i);
-  if (kAbbr) return parseInt(kAbbr[1], 10) * 1000;
+  // Lakh first — "1.5 lakh km" also matches the plain-km pattern below,
+  // which would read it as 5 km.
   const lakh = text.match(/(\d+(?:\.\d+)?)\s*lakh/i);
   if (lakh) return Math.round(parseFloat(lakh[1]) * 100000);
+  // "50,000 km" / "1,20,000 kms" / "50000 kilometres" — Indian digit grouping included.
+  const km = text.match(/(\d[\d,]*)\s*k(?:ms?\b|ilometers?|ilometres?)/i);
+  if (km) return parseInt(km[1].replace(/,/g, ''), 10);
+  // "45k" shorthand
+  const kAbbr = text.match(/(\d+)\s*k\b/i);
+  if (kAbbr) return parseInt(kAbbr[1], 10) * 1000;
   return undefined;
 }
 
-/** Match key against both the ASCII-normalised text and the original (for non-Latin scripts). */
+/**
+ * Match a dictionary key against the transcript.
+ *
+ * ASCII keys are matched on whole-word boundaries — a naive substring test
+ * makes short keys catastrophically greedy ("at" matches inside "weather",
+ * "gas" inside "gasket"). Non-ASCII keys are matched against the original
+ * text, since normalise() strips non-Latin scripts entirely, and are compared
+ * as plain substrings because JS \b is defined over ASCII word characters and
+ * never fires between Indic codepoints.
+ */
 function matchesAny(key: string, norm: string, original: string): boolean {
-  // ASCII key: check normalised text
-  if (/^[\x00-\x7F]+$/.test(key)) return norm.includes(key);
-  // Non-ASCII (Devanagari, Bengali, Tamil…): check original text directly
+  if (/^[\x00-\x7F]+$/.test(key)) {
+    const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|\\s)${escaped}($|\\s)`, 'i').test(norm);
+  }
   return original.includes(key);
 }
 
@@ -187,8 +205,8 @@ export function extractVehicleInfo(transcript: string): ExtractedVehicleInfo {
     if (matchesAny(key, norm, orig)) { result.transmission = value; break; }
   }
 
-  // Odometer
-  result.odometer_km = extractOdometer(norm);
+  // Odometer — parsed from the original text, which still has the separators.
+  result.odometer_km = extractOdometer(orig);
 
   // Required fields check
   const required: Array<keyof ExtractedVehicleInfo> = ['manufacturer', 'model', 'model_year', 'fuel_type', 'transmission'];
@@ -225,10 +243,14 @@ export function detectLanguageFromText(text: string): string {
     knda: 'kn-IN', mlym: 'ml-IN', gujr: 'gu-IN', guru: 'pa-IN', orya: 'or-IN',
   };
 
-  // Distinguish Marathi vs Hindi (Devanagari) by keyword
+  // Hindi and Marathi share the Devanagari script, so separate them on
+  // vocabulary. \b is not usable here — it is defined over ASCII word
+  // characters and never matches between Devanagari codepoints — so these are
+  // plain substring probes on markers that are distinctively Marathi.
+  // "गाडी" is deliberately excluded: it is common to both languages.
   if (dominant[0] === 'deva') {
-    const marathi = /\b(माझ|गाडी|आहे|मला|माझी)\b/.test(text);
-    return marathi ? 'mr-IN' : 'hi-IN';
+    const MARATHI_MARKERS = ['माझ', 'आहे', 'मला', 'तुमच', 'नाही', 'आणि', 'येतो', 'काय'];
+    return MARATHI_MARKERS.some(m => text.includes(m)) ? 'mr-IN' : 'hi-IN';
   }
 
   return scriptToLang[dominant[0]] ?? 'en-IN';

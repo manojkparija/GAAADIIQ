@@ -10,8 +10,9 @@ function makeSupabaseMock(overrides: Record<string, unknown> = {}) {
       auth: {
         getSession: () => Promise.resolve({ data: { session: null } }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-        signInWithPassword: () => Promise.resolve({ error: null }),
-        signOut: () => Promise.resolve({ error: null }),
+        // Typed loosely so individual tests can override with an error result.
+        signInWithPassword: (): Promise<{ error: any }> => Promise.resolve({ error: null }),
+        signOut: (): Promise<{ error: any }> => Promise.resolve({ error: null }),
         ...overrides,
       },
       from: () => ({

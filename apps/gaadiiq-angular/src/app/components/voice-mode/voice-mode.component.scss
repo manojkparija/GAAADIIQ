@@ -68,6 +68,38 @@
   &:hover { color: var(--vm-text); background: var(--vm-border); }
 }
 
+// ── Consent screen ───────────────────────────────────────────────────────────
+
+.vm-consent {
+  padding: 28px 24px 12px;
+  text-align: center;
+}
+
+.vm-consent-icon {
+  font-size: 2.6rem;
+  margin-bottom: 12px;
+}
+
+.vm-consent-title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--vm-text);
+}
+
+.vm-consent-body {
+  margin: 0 0 22px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--vm-sub);
+}
+
+.vm-consent-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 // ── Language picker ──────────────────────────────────────────────────────────
 
 .vm-lang-picker {
@@ -81,6 +113,22 @@
   color: var(--vm-text);
   font-size: 1rem;
   font-weight: 500;
+}
+
+.vm-lang-auto {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--vm-accent);
+  background: rgba(88, 166, 255, 0.08);
+  color: var(--vm-accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(88, 166, 255, 0.18); }
 }
 
 .vm-lang-grid {
@@ -368,4 +416,27 @@
 
     &:hover { background: rgba(248, 81, 73, 0.25); }
   }
+
+  &--ghost {
+    background: transparent;
+    color: var(--vm-sub);
+    border: 1px solid var(--vm-border);
+
+    &:hover { background: var(--vm-surface); color: var(--vm-text); }
+  }
+}
+
+// Keyboard focus must stay visible on every interactive control (a11y).
+.vm-btn:focus-visible,
+.vm-lang-option:focus-visible,
+.vm-close:focus-visible,
+.vm-replay:focus-visible,
+.vm-lang-change:focus-visible {
+  outline: 2px solid var(--vm-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vm-pulse-ring, .vm-mic-icon { animation: none !important; }
+  .vm-overlay, .vm-btn, .vm-lang-option { transition: none !important; }
 }

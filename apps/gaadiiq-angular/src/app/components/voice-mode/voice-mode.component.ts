@@ -15,6 +15,7 @@ export interface VoiceSessionResult {
 }
 
 type ConversationStep =
+  | 'consent'
   | 'select-language'
   | 'greeting'
   | 'capture-vehicle'
@@ -107,6 +108,61 @@ const PROMPTS: Record<string, Prompts> = {
       fuel_type: 'इंधन प्रकार', transmission: 'ट्रान्समिशन',
     },
   },
+  'kn-IN': {
+    greeting: 'ನಮಸ್ಕಾರ! ದಯವಿಟ್ಟು ನಿಮ್ಮ ವಾಹನದ ಬಗ್ಗೆ ತಿಳಿಸಿ — ಬ್ರಾಂಡ್, ಮಾಡೆಲ್, ವರ್ಷ, ಇಂಧನ ಮತ್ತು ಟ್ರಾನ್ಸ್‌ಮಿಷನ್.',
+    askField: (l) => `ನನಗೆ ${l} ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಹೇಳಿ.`,
+    gotThenAsk: (g, l) => `${g} ಸಿಕ್ಕಿತು. ಈಗ ${l}?`,
+    confirm: (s) => `ಸರಿ — ${s}. ಈಗ ನಿಮ್ಮ ವಾಹನದ ಸಮಸ್ಯೆಯನ್ನು ವಿವರಿಸಿ.`,
+    thanks: 'ಧನ್ಯವಾದಗಳು! ನಿಮ್ಮ ವಿವರಗಳನ್ನು AI ರೋಗನಿರ್ಣಯಕ್ಕೆ ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ.',
+    fields: {
+      manufacturer: 'ವಾಹನ ಬ್ರಾಂಡ್', model: 'ಮಾಡೆಲ್ ಹೆಸರು', model_year: 'ವರ್ಷ',
+      fuel_type: 'ಇಂಧನ ಪ್ರಕಾರ', transmission: 'ಟ್ರಾನ್ಸ್‌ಮಿಷನ್',
+    },
+  },
+  'ml-IN': {
+    greeting: 'നമസ്കാരം! ദയവായി നിങ്ങളുടെ വാഹനത്തെക്കുറിച്ച് പറയൂ — ബ്രാൻഡ്, മോഡൽ, വർഷം, ഇന്ധനം, ട്രാൻസ്മിഷൻ.',
+    askField: (l) => `എനിക്ക് ${l} മനസ്സിലായില്ല. ദയവായി വീണ്ടും പറയൂ.`,
+    gotThenAsk: (g, l) => `${g} കിട്ടി. ഇനി ${l}?`,
+    confirm: (s) => `ശരി — ${s}. ഇനി നിങ്ങളുടെ വാഹനത്തിന്റെ പ്രശ്നം വിവരിക്കൂ.`,
+    thanks: 'നന്ദി! നിങ്ങളുടെ വിവരങ്ങൾ AI രോഗനിർണയത്തിനായി അയയ്ക്കുന്നു.',
+    fields: {
+      manufacturer: 'വാഹന ബ്രാൻഡ്', model: 'മോഡൽ പേര്', model_year: 'വർഷം',
+      fuel_type: 'ഇന്ധന തരം', transmission: 'ട്രാൻസ്മിഷൻ',
+    },
+  },
+  'gu-IN': {
+    greeting: 'નમસ્તે! કૃપા કરીને તમારા વાહન વિશે જણાવો — બ્રાન્ડ, મોડેલ, વર્ષ, ઈંધણ અને ટ્રાન્સમિશન.',
+    askField: (l) => `મને ${l} સમજાયું નહીં. કૃપા કરીને ફરીથી કહો.`,
+    gotThenAsk: (g, l) => `${g} મળ્યું. હવે ${l}?`,
+    confirm: (s) => `બરાબર — ${s}. હવે તમારા વાહનની સમસ્યા જણાવો.`,
+    thanks: 'આભાર! તમારી વિગતો AI નિદાન માટે મોકલવામાં આવી રહી છે.',
+    fields: {
+      manufacturer: 'વાહન બ્રાન્ડ', model: 'મોડેલનું નામ', model_year: 'વર્ષ',
+      fuel_type: 'ઈંધણ પ્રકાર', transmission: 'ટ્રાન્સમિશન',
+    },
+  },
+  'pa-IN': {
+    greeting: 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੀ ਗੱਡੀ ਬਾਰੇ ਦੱਸੋ — ਬ੍ਰਾਂਡ, ਮਾਡਲ, ਸਾਲ, ਬਾਲਣ ਅਤੇ ਟ੍ਰਾਂਸਮਿਸ਼ਨ।',
+    askField: (l) => `ਮੈਨੂੰ ${l} ਸਮਝ ਨਹੀਂ ਆਇਆ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਦੱਸੋ।`,
+    gotThenAsk: (g, l) => `${g} ਮਿਲ ਗਿਆ। ਹੁਣ ${l}?`,
+    confirm: (s) => `ਠੀਕ ਹੈ — ${s}। ਹੁਣ ਆਪਣੀ ਗੱਡੀ ਦੀ ਸਮੱਸਿਆ ਦੱਸੋ।`,
+    thanks: 'ਧੰਨਵਾਦ! ਤੁਹਾਡੀ ਜਾਣਕਾਰੀ AI ਨਿਦਾਨ ਲਈ ਭੇਜੀ ਜਾ ਰਹੀ ਹੈ।',
+    fields: {
+      manufacturer: 'ਗੱਡੀ ਦਾ ਬ੍ਰਾਂਡ', model: 'ਮਾਡਲ ਦਾ ਨਾਮ', model_year: 'ਸਾਲ',
+      fuel_type: 'ਬਾਲਣ ਕਿਸਮ', transmission: 'ਟ੍ਰਾਂਸਮਿਸ਼ਨ',
+    },
+  },
+  'or-IN': {
+    greeting: 'ନମସ୍କାର! ଦୟାକରି ଆପଣଙ୍କ ଗାଡ଼ି ବିଷୟରେ କୁହନ୍ତୁ — ବ୍ରାଣ୍ଡ, ମଡେଲ, ବର୍ଷ, ଇନ୍ଧନ ଏବଂ ଟ୍ରାନ୍ସମିଶନ।',
+    askField: (l) => `ମୁଁ ${l} ବୁଝିପାରିଲି ନାହିଁ। ଦୟାକରି ପୁନର୍ବାର କୁହନ୍ତୁ।`,
+    gotThenAsk: (g, l) => `${g} ମିଳିଲା। ବର୍ତ୍ତମାନ ${l}?`,
+    confirm: (s) => `ଠିକ ଅଛି — ${s}। ବର୍ତ୍ତମାନ ଆପଣଙ୍କ ଗାଡ଼ିର ସମସ୍ୟା କୁହନ୍ତୁ।`,
+    thanks: 'ଧନ୍ୟବାଦ! ଆପଣଙ୍କ ବିବରଣୀ AI ନିଦାନ ପାଇଁ ପଠାଯାଉଛି।',
+    fields: {
+      manufacturer: 'ଗାଡ଼ି ବ୍ରାଣ୍ଡ', model: 'ମଡେଲ ନାମ', model_year: 'ବର୍ଷ',
+      fuel_type: 'ଇନ୍ଧନ ପ୍ରକାର', transmission: 'ଟ୍ରାନ୍ସମିଶନ',
+    },
+  },
 };
 
 /** Fall back to English prompts for languages without a translation yet. */
@@ -138,6 +194,9 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   readonly languages = VOICE_LANGUAGES;
   readonly isListening = computed(() => this.voice.state() === 'listening');
   readonly isSelectingLanguage = computed(() => this.step() === 'select-language');
+  readonly isAskingConsent = computed(() => this.step() === 'consent');
+  /** True while a pre-conversation screen (consent / language) is showing. */
+  readonly isSetup = computed(() => this.isAskingConsent() || this.isSelectingLanguage());
   readonly aiMessage = computed(() => {
     const msgs = this.messages();
     const last = [...msgs].reverse().find(m => m.role === 'ai');
@@ -156,23 +215,52 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
       }));
   });
 
+  /** True when the language is being inferred from speech rather than picked. */
+  autoDetect = false;
+
   /** Prompts in the language the user picked. */
   private get p(): Prompts {
     return promptsFor(this.detectedLanguage());
   }
 
   ngOnInit() {
-    // Open on the language picker — the user's choice drives the STT model,
-    // so it must be set before any recognition starts.
-    this.step.set('select-language');
+    // Consent must be recorded before any capture (TC-F-19); once granted it
+    // persists, so returning users go straight to the language picker.
+    this.step.set(this.voice.hasConsent() ? 'select-language' : 'consent');
   }
 
   // ── Public API ───────────────────────────────────────────────────────────
 
+  /** User accepted the microphone consent notice. */
+  grantConsent() {
+    this.voice.recordConsent(true);
+    this.step.set('select-language');
+  }
+
+  /** User declined — close the overlay without capturing anything. */
+  declineConsent() {
+    this.voice.recordConsent(false);
+    this.cancelled.emit();
+  }
+
   /** Called when the user picks a language from the dropdown. */
   chooseLanguage(lang: VoiceLanguage) {
+    this.autoDetect = false;
     this.voice.selectLanguage(lang);   // sets recognition.lang + TTS voice
     this.detectedLanguage.set(lang.code);
+    this.start();
+  }
+
+  /**
+   * Skip the picker and infer the language from what the user says (TC-F-15).
+   * Recognition starts on en-IN, which transcribes Indian-language speech
+   * poorly but well enough for script/keyword detection; once a language is
+   * identified the flow restarts on the correct STT model.
+   */
+  useAutoDetect() {
+    this.autoDetect = true;
+    this.voice.selectLanguage(VOICE_LANGUAGES[0]);
+    this.detectedLanguage.set('en-IN');
     this.start();
   }
 
@@ -199,11 +287,25 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
   private _listenForVehicle() {
     this.step.set('capture-vehicle');
-    // Language is already fixed by the user's pick — do not auto-detect and
-    // override it, or a mis-transcription would switch the STT model mid-flow.
     this.voice.start((text) => {
       this.voice.stop();
       this._addMessage('user', text);
+
+      // In auto-detect mode the first utterance decides the language; after
+      // that it is fixed, so a later mis-transcription can't switch models
+      // mid-conversation. When the user picked explicitly, never override.
+      if (this.autoDetect) {
+        this.autoDetect = false;
+        const lang = this.voice.autoDetectLanguage(text);
+        if (lang.code !== this.detectedLanguage()) {
+          this.detectedLanguage.set(lang.code);
+          // Re-ask in the detected language: the first pass ran on the wrong
+          // STT model, so its transcript is not worth extracting from.
+          this._aiSay(this.p.greeting, () => this._listenForVehicle());
+          return;
+        }
+      }
+
       this._extractAndMerge(text);
     });
   }

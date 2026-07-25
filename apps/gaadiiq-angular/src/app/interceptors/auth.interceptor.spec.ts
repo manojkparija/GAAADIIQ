@@ -3,8 +3,11 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { authInterceptor } from './auth.interceptor';
 import { SupabaseService } from '../services/supabase.service';
+import { environment } from '../../environments/environment';
 
-const API_URL = 'http://localhost:8000';
+// Must track the real config: the interceptor only touches URLs under
+// environment.apiUrl, so a hardcoded value here silently tests nothing.
+const API_URL = environment.apiUrl;
 
 describe('authInterceptor', () => {
   let http: HttpClient;
@@ -32,9 +35,17 @@ describe('authInterceptor', () => {
 
   afterEach(() => httpMock.verify());
 
+  /**
+   * The interceptor awaits supabase.auth.getSession() before dispatching, so
+   * the request only reaches HttpTestingController after the microtask queue
+   * drains. Without this, expectOne runs too early and finds nothing.
+   */
+  const flushMicrotasks = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+
   it('attaches Bearer header when session token present', async () => {
     setup('test-jwt-token');
     http.get(`${API_URL}/cars`).subscribe();
+    await flushMicrotasks();
 
     const req = httpMock.expectOne(`${API_URL}/cars`);
     expect(req.request.headers.get('Authorization')).toBe('Bearer test-jwt-token');
@@ -44,6 +55,7 @@ describe('authInterceptor', () => {
   it('does not attach header when no session', async () => {
     setup(null);
     http.get(`${API_URL}/cars`).subscribe();
+    await flushMicrotasks();
 
     const req = httpMock.expectOne(`${API_URL}/cars`);
     expect(req.request.headers.has('Authorization')).toBeFalse();

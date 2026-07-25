@@ -7,10 +7,34 @@
       <button class="vm-close" (click)="cancel()" aria-label="Close voice mode">✕</button>
     </div>
 
-    <!-- ── Language picker (first screen) ── -->
+    <!-- ── Microphone consent (must precede any capture) ── -->
+    <ng-container *ngIf="isAskingConsent()">
+      <div class="vm-consent">
+        <div class="vm-consent-icon" aria-hidden="true">🎙️</div>
+        <h3 class="vm-consent-title">Microphone access</h3>
+        <p class="vm-consent-body">
+          Voice diagnosis uses your microphone to capture what you say about your
+          vehicle. Speech is transcribed by your browser and only the resulting
+          text is sent for diagnosis — no audio recording is stored or uploaded.
+        </p>
+        <div class="vm-consent-actions">
+          <button class="vm-btn vm-btn--primary" (click)="grantConsent()">
+            Allow microphone
+          </button>
+          <button class="vm-btn vm-btn--ghost" (click)="declineConsent()">
+            Not now
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ── Language picker ── -->
     <ng-container *ngIf="isSelectingLanguage()">
       <div class="vm-lang-picker">
         <p class="vm-lang-prompt">Which language would you like to speak in?</p>
+        <button class="vm-lang-auto" (click)="useAutoDetect()">
+          ✨ Detect automatically
+        </button>
         <div class="vm-lang-grid">
           <button
             *ngFor="let lang of languages"
@@ -24,14 +48,14 @@
       </div>
     </ng-container>
 
-    <!-- ── Conversation (after language is picked) ── -->
-    <ng-container *ngIf="!isSelectingLanguage()">
+    <!-- ── Conversation (after consent + language are settled) ── -->
+    <ng-container *ngIf="!isSetup()">
 
     <!-- Waveform / Mic indicator -->
     <div class="vm-visual" [class.listening]="isListening()">
-      <div class="vm-pulse-ring"></div>
-      <div class="vm-mic-icon">{{ isListening() ? '🎙️' : '🔇' }}</div>
-      <div class="vm-status-label">
+      <div class="vm-pulse-ring" aria-hidden="true"></div>
+      <div class="vm-mic-icon" aria-hidden="true">{{ isListening() ? '🎙️' : '🔇' }}</div>
+      <div class="vm-status-label" role="status" aria-live="polite">
         {{ isListening() ? 'Listening…' : (voice.speakingState() === 'speaking' ? 'Speaking…' : 'Tap mic to speak') }}
       </div>
     </div>
@@ -50,10 +74,10 @@
       </div>
     </div>
 
-    <!-- AI message bubble -->
-    <div class="vm-ai-bubble" *ngIf="aiMessage()">
+    <!-- AI message bubble — announced so the assistant's question is read out -->
+    <div class="vm-ai-bubble" *ngIf="aiMessage()" role="status" aria-live="polite" aria-atomic="true">
       <p>{{ aiMessage() }}</p>
-      <button class="vm-replay" (click)="replayLast()" title="Replay">🔄</button>
+      <button class="vm-replay" (click)="replayLast()" title="Replay" aria-label="Replay question">🔄</button>
     </div>
 
     <!-- Conversation transcript -->
@@ -66,16 +90,21 @@
       >{{ msg.text }}</div>
     </div>
 
-    <!-- STT error -->
-    <div class="vm-error" *ngIf="voice.errorMessage()">
+    <!-- STT error — assertive: the user must act on it -->
+    <div class="vm-error" *ngIf="voice.errorMessage()" role="alert" aria-live="assertive">
       <span>⚠️ {{ voice.errorMessage() }}</span>
-      <button (click)="voice.dismissError()">✕</button>
+      <button (click)="voice.dismissError()" aria-label="Dismiss error">✕</button>
     </div>
 
-    <!-- Interim text -->
-    <div class="vm-interim" *ngIf="voice.interimText()">
-      {{ voice.interimText() }}
-    </div>
+    <!-- Interim transcript — always in the DOM so the live region is registered
+         before text arrives; otherwise screen readers miss the first update. -->
+    <div
+      class="vm-interim"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label="Live transcription"
+    >{{ voice.interimText() }}</div>
 
     </ng-container>
 

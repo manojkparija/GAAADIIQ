@@ -1,4 +1,4 @@
-import { Injectable, signal, NgZone } from '@angular/core';
+import { Injectable, signal, NgZone, EventEmitter } from '@angular/core';
 import { detectLanguageFromText } from '../utils/vehicle-info-extractor';
 
 export interface VoiceLanguage {
@@ -26,6 +26,14 @@ export type SpeakingState = 'idle' | 'speaking' | 'paused';
 
 const MUTE_KEY = 'gq_voice_muted';
 const LANG_KEY = 'gq_voice_lang';
+const CONSENT_KEY = 'gq_voice_consent';
+
+/** Audit record of an explicit microphone consent decision (TC-S-05). */
+export interface MicConsentRecord {
+  granted: boolean;
+  at: string;       // ISO timestamp
+  language: string; // language active when consent was given
+}
 
 @Injectable({ providedIn: 'root' })
 export class VoiceDiagnosisService {
@@ -48,6 +56,9 @@ export class VoiceDiagnosisService {
   selectedLanguage = signal<VoiceLanguage>(VOICE_LANGUAGES[0]);
   autoDetectedLanguage = signal<VoiceLanguage | null>(null);
 
+  // Microphone consent (TC-F-19, TC-S-05)
+  micConsent = signal<MicConsentRecord | null>(null);
+
   private recognition: any = null;
   private onFinal?: (text: string) => void;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
@@ -61,7 +72,44 @@ export class VoiceDiagnosisService {
         const lang = VOICE_LANGUAGES.find(l => l.code === saved);
         if (lang) this.selectedLanguage.set(lang);
       }
+      const consent = localStorage.getItem(CONSENT_KEY);
+      if (consent) {
+        try { this.micConsent.set(JSON.parse(consent)); } catch { /* corrupt entry — re-ask */ }
+      }
     }
+  }
+
+  // ── Microphone consent ────────────────────────────────────────────────────
+
+  /** True once the user has explicitly granted mic access for voice diagnosis. */
+  hasConsent(): boolean {
+    return this.micConsent()?.granted === true;
+  }
+
+  /**
+   * Record an explicit consent decision. Persisted so the prompt is shown once,
+   * and emitted as an audit event so consent is provably logged before any
+   * audio capture begins (TC-S-05).
+   */
+  recordConsent(granted: boolean): MicConsentRecord {
+    const record: MicConsentRecord = {
+      granted,
+      at: new Date().toISOString(),
+      language: this.selectedLanguage().code,
+    };
+    this.micConsent.set(record);
+    try { localStorage.setItem(CONSENT_KEY, JSON.stringify(record)); } catch { /* private mode */ }
+    this.consentLogged.emit(record);
+    return record;
+  }
+
+  /** Fires whenever a consent decision is made, for analytics/audit sinks. */
+  readonly consentLogged = new EventEmitter<MicConsentRecord>();
+
+  /** Clear stored consent — used by the "delete my voice data" control. */
+  revokeConsent() {
+    this.micConsent.set(null);
+    try { localStorage.removeItem(CONSENT_KEY); } catch { /* ignore */ }
   }
 
   // ── Language ──────────────────────────────────────────────────────────────
@@ -88,6 +136,13 @@ export class VoiceDiagnosisService {
   start(onFinalResult: (text: string) => void) {
     if (!this.supported) {
       this.errorMessage.set('Voice input is not supported in this browser. Please use Chrome or Edge.');
+      this.state.set('error');
+      return;
+    }
+    // Consent gate — no audio capture may begin without a recorded decision
+    // (TC-F-19). Callers must show the consent prompt and call recordConsent().
+    if (!this.hasConsent()) {
+      this.errorMessage.set('Microphone permission is required for voice diagnosis.');
       this.state.set('error');
       return;
     }
