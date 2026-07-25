@@ -3,8 +3,10 @@ import {
   OnDestroy, OnInit, inject, NgZone
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { VoiceDiagnosisService } from '../../services/voice-diagnosis.service';
 import { extractVehicleInfo, ExtractedVehicleInfo } from '../../utils/vehicle-info-extractor';
+import { environment } from '../../../environments/environment';
 
 export interface VoiceSessionResult {
   vehicleInfo: Partial<ExtractedVehicleInfo>;
@@ -37,7 +39,7 @@ const FIELD_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-voice-mode',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HttpClientModule],
   templateUrl: './voice-mode.component.html',
   styleUrls: ['./voice-mode.component.scss'],
 })
@@ -47,6 +49,7 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
   readonly voice = inject(VoiceDiagnosisService);
   private zone = inject(NgZone);
+  private http = inject(HttpClient);
 
   step = signal<ConversationStep>('idle');
   messages = signal<Message[]>([]);
@@ -101,19 +104,47 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
       const lang = this.voice.autoDetectLanguage(text);
       this.detectedLanguage.set(lang.code);
       this._addMessage('user', text);
-
-      const info = extractVehicleInfo(text);
-      const merged = { ...this.vehicleInfo(), ...info };
-      // Remove missing array from spread
-      delete (merged as any).missing;
-      this.vehicleInfo.set(merged);
-
-      if (info.missing.length > 0) {
-        this._askMissingFields(info.missing);
-      } else {
-        this._confirmVehicle();
-      }
+      this._extractAndMerge(text);
     });
+  }
+
+  private _extractAndMerge(text: string) {
+    // Try client-side first (fast, works for English)
+    const clientInfo = extractVehicleInfo(text);
+    const isEnglish = this.detectedLanguage() === 'en-IN';
+
+    if (isEnglish || clientInfo.missing.length === 0) {
+      this._applyExtracted(clientInfo);
+      return;
+    }
+
+    // Non-English: call backend Ollama extractor for better accuracy
+    const apiBase = (environment as any).apiUrl ?? 'http://localhost:8000';
+    this.http.post<any>(`${apiBase}/diagnosis/voice/extract`, { transcript: text })
+      .subscribe({
+        next: (backendInfo) => {
+          // Merge backend result with client result (backend wins for non-null fields)
+          const merged = { ...clientInfo, ...backendInfo };
+          merged.missing = clientInfo.missing.filter(
+            (f: string) => !backendInfo[f]
+          );
+          this._applyExtracted(merged);
+        },
+        error: () => this._applyExtracted(clientInfo), // fall back to client result
+      });
+  }
+
+  private _applyExtracted(info: any) {
+    const merged = { ...this.vehicleInfo(), ...info };
+    delete merged.missing;
+    this.vehicleInfo.set(merged);
+
+    const missing: string[] = info.missing ?? [];
+    if (missing.length > 0) {
+      this._askMissingFields(missing);
+    } else {
+      this._confirmVehicle();
+    }
   }
 
   private _askMissingFields(missing: string[]) {
@@ -125,17 +156,7 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
       this.voice.start((text) => {
         this.voice.stop();
         this._addMessage('user', text);
-        const patch = extractVehicleInfo(text);
-        const merged = { ...this.vehicleInfo(), ...patch };
-        delete (merged as any).missing;
-        this.vehicleInfo.set(merged);
-
-        const remaining = patch.missing.filter(f => !Object.keys(merged).includes(f));
-        if (remaining.length > 0) {
-          this._askMissingFields(remaining);
-        } else {
-          this._confirmVehicle();
-        }
+        this._extractAndMerge(text);
       });
     });
   }
@@ -179,17 +200,33 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   private _aiSay(text: string, then?: () => void) {
     this._addMessage('ai', text);
     this.voice.speak(text);
-    if (then) {
-      // Wait for speech to finish before listening (or 2s fallback)
+    if (!then) return;
+
+    let called = false;
+    const done = () => {
+      if (called) return;
+      called = true;
+      this.zone.run(() => then());
+    };
+
+    // Give TTS 600ms to start (fire onstart and set speakingState → 'speaking')
+    // then poll until it finishes. Without this delay the interval sees 'idle'
+    // before TTS has started and fires immediately.
+    setTimeout(() => {
+      if (this.voice.speakingState() === 'idle') {
+        // TTS is muted or not supported — proceed right away
+        done();
+        return;
+      }
       const check = setInterval(() => {
         if (this.voice.speakingState() === 'idle') {
           clearInterval(check);
-          this.zone.run(() => then());
+          done();
         }
       }, 300);
-      // Safety fallback: advance after 8s
-      setTimeout(() => { clearInterval(check); this.zone.run(() => then?.()); }, 8000);
-    }
+      // Hard fallback: 12s max
+      setTimeout(() => { clearInterval(check); done(); }, 12000);
+    }, 600);
   }
 
   private _addMessage(role: 'ai' | 'user', text: string) {
