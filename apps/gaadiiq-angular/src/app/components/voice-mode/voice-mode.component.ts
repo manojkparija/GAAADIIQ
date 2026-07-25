@@ -4,7 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { VoiceDiagnosisService } from '../../services/voice-diagnosis.service';
+import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../services/voice-diagnosis.service';
 import { extractVehicleInfo, ExtractedVehicleInfo } from '../../utils/vehicle-info-extractor';
 import { environment } from '../../../environments/environment';
 
@@ -15,7 +15,7 @@ export interface VoiceSessionResult {
 }
 
 type ConversationStep =
-  | 'idle'
+  | 'select-language'
   | 'greeting'
   | 'capture-vehicle'
   | 'confirm-vehicle'
@@ -28,13 +28,82 @@ interface Message {
   text: string;
 }
 
-const FIELD_LABELS: Record<string, string> = {
-  manufacturer: 'vehicle brand',
-  model: 'model name',
-  model_year: 'year of manufacture',
-  fuel_type: 'fuel type (Petrol/Diesel/CNG/Electric)',
-  transmission: 'transmission type (Manual/Automatic)',
+/** Localized conversation prompts, keyed by language code. */
+interface Prompts {
+  greeting: string;
+  askField: (label: string) => string;
+  confirm: (summary: string) => string;
+  thanks: string;
+  fields: Record<string, string>;
+}
+
+const PROMPTS: Record<string, Prompts> = {
+  'en-IN': {
+    greeting: 'Hello! Please tell me about your vehicle — the brand, model, year, fuel type and transmission.',
+    askField: (l) => `I didn't catch the ${l}. Could you please tell me that?`,
+    confirm: (s) => `Got it — ${s}. Now please describe the problem with your vehicle.`,
+    thanks: 'Thank you! Sending your details for AI diagnosis now.',
+    fields: {
+      manufacturer: 'vehicle brand', model: 'model name', model_year: 'year',
+      fuel_type: 'fuel type', transmission: 'transmission type',
+    },
+  },
+  'hi-IN': {
+    greeting: 'नमस्ते! कृपया अपनी गाड़ी के बारे में बताइए — ब्रांड, मॉडल, साल, फ्यूल टाइप और ट्रांसमिशन।',
+    askField: (l) => `मुझे ${l} समझ नहीं आया। कृपया दोबारा बताइए।`,
+    confirm: (s) => `ठीक है — ${s}। अब कृपया अपनी गाड़ी की समस्या बताइए।`,
+    thanks: 'धन्यवाद! आपकी जानकारी AI डायग्नोसिस के लिए भेजी जा रही है।',
+    fields: {
+      manufacturer: 'गाड़ी का ब्रांड', model: 'मॉडल का नाम', model_year: 'साल',
+      fuel_type: 'फ्यूल टाइप', transmission: 'ट्रांसमिशन',
+    },
+  },
+  'bn-IN': {
+    greeting: 'নমস্কার! অনুগ্রহ করে আপনার গাড়ি সম্পর্কে বলুন — ব্র্যান্ড, মডেল, বছর, জ্বালানি এবং ট্রান্সমিশন।',
+    askField: (l) => `আমি ${l} বুঝতে পারিনি। অনুগ্রহ করে আবার বলুন।`,
+    confirm: (s) => `ঠিক আছে — ${s}। এখন আপনার গাড়ির সমস্যা বলুন।`,
+    thanks: 'ধন্যবাদ! আপনার তথ্য AI ডায়াগনোসিসের জন্য পাঠানো হচ্ছে।',
+    fields: {
+      manufacturer: 'গাড়ির ব্র্যান্ড', model: 'মডেলের নাম', model_year: 'বছর',
+      fuel_type: 'জ্বালানির ধরন', transmission: 'ট্রান্সমিশন',
+    },
+  },
+  'ta-IN': {
+    greeting: 'வணக்கம்! உங்கள் வாகனத்தைப் பற்றி கூறுங்கள் — பிராண்ட், மாடல், ஆண்டு, எரிபொருள் மற்றும் டிரான்ஸ்மிஷன்.',
+    askField: (l) => `எனக்கு ${l} புரியவில்லை. மீண்டும் கூறுங்கள்.`,
+    confirm: (s) => `சரி — ${s}. இப்போது உங்கள் வாகனத்தின் பிரச்சனையைக் கூறுங்கள்.`,
+    thanks: 'நன்றி! உங்கள் விவரங்கள் AI நோயறிதலுக்கு அனுப்பப்படுகிறது.',
+    fields: {
+      manufacturer: 'வாகன பிராண்ட்', model: 'மாடல் பெயர்', model_year: 'ஆண்டு',
+      fuel_type: 'எரிபொருள் வகை', transmission: 'டிரான்ஸ்மிஷன்',
+    },
+  },
+  'te-IN': {
+    greeting: 'నమస్కారం! దయచేసి మీ వాహనం గురించి చెప్పండి — బ్రాండ్, మోడల్, సంవత్సరం, ఇంధనం మరియు ట్రాన్స్‌మిషన్.',
+    askField: (l) => `నాకు ${l} అర్థం కాలేదు. దయచేసి మళ్లీ చెప్పండి.`,
+    confirm: (s) => `సరే — ${s}. ఇప్పుడు మీ వాహన సమస్యను వివరించండి.`,
+    thanks: 'ధన్యవాదాలు! మీ వివరాలు AI నిర్ధారణ కోసం పంపబడుతున్నాయి.',
+    fields: {
+      manufacturer: 'వాహన బ్రాండ్', model: 'మోడల్ పేరు', model_year: 'సంవత్సరం',
+      fuel_type: 'ఇంధన రకం', transmission: 'ట్రాన్స్‌మిషన్',
+    },
+  },
+  'mr-IN': {
+    greeting: 'नमस्कार! कृपया तुमच्या गाडीबद्दल सांगा — ब्रँड, मॉडेल, वर्ष, इंधन आणि ट्रान्समिशन.',
+    askField: (l) => `मला ${l} समजले नाही. कृपया पुन्हा सांगा.`,
+    confirm: (s) => `ठीक आहे — ${s}. आता तुमच्या गाडीची समस्या सांगा.`,
+    thanks: 'धन्यवाद! तुमची माहिती AI निदानासाठी पाठवली जात आहे.',
+    fields: {
+      manufacturer: 'गाडीचा ब्रँड', model: 'मॉडेलचे नाव', model_year: 'वर्ष',
+      fuel_type: 'इंधन प्रकार', transmission: 'ट्रान्समिशन',
+    },
+  },
 };
+
+/** Fall back to English prompts for languages without a translation yet. */
+function promptsFor(code: string): Prompts {
+  return PROMPTS[code] ?? PROMPTS['en-IN'];
+}
 
 @Component({
   selector: 'app-voice-mode',
@@ -51,42 +120,52 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   private zone = inject(NgZone);
   private http = inject(HttpClient);
 
-  step = signal<ConversationStep>('idle');
+  step = signal<ConversationStep>('select-language');
   messages = signal<Message[]>([]);
   vehicleInfo = signal<Partial<ExtractedVehicleInfo>>({});
   problemDescription = signal('');
   detectedLanguage = signal('en-IN');
 
+  readonly languages = VOICE_LANGUAGES;
   readonly isListening = computed(() => this.voice.state() === 'listening');
-  readonly isIdle = computed(() => this.step() === 'idle');
+  readonly isSelectingLanguage = computed(() => this.step() === 'select-language');
   readonly aiMessage = computed(() => {
     const msgs = this.messages();
     const last = [...msgs].reverse().find(m => m.role === 'ai');
     return last?.text ?? '';
   });
 
+  /** Prompts in the language the user picked. */
+  private get p(): Prompts {
+    return promptsFor(this.detectedLanguage());
+  }
+
   ngOnInit() {
-    // Auto-start immediately when the overlay mounts
-    this.start();
+    // Open on the language picker — the user's choice drives the STT model,
+    // so it must be set before any recognition starts.
+    this.step.set('select-language');
   }
 
   // ── Public API ───────────────────────────────────────────────────────────
+
+  /** Called when the user picks a language from the dropdown. */
+  chooseLanguage(lang: VoiceLanguage) {
+    this.voice.selectLanguage(lang);   // sets recognition.lang + TTS voice
+    this.detectedLanguage.set(lang.code);
+    this.start();
+  }
 
   start() {
     this.step.set('greeting');
     this.messages.set([]);
     this.vehicleInfo.set({});
     this.problemDescription.set('');
-    this._aiSay(
-      'Hello! I\'m your voice diagnosis assistant. Please tell me about your vehicle — mention the brand, model, year, fuel type, and transmission.',
-      () => this._listenForVehicle()
-    );
+    this._aiSay(this.p.greeting, () => this._listenForVehicle());
   }
 
   cancel() {
     this.voice.stop();
     this.voice.stopSpeaking();
-    this.step.set('idle');
     this.cancelled.emit();
   }
 
@@ -99,38 +178,34 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
   private _listenForVehicle() {
     this.step.set('capture-vehicle');
+    // Language is already fixed by the user's pick — do not auto-detect and
+    // override it, or a mis-transcription would switch the STT model mid-flow.
     this.voice.start((text) => {
       this.voice.stop();
-      const lang = this.voice.autoDetectLanguage(text);
-      this.detectedLanguage.set(lang.code);
       this._addMessage('user', text);
       this._extractAndMerge(text);
     });
   }
 
   private _extractAndMerge(text: string) {
-    // Try client-side first (fast, works for English)
+    // Fast local pass first
     const clientInfo = extractVehicleInfo(text);
-    const isEnglish = this.detectedLanguage() === 'en-IN';
 
-    if (isEnglish || clientInfo.missing.length === 0) {
+    if (clientInfo.missing.length === 0) {
       this._applyExtracted(clientInfo);
       return;
     }
 
-    // Non-English: call backend Ollama extractor for better accuracy
+    // Anything still missing → ask the backend Ollama extractor, which handles
+    // free-form phrasing and native-script names the dictionaries don't cover.
     const apiBase = (environment as any).apiUrl ?? 'http://localhost:8000';
     this.http.post<any>(`${apiBase}/diagnosis/voice/extract`, { transcript: text })
       .subscribe({
         next: (backendInfo) => {
-          // Merge backend result with client result (backend wins for non-null fields)
-          const merged = { ...clientInfo, ...backendInfo };
-          merged.missing = clientInfo.missing.filter(
-            (f: string) => !backendInfo[f]
-          );
-          this._applyExtracted(merged);
+          // Backend wins for fields it resolved; client result fills the rest.
+          this._applyExtracted({ ...clientInfo, ...(backendInfo ?? {}) });
         },
-        error: () => this._applyExtracted(clientInfo), // fall back to client result
+        error: () => this._applyExtracted(clientInfo), // offline → keep local result
       });
   }
 
@@ -150,11 +225,36 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Number of consecutive times we've asked for the same field. */
+  private _fieldRetries = 0;
+  private _lastAskedField = '';
+
   private _askMissingFields(missing: string[]) {
     const field = missing[0];
-    const label = FIELD_LABELS[field] ?? field;
-    const prompt = `I didn't catch the ${label}. Could you please tell me that?`;
-    this._aiSay(prompt, () => {
+
+    // Track repeats so a field the speech engine keeps mangling doesn't trap
+    // the user in a loop — after 2 tries, move on and let them fix it on the form.
+    if (field === this._lastAskedField) {
+      this._fieldRetries++;
+    } else {
+      this._lastAskedField = field;
+      this._fieldRetries = 0;
+    }
+
+    if (this._fieldRetries >= 2) {
+      const remaining = missing.slice(1);
+      if (remaining.length > 0) {
+        this._fieldRetries = 0;
+        this._lastAskedField = '';
+        this._askMissingFields(remaining);
+      } else {
+        this._confirmVehicle(); // give up on the rest; form is pre-filled
+      }
+      return;
+    }
+
+    const label = this.p.fields[field] ?? field;
+    this._aiSay(this.p.askField(label), () => {
       this.step.set('capture-vehicle');
       this.voice.start((text) => {
         this.voice.stop();
@@ -173,8 +273,7 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
       v.odometer_km ? `${v.odometer_km.toLocaleString()} km` : null,
     ].filter(Boolean).join(', ');
 
-    const msg = `Got it! ${summary}. Now please describe the problem with your vehicle.`;
-    this._aiSay(msg, () => this._listenForProblem());
+    this._aiSay(this.p.confirm(summary), () => this._listenForProblem());
   }
 
   private _listenForProblem() {
@@ -189,7 +288,7 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
   private _finish() {
     this.step.set('done');
-    this._aiSay('Thank you! Sending your details for AI diagnosis now…', () => {
+    this._aiSay(this.p.thanks, () => {
       this.completed.emit({
         vehicleInfo: this.vehicleInfo(),
         problemDescription: this.problemDescription(),

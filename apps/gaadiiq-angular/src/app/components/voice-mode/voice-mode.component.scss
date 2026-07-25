@@ -68,6 +68,73 @@
   &:hover { color: var(--vm-text); background: var(--vm-border); }
 }
 
+// ── Language picker ──────────────────────────────────────────────────────────
+
+.vm-lang-picker {
+  padding: 24px 20px 8px;
+  overflow-y: auto;
+}
+
+.vm-lang-prompt {
+  margin: 0 0 18px;
+  text-align: center;
+  color: var(--vm-text);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.vm-lang-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.vm-lang-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 14px 10px;
+  background: var(--vm-surface);
+  border: 1px solid var(--vm-border);
+  border-radius: 12px;
+  color: var(--vm-text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+
+  &:hover {
+    border-color: var(--vm-accent);
+    background: rgba(88, 166, 255, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &:active { transform: translateY(0); }
+}
+
+.vm-lang-native {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.vm-lang-label {
+  font-size: 0.75rem;
+  color: var(--vm-sub);
+}
+
+.vm-lang-change {
+  background: none;
+  border: none;
+  color: var(--vm-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 5px;
+  text-decoration: underline;
+
+  &:hover { background: rgba(88, 166, 255, 0.15); }
+}
+
 // ── Visual / Waveform ────────────────────────────────────────────────────────
 
 .vm-visual {
@@ -128,12 +195,15 @@
 .vm-lang-badge {
   margin: 0 20px 8px;
   padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   background: rgba(88, 166, 255, 0.12);
   border: 1px solid rgba(88, 166, 255, 0.3);
   border-radius: 20px;
   font-size: 0.78rem;
   color: var(--vm-accent);
-  text-align: center;
 }
 
 // ── AI bubble ─────────────────────────────────────────────────────────────────
