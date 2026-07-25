@@ -46,6 +46,7 @@ const PLACEHOLDER = 'assets/cars/placeholder.svg';
  */
 const LOCAL_IMAGES: Record<string, string[]> = {
   'maruti suzuki swift': ['assets/cars/maruti-swift/front.svg', 'assets/cars/maruti-swift/side.svg'],
+  'maruti suzuki dzire': ['assets/cars/maruti-dzire/front.svg', 'assets/cars/maruti-dzire/side.svg'],
   'hyundai creta':       ['assets/cars/hyundai-creta/front.svg', 'assets/cars/hyundai-creta/side.svg'],
   'tata nexon':          ['assets/cars/tata-nexon/front.svg', 'assets/cars/tata-nexon/side.svg'],
   'kia seltos':          ['assets/cars/kia-seltos/front.svg', 'assets/cars/kia-seltos/side.svg'],
@@ -109,7 +110,13 @@ function img(makeModel: string): string[] {
       ?? [PLACEHOLDER];
 }
 
-// Demo fallback — shown only when the API is unreachable
+/**
+ * Below this many real listings, development builds pad the catalogue with
+ * demo cars so grids, filters and galleries have something to work against.
+ */
+const DEMO_MIN_RESULTS = 6;
+
+// Demo fallback — shown when the API is unreachable or returns too little
 const DEMO_NEW_CARS: Car[] = [
   { id: 'd8001', make: 'Maruti Suzuki', model: 'Swift', variant: 'ZXi+', year: 2025, price: 899000, km: 0, fuel: 'Petrol', transmission: 'AMT', badge: 'Bestseller', badgeType: 'featured', image: img('Maruti Suzuki Swift')[0], images: img('Maruti Suzuki Swift'), rating: 4.4, reviews: 312, verified: true, city: 'Mumbai', bodyType: 'Hatchback', specs: [{ label: 'Mileage', value: '24.8 kmpl' }, { label: 'Power', value: '81 bhp' }], features: ['Sunroof', '6 Airbags', 'Connected Car', 'Wireless Charging'] },
   { id: 'd8002', make: 'Hyundai', model: 'Creta', variant: 'SX Tech', year: 2025, price: 1695000, km: 0, fuel: 'Petrol', transmission: 'Automatic', badge: 'Top Rated', badgeType: 'featured', image: img('Hyundai Creta')[0], images: img('Hyundai Creta'), rating: 4.6, reviews: 210, verified: true, city: 'Delhi', bodyType: 'SUV', specs: [{ label: 'Mileage', value: '17.4 kmpl' }, { label: 'Power', value: '138 bhp' }], features: ['Panoramic Sunroof', 'ADAS Safety', '360° Camera', '6 Airbags'] },
@@ -219,8 +226,16 @@ export class CarsDataService {
       const usedCars = (usedResp?.items ?? []).map(mapListing);
 
       const all = [...newCars, ...usedCars];
+
+      // Demo cars fill out a thin catalogue during development so the UI can
+      // be exercised against a realistic number of results. They are never
+      // shown in production, where a real listing count is the honest signal
+      // and fabricated cars alongside real ones would mislead buyers.
+      const needsFiller = !environment.production && all.length < DEMO_MIN_RESULTS;
       this._cars.set(
-        all.length ? all : [...DEMO_NEW_CARS, ...DEMO_USED_CARS]
+        all.length && !needsFiller ? all
+        : needsFiller ? [...all, ...DEMO_NEW_CARS, ...DEMO_USED_CARS]
+        : [...DEMO_NEW_CARS, ...DEMO_USED_CARS]
       );
     } catch (err) {
       console.error('API fetch error — falling back to demo data:', err);
