@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-07-25T16:54:00+00:00",
+  "code_tip": "claude/gaadiiq-app-dev-abj5fo",
+  "tip_sha": "4963cc4",
+  "prior_brd_score": 63,
+  "brd_readiness_score": 69,
+  "requirement_counts": {
+    "PASS": 35,
+    "PARTIAL": 18,
+    "FAIL": 11
+  },
+  "test_scenario_counts": {
+    "PASS": 32,
+    "PARTIAL": 5,
+    "FAIL": 10
+  },
+  "pytest_diagnosis": {
+    "file": "apps/api/tests/test_diagnosis.py",
+    "passed": 43,
+    "failed": 0
+  },
+  "recommendation": "NO-GO for full BRD; CONDITIONAL GO for manual+images+real API analyse; browser voice Beta GO",
+  "fixed_since_prior_audit": [
+    "BR-SEC-04",
+    "BR-AND-01",
+    "BR-TEST-01",
+    "BR-ML-01",
+    "BR-ML-02 localization completeness",
+    "TC-S-02 prompt injection",
+    "TC-A-02 aria-live",
+    "analyse always-422 production bug"
+  ],
+  "remaining_p0": [
+    "BR-API-01",
+    "BR-VA-01",
+    "BR-IR-04",
+    "BR-API-07",
+    "BR-SEC-05",
+    "BR-DB-01",
+    "TC-IOS-01"
+  ]
+}
