@@ -25,23 +25,94 @@
           <h2>Past Diagnoses</h2>
           <button class="close-btn" (click)="closeHistory()">✕</button>
         </div>
-        @if (historyLoading()) {
-          <div class="history-loading">Loading…</div>
-        } @else if (history().length === 0) {
-          <div class="history-empty">No past diagnoses found.</div>
-        } @else {
-          <div class="history-list">
-            @for (h of history(); track h.id) {
-              <div class="history-item">
-                <div class="history-meta">
-                  <span class="history-date">{{ h.created_at | date:'dd MMM yyyy, h:mm a' }}</span>
-                  <span class="history-risk" [style.color]="diagSvc.riskColor(h.risk_level)">{{ h.risk_level }}</span>
-                </div>
-                <div class="history-diag">{{ h.preliminary_diagnosis }}</div>
-                <div class="history-cost">₹{{ h.cost_min_inr | number }} – ₹{{ h.cost_max_inr | number }} &nbsp;·&nbsp; {{ h.repair_complexity }}</div>
-              </div>
+        <!-- ── Detail view (BR-UX-03) ── -->
+        @if (historyDetail(); as d) {
+          <div class="history-detail">
+            <button class="history-back" (click)="closeHistoryDetail()">← All diagnoses</button>
+
+            <div class="hd-head">
+              <span class="hd-date">{{ d.created_at | date:'dd MMM yyyy, h:mm a' }}</span>
+              <span class="hd-risk" [style.color]="diagSvc.riskColor(d.risk_level)">{{ d.risk_level }}</span>
+            </div>
+
+            <p class="hd-diagnosis">{{ d.preliminary_diagnosis }}</p>
+
+            <div class="hd-safety" [class.unsafe]="d.safe_to_drive === false">
+              {{ d.safe_to_drive === false
+                 ? '⛔ Not safe to drive — get it inspected before driving'
+                 : '✅ Safe to drive with caution' }}
+            </div>
+
+            <div class="hd-facts">
+              <div><span>Estimated cost</span><strong>₹{{ d.cost_min_inr | number }} – ₹{{ d.cost_max_inr | number }}</strong></div>
+              <div><span>Complexity</span><strong>{{ d.repair_complexity }}</strong></div>
+              <div><span>Repair time</span><strong>{{ d.repair_time_estimate }}</strong></div>
+              <div><span>Confidence</span><strong>{{ d.analysis_confidence }}%</strong></div>
+            </div>
+
+            @if (d.possible_causes?.length) {
+              <h4 class="hd-h">Possible causes</h4>
+              <ul class="hd-list">
+                @for (c of d.possible_causes; track c.cause) {
+                  <li><strong>{{ c.cause }}</strong> ({{ c.confidence }}%) — {{ c.explanation }}</li>
+                }
+              </ul>
             }
+
+            @if (d.recommended_steps?.length) {
+              <h4 class="hd-h">Recommended steps</h4>
+              <ul class="hd-list">
+                @for (s of d.recommended_steps; track s) { <li>{{ s }}</li> }
+              </ul>
+            }
+
+            @if (d.diy_fixes?.length) {
+              <h4 class="hd-h">Safe DIY checks</h4>
+              <ul class="hd-list">
+                @for (f of d.diy_fixes; track f) { <li>{{ f }}</li> }
+              </ul>
+            }
+
+            <div class="hd-actions">
+              <button class="btn-ghost" (click)="speakHistoryDetail()" *ngIf="voice.synthSupported">
+                🔊 Read aloud
+              </button>
+              <button class="btn-ghost" (click)="voice.stopSpeaking()" *ngIf="voice.speakingState() !== 'idle'">
+                ⏹ Stop
+              </button>
+            </div>
+
+            <p class="hd-disclaimer">{{ d.disclaimer }}</p>
           </div>
+        } @else if (historyDetailLoading()) {
+          <div class="history-loading">Loading diagnosis…</div>
+        } @else {
+          <div class="history-detail-error" *ngIf="historyDetailError()" role="alert">
+            ⚠️ {{ historyDetailError() }}
+          </div>
+
+          @if (historyLoading()) {
+            <div class="history-loading">Loading…</div>
+          } @else if (history().length === 0) {
+            <div class="history-empty">No past diagnoses found.</div>
+          } @else {
+            <div class="history-list">
+              @for (h of history(); track h.id) {
+                <button class="history-item" (click)="openHistoryDetail(h.id)">
+                  <div class="history-meta">
+                    <span class="history-date">{{ h.created_at | date:'dd MMM yyyy, h:mm a' }}</span>
+                    <span class="history-risk" [style.color]="diagSvc.riskColor(h.risk_level)">{{ h.risk_level }}</span>
+                  </div>
+                  <div class="history-diag">{{ h.preliminary_diagnosis }}</div>
+                  <div class="history-cost">
+                    ₹{{ h.cost_min_inr | number }} – ₹{{ h.cost_max_inr | number }}
+                    &nbsp;·&nbsp; {{ h.repair_complexity }}
+                    <span class="history-open">View →</span>
+                  </div>
+                </button>
+              }
+            </div>
+          }
         }
       </div>
     </div>
@@ -394,10 +465,41 @@
           </div>
         </div>
 
+        <!-- Translation failure notice (BR-ML-04) — never let a Hindi speaker
+             assume an English answer was translated for them. -->
+        <div class="translate-banner" *ngIf="report.translation_failed" role="status" aria-live="polite">
+          <span class="tb-icon" aria-hidden="true">🌐</span>
+          <div>
+            <strong>Shown in English</strong>
+            <p>We couldn't translate this diagnosis into {{ voice.selectedLanguage().native }} right now. The advice below is unchanged — only the language differs.</p>
+          </div>
+          <button class="tb-retry" (click)="retryDiagnosis()">Try again</button>
+        </div>
+
         <!-- Diagnosis summary -->
         <div class="report-card">
           <h3>🔍 Preliminary Diagnosis</h3>
           <p class="diag-text">{{ report.preliminary_diagnosis }}</p>
+        </div>
+
+        <!-- Follow-up questions (BR-AI-10) — shown only when the model is unsure -->
+        <div class="report-card followup-card" *ngIf="report.needs_more_info && report.follow_up_questions?.length">
+          <h3>❓ A few more details would help</h3>
+          <p class="followup-intro">
+            This assessment is {{ report.analysis_confidence }}% confident. Answering these
+            would let us narrow it down:
+          </p>
+          <ul class="followup-list">
+            <li *ngFor="let q of report.follow_up_questions">{{ q }}</li>
+          </ul>
+          <div class="followup-actions">
+            <button class="btn-ghost" (click)="speakFollowUps()" *ngIf="voice.synthSupported">
+              🔊 Read questions aloud
+            </button>
+            <button class="btn-primary" (click)="answerFollowUps()">
+              ✏️ Add these details
+            </button>
+          </div>
         </div>
 
         <!-- Possible causes -->

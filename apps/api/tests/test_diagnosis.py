@@ -335,6 +335,156 @@ class TestTranslateDiagnosisSuite:
             assert code in _LANG_NAMES
 
 
+# ── Follow-up questions (BR-AI-10) ───────────────────────────────────────────
+
+class TestFollowUpQuestionsSuite:
+    def test_low_confidence_keeps_model_questions(self):
+        from services.diagnosis import _normalise_follow_ups
+        r = _normalise_follow_ups({
+            "analysis_confidence": 40,
+            "follow_up_questions": ["Does the noise change when turning?"],
+        })
+        assert r["follow_up_questions"] == ["Does the noise change when turning?"]
+        assert r["needs_more_info"] is True
+
+    def test_low_confidence_falls_back_to_generic_questions(self):
+        # The model often omits these exactly when they are most needed.
+        from services.diagnosis import _normalise_follow_ups
+        r = _normalise_follow_ups({"analysis_confidence": 30})
+        assert len(r["follow_up_questions"]) > 0
+        assert r["needs_more_info"] is True
+
+    def test_high_confidence_suppresses_questions(self):
+        from services.diagnosis import _normalise_follow_ups
+        r = _normalise_follow_ups({
+            "analysis_confidence": 88,
+            "follow_up_questions": ["Unnecessary question?"],
+        })
+        assert r["follow_up_questions"] == []
+        assert r["needs_more_info"] is False
+
+    def test_threshold_boundary_is_inclusive(self):
+        from services.diagnosis import LOW_CONFIDENCE_THRESHOLD, _normalise_follow_ups
+        at = _normalise_follow_ups({"analysis_confidence": LOW_CONFIDENCE_THRESHOLD})
+        below = _normalise_follow_ups({"analysis_confidence": LOW_CONFIDENCE_THRESHOLD - 1})
+        assert at["needs_more_info"] is False
+        assert below["needs_more_info"] is True
+
+    def test_caps_at_three_questions(self):
+        from services.diagnosis import _normalise_follow_ups
+        r = _normalise_follow_ups({
+            "analysis_confidence": 20,
+            "follow_up_questions": [f"Q{i}?" for i in range(10)],
+        })
+        assert len(r["follow_up_questions"]) == 3
+
+    def test_discards_blank_and_non_string_entries(self):
+        from services.diagnosis import _normalise_follow_ups
+        r = _normalise_follow_ups({
+            "analysis_confidence": 20,
+            "follow_up_questions": ["  ", None, 42, "Real question?"],
+        })
+        assert r["follow_up_questions"] == ["Real question?"]
+
+    @pytest.mark.parametrize("bad", [None, "not-a-list", 123, {}])
+    def test_survives_malformed_field(self, bad):
+        from services.diagnosis import _normalise_follow_ups
+        r = _normalise_follow_ups({"analysis_confidence": 20, "follow_up_questions": bad})
+        assert isinstance(r["follow_up_questions"], list)
+
+    def test_missing_confidence_is_treated_as_low(self):
+        from services.diagnosis import _normalise_follow_ups
+        assert _normalise_follow_ups({})["needs_more_info"] is True
+
+    @pytest.mark.asyncio
+    async def test_run_diagnosis_always_sets_the_field(self):
+        low = dict(OLLAMA_DIAGNOSIS, analysis_confidence=35, follow_up_questions=["Which gear?"])
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(low)):
+            r = await run_diagnosis(
+                manufacturer="Kia", model="Seltos", variant=None, model_year=2023,
+                fuel_type="Petrol", transmission="Automatic", odometer_km=8000,
+                problem_description="Vibration at highway speed on the motorway",
+                warning_lights=[], when_occurs=[], severity="medium",
+            )
+        assert r["needs_more_info"] is True
+        assert "Which gear?" in r["follow_up_questions"]
+
+    @pytest.mark.asyncio
+    async def test_endpoint_returns_follow_ups(self, client):
+        low = dict(OLLAMA_DIAGNOSIS, analysis_confidence=35,
+                   follow_up_questions=["Does it happen when cold?"])
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(low)):
+            r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
+        assert r.status_code == 201
+        body = r.json()
+        assert body["needs_more_info"] is True
+        assert body["follow_up_questions"] == ["Does it happen when cold?"]
+
+    @pytest.mark.asyncio
+    async def test_endpoint_omits_follow_ups_when_confident(self, client):
+        high = dict(OLLAMA_DIAGNOSIS, analysis_confidence=90, follow_up_questions=[])
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(high)):
+            r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
+        assert r.json()["needs_more_info"] is False
+        assert r.json()["follow_up_questions"] == []
+
+
+# ── Translation failure signalling (BR-ML-04) ────────────────────────────────
+
+class TestTranslationFailureSuite:
+    @pytest.mark.asyncio
+    async def test_flag_set_when_provider_raises(self):
+        with patch("httpx.AsyncClient", side_effect=Exception("ollama down")):
+            r = await _translate_diagnosis(dict(OLLAMA_DIAGNOSIS), "hi-IN")
+        assert r["translation_failed"] is True
+
+    @pytest.mark.asyncio
+    async def test_flag_set_when_response_is_empty(self):
+        # No exception, but nothing usable came back — still a failure.
+        with patch("httpx.AsyncClient", return_value=_mock_ollama({})):
+            r = await _translate_diagnosis(dict(OLLAMA_DIAGNOSIS), "bn-IN")
+        assert r["translation_failed"] is True
+
+    @pytest.mark.asyncio
+    async def test_flag_clear_on_success(self):
+        payload = {
+            "preliminary_diagnosis": "अनुवादित निदान",
+            "recommended_steps": ["पहला कदम"],
+        }
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(payload)):
+            r = await _translate_diagnosis(dict(OLLAMA_DIAGNOSIS), "hi-IN")
+        assert r["translation_failed"] is False
+
+    @pytest.mark.asyncio
+    async def test_english_request_is_never_flagged(self):
+        r = await _translate_diagnosis(dict(OLLAMA_DIAGNOSIS), "en-IN")
+        assert "translation_failed" not in r
+
+    @pytest.mark.asyncio
+    async def test_endpoint_surfaces_the_flag(self, client):
+        with patch("services.diagnosis._translate_diagnosis",
+                   new=AsyncMock(return_value=dict(OLLAMA_DIAGNOSIS, translation_failed=True))):
+            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+                r = await client.post(
+                    "/diagnosis/analyse", json={**VALID_PAYLOAD, "detected_language": "hi-IN"}
+                )
+        assert r.status_code == 201
+        assert r.json()["translation_failed"] is True
+
+    @pytest.mark.asyncio
+    async def test_follow_ups_rejected_when_count_changes(self):
+        # A different-length list means the model rewrote rather than
+        # translated; keep the originals rather than trust it.
+        base = dict(OLLAMA_DIAGNOSIS, follow_up_questions=["A?", "B?"])
+        payload = {
+            "preliminary_diagnosis": "निदान",
+            "follow_up_questions": ["केवल एक"],
+        }
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(payload)):
+            r = await _translate_diagnosis(base, "hi-IN")
+        assert r["follow_up_questions"] == ["A?", "B?"]
+
+
 # ── Voice transcript extraction ──────────────────────────────────────────────
 
 class TestExtractVehicleInfoSuite:
@@ -442,6 +592,77 @@ class TestVoiceExtractEndpointSuite:
 
 
 # ── Access control (IDOR, MOB-007) ───────────────────────────────────────────
+
+class TestHistoryDetailSuite:
+    """History list → detail round trip (BR-UX-03), owner-scoped (MOB-007)."""
+
+    async def _token(self, client: AsyncClient, email: str) -> str:
+        r = await client.post("/auth/register", json={"email": email, "password": "password123"})
+        return r.json()["access_token"]
+
+    async def _create(self, client: AsyncClient, token: str) -> str:
+        me = await client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+        user_id = me.json()["id"]
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+            r = await client.post(
+                "/diagnosis/analyse", json={**VALID_PAYLOAD, "user_id": user_id}
+            )
+        return r.json()["id"]
+
+    @pytest.mark.asyncio
+    async def test_history_includes_cost_and_complexity(self, client):
+        # The list template renders these; without them the row showed "₹ – ₹ ·".
+        token = await self._token(client, "hist-cost@test.com")
+        await self._create(client, token)
+        r = await client.get("/diagnosis/history", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 200
+        items = r.json()
+        assert len(items) >= 1
+        assert items[0]["cost_min_inr"] == OLLAMA_DIAGNOSIS["cost_min_inr"]
+        assert items[0]["cost_max_inr"] == OLLAMA_DIAGNOSIS["cost_max_inr"]
+        assert items[0]["repair_complexity"] == OLLAMA_DIAGNOSIS["repair_complexity"]
+
+    @pytest.mark.asyncio
+    async def test_owner_can_open_detail_from_history(self, client):
+        token = await self._token(client, "hist-detail@test.com")
+        did = await self._create(client, token)
+
+        r = await client.get(f"/diagnosis/{did}", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["id"] == did
+        assert body["preliminary_diagnosis"]
+        assert body["possible_causes"]
+        assert body["disclaimer"]
+
+    @pytest.mark.asyncio
+    async def test_other_user_cannot_open_detail(self, client):
+        owner = await self._token(client, "hist-owner@test.com")
+        did = await self._create(client, owner)
+
+        intruder = await self._token(client, "hist-intruder@test.com")
+        r = await client.get(f"/diagnosis/{did}", headers={"Authorization": f"Bearer {intruder}"})
+        assert r.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_history_is_scoped_to_the_caller(self, client):
+        owner = await self._token(client, "hist-scope-a@test.com")
+        await self._create(client, owner)
+
+        other = await self._token(client, "hist-scope-b@test.com")
+        r = await client.get("/diagnosis/history", headers={"Authorization": f"Bearer {other}"})
+        assert r.status_code == 200
+        assert r.json() == []
+
+    @pytest.mark.asyncio
+    async def test_missing_detail_returns_404(self, client):
+        token = await self._token(client, "hist-404@test.com")
+        r = await client.get(
+            "/diagnosis/11111111-1111-1111-1111-111111111111",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert r.status_code == 404
+
 
 class TestDiagnosisAccessControlSuite:
     @pytest.mark.asyncio

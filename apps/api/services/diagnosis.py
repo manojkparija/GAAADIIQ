@@ -226,7 +226,8 @@ Based on the vehicle details and retrieved cases above, provide a JSON response 
   "diy_fixes": ["Safe DIY check 1", "Safe DIY check 2"],
   "immediate_service_required": true,
   "preventive_maintenance": ["Tip 1", "Tip 2"],
-  "analysis_confidence": 72
+  "analysis_confidence": 72,
+  "follow_up_questions": ["A specific question that would raise your confidence"]
 }}
 
 Rules:
@@ -236,20 +237,76 @@ Rules:
 - risk_level: Low (cosmetic/comfort), Medium (performance affected), High (safety risk), Critical (stop driving immediately)
 - Only suggest DIY fixes that are genuinely safe for non-mechanics
 - Cost estimates in Indian Rupees (INR) for Indian market labor and parts
+- follow_up_questions: when analysis_confidence is below 70, list 1-3 short,
+  specific questions whose answers would most narrow the diagnosis (e.g. "Does
+  the noise change when you turn the steering?"). Ask only what the user can
+  observe without tools. Return an empty list when confidence is 70 or above.
 - Respond with valid JSON only, no additional text"""
 
 
+# Below this confidence the diagnosis is treated as needing more information
+# from the user before it can be relied on (BR-AI-10).
+LOW_CONFIDENCE_THRESHOLD = 70
+
+# Asked when the model is unsure but did not propose anything specific.
+_GENERIC_FOLLOW_UPS = [
+    "When did you first notice the problem?",
+    "Does it happen every time you drive, or only sometimes?",
+    "Has the vehicle been serviced or repaired recently?",
+]
+
+
+def _normalise_follow_ups(result: dict) -> dict:
+    """
+    Guarantee a well-formed follow_up_questions list (BR-AI-10).
+
+    The model is asked for these only when unsure, but it is not reliable
+    about that — it omits them on low confidence and volunteers them on high.
+    This makes the contract deterministic: questions appear when, and only
+    when, confidence is below the threshold.
+    """
+    try:
+        confidence = float(result.get("analysis_confidence") or 0)
+    except (TypeError, ValueError):
+        confidence = 0.0
+
+    raw = result.get("follow_up_questions")
+    questions = [
+        q.strip() for q in raw
+        if isinstance(q, str) and q.strip()
+    ] if isinstance(raw, list) else []
+
+    if confidence >= LOW_CONFIDENCE_THRESHOLD:
+        # Confident enough — do not pester the user.
+        result["follow_up_questions"] = []
+    else:
+        result["follow_up_questions"] = (questions or _GENERIC_FOLLOW_UPS)[:3]
+
+    result["needs_more_info"] = bool(result["follow_up_questions"])
+    return result
+
+
 async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
-    """Translate key diagnosis text fields to target_lang using Ollama."""
+    """
+    Translate key diagnosis text fields to target_lang using Ollama.
+
+    Sets result["translation_failed"] when the target language was requested
+    but the text is still English (BR-ML-04). Silently serving English to a
+    Hindi speaker looks like a working translation of a wrong answer, so the
+    client must be able to tell the difference and say so.
+    """
     lang_name = _LANG_NAMES.get(target_lang, "English")
     if lang_name == "English":
         return result
+
+    result["translation_failed"] = False
 
     fields = {
         "preliminary_diagnosis": result.get("preliminary_diagnosis", ""),
         "recommended_steps": result.get("recommended_steps", []),
         "diy_fixes": result.get("diy_fixes", []),
         "preventive_maintenance": result.get("preventive_maintenance", []),
+        "follow_up_questions": result.get("follow_up_questions", []),
         "possible_causes": [
             {"cause": c.get("cause", ""), "explanation": c.get("explanation", "")}
             for c in result.get("possible_causes", [])
@@ -272,6 +329,12 @@ async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
             resp.raise_for_status()
             translated: dict = json.loads(resp.json().get("response", "{}"))
 
+        # An empty or unusable response is a failure even though no exception
+        # was raised — the user would otherwise get English with no indication.
+        if not translated.get("preliminary_diagnosis"):
+            result["translation_failed"] = True
+            logger.warning("Translation to %s returned no diagnosis text", lang_name)
+
         if translated.get("preliminary_diagnosis"):
             result["preliminary_diagnosis"] = translated["preliminary_diagnosis"]
         if translated.get("recommended_steps"):
@@ -280,12 +343,19 @@ async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
             result["diy_fixes"] = translated["diy_fixes"]
         if translated.get("preventive_maintenance"):
             result["preventive_maintenance"] = translated["preventive_maintenance"]
+        if translated.get("follow_up_questions"):
+            # Only accept a translation that kept the same number of questions;
+            # a mismatched list means the model rewrote rather than translated.
+            tq = [q for q in translated["follow_up_questions"] if isinstance(q, str) and q.strip()]
+            if len(tq) == len(result.get("follow_up_questions", [])):
+                result["follow_up_questions"] = tq
         if translated.get("possible_causes"):
             for i, tc in enumerate(translated["possible_causes"]):
                 if i < len(result.get("possible_causes", [])):
                     result["possible_causes"][i]["cause"] = tc.get("cause", result["possible_causes"][i].get("cause", ""))
                     result["possible_causes"][i]["explanation"] = tc.get("explanation", result["possible_causes"][i].get("explanation", ""))
     except Exception as exc:
+        result["translation_failed"] = True
         logger.warning("Translation to %s failed, keeping English: %s", lang_name, exc)
 
     return result
@@ -365,6 +435,7 @@ async def run_diagnosis(
     result["retrieved_sources"] = retrieved_sources
     result["ollama_used"] = ollama_used
     result["disclaimer"] = _DISCLAIMER
+    result = _normalise_follow_ups(result)
 
     # Translate diagnosis fields to target language (for voice/multilingual mode)
     if response_language and response_language != "en-IN":

@@ -35,6 +35,11 @@ export interface DiagnosisReport {
   analysis_confidence: number;
   disclaimer: string;
   created_at: string;
+  /** BR-AI-10 — present only when confidence is below the threshold. */
+  follow_up_questions?: string[];
+  needs_more_info?: boolean;
+  /** BR-ML-04 — a non-English response was asked for but could not be produced. */
+  translation_failed?: boolean;
 }
 
 export interface DiagnoseRequest {
@@ -324,5 +329,13 @@ export class DiagnosisService {
   /** Fetch the logged-in user's past diagnosis reports (MOB-036). */
   getHistory(): Observable<DiagnosisReport[]> {
     return this.http.get<DiagnosisReport[]>(`${this.api}/history`);
+  }
+
+  /**
+   * Fetch one saved report in full (BR-UX-03). Owner-only server-side —
+   * a report belonging to someone else returns 403 (MOB-007).
+   */
+  getDiagnosis(id: string): Observable<DiagnosisReport> {
+    return this.http.get<DiagnosisReport>(`${this.api}/${id}`);
   }
 }

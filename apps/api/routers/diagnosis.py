@@ -103,6 +103,12 @@ class DiagnoseResponse(BaseModel):
     disclaimer: str
     created_at: datetime
     vision_analysis: dict | None = None
+    # BR-AI-10 — populated only when confidence is below the threshold.
+    follow_up_questions: list[str] = []
+    needs_more_info: bool = False
+    # BR-ML-04 — true when a non-English response was requested but the text
+    # is still English, so the client can say so instead of silently misleading.
+    translation_failed: bool = False
 
 
 class DiagnosisHistoryItem(BaseModel):
@@ -114,6 +120,11 @@ class DiagnosisHistoryItem(BaseModel):
     risk_level: str | None
     preliminary_diagnosis: str | None
     created_at: datetime
+    # The history list renders a cost/complexity line; without these it showed
+    # an empty "₹ – ₹ ·" row.
+    cost_min_inr: int | None = None
+    cost_max_inr: int | None = None
+    repair_complexity: str | None = None
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -202,6 +213,9 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         disclaimer=ai_result.get("disclaimer", ""),
         created_at=record.created_at,
         vision_analysis=ai_result.get("vision_analysis"),
+        follow_up_questions=ai_result.get("follow_up_questions", []),
+        needs_more_info=ai_result.get("needs_more_info", False),
+        translation_failed=ai_result.get("translation_failed", False),
     )
 
 
@@ -302,6 +316,9 @@ async def get_history(db: DB, current_user: Annotated[User, Depends(get_current_
             risk_level=r.risk_level,
             preliminary_diagnosis=r.preliminary_diagnosis,
             created_at=r.created_at,
+            cost_min_inr=r.cost_min_inr,
+            cost_max_inr=r.cost_max_inr,
+            repair_complexity=r.repair_complexity,
         )
         for r in records
     ]

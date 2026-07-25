@@ -378,7 +378,52 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     });
   }
 
-  closeHistory() { this.showHistory.set(false); }
+  closeHistory() {
+    this.showHistory.set(false);
+    this.historyDetail.set(null);
+    this.historyDetailError.set('');
+  }
+
+  // ── Past diagnosis detail (BR-UX-03) ──────────────────────────────────────
+
+  historyDetail = signal<any | null>(null);
+  historyDetailLoading = signal(false);
+  historyDetailError = signal('');
+
+  /** Open one past report in full. The list stays mounted behind the detail. */
+  openHistoryDetail(id: string) {
+    this.historyDetail.set(null);
+    this.historyDetailError.set('');
+    this.historyDetailLoading.set(true);
+    this.diagSvc.getDiagnosis(id).subscribe({
+      next: (report) => {
+        this.historyDetail.set(report);
+        this.historyDetailLoading.set(false);
+      },
+      error: (err) => {
+        this.historyDetailLoading.set(false);
+        this.historyDetailError.set(
+          err?.status === 403
+            ? 'You do not have access to this diagnosis.'
+            : err?.status === 404
+              ? 'This diagnosis is no longer available.'
+              : 'Could not load this diagnosis. Please try again.'
+        );
+      },
+    });
+  }
+
+  /** Back to the list without closing the panel. */
+  closeHistoryDetail() {
+    this.historyDetail.set(null);
+    this.historyDetailError.set('');
+  }
+
+  /** Read a past report aloud, reusing the report TTS text builder. */
+  speakHistoryDetail() {
+    const report = this.historyDetail();
+    if (report) this.voice.speak(this._buildTtsText(report));
+  }
 
   toggleWarningLight(light: string) {
     this.selectedWarningLights.update(list =>
@@ -580,6 +625,40 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     this.voiceLangOpen.set(false);
   }
 
+  // ── Follow-up questions (BR-AI-10) ────────────────────────────────────────
+
+  /** Read the follow-up questions aloud, in the user's language. */
+  speakFollowUps() {
+    const report = this.diagSvc.report() as any;
+    const questions: string[] = report?.follow_up_questions ?? [];
+    if (!questions.length) return;
+    this.voice.speak(
+      'To narrow this down, please tell me: ' + questions.join('. ')
+    );
+  }
+
+  /**
+   * Return to step 2 so the user can add the missing detail, with the
+   * questions appended to the description as prompts to answer.
+   */
+  answerFollowUps() {
+    const report = this.diagSvc.report() as any;
+    const questions: string[] = report?.follow_up_questions ?? [];
+    if (questions.length) {
+      const block = questions.map(q => `\n- ${q} `).join('');
+      this.problemDescription = `${this.problemDescription.trim()}\n\nAdditional details:${block}`;
+    }
+    this.voice.stopSpeaking();
+    this.diagSvc.report.set(null);
+    this.step.set(2);
+  }
+
+  /** Re-run the diagnosis — used by the translation-failure banner. */
+  async retryDiagnosis() {
+    this.voice.stopSpeaking();
+    await this.submit();
+  }
+
   private _buildTtsText(report: any): string {
     const parts: string[] = [
       `Preliminary diagnosis: ${report.preliminary_diagnosis}`,
@@ -589,6 +668,13 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     }
     if (report.recommended_steps?.length) {
       parts.push('Recommended next steps: ' + report.recommended_steps.join('. '));
+    }
+    // Ask the follow-ups aloud too — a driver listening hands-free would
+    // otherwise never learn the assessment was uncertain (BR-AI-10).
+    if (report.needs_more_info && report.follow_up_questions?.length) {
+      parts.push(
+        'To be more certain, please tell me: ' + report.follow_up_questions.join('. ')
+      );
     }
     return parts.join('. ');
   }
