@@ -48,13 +48,10 @@
       {{ voice.interimText() }}
     </div>
 
-    <!-- CTA (start or cancel) -->
+    <!-- CTA -->
     <div class="vm-actions">
-      <button *ngIf="step() === 'idle'" class="vm-btn vm-btn--primary" (click)="start()">
-        Start Voice Diagnosis
-      </button>
       <button
-        *ngIf="step() !== 'idle' && step() !== 'done'"
+        *ngIf="step() !== 'done'"
         class="vm-btn vm-btn--danger"
         (click)="cancel()"
       >Cancel</button>

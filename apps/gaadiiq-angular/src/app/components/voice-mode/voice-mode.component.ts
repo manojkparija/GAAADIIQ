@@ -1,6 +1,6 @@
 import {
   Component, Output, EventEmitter, signal, computed,
-  OnDestroy, inject, NgZone
+  OnDestroy, OnInit, inject, NgZone
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { VoiceDiagnosisService } from '../../services/voice-diagnosis.service';
@@ -41,7 +41,7 @@ const FIELD_LABELS: Record<string, string> = {
   templateUrl: './voice-mode.component.html',
   styleUrls: ['./voice-mode.component.scss'],
 })
-export class VoiceModeComponent implements OnDestroy {
+export class VoiceModeComponent implements OnInit, OnDestroy {
   @Output() completed = new EventEmitter<VoiceSessionResult>();
   @Output() cancelled = new EventEmitter<void>();
 
@@ -61,6 +61,11 @@ export class VoiceModeComponent implements OnDestroy {
     const last = [...msgs].reverse().find(m => m.role === 'ai');
     return last?.text ?? '';
   });
+
+  ngOnInit() {
+    // Auto-start immediately when the overlay mounts
+    this.start();
+  }
 
   // ── Public API ───────────────────────────────────────────────────────────
 
