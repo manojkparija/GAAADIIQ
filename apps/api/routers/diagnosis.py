@@ -26,7 +26,7 @@ from db.session import get_db
 from models.user import User
 from models.vehicle_diagnosis import VehicleDiagnosis
 from services.diagnosis import _LANG_NAMES, extract_vehicle_info_from_transcript, run_diagnosis
-from services.llm_tier import resolve_tier
+from services.llm_tier import resolve_tier, verify_caller
 from services.stt import (
     STTError,
     STTUnavailable,
@@ -152,10 +152,12 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
     Submit vehicle symptoms and receive an AI-powered preliminary diagnosis.
     No authentication required — open to all users.
     """
-    # Model tier is resolved server-side from the caller's role/subscription —
-    # never from the request body, or a free user could ask for the paid model.
-    requester_id = uuid.UUID(body.user_id) if body.user_id else None
-    tier = await resolve_tier(db, requester_id)
+    # Tier comes from a cryptographically verified token, never from the body.
+    # body.user_id is client-supplied: using it here would let a free user send
+    # a paid user's UUID and be upgraded.
+    auth_header = request.headers.get("authorization") or ""
+    bearer = auth_header[7:] if auth_header.lower().startswith("bearer ") else None
+    tier = await resolve_tier(db, verify_caller(bearer))
 
     ai_result = await run_diagnosis(
         manufacturer=body.manufacturer,

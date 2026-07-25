@@ -17,6 +17,7 @@ import httpx
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from core.config import settings
@@ -25,7 +26,13 @@ from main import app
 from models.subscription import Subscription, SubscriptionTier
 from models.user import User, UserRole
 from services.diagnosis import _call_gemini, run_diagnosis
-from services.llm_tier import ModelTier, gemini_available, resolve_tier
+from services.llm_tier import (
+    ModelTier,
+    VerifiedCaller,
+    gemini_available,
+    resolve_tier,
+    verify_caller,
+)
 from tests.test_diagnosis import OLLAMA_DIAGNOSIS, VALID_PAYLOAD, _mock_ollama
 
 
@@ -80,6 +87,10 @@ def _gemini_response(payload: dict):
     return cm
 
 
+def _caller(user_id=None, email=None, source="api") -> VerifiedCaller:
+    return VerifiedCaller(user_id=user_id, email=email, source=source)
+
+
 async def _make_user(db, *, role=UserRole.buyer, tier=None, valid_until=None) -> uuid.UUID:
     user = User(
         email=f"{uuid.uuid4().hex[:8]}@test.com",
@@ -103,57 +114,57 @@ class TestTierResolutionSuite:
     @pytest.mark.asyncio
     async def test_free_user_gets_free(self, db, gemini_on):
         uid = await _make_user(db, tier=SubscriptionTier.free)
-        assert await resolve_tier(db, uid) is ModelTier.free
+        assert await resolve_tier(db, _caller(uid)) is ModelTier.free
 
     @pytest.mark.asyncio
     async def test_user_without_subscription_gets_free(self, db, gemini_on):
         uid = await _make_user(db)
-        assert await resolve_tier(db, uid) is ModelTier.free
+        assert await resolve_tier(db, _caller(uid)) is ModelTier.free
 
     @pytest.mark.asyncio
     async def test_pro_subscriber_gets_premium(self, db, gemini_on):
         uid = await _make_user(db, tier=SubscriptionTier.pro)
-        assert await resolve_tier(db, uid) is ModelTier.premium
+        assert await resolve_tier(db, _caller(uid)) is ModelTier.premium
 
     @pytest.mark.asyncio
     async def test_dealer_subscriber_gets_premium(self, db, gemini_on):
         uid = await _make_user(db, tier=SubscriptionTier.dealer)
-        assert await resolve_tier(db, uid) is ModelTier.premium
+        assert await resolve_tier(db, _caller(uid)) is ModelTier.premium
 
     @pytest.mark.asyncio
     async def test_admin_gets_premium_without_a_subscription(self, db, gemini_on):
         uid = await _make_user(db, role=UserRole.admin)
-        assert await resolve_tier(db, uid) is ModelTier.premium
+        assert await resolve_tier(db, _caller(uid)) is ModelTier.premium
 
     @pytest.mark.asyncio
     async def test_expired_subscription_is_free(self, db, gemini_on):
         past = datetime.now(timezone.utc) - timedelta(days=1)
         uid = await _make_user(db, tier=SubscriptionTier.pro, valid_until=past)
-        assert await resolve_tier(db, uid) is ModelTier.free
+        assert await resolve_tier(db, _caller(uid)) is ModelTier.free
 
     @pytest.mark.asyncio
     async def test_unexpired_subscription_is_premium(self, db, gemini_on):
         future = datetime.now(timezone.utc) + timedelta(days=30)
         uid = await _make_user(db, tier=SubscriptionTier.pro, valid_until=future)
-        assert await resolve_tier(db, uid) is ModelTier.premium
+        assert await resolve_tier(db, _caller(uid)) is ModelTier.premium
 
     @pytest.mark.asyncio
     async def test_no_gemini_key_means_everyone_is_free(self, db, monkeypatch):
         # Without a key the premium path cannot work, so nobody is routed to it.
         monkeypatch.setattr(settings, "gemini_api_key", "")
         uid = await _make_user(db, role=UserRole.admin, tier=SubscriptionTier.pro)
-        assert await resolve_tier(db, uid) is ModelTier.free
+        assert await resolve_tier(db, _caller(uid)) is ModelTier.free
         assert gemini_available() is False
 
     @pytest.mark.asyncio
     async def test_unknown_user_id_is_free(self, db, gemini_on):
-        assert await resolve_tier(db, uuid.uuid4()) is ModelTier.free
+        assert await resolve_tier(db, _caller(uuid.uuid4())) is ModelTier.free
 
     @pytest.mark.asyncio
     async def test_lookup_failure_degrades_to_free(self, db, gemini_on):
         # A tier lookup error must never deny someone a diagnosis.
         with patch.object(db, "execute", side_effect=Exception("db down")):
-            assert await resolve_tier(db, uuid.uuid4()) is ModelTier.free
+            assert await resolve_tier(db, _caller(uuid.uuid4())) is ModelTier.free
 
 
 class TestGeminiCallSuite:
@@ -252,6 +263,88 @@ class TestTieredDiagnosisSuite:
         gem.assert_not_called()
 
 
+class TestCallerVerificationSuite:
+    """Only a cryptographically verified token establishes identity."""
+
+    def test_no_token_is_anonymous(self):
+        assert verify_caller(None) is None
+        assert verify_caller("") is None
+
+    def test_garbage_token_is_rejected(self):
+        assert verify_caller("not-a-jwt") is None
+
+    def test_api_token_is_accepted(self):
+        from core.security import create_access_token
+        uid = uuid.uuid4()
+        caller = verify_caller(create_access_token(uid, "someone@test.com"))
+        assert caller is not None
+        assert caller.user_id == uid
+        assert caller.email == "someone@test.com"
+        assert caller.source == "api"
+
+    def test_supabase_token_is_accepted_when_secret_configured(self, monkeypatch):
+        from jose import jwt as jose_jwt
+        monkeypatch.setattr(settings, "supabase_jwt_secret", "sb-secret")
+        token = jose_jwt.encode(
+            {"sub": str(uuid.uuid4()), "email": "Admin@GaadiiQ.com", "aud": "authenticated"},
+            "sb-secret", algorithm="HS256",
+        )
+        caller = verify_caller(token)
+        assert caller is not None
+        assert caller.source == "supabase"
+        # Normalised, so an allowlist comparison is case-insensitive.
+        assert caller.email == "admin@gaadiiq.com"
+        # The Supabase id is not this backend's users.id, so it is not carried.
+        assert caller.user_id is None
+
+    def test_supabase_token_rejected_without_secret(self, monkeypatch):
+        from jose import jwt as jose_jwt
+        monkeypatch.setattr(settings, "supabase_jwt_secret", "")
+        token = jose_jwt.encode({"email": "a@b.com"}, "sb-secret", algorithm="HS256")
+        assert verify_caller(token) is None
+
+    def test_supabase_token_with_wrong_signature_is_rejected(self, monkeypatch):
+        from jose import jwt as jose_jwt
+        monkeypatch.setattr(settings, "supabase_jwt_secret", "correct-secret")
+        forged = jose_jwt.encode({"email": "admin@gaadiiq.com"}, "wrong-secret", algorithm="HS256")
+        assert verify_caller(forged) is None
+
+
+class TestAdminAllowlistSuite:
+    """Admin must work regardless of which user store holds the role."""
+
+    @pytest.mark.asyncio
+    async def test_allowlisted_email_gets_premium(self, db, gemini_on, monkeypatch):
+        monkeypatch.setattr(settings, "admin_emails", "admin@gaadiiq.com,ops@gaadiiq.com")
+        caller = _caller(email="admin@gaadiiq.com", source="supabase")
+        assert await resolve_tier(db, caller) is ModelTier.premium
+
+    @pytest.mark.asyncio
+    async def test_allowlist_is_case_insensitive(self, db, gemini_on, monkeypatch):
+        monkeypatch.setattr(settings, "admin_emails", "Admin@GaadiiQ.com")
+        caller = _caller(email="admin@gaadiiq.com", source="supabase")
+        assert await resolve_tier(db, caller) is ModelTier.premium
+
+    @pytest.mark.asyncio
+    async def test_non_allowlisted_email_is_free(self, db, gemini_on, monkeypatch):
+        monkeypatch.setattr(settings, "admin_emails", "admin@gaadiiq.com")
+        caller = _caller(email="someone.else@test.com", source="supabase")
+        assert await resolve_tier(db, caller) is ModelTier.free
+
+    @pytest.mark.asyncio
+    async def test_supabase_caller_matched_by_email(self, db, gemini_on, monkeypatch):
+        # The two user stores have unrelated IDs, so email is the only join.
+        monkeypatch.setattr(settings, "admin_emails", "")
+        user = User(email="pro@test.com", hashed_password="x", role=UserRole.buyer)
+        db.add(user)
+        await db.flush()
+        db.add(Subscription(user_id=user.id, tier=SubscriptionTier.pro))
+        await db.commit()
+
+        caller = _caller(email="pro@test.com", source="supabase")
+        assert await resolve_tier(db, caller) is ModelTier.premium
+
+
 class TestTierCannotBeSelfSelectedSuite:
     @pytest.mark.asyncio
     async def test_anonymous_request_is_served_free(self, client, gemini_on):
@@ -264,7 +357,6 @@ class TestTierCannotBeSelfSelectedSuite:
 
     @pytest.mark.asyncio
     async def test_request_body_cannot_request_premium(self, client, gemini_on):
-        # An unknown field must not influence routing.
         payload = {**VALID_PAYLOAD, "model_tier": "premium", "engine": "gemini"}
         with patch("services.diagnosis._call_gemini") as gem:
             with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
@@ -274,14 +366,70 @@ class TestTierCannotBeSelfSelectedSuite:
         gem.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_paid_user_is_routed_to_premium(self, client, db, gemini_on):
+    async def test_body_user_id_does_not_grant_premium(self, client, db, gemini_on):
+        # The security property: knowing a paid user's UUID must not upgrade
+        # an unauthenticated caller. body.user_id is for record ownership only.
         uid = await _make_user(db, tier=SubscriptionTier.pro)
+        with patch("services.diagnosis._call_gemini") as gem:
+            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+                r = await client.post(
+                    "/diagnosis/analyse", json={**VALID_PAYLOAD, "user_id": str(uid)}
+                )
+        assert r.status_code == 201
+        assert r.json()["model_tier"] == "free"
+        gem.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_authenticated_paid_user_gets_premium(self, client, db, gemini_on):
+        from core.security import create_access_token
+        uid = await _make_user(db, tier=SubscriptionTier.pro)
+        q = await db.execute(select(User).where(User.id == uid))
+        token = create_access_token(uid, q.scalar_one().email)
+
         premium = dict(OLLAMA_DIAGNOSIS, preliminary_diagnosis="Gemini analysis")
         with patch("httpx.AsyncClient", return_value=_gemini_response(premium)):
             r = await client.post(
-                "/diagnosis/analyse", json={**VALID_PAYLOAD, "user_id": str(uid)}
+                "/diagnosis/analyse", json=VALID_PAYLOAD,
+                headers={"Authorization": f"Bearer {token}"},
             )
         assert r.status_code == 201
         body = r.json()
         assert body["model_tier"] == "premium"
         assert body["engine"] == "gemini"
+
+    @pytest.mark.asyncio
+    async def test_supabase_admin_gets_premium(self, client, gemini_on, monkeypatch):
+        # The real-world path: the UI signs in via Supabase, not this backend.
+        from jose import jwt as jose_jwt
+        monkeypatch.setattr(settings, "supabase_jwt_secret", "sb-secret")
+        monkeypatch.setattr(settings, "admin_emails", "admin@gaadiiq.com")
+        token = jose_jwt.encode(
+            {"sub": str(uuid.uuid4()), "email": "admin@gaadiiq.com"},
+            "sb-secret", algorithm="HS256",
+        )
+
+        premium = dict(OLLAMA_DIAGNOSIS, preliminary_diagnosis="Gemini analysis")
+        with patch("httpx.AsyncClient", return_value=_gemini_response(premium)):
+            r = await client.post(
+                "/diagnosis/analyse", json=VALID_PAYLOAD,
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        assert r.status_code == 201
+        assert r.json()["model_tier"] == "premium"
+
+    @pytest.mark.asyncio
+    async def test_forged_token_does_not_grant_premium(self, client, gemini_on, monkeypatch):
+        from jose import jwt as jose_jwt
+        monkeypatch.setattr(settings, "supabase_jwt_secret", "correct-secret")
+        monkeypatch.setattr(settings, "admin_emails", "admin@gaadiiq.com")
+        forged = jose_jwt.encode(
+            {"email": "admin@gaadiiq.com"}, "attacker-secret", algorithm="HS256"
+        )
+        with patch("services.diagnosis._call_gemini") as gem:
+            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+                r = await client.post(
+                    "/diagnosis/analyse", json=VALID_PAYLOAD,
+                    headers={"Authorization": f"Bearer {forged}"},
+                )
+        assert r.json()["model_tier"] == "free"
+        gem.assert_not_called()

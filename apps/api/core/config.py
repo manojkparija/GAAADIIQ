@@ -84,6 +84,20 @@ class Settings(BaseSettings):
     stt_max_audio_seconds: int = 60     # BR-IR-04 duration cap
     stt_max_bytes: int = 25 * 1024 * 1024
 
+    # Supabase JWT secret (HS256). The UI authenticates against Supabase, whose
+    # tokens this backend cannot otherwise verify — its own tokens are RS256
+    # with a different key. Without this, a Supabase-authenticated caller is
+    # indistinguishable from an anonymous one.
+    supabase_jwt_secret: str = ""
+
+    # Emails always treated as admin, regardless of which user store holds the
+    # role. Checked only against a *verified* token, never a client-sent value.
+    admin_emails: str = ""
+
+    @property
+    def admin_email_set(self) -> set[str]:
+        return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}
+
     # Gemini — higher-quality diagnosis for paid users and admins. Ollama is
     # the free tier. Leave the key blank and everyone falls back to Ollama.
     gemini_api_key: str = ""

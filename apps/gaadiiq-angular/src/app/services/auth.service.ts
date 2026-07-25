@@ -79,7 +79,13 @@ export class AuthService {
       throw new Error('Invalid email or password (min 6 characters).');
     }
 
-    // Dev admin shortcut — bypasses Supabase for local/preview testing
+    // Dev admin shortcut — bypasses Supabase for local/preview testing.
+    //
+    // NOTE: this creates no Supabase session, so no token is attached to API
+    // calls. Server-side features that require a verified identity — notably
+    // the Gemini model tier for admins — will treat this user as anonymous and
+    // serve the free tier. Sign in with a real Supabase admin account to
+    // exercise those paths.
     if (email === 'admin@gaadiiq.com' && password === 'admin123') {
       this.currentUser.set({ email, name: 'Admin', role: 'admin' });
       return;
