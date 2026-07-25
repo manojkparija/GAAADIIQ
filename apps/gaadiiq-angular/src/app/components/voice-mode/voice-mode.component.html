@@ -1,10 +1,20 @@
-<div class="vm-overlay active">
+<div class="vm-overlay active" [class.driving]="drivingMode()">
   <div class="vm-panel">
 
     <!-- Header -->
     <div class="vm-header">
       <span class="vm-title">🎤 Voice Diagnosis</span>
-      <button class="vm-close" (click)="cancel()" aria-label="Close voice mode">✕</button>
+      <div class="vm-header-actions">
+        <button
+          class="vm-driving-toggle"
+          [class.on]="drivingMode()"
+          (click)="toggleDrivingMode()"
+          [attr.aria-pressed]="drivingMode()"
+          aria-label="Driving mode"
+          title="Driving mode — larger controls, everything read aloud"
+        >🚗 {{ drivingMode() ? 'Driving' : 'Driving mode' }}</button>
+        <button class="vm-close" (click)="cancel()" aria-label="Close voice mode">✕</button>
+      </div>
     </div>
 
     <!-- ── Microphone consent (must precede any capture) ── -->
@@ -125,7 +135,7 @@
     </div>
 
     <!-- Conversation transcript -->
-    <div class="vm-transcript" *ngIf="messages().length > 0">
+    <div class="vm-transcript" *ngIf="messages().length > 0 && !drivingMode()">
       <div
         *ngFor="let msg of messages()"
         class="vm-msg"

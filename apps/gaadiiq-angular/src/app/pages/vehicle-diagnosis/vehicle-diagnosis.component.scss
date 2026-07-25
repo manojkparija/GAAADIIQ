@@ -185,6 +185,23 @@
   background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); color: #059669;
 }
 
+/* Connectivity (BR-UX-06) */
+.offline-banner, .sync-banner {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 10px 16px; font-size: 13px; font-weight: 500;
+}
+.offline-banner { background: #4B5563; color: #fff; }
+.sync-banner { background: rgba(37,99,235,0.12); color: #2563EB; }
+
+.queued-card {
+  text-align: center; padding: 32px 24px;
+  background: var(--card-bg, #fff); border: 1px solid var(--border, #e5e7eb);
+  border-radius: 16px;
+  .queued-icon { font-size: 40px; margin-bottom: 12px; }
+  h3 { font-size: 18px; margin: 0 0 10px; }
+  p { font-size: 14px; line-height: 1.6; color: var(--text-muted, #6B7280); margin: 0 0 18px; }
+}
+
 .media-error {
   grid-column: 1 / -1;
   padding: 10px 14px; margin-bottom: 4px;

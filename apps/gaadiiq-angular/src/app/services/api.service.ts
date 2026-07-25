@@ -8,6 +8,9 @@ export class ApiService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
 
+  /** API root — used by the offline queue to rebuild a request URL. */
+  get baseUrl(): string { return this.base; }
+
   getCars(): Observable<any[]> {
     return this.http.get<any[]>(`${this.base}/cars`).pipe(catchError(() => of([])));
   }

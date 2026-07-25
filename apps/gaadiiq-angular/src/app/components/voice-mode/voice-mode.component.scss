@@ -500,3 +500,97 @@
   .vm-pulse-ring, .vm-mic-icon { animation: none !important; }
   .vm-overlay, .vm-btn, .vm-lang-option { transition: none !important; }
 }
+
+// ── Driving mode (BR-VA-08, BR-VA-09) ────────────────────────────────────────
+//
+// For a driver the screen is a distraction. Targets grow past the 48px minimum
+// to something glanceable, text scales up, and the transcript is hidden — the
+// conversation is carried by voice, not by reading.
+
+.vm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vm-driving-toggle {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--vm-border);
+  background: transparent;
+  color: var(--vm-sub);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover { color: var(--vm-text); border-color: var(--vm-accent); }
+
+  &.on {
+    background: rgba(88, 166, 255, 0.18);
+    border-color: var(--vm-accent);
+    color: var(--vm-accent);
+  }
+}
+
+.vm-overlay.driving {
+  .vm-panel {
+    width: min(560px, 100vw);
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  // Everything the driver may need to hit gets a large, forgiving target.
+  .vm-btn {
+    min-height: 68px;
+    font-size: 1.15rem;
+    padding: 18px 28px;
+    border-radius: 16px;
+  }
+
+  .vm-btn--sm {
+    min-height: 60px;
+    font-size: 1.05rem;
+  }
+
+  .vm-mic-icon { font-size: 4.6rem; }
+
+  .vm-pulse-ring {
+    width: 132px;
+    height: 132px;
+    border-width: 4px;
+  }
+
+  .vm-visual { padding: 44px 20px 28px; }
+
+  .vm-status-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  // The assistant's current question is the one thing worth glancing at.
+  .vm-ai-bubble {
+    font-size: 1.3rem;
+    line-height: 1.5;
+    padding: 22px 56px 22px 22px;
+  }
+
+  .vm-replay {
+    font-size: 1.6rem;
+    top: 12px;
+    right: 12px;
+    padding: 8px;
+  }
+
+  .vm-chip { font-size: 0.95rem; padding: 8px 14px; }
+  .vm-interim { font-size: 1.05rem; }
+  .vm-record-timer { font-size: 1.15rem; }
+
+  .vm-lang-option {
+    min-height: 76px;
+    .vm-lang-native { font-size: 1.25rem; }
+  }
+
+  .vm-actions { padding: 20px; }
+}

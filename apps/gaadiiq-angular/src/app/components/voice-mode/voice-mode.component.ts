@@ -45,6 +45,8 @@ interface Prompts {
   fields: Record<string, string>;
 }
 
+const DRIVING_MODE_KEY = 'gq_voice_driving_mode';
+
 const PROMPTS: Record<string, Prompts> = {
   'en-IN': {
     greeting: 'Hello! Please tell me about your vehicle — the brand, model, year, fuel type and transmission.',
@@ -244,12 +246,43 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   /** True when the language is being inferred from speech rather than picked. */
   autoDetect = false;
 
+  // ── Driving mode (BR-VA-08, BR-VA-09) ─────────────────────────────────────
+  //
+  // For a driver the screen is a distraction, not an interface. Driving mode
+  // enlarges every target to a glanceable size, hides the transcript, and
+  // keeps the conversation moving without taps: after the report is spoken it
+  // offers to continue by voice rather than waiting for a button.
+
+  drivingMode = signal(false);
+
+  toggleDrivingMode() {
+    const next = !this.drivingMode();
+    this.drivingMode.set(next);
+    try {
+      localStorage.setItem(DRIVING_MODE_KEY, String(next));
+    } catch { /* private mode */ }
+
+    // Announce the change — the point of the mode is not looking at the screen.
+    this.voice.speak(
+      next
+        ? 'Driving mode on. I will keep listening and read everything aloud.'
+        : 'Driving mode off.'
+    );
+  }
+
+  private _restoreDrivingMode() {
+    try {
+      this.drivingMode.set(localStorage.getItem(DRIVING_MODE_KEY) === 'true');
+    } catch { /* private mode */ }
+  }
+
   /** Prompts in the language the user picked. */
   private get p(): Prompts {
     return promptsFor(this.detectedLanguage());
   }
 
   ngOnInit() {
+    this._restoreDrivingMode();
     // Consent must be recorded before any capture (TC-F-19); once granted it
     // persists, so returning users go straight to the language picker.
     this.step.set(this.voice.hasConsent() ? 'select-language' : 'consent');

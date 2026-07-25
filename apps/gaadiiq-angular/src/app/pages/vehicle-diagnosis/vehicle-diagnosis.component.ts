@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { CityService } from '../../services/city.service';
 import { ApiService } from '../../services/api.service';
+import { OfflineQueueService } from '../../services/offline-queue.service';
 import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../services/voice-diagnosis.service';
 import { VoiceModeComponent, VoiceSessionResult } from '../../components/voice-mode/voice-mode.component';
 import { firstValueFrom } from 'rxjs';
@@ -378,6 +379,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     public city: CityService,
     private api: ApiService,
     public voice: VoiceDiagnosisService,
+    public offline: OfflineQueueService,
   ) {
     seo.setPage(
       'AI Vehicle Diagnosis',
@@ -597,8 +599,23 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     };
 
     this.step.set(4);
+
+    // Offline: queue the submission so it is not lost, and say so plainly
+    // rather than showing a failure the user can do nothing about (BR-UX-06).
+    if (!this.offline.online()) {
+      this.offline.enqueue(
+        `${this.api.baseUrl}/diagnosis/analyse`, 'POST', request
+      );
+      this.queuedOffline.set(true);
+      return;
+    }
+    this.queuedOffline.set(false);
+
     await this.diagSvc.analyse(request);
   }
+
+  /** True when the last submission was queued instead of sent (BR-UX-06). */
+  queuedOffline = signal(false);
 
   reset() {
     this.step.set(1);

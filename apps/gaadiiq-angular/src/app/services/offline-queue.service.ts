@@ -5,7 +5,7 @@
  * Uses localStorage for persistence across page reloads.
  * Listens to the `online` event to drain the queue on reconnect.
  */
-import { Injectable, OnDestroy, inject } from '@angular/core';
+import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
@@ -26,17 +26,29 @@ const MAX_ATTEMPTS = 5;
 export class OfflineQueueService implements OnDestroy {
   private readonly http = inject(HttpClient);
   private queue: QueuedRequest[] = [];
-  private _onlineHandler = () => this.drainQueue();
+
+  /** Reactive state for the offline banner (BR-UX-06). */
+  readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
+  readonly pending = signal(0);
+  readonly draining = signal(false);
+
+  private _onlineHandler = () => {
+    this.online.set(true);
+    void this.drainQueue();
+  };
+  private _offlineHandler = () => this.online.set(false);
 
   constructor() {
     this._loadQueue();
     window.addEventListener('online', this._onlineHandler);
+    window.addEventListener('offline', this._offlineHandler);
     // Attempt drain on init (catches cases where SW queued items offline)
     if (navigator.onLine) this.drainQueue();
   }
 
   ngOnDestroy() {
     window.removeEventListener('online', this._onlineHandler);
+    window.removeEventListener('offline', this._offlineHandler);
   }
 
   /** Enqueue a failed request for retry on reconnect. */
@@ -57,6 +69,7 @@ export class OfflineQueueService implements OnDestroy {
 
   async drainQueue(): Promise<void> {
     if (this.queue.length === 0) return;
+    this.draining.set(true);
     const toRetry = [...this.queue];
     this.queue = [];
 
@@ -78,6 +91,7 @@ export class OfflineQueueService implements OnDestroy {
       }
     }
     this._saveQueue();
+    this.draining.set(false);
   }
 
   private _loadQueue(): void {
@@ -87,11 +101,13 @@ export class OfflineQueueService implements OnDestroy {
     } catch {
       this.queue = [];
     }
+    this.pending.set(this.queue.length);
   }
 
   private _saveQueue(): void {
+    this.pending.set(this.queue.length);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.queue));
-    } catch {}
+    } catch { /* private mode — queue is in-memory only for this session */ }
   }
 }

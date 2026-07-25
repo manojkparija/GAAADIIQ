@@ -159,6 +159,19 @@
     </div>
   }
 
+  <!-- Connectivity banner (BR-UX-06) -->
+  <div class="offline-banner" *ngIf="!offline.online()" role="status" aria-live="polite">
+    <span aria-hidden="true">📴</span>
+    <span>You're offline. You can still fill in the form — we'll send it when you reconnect.</span>
+  </div>
+  <div class="sync-banner" *ngIf="offline.online() && offline.pending() > 0" role="status" aria-live="polite">
+    <span aria-hidden="true">🔄</span>
+    <span>
+      {{ offline.draining() ? 'Sending' : 'Waiting to send' }}
+      {{ offline.pending() }} queued submission{{ offline.pending() > 1 ? 's' : '' }}…
+    </span>
+  </div>
+
   <div class="container diag-body">
 
     <!-- Progress bar -->
@@ -514,6 +527,18 @@
         <h3>Analysis unavailable</h3>
         <p>{{ diagSvc.error() }}</p>
         <button class="btn-primary" (click)="step.set(3)">← Try Again</button>
+      </div>
+
+      <!-- Queued offline (BR-UX-06) — the submission is saved, not lost -->
+      <div class="queued-card" *ngIf="queuedOffline()" role="status" aria-live="polite">
+        <div class="queued-icon" aria-hidden="true">📥</div>
+        <h3>Saved — we'll send this when you're back online</h3>
+        <p>
+          You're offline right now, so your diagnosis request is stored on this device.
+          It will be sent automatically as soon as you reconnect, and your report will
+          appear in Past Diagnoses.
+        </p>
+        <button class="btn-ghost" (click)="reset()">Start another</button>
       </div>
 
       <!-- Report -->
