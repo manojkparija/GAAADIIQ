@@ -160,7 +160,9 @@ def build_rows() -> list[dict]:
         )
         # Used cars depreciate roughly with age; enough variation to make
         # price filters and sorting meaningful.
-        price = price_lakh * 100000 if is_new else round(
+        # round() matters: 9.2 * 100000 is 919999.9999999999 in binary float,
+        # which would render as a broken price.
+        price = round(price_lakh * 100000) if is_new else round(
             price_lakh * 100000 * (0.92 - 0.07 * (2026 - year)), -3
         )
 
