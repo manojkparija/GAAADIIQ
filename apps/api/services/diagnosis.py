@@ -281,6 +281,7 @@ def _build_prompt(
     severity: str,
     retrieved_cases: list[dict],
     maintenance_history: list[dict] | None = None,
+    vision_analysis: dict | None = None,
 ) -> str:
     # Sanitise all user-supplied text to prevent prompt injection (MOB-008)
     manufacturer = _sanitise(manufacturer, 100)
@@ -321,6 +322,32 @@ def _build_prompt(
             bits.append(f"at {odo:,} km")
         history_text += f"- {' '.join(bits)}\n"
 
+    # Findings from a photo the owner uploaded. Sanitised like any other
+    # untrusted content: the vision model's output is derived from a
+    # user-supplied image, so it is not trusted input either.
+    vision_text = ""
+    if vision_analysis and vision_analysis.get("vision_model_used"):
+        findings = _sanitise(str(vision_analysis.get("findings", "")), 600).strip()
+        lights = [
+            _sanitise(str(x), 80).strip()
+            for x in (vision_analysis.get("warning_lights_visible") or [])
+            if str(x).strip()
+        ]
+        areas = [
+            _sanitise(str(x), 80).strip()
+            for x in (vision_analysis.get("damage_areas") or [])
+            if str(x).strip()
+        ]
+        sev = _sanitise(str(vision_analysis.get("severity", "")), 20).strip()
+        if findings:
+            vision_text += f"{findings}\n"
+        if lights:
+            vision_text += f"Warning lights identified in the photo: {', '.join(lights)}\n"
+        if areas:
+            vision_text += f"Damage areas identified: {', '.join(areas)}\n"
+        if sev:
+            vision_text += f"Visual severity: {sev}\n"
+
     intro = "You are an expert automotive diagnostic AI advisor for Indian vehicles."
     intro += " Analyze the following vehicle problem and provide a structured preliminary diagnosis."
     intro += (
@@ -340,6 +367,9 @@ REPORTED PROBLEM:
 <user_report>
 {problem_description}
 </user_report>
+
+PHOTO SUPPLIED BY THE OWNER (analysed by a vision model):
+{vision_text if vision_text else "No photo supplied."}
 
 RECENT SERVICE HISTORY (reported by the owner):
 {history_text if history_text else "None reported"}
@@ -599,6 +629,22 @@ async def run_diagnosis(
     downward and never fatal — Gemini → Ollama → heuristic.
     """
 
+    # Vision runs FIRST. It used to run after the diagnosis was already
+    # written, so an uploaded photo could never influence the answer — it was
+    # only attached alongside it. A picture of a lit warning light is often the
+    # only evidence the user has, so it has to reach both the retrieval step
+    # and the model prompt.
+    vision_analysis: dict | None = None
+    if image_urls:
+        vision_analysis = await analyse_image_url(image_urls[0], context=problem_description)
+        # A telltale the model identified is worth as much as one the user
+        # ticked, so fold it into the same list retrieval searches over.
+        seen = {w.lower() for w in warning_lights}
+        for light in vision_analysis.get("warning_lights_visible") or []:
+            if isinstance(light, str) and light.strip() and light.lower() not in seen:
+                warning_lights = [*warning_lights, light.strip()]
+                seen.add(light.lower())
+
     retrieved, retrieval_method = _retrieve_cases(
         problem_description, warning_lights, when_occurs, fuel_type
     )
@@ -607,7 +653,7 @@ async def run_diagnosis(
     prompt = _build_prompt(
         manufacturer, model, variant, model_year, fuel_type, transmission,
         odometer_km, problem_description, warning_lights, when_occurs, severity, retrieved,
-        maintenance_history,
+        maintenance_history, vision_analysis,
     )
 
     ollama_used = False
@@ -684,18 +730,15 @@ async def run_diagnosis(
     if response_language and response_language != "en-IN":
         result = await _translate_diagnosis(result, response_language)
 
-    # Vision analysis — run on first image if provided
-    if image_urls:
-        vision_result = await analyse_image_url(image_urls[0], context=problem_description)
-        result["vision_analysis"] = vision_result
-        # Upgrade risk_level if vision detects severe/critical damage
-        vision_severity = (vision_result.get("severity") or "").lower()
+    # Vision already ran above and fed the prompt; here it only attaches the
+    # raw findings and enforces the risk floor.
+    result["vision_analysis"] = vision_analysis
+    if vision_analysis:
+        vision_severity = (vision_analysis.get("severity") or "").lower()
         if vision_severity in ("severe", "critical"):
             current_risk = (result.get("risk_level") or "").lower()
             if current_risk not in ("high", "critical"):
                 result["risk_level"] = "High" if vision_severity == "severe" else "Critical"
-    else:
-        result["vision_analysis"] = None
 
     return result
 

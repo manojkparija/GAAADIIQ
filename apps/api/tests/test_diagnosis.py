@@ -763,3 +763,91 @@ class TestSemanticRetrievalSuite:
                     warning_lights=[], when_occurs=[], severity="high",
                 )
         assert r["preliminary_diagnosis"]
+
+
+class TestImageReachesDiagnosisSuite:
+    """
+    An uploaded photo must inform the diagnosis, not merely sit beside it.
+
+    Vision used to run after the answer was already generated, so a picture of
+    a lit warning light could never change what the model said.
+    """
+
+    VISION = {
+        "vision_model_used": True,
+        "image_type": "warning_light",
+        "warning_lights_visible": ["Battery / charging system"],
+        "findings": "A red battery-shaped telltale is illuminated on the instrument cluster.",
+        "damage_areas": [],
+        "severity": "Severe",
+        "estimated_repair_cost_inr": {"min": 3000, "max": 12000},
+        "safe_to_drive": False,
+        "confidence": 88,
+        "recommendations": ["Check alternator output"],
+    }
+
+    def test_vision_findings_appear_in_prompt(self):
+        from services.diagnosis import _build_prompt
+        prompt = _build_prompt(
+            "Maruti Suzuki", "Swift", None, 2022, "Petrol", "Manual", 45000,
+            "Light came on", [], [], "high", [], None, self.VISION,
+        )
+        assert "battery-shaped telltale" in prompt
+        assert "Battery / charging system" in prompt
+        assert "Severe" in prompt
+
+    def test_no_photo_states_so(self):
+        from services.diagnosis import _build_prompt
+        prompt = _build_prompt(
+            "Maruti Suzuki", "Swift", None, 2022, "Petrol", "Manual", 45000,
+            "Knocking", [], [], "high", [],
+        )
+        assert "No photo supplied." in prompt
+
+    def test_offline_vision_is_not_fed_to_the_model(self):
+        # A fallback dict says "unavailable"; feeding that in as evidence
+        # would have the model diagnose the outage rather than the car.
+        from services.diagnosis import _build_prompt
+        offline = {**self.VISION, "vision_model_used": False}
+        prompt = _build_prompt(
+            "Maruti Suzuki", "Swift", None, 2022, "Petrol", "Manual", 45000,
+            "Light came on", [], [], "high", [], None, offline,
+        )
+        assert "No photo supplied." in prompt
+
+    @pytest.mark.asyncio
+    async def test_detected_light_is_added_to_warning_lights(self):
+        # The telltale the vision model read must reach retrieval, exactly as
+        # if the user had ticked the chip themselves.
+        seen = {}
+
+        def _capture(desc, lights, when, fuel):
+            seen["lights"] = list(lights)
+            return [], "keyword"
+
+        with patch("services.diagnosis.analyse_image_url", return_value=self.VISION):
+            with patch("services.diagnosis._retrieve_cases", side_effect=_capture):
+                with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+                    await run_diagnosis(
+                        manufacturer="Maruti Suzuki", model="Swift", variant=None,
+                        model_year=2022, fuel_type="Petrol", transmission="Manual",
+                        odometer_km=45000, problem_description="Light came on",
+                        warning_lights=[], when_occurs=[], severity="high",
+                        image_urls=["https://media.gaadiiq.com/x.jpg"],
+                    )
+
+        assert "Battery / charging system" in seen["lights"]
+
+    @pytest.mark.asyncio
+    async def test_severe_photo_raises_risk_level(self):
+        with patch("services.diagnosis.analyse_image_url", return_value=self.VISION):
+            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+                r = await run_diagnosis(
+                    manufacturer="Maruti Suzuki", model="Swift", variant=None,
+                    model_year=2022, fuel_type="Petrol", transmission="Manual",
+                    odometer_km=45000, problem_description="Light came on",
+                    warning_lights=[], when_occurs=[], severity="high",
+                    image_urls=["https://media.gaadiiq.com/x.jpg"],
+                )
+        assert r["risk_level"] in ("High", "Critical")
+        assert r["vision_analysis"]["warning_lights_visible"] == ["Battery / charging system"]
