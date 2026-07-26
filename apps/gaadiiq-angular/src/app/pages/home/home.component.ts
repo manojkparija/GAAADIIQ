@@ -127,7 +127,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
     { icon:'brain', title:'AI Price Valuation', desc:'Instant fair market valuation — depreciation model + AI analysis when available.', color:'#2F6BFF', route:'/ai-valuation' },
     { icon:'bank', title:'Loan Comparison', desc:'Compare EMI from top banks. Pre-approval in minutes, best rates guaranteed.', color:'#14B8A6', route:'/emi-calculator' },
     { icon:'search', title:'Smart Search', desc:'Natural language search. "Red SUV under 15L near me" — we understand you.', color:'#10B981', route:'/listings' },
-    { icon:'bar-chart', title:'Market Intelligence', desc:'Real-time price trends, depreciation charts, and resale value forecasts.', color:'#F59E0B', route:'/compare' },
+    // Routed to the valuation page, which is where depreciation and resale
+    // analysis actually lives. There is no separate market-intelligence page;
+    // this card used to open the car-comparison page instead, and the copy
+    // promised live price trends the app does not yet produce.
+    { icon:'bar-chart', title:'Market Intelligence', desc:'Depreciation-based price analysis and resale value estimates for any model.', color:'#F59E0B', route:'/ai-valuation' },
     { icon:'bell', title:'Price Drop Alerts', desc:'Set your target price. Get notified the moment a listing drops below it.', color:'#2F6BFF', route:'/price-alerts' },
     { icon:'car', title:'Test Drive Booking', desc:'Book a test drive directly with the seller — from your couch, right now.', color:'#14B8A6', route:'/test-drive' },
   ];
