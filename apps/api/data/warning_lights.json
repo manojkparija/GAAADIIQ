@@ -48,16 +48,16 @@
       "name": "Engine oil pressure",
       "colour": "red",
       "aspect": [
-        1.25,
-        2.1
+        1.9,
+        2.8
       ],
       "fill": [
-        0.4,
-        0.85
+        0.35,
+        0.7
       ],
       "holes": [
-        0,
-        1
+        1,
+        5
       ],
       "symmetric": false,
       "aliases": [
@@ -77,8 +77,8 @@
       "name": "Coolant temperature",
       "colour": "red",
       "aspect": [
-        0.45,
-        1.05
+        0.5,
+        1.2
       ],
       "fill": [
         0.2,
@@ -131,6 +131,36 @@
       "kb_id": "RK004"
     },
     {
+      "id": "WL_TRANSMISSION",
+      "name": "Transmission temperature",
+      "colour": "amber",
+      "aspect": [
+        0.9,
+        1.15
+      ],
+      "fill": [
+        0.3,
+        0.55
+      ],
+      "holes": [
+        1,
+        2
+      ],
+      "symmetric": true,
+      "aliases": [
+        "transmission",
+        "gearbox",
+        "transmission temperature",
+        "gear",
+        "at oil temp"
+      ],
+      "meaning": "The automatic transmission fluid is overheating. Usually low or degraded ATF, heavy load, or a cooler fault.",
+      "severity": "Severe",
+      "safe_to_drive": false,
+      "urgency": "Stop and let the transmission cool. Driving on overheated fluid damages the gearbox, which is among the most expensive repairs on the car.",
+      "kb_id": "RK006"
+    },
+    {
       "id": "WL_BRAKE",
       "name": "Brake system",
       "colour": "red",
@@ -172,8 +202,8 @@
         0.55
       ],
       "holes": [
-        1,
-        2
+        3,
+        8
       ],
       "symmetric": true,
       "aliases": [
@@ -220,8 +250,8 @@
       "name": "TPMS (tyre pressure)",
       "colour": "amber",
       "aspect": [
-        0.9,
-        1.45
+        1.1,
+        1.6
       ],
       "fill": [
         0.25,

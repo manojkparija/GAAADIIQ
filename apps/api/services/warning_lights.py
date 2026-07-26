@@ -222,11 +222,11 @@ def _score(glyph: dict, light: dict) -> float:
     want = light["colour"]
     got = glyph["colour"]
     if got == want or {got, want} == {"amber", "yellow"}:
-        score += 0.5
+        score += 0.46
     elif {got, want} <= {"red", "amber", "yellow"}:
-        score += 0.15  # warm-on-warm: wrong lamp, but not a different family
+        score += 0.14  # warm-on-warm: wrong lamp, but not a different family
     elif got in ("white", "grey", "dark"):
-        score += 0.1   # a washed-out photo should not veto a shape match
+        score += 0.09  # a washed-out photo should not veto a shape match
 
     # Graded rather than in-range/out-of-range. With a binary test several
     # symbols whose ranges overlap all scored identically and nothing could
@@ -234,12 +234,24 @@ def _score(glyph: dict, light: dict) -> float:
     # ties in favour of the symbol the measurement actually looks most like.
     score += 0.20 * _band(glyph["aspect"], *light["aspect"])
     score += 0.08 * _band(glyph["fill"], *light["fill"])
-    score += 0.10 * _band(glyph["holes"], *light["holes"])
+    # Holes are discrete and reliable — any count inside the range is equally
+    # good, and a badly wrong count is strong evidence against the symbol. A
+    # centre-peaked band gave a hole-rich symbol like ABS partial credit for
+    # an image with one hole, which was enough to shadow the right answer.
+    score += 0.14 * _band_flat(glyph["holes"], *light["holes"])
 
     symmetric = glyph["symmetry"] >= 0.88
     score += 0.12 if symmetric == bool(light["symmetric"]) else 0.0
 
     return round(score, 4)
+
+
+def _band_flat(value: float, lo: float, hi: float) -> float:
+    """1.0 anywhere inside [lo, hi], falling to 0.0 one unit outside it."""
+    if lo <= value <= hi:
+        return 1.0
+    gap = lo - value if value < lo else value - hi
+    return max(0.0, 1.0 - gap)
 
 
 def _band(value: float, lo: float, hi: float) -> float:

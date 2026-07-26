@@ -40,6 +40,46 @@ def battery_icon(ink=RED, bg=BLACK) -> bytes:
     return _png(im)
 
 
+def oil_can_icon(ink=RED, bg=BLACK) -> bytes:
+    """The ISO oil-pressure telltale: wide can, handle, spout and a drip."""
+    im = Image.new("RGB", (975, 520), bg)
+    d = ImageDraw.Draw(im)
+    d.polygon([(275, 290), (500, 290), (575, 470), (280, 470)], fill=ink)
+    d.rectangle([275, 290, 510, 470], fill=ink)
+    d.rounded_rectangle([345, 215, 440, 290], 12, fill=ink)
+    d.polygon([(165, 340), (300, 245), (300, 300), (215, 340), (300, 380), (300, 430)], fill=ink)
+    d.polygon([(500, 300), (740, 240), (765, 290), (545, 355)], fill=ink)
+    d.polygon([(560, 315), (700, 265), (690, 290), (575, 330)], fill=bg)
+    d.polygon([(760, 355), (790, 410), (730, 410)], fill=ink)
+    d.ellipse([728, 390, 792, 435], fill=ink)
+    return _png(im)
+
+
+def transmission_temp_icon(ink=AMBER, bg=BLACK) -> bytes:
+    """Gear wheel with a thermometer inside — transmission over-temperature."""
+    import math
+
+    im = Image.new("RGB", (960, 585), bg)
+    d = ImageDraw.Draw(im)
+    cx, cy, R, r = 480, 292, 255, 196
+    for k in range(16):
+        a = 2 * math.pi * k / 16
+        d.polygon(
+            [
+                (cx + rad * math.cos(a + da), cy + rad * math.sin(a + da))
+                for da, rad in ((-0.085, R + 40), (0.085, R + 40), (0.11, R), (-0.11, R))
+            ],
+            fill=ink,
+        )
+    d.ellipse([cx - R, cy - R, cx + R, cy + R], fill=ink)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=bg)
+    d.ellipse([440, 330, 530, 420], fill=ink)
+    d.rounded_rectangle([462, 140, 508, 360], 23, fill=ink)
+    for y in (210, 250, 290):
+        d.rectangle([508, y, 560, y + 22], fill=ink)
+    return _png(im)
+
+
 def blank_image() -> bytes:
     return _png(Image.new("RGB", (200, 200), BLACK))
 
@@ -76,6 +116,34 @@ class TestTelltaleIdentificationSuite:
         r = identify_warning_light(battery_icon(ink=RED, bg=(255, 255, 255)))
         assert r["colour"] == "red"
         assert r["candidates"][0]["id"] == "WL_BATTERY"
+
+    def test_oil_pressure_icon_is_identified(self):
+        # Reported as unrecognised in the field: the real symbol is far wider
+        # and more hole-rich than the signature originally allowed.
+        r = identify_warning_light(oil_can_icon())
+        assert r["identified"] is True
+        assert r["best"]["id"] == "WL_OIL"
+        assert r["best"]["severity"] == "Critical"
+        assert r["best"]["safe_to_drive"] is False
+
+    def test_transmission_temperature_icon_is_identified(self):
+        # A gear wheel with a thermometer is the transmission warning, not the
+        # coolant one — the catalogue had no entry for it at all.
+        r = identify_warning_light(transmission_temp_icon())
+        assert r["identified"] is True
+        assert r["best"]["id"] == "WL_TRANSMISSION"
+        assert r["colour"] == "amber"
+
+    def test_transmission_is_not_confused_with_coolant_temperature(self):
+        # Both show a thermometer; only one is amber and ringed by a gear.
+        r = identify_warning_light(transmission_temp_icon())
+        assert r["best"]["id"] != "WL_TEMP"
+
+    def test_amber_urgency_differs_from_red(self):
+        amber = identify_warning_light(transmission_temp_icon())["urgency_note"]
+        red = identify_warning_light(oil_can_icon())["urgency_note"]
+        assert "soon" in amber.lower()
+        assert "stop" in red.lower()
 
     def test_red_urgency_is_reported_even_when_unidentified(self):
         # The colour convention is standard across every car sold in India, so
