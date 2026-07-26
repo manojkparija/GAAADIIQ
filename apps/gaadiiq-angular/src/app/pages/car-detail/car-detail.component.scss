@@ -453,3 +453,10 @@
 
   a { color: inherit; font-weight: 600; text-decoration: underline; }
 }
+
+.tab-empty {
+  margin: 0;
+  padding: 1.25rem 0;
+  color: var(--muted);
+  font-size: 0.925rem;
+}

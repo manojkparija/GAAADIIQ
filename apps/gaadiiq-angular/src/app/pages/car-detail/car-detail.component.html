@@ -98,6 +98,11 @@
                 <span class="spec-val gradient-text">{{ spec.value }}</span>
               </div>
             </div>
+            <!-- Without this an unpopulated tab renders as blank space, which
+                 reads as a broken page rather than as absent data. -->
+            <p class="tab-empty" *ngIf="!(car.specs || []).length">
+              Specifications for this {{ car.make }} {{ car.model }} haven't been added yet.
+            </p>
           </div>
 
           <!-- FEATURES -->
@@ -107,6 +112,9 @@
                 <span class="check"><app-icon name="check" [size]="13"></app-icon></span> {{ f }}
               </div>
             </div>
+            <p class="tab-empty" *ngIf="!(car.features || []).length">
+              Feature details for this {{ car.make }} {{ car.model }} haven't been added yet.
+            </p>
           </div>
 
           <!-- COLOURS -->
