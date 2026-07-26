@@ -296,8 +296,11 @@
   padding: 6px 14px; border: 1.5px solid var(--border, #e5e7eb); border-radius: 20px;
   font-size: 13px; font-weight: 500; cursor: pointer; background: var(--bg);
   color: var(--text); transition: all .15s;
-  &:hover { border-color: #2563EB; color: #2563EB; }
+  // Hover previews the selected look — a flat blue outline read as a
+  // different colour system from the blue-to-teal buttons elsewhere.
+  &:hover { border-color: #14B8A6; background: linear-gradient(90deg, rgba(37,99,235,0.10), rgba(20,184,166,0.10)); color: #0F766E; }
   &.selected { background: linear-gradient(90deg, #2563EB, #14B8A6); border-color: #2563EB; color: #fff; }
+  &.selected:hover { background: linear-gradient(90deg, #1D4ED8, #0D9488); color: #fff; }
 }
 
 /* Severity */
@@ -562,7 +565,9 @@
     background: #1e293b; border-color: rgba(255,255,255,0.08);
   }
   .review-desc { background: #0f172a; }
-  .chip { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
+  // :not(.selected) matters — this selector outranks `.chip.selected`, so
+  // without it a selected chip lost its blue-to-teal gradient in dark mode.
+  .chip:not(.selected) { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
   .severity-btn { background: #1e293b; border-color: rgba(255,255,255,0.1); }
   .source-tag { background: #0f172a; }
   input, select, textarea { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
@@ -572,7 +577,9 @@
     background: #1e293b; border-color: rgba(255,255,255,0.08);
   }
   .review-desc { background: #0f172a; }
-  .chip { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
+  // :not(.selected) matters — this selector outranks `.chip.selected`, so
+  // without it a selected chip lost its blue-to-teal gradient in dark mode.
+  .chip:not(.selected) { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
   .severity-btn { background: #1e293b; border-color: rgba(255,255,255,0.1); }
   .source-tag { background: #0f172a; }
   input, select, textarea { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
@@ -653,12 +660,18 @@
 .mic-btn {
   display: flex; align-items: center; gap: 6px; padding: 7px 16px;
   border-radius: 20px; font-size: 13px; font-weight: 600;
-  border: 2px solid #00D4A8; background: rgba(0,212,168,0.08); color: #00D4A8; cursor: pointer;
+  // Blue-to-teal, matching the primary buttons rather than the standalone
+  // teal this button used to carry.
+  border: none; background: linear-gradient(90deg, #2563EB, #14B8A6); color: #fff; cursor: pointer;
   .mic-icon { font-size: 15px; }
-  &:hover { background: rgba(0,212,168,0.18); }
-  &.listening { border-color: #EF4444; background: rgba(239,68,68,0.08); color: #EF4444; animation: mic-pulse 1.4s ease infinite; }
+  &:hover { background: linear-gradient(90deg, #1D4ED8, #0D9488); }
+  // Recording and error stay off the brand gradient on purpose — they are
+  // states the user must be able to tell apart at a glance.
+  &.listening { background: #EF4444; color: #fff; animation: mic-pulse 1.4s ease infinite; }
+  &.listening:hover { background: #DC2626; }
   &.processing { opacity: 0.65; cursor: default; }
-  &.error { border-color: #F59E0B; background: rgba(245,158,11,0.08); color: #F59E0B; }
+  &.error { background: #F59E0B; color: #fff; }
+  &.error:hover { background: #D97706; }
 }
 @keyframes mic-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.35); }
