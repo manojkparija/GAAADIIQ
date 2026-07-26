@@ -85,10 +85,3 @@
 .method-badge { display: inline-block; border-radius: 2rem; padding: .2rem .75rem; font-size: .78rem; font-weight: 700; margin-top: .5rem; }
 .badge-claude { background: rgba(43,107,255,0.15); color: #2B6BFF; border: 1px solid rgba(43,107,255,0.3); }
 .badge-heuristic { background: rgba(107,114,128,0.15); color: var(--muted); border: 1px solid rgba(107,114,128,0.25); }
-
-.fallback-reason {
-  display: block;
-  margin-top: 0.4rem;
-  font-size: 0.82rem;
-  opacity: 0.75;
-}

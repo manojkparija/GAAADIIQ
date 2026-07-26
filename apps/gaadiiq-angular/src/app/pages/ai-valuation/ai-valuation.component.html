@@ -116,10 +116,9 @@
     <!-- Fallback banner — shown when AI was unavailable -->
     <div class="fallback-banner" *ngIf="r.method === 'heuristic'">
       <span>ℹ️</span>
-      <p>
-        <strong>Formula estimate</strong> — AI engine unavailable. This is a depreciation-model estimate, not an AI-powered analysis. Confidence is lower; consult a dealer for a precise quote.
-        <span class="fallback-reason" *ngIf="fallbackReason()">Reason: {{ fallbackReason() }}</span>
-      </p>
+      <!-- The failure reason is a developer diagnostic, not buyer-facing:
+           it goes to the browser console, never onto the page. -->
+      <p><strong>Formula estimate</strong> — AI engine unavailable. This is a depreciation-model estimate, not an AI-powered analysis. Confidence is lower; consult a dealer for a precise quote.</p>
     </div>
 
     <div class="result-header">
