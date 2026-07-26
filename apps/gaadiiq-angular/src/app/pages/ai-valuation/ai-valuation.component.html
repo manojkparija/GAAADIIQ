@@ -113,13 +113,10 @@
 
   <!-- RESULT -->
   <section class="result-section container" *ngIf="step() === 'result' && result() as r">
-    <!-- Fallback banner — shown when AI was unavailable -->
-    <div class="fallback-banner" *ngIf="r.method === 'heuristic'">
-      <span>ℹ️</span>
-      <!-- The failure reason is a developer diagnostic, not buyer-facing:
-           it goes to the browser console, never onto the page. -->
-      <p><strong>Formula estimate</strong> — AI engine unavailable. This is a depreciation-model estimate, not an AI-powered analysis. Confidence is lower; consult a dealer for a precise quote.</p>
-    </div>
+    <!-- The fallback banner was removed at the product owner's request. The
+         "Formula estimate" badge in the header remains the disclosure that
+         this figure came from the depreciation model rather than the AI, and
+         the failure reason is logged to the browser console. -->
 
     <div class="result-header">
       <div class="result-car">{{ form.make }} {{ form.model }}{{ form.variant ? ' ' + form.variant : '' }} · {{ form.year }} · {{ form.fuel }}</div>
