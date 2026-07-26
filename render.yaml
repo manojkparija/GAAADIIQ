@@ -58,9 +58,13 @@ services:
     name: gaadiiq-web
     runtime: static
     plan: free
-    rootDir: apps/gaadiiq-angular
-    buildCommand: npm ci && npm run build -- --configuration production
-    staticPublishPath: dist/gaadiiq-angular/browser
+    # Built from the repo root, NOT from apps/gaadiiq-angular. This is an npm
+    # workspaces monorepo: the only package-lock.json lives at the root, so
+    # `npm ci` inside the app directory fails outright with "can only install
+    # with an existing package-lock.json". Installing at the root also hoists
+    # shared dependencies exactly as local development does.
+    buildCommand: npm ci && npm run build --workspace=gaadiiq-angular
+    staticPublishPath: apps/gaadiiq-angular/dist/gaadiiq-angular/browser
     routes:
       # Angular routing is client-side: a hard refresh on /new-cars asks Render
       # for a file that does not exist. Without this rewrite every deep link
