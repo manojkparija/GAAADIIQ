@@ -1,11 +1,18 @@
 # Render Blueprint — deploys GAADIIQ so it is reachable from any location.
 #
 # Two services:
-#   gaadiiq-api  — the FastAPI backend (apps/api)
+#   gaadiiq-api  — the FastAPI backend (apps/api)   [ALREADY DEPLOYED]
 #   gaadiiq-web  — the Angular app as a static site (apps/gaadiiq-angular)
 #
-# To use: Render dashboard → New → Blueprint → pick this repo. Render reads
-# this file and creates both services. Secrets marked `sync: false` are NOT in
+# IMPORTANT: gaadiiq-api already exists on Render, created by hand as a Docker
+# service on the Starter plan. The definition below is written to MATCH that
+# service so applying this blueprint cannot silently reconfigure it — in
+# particular it must not drop it to the free plan, which sleeps after 15
+# minutes of inactivity. Keep these two in step: if the live service changes,
+# change this file too.
+#
+# To use: Render dashboard → New → Blueprint → pick this repo, and set the
+# branch to the one you deploy from. Secrets marked `sync: false` are NOT in
 # this file and must be entered in the dashboard once — never commit them.
 #
 # The database is deliberately absent: GAADIIQ uses the existing Supabase
@@ -15,21 +22,21 @@ services:
   # ── Backend API ────────────────────────────────────────────────────────────
   - type: web
     name: gaadiiq-api
-    runtime: python
-    plan: free
+    # Matches the live service: Docker (apps/api/Dockerfile), Starter plan.
+    runtime: docker
+    plan: starter
     region: singapore          # closest Render region to Indian users
     rootDir: apps/api
-    buildCommand: pip install -r requirements.txt
-    # Render supplies $PORT and expects the process to bind it on 0.0.0.0.
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.12"
       # Browsers block the frontend from calling this API unless its origin is
-      # listed here. Update after the static site's URL is known.
+      # listed here, so once the static site exists its URL must be added:
+      #   ["https://<static-site>.onrender.com","http://localhost:4200","capacitor://localhost"]
+      # Left unmanaged (sync: false) because a value is already set in the
+      # dashboard, and declaring one here would overwrite it on every apply.
       - key: ALLOWED_ORIGINS
-        value: '["https://gaadiiq-web.onrender.com","http://localhost:4200","capacitor://localhost"]'
+        sync: false
       - key: ENVIRONMENT
         value: production
       # Secrets — set these in the Render dashboard, not here.
