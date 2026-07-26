@@ -5,6 +5,12 @@
 
 <div class="detail-page" *ngIf="carLoaded">
   <div class="container">
+    <!-- Substituting a different car without saying so is how a missing
+         listing looked like a working page. -->
+    <div *ngIf="notFound" class="not-found-banner">
+      We couldn't find that car. Showing another listing you might like —
+      <a routerLink="/listings">browse all cars</a>.
+    </div>
     <!-- BREADCRUMB -->
     <div class="breadcrumb">
       <a routerLink="/">Home</a> / <a routerLink="/listings">Browse</a> / <span>{{ car.make }} {{ car.model }}</span>

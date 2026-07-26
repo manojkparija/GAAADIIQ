@@ -367,13 +367,16 @@ export class CarDetailComponent implements OnInit {
   constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
-      const id = Number(this.route.snapshot.paramMap.get('id'));
+      // Ids are opaque strings — coercing to Number turned non-numeric ids
+      // (demo cars, any future slug) into NaN, which missed the lookup and
+      // silently fell back to the first car in the catalogue.
+      const id = this.route.snapshot.paramMap.get('id') ?? '';
       this.resolveCar(id);
     });
   }
 
   ngOnInit() {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
+    const id = this.route.snapshot.paramMap.get('id') ?? '';
     const tab = this.route.snapshot.queryParamMap.get('tab');
     if (tab) this.activeTab.set(tab);
     if (!this.carsData.loading()) {
