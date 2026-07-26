@@ -72,6 +72,30 @@ def _validate_image_url(url: str) -> None:
             raise ValueError("Image URL must be from an allowed CDN host")
 
 
+async def fetch_image_bytes(image_url: str) -> bytes | None:
+    """
+    Fetch an image for local analysis, applying the same SSRF checks as the
+    vision path. Returns None rather than raising — a failed fetch must never
+    take down a diagnosis.
+    """
+    try:
+        _validate_image_url(image_url)
+    except ValueError as exc:
+        logger.warning("Blocked SSRF attempt for image URL %r: %s", image_url, exc)
+        return None
+
+    try:
+        async with httpx.AsyncClient(timeout=30, follow_redirects=False) as http:
+            r = await http.get(image_url)
+            r.raise_for_status()
+            if not r.headers.get("content-type", "").startswith("image/"):
+                return None
+            return r.content
+    except Exception as exc:
+        logger.warning("Could not fetch image %s: %s", image_url, exc)
+        return None
+
+
 async def analyse_image_url(image_url: str, context: str = "") -> dict:
     """
     Fetch image, send to vision model, return structured assessment.

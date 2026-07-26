@@ -1,0 +1,361 @@
+{
+  "_comment": [
+    "Dashboard telltale catalogue used by services/warning_lights.py to identify",
+    "an uploaded warning-light image without needing a vision model.",
+    "",
+    "Each entry carries the geometric signature of the ISO/ECE symbol as it is",
+    "normally drawn: colour, the bounding-box aspect ratio of the glyph, how much",
+    "of that box the ink fills, how many enclosed holes the symbol has, and",
+    "whether it is left-right symmetric. Ranges are deliberately wide — the goal",
+    "is to rank candidates, not to claim a single answer from geometry alone.",
+    "",
+    "kb_id links to data/repair_knowledge.json so an identified light inherits",
+    "real causes and Indian repair costs instead of the model inventing them."
+  ],
+  "lights": [
+    {
+      "id": "WL_BATTERY",
+      "name": "Battery / charging system",
+      "colour": "red",
+      "aspect": [
+        1.3,
+        2.3
+      ],
+      "fill": [
+        0.28,
+        0.65
+      ],
+      "holes": [
+        1,
+        4
+      ],
+      "symmetric": true,
+      "aliases": [
+        "battery",
+        "charging",
+        "alternator",
+        "battery light",
+        "charge warning"
+      ],
+      "meaning": "The battery is not being charged. Usually the alternator, its belt, or the battery itself.",
+      "severity": "Severe",
+      "safe_to_drive": false,
+      "urgency": "The car is running on battery alone and will stop when it is flat. Drive straight to a garage or call for help.",
+      "kb_id": "RK005"
+    },
+    {
+      "id": "WL_OIL",
+      "name": "Engine oil pressure",
+      "colour": "red",
+      "aspect": [
+        1.25,
+        2.1
+      ],
+      "fill": [
+        0.4,
+        0.85
+      ],
+      "holes": [
+        0,
+        1
+      ],
+      "symmetric": false,
+      "aliases": [
+        "oil",
+        "oil pressure",
+        "oil can",
+        "oil lamp"
+      ],
+      "meaning": "Engine oil pressure has dropped below the safe threshold.",
+      "severity": "Critical",
+      "safe_to_drive": false,
+      "urgency": "Stop the engine immediately. Driving on low oil pressure destroys the engine within minutes.",
+      "kb_id": "RK003"
+    },
+    {
+      "id": "WL_TEMP",
+      "name": "Coolant temperature",
+      "colour": "red",
+      "aspect": [
+        0.45,
+        1.05
+      ],
+      "fill": [
+        0.2,
+        0.6
+      ],
+      "holes": [
+        0,
+        1
+      ],
+      "symmetric": false,
+      "aliases": [
+        "temperature",
+        "coolant",
+        "overheat",
+        "thermometer"
+      ],
+      "meaning": "The engine is overheating.",
+      "severity": "Critical",
+      "safe_to_drive": false,
+      "urgency": "Pull over and let the engine cool. Do not open the radiator cap while hot.",
+      "kb_id": "RK001"
+    },
+    {
+      "id": "WL_MIL",
+      "name": "Check engine (MIL)",
+      "colour": "amber",
+      "aspect": [
+        1.05,
+        1.8
+      ],
+      "fill": [
+        0.4,
+        0.9
+      ],
+      "holes": [
+        0,
+        2
+      ],
+      "symmetric": false,
+      "aliases": [
+        "check engine",
+        "mil",
+        "engine light",
+        "malfunction indicator"
+      ],
+      "meaning": "The engine management system has logged a fault. Needs an OBD scan to read the code.",
+      "severity": "Moderate",
+      "safe_to_drive": true,
+      "urgency": "Safe to drive gently if the car feels normal. Get the fault code read soon. If it is flashing, stop — that means a misfire that can destroy the catalytic converter.",
+      "kb_id": "RK004"
+    },
+    {
+      "id": "WL_BRAKE",
+      "name": "Brake system",
+      "colour": "red",
+      "aspect": [
+        0.85,
+        1.3
+      ],
+      "fill": [
+        0.2,
+        0.55
+      ],
+      "holes": [
+        1,
+        2
+      ],
+      "symmetric": true,
+      "aliases": [
+        "brake",
+        "brake warning",
+        "parking brake",
+        "handbrake"
+      ],
+      "meaning": "Parking brake engaged, low brake fluid, or a brake system fault.",
+      "severity": "Severe",
+      "safe_to_drive": false,
+      "urgency": "Check the handbrake is fully released. If it stays lit, treat the brakes as unreliable and stop.",
+      "kb_id": "RK002"
+    },
+    {
+      "id": "WL_ABS",
+      "name": "ABS",
+      "colour": "amber",
+      "aspect": [
+        0.85,
+        1.3
+      ],
+      "fill": [
+        0.2,
+        0.55
+      ],
+      "holes": [
+        1,
+        2
+      ],
+      "symmetric": true,
+      "aliases": [
+        "abs",
+        "anti-lock",
+        "anti lock braking"
+      ],
+      "meaning": "The anti-lock braking system has faulted. Normal braking still works; ABS assistance does not.",
+      "severity": "Moderate",
+      "safe_to_drive": true,
+      "urgency": "Drive gently and leave extra stopping distance, especially in the wet. Get it checked.",
+      "kb_id": "RK002"
+    },
+    {
+      "id": "WL_AIRBAG",
+      "name": "Airbag / SRS",
+      "colour": "red",
+      "aspect": [
+        0.95,
+        1.6
+      ],
+      "fill": [
+        0.25,
+        0.7
+      ],
+      "holes": [
+        0,
+        1
+      ],
+      "symmetric": false,
+      "aliases": [
+        "airbag",
+        "srs",
+        "supplementary restraint"
+      ],
+      "meaning": "A fault in the airbag system. The airbags may not deploy in a crash.",
+      "severity": "Severe",
+      "safe_to_drive": true,
+      "urgency": "The car drives normally but its crash protection is compromised. Get it repaired promptly.",
+      "kb_id": null
+    },
+    {
+      "id": "WL_TPMS",
+      "name": "TPMS (tyre pressure)",
+      "colour": "amber",
+      "aspect": [
+        0.9,
+        1.45
+      ],
+      "fill": [
+        0.25,
+        0.7
+      ],
+      "holes": [
+        0,
+        2
+      ],
+      "symmetric": true,
+      "aliases": [
+        "tpms",
+        "tyre pressure",
+        "tire pressure",
+        "tyre"
+      ],
+      "meaning": "One or more tyres is significantly under-inflated, or a TPMS sensor has faulted.",
+      "severity": "Moderate",
+      "safe_to_drive": true,
+      "urgency": "Check and inflate all four tyres. A slow puncture is the usual cause.",
+      "kb_id": "RK010"
+    },
+    {
+      "id": "WL_STEERING",
+      "name": "Power steering (EPS)",
+      "colour": "amber",
+      "aspect": [
+        0.9,
+        1.5
+      ],
+      "fill": [
+        0.25,
+        0.7
+      ],
+      "holes": [
+        1,
+        3
+      ],
+      "symmetric": false,
+      "aliases": [
+        "power steering",
+        "eps",
+        "steering"
+      ],
+      "meaning": "Electric power steering assistance has faulted.",
+      "severity": "Severe",
+      "safe_to_drive": false,
+      "urgency": "The steering may become very heavy, especially at low speed. Drive slowly to a garage.",
+      "kb_id": null
+    },
+    {
+      "id": "WL_DPF",
+      "name": "DPF (diesel particulate filter)",
+      "colour": "amber",
+      "aspect": [
+        1.0,
+        1.75
+      ],
+      "fill": [
+        0.3,
+        0.8
+      ],
+      "holes": [
+        0,
+        3
+      ],
+      "symmetric": false,
+      "aliases": [
+        "dpf",
+        "particulate",
+        "soot",
+        "diesel filter"
+      ],
+      "meaning": "The diesel particulate filter is clogged and needs regeneration.",
+      "severity": "Moderate",
+      "safe_to_drive": true,
+      "urgency": "Drive at steady highway speed for 20 minutes to let it regenerate. If it stays lit, get it serviced.",
+      "kb_id": "RK012"
+    },
+    {
+      "id": "WL_GLOW",
+      "name": "Glow plug (diesel preheat)",
+      "colour": "amber",
+      "aspect": [
+        0.7,
+        1.4
+      ],
+      "fill": [
+        0.12,
+        0.45
+      ],
+      "holes": [
+        0,
+        1
+      ],
+      "symmetric": false,
+      "aliases": [
+        "glow plug",
+        "preheat",
+        "coil"
+      ],
+      "meaning": "Normal during cold start. If it stays lit or flashes, a glow plug or its relay has failed.",
+      "severity": "Minor",
+      "safe_to_drive": true,
+      "urgency": "Hard starting in cold weather is the usual symptom. Book a service.",
+      "kb_id": null
+    },
+    {
+      "id": "WL_SEATBELT",
+      "name": "Seat belt reminder",
+      "colour": "red",
+      "aspect": [
+        0.4,
+        0.95
+      ],
+      "fill": [
+        0.2,
+        0.6
+      ],
+      "holes": [
+        0,
+        1
+      ],
+      "symmetric": false,
+      "aliases": [
+        "seat belt",
+        "seatbelt",
+        "belt reminder"
+      ],
+      "meaning": "A seat belt is unfastened.",
+      "severity": "None",
+      "safe_to_drive": true,
+      "urgency": "Fasten the belt.",
+      "kb_id": null
+    }
+  ]
+}

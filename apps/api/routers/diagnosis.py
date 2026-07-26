@@ -116,6 +116,9 @@ class DiagnoseResponse(BaseModel):
     disclaimer: str
     created_at: datetime
     vision_analysis: dict | None = None
+    # Locally identified dashboard telltale, when a photo was supplied. Present
+    # even with no vision model available, unlike vision_analysis.
+    warning_light_match: dict | None = None
     # BR-AI-10 — populated only when confidence is below the threshold.
     follow_up_questions: list[str] = []
     needs_more_info: bool = False
@@ -239,6 +242,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         disclaimer=ai_result.get("disclaimer", ""),
         created_at=record.created_at,
         vision_analysis=ai_result.get("vision_analysis"),
+        warning_light_match=ai_result.get("warning_light_match"),
         follow_up_questions=ai_result.get("follow_up_questions", []),
         needs_more_info=ai_result.get("needs_more_info", False),
         translation_failed=ai_result.get("translation_failed", False),

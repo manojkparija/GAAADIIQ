@@ -40,6 +40,27 @@ export interface DiagnosisReport {
   needs_more_info?: boolean;
   /** BR-ML-04 — a non-English response was asked for but could not be produced. */
   translation_failed?: boolean;
+  /** Dashboard telltale identified from an uploaded photo, when one was sent. */
+  warning_light_match?: WarningLightMatch;
+}
+
+/**
+ * Result of matching an uploaded image against the telltale catalogue.
+ *
+ * `identified` is the field to branch on: when it is false the colour and
+ * urgency are still trustworthy, but `candidates` are guesses and must be
+ * presented as such.
+ */
+export interface WarningLightMatch {
+  identified: boolean;
+  colour: string | null;
+  confidence: number;
+  urgency_note: string | null;
+  best?: {
+    id: string; name: string; meaning: string;
+    severity: string; safe_to_drive: boolean; urgency: string;
+  } | null;
+  candidates?: { id: string; name: string; score: number }[];
 }
 
 export interface DiagnoseRequest {

@@ -834,4 +834,10 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   ngOnDestroy() {
     this.voice.destroy();
   }
+
+  /** Names of the closest telltale candidates, for the "not sure" case. */
+  candidateNames(wl: { candidates?: { name: string }[] }): string {
+    return (wl.candidates ?? []).map(c => c.name).join(', ');
+  }
+
 }

@@ -722,3 +722,32 @@
 }
 
 .tts-btn--play { font-weight: 700; white-space: nowrap; }
+
+/* Telltale identified from an uploaded photo. Colour-coded to the lamp's own
+   colour, because that is the part of the finding a driver must not miss. */
+.light-match {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 16px; margin-bottom: 16px; border-radius: 12px;
+  background: var(--fill-soft, rgba(0,0,0,0.03));
+  border: 1px solid var(--border, #e5e7eb);
+
+  .lm-dot {
+    flex-shrink: 0; width: 12px; height: 12px; margin-top: 5px;
+    border-radius: 50%; background: var(--text-muted, #9CA3AF);
+  }
+  .lm-body { min-width: 0; }
+  strong { display: block; font-size: 14px; color: var(--text); margin-bottom: 4px; }
+  p { margin: 0 0 6px; font-size: 13px; line-height: 1.55; color: var(--text-muted, #6B7280); }
+  .lm-urgency { font-weight: 600; color: var(--text); }
+  .lm-conf { font-size: 11px; color: var(--text-muted, #9CA3AF); }
+  .lm-cands { font-style: italic; }
+
+  &.red {
+    background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.35);
+    .lm-dot { background: #DC2626; }
+  }
+  &.amber {
+    background: rgba(245,158,11,0.09); border-color: rgba(245,158,11,0.35);
+    .lm-dot { background: #F59E0B; }
+  }
+}

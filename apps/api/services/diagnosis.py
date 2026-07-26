@@ -14,7 +14,8 @@ from pathlib import Path
 
 import httpx
 
-from services.vision import analyse_image_url
+from services.vision import analyse_image_url, fetch_image_bytes
+from services.warning_lights import identify_warning_light
 
 logger = logging.getLogger("gaadiiq.diagnosis")
 
@@ -282,6 +283,7 @@ def _build_prompt(
     retrieved_cases: list[dict],
     maintenance_history: list[dict] | None = None,
     vision_analysis: dict | None = None,
+    light_match: dict | None = None,
 ) -> str:
     # Sanitise all user-supplied text to prevent prompt injection (MOB-008)
     manufacturer = _sanitise(manufacturer, 100)
@@ -347,6 +349,32 @@ def _build_prompt(
             vision_text += f"Damage areas identified: {', '.join(areas)}\n"
         if sev:
             vision_text += f"Visual severity: {sev}\n"
+
+    # Local telltale match. Unlike the vision model's free text, this comes
+    # from a fixed catalogue, so the name and its meaning are trustworthy —
+    # what varies is whether the match is right, which the confidence says.
+    if light_match:
+        colour = _sanitise(str(light_match.get("colour") or ""), 20).strip()
+        note = _sanitise(str(light_match.get("urgency_note") or ""), 300).strip()
+        best = light_match.get("best")
+        if best and light_match.get("identified"):
+            vision_text += (
+                f"Dashboard telltale identified from the photo: {best['name']} "
+                f"({light_match.get('confidence', 0)}% confidence). {best['meaning']} "
+                f"{best['urgency']}\n"
+            )
+        elif light_match.get("candidates"):
+            names = ", ".join(
+                str(c.get("name", "")) for c in light_match["candidates"][:3] if c.get("name")
+            )
+            if colour:
+                vision_text += (
+                    f"The photo shows a {colour} dashboard warning light. The symbol could "
+                    f"not be identified with confidence; the closest matches are: {names}. "
+                    f"Ask the owner which symbol it is rather than assuming.\n"
+                )
+        if note:
+            vision_text += f"{note}\n"
 
     intro = "You are an expert automotive diagnostic AI advisor for Indian vehicles."
     intro += " Analyze the following vehicle problem and provide a structured preliminary diagnosis."
@@ -635,12 +663,25 @@ async def run_diagnosis(
     # only evidence the user has, so it has to reach both the retrieval step
     # and the model prompt.
     vision_analysis: dict | None = None
+    light_match: dict | None = None
     if image_urls:
         vision_analysis = await analyse_image_url(image_urls[0], context=problem_description)
-        # A telltale the model identified is worth as much as one the user
+
+        # Local telltale matching runs regardless of whether the vision model
+        # answered. It needs no external service, so it is the difference
+        # between "we read your photo" and "nothing happened" on any
+        # deployment without a vision model installed.
+        raw = await fetch_image_bytes(image_urls[0])
+        if raw:
+            light_match = identify_warning_light(raw)
+
+        # A telltale either source identified is worth as much as one the user
         # ticked, so fold it into the same list retrieval searches over.
         seen = {w.lower() for w in warning_lights}
-        for light in vision_analysis.get("warning_lights_visible") or []:
+        detected = list(vision_analysis.get("warning_lights_visible") or [])
+        if light_match and light_match.get("identified") and light_match.get("best"):
+            detected.append(light_match["best"]["name"])
+        for light in detected:
             if isinstance(light, str) and light.strip() and light.lower() not in seen:
                 warning_lights = [*warning_lights, light.strip()]
                 seen.add(light.lower())
@@ -653,7 +694,7 @@ async def run_diagnosis(
     prompt = _build_prompt(
         manufacturer, model, variant, model_year, fuel_type, transmission,
         odometer_km, problem_description, warning_lights, when_occurs, severity, retrieved,
-        maintenance_history, vision_analysis,
+        maintenance_history, vision_analysis, light_match,
     )
 
     ollama_used = False
@@ -733,6 +774,7 @@ async def run_diagnosis(
     # Vision already ran above and fed the prompt; here it only attaches the
     # raw findings and enforces the risk floor.
     result["vision_analysis"] = vision_analysis
+    result["warning_light_match"] = light_match
     if vision_analysis:
         vision_severity = (vision_analysis.get("severity") or "").lower()
         if vision_severity in ("severe", "critical"):

@@ -569,6 +569,30 @@
           </div>
         </div>
 
+        <!-- What we read from the uploaded photo. Shown above the diagnosis
+             because when a telltale is identified it IS the finding, and an
+             unidentified one still carries a valid colour warning. -->
+        <div class="light-match" *ngIf="report.warning_light_match as wl"
+             [class.red]="wl.colour === 'red'" [class.amber]="wl.colour === 'amber' || wl.colour === 'yellow'">
+          <span class="lm-dot" aria-hidden="true"></span>
+          <div class="lm-body">
+            <ng-container *ngIf="wl.identified && wl.best; else lmUnsure">
+              <strong>Warning light identified: {{ wl.best.name }}</strong>
+              <p>{{ wl.best.meaning }}</p>
+              <p class="lm-urgency">{{ wl.best.urgency }}</p>
+              <span class="lm-conf">Matched from your photo · {{ wl.confidence }}% confidence</span>
+            </ng-container>
+            <ng-template #lmUnsure>
+              <strong *ngIf="wl.colour">A {{ wl.colour }} warning light was detected in your photo</strong>
+              <p *ngIf="wl.urgency_note">{{ wl.urgency_note }}</p>
+              <p class="lm-cands" *ngIf="wl.candidates?.length">
+                We could not identify the exact symbol. Closest matches:
+                {{ candidateNames(wl) }}.
+              </p>
+            </ng-template>
+          </div>
+        </div>
+
         <!-- Drive warning -->
         <div class="drive-warning" [class.danger]="!report.safe_to_drive" [class.safe]="report.safe_to_drive">
           <span>{{ report.safe_to_drive ? '✅' : '🚫' }}</span>
