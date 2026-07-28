@@ -138,17 +138,41 @@ class S3Storage:
     rather than a rewrite: every method matches LocalStorage's signature.
     """
 
-    def __init__(self, bucket: str, endpoint_url: str = "", public_base: str = ""):
+    def __init__(
+        self,
+        bucket: str,
+        endpoint_url: str = "",
+        public_base: str = "",
+        access_key: str = "",
+        secret_key: str = "",
+    ):
         self.bucket = bucket
         self.endpoint_url = endpoint_url
         self.public_base = public_base.rstrip("/")
+        self.access_key = access_key
+        self.secret_key = secret_key
 
     def _client(self):
         try:
             import boto3
+            from botocore.config import Config
         except ImportError as exc:  # pragma: no cover - deployment dependent
             raise StorageError("boto3 is required for S3 storage") from exc
-        return boto3.client("s3", endpoint_url=self.endpoint_url or None)
+
+        # Credentials are passed explicitly rather than left to boto3's
+        # discovery chain: this project holds them in R2_* variables, and
+        # boto3 only looks for AWS_* — so an implicit client failed with
+        # NoCredentialsError on a correctly configured deployment.
+        kwargs = {
+            "endpoint_url": self.endpoint_url or None,
+            # R2 requires SigV4 and rejects a real region name.
+            "config": Config(signature_version="s3v4"),
+            "region_name": "auto",
+        }
+        if self.access_key and self.secret_key:
+            kwargs["aws_access_key_id"] = self.access_key
+            kwargs["aws_secret_access_key"] = self.secret_key
+        return boto3.client("s3", **kwargs)
 
     async def save(self, key: str, data: bytes, content_type: str) -> StoredObject:
         _validate_key(key)
@@ -212,15 +236,27 @@ def get_storage() -> StorageBackend:
 
     kind = os.getenv("MEDIA_BACKEND", "local").lower()
     if kind == "s3":
-        bucket = os.getenv("MEDIA_S3_BUCKET", "")
-        if bucket:
+        # Fall back to the R2 settings the project already carries, so an
+        # existing deployment needs only MEDIA_BACKEND=s3 rather than four new
+        # variables duplicating credentials it already has.
+        from core.config import settings
+
+        bucket = os.getenv("MEDIA_S3_BUCKET") or settings.r2_bucket_name
+        access_key = os.getenv("MEDIA_S3_ACCESS_KEY") or settings.r2_access_key_id
+        secret_key = os.getenv("MEDIA_S3_SECRET_KEY") or settings.r2_secret_access_key
+
+        if bucket and access_key and secret_key:
             _backend = S3Storage(
                 bucket=bucket,
-                endpoint_url=os.getenv("MEDIA_S3_ENDPOINT", ""),
-                public_base=os.getenv("MEDIA_PUBLIC_BASE", ""),
+                endpoint_url=os.getenv("MEDIA_S3_ENDPOINT") or settings.r2_endpoint_url,
+                public_base=os.getenv("MEDIA_PUBLIC_BASE") or settings.r2_public_url,
+                access_key=access_key,
+                secret_key=secret_key,
             )
             return _backend
-        logger.warning("MEDIA_BACKEND=s3 but MEDIA_S3_BUCKET is unset — using local storage")
+        logger.warning(
+            "MEDIA_BACKEND=s3 but bucket or credentials are missing — using local storage"
+        )
     elif kind not in ("local", ""):
         logger.warning("Unknown MEDIA_BACKEND %r — using local storage", kind)
 

@@ -102,10 +102,52 @@ class TestBackendSelectionSuite:
     def test_s3_is_selected_when_configured(self, monkeypatch):
         monkeypatch.setenv("MEDIA_BACKEND", "s3")
         monkeypatch.setenv("MEDIA_S3_BUCKET", "gaadiiq-media")
+        monkeypatch.setenv("MEDIA_S3_ACCESS_KEY", "key")
+        monkeypatch.setenv("MEDIA_S3_SECRET_KEY", "secret")
         reset_storage()
         backend = get_storage()
         assert isinstance(backend, S3Storage)
         assert backend.bucket == "gaadiiq-media"
+
+    def test_existing_r2_settings_are_reused(self, monkeypatch):
+        """
+        MEDIA_BACKEND=s3 alone should suffice on a deployment that already
+        carries R2 credentials, rather than demanding four new variables that
+        duplicate them.
+        """
+        from core.config import settings
+
+        monkeypatch.setenv("MEDIA_BACKEND", "s3")
+        for var in ("MEDIA_S3_BUCKET", "MEDIA_S3_ACCESS_KEY", "MEDIA_S3_SECRET_KEY",
+                    "MEDIA_S3_ENDPOINT", "MEDIA_PUBLIC_BASE"):
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setattr(settings, "r2_bucket_name", "gaadiiq-media")
+        monkeypatch.setattr(settings, "r2_access_key_id", "r2-key")
+        monkeypatch.setattr(settings, "r2_secret_access_key", "r2-secret")
+        monkeypatch.setattr(settings, "r2_endpoint_url", "https://acct.r2.cloudflarestorage.com")
+        monkeypatch.setattr(settings, "r2_public_url", "https://media.gaadiiq.com")
+
+        reset_storage()
+        backend = get_storage()
+        assert isinstance(backend, S3Storage)
+        assert backend.bucket == "gaadiiq-media"
+        assert backend.access_key == "r2-key"
+        assert backend.url_for("brochures/j/1.png") == "https://media.gaadiiq.com/brochures/j/1.png"
+
+    def test_s3_without_credentials_degrades_to_local(self, monkeypatch, tmp_path):
+        # Uploading into a bucket we cannot authenticate to would fail on every
+        # request; local storage at least keeps the feature working.
+        from core.config import settings
+
+        monkeypatch.setenv("MEDIA_BACKEND", "s3")
+        monkeypatch.setenv("MEDIA_S3_BUCKET", "some-bucket")
+        monkeypatch.delenv("MEDIA_S3_ACCESS_KEY", raising=False)
+        monkeypatch.delenv("MEDIA_S3_SECRET_KEY", raising=False)
+        monkeypatch.setattr(settings, "r2_access_key_id", "")
+        monkeypatch.setattr(settings, "r2_secret_access_key", "")
+        monkeypatch.setenv("MEDIA_ROOT", str(tmp_path))
+        reset_storage()
+        assert isinstance(get_storage(), LocalStorage)
 
     def test_unknown_backend_degrades_to_local(self, monkeypatch, tmp_path):
         monkeypatch.setenv("MEDIA_BACKEND", "dropbox")
