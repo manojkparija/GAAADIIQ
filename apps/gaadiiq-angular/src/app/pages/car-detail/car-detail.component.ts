@@ -181,6 +181,7 @@ import { SeoService } from '../../services/seo.service';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { BrochureService } from '../../services/brochure.service';
 import { SentimentService } from '../../services/sentiment.service';
 
 @Component({
@@ -203,6 +204,19 @@ export class CarDetailComponent implements OnInit {
   loan = { amount: 0, rate: 8.5, tenure: 60, emi: 0 }; // kept for template binding
   car!: Car;
   activeImg = signal(0);
+
+  /**
+   * Photographs pulled from manufacturer brochures for this model, appended to
+   * whatever images the listing already carries. Kept in a separate signal so
+   * a slow or failed brochure lookup never delays the gallery rendering.
+   */
+  brochureImages = signal<string[]>([]);
+
+  /** Listing images first — they show the actual car being sold. */
+  galleryImages(): string[] {
+    const own = (this.car?.images?.length ? this.car.images : [this.car?.image]).filter(Boolean) as string[];
+    return [...own, ...this.brochureImages()];
+  }
   notFound = false;
   carLoaded = false;
 
@@ -364,7 +378,7 @@ export class CarDetailComponent implements OnInit {
     this.sentimentSvc.trackPublic(seller.email, buyerId, 'enquiry');
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService) {
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService, private brochures: BrochureService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       // Ids are opaque strings — coercing to Number turned non-numeric ids
@@ -382,6 +396,18 @@ export class CarDetailComponent implements OnInit {
     if (!this.carsData.loading()) {
       this.resolveCar(id);
     }
+  }
+
+  /**
+   * Fetch brochure photography for this model in the background. Failure is
+   * silent: the listing's own images are already on screen, and an empty
+   * brochure library is the normal state for most models.
+   */
+  private _loadBrochureImages(): void {
+    if (!this.car?.make || !this.car?.model) return;
+    this.brochures.imagesFor(this.car.make, this.car.model)
+      .then(imgs => this.brochureImages.set(imgs.map(i => i.url)))
+      .catch(() => this.brochureImages.set([]));
   }
 
   private resolveCar(id: string | number) {
@@ -403,6 +429,7 @@ export class CarDetailComponent implements OnInit {
       this.loadReviews();
       this.seo.setCarDetail(this.car.make, this.car.model, this.car.year, this.car.price, this.car.city || 'India');
       this._trackListingView();
+      this._loadBrochureImages();
       const fuel = this.car.fuel;
       if (fuel === 'Diesel') { this.fuelPrice.set(92); this.fuelPriceMin = 80; this.fuelPriceMax = 110; this.fuelPriceUnit = '/L'; }
       else if (fuel === 'CNG') { this.fuelPrice.set(85); this.fuelPriceMin = 70; this.fuelPriceMax = 110; this.fuelPriceUnit = '/kg'; }

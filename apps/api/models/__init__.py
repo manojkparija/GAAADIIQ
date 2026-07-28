@@ -12,6 +12,7 @@ from .subscription import Subscription
 from .test_drive_booking import TestDriveBooking
 from .user import User
 from .vehicle_diagnosis import VehicleDiagnosis
+from .vehicle_media import ExtractedVehicle, PdfIngestionJob, VehicleMedia
 from .voice_diagnosis import DiagnosisAuditEvent, DiagnosisConversation, VoiceTranscript
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "Notification", "PriceAlert", "Review", "Payment", "Subscription", "RefreshToken",
     "CustomerActivity", "CustomerIntentScore",
     "VehicleDiagnosis", "DiagnosisConversation", "VoiceTranscript", "DiagnosisAuditEvent",
+    "PdfIngestionJob", "VehicleMedia", "ExtractedVehicle",
 ]

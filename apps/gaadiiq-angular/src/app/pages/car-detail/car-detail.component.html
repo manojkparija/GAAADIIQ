@@ -22,9 +22,9 @@
         <!-- IMAGE GALLERY -->
         <div class="gallery glass-card">
           <div class="main-img">
-            <img [src]="(car.images || [car.image])[activeImg()]" [alt]="car.make + ' ' + car.model"
+            <img [src]="galleryImages()[activeImg()]" [alt]="car.make + ' ' + car.model"
                  referrerpolicy="no-referrer"
-                 [style.objectPosition]="((car.images || [car.image])[activeImg()] || '').includes('swift/front') ? 'center 65%' : 'center center'"
+                 [style.objectPosition]="(galleryImages()[activeImg()] || '').includes('swift/front') ? 'center 65%' : 'center center'"
                  onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
             <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
             <button class="like-fab" (click)="liked.set(!liked())" [class.liked]="liked()">
@@ -32,7 +32,7 @@
             </button>
           </div>
           <div class="thumbnails">
-            <div *ngFor="let img of (car.images || [car.image]); let i = index"
+            <div *ngFor="let img of galleryImages(); let i = index"
               class="thumb" [class.active]="activeImg() === i" (click)="activeImg.set(i)">
               <img [src]="img" alt="thumb" referrerpolicy="no-referrer"
                    [style.objectPosition]="img?.includes('swift/front') ? 'center 65%' : 'center center'"

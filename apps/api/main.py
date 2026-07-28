@@ -30,6 +30,7 @@ from routers import (  # noqa: E402
     cars,
     dealers,
     diagnosis,
+    brochures,
     health,
     insurance,
     listings,
@@ -179,6 +180,8 @@ app.include_router(payments.router)
 app.include_router(payments.subs_router)
 app.include_router(sentiment.router)
 app.include_router(diagnosis.router)
+app.include_router(brochures.router)
+app.include_router(brochures.media_router)
 app.include_router(upload.router)
 app.include_router(insurance.router)
 
