@@ -25,6 +25,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Upl
 from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy import desc, select
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependencies import get_admin_user
@@ -343,7 +344,23 @@ async def list_images(
         stmt = stmt.where(VehicleMedia.model.ilike(f"%{model}%"))
     stmt = stmt.order_by(desc(VehicleMedia.created_at)).limit(limit).offset(offset)
 
-    return [_media_out(m) for m in (await db.execute(stmt)).scalars().all()]
+    try:
+        rows = (await db.execute(stmt)).scalars().all()
+    except (ProgrammingError, OperationalError) as exc:
+        # Almost always a missing table: startup runs `alembic upgrade head`
+        # but only LOGS a failure, so the API serves traffic against a database
+        # that never received the migration. A bare 500 gives no clue.
+        logger.error("Brochure tables unavailable: %s", exc)
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Brochure storage is not initialised — the database migration "
+                "has not been applied. Run 'alembic upgrade head' against the "
+                "API database and check the startup logs for the failure."
+            ),
+        ) from exc
+
+    return [_media_out(m) for m in rows]
 
 
 @media_router.get("/{key:path}")
