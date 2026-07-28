@@ -3,6 +3,7 @@ import { HttpClient, HttpEventType, HttpRequest } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { CarsDataService, Car } from './cars-data.service';
+import { SupabaseService } from './supabase.service';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ interface ApiJob {
 export class PdfIngestionService {
   private http = inject(HttpClient);
   private carsData = inject(CarsDataService);
+  private supabase = inject(SupabaseService);
   // The brochure endpoints live on the main API. The old standalone
   // pdf-ingestion service is not deployed, so the previous /api/pdf-ingestion
   // base 404'd on every call — and the silent mock fallback below turned that
@@ -175,17 +177,51 @@ export class PdfIngestionService {
             resolve();
           }
         },
-        error: (err) => {
+        error: async (err) => {
           this._uploadSubs.delete(file.name);
           this.uploadQueue.update(q => q.filter(e => e.filename !== file.name));
-          this.lastError.set(
-            err?.error?.detail ?? err?.message ?? 'Upload failed. Check that you are signed in as an admin.'
-          );
+          this.lastError.set(await this._explain(err));
           resolve();
         },
       });
       this._uploadSubs.set(file.name, sub);
     });
+  }
+
+  /**
+   * Turn a failed upload into something the operator can act on.
+   *
+   * "Not authenticated" is ambiguous on its own: the most common cause is
+   * being signed in through the dev admin shortcut, which sets a local user
+   * but creates no Supabase session — so the interceptor has no token to
+   * attach and the request arrives anonymous. Saying that outright saves
+   * hunting through server logs for a client-side problem.
+   */
+  private async _explain(err: any): Promise<string> {
+    const detail = err?.error?.detail ?? err?.message ?? 'Upload failed.';
+
+    if (err?.status === 401) {
+      const { data } = await this.supabase.client.auth.getSession();
+      if (!data.session) {
+        return 'You are signed in locally but not through Supabase, so no '
+             + 'token was sent. The admin@gaadiiq.com / admin123 shortcut '
+             + 'creates no session — sign out and sign in with a real '
+             + 'Supabase admin account.';
+      }
+      return 'Your session was rejected by the API. Check that '
+           + 'SUPABASE_JWT_SECRET is set on the server and matches this '
+           + 'Supabase project.';
+    }
+    if (err?.status === 403) {
+      return 'Signed in, but this account is not an admin. Add its email to '
+           + 'ADMIN_EMAILS on the API, or set its role to admin.';
+    }
+    if (err?.status === 503) return detail;
+    if (err?.status === 0) {
+      return 'Could not reach the API. It may be starting up — wait a moment '
+           + 'and try again.';
+    }
+    return detail;
   }
 
   /**
