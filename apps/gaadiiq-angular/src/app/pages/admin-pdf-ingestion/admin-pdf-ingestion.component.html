@@ -83,6 +83,20 @@
         <p class="pi-subtitle">Upload automobile brochures, PDFs, images, spreadsheets or documents — the AI pipeline extracts all vehicle data automatically.</p>
       </div>
 
+      <!-- The dev shortcut grants admin in the browser only. Warn before the
+           upload rather than after: every API call from this session arrives
+           with no token and fails, which looks like a server fault. -->
+      @if (auth.isLocalOnly()) {
+        <div class="local-only-warning" role="alert">
+          <strong>You are signed in locally, not through Supabase</strong>
+          <p>
+            The <code>admin&#64;gaadiiq.com</code> / <code>admin123</code> shortcut
+            creates no session, so no token is sent and uploads will be rejected.
+            Sign out and sign in with a real Supabase account to use file ingestion.
+          </p>
+        </div>
+      }
+
       <!-- Drop zone -->
       <div class="drop-zone" [class.drag-over]="dragOver()">
         <div class="drop-inner">

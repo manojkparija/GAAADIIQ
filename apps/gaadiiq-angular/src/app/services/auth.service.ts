@@ -10,6 +10,16 @@ export interface AuthUser {
   name: string;
   role: UserRole;
   sellerId?: number;
+  /**
+   * True when this session exists only in the browser — the dev shortcut,
+   * with no Supabase session behind it.
+   *
+   * Such a user can open admin screens but cannot call any authenticated API
+   * endpoint, because there is no token to send. Screens that talk to the API
+   * must check this and say so, rather than letting the request fail with an
+   * opaque "Not authenticated".
+   */
+  localOnly?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -87,7 +97,16 @@ export class AuthService {
     // serve the free tier. Sign in with a real Supabase admin account to
     // exercise those paths.
     if (email === 'admin@gaadiiq.com' && password === 'admin123') {
-      this.currentUser.set({ email, name: 'Admin', role: 'admin' });
+      // Try a real Supabase sign-in first: if someone has created this account
+      // properly, they get a genuine session and working API access.
+      const { error: realError } = await this.sb.client.auth.signInWithPassword({ email, password });
+      if (!realError) {
+        await this.hydrateUser(email);
+        return;
+      }
+      // Otherwise fall back to a browser-only session, clearly marked so the
+      // UI can warn instead of letting every API call fail mysteriously.
+      this.currentUser.set({ email, name: 'Admin', role: 'admin', localOnly: true });
       return;
     }
 
@@ -196,6 +215,8 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean { return this.currentUser() !== null; }
+  /** Signed in in the browser only — no Supabase session, so no API access. */
+  isLocalOnly(): boolean { return this.currentUser()?.localOnly === true; }
   isAdmin(): boolean    { return this.currentUser()?.role === 'admin'; }
   isSeller(): boolean   { return this.currentUser()?.role === 'seller'; }
   isUser(): boolean     { return this.currentUser()?.role === 'user'; }
