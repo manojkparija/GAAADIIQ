@@ -204,9 +204,8 @@ export class PdfIngestionService {
       const { data } = await this.supabase.client.auth.getSession();
       if (!data.session) {
         return 'You are signed in locally but not through Supabase, so no '
-             + 'token was sent. The admin@gaadiiq.com / admin123 shortcut '
-             + 'creates no session — sign out and sign in with a real '
-             + 'Supabase admin account.';
+             + 'token was sent. The dev sign-in shortcut creates no session — '
+             + 'sign out and sign in with an account that exists in Supabase.';
       }
       return 'Your session was rejected by the API. Check that '
            + 'SUPABASE_JWT_SECRET is set on the server and matches this '

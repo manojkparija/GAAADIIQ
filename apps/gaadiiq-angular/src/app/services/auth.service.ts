@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SupabaseService } from './supabase.service';
+import { environment } from '../../environments/environment';
 
 export type UserRole = 'user' | 'seller' | 'admin';
 
@@ -89,14 +90,14 @@ export class AuthService {
       throw new Error('Invalid email or password (min 6 characters).');
     }
 
-    // Dev admin shortcut — bypasses Supabase for local/preview testing.
+    // Dev admin shortcut — recognises environment.devAdminEmail.
     //
     // NOTE: this creates no Supabase session, so no token is attached to API
     // calls. Server-side features that require a verified identity — notably
     // the Gemini model tier for admins — will treat this user as anonymous and
     // serve the free tier. Sign in with a real Supabase admin account to
     // exercise those paths.
-    if (email === 'admin@gaadiiq.com' && password === 'admin123') {
+    if (email === environment.devAdminEmail && password === 'admin123') {
       // Try a real Supabase sign-in first: if someone has created this account
       // properly, they get a genuine session and working API access.
       const { error: realError } = await this.sb.client.auth.signInWithPassword({ email, password });
