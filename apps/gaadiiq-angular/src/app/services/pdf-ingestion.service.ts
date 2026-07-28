@@ -63,13 +63,42 @@ export interface IngestionJob {
 
 export interface UploadProgress { jobId: string; filename: string; progress: number; }
 
+// ── Shapes returned by the API (see routers/brochures.py) ────────────────────
+interface ApiImage {
+  id: string; url: string; content_type: string;
+  width?: number | null; height?: number | null;
+  make?: string | null; model?: string | null; variant?: string | null;
+  colour?: string | null; source_pdf_name: string;
+  page_number?: number | null; created_at: string;
+}
+interface ApiVehicle {
+  id: string; make?: string | null; model?: string | null; variant?: string | null;
+  model_year?: number | null; price_inr?: number | null; fuel_type?: string | null;
+  transmission?: string | null; body_type?: string | null;
+  colours?: string[] | null; features?: string[] | null;
+  specs?: Record<string, string> | null; confidence: number; review_status: string;
+}
+interface ApiJob {
+  id: string; source_pdf_name: string; status: string; error_message?: string | null;
+  page_count: number; image_count: number; vehicle_count: number;
+  ai_engine?: string | null; created_at: string; completed_at?: string | null;
+  images?: ApiImage[]; vehicles?: ApiVehicle[];
+}
+
 // ── Service ──────────────────────────────────────────────────────────────────
 
 @Injectable({ providedIn: 'root' })
 export class PdfIngestionService {
   private http = inject(HttpClient);
   private carsData = inject(CarsDataService);
-  private base = `${environment.apiUrl ?? 'http://localhost:8001'}/api/pdf-ingestion`;
+  // The brochure endpoints live on the main API. The old standalone
+  // pdf-ingestion service is not deployed, so the previous /api/pdf-ingestion
+  // base 404'd on every call — and the silent mock fallback below turned that
+  // 404 into an empty "0 records extracted" job that looked like a real result.
+  private base = `${environment.apiUrl}/brochures`;
+
+  /** Set when an upload fails, so the UI can say why instead of showing nothing. */
+  lastError = signal<string | null>(null);
 
   jobs         = signal<IngestionJob[]>([]);
   uploadQueue  = signal<UploadProgress[]>([]);
@@ -108,12 +137,11 @@ export class PdfIngestionService {
     const entry: UploadProgress = { jobId: '', filename: file.name, progress: 0 };
     this.uploadQueue.update(q => [...q, entry]);
 
-    const backendUp = await this._isBackendUp();
-    if (backendUp) {
-      return this._uploadToBackend(file, entry, listingType);
-    } else {
-      return this._uploadMockPipeline(file, entry, listingType);
-    }
+    // No probe and no mock: a failed upload must surface as a failure. The
+    // previous version fabricated an empty job whenever the backend was
+    // unreachable, which is indistinguishable from a brochure the AI could
+    // not read.
+    return this._uploadToBackend(file, entry, listingType);
   }
 
   private async _isBackendUp(): Promise<boolean> {
@@ -128,10 +156,10 @@ export class PdfIngestionService {
   private _uploadToBackend(file: File, entry: UploadProgress, listingType: 'new' | 'used'): Promise<void> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('listing_type', listingType);
     const req = new HttpRequest('POST', `${this.base}/upload`, formData, { reportProgress: true });
+    this.lastError.set(null);
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const sub = this.http.request(req).subscribe({
         next: event => {
           if (event.type === HttpEventType.UploadProgress && event.total) {
@@ -139,7 +167,7 @@ export class PdfIngestionService {
             this.uploadQueue.update(q => q.map(e => e.filename === file.name ? { ...e, progress: entry.progress } : e));
           }
           if (event.type === HttpEventType.Response) {
-            const job = event.body as IngestionJob;
+            const job = this._mapJob(event.body as ApiJob);
             entry.jobId = job.id;
             this.jobs.update(j => [job, ...j]);
             this.uploadQueue.update(q => q.filter(e => e.filename !== file.name));
@@ -147,14 +175,78 @@ export class PdfIngestionService {
             resolve();
           }
         },
-        error: () => {
+        error: (err) => {
           this._uploadSubs.delete(file.name);
           this.uploadQueue.update(q => q.filter(e => e.filename !== file.name));
-          this._uploadMockPipeline(file, entry, listingType).then(resolve).catch(resolve);
+          this.lastError.set(
+            err?.error?.detail ?? err?.message ?? 'Upload failed. Check that you are signed in as an admin.'
+          );
+          resolve();
         },
       });
       this._uploadSubs.set(file.name, sub);
     });
+  }
+
+  /**
+   * Translate the API's job shape into the one this UI was built against.
+   *
+   * Kept as a mapping rather than reshaping the UI: the review screen already
+   * works, and the API deliberately uses different names (storage keys, review
+   * status) that should not leak into the component.
+   */
+  private _mapJob(api: ApiJob): IngestionJob {
+    const images: ExtractedImage[] = (api.images ?? []).map(i => ({
+      id: i.id,
+      url: i.url.startsWith('http') ? i.url : `${environment.apiUrl}${i.url}`,
+      colour: i.colour ?? null,
+      match_confidence: 1,
+      matched_variant: i.variant ?? null,
+      page_num: i.page_number ?? 0,
+    }));
+
+    const vehicles: ExtractedVehicle[] = (api.vehicles ?? []).map(v => ({
+      id: v.id,
+      job_id: api.id,
+      make: v.make ?? null,
+      model: v.model ?? null,
+      variant: v.variant ?? null,
+      year: v.model_year ?? null,
+      body_type: v.body_type ?? null,
+      fuel_type: v.fuel_type ?? null,
+      transmission: v.transmission ?? null,
+      price_inr: v.price_inr ?? null,
+      engine_cc: null,
+      power_bhp: null,
+      torque_nm: null,
+      mileage_kmpl: null,
+      seating: null,
+      colours: v.colours ?? [],
+      specs: Object.entries(v.specs ?? {}).map(([label, value]) => ({ label, value: String(value) })),
+      // Every image from the brochure is offered against each vehicle; the
+      // admin assigns them. Guessing would silently mislabel photos.
+      images,
+      quality_score: Math.round((v.confidence ?? 0) * 100),
+      confidence: {},
+      status: v.confidence >= 0.8 ? 'READY' : v.confidence >= 0.5 ? 'NEEDS_REVIEW' : 'INCOMPLETE',
+      duplicate_of: null,
+      admin_notes: '',
+    }));
+
+    return {
+      id: api.id,
+      filename: api.source_pdf_name,
+      file_size: 0,
+      status: api.status === 'completed' ? 'AWAITING_REVIEW'
+            : api.status === 'failed' ? 'FAILED' : 'PARSING',
+      progress: api.status === 'completed' ? 100 : 50,
+      vehicles_found: api.vehicle_count,
+      created_at: api.created_at,
+      completed_at: api.completed_at ?? null,
+      error: api.error_message ?? null,
+      vehicles,
+      images,
+    } as IngestionJob;
   }
 
   private async _renderPdfPages(file: File): Promise<string[]> {
@@ -317,9 +409,29 @@ export class PdfIngestionService {
 
   async loadJobs(): Promise<void> {
     try {
-      const jobs = await this.http.get<IngestionJob[]>(`${this.base}/jobs`).toPromise();
-      if (jobs?.length) this.jobs.set(jobs);
-    } catch { /* backend offline — keep local state */ }
+      const jobs = await this.http.get<ApiJob[]>(`${this.base}/jobs`).toPromise();
+      // The list endpoint omits images and vehicles; a job's detail is fetched
+      // when it is opened.
+      if (jobs) this.jobs.set(jobs.map(j => this._mapJob(j)));
+    } catch (err: any) {
+      this.lastError.set(err?.status === 403
+        ? 'Admin sign-in required to view ingestion jobs.'
+        : null);
+    }
+  }
+
+  /** Full detail for one job, including its extracted images. */
+  async loadJob(jobId: string): Promise<IngestionJob | null> {
+    try {
+      const job = await this.http.get<ApiJob>(`${this.base}/jobs/${jobId}`).toPromise();
+      if (!job) return null;
+      const mapped = this._mapJob(job);
+      this.jobs.update(list => list.map(j => (j.id === jobId ? mapped : j)));
+      this.selectedJob.set(mapped);
+      return mapped;
+    } catch {
+      return null;
+    }
   }
 
   selectJob(job: IngestionJob) { this.selectedJob.set(job); }

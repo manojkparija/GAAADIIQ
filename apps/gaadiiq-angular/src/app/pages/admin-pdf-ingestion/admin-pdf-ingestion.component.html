@@ -98,6 +98,16 @@
         </div>
       </div>
 
+      <!-- An upload that fails must say so. Previously a failure fell back to
+           a client-side mock and rendered an empty job, which was
+           indistinguishable from a brochure the AI could not read. -->
+      @if (svc.lastError()) {
+        <div class="upload-error" role="alert">
+          <strong>Upload failed</strong>
+          <p>{{ svc.lastError() }}</p>
+        </div>
+      }
+
       <!-- Upload queue -->
       @if (svc.uploadQueue().length) {
         <div class="upload-queue">
