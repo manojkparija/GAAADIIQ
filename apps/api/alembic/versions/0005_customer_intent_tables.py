@@ -21,9 +21,9 @@ def upgrade() -> None:
     op.create_table(
         "customer_activities",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("user_id", sa.String(36), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("dealer_id", sa.String(36), sa.ForeignKey("dealers.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("listing_id", sa.String(36), sa.ForeignKey("listings.id", ondelete="SET NULL"), nullable=True),
+        sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("dealer_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("dealers.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("listing_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("listings.id", ondelete="SET NULL"), nullable=True),
         sa.Column("activity_type", sa.Enum(
             "listing_view", "search", "enquiry", "test_drive_request",
             "loan_inquiry", "price_alert", "whatsapp_click", "photo_view",
@@ -41,8 +41,8 @@ def upgrade() -> None:
     op.create_table(
         "customer_intent_scores",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("user_id", sa.String(36), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("dealer_id", sa.String(36), sa.ForeignKey("dealers.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("dealer_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("dealers.id", ondelete="CASCADE"), nullable=False),
         sa.Column("intent_score", sa.Float, nullable=False, default=0.0),
         sa.Column("lead_grade", sa.Enum("A", "B", "C", "D", name="leadgrade"), nullable=False, default="D"),
         sa.Column("engagement_score", sa.Float, nullable=False, default=0.0),
