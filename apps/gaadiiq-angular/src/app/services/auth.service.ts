@@ -27,6 +27,15 @@ export interface AuthUser {
 export class AuthService {
   currentUser = signal<AuthUser | null>(null);
 
+  /**
+   * Why Supabase refused the dev-shortcut sign-in, when it did.
+   *
+   * Shown in the admin warning banner: an unconfirmed email and a wrong
+   * password both land in the same browser-only fallback but need different
+   * fixes.
+   */
+  localOnlyReason = signal<string | null>(null);
+
   constructor(private router: Router, private sb: SupabaseService) {
     // Restore session from Supabase on boot
     this.sb.client.auth.getSession().then(({ data }) => {
@@ -107,10 +116,17 @@ export class AuthService {
       }
       // Otherwise fall back to a browser-only session, clearly marked so the
       // UI can warn instead of letting every API call fail mysteriously.
+      //
+      // Keep Supabase's reason: "Email not confirmed" and "Invalid login
+      // credentials" need completely different fixes, and without the message
+      // the two are indistinguishable from the UI.
+      console.warn('Supabase rejected the dev admin sign-in:', realError.message);
+      this.localOnlyReason.set(realError.message);
       this.currentUser.set({ email, name: 'Admin', role: 'admin', localOnly: true });
       return;
     }
 
+    this.localOnlyReason.set(null);
     const { error } = await this.sb.client.auth.signInWithPassword({ email, password });
     if (error) {
       // Supabase returns "Invalid login credentials" for wrong password or unknown email
