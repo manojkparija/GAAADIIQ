@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import enum
 import logging
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -46,26 +47,102 @@ class VerifiedCaller:
         self.source = source  # "api" | "supabase"
 
 
+# JWKS cache. Supabase rotates signing keys rarely, and re-fetching on every
+# request would put a network round-trip in front of each authenticated call.
+_JWKS: dict | None = None
+_JWKS_FETCHED_AT: float = 0.0
+_JWKS_TTL = 3600.0
+
+
+def _jwks() -> dict | None:
+    """
+    Supabase's public signing keys, cached for an hour.
+
+    Returns None when no project URL is configured or the fetch fails; callers
+    then fall back to the shared-secret path.
+    """
+    global _JWKS, _JWKS_FETCHED_AT
+
+    # Cache first: a key set already in hand stays valid whether or not a URL
+    # is configured, and checking the URL first made a warm cache unusable.
+    if _JWKS is not None and (time.time() - _JWKS_FETCHED_AT) < _JWKS_TTL:
+        return _JWKS
+    if not settings.supabase_url:
+        return None
+
+    url = settings.supabase_url.rstrip("/") + "/auth/v1/.well-known/jwks.json"
+    try:
+        import httpx
+
+        resp = httpx.get(url, timeout=5.0)
+        resp.raise_for_status()
+        _JWKS = resp.json()
+        _JWKS_FETCHED_AT = time.time()
+        return _JWKS
+    except Exception as exc:
+        logger.warning("Could not fetch Supabase JWKS from %s: %s", url, exc)
+        return None
+
+
 def _verify_supabase_token(token: str) -> VerifiedCaller | None:
     """
-    Verify a Supabase-issued JWT (HS256, project secret).
+    Verify a Supabase-issued JWT.
 
-    The UI authenticates against Supabase, so without this the backend cannot
-    tell a signed-in admin from an anonymous visitor. Returns None when no
-    secret is configured or the token does not verify — never trusts unverified
-    claims.
+    Supabase projects sign in one of two ways, and which one depends on when
+    the project was created:
+
+      - Legacy: HS256 with a shared project secret (SUPABASE_JWT_SECRET).
+      - Current: asymmetric keys (ES256/RS256) published at the project's
+        JWKS endpoint, with no shared secret to configure.
+
+    Both are supported, chosen by the token's own header, because a deployment
+    should not break when Supabase migrates the project. Returns None when the
+    token does not verify — unverified claims are never trusted.
     """
-    if not settings.supabase_jwt_secret:
-        return None
+    payload: dict | None = None
+
     try:
-        payload = jwt.decode(
-            token,
-            settings.supabase_jwt_secret,
-            algorithms=["HS256"],
-            # Supabase sets aud="authenticated" on user tokens.
-            options={"verify_aud": False},
-        )
+        header = jwt.get_unverified_header(token)
     except JWTError:
+        return None
+
+    alg = (header.get("alg") or "").upper()
+
+    if alg.startswith("HS"):
+        if not settings.supabase_jwt_secret:
+            return None
+        try:
+            payload = jwt.decode(
+                token,
+                settings.supabase_jwt_secret,
+                algorithms=["HS256"],
+                # Supabase sets aud="authenticated" on user tokens.
+                options={"verify_aud": False},
+            )
+        except JWTError:
+            return None
+    else:
+        jwks = _jwks()
+        if not jwks:
+            return None
+        kid = header.get("kid")
+        key = next(
+            (k for k in jwks.get("keys", []) if not kid or k.get("kid") == kid),
+            None,
+        )
+        if key is None:
+            return None
+        try:
+            payload = jwt.decode(
+                token,
+                key,
+                algorithms=[alg] if alg else ["ES256", "RS256"],
+                options={"verify_aud": False},
+            )
+        except JWTError:
+            return None
+
+    if not payload:
         return None
 
     email = payload.get("email")

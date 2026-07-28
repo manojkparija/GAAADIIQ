@@ -132,3 +132,75 @@ class TestSupabaseTokenAuthSuite:
     @pytest.mark.asyncio
     async def test_no_token_is_still_unauthenticated(self, client):
         assert (await client.get("/brochures/jobs")).status_code == 401
+
+
+class TestAsymmetricSupabaseKeysSuite:
+    """
+    Newer Supabase projects sign with ES256 keys published at a JWKS endpoint
+    and have no shared secret at all. A deployment must not break when the
+    project is migrated, so both signing modes are accepted.
+    """
+
+    @staticmethod
+    def _es256_keypair():
+        """A private key PEM plus the matching public JWK, as Supabase publishes."""
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from jose import jwk
+
+        private = ec.generate_private_key(ec.SECP256R1())
+        pem = private.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
+        ).decode()
+        public_pem = private.public_key().public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        ).decode()
+
+        public_jwk = jwk.construct(public_pem, algorithm="ES256").to_dict()
+        # to_dict() can hand back bytes for the coordinates; a JWKS served over
+        # HTTP is JSON, so normalise to str or the verifier rejects the key.
+        public_jwk = {
+            k: (v.decode() if isinstance(v, bytes) else v) for k, v in public_jwk.items()
+        }
+        public_jwk["kid"] = "test-key-1"
+        return pem, public_jwk
+
+    @pytest.mark.asyncio
+    async def test_es256_token_is_accepted(self, client, monkeypatch):
+        import services.llm_tier as llm_tier
+
+        pem, public_jwk = self._es256_keypair()
+        monkeypatch.setattr(settings, "admin_emails", "boss@gaadiiq.com")
+        # No shared secret exists on an asymmetric project.
+        monkeypatch.setattr(settings, "supabase_jwt_secret", "")
+        monkeypatch.setattr(settings, "supabase_url", "https://test.supabase.co")
+        monkeypatch.setattr(llm_tier, "_JWKS", {"keys": [public_jwk]})
+        monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", 9e18)  # never expire
+
+        token = jwt.encode(
+            {"sub": str(uuid.uuid4()), "email": "boss@gaadiiq.com", "aud": "authenticated"},
+            pem, algorithm="ES256", headers={"kid": "test-key-1"},
+        )
+        r = await client.get("/brochures/jobs", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 200, r.text
+
+    @pytest.mark.asyncio
+    async def test_token_signed_by_another_key_is_rejected(self, client, monkeypatch):
+        import services.llm_tier as llm_tier
+
+        _, published_jwk = self._es256_keypair()
+        attacker_pem, _ = self._es256_keypair()
+        monkeypatch.setattr(settings, "supabase_jwt_secret", "")
+        monkeypatch.setattr(settings, "supabase_url", "https://test.supabase.co")
+        monkeypatch.setattr(llm_tier, "_JWKS", {"keys": [published_jwk]})
+        monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", 9e18)
+
+        token = jwt.encode(
+            {"sub": str(uuid.uuid4()), "email": "attacker@evil.com"},
+            attacker_pem, algorithm="ES256", headers={"kid": "test-key-1"},
+        )
+        r = await client.get("/brochures/jobs", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 401

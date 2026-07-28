@@ -42,8 +42,17 @@ services:
       # Secrets — set these in the Render dashboard, not here.
       - key: DATABASE_URL
         sync: false            # Supabase connection string
+      # Supabase token verification. Legacy projects sign with a shared HS256
+      # secret; newer ones use asymmetric keys published at a JWKS endpoint and
+      # have no secret at all. Set whichever applies — SUPABASE_URL alone is
+      # enough for an asymmetric project.
       - key: SUPABASE_JWT_SECRET
-        sync: false            # required for admins to get the Gemini tier
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      # Comma-separated emails granted admin regardless of their stored role.
+      - key: ADMIN_EMAILS
+        sync: false
       - key: SECRET_KEY
         sync: false            # JWT signing key for this backend
       - key: GEMINI_API_KEY

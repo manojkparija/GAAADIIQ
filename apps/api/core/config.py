@@ -89,6 +89,10 @@ class Settings(BaseSettings):
     # with a different key. Without this, a Supabase-authenticated caller is
     # indistinguishable from an anonymous one.
     supabase_jwt_secret: str = ""
+    # Project URL, e.g. https://abcdefgh.supabase.co — used to fetch the JWKS
+    # when the project signs tokens with asymmetric keys rather than the
+    # legacy shared secret.
+    supabase_url: str = ""
 
     # Emails always treated as admin, regardless of which user store holds the
     # role. Checked only against a *verified* token, never a client-sent value.
