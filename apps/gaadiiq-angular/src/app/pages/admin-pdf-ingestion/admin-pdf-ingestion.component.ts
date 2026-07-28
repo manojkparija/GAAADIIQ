@@ -106,11 +106,27 @@ export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
     this.toast(`Upload cancelled: ${filename}`);
   }
 
+  /**
+   * Every image extracted from the brochure.
+   *
+   * Read off the job rather than off a vehicle: images and vehicle records are
+   * produced by two independent steps, so a job can legitimately have images
+   * and no vehicles.
+   */
+  jobImages(job: IngestionJob): ExtractedImage[] {
+    return (job as any).images ?? job.vehicles.flatMap(v => v.images ?? []);
+  }
+
   // ── Review actions ─────────────────────────────────────────────────────
 
-  openReview(job: IngestionJob) {
+  async openReview(job: IngestionJob) {
+    // Show what we already have immediately, then fetch the full record.
+    // The jobs LIST endpoint omits images and vehicles to keep the response
+    // small, so opening a job straight from the list showed an empty review
+    // screen no matter what the brochure contained.
     this.svc.selectJob(job);
     this.activeTab.set('review');
+    await this.svc.loadJob(job.id);
   }
 
   startEdit(vehicle: ExtractedVehicle) {

@@ -221,7 +221,11 @@
       <div class="pi-section-hdr">
         <div>
           <h1 class="pi-title">Review Extracted Data</h1>
-          <p class="pi-subtitle">Source: <strong>{{ job.filename }}</strong> · {{ job.vehicles.length }} records extracted</p>
+          <p class="pi-subtitle">
+            Source: <strong>{{ job.filename }}</strong> ·
+            {{ job.vehicles.length }} vehicle record{{ job.vehicles.length === 1 ? '' : 's' }} ·
+            {{ jobImages(job).length }} image{{ jobImages(job).length === 1 ? '' : 's' }}
+          </p>
         </div>
         <button class="btn-bulk-approve"
           [disabled]="!readyToApprove().length"
@@ -229,6 +233,42 @@
           ✓ Approve All READY ({{ readyToApprove().length }})
         </button>
       </div>
+
+      <!-- Images extracted from the PDF.
+           Shown independently of the vehicle records: image extraction and AI
+           extraction fail separately, and a brochure whose text the model
+           could not parse still yields usable photographs. Listing only
+           vehicles made a successful image extraction look like a total
+           failure. -->
+      @if (jobImages(job).length) {
+        <div class="extracted-images">
+          <h3 class="ei-title">Images extracted from this brochure</h3>
+          <div class="ei-grid">
+            @for (img of jobImages(job); track img.id) {
+              <figure class="ei-item">
+                <img [src]="img.url" [alt]="job.filename + ' page ' + img.page_num" loading="lazy">
+                <figcaption>Page {{ img.page_num }}</figcaption>
+              </figure>
+            }
+          </div>
+        </div>
+      }
+
+      @if (!job.vehicles.length) {
+        <div class="ei-note">
+          @if (jobImages(job).length) {
+            <strong>No vehicle details were read from this PDF.</strong>
+            <p>The images above were extracted successfully. Text extraction needs
+               an AI model — check that GEMINI_API_KEY is set on the API, or that
+               Ollama is reachable.</p>
+          } @else {
+            <strong>Nothing could be extracted from this PDF.</strong>
+            <p>If the brochure is a scan, the pages are pictures of text rather
+               than text, so neither embedded images nor readable content are
+               present.</p>
+          }
+        </div>
+      }
 
       <!-- Summary row -->
       <div class="review-summary">
