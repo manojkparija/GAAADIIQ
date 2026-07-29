@@ -256,3 +256,48 @@ class TestEmptyExtractionIsExplainedSuite:
 
         assert "gemini" in reason
         assert "found no vehicle records" in reason
+
+
+class TestVisionOutcomesAreDistinguishedSuite:
+    """
+    "No text layer" has four outcomes, and they need four different messages.
+
+    Collapsing them told an operator to set GEMINI_API_KEY when the key was set
+    and the call had failed — the same misdiagnosis the previous fix removed,
+    one layer further in.
+    """
+
+    def test_key_missing_is_the_only_message_naming_the_key(self):
+        from routers.brochures import _why_no_vehicles
+
+        assert "does not appear to be set" in _why_no_vehicles("", "none")
+
+        for engine in ("gemini-vision", "vision-call-failed",
+                       "vision-render-failed", "vision-parse-failed"):
+            reason = _why_no_vehicles("", engine)
+            assert "does not appear to be set" not in reason, engine
+
+    def test_a_failed_call_points_at_the_logs(self):
+        from routers.brochures import _why_no_vehicles
+
+        reason = _why_no_vehicles("", "vision-call-failed")
+
+        assert "failed" in reason.lower()
+        assert "logs" in reason.lower()
+        # Quota and a bad key are the usual causes; naming them saves a search.
+        assert "quota" in reason.lower()
+
+    def test_a_successful_read_that_found_nothing_suggests_dpi(self):
+        from routers.brochures import _why_no_vehicles
+
+        assert "PDF_VISION_DPI" in _why_no_vehicles("", "gemini-vision")
+
+    def test_render_and_parse_failures_are_told_apart(self):
+        from routers.brochures import _why_no_vehicles
+
+        render = _why_no_vehicles("", "vision-render-failed")
+        parse = _why_no_vehicles("", "vision-parse-failed")
+
+        assert "could not be rendered" in render
+        assert "not the expected JSON" in parse
+        assert render != parse

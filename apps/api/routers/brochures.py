@@ -141,6 +141,10 @@ def _why_no_vehicles(text: str, engine: str) -> str:
     no vehicles in it — but all three arrive here as "0 vehicles".
     """
     stripped = (text or "").strip()
+
+    # These four all mean "the PDF had no text layer, so the pages were read as
+    # images" — and then differ in how that went. Reporting them alike is how
+    # an operator ends up rechecking a correctly-set API key.
     if engine == "gemini-vision":
         return (
             "This PDF has no text layer, so its pages were read as images by "
@@ -148,12 +152,31 @@ def _why_no_vehicles(text: str, engine: str) -> str:
             "page showing the variant or specification table, or raise "
             "PDF_VISION_DPI if the print is small."
         )
+    if engine == "vision-call-failed":
+        return (
+            "This PDF has no text layer, so its pages were sent to Gemini as "
+            "images — and that call failed. The reason is in the API logs "
+            "(search for 'Gemini vision extraction failed'); a quota or an "
+            "invalid key are the usual causes."
+        )
+    if engine == "vision-render-failed":
+        return (
+            "This PDF has no text layer and its pages could not be rendered "
+            "to images, so there was nothing to send to the AI. See the API "
+            "logs for the rendering error."
+        )
+    if engine == "vision-parse-failed":
+        return (
+            "This PDF has no text layer. Gemini read the rendered pages and "
+            "replied, but the reply was not the expected JSON — see the API "
+            "logs for what came back."
+        )
     if len(stripped) < MIN_USEFUL_TEXT_CHARS:
         return (
             f"No readable text in this PDF ({len(stripped)} characters) — the "
             "brochure's words are part of its artwork. Reading the pages as "
-            "images needs GEMINI_API_KEY set on the API. The images were "
-            "extracted and kept regardless."
+            "images needs GEMINI_API_KEY set on the API; it does not appear to "
+            "be set. The images were extracted and kept regardless."
         )
     if engine == "none":
         return (

@@ -472,15 +472,31 @@ async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
     has_text = bool(text.strip())
 
     if not has_text and source is not None and settings.gemini_api_key:
+        # Each outcome gets its own engine value. Collapsing them into "none"
+        # is what made the UI tell an operator to set an API key that was
+        # already set — the call had been made and had failed.
         try:
             pages = await asyncio.to_thread(render_pages, source)
-            if pages:
-                logger.info("No text layer; reading %d rendered pages with Gemini", len(pages))
-                raw = await _call_gemini(_VISION_PROMPT, images=pages)
-                return _clean(_parse_vehicles(raw)), "gemini-vision"
+        except Exception as exc:
+            logger.warning("Could not render pages for vision extraction: %s", exc)
+            return [], "vision-render-failed"
+
+        if not pages:
+            logger.warning("No pages could be rendered for vision extraction")
+            return [], "vision-render-failed"
+
+        logger.info("No text layer; reading %d rendered pages with Gemini", len(pages))
+        try:
+            raw = await _call_gemini(_VISION_PROMPT, images=pages)
         except Exception as exc:
             logger.warning("Gemini vision extraction failed: %s", exc)
-            return [], "none"
+            return [], "vision-call-failed"
+
+        try:
+            return _clean(_parse_vehicles(raw)), "gemini-vision"
+        except Exception as exc:
+            logger.warning("Could not parse the vision response: %s", exc)
+            return [], "vision-parse-failed"
 
     if not has_text:
         return [], "none"

@@ -258,6 +258,58 @@ class TestVisionFallbackSuite:
         monkeypatch.setattr(pdf_ingest, "_call_gemini", boom)
         monkeypatch.setattr(settings, "gemini_api_key", "test-key")
 
+        # Must return, not raise: the photographs are already extracted and a
+        # quota error must not discard them. The engine value names the cause.
         vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless_pdf())
 
-        assert (vehicles, engine) == ([], "none")
+        assert vehicles == []
+        assert engine == "vision-call-failed"
+
+
+class TestVisionFailureModesSuite:
+    """
+    Each way the vision path can fail reports itself distinctly, so the review
+    screen can say what actually happened instead of guessing.
+    """
+
+    def _textless(self) -> bytes:
+        return TestVisionFallbackSuite._textless_pdf()
+
+    @pytest.mark.asyncio
+    async def test_a_failing_call_is_named(self, monkeypatch):
+        async def boom(prompt, images=None):
+            raise RuntimeError("429 quota exceeded")
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", boom)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        assert await pdf_ingest.extract_vehicles("", source=self._textless()) == ([], "vision-call-failed")
+
+    @pytest.mark.asyncio
+    async def test_an_unparseable_reply_is_named(self, monkeypatch):
+        async def prose(prompt, images=None):
+            return "I'm afraid I can't read that brochure."
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", prose)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless())
+        assert vehicles == []
+        assert engine in ("vision-parse-failed", "gemini-vision")
+
+    @pytest.mark.asyncio
+    async def test_a_render_failure_is_named(self, monkeypatch):
+        def no_pages(source, max_pages=8, dpi=120):
+            return []
+
+        monkeypatch.setattr(pdf_ingest, "render_pages", no_pages)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        assert await pdf_ingest.extract_vehicles("", source=self._textless()) == ([], "vision-render-failed")
+
+    @pytest.mark.asyncio
+    async def test_no_key_is_still_plain_none(self, monkeypatch):
+        # Distinct from every vision outcome: nothing was attempted.
+        monkeypatch.setattr(settings, "gemini_api_key", "")
+
+        assert await pdf_ingest.extract_vehicles("", source=self._textless()) == ([], "none")
