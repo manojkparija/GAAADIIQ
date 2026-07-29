@@ -80,7 +80,8 @@ interface ApiVehicle {
   specs?: Record<string, string> | null; confidence: number; review_status: string;
 }
 interface ApiJob {
-  id: string; source_pdf_name: string; status: string; error_message?: string | null;
+  id: string; source_pdf_name: string; file_size_bytes?: number;
+  status: string; error_message?: string | null;
   page_count: number; image_count: number; vehicle_count: number;
   ai_engine?: string | null; created_at: string; completed_at?: string | null;
   images?: ApiImage[]; vehicles?: ApiVehicle[];
@@ -271,7 +272,7 @@ export class PdfIngestionService {
     return {
       id: api.id,
       filename: api.source_pdf_name,
-      file_size: 0,
+      file_size: api.file_size_bytes ?? 0,
       status: api.status === 'completed' ? 'AWAITING_REVIEW'
             : api.status === 'failed' ? 'FAILED' : 'PARSING',
       progress: api.status === 'completed' ? 100 : 50,
@@ -433,10 +434,18 @@ export class PdfIngestionService {
 
   async pollJob(jobId: string): Promise<IngestionJob> {
     try {
-      const job = await this.http.get<IngestionJob>(`${this.base}/jobs/${jobId}`).toPromise();
-      this.jobs.update(list => list.map(j => j.id === jobId ? job! : j));
-      if (this.selectedJob()?.id === jobId) this.selectedJob.set(job!);
-      return job!;
+      // Must go through _mapJob. This used to write the API's own shape
+      // straight into the list, which has different field names entirely:
+      // the job then rendered with no filename, "NaN MB", a blank vehicle
+      // count, and the API's raw status word instead of the UI's. Polling runs
+      // every 4 seconds, so a correctly mapped job was overwritten with a
+      // broken one moments after it appeared.
+      const api = await this.http.get<ApiJob>(`${this.base}/jobs/${jobId}`).toPromise();
+      if (!api) return this.jobs().find(j => j.id === jobId)!;
+      const job = this._mapJob(api);
+      this.jobs.update(list => list.map(j => j.id === jobId ? job : j));
+      if (this.selectedJob()?.id === jobId) this.selectedJob.set(job);
+      return job;
     } catch {
       return this.jobs().find(j => j.id === jobId)!;
     }

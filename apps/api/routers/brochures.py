@@ -162,6 +162,9 @@ class VehicleOut(BaseModel):
 class JobOut(BaseModel):
     id: uuid.UUID
     source_pdf_name: str
+    # Stored since the first version but never returned, so the admin list had
+    # no size to show and rendered "NaN MB".
+    file_size_bytes: int = 0
     status: str
     error_message: str | None = None
     page_count: int
@@ -375,6 +378,7 @@ async def _job_detail(db: AsyncSession, job_id: uuid.UUID) -> JobDetailOut:
     return JobDetailOut(
         id=job.id,
         source_pdf_name=job.source_pdf_name,
+        file_size_bytes=job.file_size_bytes or 0,
         status=job.status.value,
         error_message=job.error_message,
         page_count=job.page_count,
@@ -404,7 +408,8 @@ async def list_jobs(
         select(PdfIngestionJob).order_by(desc(PdfIngestionJob.created_at)).limit(limit)
     )).scalars().all()
     return [JobOut(
-        id=j.id, source_pdf_name=j.source_pdf_name, status=j.status.value,
+        id=j.id, source_pdf_name=j.source_pdf_name,
+        file_size_bytes=j.file_size_bytes or 0, status=j.status.value,
         error_message=j.error_message, page_count=j.page_count,
         image_count=j.image_count, vehicle_count=j.vehicle_count,
         ai_engine=j.ai_engine, created_at=j.created_at, completed_at=j.completed_at,
