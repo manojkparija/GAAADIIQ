@@ -199,6 +199,8 @@ async def upload_brochure(
         raise HTTPException(status_code=422, detail=f"Could not read PDF: {exc}") from exc
 
     stored = 0
+    storage_failures = 0
+    last_storage_error = ""
     # The loop stays lazy — materialising it here would undo the streaming and
     # restore the OOM. The handler wraps the loop because iter_images is a
     # generator: a PDF PyMuPDF cannot open raises on first iteration, not at
@@ -215,6 +217,8 @@ async def upload_brochure(
                 obj = await storage.save(key, img["data"], content_type)
             except StorageError as exc:
                 logger.warning("Could not store image %s: %s", key, exc)
+                storage_failures += 1
+                last_storage_error = str(exc)
                 continue
 
             width, height = img.get("width"), img.get("height")
@@ -239,6 +243,20 @@ async def upload_brochure(
         job.completed_at = datetime.now(timezone.utc)
         await db.commit()
         raise HTTPException(status_code=422, detail=f"Could not read PDF: {exc}") from exc
+
+    # A brochure whose every image was rejected by storage is a failure, not a
+    # job that happens to have no pictures. Reporting "completed, 0 images"
+    # would hide a misconfigured bucket behind a result that looks like a
+    # brochure the parser simply found nothing in.
+    if storage_failures and not stored:
+        job.status = IngestionStatus.failed
+        job.error_message = f"No images could be stored: {last_storage_error}"[:2000]
+        job.completed_at = datetime.now(timezone.utc)
+        await db.commit()
+        raise HTTPException(
+            status_code=502,
+            detail=f"Storage rejected every image. {last_storage_error}",
+        )
 
     vehicles, engine = await pdf_ingest.extract_vehicles(text)
     for v in vehicles:

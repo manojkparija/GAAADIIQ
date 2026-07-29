@@ -1,6 +1,7 @@
 """Storage abstraction — the seam that makes S3 a config change, not a rewrite."""
 import pytest
 
+from services import media_storage
 from services.media_storage import (
     LocalStorage,
     S3Storage,
@@ -154,3 +155,69 @@ class TestBackendSelectionSuite:
         monkeypatch.setenv("MEDIA_ROOT", str(tmp_path))
         reset_storage()
         assert isinstance(get_storage(), LocalStorage)
+
+
+class TestS3ErrorTranslationSuite:
+    """
+    Storage failures must arrive as StorageError.
+
+    A rejected R2 write raised botocore's ClientError straight out of save(),
+    past the router's `except StorageError` handler, and became a 500 with no
+    detail — a permissions problem presenting as a crash. The 403 message alone
+    ("Forbidden") names neither the bucket nor the endpoint, so the wrapper adds
+    them: that is what distinguishes a token scoped to the wrong bucket from one
+    missing write permission.
+    """
+
+    class _RefusingClient:
+        def put_object(self, **_kwargs):
+            raise RuntimeError("An error occurred (403) when calling the PutObject operation: Forbidden")
+
+        def delete_object(self, **_kwargs):
+            raise RuntimeError("An error occurred (403) when calling the DeleteObject operation: Forbidden")
+
+    def _refusing_store(self, monkeypatch):
+        store = media_storage.S3Storage(
+            bucket="gaadiiq-media",
+            endpoint_url="https://acct.r2.cloudflarestorage.com",
+            access_key="k",
+            secret_key="s",
+        )
+        monkeypatch.setattr(store, "_client", lambda: self._RefusingClient())
+        return store
+
+    @pytest.mark.asyncio
+    async def test_put_failure_becomes_storage_error(self, monkeypatch):
+        store = self._refusing_store(monkeypatch)
+
+        with pytest.raises(media_storage.StorageError):
+            await store.save("vehicles/x/front.png", b"data", "image/png")
+
+    @pytest.mark.asyncio
+    async def test_message_names_the_bucket_and_endpoint(self, monkeypatch):
+        store = self._refusing_store(monkeypatch)
+
+        with pytest.raises(media_storage.StorageError) as err:
+            await store.save("vehicles/x/front.png", b"data", "image/png")
+
+        message = str(err.value)
+        assert "gaadiiq-media" in message
+        assert "r2.cloudflarestorage.com" in message
+        assert "403" in message
+
+    @pytest.mark.asyncio
+    async def test_delete_failure_becomes_storage_error(self, monkeypatch):
+        store = self._refusing_store(monkeypatch)
+
+        with pytest.raises(media_storage.StorageError):
+            await store.delete("vehicles/x/front.png")
+
+    @pytest.mark.asyncio
+    async def test_an_unsafe_key_is_still_rejected_before_any_call(self, monkeypatch):
+        store = self._refusing_store(monkeypatch)
+
+        # Must fail validation, not reach the client and be reported as a
+        # remote failure.
+        with pytest.raises(media_storage.StorageError) as err:
+            await store.save("../../etc/passwd", b"data", "image/png")
+        assert "Unsafe storage key" in str(err.value)

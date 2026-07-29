@@ -176,11 +176,24 @@ class S3Storage:
 
     async def save(self, key: str, data: bytes, content_type: str) -> StoredObject:
         _validate_key(key)
-        await asyncio.to_thread(
-            lambda: self._client().put_object(
-                Bucket=self.bucket, Key=key, Body=data, ContentType=content_type
+        try:
+            await asyncio.to_thread(
+                lambda: self._client().put_object(
+                    Bucket=self.bucket, Key=key, Body=data, ContentType=content_type
+                )
             )
-        )
+        except StorageError:
+            raise
+        except Exception as exc:
+            # Callers handle StorageError; a raw botocore ClientError escaped as
+            # an unhandled 500, so a rejected bucket write looked like a crash.
+            # The bucket and endpoint are named because a 403 here is almost
+            # always a token scoped to the wrong bucket or missing write
+            # permission, and the bare message says neither.
+            raise StorageError(
+                f"Could not write {key!r} to bucket {self.bucket!r} "
+                f"at {self.endpoint_url or 'AWS S3'}: {exc}"
+            ) from exc
         return StoredObject(key, self.url_for(key), len(data), content_type)
 
     async def load(self, key: str) -> bytes:
@@ -196,9 +209,12 @@ class S3Storage:
 
     async def delete(self, key: str) -> None:
         _validate_key(key)
-        await asyncio.to_thread(
-            lambda: self._client().delete_object(Bucket=self.bucket, Key=key)
-        )
+        try:
+            await asyncio.to_thread(
+                lambda: self._client().delete_object(Bucket=self.bucket, Key=key)
+            )
+        except Exception as exc:
+            raise StorageError(f"Could not delete {key!r} from {self.bucket!r}: {exc}") from exc
 
     async def exists(self, key: str) -> bool:
         _validate_key(key)
