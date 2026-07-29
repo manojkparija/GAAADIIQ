@@ -165,3 +165,33 @@ class TestPathSourceSuite:
 
         with pytest.raises(pdf_ingest.PdfIngestError):
             list(pdf_ingest.iter_images(not_a_pdf))
+
+
+class TestTruncationIsAnnouncedSuite:
+    """
+    A catalogue larger than the caps must say so.
+
+    Reading 200 of 400 pages and reporting a completed job is quiet
+    truncation: the operator sees fewer images than the brochure contains and
+    no reason why, which looks identical to a parser that found nothing.
+    """
+
+    def test_exceeding_the_page_cap_is_logged(self, monkeypatch, caplog):
+        import logging
+
+        monkeypatch.setattr(pdf_ingest, "MAX_PAGES", 2)
+        with caplog.at_level(logging.WARNING, logger="gaadiiq.pdf_ingest"):
+            list(pdf_ingest.iter_images(_brochure(pages=6)))
+
+        assert "6 pages" in caplog.text
+        # The message must name the knob, not just the problem.
+        assert "PDF_MAX_PAGES" in caplog.text
+
+    def test_within_the_caps_nothing_is_logged(self, monkeypatch, caplog):
+        import logging
+
+        monkeypatch.setattr(pdf_ingest, "MAX_PAGES", 50)
+        with caplog.at_level(logging.WARNING, logger="gaadiiq.pdf_ingest"):
+            list(pdf_ingest.iter_images(_brochure(pages=3)))
+
+        assert caplog.text == ""

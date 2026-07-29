@@ -19,6 +19,7 @@ query parameters, so every request 422s.
 """
 import asyncio
 import logging
+import os
 import tempfile
 import uuid
 from contextlib import asynccontextmanager
@@ -50,7 +51,16 @@ logger = logging.getLogger("gaadiiq.brochures")
 router = APIRouter(prefix="/brochures", tags=["brochures"])
 media_router = APIRouter(prefix="/media", tags=["media"])
 
-MAX_PDF_BYTES = 50 * 1024 * 1024  # 50 MB — brochures are image-heavy
+# Full manufacturer catalogues run to hundreds of megabytes — a real one in
+# testing was 266 MB. The old 50 MB cap was sized for when the upload was held
+# in memory, where anything larger killed the process; now that it is spooled
+# to disk, file size costs disk rather than RAM and the limit can reflect what
+# brochures actually weigh.
+#
+# Overridable because the right value depends on the instance's disk, which
+# this code cannot see.
+MAX_PDF_MB = int(os.getenv("MAX_PDF_MB", "300"))
+MAX_PDF_BYTES = MAX_PDF_MB * 1024 * 1024
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 
 

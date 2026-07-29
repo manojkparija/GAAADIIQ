@@ -48,8 +48,15 @@ MIN_IMAGE_EDGE = 100
 MIN_IMAGE_PIXELS = 20_000  # ~140x140; below this it is an icon, not a photo
 
 # Guards against a hostile or malformed upload exhausting memory or disk.
-MAX_PAGES = 200
-MAX_IMAGES = 300
+#
+# Tunable because a full manufacturer catalogue is a different animal from a
+# single-model brochure: 266 MB and several hundred pages is normal for one,
+# and the defaults below would silently ingest a fraction of it. Exceeding
+# either cap is logged rather than passed over in silence — a job reporting
+# fewer images than the brochure contains, with no explanation, is the kind of
+# quiet truncation that gets mistaken for a parser that simply found nothing.
+MAX_PAGES = int(os.getenv("PDF_MAX_PAGES", "600"))
+MAX_IMAGES = int(os.getenv("PDF_MAX_IMAGES", "1000"))
 MAX_TEXT_CHARS = 60_000
 
 
@@ -116,6 +123,14 @@ def iter_images(pdf_bytes: bytes) -> Iterator[dict]:
 
     yielded = 0
     seen: set[str] = set()
+
+    if doc.page_count > MAX_PAGES:
+        logger.warning(
+            "PDF has %d pages; only the first %d will be read. Raise "
+            "PDF_MAX_PAGES to ingest the rest.",
+            doc.page_count,
+            MAX_PAGES,
+        )
 
     try:
         for page_index in range(min(doc.page_count, MAX_PAGES)):
