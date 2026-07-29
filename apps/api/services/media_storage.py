@@ -151,6 +151,7 @@ class S3Storage:
         self.public_base = public_base.rstrip("/")
         self.access_key = access_key
         self.secret_key = secret_key
+        self._cached_client = None
 
     def _check_endpoint(self) -> None:
         """
@@ -182,6 +183,18 @@ class S3Storage:
         )
 
     def _client(self):
+        """
+        One client, reused.
+
+        This used to build a new boto3 client per operation, so a brochure with
+        40 images opened 40 TLS connections to Cloudflare in a burst — wasteful,
+        and a plausible way to draw a handshake rejection. A cached client keeps
+        botocore's connection pool alive across images. boto3 clients are
+        thread-safe for this usage, which matters because the calls run in
+        worker threads via asyncio.to_thread.
+        """
+        if self._cached_client is not None:
+            return self._cached_client
         self._check_endpoint()
         try:
             import boto3
@@ -195,14 +208,24 @@ class S3Storage:
         # NoCredentialsError on a correctly configured deployment.
         kwargs = {
             "endpoint_url": self.endpoint_url or None,
-            # R2 requires SigV4 and rejects a real region name.
-            "config": Config(signature_version="s3v4"),
+            "config": Config(
+                # R2 requires SigV4 and rejects a real region name.
+                signature_version="s3v4",
+                # R2 serves the bucket under the account host; virtual-host
+                # style would put the bucket in the TLS SNI, which its
+                # certificate does not cover.
+                s3={"addressing_style": "path"},
+                # A burst of image uploads that trips a transient TLS or network
+                # error should retry rather than lose the image.
+                retries={"max_attempts": 3, "mode": "standard"},
+            ),
             "region_name": "auto",
         }
         if self.access_key and self.secret_key:
             kwargs["aws_access_key_id"] = self.access_key
             kwargs["aws_secret_access_key"] = self.secret_key
-        return boto3.client("s3", **kwargs)
+        self._cached_client = boto3.client("s3", **kwargs)
+        return self._cached_client
 
     async def save(self, key: str, data: bytes, content_type: str) -> StoredObject:
         _validate_key(key)

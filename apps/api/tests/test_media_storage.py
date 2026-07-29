@@ -274,3 +274,63 @@ class TestDashboardEndpointGuardSuite:
             store._check_endpoint()
 
         assert "r2.cloudflarestorage.com" in caplog.text
+
+
+class TestClientReuseSuite:
+    """
+    One TLS connection, not one per image.
+
+    A client was built per operation, so a 40-image brochure opened 40
+    handshakes to Cloudflare in a burst. Cloudflare answered one with
+    SSLV3_ALERT_HANDSHAKE_FAILURE and the image was lost.
+    """
+
+    def test_client_is_built_once_and_reused(self, monkeypatch):
+        built = []
+
+        def _fake_boto3_client(_service, **kwargs):
+            built.append(kwargs)
+            return object()
+
+        import sys
+        import types
+
+        fake_boto3 = types.ModuleType("boto3")
+        fake_boto3.client = _fake_boto3_client
+        monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+
+        store = media_storage.S3Storage(
+            bucket="b",
+            endpoint_url="https://acct.r2.cloudflarestorage.com",
+            access_key="k",
+            secret_key="s",
+        )
+        first, second, third = store._client(), store._client(), store._client()
+
+        assert first is second is third
+        assert len(built) == 1, f"built {len(built)} clients, expected 1"
+
+    def test_r2_requires_path_addressing_and_sigv4(self, monkeypatch):
+        built = []
+
+        import sys
+        import types
+
+        fake_boto3 = types.ModuleType("boto3")
+        fake_boto3.client = lambda _service, **kwargs: built.append(kwargs) or object()
+        monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+
+        store = media_storage.S3Storage(
+            bucket="b",
+            endpoint_url="https://acct.r2.cloudflarestorage.com",
+            access_key="k",
+            secret_key="s",
+        )
+        store._client()
+
+        config = built[0]["config"]
+        assert config.signature_version == "s3v4"
+        # Virtual-host style would put the bucket in the TLS SNI, which R2's
+        # certificate does not cover.
+        assert config.s3["addressing_style"] == "path"
+        assert built[0]["region_name"] == "auto"
