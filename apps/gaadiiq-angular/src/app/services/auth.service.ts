@@ -25,6 +25,13 @@ export interface AuthUser {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  /**
+   * Password for the browser-only dev shortcut. Not a credential for any real
+   * account — it only unlocks a session with no Supabase token behind it, and
+   * only in non-production builds.
+   */
+  private static readonly DEV_ADMIN_PASSWORD = 'admin123';
+
   currentUser = signal<AuthUser | null>(null);
 
   /**
@@ -61,6 +68,21 @@ export class AuthService {
     this.currentUser.set({ id, email, name, role, sellerId });
   }
 
+  /**
+   * Emails granted admin regardless of what the profile tables say.
+   *
+   * Mirrors the API's ADMIN_EMAILS allowlist. Without this, signing in with a
+   * genuine Supabase admin account that has no `user_profiles` row yields role
+   * 'user' and the admin screens vanish — the API would accept the upload, but
+   * the page to start it would not be reachable. This is presentation only: the
+   * server re-checks its own allowlist against a verified token, so listing an
+   * email here grants nothing on its own.
+   */
+  private isAdminEmail(email: string): boolean {
+    const target = (email || '').trim().toLowerCase();
+    return (environment.adminEmails ?? []).some(a => a.trim().toLowerCase() === target);
+  }
+
   private async fetchProfile(email: string): Promise<{ role: UserRole; sellerId?: number; name: string }> {
     const { data: profile } = await this.sb.client
       .from('user_profiles')
@@ -70,10 +92,14 @@ export class AuthService {
 
     if (profile) {
       return {
-        role: (profile.role as UserRole) ?? 'user',
+        role: this.isAdminEmail(email) ? 'admin' : ((profile.role as UserRole) ?? 'user'),
         sellerId: profile.seller_id ?? undefined,
         name: profile.name ?? this.nameFromEmail(email),
       };
+    }
+
+    if (this.isAdminEmail(email)) {
+      return { role: 'admin', name: this.nameFromEmail(email) };
     }
 
     // Fallback: check sellers table (existing seller accounts pre-dating user_profiles rows)
@@ -99,41 +125,48 @@ export class AuthService {
       throw new Error('Invalid email or password (min 6 characters).');
     }
 
-    // Dev admin shortcut — recognises environment.devAdminEmail.
+    // Supabase gets the credentials FIRST, always — whatever they are.
     //
-    // NOTE: this creates no Supabase session, so no token is attached to API
-    // calls. Server-side features that require a verified identity — notably
-    // the Gemini model tier for admins — will treat this user as anonymous and
-    // serve the free tier. Sign in with a real Supabase admin account to
-    // exercise those paths.
-    if (email === environment.devAdminEmail && password === 'admin123') {
-      // Try a real Supabase sign-in first: if someone has created this account
-      // properly, they get a genuine session and working API access.
-      const { error: realError } = await this.sb.client.auth.signInWithPassword({ email, password });
-      if (!realError) {
-        await this.hydrateUser(email);
-        return;
-      }
-      // Otherwise fall back to a browser-only session, clearly marked so the
-      // UI can warn instead of letting every API call fail mysteriously.
-      //
-      // Keep Supabase's reason: "Email not confirmed" and "Invalid login
+    // This ordering is the fix for a real bug: the dev shortcut used to be
+    // checked first, and because it only matched on the hardcoded password, it
+    // then sent *that* password to Supabase. An admin whose Supabase account
+    // had a different password could never sign in for real: Supabase answered
+    // "Invalid login credentials" to a password the user had not typed, and the
+    // session silently degraded to browser-only. Trying the real credentials
+    // first means a genuine account always wins.
+    const { error } = await this.sb.client.auth.signInWithPassword({ email, password });
+    if (!error) {
+      this.localOnlyReason.set(null);
+      // AUTH-03: hydrate synchronously so currentUser is non-null before caller navigates
+      await this.hydrateUser(email);
+      return;
+    }
+
+    // Dev-only fallback, reached solely when Supabase has already refused.
+    //
+    // Gated on !production so a shipped build cannot be entered with a password
+    // that is sitting in this file. The resulting session exists only in the
+    // browser: no token is attached to API calls, so authenticated endpoints
+    // (file ingestion, the Gemini admin tier) treat it as anonymous. It is
+    // marked localOnly so the UI can say so instead of letting every request
+    // fail with an opaque error.
+    if (
+      !environment.production &&
+      email === environment.devAdminEmail &&
+      password === AuthService.DEV_ADMIN_PASSWORD
+    ) {
+      // Keep Supabase's own words: "Email not confirmed" and "Invalid login
       // credentials" need completely different fixes, and without the message
       // the two are indistinguishable from the UI.
-      console.warn('Supabase rejected the dev admin sign-in:', realError.message);
-      this.localOnlyReason.set(realError.message);
+      console.warn('Supabase rejected the dev admin sign-in:', error.message);
+      this.localOnlyReason.set(error.message);
       this.currentUser.set({ email, name: 'Admin', role: 'admin', localOnly: true });
       return;
     }
 
     this.localOnlyReason.set(null);
-    const { error } = await this.sb.client.auth.signInWithPassword({ email, password });
-    if (error) {
-      // Supabase returns "Invalid login credentials" for wrong password or unknown email
-      throw new Error('Incorrect email or password. Please try again.');
-    }
-    // AUTH-03: hydrate synchronously so currentUser is non-null before caller navigates
-    await this.hydrateUser(email);
+    // Supabase returns "Invalid login credentials" for wrong password or unknown email
+    throw new Error('Incorrect email or password. Please try again.');
   }
 
   async register(

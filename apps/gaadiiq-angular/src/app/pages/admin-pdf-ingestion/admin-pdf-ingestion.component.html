@@ -90,9 +90,10 @@
         <div class="local-only-warning" role="alert">
           <strong>You are signed in locally, not through Supabase</strong>
           <p>
-            The dev sign-in shortcut creates no session, so no token is sent and
-            uploads will be rejected. Sign out and sign in with an account that
-            exists in Supabase to use file ingestion.
+            You used the dev shortcut password, which creates no session — no
+            token is sent, so uploads are rejected. Sign out and sign in again
+            with this account's <strong>real Supabase password</strong> to use
+            file ingestion.
           </p>
           @if (auth.localOnlyReason()) {
             <p class="low-reason"><strong>Supabase said:</strong> {{ auth.localOnlyReason() }}</p>
