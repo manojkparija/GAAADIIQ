@@ -141,12 +141,19 @@ def _why_no_vehicles(text: str, engine: str) -> str:
     no vehicles in it — but all three arrive here as "0 vehicles".
     """
     stripped = (text or "").strip()
+    if engine == "gemini-vision":
+        return (
+            "This PDF has no text layer, so its pages were read as images by "
+            "Gemini — but no vehicle details could be made out. Try a brochure "
+            "page showing the variant or specification table, or raise "
+            "PDF_VISION_DPI if the print is small."
+        )
     if len(stripped) < MIN_USEFUL_TEXT_CHARS:
         return (
-            f"No readable text in this PDF ({len(stripped)} characters). The "
-            "brochure's words are part of its artwork, so there is nothing for "
-            "the AI to read. The images were extracted and kept; vehicle "
-            "details would need OCR."
+            f"No readable text in this PDF ({len(stripped)} characters) — the "
+            "brochure's words are part of its artwork. Reading the pages as "
+            "images needs GEMINI_API_KEY set on the API. The images were "
+            "extracted and kept regardless."
         )
     if engine == "none":
         return (
@@ -368,7 +375,9 @@ async def _ingest_pdf(
             detail=f"Storage rejected every image. {last_storage_error}",
         )
 
-    vehicles, engine = await pdf_ingest.extract_vehicles(text)
+    # The path is passed so a brochure with no text layer can still be read:
+    # its pages are rendered and shown to Gemini as images.
+    vehicles, engine = await pdf_ingest.extract_vehicles(text, source=pdf_path)
     if not vehicles:
         # Three very different causes produce "0 vehicles", and the UI cannot
         # tell them apart from the count alone. Guessing sent an operator to

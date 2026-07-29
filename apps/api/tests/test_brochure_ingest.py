@@ -5,10 +5,12 @@ The PDFs here are built in-test rather than committed as binary fixtures, so
 the inputs are reviewable and the suite carries no opaque blobs.
 """
 import io
+import json
 import uuid
 
 import pytest
 
+from core.config import settings
 from services import pdf_ingest
 
 
@@ -138,3 +140,124 @@ class TestStorageKeySuite:
         # traversal characters out of a malformed PDF.
         key = pdf_ingest.build_key(uuid.uuid4(), 0, "../../etc/passwd")
         assert ".." not in key and "/etc" not in key
+
+
+class TestVisionFallbackSuite:
+    """
+    A brochure with no text layer must still be readable.
+
+    A real Dzire brochure yielded exactly zero characters: manufacturers lay
+    these out as artwork, with the model name, variant grid and prices printed
+    into the page images. Text extraction cannot succeed on such a file however
+    the model is configured, so the pages are rendered and shown to Gemini as
+    pictures instead.
+    """
+
+    @staticmethod
+    def _textless_pdf() -> bytes:
+        """A page that is entirely one image — no extractable text at all."""
+        import io
+
+        import fitz
+        from PIL import Image, ImageDraw
+
+        img = Image.new("RGB", (1240, 1754), (250, 250, 252))
+        draw = ImageDraw.Draw(img)
+        draw.text((80, 90), "DZIRE", fill=(180, 20, 40))
+        draw.text((80, 200), "VXi   Rs 7,49,000   Petrol   Manual", fill=(20, 20, 20))
+        buf = io.BytesIO()
+        img.save(buf, "PNG")
+
+        doc = fitz.open()
+        page = doc.new_page(width=595, height=842)
+        page.insert_image(fitz.Rect(0, 0, 595, 842), stream=buf.getvalue())
+        data = doc.tobytes()
+        doc.close()
+        return data
+
+    def test_the_fixture_really_has_no_text(self):
+        # If this ever gains a text layer the tests below stop testing anything.
+        assert pdf_ingest.extract_text(self._textless_pdf()).strip() == ""
+
+    def test_render_pages_produces_pngs(self):
+        pages = pdf_ingest.render_pages(self._textless_pdf())
+
+        assert len(pages) == 1
+        assert pages[0].startswith(b"\x89PNG")
+
+    def test_render_pages_is_bounded(self, monkeypatch):
+        import fitz
+
+        doc = fitz.open()
+        for _ in range(12):
+            doc.new_page(width=595, height=842)
+        many = doc.tobytes()
+        doc.close()
+
+        # Sending an entire catalogue would be slow and expensive for little
+        # extra information.
+        assert len(pdf_ingest.render_pages(many, max_pages=3)) == 3
+
+    @pytest.mark.asyncio
+    async def test_a_textless_pdf_is_read_as_images(self, monkeypatch):
+        sent = {}
+
+        async def fake_gemini(prompt, images=None):
+            sent["images"] = images or []
+            sent["prompt"] = prompt
+            return json.dumps([{
+                "make": "Maruti Suzuki", "model": "Dzire", "variant": "VXi",
+                "price_inr": 749000, "confidence": 0.9,
+            }])
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", fake_gemini)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless_pdf())
+
+        assert engine == "gemini-vision"
+        assert vehicles[0]["model"] == "Dzire"
+        assert vehicles[0]["price_inr"] == 749000
+        assert sent["images"] and sent["images"][0].startswith(b"\x89PNG")
+
+    @pytest.mark.asyncio
+    async def test_text_pdfs_still_take_the_text_path(self, monkeypatch):
+        """Rendering pages costs tokens and time; text is used when present."""
+        calls = {"images": None}
+
+        async def fake_gemini(prompt, images=None):
+            calls["images"] = images
+            return json.dumps([{"make": "Maruti Suzuki", "model": "Swift", "confidence": 0.8}])
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", fake_gemini)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        _, engine = await pdf_ingest.extract_vehicles("Swift VXi Rs 6,49,000 " * 20)
+
+        assert engine == "gemini"
+        assert calls["images"] is None, "images must not be sent when text exists"
+
+    @pytest.mark.asyncio
+    async def test_no_key_means_no_vision_attempt(self, monkeypatch):
+        monkeypatch.setattr(settings, "gemini_api_key", "")
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless_pdf())
+
+        assert (vehicles, engine) == ([], "none")
+
+    @pytest.mark.asyncio
+    async def test_a_failing_vision_call_does_not_lose_the_images(self, monkeypatch):
+        """
+        Image extraction has already succeeded by this point. A model error must
+        return empty, never raise, or the whole job fails and the photographs
+        are discarded with it.
+        """
+        async def boom(prompt, images=None):
+            raise RuntimeError("429 quota exceeded")
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", boom)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless_pdf())
+
+        assert (vehicles, engine) == ([], "none")

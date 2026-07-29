@@ -80,7 +80,7 @@ class TestBrochureUploadSuite:
     async def test_upload_extracts_images_and_records_metadata(self, client, monkeypatch):
         # The AI step is stubbed: it needs a model, and image extraction must
         # be provable without one.
-        async def fake_extract(text):
+        async def fake_extract(text, source=None):
             return [{
                 "make": "Maruti Suzuki", "model": "Dzire", "variant": "ZXi+",
                 "model_year": 2025, "price_inr": 929000, "fuel_type": "Petrol",
@@ -120,7 +120,7 @@ class TestBrochureUploadSuite:
     async def test_uploaded_image_is_actually_served(self, client, monkeypatch):
         monkeypatch.setattr(
             "services.pdf_ingest.extract_vehicles",
-            lambda text: _noop_vehicles(),
+            lambda text, source=None: _noop_vehicles(),
         )
         r = await client.post(
             "/brochures/upload",
@@ -155,7 +155,7 @@ class TestBrochureUploadSuite:
     async def test_images_survive_an_offline_ai(self, client, monkeypatch):
         # The point of extracting images first: a model outage must not lose
         # the brochure's photographs.
-        async def dead(text):
+        async def dead(text, source=None):
             return [], "none"
 
         monkeypatch.setattr("services.pdf_ingest.extract_vehicles", dead)
@@ -176,7 +176,7 @@ async def _noop_vehicles():
 class TestBrochureQuerySuite:
     @pytest.mark.asyncio
     async def test_images_are_listed_and_filterable(self, client, monkeypatch):
-        async def fake(text):
+        async def fake(text, source=None):
             return [{
                 "make": "Tata", "model": "Nexon", "variant": None, "model_year": None,
                 "price_inr": None, "fuel_type": None, "transmission": None,
@@ -197,7 +197,7 @@ class TestBrochureQuerySuite:
 
     @pytest.mark.asyncio
     async def test_deleting_a_job_removes_its_files_and_rows(self, client, monkeypatch):
-        monkeypatch.setattr("services.pdf_ingest.extract_vehicles", lambda t: _noop_vehicles())
+        monkeypatch.setattr("services.pdf_ingest.extract_vehicles", lambda t, source=None: _noop_vehicles())
         job_id = (await client.post(
             "/brochures/upload",
             files={"file": ("b.pdf", _brochure_pdf(), "application/pdf")},
@@ -232,8 +232,9 @@ class TestEmptyExtractionIsExplainedSuite:
 
         assert "readable text" in reason.lower()
         assert "artwork" in reason.lower()
-        # Must not send the operator to the API key: it is not the cause.
-        assert "GEMINI_API_KEY" not in reason
+        # Naming the key is correct here now: with no text layer, reading the
+        # pages as images is the route to the data, and that needs the key.
+        assert "GEMINI_API_KEY" in reason
 
     def test_a_page_number_alone_is_not_usable_text(self):
         from routers.brochures import _why_no_vehicles

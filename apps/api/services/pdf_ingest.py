@@ -4,7 +4,11 @@ Read a car brochure PDF: pull out the images, and extract the vehicle data.
 Two halves, kept separate because they fail independently:
 
   extract_images()   — PyMuPDF, deterministic, no network. Works offline.
-  extract_vehicles() — an LLM reading the brochure text. Needs a model.
+  extract_vehicles() — an LLM reading the brochure. Needs a model. Reads the
+                       text layer when there is one, and falls back to showing
+                       Gemini the rendered pages when there is not — which is
+                       the common case for manufacturer brochures, whose words
+                       are printed into the artwork.
 
 If the LLM is unavailable the images are still extracted and stored. That
 matters: images are the expensive, hard-to-replace part of a brochure, and
@@ -16,6 +20,8 @@ self-hosted Ollama model. Both are optional.
 """
 from __future__ import annotations
 
+import asyncio
+import base64
 import hashlib
 import io
 import json
@@ -34,6 +40,14 @@ logger = logging.getLogger("gaadiiq.pdf_ingest")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_INGEST_MODEL", "llama3")
 INGEST_TIMEOUT = float(os.getenv("PDF_INGEST_TIMEOUT", "60"))
+
+# Reading pages as images costs more tokens and more time than reading text, so
+# it is bounded: the first few pages of a brochure carry the model, variant and
+# price tables, and sending forty pages of lifestyle photography would spend a
+# lot to learn nothing. Raise VISION_MAX_PAGES for a full catalogue.
+VISION_MAX_PAGES = int(os.getenv("PDF_VISION_MAX_PAGES", "8"))
+VISION_DPI = int(os.getenv("PDF_VISION_DPI", "120"))
+VISION_TIMEOUT = float(os.getenv("PDF_VISION_TIMEOUT", "180"))
 
 # Brochures are image-heavy, and we want the photographs rather than the
 # bullets, rules and logo fragments.
@@ -236,22 +250,103 @@ BROCHURE TEXT:
 """
 
 
-async def _call_gemini(prompt: str) -> str:
+# Same schema, but the brochure arrives as page images. Kept separate from
+# _PROMPT rather than parameterised: the instructions differ in kind — colours
+# have to be read off swatches, and specification tables have to be read as
+# tables rather than as a run of words — and merging them would make both
+# vaguer.
+_VISION_PROMPT = """You are reading the attached pages of an Indian car
+manufacturer's brochure. The pages are images; read the text printed in them.
+
+Extract every distinct vehicle variant shown. Return ONLY a JSON array — no
+prose, no markdown fences — where each element is:
+
+{
+  "make": "manufacturer name or null",
+  "model": "model name or null",
+  "variant": "trim/variant name or null",
+  "model_year": 2025 or null,
+  "price_inr": ex-showroom price as an integer number of rupees, or null,
+  "fuel_type": "Petrol|Diesel|CNG|Electric|Hybrid or null",
+  "transmission": "Manual|Automatic|AMT|CVT|DCT or null",
+  "body_type": "Hatchback|Sedan|SUV|MUV or null",
+  "colours": ["colour name", ...],
+  "features": ["feature", ...],
+  "specs": {"Mileage": "24.8 kmpl", "Power": "81 bhp"},
+  "confidence": 0.0 to 1.0
+}
+
+Rules:
+- Read specification tables column by column: a variant grid lists one column
+  per variant, and the values in a column all belong to that variant.
+- Colour names are usually printed beneath colour swatches — list them under
+  the model they belong to.
+- Prices may be printed as "6.49 Lakh" or "Rs 6,49,000" — convert both to a
+  plain integer of rupees (649000).
+- Never invent a value. Use null when the pages do not show it.
+- If the pages show one model in several trims, return one element per trim.
+- confidence reflects how clearly the page stated that variant.
+"""
+
+
+async def _call_gemini(prompt: str, images: list[bytes] | None = None) -> str:
+    """
+    Ask Gemini Flash, optionally showing it page images as well as text.
+
+    The image path exists because manufacturer brochures are frequently laid
+    out as artwork with no text layer at all — a real Dzire brochure yielded
+    zero characters — so a text-only request has nothing to work with however
+    well the model is configured.
+    """
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
         f"gemini-2.0-flash:generateContent?key={settings.gemini_api_key}"
     )
-    async with httpx.AsyncClient(timeout=INGEST_TIMEOUT) as client:
+    parts: list[dict] = [{"text": prompt}]
+    for png in images or []:
+        parts.append({
+            "inline_data": {
+                "mime_type": "image/png",
+                "data": base64.b64encode(png).decode("ascii"),
+            }
+        })
+
+    async with httpx.AsyncClient(timeout=VISION_TIMEOUT if images else INGEST_TIMEOUT) as client:
         resp = await client.post(
             url,
             json={
-                "contents": [{"parts": [{"text": prompt}]}],
+                "contents": [{"parts": parts}],
                 "generationConfig": {"temperature": 0.1, "maxOutputTokens": 8192},
             },
         )
         resp.raise_for_status()
         data = resp.json()
     return data["candidates"][0]["content"]["parts"][0]["text"]
+
+
+def render_pages(source, max_pages: int = VISION_MAX_PAGES, dpi: int = VISION_DPI) -> list[bytes]:
+    """
+    Render the first pages to PNGs, for a model to read as pictures.
+
+    Rendered rather than reusing the embedded photographs: the words live in
+    the page artwork, and an embedded image is only part of a page. The DPI is
+    a compromise — high enough for a model to read specification tables, low
+    enough that several pages fit in one request without exhausting memory on
+    a small instance.
+    """
+    doc = _open_pdf(source)
+    out: list[bytes] = []
+    try:
+        for index in range(min(doc.page_count, max_pages)):
+            try:
+                pix = doc[index].get_pixmap(dpi=dpi)
+                out.append(pix.tobytes("png"))
+                del pix
+            except Exception as exc:  # one bad page must not lose the rest
+                logger.warning("Could not render page %d: %s", index + 1, exc)
+    finally:
+        doc.close()
+    return out
 
 
 async def _call_ollama(prompt: str) -> str:
@@ -359,15 +454,35 @@ def _clean(vehicles: list[dict]) -> list[dict]:
     return out
 
 
-async def extract_vehicles(text: str) -> tuple[list[dict], str]:
+async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
     """
     Ask a model what vehicles the brochure describes.
 
     Returns (vehicles, engine_name). Never raises: image extraction has already
     succeeded by this point, and an offline model must not discard that work.
     engine is "none" when nothing could run.
+
+    When the PDF has no text layer, `source` (a path or bytes) lets the pages be
+    rendered and shown to Gemini as pictures instead. Manufacturer brochures are
+    routinely built this way — a real Dzire brochure yielded zero characters —
+    so without this the whole feature returns nothing for exactly the documents
+    it exists to read. Ollama is not offered the image path: the default model
+    is text-only, and llava would have to be pulled first.
     """
-    if not text.strip():
+    has_text = bool(text.strip())
+
+    if not has_text and source is not None and settings.gemini_api_key:
+        try:
+            pages = await asyncio.to_thread(render_pages, source)
+            if pages:
+                logger.info("No text layer; reading %d rendered pages with Gemini", len(pages))
+                raw = await _call_gemini(_VISION_PROMPT, images=pages)
+                return _clean(_parse_vehicles(raw)), "gemini-vision"
+        except Exception as exc:
+            logger.warning("Gemini vision extraction failed: %s", exc)
+            return [], "none"
+
+    if not has_text:
         return [], "none"
 
     prompt = _PROMPT.format(text=text)
