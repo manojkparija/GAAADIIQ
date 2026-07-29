@@ -1,4 +1,6 @@
 """Storage abstraction — the seam that makes S3 a config change, not a rewrite."""
+import logging
+
 import pytest
 
 from services import media_storage
@@ -221,3 +223,54 @@ class TestS3ErrorTranslationSuite:
         with pytest.raises(media_storage.StorageError) as err:
             await store.save("../../etc/passwd", b"data", "image/png")
         assert "Unsafe storage key" in str(err.value)
+
+
+class TestDashboardEndpointGuardSuite:
+    """
+    The Cloudflare console URL is the natural thing to copy, and it fails in the
+    most misleading way possible: dash.cloudflare.com is a web page, so every
+    PutObject returns 403 Forbidden — identical to a token missing write
+    permission. Hours go into checking token scopes when the account ID is
+    sitting in the wrong URL.
+    """
+
+    def test_dashboard_url_is_reported_with_the_correct_endpoint(self, caplog):
+        account = "0c79c9f16e2fcbe73b64b3201177c858"
+        store = media_storage.S3Storage(
+            bucket="gaadiiq-media",
+            endpoint_url=f"https://dash.cloudflare.com/{account}/r2",
+            access_key="k",
+            secret_key="s",
+        )
+
+        with caplog.at_level(logging.ERROR, logger="gaadiiq.media_storage"):
+            store._check_endpoint()
+
+        # Naming the exact replacement matters more than describing the problem.
+        assert f"https://{account}.r2.cloudflarestorage.com" in caplog.text
+
+    def test_a_correct_endpoint_is_left_alone(self, caplog):
+        store = media_storage.S3Storage(
+            bucket="gaadiiq-media",
+            endpoint_url="https://0c79c9f16e2fcbe73b64b3201177c858.r2.cloudflarestorage.com",
+            access_key="k",
+            secret_key="s",
+        )
+
+        with caplog.at_level(logging.ERROR, logger="gaadiiq.media_storage"):
+            store._check_endpoint()
+
+        assert caplog.text == ""
+
+    def test_dashboard_url_without_an_account_id_still_warns(self, caplog):
+        store = media_storage.S3Storage(
+            bucket="gaadiiq-media",
+            endpoint_url="https://dash.cloudflare.com/r2",
+            access_key="k",
+            secret_key="s",
+        )
+
+        with caplog.at_level(logging.ERROR, logger="gaadiiq.media_storage"):
+            store._check_endpoint()
+
+        assert "r2.cloudflarestorage.com" in caplog.text

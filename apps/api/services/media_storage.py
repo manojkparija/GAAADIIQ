@@ -152,7 +152,37 @@ class S3Storage:
         self.access_key = access_key
         self.secret_key = secret_key
 
+    def _check_endpoint(self) -> None:
+        """
+        Catch the Cloudflare dashboard URL being used as the S3 endpoint.
+
+        R2's console lives at dash.cloudflare.com/<account-id>/r2, and that is
+        the URL to hand when someone copies "the R2 URL" from the browser. It
+        is a web page, not an S3 API, so every request to it returns 403
+        Forbidden — indistinguishable from a token with the wrong permissions,
+        and it sends debugging to Cloudflare's token settings instead of to the
+        one wrong character in an environment variable.
+
+        The account ID is in that path, so the correct endpoint can be named
+        exactly rather than described.
+        """
+        if "dash.cloudflare.com" not in (self.endpoint_url or ""):
+            return
+        match = re.search(r"dash\.cloudflare\.com/([0-9a-f]{32})", self.endpoint_url)
+        correct = (
+            f"https://{match.group(1)}.r2.cloudflarestorage.com"
+            if match
+            else "https://<account-id>.r2.cloudflarestorage.com"
+        )
+        logger.error(
+            "R2 endpoint %r is the Cloudflare dashboard, not the S3 API. Every "
+            "upload will fail with 403. Set R2_ENDPOINT_URL to %s",
+            self.endpoint_url,
+            correct,
+        )
+
     def _client(self):
+        self._check_endpoint()
         try:
             import boto3
             from botocore.config import Config
