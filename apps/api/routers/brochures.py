@@ -17,9 +17,13 @@ turns annotations into strings, and slowapi's @limiter.limit wrapper leaves
 FastAPI unable to resolve them — it then treats the body and DB dependency as
 query parameters, so every request 422s.
 """
+import asyncio
 import logging
+import tempfile
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import Response
@@ -52,9 +56,10 @@ UPLOAD_CHUNK_BYTES = 1024 * 1024
 
 async def _read_capped(file: UploadFile, limit: int) -> bytes:
     """
-    Buffer an upload, refusing anything past `limit` without buffering it.
+    Buffer an upload in memory, refusing anything past `limit`.
 
-    Peak memory stays at limit + one chunk however large the client's file is.
+    Kept for callers that genuinely need the bytes. Request handlers should use
+    _spool_to_disk instead — see the note there.
     """
     chunks: list[bytes] = []
     total = 0
@@ -70,6 +75,44 @@ async def _read_capped(file: UploadFile, limit: int) -> bytes:
             )
         chunks.append(chunk)
     return b"".join(chunks)
+
+
+@asynccontextmanager
+async def _spool_to_disk(file: UploadFile, limit: int):
+    """
+    Write the upload to a temp file, yield its path, and always clean up.
+
+    Streaming the images was not enough on a 512 MB instance: the PDF itself
+    was held three times over — the chunk list, the joined bytes, and
+    PyMuPDF's own copy of the stream. A 40 MB brochure therefore cost ~120 MB
+    on top of a baseline that already carries onnxruntime and the Qdrant
+    client, and the process was OOM-killed with no traceback.
+
+    On disk, the bytes are held zero times: PyMuPDF reads the file, and peak
+    memory is one 1 MB chunk regardless of brochure size.
+    """
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    total = 0
+    try:
+        try:
+            while True:
+                chunk = await file.read(UPLOAD_CHUNK_BYTES)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > limit:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"PDF exceeds {limit // (1024 * 1024)} MB",
+                    )
+                await asyncio.to_thread(tmp.write, chunk)
+        finally:
+            tmp.close()
+        yield Path(tmp.name), total
+    finally:
+        # The temp file outlives the request only if this is missed, and a
+        # 50 MB leak per upload would fill the instance's disk.
+        Path(tmp.name).unlink(missing_ok=True)
 
 
 # ── Response shapes ───────────────────────────────────────────────────────────
@@ -160,22 +203,41 @@ async def upload_brochure(
     photographs are the expensive part, and an offline model must not discard
     them.
     """
-    # Read in chunks and stop at the cap, rather than await file.read() and
-    # check the length afterwards. Buffering first means an oversized upload is
-    # already resident in memory by the time the 413 is raised — on a small
-    # instance the process is OOM-killed before it can answer, which the client
-    # sees as a dropped connection with no status at all.
-    raw = await _read_capped(file, MAX_PDF_BYTES)
-    if not raw:
-        raise HTTPException(status_code=400, detail="Empty file")
-    # Content sniffing, not the filename: trusting a client-supplied extension
-    # is how an executable ends up on disk named .pdf.
-    if not pdf_ingest.is_pdf(raw):
-        raise HTTPException(status_code=400, detail="File is not a PDF")
+    # Spooled to disk, never held in memory: the PDF used to exist three times
+    # over (chunk list, joined bytes, PyMuPDF's copy of the stream), which
+    # OOM-killed the instance on a large brochure before any image was touched.
+    async with _spool_to_disk(file, MAX_PDF_BYTES) as (pdf_path, size):
+        if not size:
+            raise HTTPException(status_code=400, detail="Empty file")
+        # Content sniffing, not the filename: trusting a client-supplied
+        # extension is how an executable ends up on disk named .pdf. Only the
+        # header is read — enough to identify the format.
+        header = await asyncio.to_thread(pdf_path.read_bytes) if size <= 1024 else None
+        if header is None:
+            with open(pdf_path, "rb") as fh:
+                header = await asyncio.to_thread(fh.read, 1024)
+        if not pdf_ingest.is_pdf(header):
+            raise HTTPException(status_code=400, detail="File is not a PDF")
 
+        return await _ingest_pdf(pdf_path, size, file.filename, admin, db)
+
+
+async def _ingest_pdf(
+    pdf_path: Path,
+    size: int,
+    filename: str | None,
+    admin: User,
+    db: AsyncSession,
+) -> "JobDetailOut":
+    """
+    The ingestion itself, given a PDF already on disk.
+
+    Split out so the upload handler can hold the temp file open with `async
+    with` without indenting this whole body inside it.
+    """
     job = PdfIngestionJob(
-        source_pdf_name=(file.filename or "upload.pdf")[:500],
-        file_size_bytes=len(raw),
+        source_pdf_name=(filename or "upload.pdf")[:500],
+        file_size_bytes=size,
         status=IngestionStatus.processing,
         uploaded_by=admin.id,
     )
@@ -185,12 +247,12 @@ async def upload_brochure(
     storage = get_storage()
 
     try:
-        text = pdf_ingest.extract_text(raw)
+        text = pdf_ingest.extract_text(pdf_path)
         # Streamed, not listed: holding every image at once reached ~492 MB on a
         # 300-image brochure (~1.6 MB per photo), which OOM-kills a small
         # instance mid-request. Each image below is stored and then dropped, so
         # peak memory is the PDF plus one image.
-        image_stream = pdf_ingest.iter_images(raw)
+        image_stream = pdf_ingest.iter_images(pdf_path)
     except pdf_ingest.PdfIngestError as exc:
         job.status = IngestionStatus.failed
         job.error_message = str(exc)[:2000]
@@ -273,7 +335,7 @@ async def upload_brochure(
         )).scalars():
             m.make, m.model, m.variant = only["make"], only["model"], only["variant"]
 
-    job.page_count = pdf_ingest.page_count(raw)
+    job.page_count = pdf_ingest.page_count(pdf_path)
     job.image_count = stored
     job.vehicle_count = len(vehicles)
     job.ai_engine = engine

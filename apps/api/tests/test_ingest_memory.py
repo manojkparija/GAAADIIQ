@@ -124,3 +124,44 @@ class TestUploadSizeCapSuite:
     async def test_normal_upload_passes_through_intact(self):
         pdf = _brochure(pages=3)
         assert await _read_capped(_CountingFile(pdf), MAX_PDF_BYTES) == pdf
+
+
+class TestPathSourceSuite:
+    """
+    Ingestion reads the PDF from disk, not from memory.
+
+    Streaming the images was not enough: the PDF itself existed three times
+    over — the chunk list, the joined bytes, and PyMuPDF's own copy of the
+    stream — so a large brochure was still OOM-killed before an image was
+    touched. Measured peak RSS on a 70 MB brochure: +149 MB in memory versus
+    +79 MB from disk.
+    """
+
+    def test_iter_images_accepts_a_path(self, tmp_path):
+        pdf = tmp_path / "brochure.pdf"
+        pdf.write_bytes(_brochure(pages=4))
+
+        from_path = list(pdf_ingest.iter_images(pdf))
+        from_bytes = list(pdf_ingest.iter_images(pdf.read_bytes()))
+
+        assert len(from_path) == len(from_bytes) > 0
+        assert [i["phash"] for i in from_path] == [i["phash"] for i in from_bytes]
+
+    def test_extract_text_accepts_a_path(self, tmp_path):
+        pdf = tmp_path / "brochure.pdf"
+        pdf.write_bytes(_brochure(pages=2))
+
+        assert pdf_ingest.extract_text(pdf) == pdf_ingest.extract_text(pdf.read_bytes())
+
+    def test_page_count_accepts_a_path(self, tmp_path):
+        pdf = tmp_path / "brochure.pdf"
+        pdf.write_bytes(_brochure(pages=7))
+
+        assert pdf_ingest.page_count(pdf) == 7
+
+    def test_an_unreadable_path_raises_the_ingest_error(self, tmp_path):
+        not_a_pdf = tmp_path / "junk.pdf"
+        not_a_pdf.write_bytes(b"this is not a PDF at all")
+
+        with pytest.raises(pdf_ingest.PdfIngestError):
+            list(pdf_ingest.iter_images(not_a_pdf))

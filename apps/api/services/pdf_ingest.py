@@ -57,6 +57,32 @@ class PdfIngestError(RuntimeError):
     """The PDF could not be read at all."""
 
 
+PdfSource = "bytes | str | os.PathLike"
+
+
+def _open_pdf(source):
+    """
+    Open a PDF held either in memory or on disk.
+
+    A path is strongly preferred for uploads: fitz.open(stream=...) keeps its
+    own copy of the bytes, so passing a 40 MB brochure through memory costs 40
+    MB for the caller's copy plus 40 MB inside PyMuPDF. Opening by path lets it
+    read from the file instead, which is the difference between fitting in a
+    small instance and being OOM-killed.
+    """
+    try:
+        import fitz  # PyMuPDF
+    except ImportError as exc:  # pragma: no cover - deployment dependent
+        raise PdfIngestError("PyMuPDF is required to read PDFs") from exc
+
+    try:
+        if isinstance(source, bytes | bytearray):
+            return fitz.open(stream=bytes(source), filetype="pdf")
+        return fitz.open(str(source))
+    except Exception as exc:
+        raise PdfIngestError(f"Could not open PDF: {exc}") from exc
+
+
 def extract_images(pdf_bytes: bytes) -> list[dict]:
     """
     Every embedded raster image, materialised as a list.
@@ -86,15 +112,7 @@ def iter_images(pdf_bytes: bytes) -> Iterator[dict]:
     image regardless of how many the brochure contains — the caller writes each
     to storage and drops it before the next arrives.
     """
-    try:
-        import fitz  # PyMuPDF
-    except ImportError as exc:  # pragma: no cover - deployment dependent
-        raise PdfIngestError("PyMuPDF is required to read PDFs") from exc
-
-    try:
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    except Exception as exc:
-        raise PdfIngestError(f"Could not open PDF: {exc}") from exc
+    doc = _open_pdf(pdf_bytes)
 
     yielded = 0
     seen: set[str] = set()
@@ -147,15 +165,7 @@ def iter_images(pdf_bytes: bytes) -> Iterator[dict]:
 
 def extract_text(pdf_bytes: bytes) -> str:
     """Concatenated page text, truncated so a huge catalogue cannot blow the prompt."""
-    try:
-        import fitz
-    except ImportError as exc:  # pragma: no cover
-        raise PdfIngestError("PyMuPDF is required to read PDFs") from exc
-
-    try:
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    except Exception as exc:
-        raise PdfIngestError(f"Could not open PDF: {exc}") from exc
+    doc = _open_pdf(pdf_bytes)
 
     parts: list[str] = []
     try:
@@ -171,8 +181,7 @@ def extract_text(pdf_bytes: bytes) -> str:
 
 def page_count(pdf_bytes: bytes) -> int:
     try:
-        import fitz
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        doc = _open_pdf(pdf_bytes)
         try:
             return doc.page_count
         finally:
