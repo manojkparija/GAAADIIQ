@@ -125,6 +125,41 @@ async def _spool_to_disk(file: UploadFile, limit: int):
         Path(tmp.name).unlink(missing_ok=True)
 
 
+# Below this, a PDF has no usable prose — a page number and a copyright line
+# come to about this much.
+MIN_USEFUL_TEXT_CHARS = 200
+
+
+def _why_no_vehicles(text: str, engine: str) -> str:
+    """
+    Explain an empty extraction in terms the operator can act on.
+
+    Car brochures are frequently laid out as artwork with the words baked into
+    the images, so there is nothing for a language model to read no matter how
+    well it is configured. That is a different problem from an unreachable
+    model, and a different one again from a model that read the text and found
+    no vehicles in it — but all three arrive here as "0 vehicles".
+    """
+    stripped = (text or "").strip()
+    if len(stripped) < MIN_USEFUL_TEXT_CHARS:
+        return (
+            f"No readable text in this PDF ({len(stripped)} characters). The "
+            "brochure's words are part of its artwork, so there is nothing for "
+            "the AI to read. The images were extracted and kept; vehicle "
+            "details would need OCR."
+        )
+    if engine == "none":
+        return (
+            "The brochure text was read from the PDF, but no AI model was "
+            "available to interpret it. Check GEMINI_API_KEY on the API, or "
+            "that Ollama is reachable."
+        )
+    return (
+        f"{engine} read {len(stripped)} characters from this brochure but "
+        "found no vehicle records in it."
+    )
+
+
 # ── Response shapes ───────────────────────────────────────────────────────────
 
 class MediaOut(BaseModel):
@@ -334,6 +369,11 @@ async def _ingest_pdf(
         )
 
     vehicles, engine = await pdf_ingest.extract_vehicles(text)
+    if not vehicles:
+        # Three very different causes produce "0 vehicles", and the UI cannot
+        # tell them apart from the count alone. Guessing sent an operator to
+        # check an API key that was already set.
+        job.error_message = _why_no_vehicles(text, engine)[:2000]
     for v in vehicles:
         db.add(ExtractedVehicle(job_id=job.id, **v))
 

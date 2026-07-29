@@ -215,3 +215,43 @@ class TestBrochureQuerySuite:
     async def test_missing_media_key_is_404_not_500(self, client):
         r = await client.get("/media/brochures/does-not-exist/000.png")
         assert r.status_code == 404
+
+
+class TestEmptyExtractionIsExplainedSuite:
+    """
+    "0 vehicles" has three causes that need three different responses, and the
+    count alone distinguishes none of them. The UI used to guess "check
+    GEMINI_API_KEY", which is wrong — and wastes an operator's evening — when
+    the real problem is a brochure whose text is part of its artwork.
+    """
+
+    def test_no_readable_text_says_so(self):
+        from routers.brochures import _why_no_vehicles
+
+        reason = _why_no_vehicles("   \n  ", "none")
+
+        assert "readable text" in reason.lower()
+        assert "artwork" in reason.lower()
+        # Must not send the operator to the API key: it is not the cause.
+        assert "GEMINI_API_KEY" not in reason
+
+    def test_a_page_number_alone_is_not_usable_text(self):
+        from routers.brochures import _why_no_vehicles
+
+        assert "readable text" in _why_no_vehicles("Page 1 of 4\n© 2026", "none").lower()
+
+    def test_text_present_but_no_model_names_the_key(self):
+        from routers.brochures import _why_no_vehicles
+
+        reason = _why_no_vehicles("Dzire VXi specifications " * 40, "none")
+
+        assert "GEMINI_API_KEY" in reason
+        assert "no readable text" not in reason.lower()
+
+    def test_a_model_that_found_nothing_says_which_model(self):
+        from routers.brochures import _why_no_vehicles
+
+        reason = _why_no_vehicles("Dzire VXi specifications " * 40, "gemini")
+
+        assert "gemini" in reason
+        assert "found no vehicle records" in reason

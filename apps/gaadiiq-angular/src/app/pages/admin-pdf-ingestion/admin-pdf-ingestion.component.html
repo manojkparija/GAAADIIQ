@@ -280,9 +280,17 @@
         <div class="ei-note">
           @if (jobImages(job).length) {
             <strong>No vehicle details were read from this PDF.</strong>
-            <p>The images above were extracted successfully. Text extraction needs
-               an AI model — check that GEMINI_API_KEY is set on the API, or that
-               Ollama is reachable.</p>
+            <!-- The server knows which of three causes applies: no readable
+                 text, no model available, or a model that read the text and
+                 found nothing. Guessing here once sent an operator to check an
+                 API key that was already set correctly. -->
+            @if (job.error) {
+              <p>{{ job.error }}</p>
+            } @else {
+              <p>The images above were extracted successfully. Text extraction needs
+                 an AI model — check that GEMINI_API_KEY is set on the API, or that
+                 Ollama is reachable.</p>
+            }
           } @else {
             <strong>Nothing could be extracted from this PDF.</strong>
             <p>If the brochure is a scan, the pages are pictures of text rather
