@@ -112,7 +112,11 @@
           </button>
           <input #fileInput type="file" accept="*/*"
             multiple hidden (change)="onFileSelect($event)" />
-          <div class="drop-limits">All file types accepted · Max 10 GB per file · Up to 20 files per batch</div>
+          <!-- Must match MAX_PDF_BYTES in routers/brochures.py. The previous
+               "10 GB" was never achievable: the server refuses anything over
+               50 MB, and inviting a larger file meant a long upload ending in
+               a rejection. -->
+          <div class="drop-limits">PDF brochures · Max 50 MB per file · Up to 20 files per batch</div>
         </div>
       </div>
 

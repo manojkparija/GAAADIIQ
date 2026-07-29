@@ -47,6 +47,29 @@ router = APIRouter(prefix="/brochures", tags=["brochures"])
 media_router = APIRouter(prefix="/media", tags=["media"])
 
 MAX_PDF_BYTES = 50 * 1024 * 1024  # 50 MB — brochures are image-heavy
+UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+
+async def _read_capped(file: UploadFile, limit: int) -> bytes:
+    """
+    Buffer an upload, refusing anything past `limit` without buffering it.
+
+    Peak memory stays at limit + one chunk however large the client's file is.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(UPLOAD_CHUNK_BYTES)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > limit:
+            raise HTTPException(
+                status_code=413,
+                detail=f"PDF exceeds {limit // (1024 * 1024)} MB",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 # ── Response shapes ───────────────────────────────────────────────────────────
@@ -137,14 +160,14 @@ async def upload_brochure(
     photographs are the expensive part, and an offline model must not discard
     them.
     """
-    raw = await file.read()
+    # Read in chunks and stop at the cap, rather than await file.read() and
+    # check the length afterwards. Buffering first means an oversized upload is
+    # already resident in memory by the time the 413 is raised — on a small
+    # instance the process is OOM-killed before it can answer, which the client
+    # sees as a dropped connection with no status at all.
+    raw = await _read_capped(file, MAX_PDF_BYTES)
     if not raw:
         raise HTTPException(status_code=400, detail="Empty file")
-    if len(raw) > MAX_PDF_BYTES:
-        raise HTTPException(
-            status_code=413,
-            detail=f"PDF exceeds {MAX_PDF_BYTES // (1024 * 1024)} MB",
-        )
     # Content sniffing, not the filename: trusting a client-supplied extension
     # is how an executable ends up on disk named .pdf.
     if not pdf_ingest.is_pdf(raw):
@@ -162,8 +185,12 @@ async def upload_brochure(
     storage = get_storage()
 
     try:
-        images = pdf_ingest.extract_images(raw)
         text = pdf_ingest.extract_text(raw)
+        # Streamed, not listed: holding every image at once reached ~492 MB on a
+        # 300-image brochure (~1.6 MB per photo), which OOM-kills a small
+        # instance mid-request. Each image below is stored and then dropped, so
+        # peak memory is the PDF plus one image.
+        image_stream = pdf_ingest.iter_images(raw)
     except pdf_ingest.PdfIngestError as exc:
         job.status = IngestionStatus.failed
         job.error_message = str(exc)[:2000]
@@ -172,34 +199,46 @@ async def upload_brochure(
         raise HTTPException(status_code=422, detail=f"Could not read PDF: {exc}") from exc
 
     stored = 0
-    for index, img in enumerate(images):
-        sniffed = pdf_ingest.sniff_image(img["data"])
-        if not sniffed:
-            continue  # not an image we can serve; skip rather than store junk
-        ext, content_type = sniffed
-        key = pdf_ingest.build_key(job.id, index, ext)
-        try:
-            obj = await storage.save(key, img["data"], content_type)
-        except StorageError as exc:
-            logger.warning("Could not store image %s: %s", key, exc)
-            continue
+    # The loop stays lazy — materialising it here would undo the streaming and
+    # restore the OOM. The handler wraps the loop because iter_images is a
+    # generator: a PDF PyMuPDF cannot open raises on first iteration, not at
+    # the call above, and would otherwise escape as a 500 rather than the 422
+    # callers get today.
+    try:
+        for index, img in enumerate(image_stream):
+            sniffed = pdf_ingest.sniff_image(img["data"])
+            if not sniffed:
+                continue  # not an image we can serve; skip rather than store junk
+            ext, content_type = sniffed
+            key = pdf_ingest.build_key(job.id, index, ext)
+            try:
+                obj = await storage.save(key, img["data"], content_type)
+            except StorageError as exc:
+                logger.warning("Could not store image %s: %s", key, exc)
+                continue
 
-        width, height = img.get("width"), img.get("height")
-        if not width or not height:
-            width, height = pdf_ingest.image_dimensions(img["data"])
+            width, height = img.get("width"), img.get("height")
+            if not width or not height:
+                width, height = pdf_ingest.image_dimensions(img["data"])
 
-        db.add(VehicleMedia(
-            storage_key=obj.key,
-            content_type=content_type,
-            size_bytes=obj.size_bytes,
-            width=width,
-            height=height,
-            source_pdf_name=job.source_pdf_name,
-            page_number=img.get("page_number"),
-            phash=img.get("phash"),
-            job_id=job.id,
-        ))
-        stored += 1
+            db.add(VehicleMedia(
+                storage_key=obj.key,
+                content_type=content_type,
+                size_bytes=obj.size_bytes,
+                width=width,
+                height=height,
+                source_pdf_name=job.source_pdf_name,
+                page_number=img.get("page_number"),
+                phash=img.get("phash"),
+                job_id=job.id,
+            ))
+            stored += 1
+    except pdf_ingest.PdfIngestError as exc:
+        job.status = IngestionStatus.failed
+        job.error_message = str(exc)[:2000]
+        job.completed_at = datetime.now(timezone.utc)
+        await db.commit()
+        raise HTTPException(status_code=422, detail=f"Could not read PDF: {exc}") from exc
 
     vehicles, engine = await pdf_ingest.extract_vehicles(text)
     for v in vehicles:

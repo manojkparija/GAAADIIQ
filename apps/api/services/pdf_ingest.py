@@ -23,6 +23,7 @@ import logging
 import os
 import re
 import uuid
+from collections.abc import Iterator
 
 import httpx
 
@@ -58,11 +59,32 @@ class PdfIngestError(RuntimeError):
 
 def extract_images(pdf_bytes: bytes) -> list[dict]:
     """
-    Pull every embedded raster image out of the PDF.
+    Every embedded raster image, materialised as a list.
 
-    Returns dicts with the raw bytes plus enough metadata to store them:
+    MEMORY WARNING: this holds every image at once. At MAX_IMAGES that is
+    hundreds of megabytes — measured at ~1.6 MB per photo on a real brochure,
+    so ~492 MB at the cap, which exceeds a small instance's entire allowance
+    and gets the process OOM-killed mid-request. The kill leaves no traceback,
+    so it surfaces as an unexplained restart.
+
+    Prefer iter_images() in request handlers, which yields one image at a time
+    and lets each be stored and freed. This wrapper remains for tests and for
+    callers working with small, known-size PDFs.
+    """
+    return list(iter_images(pdf_bytes))
+
+
+def iter_images(pdf_bytes: bytes) -> Iterator[dict]:
+    """
+    Pull every embedded raster image out of the PDF, one at a time.
+
+    Yields dicts with the raw bytes plus enough metadata to store them:
     page number, dimensions, content type, and a perceptual-ish hash used to
     drop duplicates (brochures repeat the same hero shot on many pages).
+
+    Streaming rather than returning a list keeps peak memory at roughly one
+    image regardless of how many the brochure contains — the caller writes each
+    to storage and drops it before the next arrives.
     """
     try:
         import fitz  # PyMuPDF
@@ -74,12 +96,12 @@ def extract_images(pdf_bytes: bytes) -> list[dict]:
     except Exception as exc:
         raise PdfIngestError(f"Could not open PDF: {exc}") from exc
 
-    out: list[dict] = []
+    yielded = 0
     seen: set[str] = set()
 
     try:
         for page_index in range(min(doc.page_count, MAX_PAGES)):
-            if len(out) >= MAX_IMAGES:
+            if yielded >= MAX_IMAGES:
                 logger.warning("Image cap %d reached; ignoring the rest", MAX_IMAGES)
                 break
             page = doc[page_index]
@@ -106,7 +128,7 @@ def extract_images(pdf_bytes: bytes) -> list[dict]:
                     continue
                 seen.add(digest)
 
-                out.append({
+                yield {
                     "data": data,
                     "ext": (raw.get("ext") or "png").lower(),
                     "content_type": f"image/{(raw.get('ext') or 'png').lower()}",
@@ -114,11 +136,13 @@ def extract_images(pdf_bytes: bytes) -> list[dict]:
                     "height": raw.get("height"),
                     "page_number": page_index + 1,
                     "phash": digest[:32],
-                })
+                }
+                yielded += 1
+                if yielded >= MAX_IMAGES:
+                    logger.warning("Image cap %d reached; ignoring the rest", MAX_IMAGES)
+                    break
     finally:
         doc.close()
-
-    return out
 
 
 def extract_text(pdf_bytes: bytes) -> str:
