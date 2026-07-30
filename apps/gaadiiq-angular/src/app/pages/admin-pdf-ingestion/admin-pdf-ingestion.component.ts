@@ -33,6 +33,22 @@ export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
   pendingJobs = computed(() =>
     this.svc.jobs().filter(j => !['APPROVED','REJECTED','FAILED'].includes(j.status))
   );
+
+  /**
+   * Jobs the server can still change on its own — the only ones worth polling.
+   *
+   * Separate from pendingJobs, which drives the "needs your attention" badge
+   * and therefore includes AWAITING_REVIEW. That status is where every
+   * completed ingestion lands and it never changes without a human, so polling
+   * it asks the same question forever: eight finished brochures produced a
+   * sustained two requests a second against the API for as long as the tab
+   * stayed open.
+   */
+  jobsStillProcessing = computed(() =>
+    this.svc.jobs().filter(j =>
+      ['PENDING', 'PARSING', 'EXTRACTING', 'MATCHING_IMAGES', 'VALIDATING'].includes(j.status)
+    )
+  );
   readyToApprove = computed(() =>
     this.svc.selectedJob()?.vehicles.filter(v => v.status === 'READY') ?? []
   );
@@ -57,7 +73,12 @@ export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
 
   private startPolling() {
     this.pollTimer = setInterval(async () => {
-      for (const job of this.pendingJobs()) {
+      const inFlight = this.jobsStillProcessing();
+      // No request at all when nothing is in flight. The common resting state
+      // of this screen is a list of finished jobs, and it should cost nothing.
+      if (!inFlight.length) return;
+
+      for (const job of inFlight) {
         await this.svc.pollJob(job.id);
       }
     }, 4000);
