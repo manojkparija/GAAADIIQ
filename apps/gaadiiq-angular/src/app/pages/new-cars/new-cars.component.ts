@@ -1,10 +1,11 @@
-import { Component, signal, computed, OnInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, signal, computed, OnInit, ElementRef, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
+import { VehicleImageService } from '../../services/vehicle-image.service';
 
 const PLACEHOLDER = 'assets/cars/placeholder.svg';
 const COMPARE_KEY = 'gaadiiq_compare_keys';
@@ -65,6 +66,19 @@ export class NewCarsComponent implements OnInit {
   @ViewChild('modelsSection') modelsSection?: ElementRef<HTMLElement>;
 
   readonly placeholder = PLACEHOLDER;
+
+  private readonly vehicleImages = inject(VehicleImageService);
+
+  /**
+   * A brochure photograph when the catalogue entry has no image of its own.
+   *
+   * New-car listings are seeded without photography far more often than not,
+   * so without this the launch grid is a wall of placeholders even when the
+   * manufacturer's own brochure has been ingested.
+   */
+  imageFor(car: { image?: string | null; make?: string; model?: string }): string {
+    return this.vehicleImages.imageOr(car?.image, car?.make, car?.model);
+  }
 
   constructor(
     private carsData: CarsDataService,

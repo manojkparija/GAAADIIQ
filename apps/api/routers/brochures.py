@@ -46,7 +46,7 @@ from models.vehicle_media import (
     PdfIngestionJob,
     VehicleMedia,
 )
-from services import pdf_ingest
+from services import media_backfill, pdf_ingest
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
 
@@ -714,6 +714,45 @@ async def delete_job(
 
     await db.delete(job)
     await db.commit()
+
+
+class BackfillOut(BaseModel):
+    scanned: int
+    tagged: int
+    thumbnailed: int
+    hashed: int
+    indexed: int
+    unreadable: int
+    errors: list[str] = []
+
+
+@router.post("/backfill", response_model=BackfillOut)
+@limiter.limit("2/hour")
+async def backfill_media_endpoint(
+    request: Request,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int | None = Query(None, ge=1, le=5000, description="Cap rows touched; omit for all"),
+    reindex_all: bool = Query(False, description="Also re-index rows that need no other work"),
+):
+    """
+    Bring images stored before the enrichment pipeline up to its standard.
+
+    Images ingested by the earlier code have a storage key and little else — no
+    thumbnail, no perceptual hash, and tags only where a brochure happened to
+    describe exactly one vehicle. Every catalogue surface filters on those tags,
+    so without this the pipeline looks broken on existing data while working
+    correctly on everything uploaded after it.
+
+    Idempotent: only missing fields are filled, so running it twice is a no-op
+    and an interrupted run can simply be started again. Rate-limited and
+    admin-only because it reads and rewrites every image in storage.
+
+    Start with `?limit=50` to see what a run does before committing to the
+    whole table.
+    """
+    report = await media_backfill.backfill_media(db, limit=limit, reindex_all=reindex_all)
+    return BackfillOut(**report.as_dict())
 
 
 # ── Public read ───────────────────────────────────────────────────────────────
