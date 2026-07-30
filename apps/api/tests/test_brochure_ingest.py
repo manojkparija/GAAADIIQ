@@ -4,6 +4,7 @@ Brochure ingestion: PDF in, images and vehicle data out.
 The PDFs here are built in-test rather than committed as binary fixtures, so
 the inputs are reviewable and the suite carries no opaque blobs.
 """
+import base64
 import io
 import json
 import uuid
@@ -238,12 +239,24 @@ class TestVisionFallbackSuite:
         assert calls["images"] is None, "images must not be sent when text exists"
 
     @pytest.mark.asyncio
-    async def test_no_key_means_no_vision_attempt(self, monkeypatch):
+    async def test_no_gemini_key_still_reads_the_pages_with_a_free_provider(self, monkeypatch):
+        """
+        Absence of a Gemini key is the exact case the free fallback exists for,
+        so it must not skip vision. Gating the whole vision path on the Gemini
+        key meant removing the key reported "none" and no free provider was ever
+        reached.
+        """
+        async def fake_groq(prompt, images):
+            return json.dumps([{"make": "Maruti Suzuki", "model": "Dzire", "confidence": 0.7}])
+
         monkeypatch.setattr(settings, "gemini_api_key", "")
+        monkeypatch.setattr(settings, "groq_api_key", "test-groq-key")
+        monkeypatch.setattr(pdf_ingest, "_call_groq_vision", fake_groq)
 
         vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless_pdf())
 
-        assert (vehicles, engine) == ([], "none")
+        assert engine == "groq-vision"
+        assert [v["model"] for v in vehicles] == ["Dzire"]
 
     @pytest.mark.asyncio
     async def test_a_failing_vision_call_does_not_lose_the_images(self, monkeypatch):
@@ -308,11 +321,14 @@ class TestVisionFailureModesSuite:
         assert await pdf_ingest.extract_vehicles("", source=self._textless()) == ([], "vision-render-failed")
 
     @pytest.mark.asyncio
-    async def test_no_key_is_still_plain_none(self, monkeypatch):
-        # Distinct from every vision outcome: nothing was attempted.
+    async def test_no_source_to_render_is_still_plain_none(self, monkeypatch):
+        # "none" now means strictly "there was nothing to attempt" — no text to
+        # read and no pages to render. Distinct from every vision outcome, which
+        # all imply a provider was tried.
         monkeypatch.setattr(settings, "gemini_api_key", "")
+        monkeypatch.setattr(settings, "groq_api_key", "")
 
-        assert await pdf_ingest.extract_vehicles("", source=self._textless()) == ([], "none")
+        assert await pdf_ingest.extract_vehicles("", source=None) == ([], "none")
 
 
 class TestOllamaVisionFallbackSuite:
@@ -436,3 +452,150 @@ class TestOllamaVisionFallbackSuite:
         assert vehicles == []
         # Unparseable responses are treated like "found nothing", consistent with Gemini
         assert engine == "ollama-vision"
+
+
+class TestGroqVisionFallbackSuite:
+    """
+    Groq is the free fallback that works in the deployed API.
+
+    Ollama, the previous free fallback, has to be self-hosted — the deployed
+    backend has no Ollama to reach, so that hop can only ever succeed on a
+    developer machine. These cover the provider that actually answers in
+    production.
+    """
+
+    def _textless(self) -> bytes:
+        return TestVisionFallbackSuite._textless_pdf()
+
+    @pytest.mark.asyncio
+    async def test_groq_takes_over_when_gemini_fails(self, monkeypatch):
+        async def boom(prompt, images=None):
+            raise RuntimeError("429 quota exceeded")
+
+        async def fake_groq(prompt, images):
+            return json.dumps([{"make": "Maruti Suzuki", "model": "Dzire", "confidence": 0.8}])
+
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+        monkeypatch.setattr(settings, "groq_api_key", "test-groq-key")
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", boom)
+        monkeypatch.setattr(pdf_ingest, "_call_groq_vision", fake_groq)
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless())
+
+        assert engine == "groq-vision"
+        assert [v["model"] for v in vehicles] == ["Dzire"]
+
+    @pytest.mark.asyncio
+    async def test_groq_is_skipped_without_a_key(self, monkeypatch):
+        """An unconfigured provider must not be attempted at all."""
+        called = {"groq": False}
+
+        async def fake_groq(prompt, images):
+            called["groq"] = True
+            return "[]"
+
+        monkeypatch.setattr(settings, "gemini_api_key", "")
+        monkeypatch.setattr(settings, "groq_api_key", "")
+        monkeypatch.setattr(pdf_ingest, "_call_groq_vision", fake_groq)
+
+        await pdf_ingest.extract_vehicles("", source=self._textless())
+
+        assert called["groq"] is False
+
+    @pytest.mark.asyncio
+    async def test_pages_are_batched_to_groqs_five_image_limit(self, monkeypatch):
+        """
+        Groq rejects more than 5 images per request but PDF_VISION_MAX_PAGES is 8.
+        Batching rather than truncating: the variant grid is as likely to be on
+        page 6 as page 1, so dropping the overflow would lose the table this
+        reads the pages to find.
+        """
+        batches: list[int] = []
+
+        async def fake_chat(content, timeout):
+            batches.append(sum(1 for part in content if part["type"] == "image_url"))
+            return json.dumps([{"make": "Maruti Suzuki", "model": f"V{len(batches)}", "confidence": 0.6}])
+
+        monkeypatch.setattr(settings, "groq_api_key", "test-groq-key")
+        monkeypatch.setattr(settings, "groq_max_images_per_request", 5)
+        monkeypatch.setattr(pdf_ingest, "_groq_chat", fake_chat)
+
+        raw = await pdf_ingest._call_groq_vision("prompt", [b"png"] * 8)
+
+        assert batches == [5, 3], "8 pages must go as a 5-image batch then a 3-image batch"
+        # Every batch's findings are kept, not just the last request's.
+        assert [v["model"] for v in json.loads(raw)] == ["V1", "V2"]
+
+    @pytest.mark.asyncio
+    async def test_a_failed_batch_keeps_the_pages_that_read(self, monkeypatch):
+        """One bad batch must not discard the variants the other batches found."""
+        calls = {"n": 0}
+
+        async def flaky_chat(content, timeout):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise RuntimeError("503 upstream")
+            return json.dumps([{"make": "Maruti Suzuki", "model": "Dzire", "confidence": 0.6}])
+
+        monkeypatch.setattr(settings, "groq_api_key", "test-groq-key")
+        monkeypatch.setattr(settings, "groq_max_images_per_request", 5)
+        monkeypatch.setattr(pdf_ingest, "_groq_chat", flaky_chat)
+
+        raw = await pdf_ingest._call_groq_vision("prompt", [b"png"] * 8)
+
+        assert [v["model"] for v in json.loads(raw)] == ["Dzire"]
+
+    @pytest.mark.asyncio
+    async def test_every_batch_failing_raises_so_the_next_provider_runs(self, monkeypatch):
+        async def always_fails(content, timeout):
+            raise RuntimeError("503 upstream")
+
+        monkeypatch.setattr(settings, "groq_api_key", "test-groq-key")
+        monkeypatch.setattr(pdf_ingest, "_groq_chat", always_fails)
+
+        with pytest.raises(Exception):
+            await pdf_ingest._call_groq_vision("prompt", [b"png"] * 8)
+
+
+class TestOllamaVisionPayloadSuite:
+    """
+    Ollama takes images as a top-level `images` field of base64 strings.
+
+    An earlier version encoded them into the prompt text instead, which showed
+    the model a wall of base64 and no picture — so the fallback could never have
+    read a brochure however well it was configured.
+    """
+
+    @pytest.mark.asyncio
+    async def test_images_go_in_the_images_field_not_the_prompt(self, monkeypatch):
+        captured: dict = {}
+
+        class FakeResponse:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"response": "[]"}
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                return False
+
+            async def post(self, url, json=None, **kwargs):
+                captured.update(json or {})
+                return FakeResponse()
+
+        monkeypatch.setattr(pdf_ingest.httpx, "AsyncClient", lambda **kw: FakeClient())
+
+        await pdf_ingest._call_ollama_vision("read this", images=[b"\x89PNG-one", b"\x89PNG-two"])
+
+        assert captured["images"] == [
+            base64.b64encode(b"\x89PNG-one").decode("ascii"),
+            base64.b64encode(b"\x89PNG-two").decode("ascii"),
+        ]
+        # The prompt must stay the prompt — no base64 smuggled into it.
+        assert captured["prompt"] == "read this"
+        assert "IMAGE_DATA" not in captured["prompt"]

@@ -57,6 +57,11 @@ services:
         sync: false            # JWT signing key for this backend
       - key: GEMINI_API_KEY
         sync: false
+      # Free hosted vision fallback for brochure pages when Gemini is out of
+      # quota or unset. Needed because the other free provider, Ollama, is
+      # self-hosted and this deployment has none to reach.
+      - key: GROQ_API_KEY
+        sync: false
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET

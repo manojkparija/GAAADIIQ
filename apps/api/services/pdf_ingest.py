@@ -6,17 +6,27 @@ Two halves, kept separate because they fail independently:
   extract_images()   — PyMuPDF, deterministic, no network. Works offline.
   extract_vehicles() — an LLM reading the brochure. Needs a model. Reads the
                        text layer when there is one, and falls back to showing
-                       Gemini the rendered pages when there is not — which is
-                       the common case for manufacturer brochures, whose words
-                       are printed into the artwork.
+                       a vision model the rendered pages when there is not —
+                       which is the common case for manufacturer brochures,
+                       whose words are printed into the artwork.
 
 If the LLM is unavailable the images are still extracted and stored. That
 matters: images are the expensive, hard-to-replace part of a brochure, and
 losing them because a model was offline would be the wrong trade.
 
-Model choice follows the same tiering as diagnosis — Gemini Flash when a key is
-configured (much better at reading messy brochure tables), otherwise the
-self-hosted Ollama model. Both are optional.
+Providers are tried in order, best accuracy first, and each hop is skipped when
+unconfigured:
+
+  Gemini Flash — best at messy brochure variant tables. Paid.
+  Groq         — free hosted tier, Llama 4 vision, OpenAI-compatible.
+  Ollama       — free but self-hosted, so it only answers where a host is
+                 actually reachable, typically local development.
+
+Groq sits ahead of Ollama deliberately. Ollama was previously the only free
+fallback, which made the free path unreachable in the deployed API: there is no
+Ollama alongside it, so "fall back to Ollama" meant "fail". The chain is also
+not gated on a Gemini key — gating it there meant that removing the key, the
+exact case the fallback exists for, skipped the free providers entirely.
 """
 from __future__ import annotations
 
@@ -359,33 +369,103 @@ async def _call_ollama(prompt: str) -> str:
         return resp.json().get("response", "")
 
 
+async def _groq_chat(content: list[dict], timeout: float) -> str:
+    """POST one OpenAI-compatible chat completion to Groq and return the text."""
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        resp = await client.post(
+            f"{settings.groq_api_url}/chat/completions",
+            headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+            json={
+                "model": settings.groq_vision_model,
+                "messages": [{"role": "user", "content": content}],
+                "temperature": 0.1,
+                "max_tokens": 8192,
+            },
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
+
+
+async def _call_groq(prompt: str) -> str:
+    """Ask Groq to read a brochure's text layer — the free hosted text fallback."""
+    return await _groq_chat([{"type": "text", "text": prompt}], INGEST_TIMEOUT)
+
+
+async def _call_groq_vision(prompt: str, images: list[bytes]) -> str:
+    """
+    Ask Groq's Llama 4 vision model to read the rendered pages.
+
+    This is the fallback that works in the deployed API: Groq is hosted and its
+    developer tier is free, where Ollama would have to be self-hosted next to
+    the backend. The API is OpenAI-compatible, so pages travel as `image_url`
+    parts holding data: URIs rather than as a provider-specific images field.
+
+    Groq caps a request at 5 images, below PDF_VISION_MAX_PAGES, so the pages go
+    in batches and the variants found in each are concatenated. Batching rather
+    than truncating: page 6 of a brochure is as likely to hold the variant grid
+    as page 1, and silently dropping it would lose exactly the table this reads
+    the pages to find.
+    """
+    batch_size = max(1, settings.groq_max_images_per_request)
+    batches = [images[i:i + batch_size] for i in range(0, len(images), batch_size)]
+
+    collected: list[dict] = []
+    last_error: Exception | None = None
+
+    for index, batch in enumerate(batches):
+        content: list[dict] = [{"type": "text", "text": prompt}]
+        for png in batch:
+            b64 = base64.b64encode(png).decode("ascii")
+            content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{b64}"},
+            })
+
+        try:
+            raw = await _groq_chat(content, VISION_TIMEOUT)
+        except Exception as exc:
+            # One bad batch must not lose the pages that did read, for the same
+            # reason a bad page must not lose the rest of the render.
+            logger.warning("Groq vision batch %d/%d failed: %s", index + 1, len(batches), exc)
+            last_error = exc
+            continue
+
+        try:
+            collected.extend(_parse_vehicles(raw))
+        except Exception as exc:
+            logger.warning("Could not parse Groq vision batch %d/%d: %s", index + 1, len(batches), exc)
+            last_error = exc
+
+    if not collected:
+        raise last_error or RuntimeError("Groq vision returned no vehicles")
+
+    # Re-serialised so the caller keeps a single parse-then-clean path across
+    # every provider, rather than one shape for Groq and another for the rest.
+    return json.dumps(collected)
+
+
 async def _call_ollama_vision(prompt: str, images: list[bytes] | None = None) -> str:
     """
     Ask Ollama's vision model (llava) with optional page images.
 
-    Free fallback for Gemini when quota is exhausted. Ollama runs locally so it
-    has no API costs, rate limits, or quota — only the tradeoff of speed and
-    accuracy vs. Gemini's Flash model.
+    Only useful where an Ollama host is actually reachable — typically local
+    development. Kept as the last hop so a self-hosted deployment still has a
+    free path once Gemini and Groq are out.
     """
-    # Images arrive as PNG bytes; Ollama expects base64-encoded data in the prompt.
-    # Construct a prompt that tells the model to read the images.
-    parts = [prompt]
-    for i, png in enumerate(images or []):
-        b64 = base64.b64encode(png).decode("ascii")
-        parts.append(f"[Image {i+1}]\n<IMAGE_DATA>\n{b64}\n</IMAGE_DATA>")
-
-    combined_prompt = "\n".join(parts)
+    payload: dict = {
+        "model": settings.ollama_vision_model,
+        "prompt": prompt,
+        "stream": False,
+        "format": "json",
+    }
+    # Ollama takes images as a top-level field of base64 strings. Encoding them
+    # into the prompt text instead shows the model a wall of base64 and no
+    # picture, which is why this path previously returned nothing.
+    if images:
+        payload["images"] = [base64.b64encode(png).decode("ascii") for png in images]
 
     async with httpx.AsyncClient(timeout=VISION_TIMEOUT if images else INGEST_TIMEOUT) as client:
-        resp = await client.post(
-            f"{OLLAMA_BASE_URL}/api/generate",
-            json={
-                "model": "llava",
-                "prompt": combined_prompt,
-                "stream": False,
-                "format": "json",
-            },
-        )
+        resp = await client.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload)
         resp.raise_for_status()
         return resp.json().get("response", "")
 
@@ -502,8 +582,21 @@ async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
     """
     has_text = bool(text.strip())
 
-    if not has_text and source is not None and settings.gemini_api_key:
-        # Render pages once for vision extraction, try Gemini then Ollama as free fallback
+    if not has_text and source is not None:
+        # Ordered best-accuracy-first. Gemini reads brochure tables best; Groq is
+        # the free hosted fallback; Ollama only answers where it is self-hosted.
+        #
+        # Deliberately not gated on a Gemini key any more. Gating the whole
+        # vision path on Gemini meant that removing the key — the exact case a
+        # fallback exists for — skipped vision entirely and reported "none",
+        # so the free providers could never be reached.
+        providers: list[tuple[str, object]] = []
+        if settings.gemini_api_key:
+            providers.append(("gemini-vision", _call_gemini))
+        if settings.groq_api_key:
+            providers.append(("groq-vision", _call_groq_vision))
+        providers.append(("ollama-vision", _call_ollama_vision))
+
         try:
             pages = await asyncio.to_thread(render_pages, source)
         except Exception as exc:
@@ -514,47 +607,55 @@ async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
             logger.warning("No pages could be rendered for vision extraction")
             return [], "vision-render-failed"
 
-        # Try Gemini first (better accuracy for brochures)
-        logger.info("No text layer; reading %d rendered pages with Gemini", len(pages))
-        try:
-            raw = await _call_gemini(_VISION_PROMPT, images=pages)
-            try:
-                return _clean(_parse_vehicles(raw)), "gemini-vision"
-            except Exception as exc:
-                logger.warning("Could not parse the Gemini vision response: %s", exc)
-                return [], "vision-parse-failed"
-        except Exception as exc:
-            logger.warning("Gemini vision extraction failed (%s), falling back to Ollama", exc)
+        # Distinguishes "every provider errored" from "a provider answered but
+        # the answer was unreadable", because the two need different fixes: a
+        # key or quota in the first case, a prompt or model in the second.
+        parse_failed = False
 
-            # Fallback to Ollama's free llava model when Gemini fails
+        for engine, call in providers:
+            logger.info("No text layer; reading %d rendered pages with %s", len(pages), engine)
             try:
-                logger.info("Reading %d rendered pages with Ollama vision model", len(pages))
-                raw = await _call_ollama_vision(_VISION_PROMPT, images=pages)
-                try:
-                    return _clean(_parse_vehicles(raw)), "ollama-vision"
-                except Exception as exc:
-                    logger.warning("Could not parse the Ollama vision response: %s", exc)
-                    return [], "vision-parse-failed"
+                raw = await call(_VISION_PROMPT, images=pages)
             except Exception as exc:
-                logger.warning("Ollama vision extraction failed: %s", exc)
-                return [], "vision-call-failed"
+                logger.warning("%s extraction failed: %s", engine, exc)
+                continue
+
+            try:
+                vehicles = _clean(_parse_vehicles(raw))
+            except Exception as exc:
+                logger.warning("Could not parse the %s response: %s", engine, exc)
+                parse_failed = True
+                continue
+
+            # A provider that answers with an empty list has read the pages and
+            # found no variants; trying the next one will not change that, and
+            # the engine name records who read them.
+            return vehicles, engine
+
+        return [], "vision-parse-failed" if parse_failed else "vision-call-failed"
 
     if not has_text:
         return [], "none"
 
     prompt = _PROMPT.format(text=text)
 
+    # Same order and same reasoning as the vision chain above: a brochure that
+    # does have a text layer hits the identical dead end when Gemini is out and
+    # the only remaining provider is an Ollama host that is not deployed.
+    text_providers: list[tuple[str, object]] = []
     if settings.gemini_api_key:
-        try:
-            return _clean(_parse_vehicles(await _call_gemini(prompt))), "gemini"
-        except Exception as exc:
-            logger.warning("Gemini extraction failed, trying Ollama: %s", exc)
+        text_providers.append(("gemini", _call_gemini))
+    if settings.groq_api_key:
+        text_providers.append(("groq", _call_groq))
+    text_providers.append(("ollama", _call_ollama))
 
-    try:
-        return _clean(_parse_vehicles(await _call_ollama(prompt))), "ollama"
-    except Exception as exc:
-        logger.warning("Ollama extraction failed: %s", exc)
-        return [], "none"
+    for engine, call in text_providers:
+        try:
+            return _clean(_parse_vehicles(await call(prompt))), engine
+        except Exception as exc:
+            logger.warning("%s extraction failed: %s", engine, exc)
+
+    return [], "none"
 
 
 def build_key(job_id: uuid.UUID, index: int, ext: str) -> str:

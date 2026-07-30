@@ -109,6 +109,19 @@ class Settings(BaseSettings):
     gemini_api_url: str = "https://generativelanguage.googleapis.com/v1beta"
     gemini_timeout_seconds: float = 15.0
 
+    # Groq — free, hosted vision fallback for brochure pages when Gemini is
+    # unavailable (no key, exhausted quota, or an outage). Chosen over Ollama
+    # for this role because Ollama has to be self-hosted, and the deployed API
+    # has no Ollama to reach: a fallback that only works on a developer's
+    # laptop is not a fallback. OpenAI-compatible, so the call is a plain
+    # chat-completions POST. Leave blank to skip this hop.
+    groq_api_key: str = ""
+    groq_api_url: str = "https://api.groq.com/openai/v1"
+    groq_vision_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    # Groq accepts at most 5 images per request, fewer than PDF_VISION_MAX_PAGES,
+    # so the rendered pages are sent in batches of this size.
+    groq_max_images_per_request: int = 5
+
     # Optional server-side TTS (BR-API-02). "none" disables it and the client
     # falls back to the browser's speechSynthesis, which is the default path.
     tts_provider: str = "none"          # none | google | azure

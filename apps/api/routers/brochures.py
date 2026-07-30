@@ -152,6 +152,14 @@ def _why_no_vehicles(text: str, engine: str) -> str:
             "page showing the variant or specification table, or raise "
             "PDF_VISION_DPI if the print is small."
         )
+    if engine == "groq-vision":
+        return (
+            "This PDF has no text layer, so its pages were read as images by "
+            "Groq (free) — but no vehicle details could be made out. Try a "
+            "brochure page showing the variant or specification table, or raise "
+            "PDF_VISION_DPI if the print is small. Gemini may read some "
+            "brochures better."
+        )
     if engine == "ollama-vision":
         return (
             "This PDF has no text layer, so its pages were read as images by "
@@ -161,10 +169,11 @@ def _why_no_vehicles(text: str, engine: str) -> str:
     if engine == "vision-call-failed":
         return (
             "This PDF has no text layer, so its pages were sent to a vision "
-            "model as images — and that call failed. The reason is in the API "
-            "logs (search for 'Gemini vision extraction failed' or 'Ollama "
-            "vision extraction failed'); a quota, an invalid key, or an "
-            "unreachable model are the usual causes."
+            "model as images — and every provider failed. The reason is in the "
+            "API logs (search for 'extraction failed'); a quota, an invalid "
+            "key, or an unreachable model are the usual causes. Setting "
+            "GROQ_API_KEY gives a free hosted fallback that does not depend on "
+            "Gemini quota or on a self-hosted Ollama."
         )
     if engine == "vision-render-failed":
         return (
@@ -182,16 +191,16 @@ def _why_no_vehicles(text: str, engine: str) -> str:
         return (
             f"No readable text in this PDF ({len(stripped)} characters) — the "
             "brochure's words are part of its artwork. Reading the pages as "
-            "images is attempted automatically using Ollama (free, local) then "
-            "Gemini (paid API) if available. Set GEMINI_API_KEY on the API or "
-            "ensure Ollama is reachable. The images were extracted and kept "
-            "regardless."
+            "images is attempted automatically: Gemini (paid API) first, then "
+            "Groq (free, hosted), then Ollama (free, self-hosted). Set "
+            "GEMINI_API_KEY or GROQ_API_KEY on the API, or ensure Ollama is "
+            "reachable. The images were extracted and kept regardless."
         )
     if engine == "none":
         return (
             "The brochure text was read from the PDF, but no AI model was "
-            "available to interpret it. Check GEMINI_API_KEY on the API, or "
-            "that Ollama is reachable."
+            "available to interpret it. Set GEMINI_API_KEY or GROQ_API_KEY on "
+            "the API, or check that Ollama is reachable."
         )
     return (
         f"{engine} read {len(stripped)} characters from this brochure but "
