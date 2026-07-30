@@ -105,7 +105,10 @@ class Settings(BaseSettings):
     # Gemini — higher-quality diagnosis for paid users and admins. Ollama is
     # the free tier. Leave the key blank and everyone falls back to Ollama.
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
+    # gemini-2.0-flash was shut down on 2026-06-01, so the previous default
+    # named a model the API no longer serves. Flash-Lite is the cost-efficient
+    # tier; override with GEMINI_MODEL rather than editing this.
+    gemini_model: str = "gemini-3.5-flash-lite"
     gemini_api_url: str = "https://generativelanguage.googleapis.com/v1beta"
     gemini_timeout_seconds: float = 15.0
 

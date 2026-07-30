@@ -307,10 +307,15 @@ async def _call_gemini(prompt: str, images: list[bytes] | None = None) -> str:
     out as artwork with no text layer at all — a real Dzire brochure yielded
     zero characters — so a text-only request has nothing to work with however
     well the model is configured.
+
+    Model and endpoint come from settings, matching services/diagnosis.py. They
+    were previously hardcoded here, so GEMINI_MODEL changed the diagnosis path
+    and silently did nothing to brochures — and the pinned value outlived the
+    model it named.
     """
     url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-2.0-flash:generateContent?key={settings.gemini_api_key}"
+        f"{settings.gemini_api_url.rstrip('/')}/models/"
+        f"{settings.gemini_model}:generateContent?key={settings.gemini_api_key}"
     )
     parts: list[dict] = [{"text": prompt}]
     for png in images or []:

@@ -726,3 +726,54 @@ class TestGroqRateLimitSuite:
 
         assert [v["model"] for v in json.loads(raw)] == ["Dzire"]
         assert calls["n"] == 2, "must stop at the throttle, not grind through later batches"
+
+
+class TestGeminiModelIsConfigurableSuite:
+    """
+    The brochure path must honour GEMINI_MODEL like the diagnosis path does.
+
+    The model and endpoint were hardcoded here, so setting GEMINI_MODEL changed
+    diagnosis and silently did nothing to brochures — and the pinned value,
+    gemini-2.0-flash, outlived the model it named (shut down 2026-06-01), which
+    turns every brochure vision call into a request for a model that no longer
+    exists.
+    """
+
+    @pytest.mark.asyncio
+    async def test_model_and_endpoint_come_from_settings(self, monkeypatch):
+        seen: dict = {}
+
+        class FakeResponse:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"candidates": [{"content": {"parts": [{"text": "[]"}]}}]}
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                return False
+
+            async def post(self, url, json=None, **kwargs):
+                seen["url"] = url
+                return FakeResponse()
+
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+        monkeypatch.setattr(settings, "gemini_model", "gemini-3.5-flash-lite")
+        monkeypatch.setattr(settings, "gemini_api_url", "https://example.test/v1beta")
+        monkeypatch.setattr(pdf_ingest.httpx, "AsyncClient", lambda **kw: FakeClient())
+
+        await pdf_ingest._call_gemini("prompt", images=[b"\x89PNG"])
+
+        assert seen["url"].startswith("https://example.test/v1beta/models/")
+        assert "gemini-3.5-flash-lite:generateContent" in seen["url"]
+        # The retired model must not be reachable by any code path.
+        assert "gemini-2.0-flash" not in seen["url"]
+
+    def test_the_default_model_is_not_a_retired_one(self):
+        # gemini-2.0-flash was shut down 2026-06-01; a default naming a dead
+        # model fails every call until someone sets the env var.
+        assert settings.gemini_model != "gemini-2.0-flash"
