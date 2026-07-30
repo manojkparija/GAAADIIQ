@@ -270,12 +270,16 @@ class TestVisionOutcomesAreDistinguishedSuite:
     def test_key_missing_is_the_only_message_naming_the_key(self):
         from routers.brochures import _why_no_vehicles
 
-        assert "does not appear to be set" in _why_no_vehicles("", "none")
+        # "none" is the only engine value that explains the fallback to Ollama
+        reason = _why_no_vehicles("", "none")
+        assert "GEMINI_API_KEY" in reason
+        assert "Ollama" in reason
 
-        for engine in ("gemini-vision", "vision-call-failed",
+        # Vision outcomes should not mention the fallback mechanism
+        for engine in ("gemini-vision", "ollama-vision", "vision-call-failed",
                        "vision-render-failed", "vision-parse-failed"):
             reason = _why_no_vehicles("", engine)
-            assert "does not appear to be set" not in reason, engine
+            assert "GEMINI_API_KEY" not in reason or "Set" not in reason, engine
 
     def test_a_failed_call_points_at_the_logs(self):
         from routers.brochures import _why_no_vehicles

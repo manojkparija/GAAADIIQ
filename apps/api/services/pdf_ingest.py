@@ -359,6 +359,37 @@ async def _call_ollama(prompt: str) -> str:
         return resp.json().get("response", "")
 
 
+async def _call_ollama_vision(prompt: str, images: list[bytes] | None = None) -> str:
+    """
+    Ask Ollama's vision model (llava) with optional page images.
+
+    Free fallback for Gemini when quota is exhausted. Ollama runs locally so it
+    has no API costs, rate limits, or quota — only the tradeoff of speed and
+    accuracy vs. Gemini's Flash model.
+    """
+    # Images arrive as PNG bytes; Ollama expects base64-encoded data in the prompt.
+    # Construct a prompt that tells the model to read the images.
+    parts = [prompt]
+    for i, png in enumerate(images or []):
+        b64 = base64.b64encode(png).decode("ascii")
+        parts.append(f"[Image {i+1}]\n<IMAGE_DATA>\n{b64}\n</IMAGE_DATA>")
+
+    combined_prompt = "\n".join(parts)
+
+    async with httpx.AsyncClient(timeout=VISION_TIMEOUT if images else INGEST_TIMEOUT) as client:
+        resp = await client.post(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            json={
+                "model": "llava",
+                "prompt": combined_prompt,
+                "stream": False,
+                "format": "json",
+            },
+        )
+        resp.raise_for_status()
+        return resp.json().get("response", "")
+
+
 def _parse_vehicles(raw: str) -> list[dict]:
     """
     Pull the JSON array out of a model response.
@@ -463,18 +494,16 @@ async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
     engine is "none" when nothing could run.
 
     When the PDF has no text layer, `source` (a path or bytes) lets the pages be
-    rendered and shown to Gemini as pictures instead. Manufacturer brochures are
-    routinely built this way — a real Dzire brochure yielded zero characters —
+    rendered and shown to a vision model as pictures instead. Manufacturer brochures
+    are routinely built this way — a real Dzire brochure yielded zero characters —
     so without this the whole feature returns nothing for exactly the documents
-    it exists to read. Ollama is not offered the image path: the default model
-    is text-only, and llava would have to be pulled first.
+    it exists to read. Tries Gemini first (better accuracy), then falls back to
+    Ollama's llava model for free extraction.
     """
     has_text = bool(text.strip())
 
     if not has_text and source is not None and settings.gemini_api_key:
-        # Each outcome gets its own engine value. Collapsing them into "none"
-        # is what made the UI tell an operator to set an API key that was
-        # already set — the call had been made and had failed.
+        # Render pages once for vision extraction, try Gemini then Ollama as free fallback
         try:
             pages = await asyncio.to_thread(render_pages, source)
         except Exception as exc:
@@ -485,18 +514,30 @@ async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
             logger.warning("No pages could be rendered for vision extraction")
             return [], "vision-render-failed"
 
+        # Try Gemini first (better accuracy for brochures)
         logger.info("No text layer; reading %d rendered pages with Gemini", len(pages))
         try:
             raw = await _call_gemini(_VISION_PROMPT, images=pages)
+            try:
+                return _clean(_parse_vehicles(raw)), "gemini-vision"
+            except Exception as exc:
+                logger.warning("Could not parse the Gemini vision response: %s", exc)
+                return [], "vision-parse-failed"
         except Exception as exc:
-            logger.warning("Gemini vision extraction failed: %s", exc)
-            return [], "vision-call-failed"
+            logger.warning("Gemini vision extraction failed (%s), falling back to Ollama", exc)
 
-        try:
-            return _clean(_parse_vehicles(raw)), "gemini-vision"
-        except Exception as exc:
-            logger.warning("Could not parse the vision response: %s", exc)
-            return [], "vision-parse-failed"
+            # Fallback to Ollama's free llava model when Gemini fails
+            try:
+                logger.info("Reading %d rendered pages with Ollama vision model", len(pages))
+                raw = await _call_ollama_vision(_VISION_PROMPT, images=pages)
+                try:
+                    return _clean(_parse_vehicles(raw)), "ollama-vision"
+                except Exception as exc:
+                    logger.warning("Could not parse the Ollama vision response: %s", exc)
+                    return [], "vision-parse-failed"
+            except Exception as exc:
+                logger.warning("Ollama vision extraction failed: %s", exc)
+                return [], "vision-call-failed"
 
     if not has_text:
         return [], "none"

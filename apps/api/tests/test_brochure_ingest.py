@@ -313,3 +313,126 @@ class TestVisionFailureModesSuite:
         monkeypatch.setattr(settings, "gemini_api_key", "")
 
         assert await pdf_ingest.extract_vehicles("", source=self._textless()) == ([], "none")
+
+
+class TestOllamaVisionFallbackSuite:
+    """
+    When Gemini quota is exhausted, fallback to Ollama's free local model.
+
+    Ollama is self-hosted and has no quota or API costs, only the tradeoff of
+    speed and accuracy vs. Gemini. This is the free AI API fallback for vision
+    extraction.
+    """
+
+    def _textless(self) -> bytes:
+        return TestVisionFallbackSuite._textless_pdf()
+
+    @pytest.mark.asyncio
+    async def test_ollama_vision_is_fallback_when_gemini_key_is_set(self, monkeypatch):
+        """Ollama vision is only attempted if Gemini key is set (enables vision)."""
+        gemini_called = False
+
+        async def fake_gemini(prompt, images=None):
+            nonlocal gemini_called
+            gemini_called = True
+            raise RuntimeError("429 quota exceeded")
+
+        async def fake_ollama_vision(prompt, images=None):
+            assert images and len(images) > 0
+            return json.dumps([{
+                "make": "Maruti Suzuki", "model": "Dzire", "variant": "VXi",
+                "price_inr": 749000, "confidence": 0.85,
+            }])
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", fake_gemini)
+        monkeypatch.setattr(pdf_ingest, "_call_ollama_vision", fake_ollama_vision)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless())
+
+        assert gemini_called, "Gemini should be tried first when key is set"
+        assert engine == "ollama-vision"
+        assert vehicles[0]["model"] == "Dzire"
+
+    @pytest.mark.asyncio
+    async def test_ollama_vision_is_fallback_when_gemini_fails(self, monkeypatch):
+        """When Gemini vision fails, Ollama vision is tried as fallback."""
+        calls = {"gemini": 0, "ollama": 0}
+
+        async def fake_gemini(prompt, images=None):
+            calls["gemini"] += 1
+            raise RuntimeError("429 quota exceeded")
+
+        async def fake_ollama_vision(prompt, images=None):
+            calls["ollama"] += 1
+            assert images and len(images) > 0
+            return json.dumps([{
+                "make": "Tata", "model": "Nexon", "variant": "EV",
+                "price_inr": 1500000, "confidence": 0.8,
+            }])
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", fake_gemini)
+        monkeypatch.setattr(pdf_ingest, "_call_ollama_vision", fake_ollama_vision)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless())
+
+        assert calls["gemini"] == 1, "Gemini should be tried first"
+        assert calls["ollama"] == 1, "Ollama should be tried after Gemini fails"
+        assert engine == "ollama-vision"
+        assert vehicles[0]["model"] == "Nexon"
+
+    @pytest.mark.asyncio
+    async def test_both_vision_models_fail_returns_vision_call_failed(self, monkeypatch):
+        """When both Gemini and Ollama vision fail, return vision-call-failed."""
+        async def boom_gemini(prompt, images=None):
+            raise RuntimeError("429 quota exceeded")
+
+        async def boom_ollama(prompt, images=None):
+            raise RuntimeError("Ollama unreachable")
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", boom_gemini)
+        monkeypatch.setattr(pdf_ingest, "_call_ollama_vision", boom_ollama)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless())
+
+        assert vehicles == []
+        assert engine == "vision-call-failed"
+
+    @pytest.mark.asyncio
+    async def test_ollama_vision_returns_nothing_when_found_no_vehicles(self, monkeypatch):
+        """Ollama vision can read images but find no vehicles when Gemini fails."""
+        async def gemini_fails(prompt, images=None):
+            raise RuntimeError("quota")
+
+        async def fake_ollama_vision(prompt, images=None):
+            return json.dumps([])
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", gemini_fails)
+        monkeypatch.setattr(pdf_ingest, "_call_ollama_vision", fake_ollama_vision)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless())
+
+        assert vehicles == []
+        assert engine == "ollama-vision"
+
+    @pytest.mark.asyncio
+    async def test_ollama_vision_with_unparseable_response(self, monkeypatch):
+        """When Ollama vision returns unparseable JSON after Gemini fails."""
+        async def gemini_fails(prompt, images=None):
+            raise RuntimeError("quota")
+
+        async def unparseable(prompt, images=None):
+            return "I'm not JSON"
+
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", gemini_fails)
+        monkeypatch.setattr(pdf_ingest, "_call_ollama_vision", unparseable)
+        monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless())
+
+        assert vehicles == []
+        # Unparseable responses are treated like "found nothing", consistent with Gemini
+        assert engine == "ollama-vision"
