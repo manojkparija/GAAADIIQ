@@ -5,6 +5,7 @@ The PDFs here are built in-test rather than committed as binary fixtures, so
 the inputs are reviewable and the suite carries no opaque blobs.
 """
 import base64
+import hashlib
 import io
 import json
 import uuid
@@ -864,3 +865,164 @@ class TestGeminiRateLimitSuite:
 
         assert vehicles == []
         assert engine == "vision-rate-limited"
+
+
+class TestThumbnailSuite:
+    """Galleries and cards load thumbnails; originals are only for detail views."""
+
+    @staticmethod
+    def _png(size=(900, 520), colour=(200, 30, 30)) -> bytes:
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new("RGB", size, colour).save(buf, "PNG")
+        return buf.getvalue()
+
+    def test_a_thumbnail_is_smaller_and_webp(self):
+        original = self._png()
+        result = pdf_ingest.make_thumbnail(original)
+
+        assert result is not None
+        data, content_type = result
+        assert content_type == "image/webp"
+        assert len(data) < len(original)
+
+    def test_the_long_edge_is_bounded(self):
+        data, _ = pdf_ingest.make_thumbnail(self._png((2400, 1600)), max_edge=400)
+
+        from PIL import Image
+        with Image.open(io.BytesIO(data)) as im:
+            assert max(im.size) <= 400
+            # Aspect ratio preserved: a squashed thumbnail is worse than none.
+            assert abs((im.size[0] / im.size[1]) - (2400 / 1600)) < 0.05
+
+    def test_a_small_image_is_not_upscaled(self):
+        # A colour swatch blown up to 400px is just a blurry swatch.
+        data, _ = pdf_ingest.make_thumbnail(self._png((120, 90)), max_edge=400)
+
+        from PIL import Image
+        with Image.open(io.BytesIO(data)) as im:
+            assert im.size == (120, 90)
+
+    def test_undecodable_bytes_yield_none_rather_than_raising(self):
+        # A thumbnail is derived data; failing to build one must not cost the
+        # original, which is already stored by the time this runs.
+        assert pdf_ingest.make_thumbnail(b"not an image at all") is None
+
+    def test_thumbnail_key_sits_beside_the_original(self):
+        assert pdf_ingest.thumbnail_key("brochures/j/003.png") == "brochures/j/003_thumb.webp"
+        # No extension to split on — must still produce a distinct key.
+        assert pdf_ingest.thumbnail_key("noext") == "noext_thumb.webp"
+
+
+class TestPerceptualHashSuite:
+    """
+    The duplicate that matters is the same photograph re-encoded.
+
+    A manufacturer reuses one press shot across a brochure, a facelift brochure
+    and a dealer pack, each time at a different size or JPEG quality. Those
+    files share no bytes, so an exact digest sees three distinct images and
+    stores all three.
+    """
+
+    @staticmethod
+    def _photo(colour=(200, 30, 30), size=(900, 520)) -> bytes:
+        from PIL import Image, ImageDraw
+        im = Image.new("RGB", size, (245, 245, 248))
+        d = ImageDraw.Draw(im)
+        d.rounded_rectangle([80, 180, 820, 400], 40, fill=colour)
+        d.ellipse([160, 350, 290, 470], fill=(30, 30, 30))
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        return buf.getvalue()
+
+    def test_the_same_photo_reencoded_is_recognised(self):
+        from PIL import Image
+        original = self._photo()
+        with Image.open(io.BytesIO(original)) as im:
+            buf = io.BytesIO()
+            im.resize((600, 347)).save(buf, "JPEG", quality=70)
+        reencoded = buf.getvalue()
+
+        # Precondition: an exact hash cannot see these as the same.
+        assert hashlib.sha256(original).hexdigest() != hashlib.sha256(reencoded).hexdigest()
+
+        distance = pdf_ingest.hamming_distance(
+            pdf_ingest.perceptual_hash(original),
+            pdf_ingest.perceptual_hash(reencoded),
+        )
+        assert distance is not None and distance <= 10
+
+    def test_a_different_photo_is_not_a_match(self):
+        distance = pdf_ingest.hamming_distance(
+            pdf_ingest.perceptual_hash(self._photo((200, 30, 30))),
+            pdf_ingest.perceptual_hash(self._photo((20, 90, 30), size=(700, 700))),
+        )
+        assert distance is not None and distance > 10
+
+    def test_hash_is_64_bits(self):
+        assert len(pdf_ingest.perceptual_hash(self._photo())) == 16  # hex chars
+
+    def test_undecodable_bytes_yield_none(self):
+        assert pdf_ingest.perceptual_hash(b"not an image") is None
+        # A missing hash must not be compared as if it were zero.
+        assert pdf_ingest.hamming_distance(None, "0" * 16) is None
+
+
+class TestImageClassificationSuite:
+    """Angle and colour need looking at the picture; make and model do not."""
+
+    @pytest.mark.asyncio
+    async def test_one_result_per_image_even_on_a_short_reply(self, monkeypatch):
+        """
+        A model returning fewer objects than images must not shift every later
+        image's metadata onto the wrong row — that would mislabel a whole
+        brochure rather than leaving it unlabelled.
+        """
+        async def short(prompt, images=None):
+            return json.dumps([{"kind": "exterior", "view": "front"}])
+
+        monkeypatch.setattr(settings, "gemini_api_key", "k")
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", short)
+
+        results = await pdf_ingest.classify_images([b"a", b"b", b"c"])
+
+        assert len(results) == 3
+        assert results[0]["kind"] == "exterior"
+        assert results[1] == {} and results[2] == {}
+
+    @pytest.mark.asyncio
+    async def test_a_long_reply_is_trimmed(self, monkeypatch):
+        async def verbose(prompt, images=None):
+            return json.dumps([{"kind": "exterior"}] * 9)
+
+        monkeypatch.setattr(settings, "gemini_api_key", "k")
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", verbose)
+
+        assert len(await pdf_ingest.classify_images([b"a", b"b"])) == 2
+
+    @pytest.mark.asyncio
+    async def test_throttling_raises_rather_than_mislabelling(self, monkeypatch):
+        async def throttled(prompt, images=None):
+            raise pdf_ingest.RateLimited("429")
+
+        monkeypatch.setattr(settings, "gemini_api_key", "k")
+        monkeypatch.setattr(settings, "groq_api_key", "")
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", throttled)
+        monkeypatch.setattr(pdf_ingest, "_call_ollama_vision", throttled)
+
+        with pytest.raises(pdf_ingest.RateLimited):
+            await pdf_ingest.classify_images([b"a"])
+
+    @pytest.mark.asyncio
+    async def test_no_images_makes_no_calls(self, monkeypatch):
+        called = {"n": 0}
+
+        async def counted(prompt, images=None):
+            called["n"] += 1
+            return "[]"
+
+        monkeypatch.setattr(settings, "gemini_api_key", "k")
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", counted)
+
+        assert await pdf_ingest.classify_images([]) == []
+        assert called["n"] == 0

@@ -125,6 +125,13 @@ class Settings(BaseSettings):
     # so the rendered pages are sent in batches of this size.
     groq_max_images_per_request: int = 5
 
+    # Per-image classification (what a picture shows, its angle, its colour).
+    # Off by default: it adds a vision call per batch of images on top of the
+    # extraction, and the free tiers this runs on are already the binding
+    # constraint. Make/model/year come from the brochure text regardless, so
+    # leaving this off costs only the angle and colour, not searchability.
+    media_classification_enabled: bool = False
+
     # Optional server-side TTS (BR-API-02). "none" disables it and the client
     # falls back to the browser's speechSynthesis, which is the default path.
     tts_provider: str = "none"          # none | google | azure

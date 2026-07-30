@@ -59,6 +59,11 @@ VISION_MAX_PAGES = int(os.getenv("PDF_VISION_MAX_PAGES", "8"))
 VISION_DPI = int(os.getenv("PDF_VISION_DPI", "120"))
 VISION_TIMEOUT = float(os.getenv("PDF_VISION_TIMEOUT", "180"))
 
+# Thumbnails are what galleries, cards and search results load, so they are
+# sized for the largest of those rather than for a single layout.
+THUMBNAIL_MAX_EDGE = int(os.getenv("MEDIA_THUMBNAIL_MAX_EDGE", "400"))
+THUMBNAIL_QUALITY = int(os.getenv("MEDIA_THUMBNAIL_QUALITY", "82"))
+
 # Brochures are image-heavy, and we want the photographs rather than the
 # bullets, rules and logo fragments.
 #
@@ -185,6 +190,10 @@ def iter_images(pdf_bytes: bytes) -> Iterator[dict]:
                     continue
                 seen.add(digest)
 
+                # And a perceptual hash for the case an exact one cannot see:
+                # the same photograph re-encoded or resized in another
+                # brochure. Those bytes differ, so exact hashing alone stores
+                # the picture twice.
                 yield {
                     "data": data,
                     "ext": (raw.get("ext") or "png").lower(),
@@ -192,7 +201,8 @@ def iter_images(pdf_bytes: bytes) -> Iterator[dict]:
                     "width": raw.get("width"),
                     "height": raw.get("height"),
                     "page_number": page_index + 1,
-                    "phash": digest[:32],
+                    "content_hash": digest,
+                    "phash": perceptual_hash(data),
                 }
                 yielded += 1
                 if yielded >= MAX_IMAGES:
@@ -200,6 +210,110 @@ def iter_images(pdf_bytes: bytes) -> Iterator[dict]:
                     break
     finally:
         doc.close()
+
+
+def perceptual_hash(data: bytes) -> str | None:
+    """
+    64-bit difference hash, hex-encoded, or None if the image cannot be read.
+
+    dHash rather than an exact digest because the duplicate that matters here is
+    the same photograph re-encoded: a manufacturer reuses one press shot across
+    a brochure, a facelift brochure and a dealer pack, each time at a different
+    size or JPEG quality. Those files share no bytes, so sha256 sees three
+    distinct images and stores all three.
+
+    dHash compares each pixel with its right-hand neighbour on a 9x8 greyscale
+    reduction, so it encodes the direction of brightness change rather than
+    brightness itself. That survives rescaling and re-compression, and two
+    hashes can be compared by Hamming distance to find near-matches.
+    """
+    try:
+        from PIL import Image
+
+        with Image.open(io.BytesIO(data)) as im:
+            # 9 wide so eight horizontal comparisons fit per row: 8 rows x 8
+            # comparisons is the 64 bits.
+            small = im.convert("L").resize((9, 8), Image.Resampling.LANCZOS)
+            # tobytes() rather than getdata(): in mode "L" it is one byte per
+            # pixel in row order, which is exactly what this needs, and it is
+            # stable API — getdata() is deprecated for removal in Pillow 14.
+            pixels = small.tobytes()
+
+        bits = 0
+        for row in range(8):
+            base = row * 9
+            for col in range(8):
+                bits <<= 1
+                if pixels[base + col] > pixels[base + col + 1]:
+                    bits |= 1
+        return f"{bits:016x}"
+    except Exception as exc:
+        # A hash is an optimisation, never a reason to lose the image.
+        logger.debug("Could not compute perceptual hash: %s", exc)
+        return None
+
+
+def hamming_distance(a: str | None, b: str | None) -> int | None:
+    """
+    Bit difference between two perceptual hashes, or None if either is missing.
+
+    Distances up to about 10 of 64 bits are the same picture in practice; beyond
+    that they diverge quickly. Exposed so callers decide their own threshold
+    rather than having one baked in here.
+    """
+    if not a or not b:
+        return None
+    try:
+        return bin(int(a, 16) ^ int(b, 16)).count("1")
+    except ValueError:
+        return None
+
+
+def make_thumbnail(data: bytes, max_edge: int = THUMBNAIL_MAX_EDGE) -> tuple[bytes, str] | None:
+    """
+    Downscale to a WebP thumbnail, returning (bytes, content_type).
+
+    WebP because every gallery and card in the product loads these rather than
+    the originals, and it is markedly smaller than JPEG at the same quality.
+    Aspect ratio is preserved and images already smaller than max_edge are not
+    upscaled — a colour swatch enlarged to 400px is just a blurry swatch.
+
+    Returns None rather than raising: a thumbnail is derived data, and failing
+    to build one must not cost us the original.
+    """
+    try:
+        from PIL import Image
+
+        with Image.open(io.BytesIO(data)) as im:
+            # Flatten transparency and exotic modes onto white — WebP can carry
+            # alpha, but a PNG logo with a transparent background renders as a
+            # black box in most galleries.
+            if im.mode not in ("RGB", "L"):
+                background = Image.new("RGB", im.size, (255, 255, 255))
+                converted = im.convert("RGBA")
+                background.paste(converted, mask=converted.split()[-1])
+                im = background
+
+            im.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
+
+            buf = io.BytesIO()
+            im.save(buf, format="WEBP", quality=THUMBNAIL_QUALITY, method=4)
+            return buf.getvalue(), "image/webp"
+    except Exception as exc:
+        logger.warning("Could not build thumbnail: %s", exc)
+        return None
+
+
+def thumbnail_key(key: str) -> str:
+    """
+    Storage key for a thumbnail, derived from the original's key.
+
+    Derived rather than stored separately so the pair cannot drift apart, and
+    suffixed before the extension so the two sort next to each other when
+    someone is looking through a bucket by hand.
+    """
+    stem, _, ext = key.rpartition(".")
+    return f"{stem or key}_thumb.webp" if stem else f"{key}_thumb.webp"
 
 
 def extract_text(pdf_bytes: bytes) -> str:
@@ -552,6 +666,90 @@ async def _call_ollama_vision(prompt: str, images: list[bytes] | None = None) ->
         resp = await client.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload)
         resp.raise_for_status()
         return resp.json().get("response", "")
+
+
+_CLASSIFY_PROMPT = """You are cataloguing photographs from an Indian car
+brochure. {n} images follow, in order.
+
+For EACH image, in the same order, return one JSON object:
+
+{{
+  "kind": "exterior|interior|colour_swatch|feature|logo|unknown",
+  "view": "front|front_three_quarter|side|rear_three_quarter|rear|top|detail|unknown",
+  "colour": "the car's body colour as a brochure would name it, or null"
+}}
+
+Return ONLY a JSON array of exactly {n} objects — no prose, no markdown fences.
+
+Rules:
+- kind: exterior = the outside of a car; interior = cabin, seats, dashboard;
+  colour_swatch = a paint sample or colour chip, usually a plain block of
+  colour; feature = a close-up of one component such as a headlamp or alloy;
+  logo = a badge or wordmark alone.
+- view applies to exterior shots. Use "detail" for a close crop of one part,
+  and "unknown" for interiors, swatches and logos.
+- colour: only when a car body is visible and its colour is unambiguous. Use
+  null for interiors, logos and anything you are unsure of. Never guess.
+- Return exactly one object per image, in the order the images were given.
+"""
+
+
+async def classify_images(images: list[bytes]) -> list[dict]:
+    """
+    Ask a vision model what each image depicts. Returns one dict per input.
+
+    Uses the same provider chain and 429 semantics as extraction, so a throttled
+    classification raises RateLimited and the caller can leave images
+    unclassified rather than mistaking a rate limit for a bad key.
+
+    Batched to the tightest per-request image cap of the configured providers,
+    and the result list is always the same length as the input — a short or
+    malformed reply is padded with empty dicts rather than silently shifting
+    every later image's metadata onto the wrong row.
+    """
+    if not images:
+        return []
+
+    providers: list[tuple[str, object, int]] = []
+    if settings.gemini_api_key:
+        providers.append(("gemini", _call_gemini, len(images)))
+    if settings.groq_api_key:
+        providers.append(("groq", _call_groq_vision, max(1, settings.groq_max_images_per_request)))
+    providers.append(("ollama", _call_ollama_vision, len(images)))
+
+    rate_limited = False
+
+    for name, call, batch_size in providers:
+        out: list[dict] = []
+        failed = False
+
+        for start in range(0, len(images), batch_size):
+            batch = images[start:start + batch_size]
+            prompt = _CLASSIFY_PROMPT.format(n=len(batch))
+            try:
+                raw = await call(prompt, images=batch)
+            except RateLimited as exc:
+                logger.warning("%s image classification throttled: %s", name, exc)
+                rate_limited = True
+                failed = True
+                break
+            except Exception as exc:
+                logger.warning("%s image classification failed: %s", name, exc)
+                failed = True
+                break
+
+            parsed = _parse_vehicles(raw)  # same tolerant JSON-array reader
+            # Pad or trim to the batch length so index i always describes image i.
+            parsed = (parsed + [{}] * len(batch))[:len(batch)]
+            out.extend(parsed)
+
+        if not failed:
+            logger.info("Classified %d images with %s", len(out), name)
+            return (out + [{}] * len(images))[:len(images)]
+
+    if rate_limited:
+        raise RateLimited("Every provider was rate-limited while classifying images")
+    return [{} for _ in images]
 
 
 def _parse_vehicles(raw: str) -> list[dict]:

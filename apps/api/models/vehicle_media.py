@@ -57,6 +57,59 @@ class MediaKind(str, enum.Enum):
     logo = "logo"
 
 
+class MediaView(str, enum.Enum):
+    """
+    Which angle an exterior shot was taken from.
+
+    Separate from MediaKind because they answer different questions: kind says
+    whether a picture is of the body, the cabin or a colour swatch, and view
+    says where the camera was. A gallery needs both — "front three-quarter
+    exterior" is the hero shot, and picking it requires the angle, not just
+    that the image is an exterior.
+    """
+    unknown = "unknown"
+    front = "front"
+    front_three_quarter = "front_three_quarter"
+    side = "side"
+    rear_three_quarter = "rear_three_quarter"
+    rear = "rear"
+    top = "top"
+    detail = "detail"
+
+
+class ListingMedia(Base):
+    """
+    Links a listing to an image in vehicle_media.
+
+    An association table rather than a column on either side, because the same
+    photograph legitimately belongs to several listings — two dealers selling
+    the same variant in the same colour should share the stored file, not hold
+    a copy each. That sharing is the point of a single source of truth, and it
+    is what a JSON array of URLs per listing cannot express.
+
+    `position` orders a listing's gallery. It lives here rather than on the
+    image because the running order is a property of the listing, not of the
+    photograph: the same shot can be the hero on one listing and the fourth
+    thumbnail on another.
+    """
+
+    __tablename__ = "listing_media"
+
+    listing_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("listings.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    media_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("vehicle_media.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class PdfIngestionJob(Base):
     """One uploaded brochure PDF and the outcome of processing it."""
 
@@ -126,12 +179,21 @@ class VehicleMedia(Base):
     width: Mapped[int | None] = mapped_column(Integer, nullable=True)
     height: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # Derived, cheap, and served to every gallery and card in the product. Also
+    # a key rather than a URL, for the same reason as storage_key. Nullable
+    # because generation can fail on an image the decoder dislikes, and losing
+    # the original over a missing thumbnail would be the wrong trade.
+    thumbnail_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
     # Provenance — which brochure, which page.
     source_pdf_name: Mapped[str] = mapped_column(String(500), nullable=False)
     page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     kind: Mapped[MediaKind] = mapped_column(
         Enum(MediaKind, name="media_kind"), default=MediaKind.unknown, nullable=False
+    )
+    view: Mapped[MediaView] = mapped_column(
+        Enum(MediaView, name="media_view"), default=MediaView.unknown, nullable=False
     )
 
     # Free-text make/model as read from the brochure. Deliberately not a
@@ -142,9 +204,28 @@ class VehicleMedia(Base):
     variant: Mapped[str | None] = mapped_column(String(160), nullable=True)
     colour: Mapped[str | None] = mapped_column(String(80), nullable=True)
 
-    # Perceptual hash, used to spot the same picture appearing in several
-    # brochures rather than storing it repeatedly.
+    # Indexed alongside make/model because the catalogue surfaces filter on them
+    # together: a model page wants this year's photographs, and a body-type
+    # carousel wants every SUV.
+    model_year: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    category: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+
+    # Exact hash of the bytes. Catches the same embedded object reused across
+    # pages — the common case within one brochure.
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+
+    # Perceptual (difference) hash. Catches the same photograph re-encoded,
+    # resized or recompressed between brochures, which an exact hash cannot:
+    # those bytes differ, so exact-hashing alone stores the picture twice.
     phash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+
+    # Which extracted vehicle this image depicts, once known. Nullable and SET
+    # NULL: an image is stored before the AI has said anything about it, and it
+    # must outlive a rejected extraction rather than vanish with it.
+    extracted_vehicle_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("extracted_vehicles.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
 
     job_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("pdf_ingestion_jobs.id", ondelete="CASCADE"),

@@ -48,3 +48,7 @@ yarn-error.log*
 
 # Testing
 coverage/
+
+# Local media storage — written by LocalStorage in dev and tests
+apps/api/media_store/
+media_store/
