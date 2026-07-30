@@ -1,0 +1,20 @@
+<div class="cs-wrap" [class.open]="open()" [class.disabled]="disabled">
+  <button type="button" class="cs-trigger" (click)="toggle()" [disabled]="disabled">
+    <span class="cs-value" [class.placeholder]="!value()">{{ displayValue }}</span>
+    <span class="cs-arrow">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+  </button>
+  @if (open()) {
+    <div class="cs-dropdown">
+      <div class="cs-option placeholder-opt" (click)="select('')">{{ placeholder }}</div>
+      @for (opt of options; track opt) {
+        <div class="cs-option" [class.selected]="value() === opt" (click)="select(opt)">
+          {{ opt }}
+        </div>
+      }
+    </div>
+  }
+</div>

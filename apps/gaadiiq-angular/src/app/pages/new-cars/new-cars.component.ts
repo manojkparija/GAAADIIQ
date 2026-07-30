@@ -1,10 +1,11 @@
-import { Component, signal, computed, OnInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, signal, computed, OnInit, ElementRef, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
+import { VehicleImageService } from '../../services/vehicle-image.service';
 
 const PLACEHOLDER = 'assets/cars/placeholder.svg';
 const COMPARE_KEY = 'gaadiiq_compare_keys';
@@ -23,7 +24,7 @@ interface NewCarModel {
   rating: number;
   reviews: number;
   badge: string;
-  representativeId: number;
+  representativeId: string;
 }
 
 interface NewLaunch {
@@ -65,6 +66,19 @@ export class NewCarsComponent implements OnInit {
   @ViewChild('modelsSection') modelsSection?: ElementRef<HTMLElement>;
 
   readonly placeholder = PLACEHOLDER;
+
+  private readonly vehicleImages = inject(VehicleImageService);
+
+  /**
+   * A brochure photograph when the catalogue entry has no image of its own.
+   *
+   * New-car listings are seeded without photography far more often than not,
+   * so without this the launch grid is a wall of placeholders even when the
+   * manufacturer's own brochure has been ingested.
+   */
+  imageFor(car: { image?: string | null; make?: string; model?: string }): string {
+    return this.vehicleImages.imageOr(car?.image, car?.make, car?.model);
+  }
 
   constructor(
     private carsData: CarsDataService,
@@ -119,7 +133,7 @@ export class NewCarsComponent implements OnInit {
     { make: 'Mahindra', model: 'BE 6', price: '₹18.90L onwards', launchDate: 'Feb 2025', launchAt: new Date('2025-02-01'), bodyType: 'SUV', fuel: 'Electric', image: PLACEHOLDER, isNew: true },
     { make: 'Hyundai', model: 'Creta EV', price: '₹17.99L onwards', launchDate: 'Jan 2025', launchAt: new Date('2025-01-15'), bodyType: 'SUV', fuel: 'Electric', image: PLACEHOLDER, isNew: true },
     { make: 'Skoda', model: 'Kylaq', price: '₹7.89L onwards', launchDate: 'Dec 2024', launchAt: new Date('2024-12-10'), bodyType: 'SUV', fuel: 'Petrol', image: PLACEHOLDER, isNew: true },
-    { make: 'Maruti Suzuki', model: 'Swift', price: '₹6.49L onwards', launchDate: 'May 2024', launchAt: new Date('2024-05-01'), bodyType: 'Hatchback', fuel: 'Petrol / CNG', image: 'assets/cars/swift/front.jpg', isNew: true },
+    { make: 'Maruti Suzuki', model: 'Swift', price: '₹6.49L onwards', launchDate: 'May 2024', launchAt: new Date('2024-05-01'), bodyType: 'Hatchback', fuel: 'Petrol / CNG', image: 'assets/cars/maruti-swift/front.svg', isNew: true },
     { make: 'Kia', model: 'Syros', price: '₹8.99L onwards', launchDate: 'Jan 2025', launchAt: new Date('2025-01-20'), bodyType: 'SUV', fuel: 'Petrol / Diesel', image: PLACEHOLDER, isNew: true },
   ];
 
@@ -149,7 +163,7 @@ export class NewCarsComponent implements OnInit {
   });
 
   newCarModels = computed<NewCarModel[]>(() => {
-    const newCars = this.carsData.cars().filter(c => c.km === 0 && c.year >= 2025);
+    const newCars = this.carsData.cars().filter(c => c.km === 0 && c.year >= 2024);
     const map = new Map<string, typeof newCars>();
     for (const c of newCars) {
       const key = `${c.make}||${c.model}`;
@@ -266,7 +280,7 @@ export class NewCarsComponent implements OnInit {
 
   private resolveImage(make: string, model: string, raw?: string): string {
     const key = `${make} ${model}`;
-    if (key === 'Maruti Suzuki Swift' || model === 'Swift') return 'assets/cars/swift/front.jpg';
+    if (key === 'Maruti Suzuki Swift' || model === 'Swift') return 'assets/cars/maruti-swift/front.svg';
     if (raw && !raw.includes('aeplcdn') && raw.trim()) return raw;
     return PLACEHOLDER;
   }

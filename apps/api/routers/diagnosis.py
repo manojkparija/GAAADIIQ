@@ -5,25 +5,53 @@ POST /diagnosis/analyse   — submit symptoms, get AI diagnosis report
 GET  /diagnosis/{id}      — retrieve a saved diagnosis report
 GET  /diagnosis/history   — list the current user's past diagnoses (auth required)
 """
-from __future__ import annotations
+# NOTE: deliberately NOT using `from __future__ import annotations`.
+# PEP 563 turns annotations into strings, and slowapi's @limiter.limit wrapper
+# leaves FastAPI unable to resolve them — it then treats the Pydantic body and
+# the DB dependency as query parameters, so every request 422s.
 
 import uuid
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.dependencies import get_current_user
 from core.limiter import limiter
 from db.session import get_db
 from models.user import User
 from models.vehicle_diagnosis import VehicleDiagnosis
-from services.diagnosis import run_diagnosis
+from services.diagnosis import _LANG_NAMES, extract_vehicle_info_from_transcript, run_diagnosis
+from services.llm_tier import resolve_tier, verify_caller
+from services.stt import (
+    STTError,
+    STTUnavailable,
+    estimate_duration_seconds,
+    stt_enabled,
+    transcribe,
+)
+from services.tts import TTSError, TTSUnavailable, synthesize, tts_enabled
+from services.voice_store import (
+    EVENT_CONSENT_DECLINED,
+    EVENT_CONSENT_GRANTED,
+    EVENT_CONSENT_REVOKED,
+    delete_diagnosis,
+    delete_voice_data,
+    record_audit_event,
+)
 
 router = APIRouter(prefix="/diagnosis", tags=["diagnosis"])
+
+# Formats MediaRecorder and native pickers realistically produce.
+_STT_ALLOWED_TYPES = {
+    "audio/webm", "audio/ogg", "audio/mpeg", "audio/mp4",
+    "audio/wav", "audio/x-wav", "audio/aac", "audio/3gpp",
+    "audio/webm;codecs=opus", "audio/ogg;codecs=opus",
+}
 
 DB = Annotated[AsyncSession, Depends(get_db)]
 OptionalUser = Annotated[User | None, Depends(lambda: None)]
@@ -47,6 +75,9 @@ class DiagnoseRequest(BaseModel):
     when_occurs: list[str] = Field(default_factory=list)
     severity: str = Field(..., pattern="^(low|medium|high|critical)$")
 
+    # Recent service/repair history (BR-IR-07)
+    maintenance_history: list[dict] = Field(default_factory=list, max_length=20)
+
     # Optional media (URLs after client uploads to storage)
     image_urls: list[str] = Field(default_factory=list, max_length=5)
     audio_url: str | None = None
@@ -54,6 +85,9 @@ class DiagnoseRequest(BaseModel):
 
     # Optional auth
     user_id: str | None = None
+
+    # Language detected from user's voice input
+    detected_language: str | None = None
 
 
 class PossibleCause(BaseModel):
@@ -82,6 +116,18 @@ class DiagnoseResponse(BaseModel):
     disclaimer: str
     created_at: datetime
     vision_analysis: dict | None = None
+    # Locally identified dashboard telltale, when a photo was supplied. Present
+    # even with no vision model available, unlike vision_analysis.
+    warning_light_match: dict | None = None
+    # BR-AI-10 — populated only when confidence is below the threshold.
+    follow_up_questions: list[str] = []
+    needs_more_info: bool = False
+    # BR-ML-04 — true when a non-English response was requested but the text
+    # is still English, so the client can say so instead of silently misleading.
+    translation_failed: bool = False
+    # Which engine produced this: gemini (paid/admin) | ollama | heuristic.
+    engine: str = "heuristic"
+    model_tier: str = "free"
 
 
 class DiagnosisHistoryItem(BaseModel):
@@ -93,6 +139,11 @@ class DiagnosisHistoryItem(BaseModel):
     risk_level: str | None
     preliminary_diagnosis: str | None
     created_at: datetime
+    # The history list renders a cost/complexity line; without these it showed
+    # an empty "₹ – ₹ ·" row.
+    cost_min_inr: int | None = None
+    cost_max_inr: int | None = None
+    repair_complexity: str | None = None
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -104,6 +155,13 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
     Submit vehicle symptoms and receive an AI-powered preliminary diagnosis.
     No authentication required — open to all users.
     """
+    # Tier comes from a cryptographically verified token, never from the body.
+    # body.user_id is client-supplied: using it here would let a free user send
+    # a paid user's UUID and be upgraded.
+    auth_header = request.headers.get("authorization") or ""
+    bearer = auth_header[7:] if auth_header.lower().startswith("bearer ") else None
+    tier = await resolve_tier(db, verify_caller(bearer))
+
     ai_result = await run_diagnosis(
         manufacturer=body.manufacturer,
         model=body.model,
@@ -117,6 +175,9 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         when_occurs=body.when_occurs,
         severity=body.severity,
         image_urls=body.image_urls,
+        maintenance_history=body.maintenance_history,
+        response_language=body.detected_language or "en-IN",
+        model_tier=tier.value,
     )
 
     # Parse causes safely
@@ -137,6 +198,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         warning_lights=body.warning_lights or None,
         when_occurs=body.when_occurs or None,
         severity=body.severity,
+        maintenance_history=body.maintenance_history or None,
         image_urls=body.image_urls or None,
         audio_url=body.audio_url,
         video_url=body.video_url,
@@ -180,7 +242,220 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         disclaimer=ai_result.get("disclaimer", ""),
         created_at=record.created_at,
         vision_analysis=ai_result.get("vision_analysis"),
+        warning_light_match=ai_result.get("warning_light_match"),
+        follow_up_questions=ai_result.get("follow_up_questions", []),
+        needs_more_info=ai_result.get("needs_more_info", False),
+        translation_failed=ai_result.get("translation_failed", False),
+        engine=ai_result.get("engine", "heuristic"),
+        model_tier=ai_result.get("model_tier", "free"),
     )
+
+
+# ── Consent + DPDP erasure (BR-SEC-01/05/06, BR-DB-04) ───────────────────────
+
+class ConsentRequest(BaseModel):
+    granted: bool
+    consent_version: int = Field(1, ge=1, le=1000)
+    language: str = Field("en-IN", max_length=10)
+
+
+class ConsentResponse(BaseModel):
+    granted: bool
+    consent_version: int
+    recorded_at: datetime
+
+
+@router.post("/voice/consent", response_model=ConsentResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("20/minute")
+async def record_voice_consent(
+    request: Request,
+    body: ConsentRequest,
+    db: DB,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """
+    Record a microphone consent decision server-side (BR-SEC-01).
+
+    The client also stores this locally so the prompt is shown once; this is
+    the durable, auditable copy, and it is what gates transcript persistence.
+    """
+    event = await record_audit_event(
+        db,
+        event_type=EVENT_CONSENT_GRANTED if body.granted else EVENT_CONSENT_DECLINED,
+        user_id=current_user.id,
+        consent_version=body.consent_version,
+        language=body.language,
+    )
+    await db.commit()
+    return ConsentResponse(
+        granted=body.granted,
+        consent_version=body.consent_version,
+        recorded_at=event.occurred_at,
+    )
+
+
+class VoiceDataDeletionResponse(BaseModel):
+    transcripts_deleted: int
+    conversations_deleted: int
+
+
+@router.delete("/voice/data", response_model=VoiceDataDeletionResponse)
+@limiter.limit("5/minute")
+async def delete_my_voice_data(
+    request: Request,
+    db: DB,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """
+    Erase all stored voice transcripts and conversations (BR-SEC-06, DPDP).
+
+    Also revokes consent, so nothing new is written until the user opts in
+    again. The audit trail is retained as evidence the erasure occurred.
+    """
+    result = await delete_voice_data(db, current_user.id)
+    await record_audit_event(
+        db, event_type=EVENT_CONSENT_REVOKED, user_id=current_user.id
+    )
+    await db.commit()
+    return VoiceDataDeletionResponse(**result)
+
+
+@router.delete("/{diagnosis_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
+async def delete_diagnosis_report(
+    request: Request,
+    diagnosis_id: str,
+    db: DB,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """Delete one of the caller's own diagnosis reports (BR-SEC-05)."""
+    try:
+        did = uuid.UUID(diagnosis_id)
+    except ValueError:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid diagnosis ID")
+
+    deleted = await delete_diagnosis(db, did, current_user.id)
+    if not deleted:
+        # Not found and not-yours are deliberately indistinguishable here, so
+        # this cannot be used to probe for others' report IDs.
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Diagnosis report not found")
+    return None
+
+
+class SttResponse(BaseModel):
+    text: str
+    language: str
+    provider: str
+    confidence: float | None = None
+
+
+@router.post("/stt", response_model=SttResponse)
+@limiter.limit("15/minute;100/hour")
+async def speech_to_text(
+    request: Request,
+    file: UploadFile = File(...),
+    language: str = Form("en-IN"),
+):
+    """
+    Server-side transcription fallback (BR-API-01, BR-VA-01).
+
+    Used when the client has no usable Web Speech API — Android WebView,
+    Safari, Firefox. Audio is transcribed and discarded; nothing is persisted
+    by this endpoint.
+    """
+    if not stt_enabled():
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Server-side speech recognition is not configured.",
+        )
+
+    content_type = file.content_type or ""
+    if content_type not in _STT_ALLOWED_TYPES:
+        raise HTTPException(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "Unsupported audio format.",
+        )
+
+    audio = await file.read()
+    if not audio:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Empty audio file.")
+    if len(audio) > settings.stt_max_bytes:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            f"Audio must be under {settings.stt_max_bytes // (1024 * 1024)} MB.",
+        )
+
+    # Duration cap where measurable (BR-IR-04). Compressed formats report None;
+    # the byte cap above is the backstop for those.
+    duration = estimate_duration_seconds(audio, content_type)
+    if duration is not None and duration > settings.stt_max_audio_seconds:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            f"Audio must be under {settings.stt_max_audio_seconds} seconds.",
+        )
+
+    if language not in _LANG_NAMES:
+        language = "en-IN"
+
+    try:
+        result = await transcribe(audio, content_type=content_type, language=language)
+    except STTUnavailable as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    except STTError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+
+    return SttResponse(**result)
+
+
+class TtsRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=3000)
+    language: str = Field("en-IN", max_length=10)
+
+
+class TtsResponse(BaseModel):
+    audio_base64: str
+    content_type: str
+    provider: str
+    voice: str
+    language: str
+
+
+@router.post("/tts", response_model=TtsResponse)
+@limiter.limit("20/minute")
+async def text_to_speech(request: Request, body: TtsRequest):
+    """
+    Optional server-side speech synthesis (BR-API-02).
+
+    503 means "not configured" — the client falls back to the browser's
+    speechSynthesis, which is the normal path on most platforms.
+    """
+    if not tts_enabled():
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Server-side speech synthesis is not configured.",
+        )
+
+    language = body.language if body.language in _LANG_NAMES else "en-IN"
+    try:
+        result = await synthesize(body.text, language=language)
+    except TTSUnavailable as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    except TTSError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+
+    return TtsResponse(**result)
+
+
+class VoiceExtractRequest(BaseModel):
+    transcript: str = Field(..., min_length=3, max_length=500)
+
+
+@router.post("/voice/extract")
+@limiter.limit("20/minute")
+async def voice_extract(request: Request, body: VoiceExtractRequest):
+    """Extract structured vehicle info from a spoken transcript using Ollama."""
+    extracted = await extract_vehicle_info_from_transcript(body.transcript)
+    return extracted
 
 
 @router.get("/history", response_model=list[DiagnosisHistoryItem])
@@ -203,6 +478,9 @@ async def get_history(db: DB, current_user: Annotated[User, Depends(get_current_
             risk_level=r.risk_level,
             preliminary_diagnosis=r.preliminary_diagnosis,
             created_at=r.created_at,
+            cost_min_inr=r.cost_min_inr,
+            cost_max_inr=r.cost_max_inr,
+            repair_complexity=r.repair_complexity,
         )
         for r in records
     ]

@@ -133,11 +133,7 @@
   .emi-row { margin-bottom: 1rem; label { font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 0.4rem; } }
   .emi-val { font-weight: 700; font-size: 0.95rem; margin-top: 0.25rem; }
   .emi-result { text-align: center; padding: 1rem; background: var(--glass); border-radius: 12px; margin: 1rem 0; }
-  input[type=range] {
-    padding: 0; border: none; box-shadow: none; background: linear-gradient(90deg, var(--primary), var(--secondary));
-    height: 4px; border-radius: 2px; cursor: pointer;
-    &::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; }
-  }
+  input[type=range] { width: 100%; }
 }
 
 @media (max-width: 1024px) {
@@ -444,4 +440,23 @@
   border: 1px solid var(--border, rgba(0,0,0,0.12)); background: var(--fill-dim, #f5f5f5);
   color: var(--text); font-family: inherit; outline: none; box-sizing: border-box;
   &:focus { border-color: var(--primary); }
+}
+
+.not-found-banner {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #f0c36d;
+  background: #fdf6e3;
+  color: #7a5b12;
+  font-size: 0.9rem;
+
+  a { color: inherit; font-weight: 600; text-decoration: underline; }
+}
+
+.tab-empty {
+  margin: 0;
+  padding: 1.25rem 0;
+  color: var(--muted);
+  font-size: 0.925rem;
 }

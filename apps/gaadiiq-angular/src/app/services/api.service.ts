@@ -8,6 +8,9 @@ export class ApiService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
 
+  /** API root — used by the offline queue to rebuild a request URL. */
+  get baseUrl(): string { return this.base; }
+
   getCars(): Observable<any[]> {
     return this.http.get<any[]>(`${this.base}/cars`).pipe(catchError(() => of([])));
   }
@@ -47,6 +50,24 @@ export class ApiService {
     form.append('file', file);
     return this.http.post<{ url: string; filename: string; size_bytes: number }>(
       `${this.base}/upload/image`, form
+    ).pipe(catchError(() => of(null as any)));
+  }
+
+  /** Upload an audio recording of the fault (TC-F-12). */
+  uploadDiagnosisAudio(file: File) {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ url: string; filename: string; size_bytes: number }>(
+      `${this.base}/upload/audio`, form
+    ).pipe(catchError(() => of(null as any)));
+  }
+
+  /** Upload a short video of the fault (TC-F-13). */
+  uploadDiagnosisVideo(file: File) {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ url: string; filename: string; size_bytes: number }>(
+      `${this.base}/upload/video`, form
     ).pipe(catchError(() => of(null as any)));
   }
 

@@ -10,7 +10,10 @@ Implementation notes:
 - OTPs are stored as bcrypt hashes in Redis with a 10-minute TTL.
 - Rate-limited to 5 send requests per phone per hour.
 """
-from __future__ import annotations
+# NOTE: deliberately NOT using `from __future__ import annotations`.
+# PEP 563 turns annotations into strings, and slowapi's @limiter.limit wrapper
+# leaves FastAPI unable to resolve them — it then treats the Pydantic body and
+# the DB dependency as query parameters, so every request 422s.
 
 import logging
 import os

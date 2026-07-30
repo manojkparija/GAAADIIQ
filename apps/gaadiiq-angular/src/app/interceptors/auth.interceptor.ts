@@ -2,12 +2,18 @@
  * AuthInterceptor — bridges Supabase session token to FastAPI RS256 JWT (MOB-002).
  *
  * Attaches the Supabase access token as a Bearer header on every request to the
- * API base URL. The FastAPI backend accepts Supabase-issued JWTs because Supabase
- * uses RS256 and the public key can be verified by the backend without a shared secret.
+ * API base URL.
  *
- * For the dual-auth gap: the FastAPI /auth/* endpoints issue their own RS256 JWTs,
- * but all UI auth flows go through Supabase. The token from Supabase is forwarded
- * here so API calls work without a separate login step.
+ * Supabase signs these with HS256 using the project JWT secret — NOT RS256, as
+ * an earlier version of this comment claimed. That mistake mattered: the
+ * backend only verified its own RS256 tokens, so every signed-in user was
+ * rejected with "Not authenticated", and the wrong comment made the cause look
+ * like it was already handled. The backend now verifies both (see
+ * core/dependencies.get_current_user), which requires SUPABASE_JWT_SECRET to be
+ * set on the API.
+ *
+ * The FastAPI /auth/* endpoints still issue their own RS256 tokens; both are
+ * accepted, so no separate login step is needed.
  */
 import { inject } from '@angular/core';
 import {

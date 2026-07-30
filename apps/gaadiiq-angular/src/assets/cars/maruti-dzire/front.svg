@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-label="Maruti Suzuki Dzire, front view">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <ellipse cx="400" cy="500" rx="290" ry="26" fill="#0f172a" opacity=".10"/>
+  <rect x="150" y="250" width="500" height="190" rx="34" fill="#134E4A"/><rect x="196" y="196" width="408" height="104" rx="30" fill="#2DD4BF"/><rect x="224" y="212" width="352" height="74" rx="20" fill="#0f172a" opacity=".55"/><rect x="176" y="300" width="86" height="40" rx="14" fill="#fef3c7"/><rect x="538" y="300" width="86" height="40" rx="14" fill="#fef3c7"/><rect x="330" y="372" width="140" height="34" rx="10" fill="#0f172a" opacity=".45"/><circle cx="250" cy="452" r="42" fill="#0f172a"/><circle cx="250" cy="452" r="18" fill="#64748b"/><circle cx="550" cy="452" r="42" fill="#0f172a"/><circle cx="550" cy="452" r="18" fill="#64748b"/>
+  <text x="400" y="86" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="40" font-weight="700"
+        fill="#0f172a" text-anchor="middle">Maruti Suzuki</text>
+  <text x="400" y="132" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="30"
+        fill="#475569" text-anchor="middle">Dzire</text>
+  <text x="400" y="556" font-family="system-ui,Segoe UI,Roboto,sans-serif" font-size="19"
+        fill="#94a3b8" text-anchor="middle" letter-spacing="2.5">FRONT VIEW · PLACEHOLDER</text>
+</svg>

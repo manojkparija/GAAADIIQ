@@ -1,0 +1,98 @@
+# Render Blueprint — deploys GAADIIQ so it is reachable from any location.
+#
+# Two services:
+#   gaadiiq-api  — the FastAPI backend (apps/api)   [ALREADY DEPLOYED]
+#   gaadiiq-web  — the Angular app as a static site (apps/gaadiiq-angular)
+#
+# IMPORTANT: gaadiiq-api already exists on Render, created by hand as a Docker
+# service on the Starter plan. The definition below is written to MATCH that
+# service so applying this blueprint cannot silently reconfigure it — in
+# particular it must not drop it to the free plan, which sleeps after 15
+# minutes of inactivity. Keep these two in step: if the live service changes,
+# change this file too.
+#
+# To use: Render dashboard → New → Blueprint → pick this repo, and set the
+# branch to the one you deploy from. Secrets marked `sync: false` are NOT in
+# this file and must be entered in the dashboard once — never commit them.
+#
+# The database is deliberately absent: GAADIIQ uses the existing Supabase
+# Postgres, so DATABASE_URL points there rather than at a Render database.
+
+services:
+  # ── Backend API ────────────────────────────────────────────────────────────
+  - type: web
+    name: gaadiiq-api
+    # Matches the live service: Docker (apps/api/Dockerfile), Starter plan.
+    runtime: docker
+    plan: starter
+    region: singapore          # closest Render region to Indian users
+    rootDir: apps/api
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      # Browsers block the frontend from calling this API unless its origin is
+      # listed here, so once the static site exists its URL must be added:
+      #   ["https://<static-site>.onrender.com","http://localhost:4200","capacitor://localhost"]
+      # Left unmanaged (sync: false) because a value is already set in the
+      # dashboard, and declaring one here would overwrite it on every apply.
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+      # Secrets — set these in the Render dashboard, not here.
+      - key: DATABASE_URL
+        sync: false            # Supabase connection string
+      # Supabase token verification. Legacy projects sign with a shared HS256
+      # secret; newer ones use asymmetric keys published at a JWKS endpoint and
+      # have no secret at all. Set whichever applies — SUPABASE_URL alone is
+      # enough for an asymmetric project.
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      # Comma-separated emails granted admin regardless of their stored role.
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: SECRET_KEY
+        sync: false            # JWT signing key for this backend
+      - key: GEMINI_API_KEY
+        sync: false
+      # Free hosted vision fallback for brochure pages when Gemini is out of
+      # quota or unset. Needed because the other free provider, Ollama, is
+      # self-hosted and this deployment has none to reach.
+      - key: GROQ_API_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+
+  # ── Angular frontend ───────────────────────────────────────────────────────
+  - type: web
+    name: gaadiiq-web
+    runtime: static
+    plan: free
+    # Built from the repo root, NOT from apps/gaadiiq-angular. This is an npm
+    # workspaces monorepo: the only package-lock.json lives at the root, so
+    # `npm ci` inside the app directory fails outright with "can only install
+    # with an existing package-lock.json". Installing at the root also hoists
+    # shared dependencies exactly as local development does.
+    buildCommand: npm ci && npm run build --workspace=gaadiiq-angular
+    staticPublishPath: apps/gaadiiq-angular/dist/gaadiiq-angular/browser
+    routes:
+      # Angular routing is client-side: a hard refresh on /new-cars asks Render
+      # for a file that does not exist. Without this rewrite every deep link
+      # 404s, and only the home page works.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin

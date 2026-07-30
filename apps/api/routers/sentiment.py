@@ -8,7 +8,10 @@ Endpoints:
   GET  /sentiment/leads/{uid}    — detailed intent report for one customer
   GET  /sentiment/summary        — dashboard KPIs (grade counts, avg score, etc.)
 """
-from __future__ import annotations
+# NOTE: deliberately NOT using `from __future__ import annotations`.
+# PEP 563 turns annotations into strings, and slowapi's @limiter.limit wrapper
+# leaves FastAPI unable to resolve them — it then treats the Pydantic body and
+# the DB dependency as query parameters, so every request 422s.
 
 import uuid
 from datetime import datetime, timedelta, timezone

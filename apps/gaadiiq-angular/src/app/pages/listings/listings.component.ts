@@ -11,7 +11,7 @@ interface NewCarModel {
   minPrice: number; maxPrice: number;
   variantCount: number; bodyType: string; fuel: string;
   rating: number; reviews: number; badge: string;
-  representativeId: number;
+  representativeId: string;
 }
 
 @Component({
@@ -114,8 +114,8 @@ export class ListingsComponent implements OnInit {
       // Top-level New / Used split
       const type = this.carType();
       const matchType = type === 'All' ? true :
-        type === 'New'  ? c.km === 0 && c.year >= 2025 :
-        /* Used */ c.km > 0 || c.year < 2025;
+        type === 'New'  ? c.km === 0 && c.year >= 2024 :
+        /* Used */ c.km > 0 || c.year < 2024;
 
       // Used km sub-range
       const range = this.usedKmRange();
@@ -136,13 +136,13 @@ export class ListingsComponent implements OnInit {
   newCount  = computed(() => {
     const make = this.selectedMake();
     return this.carsData.cars().filter(c =>
-      c.km === 0 && c.year >= 2025 && (make === 'All' || c.make === make)
+      c.km === 0 && c.year >= 2024 && (make === 'All' || c.make === make)
     ).length;
   });
   usedCount = computed(() => {
     const make = this.selectedMake();
     return this.carsData.cars().filter(c =>
-      (c.km > 0 || c.year < 2025) && (make === 'All' || c.make === make)
+      (c.km > 0 || c.year < 2024) && (make === 'All' || c.make === make)
     ).length;
   });
 
@@ -152,7 +152,7 @@ export class ListingsComponent implements OnInit {
     const make = this.selectedMake();
     const modelName = this.selectedModelName();
     const newCars = this.carsData.cars().filter(c =>
-      c.km === 0 && c.year >= 2025
+      c.km === 0 && c.year >= 2024
       && (make === 'All' || c.make === make)
       && (modelName === 'All' || c.model === modelName)
     );
@@ -175,7 +175,7 @@ export class ListingsComponent implements OnInit {
         ?? affordable.find(c => c.image) ?? affordable[0];
       const image = (rep.image && !String(rep.image).includes('aeplcdn'))
         ? rep.image
-        : (model === 'Swift' ? 'assets/cars/swift/front.jpg' : 'assets/cars/placeholder.svg');
+        : (model === 'Swift' ? 'assets/cars/maruti-swift/front.svg' : 'assets/cars/placeholder.svg');
       return {
         make, model,
         image,
@@ -206,7 +206,7 @@ export class ListingsComponent implements OnInit {
     return this.carsData.cars()
       .filter(c =>
         c.make === make && c.model === model
-        && c.km === 0 && c.year >= 2025
+        && c.km === 0 && c.year >= 2024
         && c.price >= minP && c.price <= maxP
       )
       .sort((a, b) => a.price - b.price);
@@ -220,7 +220,7 @@ export class ListingsComponent implements OnInit {
   }
 
   swiftGallery = [
-    { src: 'assets/cars/swift/front.jpg',      label: 'Front View',     pos: 'center 65%' },
+    { src: 'assets/cars/maruti-swift/front.svg',      label: 'Front View',     pos: 'center 65%' },
     { src: 'assets/cars/swift/rear-wide.jpg',  label: 'Side & Rear',    pos: 'center 85%' },
     { src: 'assets/cars/swift/trio.jpg',       label: 'Colour Range',   pos: 'center center' },
     { src: 'assets/cars/swift/interior.jpg',   label: 'Interior',       pos: 'center center' },

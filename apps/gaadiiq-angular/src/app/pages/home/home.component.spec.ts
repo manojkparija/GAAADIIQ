@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HomeComponent } from './home.component';
 import { AuthService } from '../../services/auth.service';
@@ -19,6 +21,9 @@ describe('HomeComponent — AUTH-01: bottom nav auth branches', () => {
     TestBed.configureTestingModule({
       imports: [HomeComponent, RouterTestingModule],
       providers: [
+        // HomeComponent pulls in ChatService → DiagnosisService → HttpClient.
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: AuthService, useValue: makeAuthMock(loggedIn) },
         { provide: BrandsService, useValue: { brands: signal([]), loading: signal(false) } },
       ],

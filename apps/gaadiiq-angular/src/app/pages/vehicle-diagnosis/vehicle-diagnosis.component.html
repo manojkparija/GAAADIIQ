@@ -10,6 +10,13 @@
     </div>
   </div>
 
+  <!-- Voice Mode overlay -->
+  <app-voice-mode
+    *ngIf="showVoiceMode()"
+    (completed)="onVoiceCompleted($event)"
+    (cancelled)="onVoiceCancelled()"
+  ></app-voice-mode>
+
   <!-- ── History panel (MOB-036) ─────────────────────────────────────────── -->
   @if (showHistory()) {
     <div class="history-overlay" (click)="closeHistory()">
@@ -18,27 +25,152 @@
           <h2>Past Diagnoses</h2>
           <button class="close-btn" (click)="closeHistory()">✕</button>
         </div>
-        @if (historyLoading()) {
-          <div class="history-loading">Loading…</div>
-        } @else if (history().length === 0) {
-          <div class="history-empty">No past diagnoses found.</div>
-        } @else {
-          <div class="history-list">
-            @for (h of history(); track h.id) {
-              <div class="history-item">
-                <div class="history-meta">
-                  <span class="history-date">{{ h.created_at | date:'dd MMM yyyy, h:mm a' }}</span>
-                  <span class="history-risk" [style.color]="diagSvc.riskColor(h.risk_level)">{{ h.risk_level }}</span>
-                </div>
-                <div class="history-diag">{{ h.preliminary_diagnosis }}</div>
-                <div class="history-cost">₹{{ h.cost_min_inr | number }} – ₹{{ h.cost_max_inr | number }} &nbsp;·&nbsp; {{ h.repair_complexity }}</div>
-              </div>
+        <!-- ── Detail view (BR-UX-03) ── -->
+        @if (historyDetail(); as d) {
+          <div class="history-detail">
+            <button class="history-back" (click)="closeHistoryDetail()">← All diagnoses</button>
+
+            <div class="hd-head">
+              <span class="hd-date">{{ d.created_at | date:'dd MMM yyyy, h:mm a' }}</span>
+              <span class="hd-risk" [style.color]="diagSvc.riskColor(d.risk_level)">{{ d.risk_level }}</span>
+            </div>
+
+            <p class="hd-diagnosis">{{ d.preliminary_diagnosis }}</p>
+
+            <div class="hd-safety" [class.unsafe]="d.safe_to_drive === false">
+              {{ d.safe_to_drive === false
+                 ? '⛔ Not safe to drive — get it inspected before driving'
+                 : '✅ Safe to drive with caution' }}
+            </div>
+
+            <div class="hd-facts">
+              <div><span>Estimated cost</span><strong>₹{{ d.cost_min_inr | number }} – ₹{{ d.cost_max_inr | number }}</strong></div>
+              <div><span>Complexity</span><strong>{{ d.repair_complexity }}</strong></div>
+              <div><span>Repair time</span><strong>{{ d.repair_time_estimate }}</strong></div>
+              <div><span>Confidence</span><strong>{{ d.analysis_confidence }}%</strong></div>
+            </div>
+
+            @if (d.possible_causes?.length) {
+              <h4 class="hd-h">Possible causes</h4>
+              <ul class="hd-list">
+                @for (c of d.possible_causes; track c.cause) {
+                  <li><strong>{{ c.cause }}</strong> ({{ c.confidence }}%) — {{ c.explanation }}</li>
+                }
+              </ul>
             }
+
+            @if (d.recommended_steps?.length) {
+              <h4 class="hd-h">Recommended steps</h4>
+              <ul class="hd-list">
+                @for (s of d.recommended_steps; track s) { <li>{{ s }}</li> }
+              </ul>
+            }
+
+            @if (d.diy_fixes?.length) {
+              <h4 class="hd-h">Safe DIY checks</h4>
+              <ul class="hd-list">
+                @for (f of d.diy_fixes; track f) { <li>{{ f }}</li> }
+              </ul>
+            }
+
+            <div class="hd-actions">
+              <button class="btn-ghost" (click)="speakHistoryDetail()" *ngIf="voice.synthSupported">
+                🔊 Read aloud
+              </button>
+              <button class="btn-ghost" (click)="voice.stopSpeaking()" *ngIf="voice.speakingState() !== 'idle'">
+                ⏹ Stop
+              </button>
+              <button class="btn-danger-ghost" (click)="askDeleteDiagnosis(d.id)">
+                🗑 Delete
+              </button>
+            </div>
+
+            <!-- BR-SEC-05 confirmation — deletion is irreversible -->
+            <div class="danger-confirm" *ngIf="confirmDeleteId() === d.id" role="alertdialog">
+              <p>Delete this diagnosis permanently? This cannot be undone.</p>
+              <div class="danger-actions">
+                <button class="btn-danger" [disabled]="deleteBusy()" (click)="confirmDeleteDiagnosis()">
+                  {{ deleteBusy() ? 'Deleting…' : 'Yes, delete' }}
+                </button>
+                <button class="btn-ghost" [disabled]="deleteBusy()" (click)="cancelDelete()">Cancel</button>
+              </div>
+            </div>
+
+            <p class="hd-disclaimer">{{ d.disclaimer }}</p>
           </div>
+        } @else if (historyDetailLoading()) {
+          <div class="history-loading">Loading diagnosis…</div>
+        } @else {
+          <div class="history-detail-error" *ngIf="historyDetailError()" role="alert">
+            ⚠️ {{ historyDetailError() }}
+          </div>
+
+          <div class="delete-message" *ngIf="deleteMessage()" role="status" aria-live="polite">
+            {{ deleteMessage() }}
+          </div>
+
+          <!-- BR-SEC-06 — DPDP erasure of all voice data -->
+          <div class="dpdp-panel">
+            <div class="dpdp-copy">
+              <strong>Your voice data</strong>
+              <p>
+                Delete every stored transcript from your voice diagnoses. Audio recordings are
+                never kept — only the text. This also withdraws microphone consent.
+              </p>
+            </div>
+            <button class="btn-danger-ghost" *ngIf="!confirmVoiceWipe()" (click)="askVoiceWipe()">
+              Delete my voice data
+            </button>
+            <div class="danger-confirm" *ngIf="confirmVoiceWipe()" role="alertdialog">
+              <p>Delete all stored voice transcripts? This cannot be undone.</p>
+              <div class="danger-actions">
+                <button class="btn-danger" [disabled]="deleteBusy()" (click)="confirmVoiceDataWipe()">
+                  {{ deleteBusy() ? 'Deleting…' : 'Yes, delete everything' }}
+                </button>
+                <button class="btn-ghost" [disabled]="deleteBusy()" (click)="cancelDelete()">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          @if (historyLoading()) {
+            <div class="history-loading">Loading…</div>
+          } @else if (history().length === 0) {
+            <div class="history-empty">No past diagnoses found.</div>
+          } @else {
+            <div class="history-list">
+              @for (h of history(); track h.id) {
+                <button class="history-item" (click)="openHistoryDetail(h.id)">
+                  <div class="history-meta">
+                    <span class="history-date">{{ h.created_at | date:'dd MMM yyyy, h:mm a' }}</span>
+                    <span class="history-risk" [style.color]="diagSvc.riskColor(h.risk_level)">{{ h.risk_level }}</span>
+                  </div>
+                  <div class="history-diag">{{ h.preliminary_diagnosis }}</div>
+                  <div class="history-cost">
+                    ₹{{ h.cost_min_inr | number }} – ₹{{ h.cost_max_inr | number }}
+                    &nbsp;·&nbsp; {{ h.repair_complexity }}
+                    <span class="history-open">View →</span>
+                  </div>
+                </button>
+              }
+            </div>
+          }
         }
       </div>
     </div>
   }
+
+  <!-- Connectivity banner (BR-UX-06) -->
+  <div class="offline-banner" *ngIf="!offline.online()" role="status" aria-live="polite">
+    <span aria-hidden="true">📴</span>
+    <span>You're offline. You can still fill in the form — we'll send it when you reconnect.</span>
+  </div>
+  <div class="sync-banner" *ngIf="offline.online() && offline.pending() > 0" role="status" aria-live="polite">
+    <span aria-hidden="true">🔄</span>
+    <span>
+      {{ offline.draining() ? 'Sending' : 'Waiting to send' }}
+      {{ offline.pending() }} queued submission{{ offline.pending() > 1 ? 's' : '' }}…
+    </span>
+  </div>
 
   <div class="container diag-body">
 
@@ -64,35 +196,67 @@
 
     <!-- ── STEP 1: Vehicle Details ── -->
     <div class="step-card" *ngIf="step() === 1">
+
+      <!-- Input mode selector -->
+      <div class="input-mode-selector" role="group" aria-label="How would you like to enter details?">
+        <button
+          class="mode-btn mode-btn--text"
+          [class.mode-btn--active]="inputMode() === 'manual'"
+          [attr.aria-pressed]="inputMode() === 'manual'"
+          (click)="chooseManualMode()"
+        >✏️ Fill Manually</button>
+        <button
+          class="mode-btn mode-btn--voice"
+          [class.mode-btn--active]="inputMode() === 'voice'"
+          [attr.aria-pressed]="inputMode() === 'voice'"
+          (click)="openVoiceMode()"
+          *ngIf="voice.supported"
+        >🎤 Use Voice</button>
+      </div>
+      <p class="input-mode-hint">
+        {{ inputMode() === 'voice'
+          ? 'Your report will be read aloud when it is ready.'
+          : 'Your report will be shown on screen. You can play it aloud if you want to.' }}
+      </p>
+
       <h2 class="step-title">Tell us about your vehicle</h2>
 
       <div class="form-grid">
         <div class="form-group">
           <label>Manufacturer *</label>
-          <select [(ngModel)]="form.manufacturer" (ngModelChange)="onMakeChange()">
-            <option value="">Select make</option>
-            <option *ngFor="let m of makes" [value]="m">{{ m }}</option>
-          </select>
+          <app-custom-select
+            [(ngModel)]="form.manufacturer"
+            (ngModelChange)="onMakeChange()"
+            [options]="makes"
+            placeholder="Select make">
+          </app-custom-select>
         </div>
         <div class="form-group">
           <label>Model *</label>
-          <select [(ngModel)]="form.model" [disabled]="!form.manufacturer" (ngModelChange)="onModelChange()">
-            <option value="">Select model</option>
-            <option *ngFor="let m of models" [value]="m">{{ m }}</option>
-          </select>
+          <app-custom-select
+            [(ngModel)]="form.model"
+            (ngModelChange)="onModelChange()"
+            [options]="models"
+            [disabled]="!form.manufacturer"
+            placeholder="Select model">
+          </app-custom-select>
         </div>
         <div class="form-group">
           <label>Variant</label>
-          <select [(ngModel)]="form.variant" [disabled]="!form.model">
-            <option value="">Select variant (optional)</option>
-            <option *ngFor="let v of variants" [value]="v">{{ v }}</option>
-          </select>
+          <app-custom-select
+            [(ngModel)]="form.variant"
+            [options]="variants"
+            [disabled]="!form.model"
+            placeholder="Select variant (optional)">
+          </app-custom-select>
         </div>
         <div class="form-group">
           <label>Model Year *</label>
-          <select [(ngModel)]="form.model_year">
-            <option *ngFor="let y of years" [value]="y">{{ y }}</option>
-          </select>
+          <app-custom-select
+            [(ngModel)]="form.model_year"
+            [options]="years"
+            placeholder="Select year">
+          </app-custom-select>
         </div>
         <div class="form-group">
           <label>Fuel Type *</label>
@@ -123,8 +287,61 @@
 
       <div class="form-group">
         <label>Describe the issue in your own words *</label>
+
+        <!-- Voice input toolbar -->
+        <div class="voice-toolbar" *ngIf="voice.supported">
+          <div class="voice-lang-wrap">
+            <button type="button" class="voice-lang-btn" (click)="voiceLangOpen.set(!voiceLangOpen())" [class.open]="voiceLangOpen()">
+              🌐 {{ voice.selectedLanguage().native }}
+              <span class="lang-arrow">▾</span>
+            </button>
+            <div class="voice-lang-dropdown" *ngIf="voiceLangOpen()">
+              <button *ngFor="let lang of voiceLanguages" type="button" class="lang-option"
+                [class.selected]="voice.selectedLanguage().code === lang.code"
+                (click)="selectVoiceLang(lang)">
+                <span class="lang-native">{{ lang.native }}</span>
+                <span class="lang-label">{{ lang.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="mic-btn"
+            [class.listening]="voice.state() === 'listening'"
+            [class.processing]="voice.state() === 'processing'"
+            [class.error]="voice.state() === 'error'"
+            (click)="toggleVoice()"
+            [title]="voice.state() === 'listening' ? 'Stop recording' : 'Start voice input'">
+            <span class="mic-icon" *ngIf="voice.state() !== 'listening'">🎤</span>
+            <span class="mic-icon recording-pulse" *ngIf="voice.state() === 'listening'">🔴</span>
+            <span class="mic-label">
+              {{ voice.state() === 'listening' ? 'Tap to stop' :
+                 voice.state() === 'processing' ? 'Processing…' : 'Speak' }}
+            </span>
+          </button>
+
+          <span class="voice-hint" *ngIf="voice.state() === 'listening'">
+            Listening… speak clearly
+            <span class="retry-badge" *ngIf="voice.noSpeechRetries() > 0">retry {{voice.noSpeechRetries()}}/3</span>
+          </span>
+          <button type="button" class="voice-dismiss" *ngIf="voice.state() === 'error'" (click)="voice.dismissError()">
+            ⚠ {{ voice.errorMessage() }} &nbsp;✕
+          </button>
+        </div>
+
+        <!-- Confidence indicator -->
+        <div class="conf-indicator" *ngIf="voice.lastConfidence() !== null && voice.state() === 'idle' && problemDescription.length > 0">
+          <span class="conf-dot" [class.high]="voice.lastConfidence()! >= 70" [class.low]="voice.lastConfidence()! < 50"></span>
+          Speech confidence: {{ voice.lastConfidence() }}%
+          <span class="conf-warn" *ngIf="voice.lastConfidence()! < 50"> — Low confidence. Please review and edit the text above.</span>
+        </div>
+
+        <!-- Interim live transcription -->
+        <div class="interim-text" *ngIf="voice.interimText()">
+          <span class="interim-label">Hearing:</span> {{ voice.interimText() }}
+        </div>
+
         <textarea [(ngModel)]="problemDescription" rows="5"
-          placeholder="e.g. When I start the car in the morning, there's a grinding noise from the front left. The car pulls to the left when braking. Started about a week ago after hitting a speed bump hard."></textarea>
+          [placeholder]="voice.supported ? 'Tap 🎤 above to describe by voice, or type here…' : 'e.g. When I start the car in the morning, there\'s a grinding noise from the front left…'"></textarea>
         <span class="char-count">{{ problemDescription.length }}/2000 characters (min 10)</span>
       </div>
 
@@ -179,6 +396,81 @@
           </ng-container>
         </div>
         <input #photoInput type="file" accept="image/*" multiple class="hidden-input" (change)="onPhotoChange($event)" />
+      </div>
+
+      <!-- Recent service history (BR-IR-07) -->
+      <div class="form-group maint-group">
+        <label>Recent service history <span class="optional-label">(optional)</span></label>
+        <p class="maint-hint">
+          A part replaced recently can change the diagnosis — add anything done in the last few months.
+        </p>
+
+        <ul class="maint-list" *ngIf="maintenanceHistory().length">
+          <li *ngFor="let m of maintenanceHistory(); let i = index">
+            <span class="maint-item">{{ m.item }}</span>
+            <span class="maint-meta">
+              {{ m.date }}<span *ngIf="m.date && m.odometer_km"> · </span>
+              <span *ngIf="m.odometer_km">{{ m.odometer_km | number }} km</span>
+            </span>
+            <button type="button" class="maint-remove" (click)="removeMaintenanceEntry(i)"
+                    [attr.aria-label]="'Remove ' + m.item">✕</button>
+          </li>
+        </ul>
+
+        <div class="maint-add">
+          <input type="text" [(ngModel)]="newMaintItem" [ngModelOptions]="{standalone: true}"
+                 placeholder="e.g. Brake pads replaced" maxlength="120" />
+          <input type="text" [(ngModel)]="newMaintDate" [ngModelOptions]="{standalone: true}"
+                 placeholder="When (e.g. May 2026)" maxlength="40" />
+          <input type="number" [(ngModel)]="newMaintOdo" [ngModelOptions]="{standalone: true}"
+                 placeholder="km" min="0" />
+          <button type="button" class="maint-add-btn"
+                  [disabled]="!newMaintItem.trim() || maintenanceHistory().length >= 20"
+                  (click)="addMaintenanceEntry()">+ Add</button>
+        </div>
+        <p class="maint-full" *ngIf="maintenanceHistory().length >= 20">
+          Maximum of 20 entries reached.
+        </p>
+      </div>
+
+      <!-- Audio recording (TC-F-12) -->
+      <div class="form-group">
+        <label>Sound recording <span class="optional-label">(optional)</span></label>
+        <div class="photo-upload-zone" (click)="audioInput.click()" [class.has-files]="selectedAudio()">
+          <ng-container *ngIf="!selectedAudio()">
+            <span class="photo-icon">🎧</span>
+            <p class="photo-hint">Tap to attach a recording of the noise</p>
+            <p class="photo-sub">Engine knock, brake squeal, rattle — max 25 MB</p>
+          </ng-container>
+          <ng-container *ngIf="selectedAudio() as af">
+            <span class="photo-icon">🎵</span>
+            <p class="photo-count">{{ af.name }} ({{ formatBytes(af.size) }})</p>
+            <button type="button" class="photo-clear" (click)="clearAudio($event)">Remove</button>
+          </ng-container>
+        </div>
+        <input #audioInput type="file" accept="audio/*" class="hidden-input" (change)="onAudioChange($event)" />
+      </div>
+
+      <!-- Video clip (TC-F-13) -->
+      <div class="form-group">
+        <label>Video clip <span class="optional-label">(optional)</span></label>
+        <div class="photo-upload-zone" (click)="videoInput.click()" [class.has-files]="selectedVideo()">
+          <ng-container *ngIf="!selectedVideo()">
+            <span class="photo-icon">🎥</span>
+            <p class="photo-hint">Tap to attach a short video of the issue</p>
+            <p class="photo-sub">Smoke, warning lights, unusual movement — max 75 MB</p>
+          </ng-container>
+          <ng-container *ngIf="selectedVideo() as vf">
+            <span class="photo-icon">🎬</span>
+            <p class="photo-count">{{ vf.name }} ({{ formatBytes(vf.size) }})</p>
+            <button type="button" class="photo-clear" (click)="clearVideo($event)">Remove</button>
+          </ng-container>
+        </div>
+        <input #videoInput type="file" accept="video/*" class="hidden-input" (change)="onVideoChange($event)" />
+      </div>
+
+      <div class="media-error" *ngIf="mediaError()" role="alert" aria-live="assertive">
+        ⚠️ {{ mediaError() }}
       </div>
 
       <div class="step-actions">
@@ -249,6 +541,18 @@
         <button class="btn-primary" (click)="step.set(3)">← Try Again</button>
       </div>
 
+      <!-- Queued offline (BR-UX-06) — the submission is saved, not lost -->
+      <div class="queued-card" *ngIf="queuedOffline()" role="status" aria-live="polite">
+        <div class="queued-icon" aria-hidden="true">📥</div>
+        <h3>Saved — we'll send this when you're back online</h3>
+        <p>
+          You're offline right now, so your diagnosis request is stored on this device.
+          It will be sent automatically as soon as you reconnect, and your report will
+          appear in Past Diagnoses.
+        </p>
+        <button class="btn-ghost" (click)="reset()">Start another</button>
+      </div>
+
       <!-- Report -->
       <ng-container *ngIf="diagSvc.report() as report">
         <div class="report-header">
@@ -265,6 +569,30 @@
           </div>
         </div>
 
+        <!-- What we read from the uploaded photo. Shown above the diagnosis
+             because when a telltale is identified it IS the finding, and an
+             unidentified one still carries a valid colour warning. -->
+        <div class="light-match" *ngIf="report.warning_light_match as wl"
+             [class.red]="wl.colour === 'red'" [class.amber]="wl.colour === 'amber' || wl.colour === 'yellow'">
+          <span class="lm-dot" aria-hidden="true"></span>
+          <div class="lm-body">
+            <ng-container *ngIf="wl.identified && wl.best; else lmUnsure">
+              <strong>Warning light identified: {{ wl.best.name }}</strong>
+              <p>{{ wl.best.meaning }}</p>
+              <p class="lm-urgency">{{ wl.best.urgency }}</p>
+              <span class="lm-conf">Matched from your photo · {{ wl.confidence }}% confidence</span>
+            </ng-container>
+            <ng-template #lmUnsure>
+              <strong *ngIf="wl.colour">A {{ wl.colour }} warning light was detected in your photo</strong>
+              <p *ngIf="wl.urgency_note">{{ wl.urgency_note }}</p>
+              <p class="lm-cands" *ngIf="wl.candidates?.length">
+                We could not identify the exact symbol. Closest matches:
+                {{ candidateNames(wl) }}.
+              </p>
+            </ng-template>
+          </div>
+        </div>
+
         <!-- Drive warning -->
         <div class="drive-warning" [class.danger]="!report.safe_to_drive" [class.safe]="report.safe_to_drive">
           <span>{{ report.safe_to_drive ? '✅' : '🚫' }}</span>
@@ -274,10 +602,41 @@
           </div>
         </div>
 
+        <!-- Translation failure notice (BR-ML-04) — never let a Hindi speaker
+             assume an English answer was translated for them. -->
+        <div class="translate-banner" *ngIf="report.translation_failed" role="status" aria-live="polite">
+          <span class="tb-icon" aria-hidden="true">🌐</span>
+          <div>
+            <strong>Shown in English</strong>
+            <p>We couldn't translate this diagnosis into {{ voice.selectedLanguage().native }} right now. The advice below is unchanged — only the language differs.</p>
+          </div>
+          <button class="tb-retry" (click)="retryDiagnosis()">Try again</button>
+        </div>
+
         <!-- Diagnosis summary -->
         <div class="report-card">
           <h3>🔍 Preliminary Diagnosis</h3>
           <p class="diag-text">{{ report.preliminary_diagnosis }}</p>
+        </div>
+
+        <!-- Follow-up questions (BR-AI-10) — shown only when the model is unsure -->
+        <div class="report-card followup-card" *ngIf="report.needs_more_info && report.follow_up_questions?.length">
+          <h3>❓ A few more details would help</h3>
+          <p class="followup-intro">
+            This assessment is {{ report.analysis_confidence }}% confident. Answering these
+            would let us narrow it down:
+          </p>
+          <ul class="followup-list">
+            <li *ngFor="let q of report.follow_up_questions">{{ q }}</li>
+          </ul>
+          <div class="followup-actions">
+            <button class="btn-ghost" (click)="speakFollowUps()" *ngIf="voice.synthSupported">
+              🔊 Read questions aloud
+            </button>
+            <button class="btn-primary" (click)="answerFollowUps()">
+              ✏️ Add these details
+            </button>
+          </div>
         </div>
 
         <!-- Possible causes -->
@@ -294,6 +653,31 @@
                   [style.background]="cause.confidence >= 70 ? '#EF4444' : cause.confidence >= 45 ? '#F59E0B' : '#9CA3AF'"></div>
               </div>
               <p class="cause-exp">{{ cause.explanation }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- How to Fix -->
+        <div class="report-card fix-card" *ngIf="report.fix_solutions?.length">
+          <h3>🔩 How to Fix or Bypass the Issue</h3>
+          <p class="fix-intro">3 approaches from quick self-help to professional repair — always confirm with a certified mechanic.</p>
+          <div class="fix-grid">
+            <div class="fix-solution" *ngFor="let fix of report.fix_solutions; let i = index">
+              <div class="fix-header">
+                <span class="fix-num">{{ i + 1 }}</span>
+                <div class="fix-meta">
+                  <span class="fix-title">{{ fix.title }}</span>
+                  <span class="fix-badge"
+                    [class.diy]="fix.difficulty === 'DIY'"
+                    [class.mechanic]="fix.difficulty === 'Mechanic'"
+                    [class.specialist]="fix.difficulty === 'Specialist'">
+                    {{ fix.difficulty === 'DIY' ? '🔧 DIY' : fix.difficulty === 'Mechanic' ? '🏪 Mechanic' : '⚙️ Specialist' }}
+                  </span>
+                </div>
+              </div>
+              <ol class="fix-steps">
+                <li *ngFor="let step of fix.steps">{{ step }}</li>
+              </ol>
             </div>
           </div>
         </div>
@@ -354,6 +738,45 @@
         <div class="disclaimer-box">
           <span>⚠️</span>
           <p>{{ report.disclaimer }}</p>
+        </div>
+
+        <!-- TTS playback controls -->
+        <div class="tts-bar" *ngIf="voice.synthSupported">
+          <div class="tts-status">
+            <span class="tts-icon" [class.active]="voice.speakingState() === 'speaking'">🔊</span>
+            <span class="tts-label">
+              {{ voice.speakingState() === 'speaking' ? 'Playing diagnosis…' :
+                 voice.speakingState() === 'paused' ? 'Paused' :
+                 voice.muted() ? 'Voice muted' :
+                 inputMode() === 'voice' ? 'Voice ready' : 'Listen to this report' }}
+            </span>
+          </div>
+          <div class="tts-controls">
+            <!-- Play — the entry point when nothing has been spoken yet, which
+                 is always the case in the manual flow. -->
+            <button type="button" class="tts-btn tts-btn--play" title="Read the diagnosis aloud"
+              *ngIf="voice.speakingState() === 'idle'"
+              (click)="playReport()">▶ Listen</button>
+            <!-- Pause / Resume -->
+            <button type="button" class="tts-btn" title="Pause"
+              *ngIf="voice.speakingState() === 'speaking'"
+              (click)="voice.pauseSpeaking()">⏸</button>
+            <button type="button" class="tts-btn" title="Resume"
+              *ngIf="voice.speakingState() === 'paused'"
+              (click)="voice.resumeSpeaking()">▶</button>
+            <!-- Stop -->
+            <button type="button" class="tts-btn" title="Stop"
+              *ngIf="voice.speakingState() !== 'idle'"
+              (click)="voice.stopSpeaking()">⏹</button>
+            <!-- Replay -->
+            <button type="button" class="tts-btn" title="Replay from beginning"
+              (click)="voice.replaySpeaking()">🔄</button>
+            <!-- Mute toggle -->
+            <button type="button" class="tts-btn mute-btn" [class.muted]="voice.muted()"
+              (click)="voice.toggleMute()" [title]="voice.muted() ? 'Unmute voice' : 'Mute voice'">
+              {{ voice.muted() ? '🔇' : '🔉' }}
+            </button>
+          </div>
         </div>
 
         <!-- Actions -->

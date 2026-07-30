@@ -87,7 +87,10 @@ Rules:
 
     const message = await client.messages.create({
       model: 'claude-opus-4-8',
-      max_tokens: 1024,
+      // Adaptive thinking spends part of max_tokens on reasoning before any
+      // visible text. At 1024 the JSON could be cut off mid-object, which
+      // threw in JSON.parse and surfaced as "AI engine unavailable".
+      max_tokens: 4096,
       thinking: { type: 'adaptive' },
       messages: [{ role: 'user', content: prompt }],
     });

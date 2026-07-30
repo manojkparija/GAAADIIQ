@@ -5,6 +5,8 @@ pydantic-settings==2.7.0
 email-validator>=2.0.0
 boto3>=1.35.0
 Pillow>=11.0.0
+# Brochure ingestion: extracts embedded images and text from car PDFs
+PyMuPDF>=1.24.0
 opensearch-py>=2.7.0
 aiosqlite>=0.20.0
 sqlalchemy==2.0.36

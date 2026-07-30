@@ -5,6 +5,12 @@
 
 <div class="detail-page" *ngIf="carLoaded">
   <div class="container">
+    <!-- Substituting a different car without saying so is how a missing
+         listing looked like a working page. -->
+    <div *ngIf="notFound" class="not-found-banner">
+      We couldn't find that car. Showing another listing you might like —
+      <a routerLink="/listings">browse all cars</a>.
+    </div>
     <!-- BREADCRUMB -->
     <div class="breadcrumb">
       <a routerLink="/">Home</a> / <a routerLink="/listings">Browse</a> / <span>{{ car.make }} {{ car.model }}</span>
@@ -16,9 +22,9 @@
         <!-- IMAGE GALLERY -->
         <div class="gallery glass-card">
           <div class="main-img">
-            <img [src]="(car.images || [car.image])[activeImg()]" [alt]="car.make + ' ' + car.model"
+            <img [src]="galleryImages()[activeImg()]" [alt]="car.make + ' ' + car.model"
                  referrerpolicy="no-referrer"
-                 [style.objectPosition]="((car.images || [car.image])[activeImg()] || '').includes('swift/front') ? 'center 65%' : 'center center'"
+                 [style.objectPosition]="(galleryImages()[activeImg()] || '').includes('swift/front') ? 'center 65%' : 'center center'"
                  onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
             <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
             <button class="like-fab" (click)="liked.set(!liked())" [class.liked]="liked()">
@@ -26,7 +32,7 @@
             </button>
           </div>
           <div class="thumbnails">
-            <div *ngFor="let img of (car.images || [car.image]); let i = index"
+            <div *ngFor="let img of galleryImages(); let i = index"
               class="thumb" [class.active]="activeImg() === i" (click)="activeImg.set(i)">
               <img [src]="img" alt="thumb" referrerpolicy="no-referrer"
                    [style.objectPosition]="img?.includes('swift/front') ? 'center 65%' : 'center center'"
@@ -92,6 +98,11 @@
                 <span class="spec-val gradient-text">{{ spec.value }}</span>
               </div>
             </div>
+            <!-- Without this an unpopulated tab renders as blank space, which
+                 reads as a broken page rather than as absent data. -->
+            <p class="tab-empty" *ngIf="!(car.specs || []).length">
+              Specifications for this {{ car.make }} {{ car.model }} haven't been added yet.
+            </p>
           </div>
 
           <!-- FEATURES -->
@@ -101,6 +112,9 @@
                 <span class="check"><app-icon name="check" [size]="13"></app-icon></span> {{ f }}
               </div>
             </div>
+            <p class="tab-empty" *ngIf="!(car.features || []).length">
+              Feature details for this {{ car.make }} {{ car.model }} haven't been added yet.
+            </p>
           </div>
 
           <!-- COLOURS -->

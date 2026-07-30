@@ -7,14 +7,67 @@ import io
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
 
+from core.config import settings
 from core.dependencies import get_current_user
 from core.limiter import limiter
 from models.user import User
-from services.storage import upload_image
+from services.storage import upload_image, upload_media
+from services.stt import estimate_duration_seconds
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
-_MAX_SIZE = 20 * 1024 * 1024  # 20 MB
+_MAX_SIZE = 20 * 1024 * 1024        # 20 MB — images
+_MAX_AUDIO_SIZE = 25 * 1024 * 1024  # 25 MB — ~5 min of compressed speech
+_MAX_VIDEO_SIZE = 75 * 1024 * 1024  # 75 MB — short clip of the fault
+
+_ALLOWED_AUDIO_TYPES = {
+    "audio/webm", "audio/ogg", "audio/mpeg", "audio/mp4",
+    "audio/wav", "audio/x-wav", "audio/aac", "audio/3gpp",
+}
+_ALLOWED_VIDEO_TYPES = {
+    "video/mp4", "video/webm", "video/quicktime", "video/3gpp", "video/x-matroska",
+}
+
+# Extension used when persisting, keyed by content type.
+_MEDIA_EXTENSIONS = {
+    "audio/webm": "webm", "audio/ogg": "ogg", "audio/mpeg": "mp3",
+    "audio/mp4": "m4a", "audio/wav": "wav", "audio/x-wav": "wav",
+    "audio/aac": "aac", "audio/3gpp": "3gp",
+    "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
+    "video/3gpp": "3gp", "video/x-matroska": "mkv",
+}
+
+
+def _check_av_magic_bytes(data: bytes) -> bool:
+    """
+    Validate audio/video container signatures, so a Content-Type header alone
+    cannot smuggle an arbitrary payload past the filter (TC-S-04).
+    """
+    if len(data) < 12:
+        return False
+    # ISO-BMFF (MP4 / M4A / MOV / 3GP): 'ftyp' box at offset 4
+    if data[4:8] == b"ftyp":
+        return True
+    # Matroska / WebM — EBML header
+    if data[:4] == b"\x1a\x45\xdf\xa3":
+        return True
+    # Ogg
+    if data[:4] == b"OggS":
+        return True
+    # RIFF....WAVE
+    if data[:4] == b"RIFF" and data[8:12] == b"WAVE":
+        return True
+    # MP3: ID3 tag, or a frame-sync header
+    if data[:3] == b"ID3":
+        return True
+    if data[0] == 0xFF and (data[1] & 0xE0) == 0xE0:
+        return True
+    # ADTS AAC
+    if data[0] == 0xFF and (data[1] & 0xF6) == 0xF0:
+        return True
+    return False
+
+
 
 # Magic byte signatures for allowed image types
 _MAGIC_SIGNATURES: list[tuple[bytes, str]] = [
@@ -46,6 +99,67 @@ class UploadResponse(BaseModel):
     url: str
     filename: str
     size_bytes: int
+
+
+async def _store_av(
+    request: Request,
+    file: UploadFile,
+    allowed_types: set[str],
+    max_size: int,
+    kind: str,
+) -> UploadResponse:
+    """Shared validate-then-store path for audio and video uploads."""
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported {kind} format.",
+        )
+
+    limit_mb = max_size // (1024 * 1024)
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"{kind.capitalize()} must be under {limit_mb} MB.",
+        )
+
+    content = await file.read()
+
+    # Re-check after reading: Content-Length may be absent or spoofed.
+    if len(content) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"{kind.capitalize()} must be under {limit_mb} MB.",
+        )
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Empty {kind} file.",
+        )
+    if not _check_av_magic_bytes(content):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"File content does not match a supported {kind} format.",
+        )
+
+    # Duration cap for audio (BR-IR-04). Only measurable without decoding for
+    # WAV; compressed formats return None and rely on the byte cap above.
+    if kind == "audio":
+        duration = estimate_duration_seconds(content, file.content_type or "")
+        if duration is not None and duration > settings.stt_max_audio_seconds:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Audio must be under {settings.stt_max_audio_seconds} seconds.",
+            )
+
+    ct = file.content_type or ""
+    url = upload_media(
+        io.BytesIO(content),
+        content_type=ct,
+        extension=_MEDIA_EXTENSIONS.get(ct, "bin"),
+        folder="diagnosis",
+    )
+    return UploadResponse(url=url, filename=file.filename or f"{kind}-upload", size_bytes=len(content))
 
 
 @router.post("/image", response_model=UploadResponse)
@@ -89,3 +203,25 @@ async def upload_image_endpoint(
 
     url = upload_image(io.BytesIO(content), content_type=file.content_type or "image/jpeg", folder="diagnosis")
     return UploadResponse(url=url, filename=file.filename or "upload", size_bytes=len(content))
+
+
+@router.post("/audio", response_model=UploadResponse)
+@limiter.limit("10/minute")
+async def upload_audio_endpoint(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload an audio recording of the fault (engine noise, etc.). Returns the public URL."""
+    return await _store_av(request, file, _ALLOWED_AUDIO_TYPES, _MAX_AUDIO_SIZE, "audio")
+
+
+@router.post("/video", response_model=UploadResponse)
+@limiter.limit("5/minute")
+async def upload_video_endpoint(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a short video of the fault. Returns the public URL."""
+    return await _store_av(request, file, _ALLOWED_VIDEO_TYPES, _MAX_VIDEO_SIZE, "video")

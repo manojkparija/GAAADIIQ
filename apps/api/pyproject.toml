@@ -2,6 +2,9 @@
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_classes = ["Test*Suite", "Test*Case"]
+markers = [
+    "golden: golden-fixture regression checks (BR-PERF-02/03); informational in CI",
+]
 
 [tool.ruff]
 line-length = 150

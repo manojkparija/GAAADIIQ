@@ -1,0 +1,18 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+pdfplumber>=0.11.0
+PyMuPDF>=1.24.0
+pytesseract>=0.3.10
+easyocr>=1.7.0
+Pillow>=10.3.0
+httpx>=0.27.0
+pydantic>=2.7.0
+rapidfuzz>=3.9.0
+
+# Enhanced document understanding (optional but strongly recommended)
+# Provides layout-aware parsing for complex brochure/catalog PDFs
+docling>=2.14.0
+
+# Proper perceptual hashing for image deduplication
+imagehash>=4.3.1

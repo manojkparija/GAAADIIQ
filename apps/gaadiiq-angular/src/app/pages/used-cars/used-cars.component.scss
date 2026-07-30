@@ -393,18 +393,18 @@
     &::-webkit-slider-thumb {
       appearance: none;
       -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      /* (track-height 0 − thumb-height 18) / 2 = −9px centres the thumb on the track */
-      margin-top: -9px;
+      width: 20px;
+      height: 20px;
+      /* (track-height 0 − thumb-height 20) / 2 = −10px centres the thumb on the track */
+      margin-top: -10px;
       border-radius: 50%;
-      background: var(--primary, #2563EB);
-      border: 2px solid #fff;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      background: #fff;
+      border: 2.5px solid #FFD700;
+      box-shadow: 0 0 0 3px rgba(255,215,0,0.25), 0 2px 8px rgba(0,0,0,0.18);
       pointer-events: all;
       cursor: grab;
-      transition: box-shadow 0.15s;
-      &:active { cursor: grabbing; box-shadow: 0 0 0 4px rgba(37,99,235,0.18); }
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      &:active { cursor: grabbing; transform: scale(1.15); box-shadow: 0 0 0 5px rgba(255,215,0,0.35), 0 4px 12px rgba(0,0,0,0.22); }
     }
 
     /* Firefox: hide the built-in track */
@@ -415,12 +415,12 @@
     }
 
     &::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
-      background: var(--primary, #2563EB);
-      border: 2px solid #fff;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      background: #fff;
+      border: 2.5px solid #FFD700;
+      box-shadow: 0 0 0 3px rgba(255,215,0,0.25), 0 2px 8px rgba(0,0,0,0.18);
       cursor: grab;
     }
   }
@@ -443,12 +443,15 @@
 
 .year-select {
   flex: 1;
-  padding: 0.4rem 0.5rem;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  border: 1px solid var(--border, rgba(0,0,0,0.12));
-  background: var(--navy);
+  background: var(--surface);
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  appearance: auto;
 }
 
 .year-sep {
@@ -739,6 +742,37 @@
   .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
   h3 { font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
   p { color: var(--muted); margin-bottom: 1.25rem; }
+
+  .btn-gradient {
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.75rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+    transition: opacity 0.2s, transform 0.2s;
+    &:hover { opacity: 0.92; transform: translateY(-1px); }
+  }
+
+  .btn-outline {
+    display: inline-block;
+    padding: 0.75rem 1.75rem;
+    border-radius: 10px;
+    border: 1.5px solid #2563EB;
+    color: #2563EB;
+    background: transparent;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    &:hover { background: rgba(37,99,235,0.08); }
+  }
 }
 
 /* ── CAR CARDS GRID ── */

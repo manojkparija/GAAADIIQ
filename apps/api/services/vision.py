@@ -72,6 +72,30 @@ def _validate_image_url(url: str) -> None:
             raise ValueError("Image URL must be from an allowed CDN host")
 
 
+async def fetch_image_bytes(image_url: str) -> bytes | None:
+    """
+    Fetch an image for local analysis, applying the same SSRF checks as the
+    vision path. Returns None rather than raising — a failed fetch must never
+    take down a diagnosis.
+    """
+    try:
+        _validate_image_url(image_url)
+    except ValueError as exc:
+        logger.warning("Blocked SSRF attempt for image URL %r: %s", image_url, exc)
+        return None
+
+    try:
+        async with httpx.AsyncClient(timeout=30, follow_redirects=False) as http:
+            r = await http.get(image_url)
+            r.raise_for_status()
+            if not r.headers.get("content-type", "").startswith("image/"):
+                return None
+            return r.content
+    except Exception as exc:
+        logger.warning("Could not fetch image %s: %s", image_url, exc)
+        return None
+
+
 async def analyse_image_url(image_url: str, context: str = "") -> dict:
     """
     Fetch image, send to vision model, return structured assessment.
@@ -97,11 +121,24 @@ async def analyse_image_url(image_url: str, context: str = "") -> dict:
         logger.warning("Could not fetch image %s: %s", image_url, exc)
         return _unavailable()
 
-    prompt = f"""You are an automotive damage assessment AI for Indian vehicles.
+    # The image is as often a dashboard warning light as it is body damage.
+    # Asking only about "visible damage" made a photo of a lit battery/ABS
+    # telltale come back as "no damage found", which is worse than useless.
+    prompt = f"""You are an automotive diagnostic AI for Indian vehicles.
 {f"Context: {context}" if context else ""}
-Analyse this vehicle image and respond with ONLY valid JSON:
+The image may show EITHER a dashboard warning light / instrument cluster, OR
+physical damage or wear to a vehicle. Work out which, then analyse it.
+
+If it is a dashboard warning light, name the exact telltale (for example:
+battery/charging system, check engine (MIL), oil pressure, coolant temperature,
+ABS, airbag/SRS, brake, TPMS, power steering, DPF, glow plug) and say what it
+indicates. A red light means stop driving; amber means service soon.
+
+Respond with ONLY valid JSON:
 {{
-  "findings": "2-3 sentence description of visible damage or wear",
+  "image_type": "warning_light|damage|other",
+  "warning_lights_visible": ["exact name of each telltale lit, empty if none"],
+  "findings": "2-3 sentences: what the image shows and what it means",
   "damage_areas": ["area1", "area2"],
   "severity": "None|Minor|Moderate|Severe|Critical",
   "estimated_repair_cost_inr": {{"min": 0, "max": 0}},
@@ -109,8 +146,9 @@ Analyse this vehicle image and respond with ONLY valid JSON:
   "confidence": 70,
   "recommendations": ["rec1", "rec2"]
 }}
-severity None = no damage; Minor = cosmetic; Moderate = functional; Severe = significant; Critical = unsafe.
-Costs in Indian Rupees."""
+severity None = nothing wrong; Minor = cosmetic; Moderate = functional;
+Severe = significant; Critical = unsafe to drive. A lit red warning light is
+at least Severe. Costs in Indian Rupees."""
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as http:
@@ -137,6 +175,8 @@ Costs in Indian Rupees."""
 def _unavailable() -> dict:
     return {
         "findings": "Image analysis unavailable — vision model offline.",
+        "image_type": "other",
+        "warning_lights_visible": [],
         "damage_areas": [],
         "severity": "Unknown",
         "estimated_repair_cost_inr": {"min": 0, "max": 0},

@@ -307,7 +307,7 @@ export class AiAdvisorComponent {
     return this.ALL_STEPS.filter(s => !s.ev || fuels.includes('Electric'));
   });
 
-  currentStep  = computed(() => this.visibleSteps()[this.stepIdx()]);
+  currentStep  = computed((): AdvisorStep | undefined => this.visibleSteps()[this.stepIdx()]);
   totalSteps   = computed(() => this.visibleSteps().length);
   progress     = computed(() => ((this.stepIdx() + 1) / this.totalSteps()) * 100);
   currentSels  = computed(() => {
@@ -347,6 +347,7 @@ export class AiAdvisorComponent {
 
   toggle(option: string) {
     const step = this.currentStep();
+    if (!step) return;
     this.profile.update(p => {
       const cur = (p[step.key] as string[] || []);
       if (!step.multi) return { ...p, [step.key]: [option] };

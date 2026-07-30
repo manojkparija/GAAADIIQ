@@ -52,6 +52,8 @@ export class AiValuationComponent {
 
   loading = signal(false);
   result = signal<ValuationResult | null>(null);
+  /** Why the AI call failed, when it did. Shown in the fallback banner. */
+  fallbackReason = signal<string | null>(null);
   step = signal<'form' | 'result'>('form');
 
   get formValid() {
@@ -62,6 +64,7 @@ export class AiValuationComponent {
   async estimate() {
     if (!this.formValid) return;
     this.loading.set(true);
+    this.fallbackReason.set(null);
 
     try {
       const { data, error } = await this.supabase.client.functions.invoke('ai-valuation', {
@@ -76,7 +79,12 @@ export class AiValuationComponent {
       this.result.set({ ...(data as ValuationResult), method: data.method ?? 'claude' });
       this.step.set('result');
     } catch (err) {
-      // Show heuristic result with honest fallback label
+      // Swallowing this made "AI engine unavailable" impossible to diagnose:
+      // an undeployed function, a missing API key and a rate limit all looked
+      // identical. Keep the honest fallback, but say why it happened.
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error('AI valuation unavailable — falling back to the depreciation model:', reason);
+      this.fallbackReason.set(reason);
       this.result.set(computeHeuristicValuation({ ...this.form }));
       this.step.set('result');
     } finally {
@@ -87,6 +95,7 @@ export class AiValuationComponent {
   reset() {
     this.step.set('form');
     this.result.set(null);
+    this.fallbackReason.set(null);
     this.form = { make: '', model: '', variant: '', year: new Date().getFullYear(), km: '', fuel: '', transmission: '', owners: '', condition: '' };
   }
 

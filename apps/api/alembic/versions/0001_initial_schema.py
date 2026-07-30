@@ -24,23 +24,30 @@ _ENUM_NAMES = [
 
 # Pre-built Enum objects with create_type=False so SQLAlchemy never tries to
 # re-create types we already created explicitly with op.execute below.
-_fuel_type = sa.Enum("petrol", "diesel", "electric", "cng", "hybrid", name="fuel_type", create_type=False)
-_transmission = sa.Enum("manual", "automatic", "amt", "cvt", "dct", name="transmission", create_type=False)
-_body_type = sa.Enum("hatchback", "sedan", "suv", "muv", "coupe", "convertible", name="body_type", create_type=False)
-_user_role = sa.Enum("buyer", "seller", "dealer", "admin", name="user_role", create_type=False)
-_listing_type = sa.Enum("new", "used", name="listing_type", create_type=False)
-_listing_condition = sa.Enum("excellent", "good", "fair", "poor", name="listing_condition", create_type=False)
-_booking_status = sa.Enum("pending", "confirmed", "cancelled", "completed", name="booking_status", create_type=False)
-_loan_status = sa.Enum("submitted", "processing", "approved", "rejected", name="loan_status", create_type=False)
-_employment_type = sa.Enum("salaried", "self_employed", "business", name="employment_type", create_type=False)
-_notification_type = sa.Enum(
+#
+# These MUST be postgresql.ENUM, not sa.Enum. create_type is a postgresql
+# dialect option; generic sa.Enum silently ignores it, so SQLAlchemy re-emitted
+# CREATE TYPE while building each table and every migration run died with
+# 'type "fuel_type" already exists'. Because main.py logs a migration failure
+# without aborting startup, the API then served requests against a database
+# missing every table this file creates.
+_fuel_type = postgresql.ENUM("petrol", "diesel", "electric", "cng", "hybrid", name="fuel_type", create_type=False)
+_transmission = postgresql.ENUM("manual", "automatic", "amt", "cvt", "dct", name="transmission", create_type=False)
+_body_type = postgresql.ENUM("hatchback", "sedan", "suv", "muv", "coupe", "convertible", name="body_type", create_type=False)
+_user_role = postgresql.ENUM("buyer", "seller", "dealer", "admin", name="user_role", create_type=False)
+_listing_type = postgresql.ENUM("new", "used", name="listing_type", create_type=False)
+_listing_condition = postgresql.ENUM("excellent", "good", "fair", "poor", name="listing_condition", create_type=False)
+_booking_status = postgresql.ENUM("pending", "confirmed", "cancelled", "completed", name="booking_status", create_type=False)
+_loan_status = postgresql.ENUM("submitted", "processing", "approved", "rejected", name="loan_status", create_type=False)
+_employment_type = postgresql.ENUM("salaried", "self_employed", "business", name="employment_type", create_type=False)
+_notification_type = postgresql.ENUM(
     "booking_received", "booking_confirmed", "booking_cancelled",
     "loan_inquiry_received", "price_drop", "listing_viewed", "system",
     name="notification_type", create_type=False,
 )
-_payment_status = sa.Enum("pending", "paid", "failed", "refunded", name="payment_status", create_type=False)
-_payment_purpose = sa.Enum("featured_listing", "subscription_pro", "subscription_dealer", name="payment_purpose", create_type=False)
-_subscription_tier = sa.Enum("free", "pro", "dealer", name="subscription_tier", create_type=False)
+_payment_status = postgresql.ENUM("pending", "paid", "failed", "refunded", name="payment_status", create_type=False)
+_payment_purpose = postgresql.ENUM("featured_listing", "subscription_pro", "subscription_dealer", name="payment_purpose", create_type=False)
+_subscription_tier = postgresql.ENUM("free", "pro", "dealer", name="subscription_tier", create_type=False)
 
 
 def upgrade() -> None:

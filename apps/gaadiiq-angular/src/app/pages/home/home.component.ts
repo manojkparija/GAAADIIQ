@@ -10,7 +10,7 @@ import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 
 interface Car {
-  id: number; make: string; model: string; year: number; price: number;
+  id: string; make: string; model: string; year: number; price: number;
   km: number; fuel: string; transmission: string; badge: string; badgeType: string;
   image: string; rating: number; reviews: number; verified: boolean;
 }
@@ -110,24 +110,28 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   featuredCars: Car[] = [
     // Maruti Suzuki lineup
-    { id:1, make:'Maruti Suzuki', model:'Swift', year:2024, price:749000, km:5000, fuel:'Petrol', transmission:'Manual', badge:'🔥 Bestseller', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.7, reviews:512, verified:true },
-    { id:2, make:'Maruti Suzuki', model:'Baleno', year:2024, price:669000, km:8000, fuel:'Petrol', transmission:'AMT', badge:'⭐ Top Rated', badgeType:'badge-gold', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/54523/baleno-exterior-right-front-three-quarter.jpeg', rating:4.7, reviews:445, verified:true },
-    { id:3, make:'Maruti Suzuki', model:'Brezza', year:2024, price:1349000, km:6000, fuel:'Petrol', transmission:'Automatic', badge:'💰 Best Value', badgeType:'badge-gold', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/146811/brezza-exterior-right-front-three-quarter-4.jpeg', rating:4.6, reviews:389, verified:true },
-    { id:4, make:'Maruti Suzuki', model:'Grand Vitara', year:2024, price:1799000, km:4000, fuel:'Hybrid', transmission:'Automatic', badge:'⚡ Hybrid', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/155843/grand-vitara-exterior-right-front-three-quarter-2.jpeg', rating:4.8, reviews:267, verified:true },
-    { id:5, make:'Maruti Suzuki', model:'Fronx', year:2024, price:899000, km:3000, fuel:'Petrol', transmission:'AMT', badge:'🆕 Nearly New', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/189349/fronx-exterior-right-front-three-quarter.jpeg', rating:4.6, reviews:198, verified:true },
-    { id:6, make:'Maruti Suzuki', model:'Jimny', year:2024, price:1299000, km:2000, fuel:'Petrol', transmission:'Manual', badge:'🏔️ Off-Road', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/130591/jimny-exterior-right-front-three-quarter-2.jpeg', rating:4.9, reviews:143, verified:true },
+    { id:'1', make:'Maruti Suzuki', model:'Swift', year:2024, price:749000, km:5000, fuel:'Petrol', transmission:'Manual', badge:'🔥 Bestseller', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.7, reviews:512, verified:true },
+    { id:'2', make:'Maruti Suzuki', model:'Baleno', year:2024, price:669000, km:8000, fuel:'Petrol', transmission:'AMT', badge:'⭐ Top Rated', badgeType:'badge-gold', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/54523/baleno-exterior-right-front-three-quarter.jpeg', rating:4.7, reviews:445, verified:true },
+    { id:'3', make:'Maruti Suzuki', model:'Brezza', year:2024, price:1349000, km:6000, fuel:'Petrol', transmission:'Automatic', badge:'💰 Best Value', badgeType:'badge-gold', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/146811/brezza-exterior-right-front-three-quarter-4.jpeg', rating:4.6, reviews:389, verified:true },
+    { id:'4', make:'Maruti Suzuki', model:'Grand Vitara', year:2024, price:1799000, km:4000, fuel:'Hybrid', transmission:'Automatic', badge:'⚡ Hybrid', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/155843/grand-vitara-exterior-right-front-three-quarter-2.jpeg', rating:4.8, reviews:267, verified:true },
+    { id:'5', make:'Maruti Suzuki', model:'Fronx', year:2024, price:899000, km:3000, fuel:'Petrol', transmission:'AMT', badge:'🆕 Nearly New', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/189349/fronx-exterior-right-front-three-quarter.jpeg', rating:4.6, reviews:198, verified:true },
+    { id:'6', make:'Maruti Suzuki', model:'Jimny', year:2024, price:1299000, km:2000, fuel:'Petrol', transmission:'Manual', badge:'🏔️ Off-Road', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/130591/jimny-exterior-right-front-three-quarter-2.jpeg', rating:4.9, reviews:143, verified:true },
     // Other popular models
-    { id:7, make:'Hyundai', model:'Creta', year:2023, price:1450000, km:12000, fuel:'Petrol', transmission:'Automatic', badge:'🔥 Trending', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg', rating:4.8, reviews:234, verified:true },
-    { id:8, make:'Tata', model:'Nexon EV', year:2024, price:1850000, km:5000, fuel:'Electric', transmission:'Automatic', badge:'⚡ Electric', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg', rating:4.9, reviews:189, verified:true },
-    { id:9, make:'Mahindra', model:'XUV700', year:2022, price:2100000, km:22000, fuel:'Diesel', transmission:'Automatic', badge:'👑 Premium', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/42355/xuv700-exterior-right-front-three-quarter.jpeg', rating:4.7, reviews:156, verified:true },
-    { id:10, make:'Kia', model:'Seltos', year:2024, price:1680000, km:3000, fuel:'Petrol', transmission:'DCT', badge:'🆕 Nearly New', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/115025/seltos-exterior-right-front-three-quarter-3.jpeg', rating:4.8, reviews:201, verified:true },
+    { id:'7', make:'Hyundai', model:'Creta', year:2023, price:1450000, km:12000, fuel:'Petrol', transmission:'Automatic', badge:'🔥 Trending', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg', rating:4.8, reviews:234, verified:true },
+    { id:'8', make:'Tata', model:'Nexon EV', year:2024, price:1850000, km:5000, fuel:'Electric', transmission:'Automatic', badge:'⚡ Electric', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg', rating:4.9, reviews:189, verified:true },
+    { id:'9', make:'Mahindra', model:'XUV700', year:2022, price:2100000, km:22000, fuel:'Diesel', transmission:'Automatic', badge:'👑 Premium', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/42355/xuv700-exterior-right-front-three-quarter.jpeg', rating:4.7, reviews:156, verified:true },
+    { id:'10', make:'Kia', model:'Seltos', year:2024, price:1680000, km:3000, fuel:'Petrol', transmission:'DCT', badge:'🆕 Nearly New', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/115025/seltos-exterior-right-front-three-quarter-3.jpeg', rating:4.8, reviews:201, verified:true },
   ];
 
   features = [
     { icon:'brain', title:'AI Price Valuation', desc:'Instant fair market valuation — depreciation model + AI analysis when available.', color:'#2F6BFF', route:'/ai-valuation' },
     { icon:'bank', title:'Loan Comparison', desc:'Compare EMI from top banks. Pre-approval in minutes, best rates guaranteed.', color:'#14B8A6', route:'/emi-calculator' },
     { icon:'search', title:'Smart Search', desc:'Natural language search. "Red SUV under 15L near me" — we understand you.', color:'#10B981', route:'/listings' },
-    { icon:'bar-chart', title:'Market Intelligence', desc:'Real-time price trends, depreciation charts, and resale value forecasts.', color:'#F59E0B', route:'/compare' },
+    // Routed to the valuation page, which is where depreciation and resale
+    // analysis actually lives. There is no separate market-intelligence page;
+    // this card used to open the car-comparison page instead, and the copy
+    // promised live price trends the app does not yet produce.
+    { icon:'bar-chart', title:'Market Intelligence', desc:'Depreciation-based price analysis and resale value estimates for any model.', color:'#F59E0B', route:'/ai-valuation' },
     { icon:'bell', title:'Price Drop Alerts', desc:'Set your target price. Get notified the moment a listing drops below it.', color:'#2F6BFF', route:'/price-alerts' },
     { icon:'car', title:'Test Drive Booking', desc:'Book a test drive directly with the seller — from your couch, right now.', color:'#14B8A6', route:'/test-drive' },
   ];

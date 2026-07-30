@@ -3,17 +3,19 @@ import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { InstallPwaComponent } from './components/install-pwa/install-pwa.component';
+import { ChatWidgetComponent } from './components/chat-widget/chat-widget.component';
 import { NativeService } from './services/native.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavbarComponent, FooterComponent, InstallPwaComponent],
+  imports: [RouterOutlet, NavbarComponent, FooterComponent, InstallPwaComponent, ChatWidgetComponent],
   template: `
     <app-navbar></app-navbar>
     <router-outlet></router-outlet>
     <app-footer></app-footer>
     <app-install-pwa></app-install-pwa>
+    <app-chat-widget></app-chat-widget>
   `,
   styles: [`
     :host { display: block; min-height: 100vh; }

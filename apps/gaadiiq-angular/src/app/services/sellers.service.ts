@@ -16,7 +16,7 @@ export interface Seller {
 
 @Injectable({ providedIn: 'root' })
 export class SellersService {
-  private cache = new Map<number, Seller>();
+  private cache = new Map<string, Seller>();
 
   // Fallback dummy seller shown when DB isn't set up yet
   private readonly DUMMY: Seller = {
@@ -35,14 +35,14 @@ export class SellersService {
   constructor(private sb: SupabaseService) {}
 
   async getById(sellerId: number): Promise<Seller> {
-    if (this.cache.has(-sellerId)) return this.cache.get(-sellerId)!;
+    if (this.cache.has(String(-sellerId))) return this.cache.get(String(-sellerId))!;
     const { data, error } = await this.sb.client
       .from('sellers')
       .select('*')
       .eq('id', sellerId)
       .single();
     const seller: Seller = (!error && data) ? data : { ...this.DUMMY, id: sellerId };
-    this.cache.set(-sellerId, seller);
+    this.cache.set(String(-sellerId), seller);
     return seller;
   }
 
@@ -53,11 +53,11 @@ export class SellersService {
       .eq('email', email)
       .single();
     if (error || !data) return null;
-    this.cache.set(-data.id, data);
+    this.cache.set(String(-data.id), data);
     return data;
   }
 
-  async getForCar(carId: number): Promise<Seller> {
+  async getForCar(carId: string): Promise<Seller> {
     if (this.cache.has(carId)) return this.cache.get(carId)!;
 
     // Try to find a mapped seller; fall back to round-robin from sellers table
@@ -67,7 +67,7 @@ export class SellersService {
       .eq('car_id', carId)
       .single();
 
-    let sellerId: number = map?.seller_id ?? ((carId % 8) + 1);
+    let sellerId: number = map?.seller_id ?? 1;
 
     const { data, error } = await this.sb.client
       .from('sellers')

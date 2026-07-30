@@ -73,6 +73,79 @@ class Settings(BaseSettings):
     ollama_vision_model: str = "llava"
     ollama_url: str = "http://localhost:11434"  # alias used by sentiment service
 
+    # Server-side speech-to-text (BR-API-01) — fallback for WebViews and
+    # browsers without the Web Speech API. Provider is selected by
+    # STT_PROVIDER; "none" disables the endpoint (503).
+    stt_provider: str = "none"          # none | whisper | openai | google | azure
+    stt_api_key: str = ""
+    stt_api_url: str = ""               # self-hosted Whisper / custom gateway
+    stt_model: str = "whisper-1"
+    stt_timeout_seconds: int = 45
+    stt_max_audio_seconds: int = 60     # BR-IR-04 duration cap
+    stt_max_bytes: int = 25 * 1024 * 1024
+
+    # Supabase JWT secret (HS256). The UI authenticates against Supabase, whose
+    # tokens this backend cannot otherwise verify — its own tokens are RS256
+    # with a different key. Without this, a Supabase-authenticated caller is
+    # indistinguishable from an anonymous one.
+    supabase_jwt_secret: str = ""
+    # Project URL, e.g. https://abcdefgh.supabase.co — used to fetch the JWKS
+    # when the project signs tokens with asymmetric keys rather than the
+    # legacy shared secret.
+    supabase_url: str = ""
+
+    # Emails always treated as admin, regardless of which user store holds the
+    # role. Checked only against a *verified* token, never a client-sent value.
+    admin_emails: str = ""
+
+    @property
+    def admin_email_set(self) -> set[str]:
+        return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}
+
+    # Gemini — higher-quality diagnosis for paid users and admins. Ollama is
+    # the free tier. Leave the key blank and everyone falls back to Ollama.
+    gemini_api_key: str = ""
+    # gemini-2.0-flash was shut down on 2026-06-01, so the previous default
+    # named a model the API no longer serves. Flash-Lite is the cost-efficient
+    # tier; override with GEMINI_MODEL rather than editing this.
+    gemini_model: str = "gemini-3.5-flash-lite"
+    gemini_api_url: str = "https://generativelanguage.googleapis.com/v1beta"
+    gemini_timeout_seconds: float = 15.0
+
+    # Groq — free, hosted vision fallback for brochure pages when Gemini is
+    # unavailable (no key, exhausted quota, or an outage). Chosen over Ollama
+    # for this role because Ollama has to be self-hosted, and the deployed API
+    # has no Ollama to reach: a fallback that only works on a developer's
+    # laptop is not a fallback. OpenAI-compatible, so the call is a plain
+    # chat-completions POST. Leave blank to skip this hop.
+    groq_api_key: str = ""
+    groq_api_url: str = "https://api.groq.com/openai/v1"
+    groq_vision_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    # Groq accepts at most 5 images per request, fewer than PDF_VISION_MAX_PAGES,
+    # so the rendered pages are sent in batches of this size.
+    groq_max_images_per_request: int = 5
+
+    # Per-image classification (what a picture shows, its angle, its colour).
+    # Off by default: it adds a vision call per batch of images on top of the
+    # extraction, and the free tiers this runs on are already the binding
+    # constraint. Make/model/year come from the brochure text regardless, so
+    # leaving this off costs only the angle and colour, not searchability.
+    media_classification_enabled: bool = False
+
+    # Per-file cap for admin image uploads, in megabytes. The BRD asks for this
+    # to be configurable; the default is sized for photography rather than for
+    # the 15 GB in that document, which is video territory and would need a
+    # resumable/chunked upload rather than a request body.
+    media_max_upload_mb: int = 64
+
+    # Optional server-side TTS (BR-API-02). "none" disables it and the client
+    # falls back to the browser's speechSynthesis, which is the default path.
+    tts_provider: str = "none"          # none | google | azure
+    tts_api_key: str = ""
+    tts_api_url: str = ""
+    tts_timeout_seconds: int = 20
+    tts_max_chars: int = 3000
+
     # Qdrant vector database
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "gaadiiq_listings"

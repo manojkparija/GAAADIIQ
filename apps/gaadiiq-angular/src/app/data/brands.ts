@@ -10,7 +10,12 @@ const CDN = 'https://cdn.jsdelivr.net/gh/filippofilip95/car-logos-dataset@latest
 export const BRANDS: Brand[] = [
   { name: 'Tata',          slug: 'tata',          logo: `${CDN}/tata.png`,          country: 'India'   },
   { name: 'Maruti Suzuki', slug: 'maruti-suzuki',  logo: `${CDN}/suzuki.png`,        country: 'India'   },
-  { name: 'Mahindra',      slug: 'mahindra',       logo: `${CDN}/mahindra.png`,      country: 'India'   },
+  // Local rather than the CDN: that dataset's Mahindra thumbnail is the older
+  // mark set beneath a wordmark, so at grid size the mark itself is a few
+  // pixels tall and the wordmark is unreadable — it is visibly the faintest
+  // tile in a row of crisp ones. The local SVG is the mark alone and stays
+  // sharp at any size.
+  { name: 'Mahindra',      slug: 'mahindra',       logo: 'assets/brand-logos/mahindra.svg', country: 'India' },
   { name: 'Nissan',        slug: 'nissan',         logo: `${CDN}/nissan.png`,        country: 'Japan'   },
   { name: 'Hyundai',       slug: 'hyundai',        logo: `${CDN}/hyundai.png`,       country: 'Korea'   },
   { name: 'Toyota',        slug: 'toyota',         logo: `${CDN}/toyota.png`,        country: 'Japan'   },

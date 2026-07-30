@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -8,7 +8,11 @@ import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { CityService } from '../../services/city.service';
 import { ApiService } from '../../services/api.service';
+import { OfflineQueueService } from '../../services/offline-queue.service';
+import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../services/voice-diagnosis.service';
+import { VoiceModeComponent, VoiceSessionResult } from '../../components/voice-mode/voice-mode.component';
 import { firstValueFrom } from 'rxjs';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 interface ServiceCenter {
   name: string;
@@ -188,17 +192,17 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
 @Component({
   selector: 'app-vehicle-diagnosis',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent],
   templateUrl: './vehicle-diagnosis.component.html',
   styleUrl: './vehicle-diagnosis.component.scss',
 })
-export class VehicleDiagnosisComponent {
+export class VehicleDiagnosisComponent implements OnDestroy {
   step = signal(1);
   totalSteps = 4;
 
   // Step 1 — Vehicle details
   form = {
-    manufacturer: '', model: '', variant: '', model_year: new Date().getFullYear() - 2,
+    manufacturer: '', model: '', variant: '', model_year: String(new Date().getFullYear() - 2),
     fuel_type: '', transmission: '', odometer_km: null as number | null,
   };
 
@@ -223,7 +227,7 @@ export class VehicleDiagnosisComponent {
     { value: 'critical', label: 'Critical', desc: 'Dangerous — do not drive' },
   ];
 
-  years = Array.from({ length: 35 }, (_, i) => new Date().getFullYear() - i);
+  years = Array.from({ length: 35 }, (_, i) => String(new Date().getFullYear() - i));
 
   get models(): string[] {
     return MODELS_BY_MAKE[this.form.manufacturer] ?? [];
@@ -278,6 +282,81 @@ export class VehicleDiagnosisComponent {
     this.imageThumbs.set([]);
   }
 
+  // ── Maintenance history (BR-IR-07) ────────────────────────────────────────
+
+  maintenanceHistory = signal<{ item: string; date: string; odometer_km: number | null }[]>([]);
+  newMaintItem = '';
+  newMaintDate = '';
+  newMaintOdo: number | null = null;
+
+  addMaintenanceEntry() {
+    const item = this.newMaintItem.trim();
+    if (!item) return;
+    // Server caps at 20; stop here so the request cannot 422.
+    if (this.maintenanceHistory().length >= 20) return;
+    this.maintenanceHistory.update(list => [
+      ...list,
+      { item, date: this.newMaintDate.trim(), odometer_km: this.newMaintOdo },
+    ]);
+    this.newMaintItem = '';
+    this.newMaintDate = '';
+    this.newMaintOdo = null;
+  }
+
+  removeMaintenanceEntry(index: number) {
+    this.maintenanceHistory.update(list => list.filter((_, i) => i !== index));
+  }
+
+  // ── Audio / video attachments (TC-F-12, TC-F-13) ─────────────────────────
+
+  selectedAudio = signal<File | null>(null);
+  selectedVideo = signal<File | null>(null);
+
+  // Kept in step with the server-side caps in routers/upload.py.
+  private readonly MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+  private readonly MAX_VIDEO_BYTES = 75 * 1024 * 1024;
+
+  mediaError = signal('');
+
+  onAudioChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (file && file.size > this.MAX_AUDIO_BYTES) {
+      this.mediaError.set('Audio must be under 25 MB.');
+      input.value = '';
+      return;
+    }
+    this.mediaError.set('');
+    this.selectedAudio.set(file);
+  }
+
+  onVideoChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (file && file.size > this.MAX_VIDEO_BYTES) {
+      this.mediaError.set('Video must be under 75 MB.');
+      input.value = '';
+      return;
+    }
+    this.mediaError.set('');
+    this.selectedVideo.set(file);
+  }
+
+  clearAudio(event: MouseEvent) {
+    event.stopPropagation();
+    this.selectedAudio.set(null);
+  }
+
+  clearVideo(event: MouseEvent) {
+    event.stopPropagation();
+    this.selectedVideo.set(null);
+  }
+
+  formatBytes(n: number): string {
+    if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    return `${Math.round(n / 1024)} KB`;
+  }
+
   serviceCenterModal = signal(false);
   nearbyServiceCenters = signal<ServiceCenter[]>([]);
 
@@ -286,6 +365,25 @@ export class VehicleDiagnosisComponent {
   history = signal<any[]>([]);
   historyLoading = signal(false);
 
+  // Voice input
+  voiceLanguages = VOICE_LANGUAGES;
+  voiceLangOpen = signal(false);
+  showVoiceMode = signal(false);
+  private _voiceDetectedLang = 'en-IN';
+
+  /**
+   * How this diagnosis was entered. Drives whether the report is spoken
+   * unprompted: 'voice' auto-plays, 'manual' stays silent until the user
+   * asks for audio.
+   */
+  inputMode = signal<'manual' | 'voice'>('manual');
+
+  /** User explicitly chose the typed form. */
+  chooseManualMode() {
+    this.inputMode.set('manual');
+    this.voice.stopSpeaking();
+  }
+
   constructor(
     private seo: SeoService,
     public diagSvc: DiagnosisService,
@@ -293,11 +391,26 @@ export class VehicleDiagnosisComponent {
     private sb: SupabaseService,
     public city: CityService,
     private api: ApiService,
+    public voice: VoiceDiagnosisService,
+    public offline: OfflineQueueService,
   ) {
     seo.setPage(
       'AI Vehicle Diagnosis',
       'Describe your car problem and get an instant AI-powered preliminary diagnosis with repair cost estimates.',
     );
+
+    // Auto-play TTS when a new diagnosis report arrives (respects mute preference)
+    effect(() => {
+      const report = this.diagSvc.report();
+      if (!report || this.step() !== 4 || this.diagSvc.loading()) return;
+
+      // Only speak the report unprompted when the user chose the voice flow.
+      // Someone who filled the form by hand is looking at the screen — reading
+      // it aloud at them is intrusive. They can still tap play on the TTS bar.
+      if (this.inputMode() !== 'voice') return;
+
+      this.voice.speak(this._buildTtsText(report));
+    });
   }
 
   openHistory() {
@@ -309,7 +422,118 @@ export class VehicleDiagnosisComponent {
     });
   }
 
-  closeHistory() { this.showHistory.set(false); }
+  closeHistory() {
+    this.showHistory.set(false);
+    this.historyDetail.set(null);
+    this.historyDetailError.set('');
+  }
+
+  // ── Past diagnosis detail (BR-UX-03) ──────────────────────────────────────
+
+  historyDetail = signal<any | null>(null);
+  historyDetailLoading = signal(false);
+  historyDetailError = signal('');
+
+  /** Open one past report in full. The list stays mounted behind the detail. */
+  openHistoryDetail(id: string) {
+    this.historyDetail.set(null);
+    this.historyDetailError.set('');
+    this.historyDetailLoading.set(true);
+    this.diagSvc.getDiagnosis(id).subscribe({
+      next: (report) => {
+        this.historyDetail.set(report);
+        this.historyDetailLoading.set(false);
+      },
+      error: (err) => {
+        this.historyDetailLoading.set(false);
+        this.historyDetailError.set(
+          err?.status === 403
+            ? 'You do not have access to this diagnosis.'
+            : err?.status === 404
+              ? 'This diagnosis is no longer available.'
+              : 'Could not load this diagnosis. Please try again.'
+        );
+      },
+    });
+  }
+
+  // ── DPDP controls (BR-SEC-05, BR-SEC-06) ──────────────────────────────────
+
+  deleteBusy = signal(false);
+  deleteMessage = signal('');
+  confirmDeleteId = signal<string | null>(null);
+  confirmVoiceWipe = signal(false);
+
+  askDeleteDiagnosis(id: string) {
+    this.confirmDeleteId.set(id);
+    this.deleteMessage.set('');
+  }
+
+  cancelDelete() {
+    this.confirmDeleteId.set(null);
+    this.confirmVoiceWipe.set(false);
+  }
+
+  /** Delete one saved report, then refresh the list (BR-SEC-05). */
+  confirmDeleteDiagnosis() {
+    const id = this.confirmDeleteId();
+    if (!id) return;
+    this.deleteBusy.set(true);
+    this.diagSvc.deleteDiagnosis(id).subscribe({
+      next: () => {
+        this.deleteBusy.set(false);
+        this.confirmDeleteId.set(null);
+        this.historyDetail.set(null);
+        this.deleteMessage.set('Diagnosis deleted.');
+        this.openHistory();
+      },
+      error: () => {
+        this.deleteBusy.set(false);
+        this.confirmDeleteId.set(null);
+        this.deleteMessage.set('Could not delete that diagnosis. Please try again.');
+      },
+    });
+  }
+
+  askVoiceWipe() {
+    this.confirmVoiceWipe.set(true);
+    this.deleteMessage.set('');
+  }
+
+  /** Erase all stored voice data and revoke consent locally too (BR-SEC-06). */
+  confirmVoiceDataWipe() {
+    this.deleteBusy.set(true);
+    this.diagSvc.deleteVoiceData().subscribe({
+      next: (res) => {
+        this.deleteBusy.set(false);
+        this.confirmVoiceWipe.set(false);
+        // Server consent is revoked; clear the local copy so the notice is
+        // shown again before any further capture.
+        this.voice.revokeConsent();
+        this.deleteMessage.set(
+          `Deleted ${res.transcripts_deleted} voice transcript(s) across ` +
+          `${res.conversations_deleted} conversation(s). Microphone consent has been withdrawn.`
+        );
+      },
+      error: () => {
+        this.deleteBusy.set(false);
+        this.confirmVoiceWipe.set(false);
+        this.deleteMessage.set('Could not delete your voice data. Please try again.');
+      },
+    });
+  }
+
+  /** Back to the list without closing the panel. */
+  closeHistoryDetail() {
+    this.historyDetail.set(null);
+    this.historyDetailError.set('');
+  }
+
+  /** Read a past report aloud, reusing the report TTS text builder. */
+  speakHistoryDetail() {
+    const report = this.historyDetail();
+    if (report) this.voice.speak(this._buildTtsText(report));
+  }
 
   toggleWarningLight(light: string) {
     this.selectedWarningLights.update(list =>
@@ -346,11 +570,30 @@ export class VehicleDiagnosisComponent {
       }
     }
 
+    // Upload audio / video attachments (non-fatal: a failed upload must not
+    // block the diagnosis itself).
+    let audioUrl: string | undefined;
+    let videoUrl: string | undefined;
+    const audioFile = this.selectedAudio();
+    if (audioFile) {
+      try {
+        const res = await firstValueFrom(this.api.uploadDiagnosisAudio(audioFile));
+        audioUrl = res?.url;
+      } catch { /* proceed without the recording */ }
+    }
+    const videoFile = this.selectedVideo();
+    if (videoFile) {
+      try {
+        const res = await firstValueFrom(this.api.uploadDiagnosisVideo(videoFile));
+        videoUrl = res?.url;
+      } catch { /* proceed without the clip */ }
+    }
+
     const request: DiagnoseRequest = {
       manufacturer: this.form.manufacturer,
       model: this.form.model,
       variant: this.form.variant || undefined,
-      model_year: this.form.model_year,
+      model_year: Number(this.form.model_year),
       fuel_type: this.form.fuel_type,
       transmission: this.form.transmission,
       odometer_km: this.form.odometer_km ?? undefined,
@@ -358,23 +601,54 @@ export class VehicleDiagnosisComponent {
       warning_lights: this.selectedWarningLights(),
       when_occurs: this.selectedWhenOccurs(),
       severity: this.severity,
+      maintenance_history: this.maintenanceHistory().length
+        ? this.maintenanceHistory().map(m => ({
+            item: m.item,
+            ...(m.date ? { date: m.date } : {}),
+            ...(m.odometer_km ? { odometer_km: m.odometer_km } : {}),
+          }))
+        : undefined,
       user_id: userId,
       image_urls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+      audio_url: audioUrl,
+      video_url: videoUrl,
+      detected_language: this._voiceDetectedLang !== 'en-IN' ? this._voiceDetectedLang : undefined,
     };
 
     this.step.set(4);
+
+    // Offline: queue the submission so it is not lost, and say so plainly
+    // rather than showing a failure the user can do nothing about (BR-UX-06).
+    if (!this.offline.online()) {
+      this.offline.enqueue(
+        `${this.api.baseUrl}/diagnosis/analyse`, 'POST', request
+      );
+      this.queuedOffline.set(true);
+      return;
+    }
+    this.queuedOffline.set(false);
+
     await this.diagSvc.analyse(request);
   }
 
+  /** True when the last submission was queued instead of sent (BR-UX-06). */
+  queuedOffline = signal(false);
+
   reset() {
     this.step.set(1);
-    this.form = { manufacturer: '', model: '', variant: '', model_year: new Date().getFullYear() - 2, fuel_type: '', transmission: '', odometer_km: null };
+    this.form = { manufacturer: '', model: '', variant: '', model_year: String(new Date().getFullYear() - 2), fuel_type: '', transmission: '', odometer_km: null };
     this.problemDescription = '';
     this.selectedWarningLights.set([]);
     this.selectedWhenOccurs.set([]);
     this.severity = 'medium';
     this.selectedImages.set([]);
     this.imageThumbs.set([]);
+    this.selectedAudio.set(null);
+    this.selectedVideo.set(null);
+    this.mediaError.set('');
+    this.inputMode.set('manual');
+    this.maintenanceHistory.set([]);
+    this.newMaintItem = ''; this.newMaintDate = ''; this.newMaintOdo = null;
     this.diagSvc.report.set(null);
     this.diagSvc.error.set(null);
   }
@@ -432,4 +706,138 @@ export class VehicleDiagnosisComponent {
   severityColor(s: string): string {
     return { low: '#10B981', medium: '#F59E0B', high: '#EF4444', critical: '#7C3AED' }[s] ?? '#6B7280';
   }
+
+  // ── Voice Mode ────────────────────────────────────────────────────────────
+
+  openVoiceMode() {
+    this.inputMode.set('voice');
+    this.showVoiceMode.set(true);
+  }
+
+  onVoiceCompleted(result: VoiceSessionResult) {
+    this.showVoiceMode.set(false);
+    this._voiceDetectedLang = result.detectedLanguage;
+
+    const v = result.vehicleInfo as any;
+    if (v.manufacturer) this.form.manufacturer = v.manufacturer;
+    if (v.model) this.form.model = v.model;
+    if (v.variant) this.form.variant = v.variant;
+    if (v.model_year) this.form.model_year = String(v.model_year);
+    if (v.fuel_type) this.form.fuel_type = v.fuel_type;
+    if (v.transmission) this.form.transmission = v.transmission;
+    if (v.odometer_km) this.form.odometer_km = v.odometer_km;
+
+    if (result.problemDescription) {
+      this.problemDescription = result.problemDescription;
+    }
+
+    // Jump to confirmation step if vehicle info is complete enough
+    if (v.manufacturer && v.model && v.fuel_type && v.transmission) {
+      this.step.set(3);
+    } else {
+      this.step.set(1);
+    }
+  }
+
+  onVoiceCancelled() {
+    // Backing out of voice mode means finishing by hand — don't then read
+    // the report aloud unprompted.
+    this.showVoiceMode.set(false);
+    this.inputMode.set('manual');
+  }
+
+  // ── Voice input (Step 2 mic) ──────────────────────────────────────────────
+
+  toggleVoice() {
+    if (this.voice.state() === 'listening') {
+      this.voice.stop();
+    } else {
+      this.voice.dismissError();
+      this.voice.start((finalText: string) => {
+        this.problemDescription = (this.problemDescription + finalText).slice(0, 2000);
+      });
+    }
+  }
+
+  selectVoiceLang(lang: VoiceLanguage) {
+    this.voice.selectLanguage(lang);
+    this.voiceLangOpen.set(false);
+  }
+
+  // ── Follow-up questions (BR-AI-10) ────────────────────────────────────────
+
+  /** Read the follow-up questions aloud, in the user's language. */
+  speakFollowUps() {
+    const report = this.diagSvc.report() as any;
+    const questions: string[] = report?.follow_up_questions ?? [];
+    if (!questions.length) return;
+    this.voice.speak(
+      'To narrow this down, please tell me: ' + questions.join('. ')
+    );
+  }
+
+  /**
+   * Return to step 2 so the user can add the missing detail, with the
+   * questions appended to the description as prompts to answer.
+   */
+  answerFollowUps() {
+    const report = this.diagSvc.report() as any;
+    const questions: string[] = report?.follow_up_questions ?? [];
+    if (questions.length) {
+      const block = questions.map(q => `\n- ${q} `).join('');
+      this.problemDescription = `${this.problemDescription.trim()}\n\nAdditional details:${block}`;
+    }
+    this.voice.stopSpeaking();
+    this.diagSvc.report.set(null);
+    this.step.set(2);
+  }
+
+  /** Re-run the diagnosis — used by the translation-failure banner. */
+  async retryDiagnosis() {
+    this.voice.stopSpeaking();
+    await this.submit();
+  }
+
+  /**
+   * Speak the current report on demand. Needed because the manual flow never
+   * auto-plays, so the replay control has nothing buffered to replay.
+   */
+  playReport() {
+    const report = this.diagSvc.report();
+    if (!report) return;
+    // An explicit tap on Listen overrides a stale mute preference; leaving it
+    // muted would make the button appear broken.
+    if (this.voice.muted()) this.voice.toggleMute();
+    this.voice.speak(this._buildTtsText(report));
+  }
+
+  private _buildTtsText(report: any): string {
+    const parts: string[] = [
+      `Preliminary diagnosis: ${report.preliminary_diagnosis}`,
+    ];
+    if (report.safe_to_drive === false) {
+      parts.push('Warning: Do not drive. Immediate professional inspection required.');
+    }
+    if (report.recommended_steps?.length) {
+      parts.push('Recommended next steps: ' + report.recommended_steps.join('. '));
+    }
+    // Ask the follow-ups aloud too — a driver listening hands-free would
+    // otherwise never learn the assessment was uncertain (BR-AI-10).
+    if (report.needs_more_info && report.follow_up_questions?.length) {
+      parts.push(
+        'To be more certain, please tell me: ' + report.follow_up_questions.join('. ')
+      );
+    }
+    return parts.join('. ');
+  }
+
+  ngOnDestroy() {
+    this.voice.destroy();
+  }
+
+  /** Names of the closest telltale candidates, for the "not sure" case. */
+  candidateNames(wl: { candidates?: { name: string }[] }): string {
+    return (wl.candidates ?? []).map(c => c.name).join(', ');
+  }
+
 }

@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -27,6 +28,7 @@ from routers import (  # noqa: E402
     admin,
     auth,
     bookings,
+    brochures,
     cars,
     dealers,
     diagnosis,
@@ -34,6 +36,7 @@ from routers import (  # noqa: E402
     insurance,
     listings,
     loans,
+    media_admin,
     notifications,
     otp,
     payments,
@@ -113,6 +116,37 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+@app.middleware("http")
+async def _unhandled_error_middleware(request: Request, call_next):
+    """
+    Turn an unhandled exception into a 500 the browser is allowed to read.
+
+    Starlette's ServerErrorMiddleware sits above CORSMiddleware, so a crash it
+    handles produces a 500 carrying no Access-Control-Allow-Origin header. The
+    browser then refuses to expose the response and reports a network failure,
+    which reaches the frontend as status 0 — indistinguishable from the API
+    being unreachable. A server-side traceback was surfacing in the UI as
+    "Could not reach the API", sending debugging to the wrong machine entirely.
+
+    ORDERING IS LOAD-BEARING: this must be registered BEFORE CORSMiddleware.
+    Starlette's add_middleware inserts at position 0, so the last registration
+    is the outermost layer — registering this after CORS would place it outside,
+    and the response would again go out without the header. test_error_cors.py
+    fails if the two are swapped.
+    """
+    try:
+        return await call_next(request)
+    except Exception:
+        # The traceback goes to the server log; the client gets a generic
+        # message. Exception text may name table or column internals, which
+        # belong in logs rather than in a browser.
+        _log.exception("Unhandled error on %s %s", request.method, request.url.path)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error. Check the API logs for the traceback."},
+        )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -179,6 +213,9 @@ app.include_router(payments.router)
 app.include_router(payments.subs_router)
 app.include_router(sentiment.router)
 app.include_router(diagnosis.router)
+app.include_router(brochures.router)
+app.include_router(brochures.media_router)
+app.include_router(media_admin.router)
 app.include_router(upload.router)
 app.include_router(insurance.router)
 

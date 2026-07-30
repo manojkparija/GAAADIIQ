@@ -23,7 +23,7 @@ from models.listing import Listing
 from models.price_alert import PriceAlert
 from models.user import User
 from schemas.listing import ListingCreate, ListingListOut, ListingOut, ListingUpdate
-from services import n8n, storage, valuation, vector_store
+from services import media_library, n8n, valuation, vector_store
 from services.notifications import notify_price_drop
 from services.search_index import search_index
 
@@ -301,10 +301,31 @@ async def upload_image(
             detail="Image must be under 10 MB",
         )
 
-    import io
-    url = storage.upload_image(io.BytesIO(contents), file.content_type)
+    # Through the media library rather than straight to the bucket, so the same
+    # photograph offered by a brochure and by a dealer resolves to one stored
+    # file instead of two. The library returns an existing row when it
+    # recognises the picture, exactly or as a re-encoding.
+    car = listing.car
+    media = await media_library.store_image(
+        db,
+        contents,
+        file.content_type or "image/jpeg",
+        key_prefix=f"listings/{listing.id}",
+        source_name=file.filename or "listing-upload",
+        make=getattr(car, "make", None),
+        model=getattr(car, "model", None),
+        variant=getattr(car, "variant", None),
+        model_year=getattr(car, "model_year", None) or getattr(car, "year", None),
+        category=getattr(car, "body_type", None),
+    )
+    await media_library.attach_to_listing(db, listing.id, media)
 
-    listing.image_urls = [*listing.image_urls, url]
+    # image_urls stays populated and stays the field the API returns. The link
+    # table is now the source of truth, but listings created before it exists
+    # still have URLs and nothing else, so reads must keep working for both —
+    # a hard cutover would blank the gallery of every existing listing.
+    listing.image_urls = await media_library.urls_for_listing(db, listing.id)
+
     await db.commit()
 
     result = await db.execute(

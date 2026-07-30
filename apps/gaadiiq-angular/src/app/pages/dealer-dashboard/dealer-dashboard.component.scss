@@ -31,7 +31,15 @@
 .dd-tab {
   padding: 0.5rem 1.25rem; border-radius: 50px; font-size: 0.875rem; font-weight: 600;
   background: var(--glass); border: 1px solid var(--glass-border); color: var(--muted); cursor: pointer; transition: all 0.2s;
-  &.active, &:hover { background: rgba(47,107,255,0.2); border-color: var(--primary); color: var(--teal); }
+  /* Hover and active were styled identically, so hovering an inactive tab
+     made it look selected. Active is now the filled brand gradient; hover is
+     a tint that hints at it without impersonating it. */
+  &:hover { background: linear-gradient(90deg, rgba(37,99,235,0.12), rgba(20,184,166,0.12)); border-color: #14B8A6; color: var(--text); }
+  &.active {
+    background: linear-gradient(90deg, #2563EB, #14B8A6);
+    border-color: transparent; color: #fff;
+  }
+  &.active:hover { background: linear-gradient(90deg, #1D4ED8, #0D9488); color: #fff; }
 }
 
 .dd-content { padding: 0 1.5rem; }
@@ -316,7 +324,9 @@
   padding: 0.3rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
   text-decoration: none; border: none; cursor: pointer; transition: opacity 0.2s;
   &:disabled { opacity: 0.5; cursor: not-allowed; }
-  &.btn-primary { background: var(--primary); color: #fff; }
+  &.btn-primary { background: linear-gradient(90deg, #2563EB, #14B8A6); color: #fff; }
+  &.btn-primary:hover { background: linear-gradient(90deg, #1D4ED8, #0D9488); }
+  /* WhatsApp keeps its own brand green — users identify the channel by it. */
   &.btn-whatsapp { background: #25D366; color: #fff; }
   &.btn-outline {
     background: transparent; color: var(--primary);

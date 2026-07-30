@@ -1,0 +1,596 @@
+:host {
+  --vm-bg: #0d1117;
+  --vm-surface: #161b22;
+  --vm-border: #30363d;
+  --vm-accent: #58a6ff;
+  --vm-danger: #f85149;
+  --vm-text: #e6edf3;
+  --vm-sub: #8b949e;
+  --vm-ai-bg: #1c2128;
+  --vm-user-bg: #0d419d;
+}
+
+.vm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+
+  &.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+
+.vm-panel {
+  background: var(--vm-bg);
+  border: 1px solid var(--vm-border);
+  border-radius: 20px;
+  width: min(480px, 95vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.vm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--vm-border);
+}
+
+.vm-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--vm-text);
+  letter-spacing: 0.02em;
+}
+
+.vm-close {
+  background: none;
+  border: none;
+  color: var(--vm-sub);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover { color: var(--vm-text); background: var(--vm-border); }
+}
+
+// ── Consent screen ───────────────────────────────────────────────────────────
+
+.vm-consent {
+  padding: 28px 24px 12px;
+  text-align: center;
+}
+
+.vm-consent-icon {
+  font-size: 2.6rem;
+  margin-bottom: 12px;
+}
+
+.vm-consent-title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--vm-text);
+}
+
+.vm-consent-body {
+  margin: 0 0 22px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--vm-sub);
+}
+
+.vm-consent-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vm-consent-terms {
+  margin: 0 0 16px;
+  text-align: left;
+
+  dt {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--vm-accent);
+    margin-top: 12px;
+  }
+
+  dd {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--vm-sub);
+  }
+}
+
+.vm-consent-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  font-size: 0.78rem;
+
+  a { color: var(--vm-accent); }
+}
+
+.vm-consent-version { color: var(--vm-sub); }
+
+// ── Server-STT recording bar ─────────────────────────────────────────────────
+
+.vm-record-bar {
+  margin: 0 20px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  border-radius: 12px;
+}
+
+.vm-record-timer {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--vm-danger);
+  font-variant-numeric: tabular-nums;
+}
+
+.vm-btn--sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+// ── Language picker ──────────────────────────────────────────────────────────
+
+.vm-lang-picker {
+  padding: 24px 20px 8px;
+  overflow-y: auto;
+}
+
+.vm-lang-prompt {
+  margin: 0 0 18px;
+  text-align: center;
+  color: var(--vm-text);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.vm-lang-auto {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--vm-accent);
+  background: rgba(88, 166, 255, 0.08);
+  color: var(--vm-accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(88, 166, 255, 0.18); }
+}
+
+.vm-lang-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.vm-lang-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 14px 10px;
+  background: var(--vm-surface);
+  border: 1px solid var(--vm-border);
+  border-radius: 12px;
+  color: var(--vm-text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+
+  &:hover {
+    border-color: var(--vm-accent);
+    background: rgba(88, 166, 255, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &:active { transform: translateY(0); }
+}
+
+.vm-lang-native {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.vm-lang-label {
+  font-size: 0.75rem;
+  color: var(--vm-sub);
+}
+
+.vm-lang-change {
+  background: none;
+  border: none;
+  color: var(--vm-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 5px;
+  text-decoration: underline;
+
+  &:hover { background: rgba(88, 166, 255, 0.15); }
+}
+
+// ── Visual / Waveform ────────────────────────────────────────────────────────
+
+.vm-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px 20px;
+  gap: 12px;
+  position: relative;
+}
+
+.vm-pulse-ring {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid var(--vm-accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  .listening & {
+    opacity: 1;
+    animation: pulse-ring 1.4s ease-out infinite;
+  }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.9); opacity: 0.6; }
+  70%  { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.vm-mic-icon {
+  font-size: 2.8rem;
+  z-index: 1;
+
+  .listening & {
+    animation: mic-pop 0.8s ease infinite alternate;
+  }
+}
+
+@keyframes mic-pop {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+
+.vm-status-label {
+  font-size: 0.85rem;
+  color: var(--vm-sub);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  .listening & { color: var(--vm-accent); }
+}
+
+// ── Language badge ────────────────────────────────────────────────────────────
+
+.vm-lang-badge {
+  margin: 0 20px 8px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: var(--vm-accent);
+}
+
+// ── Captured chips ───────────────────────────────────────────────────────────
+
+.vm-captured {
+  margin: 0 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vm-captured-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vm-sub);
+}
+
+.vm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vm-chip {
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: rgba(63, 185, 80, 0.15);
+  border: 1px solid rgba(63, 185, 80, 0.35);
+  color: #56d364;
+}
+
+// ── AI bubble ─────────────────────────────────────────────────────────────────
+
+.vm-ai-bubble {
+  margin: 0 20px 12px;
+  background: var(--vm-ai-bg);
+  border: 1px solid var(--vm-border);
+  border-radius: 12px;
+  padding: 14px 40px 14px 16px;
+  color: var(--vm-text);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  position: relative;
+
+  p { margin: 0; }
+}
+
+.vm-replay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 1; }
+}
+
+// ── Transcript ────────────────────────────────────────────────────────────────
+
+.vm-transcript {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vm-msg {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 85%;
+
+  &--ai {
+    background: var(--vm-ai-bg);
+    color: var(--vm-text);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+
+  &--user {
+    background: var(--vm-user-bg);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+}
+
+// ── Interim / Error ───────────────────────────────────────────────────────────
+
+.vm-interim {
+  margin: 0 20px 8px;
+  font-size: 0.85rem;
+  color: var(--vm-sub);
+  font-style: italic;
+  min-height: 20px;
+}
+
+.vm-error {
+  margin: 0 20px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  border-radius: 8px;
+  font-size: 0.83rem;
+  color: var(--vm-danger);
+
+  button {
+    background: none;
+    border: none;
+    color: var(--vm-danger);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+.vm-actions {
+  padding: 16px 20px;
+  border-top: 1px solid var(--vm-border);
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.vm-btn {
+  padding: 12px 28px;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:active { transform: scale(0.97); }
+
+  &--primary {
+    background: var(--vm-accent);
+    color: #000;
+
+    &:hover { opacity: 0.88; }
+  }
+
+  &--danger {
+    background: rgba(248, 81, 73, 0.15);
+    color: var(--vm-danger);
+    border: 1px solid rgba(248, 81, 73, 0.35);
+
+    &:hover { background: rgba(248, 81, 73, 0.25); }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: var(--vm-sub);
+    border: 1px solid var(--vm-border);
+
+    &:hover { background: var(--vm-surface); color: var(--vm-text); }
+  }
+}
+
+// Keyboard focus must stay visible on every interactive control (a11y).
+.vm-btn:focus-visible,
+.vm-lang-option:focus-visible,
+.vm-close:focus-visible,
+.vm-replay:focus-visible,
+.vm-lang-change:focus-visible {
+  outline: 2px solid var(--vm-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vm-pulse-ring, .vm-mic-icon { animation: none !important; }
+  .vm-overlay, .vm-btn, .vm-lang-option { transition: none !important; }
+}
+
+// ── Driving mode (BR-VA-08, BR-VA-09) ────────────────────────────────────────
+//
+// For a driver the screen is a distraction. Targets grow past the 48px minimum
+// to something glanceable, text scales up, and the transcript is hidden — the
+// conversation is carried by voice, not by reading.
+
+.vm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vm-driving-toggle {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--vm-border);
+  background: transparent;
+  color: var(--vm-sub);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover { color: var(--vm-text); border-color: var(--vm-accent); }
+
+  &.on {
+    background: rgba(88, 166, 255, 0.18);
+    border-color: var(--vm-accent);
+    color: var(--vm-accent);
+  }
+}
+
+.vm-overlay.driving {
+  .vm-panel {
+    width: min(560px, 100vw);
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  // Everything the driver may need to hit gets a large, forgiving target.
+  .vm-btn {
+    min-height: 68px;
+    font-size: 1.15rem;
+    padding: 18px 28px;
+    border-radius: 16px;
+  }
+
+  .vm-btn--sm {
+    min-height: 60px;
+    font-size: 1.05rem;
+  }
+
+  .vm-mic-icon { font-size: 4.6rem; }
+
+  .vm-pulse-ring {
+    width: 132px;
+    height: 132px;
+    border-width: 4px;
+  }
+
+  .vm-visual { padding: 44px 20px 28px; }
+
+  .vm-status-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  // The assistant's current question is the one thing worth glancing at.
+  .vm-ai-bubble {
+    font-size: 1.3rem;
+    line-height: 1.5;
+    padding: 22px 56px 22px 22px;
+  }
+
+  .vm-replay {
+    font-size: 1.6rem;
+    top: 12px;
+    right: 12px;
+    padding: 8px;
+  }
+
+  .vm-chip { font-size: 0.95rem; padding: 8px 14px; }
+  .vm-interim { font-size: 1.05rem; }
+  .vm-record-timer { font-size: 1.15rem; }
+
+  .vm-lang-option {
+    min-height: 76px;
+    .vm-lang-native { font-size: 1.25rem; }
+  }
+
+  .vm-actions { padding: 20px; }
+}

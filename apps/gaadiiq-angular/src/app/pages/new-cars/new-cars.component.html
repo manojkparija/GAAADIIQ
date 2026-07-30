@@ -231,7 +231,7 @@
             @for (model of newCarModels(); track model.make + model.model) {
               <div class="model-card glass-card">
                 <div class="model-img-wrap">
-                  <img [src]="model.image || placeholder" [alt]="model.make + ' ' + model.model"
+                  <img [src]="imageFor(model)" [alt]="model.make + ' ' + model.model"
                     class="model-img" (error)="onImgError($event)" loading="lazy" />
                   @if (model.badge) {
                     <span class="model-badge badge-featured">{{ model.badge }}</span>
@@ -292,7 +292,7 @@
       @for (car of newLaunches(); track car.make + car.model) {
         <div class="launch-card glass-card">
           <div class="launch-img-wrap">
-            <img [src]="car.image" [alt]="car.make + ' ' + car.model"
+            <img [src]="imageFor(car)" [alt]="car.make + ' ' + car.model"
               class="launch-img" (error)="onImgError($event)" loading="lazy" />
             @if (car.isNew) {
               <span class="launch-new-badge">NEW</span>
@@ -323,7 +323,7 @@
     <div class="upcoming-list">
       @for (car of upcomingCars; track car.make + car.model) {
         <div class="upcoming-card glass-card">
-          <img [src]="car.image" [alt]="car.make + ' ' + car.model"
+          <img [src]="imageFor(car)" [alt]="car.make + ' ' + car.model"
             class="upcoming-img" (error)="onImgError($event)" loading="lazy" />
           <div class="upcoming-info">
             <span class="upcoming-expected">Expected: {{ car.expectedDate }}</span>
