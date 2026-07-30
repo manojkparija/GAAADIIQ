@@ -1026,3 +1026,28 @@ class TestImageClassificationSuite:
 
         assert await pdf_ingest.classify_images([]) == []
         assert called["n"] == 0
+
+    def test_a_flat_colour_image_has_no_perceptual_signature(self):
+        """
+        Regression: every flat image hashed identically, so a brochure's red,
+        blue and white colour swatches deduplicated into one stored picture.
+        A uniform image has no gradient to encode, so it offers no signature
+        and exact hashing decides instead.
+        """
+        from PIL import Image
+
+        def flat(colour):
+            buf = io.BytesIO()
+            Image.new("RGB", (400, 300), colour).save(buf, "PNG")
+            return buf.getvalue()
+
+        red, blue = flat((220, 20, 20)), flat((20, 20, 220))
+
+        assert pdf_ingest.perceptual_hash(red) is None
+        assert pdf_ingest.perceptual_hash(blue) is None
+        # And a missing signature must never compare as a match.
+        assert pdf_ingest.hamming_distance(
+            pdf_ingest.perceptual_hash(red), pdf_ingest.perceptual_hash(blue)
+        ) is None
+        # The images are still distinguishable by their exact bytes.
+        assert hashlib.sha256(red).hexdigest() != hashlib.sha256(blue).hexdigest()

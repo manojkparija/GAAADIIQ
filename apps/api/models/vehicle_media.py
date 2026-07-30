@@ -24,6 +24,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     DateTime,
     Enum,
     Float,
@@ -55,6 +56,41 @@ class MediaKind(str, enum.Enum):
     colour_swatch = "colour_swatch"
     feature = "feature"
     logo = "logo"
+
+
+class ImageCategory(str, enum.Enum):
+    """
+    What an admin says a picture is, from the catalogue's fixed vocabulary.
+
+    Distinct from MediaKind/MediaView, which are what a vision model guessed.
+    Both exist because they answer to different authorities: a model's guess is
+    useful for sorting a thousand brochure extracts, and an admin's choice is
+    what the model page filters on. Conflating them would let a misclassified
+    image change what a customer sees.
+
+    The list is the one the business specified — deliberately finer than the
+    model's coarse kind/view, because a gallery needs "boot space" and "engine
+    bay" as separate tabs and a model cannot reliably tell those apart.
+    """
+    exterior_front = "exterior_front"
+    exterior_rear = "exterior_rear"
+    exterior_left = "exterior_left"
+    exterior_right = "exterior_right"
+    front_quarter = "front_quarter"
+    rear_quarter = "rear_quarter"
+    interior_dashboard = "interior_dashboard"
+    steering = "steering"
+    infotainment = "infotainment"
+    seats = "seats"
+    boot_space = "boot_space"
+    engine_bay = "engine_bay"
+    wheels = "wheels"
+    sunroof = "sunroof"
+    safety = "safety"
+    accessories = "accessories"
+    gallery = "gallery"
+    three_sixty = "three_sixty"
+    video = "video"
 
 
 class MediaView(str, enum.Enum):
@@ -225,6 +261,62 @@ class VehicleMedia(Base):
     extracted_vehicle_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("extracted_vehicles.id", ondelete="SET NULL"),
         nullable=True, index=True,
+    )
+
+    # ── Admin-supplied catalogue metadata ────────────────────────────────────
+    # The category an admin chose, as opposed to kind/view which a model
+    # guessed. Nullable because brochure extracts arrive without one.
+    image_category: Mapped[ImageCategory | None] = mapped_column(
+        Enum(ImageCategory, name="image_category"), nullable=True, index=True
+    )
+    fuel_type: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    transmission: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
+    # The hero shot for a vehicle. Enforced per (make, model, variant) in the
+    # upload path rather than by a constraint: "primary" is only meaningful
+    # within a vehicle, and a partial unique index over three nullable columns
+    # behaves differently on every backend.
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # ── SEO and accessibility ────────────────────────────────────────────────
+    # alt_text is an accessibility requirement before it is an SEO one: a
+    # gallery of unlabelled images is unusable with a screen reader.
+    alt_text: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    seo_keywords: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    ai_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # ── Provenance and rights ────────────────────────────────────────────────
+    # Where the file came from and on what terms. Worth recording at upload:
+    # reconstructing the licence of a photograph after the fact is usually
+    # impossible, and publishing one without it is the expensive kind of
+    # mistake.
+    source: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    copyright: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    license: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Camera/EXIF block as the file carried it, kept whole rather than parsed
+    # into columns: the interesting fields differ per camera, and most are null.
+    exif: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    # Nullable and SET NULL for the same reason as the ingestion job's: the
+    # image is a record that outlives the account that uploaded it.
+    uploaded_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+
+    # When the enrichment backfill last processed this row.
+    #
+    # A marker is needed because "has no perceptual hash" and "has no make" are
+    # both legitimate resting states — a flat colour swatch offers no signature
+    # to hash, and an image uploaded against a listing has no brochure to take
+    # a make from. Selecting on those nulls made the backfill pick the same
+    # rows up on every run and re-read every file from storage forever.
+    #
+    # Null it to force a row through again.
+    enriched_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
     )
 
     job_id: Mapped[uuid.UUID | None] = mapped_column(

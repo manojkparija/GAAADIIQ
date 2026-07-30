@@ -14,6 +14,7 @@ from .user import User
 from .vehicle_diagnosis import VehicleDiagnosis
 from .vehicle_media import (
     ExtractedVehicle,
+    ImageCategory,
     ListingMedia,
     MediaKind,
     MediaView,
@@ -28,5 +29,5 @@ __all__ = [
     "CustomerActivity", "CustomerIntentScore",
     "VehicleDiagnosis", "DiagnosisConversation", "VoiceTranscript", "DiagnosisAuditEvent",
     "PdfIngestionJob", "VehicleMedia", "ExtractedVehicle", "ListingMedia",
-    "MediaKind", "MediaView",
+    "MediaKind", "MediaView", "ImageCategory",
 ]

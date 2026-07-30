@@ -18,9 +18,21 @@ from services.media_storage import get_storage
 
 
 def _png(colour=(200, 30, 30), size=(600, 400)) -> bytes:
-    from PIL import Image
+    """
+    A picture with structure, not a flat fill.
+
+    A uniform image has no gradient anywhere and so no perceptual signature to
+    compute — correct behaviour, covered by its own test below, but a useless
+    fixture for the hashing assertions here.
+    """
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", size, (245, 245, 248))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([50, 120, 550, 280], 30, fill=colour)
+    d.ellipse([110, 240, 200, 330], fill=(30, 30, 30))
+    d.ellipse([400, 240, 490, 330], fill=(30, 30, 30))
     buf = io.BytesIO()
-    Image.new("RGB", size, colour).save(buf, "PNG")
+    im.save(buf, "PNG")
     return buf.getvalue()
 
 
@@ -187,3 +199,52 @@ async def test_a_row_with_no_job_is_still_hashed_and_thumbnailed(session):
     assert row.thumbnail_key is not None
     assert row.phash is not None
     assert row.make is None, "nothing to infer tags from, and none invented"
+
+
+@pytest.mark.asyncio
+async def test_a_flat_swatch_is_not_reprocessed_forever(session):
+    """
+    Regression: the run selected rows where phash was null, but a flat colour
+    swatch legitimately has no perceptual signature — so every run picked it up
+    again and re-read the file from storage. Rows are marked as enriched
+    instead of having work inferred from nulls that can never be filled.
+    """
+    storage = get_storage()
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new("RGB", (300, 200), (220, 20, 20)).save(buf, "PNG")
+
+    key = "brochures/legacy/swatch.png"
+    await storage.save(key, buf.getvalue(), "image/png")
+    row = VehicleMedia(
+        storage_key=key, content_type="image/png", size_bytes=100,
+        source_pdf_name="SWATCH.pdf",
+    )
+    session.add(row)
+    await session.commit()
+
+    first = await media_backfill.backfill_media(session)
+    second = await media_backfill.backfill_media(session)
+
+    await session.refresh(row)
+    assert first.scanned == 1
+    assert row.phash is None, "a uniform image offers no signature to hash"
+    assert row.enriched_at is not None
+    assert second.scanned == 0, "a processed row must not be selected again"
+
+
+@pytest.mark.asyncio
+async def test_a_vanished_file_is_not_retried_forever(session):
+    """The same trap: an unreadable row cannot improve, so stop re-reading it."""
+    broken = VehicleMedia(
+        storage_key="brochures/legacy/gone.png", content_type="image/png",
+        size_bytes=1, source_pdf_name="OLD.pdf",
+    )
+    session.add(broken)
+    await session.commit()
+
+    first = await media_backfill.backfill_media(session)
+    second = await media_backfill.backfill_media(session)
+
+    assert first.unreadable == 1
+    assert second.scanned == 0

@@ -25,8 +25,9 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.vehicle_media import ExtractedVehicle, VehicleMedia
@@ -64,13 +65,16 @@ class BackfillReport:
 
 
 def _needs_work(m: VehicleMedia) -> bool:
-    return (
-        m.thumbnail_key is None
-        or m.phash is None
-        or m.content_hash is None
-        or m.make is None
-        or m.model is None
-    )
+    """
+    Whether a row has been through enrichment at all.
+
+    Deliberately not "is any enriched field null". Several of them are
+    legitimately null forever — a flat colour swatch has no perceptual
+    signature to compute, and an image uploaded against a listing has no
+    brochure to take a make from — so selecting on those nulls made every run
+    pick the same rows up again and re-read every file from storage.
+    """
+    return m.enriched_at is None
 
 
 async def _tags_for_job(db: AsyncSession, job_id) -> dict:
@@ -123,15 +127,7 @@ async def backfill_media(
 
     stmt = select(VehicleMedia).order_by(VehicleMedia.created_at)
     if not reindex_all:
-        stmt = stmt.where(
-            or_(
-                VehicleMedia.thumbnail_key.is_(None),
-                VehicleMedia.phash.is_(None),
-                VehicleMedia.content_hash.is_(None),
-                VehicleMedia.make.is_(None),
-                VehicleMedia.model.is_(None),
-            )
-        )
+        stmt = stmt.where(VehicleMedia.enriched_at.is_(None))
     if limit:
         stmt = stmt.limit(limit)
 
@@ -167,8 +163,11 @@ async def backfill_media(
                 data = await storage.load(m.storage_key)
             except StorageError as exc:
                 # A row whose file is gone is a broken row, not a broken run.
+                # Still marked: retrying a vanished file on every future run
+                # would re-read storage forever for a row that cannot improve.
                 report.unreadable += 1
                 report.errors.append(f"{m.storage_key}: {exc}")
+                m.enriched_at = datetime.now(timezone.utc)
                 pending.append(m)
                 continue
 
@@ -200,6 +199,11 @@ async def backfill_media(
                     # will simply be picked up again if the decoder improves.
                     report.unreadable += 1
 
+        # Marked whatever the outcome, including for a row whose file has
+        # vanished: retrying an unreadable file on every future run would
+        # re-read storage forever for a row that cannot improve. Null the
+        # column to force one back through.
+        m.enriched_at = datetime.now(timezone.utc)
         pending.append(m)
 
         # Committed per batch so an interrupted run keeps the work it has done.

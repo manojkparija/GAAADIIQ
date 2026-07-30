@@ -132,6 +132,12 @@ class Settings(BaseSettings):
     # leaving this off costs only the angle and colour, not searchability.
     media_classification_enabled: bool = False
 
+    # Per-file cap for admin image uploads, in megabytes. The BRD asks for this
+    # to be configurable; the default is sized for photography rather than for
+    # the 15 GB in that document, which is video territory and would need a
+    # resumable/chunked upload rather than a request body.
+    media_max_upload_mb: int = 64
+
     # Optional server-side TTS (BR-API-02). "none" disables it and the client
     # falls back to the browser's speechSynthesis, which is the default path.
     tts_provider: str = "none"          # none | google | azure

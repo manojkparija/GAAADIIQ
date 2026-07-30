@@ -246,6 +246,16 @@ def perceptual_hash(data: bytes) -> str | None:
                 bits <<= 1
                 if pixels[base + col] > pixels[base + col + 1]:
                     bits |= 1
+
+        # A flat image — a colour swatch, a plain background — has no gradient
+        # anywhere, so every comparison comes out the same and the hash is all
+        # zeros or all ones. Every such image would then match every other one,
+        # and a brochure's red, blue and white swatches would collapse into a
+        # single stored picture. There is no perceptual signature to offer, so
+        # say so and let exact hashing decide.
+        if bits in (0, (1 << 64) - 1):
+            return None
+
         return f"{bits:016x}"
     except Exception as exc:
         # A hash is an optimisation, never a reason to lose the image.
@@ -978,6 +988,18 @@ def sniff_image(data: bytes) -> tuple[str, str] | None:
         return "gif", "image/gif"
     if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return "webp", "image/webp"
+    # TIFF: II* (little-endian) or MM\0* (big-endian). Common in supplied
+    # press photography, which is why the catalogue accepts it even though a
+    # browser will not render it — it is converted on the way in.
+    if data[:4] in (b"II\x2a\x00", b"MM\x00\x2a"):
+        return "tiff", "image/tiff"
+    # HEIC/HEIF: 'ftyp' box at offset 4, brand in the next four bytes. The
+    # default format of every recent iPhone, so it arrives whether or not
+    # anyone planned for it.
+    if len(data) >= 12 and data[4:8] == b"ftyp":
+        brand = data[8:12]
+        if brand in (b"heic", b"heix", b"hevc", b"heim", b"heis", b"mif1", b"msf1"):
+            return "heic", "image/heic"
     return None
 
 
