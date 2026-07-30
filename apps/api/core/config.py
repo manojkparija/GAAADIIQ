@@ -105,9 +105,38 @@ class Settings(BaseSettings):
     # Gemini — higher-quality diagnosis for paid users and admins. Ollama is
     # the free tier. Leave the key blank and everyone falls back to Ollama.
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
+    # gemini-2.0-flash was shut down on 2026-06-01, so the previous default
+    # named a model the API no longer serves. Flash-Lite is the cost-efficient
+    # tier; override with GEMINI_MODEL rather than editing this.
+    gemini_model: str = "gemini-3.5-flash-lite"
     gemini_api_url: str = "https://generativelanguage.googleapis.com/v1beta"
     gemini_timeout_seconds: float = 15.0
+
+    # Groq — free, hosted vision fallback for brochure pages when Gemini is
+    # unavailable (no key, exhausted quota, or an outage). Chosen over Ollama
+    # for this role because Ollama has to be self-hosted, and the deployed API
+    # has no Ollama to reach: a fallback that only works on a developer's
+    # laptop is not a fallback. OpenAI-compatible, so the call is a plain
+    # chat-completions POST. Leave blank to skip this hop.
+    groq_api_key: str = ""
+    groq_api_url: str = "https://api.groq.com/openai/v1"
+    groq_vision_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    # Groq accepts at most 5 images per request, fewer than PDF_VISION_MAX_PAGES,
+    # so the rendered pages are sent in batches of this size.
+    groq_max_images_per_request: int = 5
+
+    # Per-image classification (what a picture shows, its angle, its colour).
+    # Off by default: it adds a vision call per batch of images on top of the
+    # extraction, and the free tiers this runs on are already the binding
+    # constraint. Make/model/year come from the brochure text regardless, so
+    # leaving this off costs only the angle and colour, not searchability.
+    media_classification_enabled: bool = False
+
+    # Per-file cap for admin image uploads, in megabytes. The BRD asks for this
+    # to be configurable; the default is sized for photography rather than for
+    # the 15 GB in that document, which is video territory and would need a
+    # resumable/chunked upload rather than a request body.
+    media_max_upload_mb: int = 64
 
     # Optional server-side TTS (BR-API-02). "none" disables it and the client
     # falls back to the browser's speechSynthesis, which is the default path.

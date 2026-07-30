@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { CarsDataService, Car } from '../../services/cars-data.service';
 import { TcoService, TcoBreakdown } from '../../services/tco.service';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { VehicleImageService } from '../../services/vehicle-image.service';
 
 const COMPARE_KEY = 'gaadiiq_compare_keys';
 
@@ -124,6 +125,19 @@ export class CompareComponent implements OnInit {
   }
 
   formatPrice(p: number) { return `₹${(p/100000).toFixed(1)}L`; }
+
+  private readonly vehicleImages = inject(VehicleImageService);
+
+  /**
+   * A comparison row without a picture is hard to read, and most catalogue
+   * cars carry no image of their own — so fall back to the manufacturer's
+   * brochure photography before the placeholder.
+   */
+  optimisedImageFor(car: Car): string {
+    return this.optimisedImage(
+      this.vehicleImages.imageOr((car as any)?.image, car?.make, car?.model),
+    );
+  }
 
   optimisedImage(url: string): string {
     if (!url) return 'assets/cars/placeholder.svg';

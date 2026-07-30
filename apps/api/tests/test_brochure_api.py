@@ -305,3 +305,22 @@ class TestVisionOutcomesAreDistinguishedSuite:
         assert "could not be rendered" in render
         assert "not the expected JSON" in parse
         assert render != parse
+
+
+class TestRateLimitMessageSuite:
+    def test_throttling_does_not_blame_the_api_key(self):
+        from routers.brochures import _why_no_vehicles
+
+        reason = _why_no_vehicles("", "vision-rate-limited")
+
+        # The whole point of the distinct engine value: a throttle clears by
+        # itself, so the message must say so rather than sending an operator
+        # to recheck a key that was correct.
+        assert "rate-limited" in reason.lower() or "rate limit" in reason.lower()
+        assert "retry" in reason.lower()
+        assert "fine" in reason.lower() or "clears" in reason.lower()
+
+    def test_throttling_is_not_the_generic_failure_message(self):
+        from routers.brochures import _why_no_vehicles
+
+        assert _why_no_vehicles("", "vision-rate-limited") != _why_no_vehicles("", "vision-call-failed")

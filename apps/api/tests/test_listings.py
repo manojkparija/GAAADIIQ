@@ -3,7 +3,6 @@ Listings & Cars API tests using in-memory SQLite.
 Image upload tests mock the storage service to avoid needing real R2 credentials.
 """
 import io
-from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -237,11 +236,46 @@ async def test_image_upload(client: AsyncClient):
     listing_id = create_resp.json()["id"]
 
     fake_image = io.BytesIO(b"\xff\xd8\xff" + b"\x00" * 100)  # minimal JPEG header
-    with patch("services.storage.upload_image", return_value="https://media.gaadiiq.com/listings/fake.jpg"):
+    resp = await client.post(
+        f"/listings/{listing_id}/images",
+        files={"file": ("photo.jpg", fake_image, "image/jpeg")},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    # Asserts the contract, not a mocked URL. Listing images now go through the
+    # media library so a photograph is stored once and shared, which means the
+    # URL is derived from a storage key rather than returned by the uploader —
+    # pinning the old mocked string would only re-pin the old implementation.
+    assert resp.status_code == 200
+    urls = resp.json()["image_urls"]
+    assert len(urls) == 1
+    assert urls[0].endswith(".jpg")
+    assert str(listing_id) in urls[0], "the image is filed under its listing"
+
+
+@pytest.mark.asyncio
+async def test_uploading_the_same_image_twice_stores_it_once(client: AsyncClient):
+    """
+    The point of a single source of truth: identical bytes must not produce a
+    second stored file, and the gallery must not gain a duplicate entry.
+    """
+    token = await _register_and_token(client, "dedupe@test.com")
+    car_id = await _create_car(client, token)
+    listing_id = (await client.post(
+        "/listings",
+        json={"car_id": car_id, "listing_type": "used", "price": 600000},
+        headers={"Authorization": f"Bearer {token}"},
+    )).json()["id"]
+
+    payload = b"\xff\xd8\xff" + b"\x42" * 200
+    urls = []
+    for _ in range(2):
         resp = await client.post(
             f"/listings/{listing_id}/images",
-            files={"file": ("photo.jpg", fake_image, "image/jpeg")},
+            files={"file": ("photo.jpg", io.BytesIO(payload), "image/jpeg")},
             headers={"Authorization": f"Bearer {token}"},
         )
-    assert resp.status_code == 200
-    assert "https://media.gaadiiq.com/listings/fake.jpg" in resp.json()["image_urls"]
+        assert resp.status_code == 200
+        urls = resp.json()["image_urls"]
+
+    assert len(urls) == 1, "the same photograph must not be stored or listed twice"
