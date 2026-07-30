@@ -299,6 +299,66 @@ Rules:
 """
 
 
+class RateLimited(Exception):
+    """
+    A provider throttled us rather than failing.
+
+    Worth its own type because it needs a different response from every other
+    error: an invalid key or an unreachable host will not fix itself, but a rate
+    limit clears on its own. Reporting the two alike sends an operator to
+    recheck a key that was correct all along.
+    """
+
+
+# Both providers meter free usage, and a brochure is a heavy request: eight page
+# images in one call. Gemini's free tier throttles this in practice — a Dzire
+# upload produced 429 TooManyRequests against Google's free tier while the key
+# and model were both fine. A couple of short waits absorb a burst; anything
+# longer belongs to the caller, not to a held-open request.
+_RETRY_ATTEMPTS = 3
+_MAX_RETRY_WAIT = 20.0
+
+
+async def _post_retrying_429(provider: str, do_post, timeout: float):
+    """
+    Run `do_post(client)` and retry a 429, honouring Retry-After where present.
+
+    Raises RateLimited once the attempts are spent, so callers can report
+    "throttled" rather than folding it in with unreachable hosts and bad keys.
+    Shared by both providers: whichever one is metering us, the operator needs
+    the same distinction.
+    """
+    last_retry_after = 0.0
+
+    for attempt in range(1, _RETRY_ATTEMPTS + 1):
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await do_post(client)
+
+            if resp.status_code != 429:
+                resp.raise_for_status()
+                return resp
+
+            try:
+                last_retry_after = float(resp.headers.get("retry-after", "") or 0)
+            except ValueError:
+                last_retry_after = 0.0
+            wait = min(last_retry_after or 2.0 ** attempt, _MAX_RETRY_WAIT)
+
+        if attempt == _RETRY_ATTEMPTS:
+            break
+
+        logger.info(
+            "%s rate-limited (attempt %d/%d), waiting %.1fs",
+            provider, attempt, _RETRY_ATTEMPTS, wait,
+        )
+        await asyncio.sleep(wait)
+
+    raise RateLimited(
+        f"{provider} rate limit not cleared after {_RETRY_ATTEMPTS} attempts"
+        + (f" (last Retry-After: {last_retry_after:.0f}s)" if last_retry_after else "")
+    )
+
+
 async def _call_gemini(prompt: str, images: list[bytes] | None = None) -> str:
     """
     Ask Gemini Flash, optionally showing it page images as well as text.
@@ -326,16 +386,16 @@ async def _call_gemini(prompt: str, images: list[bytes] | None = None) -> str:
             }
         })
 
-    async with httpx.AsyncClient(timeout=VISION_TIMEOUT if images else INGEST_TIMEOUT) as client:
-        resp = await client.post(
-            url,
-            json={
-                "contents": [{"parts": parts}],
-                "generationConfig": {"temperature": 0.1, "maxOutputTokens": 8192},
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
+    timeout = VISION_TIMEOUT if images else INGEST_TIMEOUT
+    payload = {
+        "contents": [{"parts": parts}],
+        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 8192},
+    }
+
+    async def post(client):
+        return await client.post(url, json=payload)
+
+    data = (await _post_retrying_429("Gemini", post, timeout)).json()
     return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
@@ -374,74 +434,22 @@ async def _call_ollama(prompt: str) -> str:
         return resp.json().get("response", "")
 
 
-class RateLimited(Exception):
-    """
-    A provider throttled us rather than failing.
-
-    Worth its own type because it needs a different response from every other
-    error: an invalid key or an unreachable host will not fix itself, but a rate
-    limit clears on its own. Reporting the two alike sends an operator to
-    recheck a key that was correct all along.
-    """
-
-
-# Groq's free tier is bounded per minute and per day, and the limit is shared
-# across the organisation rather than per key, so a burst of brochure uploads
-# can throttle even when a single one would not. A couple of short waits absorb
-# that; anything longer belongs to the caller, not to a held-open request.
-_GROQ_RETRY_ATTEMPTS = 3
-_GROQ_MAX_RETRY_WAIT = 20.0
-
-
 async def _groq_chat(content: list[dict], timeout: float) -> str:
-    """
-    POST one OpenAI-compatible chat completion to Groq and return the text.
-
-    Retries a 429 rather than surfacing it, honouring Retry-After when the
-    response carries one, and raises RateLimited once the attempts are spent so
-    the caller can say "throttled" instead of "call failed".
-    """
-    last_retry_after = 0.0
-
-    for attempt in range(1, _GROQ_RETRY_ATTEMPTS + 1):
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.post(
-                f"{settings.groq_api_url}/chat/completions",
-                headers={"Authorization": f"Bearer {settings.groq_api_key}"},
-                json={
-                    "model": settings.groq_vision_model,
-                    "messages": [{"role": "user", "content": content}],
-                    "temperature": 0.1,
-                    "max_tokens": 8192,
-                },
-            )
-
-            if resp.status_code != 429:
-                resp.raise_for_status()
-                return resp.json()["choices"][0]["message"]["content"]
-
-            # Groq states how long to wait; fall back to exponential backoff
-            # when it does not, and cap either way so one brochure cannot hold
-            # a worker for the length of a daily quota window.
-            try:
-                last_retry_after = float(resp.headers.get("retry-after", "") or 0)
-            except ValueError:
-                last_retry_after = 0.0
-            wait = min(last_retry_after or 2.0 ** attempt, _GROQ_MAX_RETRY_WAIT)
-
-        if attempt == _GROQ_RETRY_ATTEMPTS:
-            break
-
-        logger.info(
-            "Groq rate-limited (attempt %d/%d), waiting %.1fs",
-            attempt, _GROQ_RETRY_ATTEMPTS, wait,
+    """POST one OpenAI-compatible chat completion to Groq and return the text."""
+    async def post(client):
+        return await client.post(
+            f"{settings.groq_api_url}/chat/completions",
+            headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+            json={
+                "model": settings.groq_vision_model,
+                "messages": [{"role": "user", "content": content}],
+                "temperature": 0.1,
+                "max_tokens": 8192,
+            },
         )
-        await asyncio.sleep(wait)
 
-    raise RateLimited(
-        f"Groq rate limit not cleared after {_GROQ_RETRY_ATTEMPTS} attempts"
-        + (f" (last Retry-After: {last_retry_after:.0f}s)" if last_retry_after else "")
-    )
+    resp = await _post_retrying_429("Groq", post, timeout)
+    return resp.json()["choices"][0]["message"]["content"]
 
 
 async def _call_groq(prompt: str) -> str:

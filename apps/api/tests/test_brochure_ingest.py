@@ -664,7 +664,7 @@ class TestGroqRateLimitSuite:
         monkeypatch.setattr(settings, "groq_api_key", "k")
         monkeypatch.setattr(
             pdf_ingest.httpx, "AsyncClient",
-            self._client([(429, {"retry-after": "0"})] * pdf_ingest._GROQ_RETRY_ATTEMPTS),
+            self._client([(429, {"retry-after": "0"})] * pdf_ingest._RETRY_ATTEMPTS),
         )
 
         with pytest.raises(pdf_ingest.RateLimited):
@@ -682,14 +682,14 @@ class TestGroqRateLimitSuite:
         monkeypatch.setattr(pdf_ingest.asyncio, "sleep", fake_sleep)
         monkeypatch.setattr(
             pdf_ingest.httpx, "AsyncClient",
-            self._client([(429, {"retry-after": "86400"})] * pdf_ingest._GROQ_RETRY_ATTEMPTS),
+            self._client([(429, {"retry-after": "86400"})] * pdf_ingest._RETRY_ATTEMPTS),
         )
 
         with pytest.raises(pdf_ingest.RateLimited):
             await pdf_ingest._groq_chat([{"type": "text", "text": "x"}], 5.0)
 
         assert waits, "a retry must have waited"
-        assert max(waits) <= pdf_ingest._GROQ_MAX_RETRY_WAIT
+        assert max(waits) <= pdf_ingest._MAX_RETRY_WAIT
 
     @pytest.mark.asyncio
     async def test_throttling_is_reported_distinctly_from_a_failed_call(self, monkeypatch):
@@ -744,6 +744,8 @@ class TestGeminiModelIsConfigurableSuite:
         seen: dict = {}
 
         class FakeResponse:
+            status_code = 200
+
             def raise_for_status(self):
                 return None
 
@@ -777,3 +779,88 @@ class TestGeminiModelIsConfigurableSuite:
         # gemini-2.0-flash was shut down 2026-06-01; a default naming a dead
         # model fails every call until someone sets the env var.
         assert settings.gemini_model != "gemini-2.0-flash"
+
+
+class TestGeminiRateLimitSuite:
+    """
+    Gemini throttles this workload in practice, so it needs the same 429
+    handling as Groq.
+
+    Observed against Google's free tier: a Dzire brochure upload produced
+    429 TooManyRequests while the key and model were both valid. Retry lived
+    only in the Groq path, so a Gemini throttle surfaced as a generic error and
+    the review screen blamed a key that was fine.
+    """
+
+    def _textless(self) -> bytes:
+        return TestVisionFallbackSuite._textless_pdf()
+
+    @staticmethod
+    def _client(statuses, seen=None):
+        class FakeResponse:
+            def __init__(self, status):
+                self.status_code = status
+                self.headers = {"retry-after": "0"}
+
+            def raise_for_status(self):
+                if self.status_code >= 400:
+                    raise RuntimeError(f"HTTP {self.status_code}")
+
+            def json(self):
+                return {"candidates": [{"content": {"parts": [{"text": "[]"}]}}]}
+
+        seq = list(statuses)
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                return False
+
+            async def post(self, url, **kwargs):
+                s = seq.pop(0)
+                if seen is not None:
+                    seen.append(s)
+                return FakeResponse(s)
+
+        return lambda **kw: FakeClient()
+
+    @pytest.mark.asyncio
+    async def test_a_gemini_429_is_retried(self, monkeypatch):
+        seen: list[int] = []
+        monkeypatch.setattr(settings, "gemini_api_key", "k")
+        monkeypatch.setattr(pdf_ingest.httpx, "AsyncClient", self._client([429, 200], seen))
+
+        assert await pdf_ingest._call_gemini("prompt") == "[]"
+        assert seen == [429, 200], "a transient Gemini throttle must be absorbed"
+
+    @pytest.mark.asyncio
+    async def test_sustained_gemini_429_raises_rate_limited(self, monkeypatch):
+        monkeypatch.setattr(settings, "gemini_api_key", "k")
+        monkeypatch.setattr(
+            pdf_ingest.httpx, "AsyncClient",
+            self._client([429] * pdf_ingest._RETRY_ATTEMPTS),
+        )
+
+        with pytest.raises(pdf_ingest.RateLimited):
+            await pdf_ingest._call_gemini("prompt")
+
+    @pytest.mark.asyncio
+    async def test_a_throttled_gemini_with_no_other_provider_says_rate_limited(self, monkeypatch):
+        """
+        The exact production shape: Gemini on the free tier is throttled and no
+        Groq key is set. This must not read as "call failed" — that sends an
+        operator to recheck a key the dashboard already shows as working.
+        """
+        async def throttled(prompt, images=None):
+            raise pdf_ingest.RateLimited("429 TooManyRequests")
+
+        monkeypatch.setattr(settings, "gemini_api_key", "k")
+        monkeypatch.setattr(settings, "groq_api_key", "")
+        monkeypatch.setattr(pdf_ingest, "_call_gemini", throttled)
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless())
+
+        assert vehicles == []
+        assert engine == "vision-rate-limited"
