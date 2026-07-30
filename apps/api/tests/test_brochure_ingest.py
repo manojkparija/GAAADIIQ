@@ -599,3 +599,130 @@ class TestOllamaVisionPayloadSuite:
         # The prompt must stay the prompt — no base64 smuggled into it.
         assert captured["prompt"] == "read this"
         assert "IMAGE_DATA" not in captured["prompt"]
+
+
+class TestGroqRateLimitSuite:
+    """
+    A throttle is not a failure and must not be reported as one.
+
+    Groq's free tier is bounded per minute and per day, and the budget is shared
+    across the organisation rather than per key, so a burst of uploads can
+    throttle even when one brochure would not. An invalid key never fixes
+    itself; a rate limit always does. Collapsing the two sends an operator to
+    recheck a key that was correct.
+    """
+
+    def _textless(self) -> bytes:
+        return TestVisionFallbackSuite._textless_pdf()
+
+    @staticmethod
+    def _client(statuses, captured=None):
+        """httpx.AsyncClient stub returning the given status codes in order."""
+        seq = list(statuses)
+
+        class FakeResponse:
+            def __init__(self, status, headers):
+                self.status_code = status
+                self.headers = headers
+
+            def raise_for_status(self):
+                if self.status_code >= 400:
+                    raise RuntimeError(f"HTTP {self.status_code}")
+
+            def json(self):
+                return {"choices": [{"message": {"content": "[]"}}]}
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                return False
+
+            async def post(self, url, **kwargs):
+                status, headers = seq.pop(0)
+                if captured is not None:
+                    captured.append(status)
+                return FakeResponse(status, headers)
+
+        return lambda **kw: FakeClient()
+
+    @pytest.mark.asyncio
+    async def test_a_429_is_retried_and_then_succeeds(self, monkeypatch):
+        seen: list[int] = []
+        monkeypatch.setattr(settings, "groq_api_key", "k")
+        monkeypatch.setattr(
+            pdf_ingest.httpx, "AsyncClient",
+            self._client([(429, {"retry-after": "0"}), (200, {})], seen),
+        )
+
+        assert await pdf_ingest._groq_chat([{"type": "text", "text": "x"}], 5.0) == "[]"
+        assert seen == [429, 200], "must retry rather than surface the first 429"
+
+    @pytest.mark.asyncio
+    async def test_sustained_429_raises_rate_limited_not_a_generic_error(self, monkeypatch):
+        monkeypatch.setattr(settings, "groq_api_key", "k")
+        monkeypatch.setattr(
+            pdf_ingest.httpx, "AsyncClient",
+            self._client([(429, {"retry-after": "0"})] * pdf_ingest._GROQ_RETRY_ATTEMPTS),
+        )
+
+        with pytest.raises(pdf_ingest.RateLimited):
+            await pdf_ingest._groq_chat([{"type": "text", "text": "x"}], 5.0)
+
+    @pytest.mark.asyncio
+    async def test_retry_wait_is_capped(self, monkeypatch):
+        """A daily quota window must not hold a worker open."""
+        waits: list[float] = []
+
+        async def fake_sleep(seconds):
+            waits.append(seconds)
+
+        monkeypatch.setattr(settings, "groq_api_key", "k")
+        monkeypatch.setattr(pdf_ingest.asyncio, "sleep", fake_sleep)
+        monkeypatch.setattr(
+            pdf_ingest.httpx, "AsyncClient",
+            self._client([(429, {"retry-after": "86400"})] * pdf_ingest._GROQ_RETRY_ATTEMPTS),
+        )
+
+        with pytest.raises(pdf_ingest.RateLimited):
+            await pdf_ingest._groq_chat([{"type": "text", "text": "x"}], 5.0)
+
+        assert waits, "a retry must have waited"
+        assert max(waits) <= pdf_ingest._GROQ_MAX_RETRY_WAIT
+
+    @pytest.mark.asyncio
+    async def test_throttling_is_reported_distinctly_from_a_failed_call(self, monkeypatch):
+        async def throttled(prompt, images):
+            raise pdf_ingest.RateLimited("429")
+
+        monkeypatch.setattr(settings, "gemini_api_key", "")
+        monkeypatch.setattr(settings, "groq_api_key", "k")
+        monkeypatch.setattr(pdf_ingest, "_call_groq_vision", throttled)
+
+        vehicles, engine = await pdf_ingest.extract_vehicles("", source=self._textless())
+
+        assert vehicles == []
+        # Not "vision-call-failed": that would send an operator to check a key
+        # that was never the problem.
+        assert engine == "vision-rate-limited"
+
+    @pytest.mark.asyncio
+    async def test_a_throttled_batch_keeps_what_earlier_batches_read(self, monkeypatch):
+        """Half a variant grid beats an empty review queue."""
+        calls = {"n": 0}
+
+        async def chat(content, timeout):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return json.dumps([{"make": "Maruti Suzuki", "model": "Dzire", "confidence": 0.6}])
+            raise pdf_ingest.RateLimited("429")
+
+        monkeypatch.setattr(settings, "groq_api_key", "k")
+        monkeypatch.setattr(settings, "groq_max_images_per_request", 5)
+        monkeypatch.setattr(pdf_ingest, "_groq_chat", chat)
+
+        raw = await pdf_ingest._call_groq_vision("prompt", [b"png"] * 8)
+
+        assert [v["model"] for v in json.loads(raw)] == ["Dzire"]
+        assert calls["n"] == 2, "must stop at the throttle, not grind through later batches"

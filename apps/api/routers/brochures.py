@@ -166,6 +166,15 @@ def _why_no_vehicles(text: str, engine: str) -> str:
             "Ollama — but no vehicle details could be made out. Gemini "
             "(paid API) may give better results for some brochures."
         )
+    if engine == "vision-rate-limited":
+        return (
+            "This PDF has no text layer, so its pages were sent to a vision "
+            "model as images — and every provider was rate-limited. This clears "
+            "by itself: wait a minute and retry the job. Your API keys are "
+            "fine. If it keeps happening, brochures are being ingested faster "
+            "than the free tier allows — raise the provider's tier, or lower "
+            "PDF_VISION_MAX_PAGES so each brochure spends fewer tokens."
+        )
     if engine == "vision-call-failed":
         return (
             "This PDF has no text layer, so its pages were sent to a vision "

@@ -369,21 +369,74 @@ async def _call_ollama(prompt: str) -> str:
         return resp.json().get("response", "")
 
 
+class RateLimited(Exception):
+    """
+    A provider throttled us rather than failing.
+
+    Worth its own type because it needs a different response from every other
+    error: an invalid key or an unreachable host will not fix itself, but a rate
+    limit clears on its own. Reporting the two alike sends an operator to
+    recheck a key that was correct all along.
+    """
+
+
+# Groq's free tier is bounded per minute and per day, and the limit is shared
+# across the organisation rather than per key, so a burst of brochure uploads
+# can throttle even when a single one would not. A couple of short waits absorb
+# that; anything longer belongs to the caller, not to a held-open request.
+_GROQ_RETRY_ATTEMPTS = 3
+_GROQ_MAX_RETRY_WAIT = 20.0
+
+
 async def _groq_chat(content: list[dict], timeout: float) -> str:
-    """POST one OpenAI-compatible chat completion to Groq and return the text."""
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(
-            f"{settings.groq_api_url}/chat/completions",
-            headers={"Authorization": f"Bearer {settings.groq_api_key}"},
-            json={
-                "model": settings.groq_vision_model,
-                "messages": [{"role": "user", "content": content}],
-                "temperature": 0.1,
-                "max_tokens": 8192,
-            },
+    """
+    POST one OpenAI-compatible chat completion to Groq and return the text.
+
+    Retries a 429 rather than surfacing it, honouring Retry-After when the
+    response carries one, and raises RateLimited once the attempts are spent so
+    the caller can say "throttled" instead of "call failed".
+    """
+    last_retry_after = 0.0
+
+    for attempt in range(1, _GROQ_RETRY_ATTEMPTS + 1):
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(
+                f"{settings.groq_api_url}/chat/completions",
+                headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+                json={
+                    "model": settings.groq_vision_model,
+                    "messages": [{"role": "user", "content": content}],
+                    "temperature": 0.1,
+                    "max_tokens": 8192,
+                },
+            )
+
+            if resp.status_code != 429:
+                resp.raise_for_status()
+                return resp.json()["choices"][0]["message"]["content"]
+
+            # Groq states how long to wait; fall back to exponential backoff
+            # when it does not, and cap either way so one brochure cannot hold
+            # a worker for the length of a daily quota window.
+            try:
+                last_retry_after = float(resp.headers.get("retry-after", "") or 0)
+            except ValueError:
+                last_retry_after = 0.0
+            wait = min(last_retry_after or 2.0 ** attempt, _GROQ_MAX_RETRY_WAIT)
+
+        if attempt == _GROQ_RETRY_ATTEMPTS:
+            break
+
+        logger.info(
+            "Groq rate-limited (attempt %d/%d), waiting %.1fs",
+            attempt, _GROQ_RETRY_ATTEMPTS, wait,
         )
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"]
+        await asyncio.sleep(wait)
+
+    raise RateLimited(
+        f"Groq rate limit not cleared after {_GROQ_RETRY_ATTEMPTS} attempts"
+        + (f" (last Retry-After: {last_retry_after:.0f}s)" if last_retry_after else "")
+    )
 
 
 async def _call_groq(prompt: str) -> str:
@@ -411,6 +464,7 @@ async def _call_groq_vision(prompt: str, images: list[bytes]) -> str:
 
     collected: list[dict] = []
     last_error: Exception | None = None
+    throttled = False
 
     for index, batch in enumerate(batches):
         content: list[dict] = [{"type": "text", "text": prompt}]
@@ -423,6 +477,14 @@ async def _call_groq_vision(prompt: str, images: list[bytes]) -> str:
 
         try:
             raw = await _groq_chat(content, VISION_TIMEOUT)
+        except RateLimited as exc:
+            # Later batches share the same exhausted budget, so continuing would
+            # only spend more waiting to fail again. Stop and keep whatever the
+            # earlier batches already read.
+            logger.warning("Groq vision batch %d/%d throttled: %s", index + 1, len(batches), exc)
+            last_error = exc
+            throttled = True
+            break
         except Exception as exc:
             # One bad batch must not lose the pages that did read, for the same
             # reason a bad page must not lose the rest of the render.
@@ -438,6 +500,15 @@ async def _call_groq_vision(prompt: str, images: list[bytes]) -> str:
 
     if not collected:
         raise last_error or RuntimeError("Groq vision returned no vehicles")
+
+    # Partial results are still worth returning — half a variant grid beats an
+    # empty review queue — but the caller is told it was throttled so the page
+    # can say the reading was cut short rather than implying it was complete.
+    if throttled:
+        logger.warning(
+            "Groq was throttled partway; returning %d vehicles from the batches that read",
+            len(collected),
+        )
 
     # Re-serialised so the caller keeps a single parse-then-clean path across
     # every provider, rather than one shape for Groq and another for the rest.
@@ -611,11 +682,19 @@ async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
         # the answer was unreadable", because the two need different fixes: a
         # key or quota in the first case, a prompt or model in the second.
         parse_failed = False
+        # A throttle is temporary and clears by itself, unlike a bad key or an
+        # unreachable host. Collapsing it into "call failed" is what sends an
+        # operator to recheck a key that was never the problem.
+        rate_limited = False
 
         for engine, call in providers:
             logger.info("No text layer; reading %d rendered pages with %s", len(pages), engine)
             try:
                 raw = await call(_VISION_PROMPT, images=pages)
+            except RateLimited as exc:
+                logger.warning("%s was rate-limited: %s", engine, exc)
+                rate_limited = True
+                continue
             except Exception as exc:
                 logger.warning("%s extraction failed: %s", engine, exc)
                 continue
@@ -632,7 +711,11 @@ async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
             # the engine name records who read them.
             return vehicles, engine
 
-        return [], "vision-parse-failed" if parse_failed else "vision-call-failed"
+        # Parse failure ranks above throttling: a provider that replied with
+        # something unreadable tells us more than one that never got a turn.
+        if parse_failed:
+            return [], "vision-parse-failed"
+        return [], "vision-rate-limited" if rate_limited else "vision-call-failed"
 
     if not has_text:
         return [], "none"
