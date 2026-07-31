@@ -85,15 +85,23 @@ _redoc_url = None if settings.is_production else "/redoc"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Run DB migrations on startup
+    # Run DB migrations on startup (skip in development if DB is unavailable)
     try:
+        api_dir = os.path.dirname(os.path.abspath(__file__))
         result = subprocess.run(
             ["alembic", "upgrade", "head"],
             capture_output=True, text=True, check=True,
+            cwd=api_dir,
         )
         _log.info("Alembic: %s", result.stdout.strip() or "up to date")
     except subprocess.CalledProcessError as exc:
-        _log.error("Alembic migration failed stdout=%s stderr=%s", exc.stdout, exc.stderr)
+        if settings.is_production:
+            _log.error("Alembic migration failed stdout=%s stderr=%s", exc.stdout, exc.stderr)
+            raise
+        else:
+            _log.warning("Alembic migration skipped (development mode): %s", exc.stderr[:200] if exc.stderr else "unknown error")
+    except FileNotFoundError:
+        _log.warning("Alembic command not found in PATH; skipping database migrations")
 
     start_scheduler()
 
