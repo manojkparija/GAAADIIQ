@@ -15,6 +15,11 @@ from slowapi.errors import RateLimitExceeded
 from core.config import settings
 from core.limiter import limiter
 
+# Debug: Verify configuration is loaded
+_log = logging.getLogger("gaadiiq")
+_log.info("DEBUG: DATABASE_URL = %s", settings.database_url[:80] if settings.database_url else "NOT SET")
+_log.info("DEBUG: ENVIRONMENT = %s", settings.environment)
+
 # Fail fast in production if secrets are missing/default
 settings.validate_production_config()
 
