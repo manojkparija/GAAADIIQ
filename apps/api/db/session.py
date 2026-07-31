@@ -1,4 +1,3 @@
-import socket
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -10,7 +9,7 @@ engine = create_async_engine(
     echo=settings.debug,
     pool_size=10,
     max_overflow=20,
-    connect_args={"ssl": True, "family": socket.AF_INET},
+    connect_args={"ssl": True},
 )
 
 AsyncSessionLocal = async_sessionmaker(
