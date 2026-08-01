@@ -859,6 +859,76 @@ async def list_images(
     return [_media_out(m) for m in rows]
 
 
+class TagMediaRequest(BaseModel):
+    """Request to manually tag untagged images from a PDF."""
+    pdf_name: str
+    make: str
+    model: str
+    variant: str | None = None
+
+
+@router.post("/tag-images", status_code=status.HTTP_200_OK)
+async def tag_images_manually(
+    body: TagMediaRequest,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Manually tag untagged images from a specific PDF.
+
+    Admin-only. Used when vehicle extraction fails (e.g., no Gemini API key
+    configured) but the make/model are known from the PDF name or other metadata.
+
+    Example:
+        POST /brochures/tag-images
+        {
+            "pdf_name": "DZIRE.pdf",
+            "make": "Maruti Suzuki",
+            "model": "Dzire",
+            "variant": "ZXi+"
+        }
+
+    This tags all untagged images from DZIRE.pdf so they become queryable via
+    GET /brochures/images?make=Maruti+Suzuki&model=Dzire
+    """
+    # Find all untagged images from this PDF
+    stmt = select(VehicleMedia).where(
+        VehicleMedia.source_pdf_name == body.pdf_name,
+        VehicleMedia.make.is_(None),
+    )
+    rows = (await db.execute(stmt)).scalars().all()
+
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No untagged images found for {body.pdf_name}",
+        )
+
+    # Tag them
+    for media in rows:
+        media.make = body.make
+        media.model = body.model
+        if body.variant:
+            media.variant = body.variant
+
+    await db.commit()
+    logger.info(
+        "Admin %s tagged %d images from %s: %s %s",
+        admin.email,
+        len(rows),
+        body.pdf_name,
+        body.make,
+        body.model,
+    )
+
+    return {
+        "tagged_count": len(rows),
+        "pdf_name": body.pdf_name,
+        "make": body.make,
+        "model": body.model,
+    }
+
+
 @media_router.get("/{key:path}")
 async def serve_media(key: str):
     """
