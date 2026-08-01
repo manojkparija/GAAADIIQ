@@ -1,19 +1,21 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../environments/environment';
 
 interface BrochureImage {
   id: string;
-  storage_key: string;
-  thumbnail_key?: string;
-  width: number;
-  height: number;
+  url: string;
+  thumbnail_url?: string;
+  width?: number;
+  height?: number;
   make?: string;
   model?: string;
   variant?: string;
   content_type: string;
-  kind?: string;
-  view?: string;
+  kind: string;
+  view: string;
+  source_pdf_name: string;
   created_at: string;
 }
 
@@ -36,7 +38,7 @@ interface BrochureImage {
       <div *ngIf="!loading && images.length > 0" class="gallery-grid">
         <div *ngFor="let image of images" class="gallery-item">
           <img
-            [src]="getImageUrl(image.storage_key)"
+            [src]="image.thumbnail_url || image.url"
             [alt]="getImageAlt(image)"
             loading="lazy"
             (click)="selectImage(image)"
@@ -53,7 +55,7 @@ interface BrochureImage {
         <div class="lightbox-content" (click)="$event.stopPropagation()">
           <button class="close-btn" (click)="closeImage()">×</button>
           <img
-            [src]="getImageUrl(selectedImage.storage_key)"
+            [src]="selectedImage.url"
             [alt]="getImageAlt(selectedImage)"
             class="lightbox-image"
           />
@@ -214,7 +216,6 @@ export class BrochureGalleryComponent implements OnInit {
   images: BrochureImage[] = [];
   selectedImage: BrochureImage | null = null;
   loading = false;
-  apiUrl = '/api/brochures/images'; // Adjust to your API base URL
 
   constructor(private http: HttpClient) {}
 
@@ -230,7 +231,8 @@ export class BrochureGalleryComponent implements OnInit {
     if (this.model) params += `&model=${encodeURIComponent(this.model)}`;
     if (this.variant) params += `&variant=${encodeURIComponent(this.variant)}`;
 
-    this.http.get<BrochureImage[]>(`${this.apiUrl}?${params}`).subscribe({
+    const apiUrl = `${environment.apiUrl}/brochures/images`;
+    this.http.get<BrochureImage[]>(`${apiUrl}?${params}`).subscribe({
       next: (data) => {
         this.images = data;
         this.loading = false;
@@ -240,10 +242,6 @@ export class BrochureGalleryComponent implements OnInit {
         this.loading = false;
       }
     });
-  }
-
-  getImageUrl(storageKey: string): string {
-    return `/api/media/${storageKey}`;
   }
 
   getImageAlt(image: BrochureImage): string {
