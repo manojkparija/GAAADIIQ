@@ -9,7 +9,7 @@ engine = create_async_engine(
     echo=settings.debug,
     pool_size=10,
     max_overflow=20,
-    connect_args={"ssl": True},
+    connect_args={"ssl": False},
 )
 
 AsyncSessionLocal = async_sessionmaker(
