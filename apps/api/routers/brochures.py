@@ -56,12 +56,6 @@ router = APIRouter(prefix="/brochures", tags=["brochures"])
 media_router = APIRouter(prefix="/media", tags=["media"])
 
 
-@router.get("/test-auth")
-async def test_auth():
-    """Test endpoint - no authentication required."""
-    return {"status": "ok", "message": "auth test endpoint works"}
-
-
 # Full manufacturer catalogues run to hundreds of megabytes — a real one in
 # testing was 266 MB. The old 50 MB cap was sized for when the upload was held
 # in memory, where anything larger killed the process; now that it is spooled
