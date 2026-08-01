@@ -399,10 +399,16 @@ async def _ingest_pdf(
             key = pdf_ingest.build_key(job.id, index, ext)
             try:
                 obj = await storage.save(key, img["data"], content_type)
+                logger.info("Stored image %s (%d bytes) for job %s", key, len(img["data"]), job.id)
             except StorageError as exc:
-                logger.warning("Could not store image %s: %s", key, exc)
+                logger.error("StorageError storing image %s: %s", key, exc)
                 storage_failures += 1
                 last_storage_error = str(exc)
+                continue
+            except Exception as exc:
+                logger.error("Unexpected error storing image %s: %s (type: %s)", key, exc, type(exc).__name__)
+                storage_failures += 1
+                last_storage_error = f"{type(exc).__name__}: {exc}"
                 continue
 
             width, height = img.get("width"), img.get("height")
@@ -477,6 +483,8 @@ async def _ingest_pdf(
     media_rows = (await db.execute(
         select(VehicleMedia).where(VehicleMedia.job_id == job.id)
     )).scalars().all()
+
+    logger.info("Job %s: stored=%d media_rows=%d vehicles=%d", job.id, stored, len(media_rows), len(vehicles))
 
     _tag_media_from_vehicles(media_rows, vehicle_rows)
 
