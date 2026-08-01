@@ -8,8 +8,9 @@ they came from.
 """
 import asyncio
 import sys
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from core.config import settings
