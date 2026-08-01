@@ -328,3 +328,58 @@ class TestRateLimitMessageSuite:
         from routers.brochures import _why_no_vehicles
 
         assert _why_no_vehicles("", "vision-rate-limited") != _why_no_vehicles("", "vision-call-failed")
+
+
+class TestManualImageTaggingSuite:
+    """
+    Endpoint to manually tag untagged images when vehicle extraction fails.
+    """
+
+    @pytest.mark.asyncio
+    async def test_tag_images_manually(self, client, monkeypatch):
+        # Upload a brochure but with no vehicle extraction
+        async def no_extract(text, source=None):
+            return [], "none"
+
+        monkeypatch.setattr("services.pdf_ingest.extract_vehicles", no_extract)
+
+        job_id = (await client.post(
+            "/brochures/upload",
+            files={"file": ("dzire.pdf", _brochure_pdf(), "application/pdf")},
+        )).json()["id"]
+
+        # Verify images exist but are untagged
+        images_before = await client.get("/brochures/images?make=Maruti%20Suzuki&model=Dzire")
+        assert len(images_before.json()) == 0
+
+        # Tag the images
+        tag_response = await client.post(
+            "/brochures/tag-images",
+            json={
+                "pdf_name": "dzire.pdf",
+                "make": "Maruti Suzuki",
+                "model": "Dzire",
+                "variant": "ZXi+",
+            },
+        )
+        assert tag_response.status_code == 200
+        assert tag_response.json()["tagged_count"] == 1
+
+        # Now images should be queryable
+        images_after = await client.get("/brochures/images?make=Maruti%20Suzuki&model=Dzire")
+        assert len(images_after.json()) == 1
+        assert images_after.json()[0]["make"] == "Maruti Suzuki"
+        assert images_after.json()[0]["model"] == "Dzire"
+
+    @pytest.mark.asyncio
+    async def test_tag_images_not_found(self, client):
+        # Try to tag images from a PDF that doesn't exist
+        tag_response = await client.post(
+            "/brochures/tag-images",
+            json={
+                "pdf_name": "nonexistent.pdf",
+                "make": "Maruti Suzuki",
+                "model": "Dzire",
+            },
+        )
+        assert tag_response.status_code == 404
