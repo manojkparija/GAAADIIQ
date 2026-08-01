@@ -90,8 +90,9 @@ _redoc_url = None if settings.is_production else "/redoc"
 
 async def _fix_schema():
     """Apply missing schema columns at startup (non-fatal if DB unavailable)."""
-    import asyncpg
     from urllib.parse import urlparse
+
+    import asyncpg
 
     try:
         # Parse database URL

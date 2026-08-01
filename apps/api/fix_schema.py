@@ -5,10 +5,11 @@ Run this directly: python fix_schema.py
 """
 
 import asyncio
-import asyncpg
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
+
+import asyncpg
 
 
 async def fix_schema():
@@ -31,7 +32,7 @@ async def fix_schema():
         print("❌ DATABASE_URL not found in .env")
         return False
 
-    print(f"📡 Connecting to database...")
+    print("📡 Connecting to database...")
     print(f"   Host: {database_url.split('@')[1].split('/')[0]}")
 
     # Parse connection string
@@ -60,7 +61,7 @@ async def fix_schema():
         except asyncio.TimeoutError:
             print("timeout")
             if attempt < 3:
-                print(f"   Waiting before retry...")
+                print("   Waiting before retry...")
                 await asyncio.sleep(3)
         except Exception as e:
             print(f"error: {e}")
@@ -82,7 +83,7 @@ async def fix_schema():
 
         # Add missing revoked column to refresh_tokens
         try:
-            result = await conn.execute(
+            await conn.execute(
                 "ALTER TABLE refresh_tokens "
                 "ADD COLUMN IF NOT EXISTS revoked BOOLEAN NOT NULL DEFAULT FALSE;"
             )
