@@ -6,6 +6,7 @@ import { CarsDataService } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 import { VehicleImageService } from '../../services/vehicle-image.service';
+import { BrochureGalleryComponent } from '../../components/brochure-gallery.component';
 
 const PLACEHOLDER = 'assets/cars/placeholder.svg';
 const COMPARE_KEY = 'gaadiiq_compare_keys';
@@ -58,7 +59,7 @@ interface BudgetRange {
 @Component({
   selector: 'app-new-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, BrochureGalleryComponent],
   templateUrl: './new-cars.component.html',
   styleUrl: './new-cars.component.scss'
 })
