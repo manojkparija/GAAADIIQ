@@ -11,7 +11,14 @@ Example:
 
 import asyncio
 import sys
+import traceback
+import uuid
 from pathlib import Path
+
+from core.config import settings
+from services import pdf_ingest
+from services.media_storage import get_storage
+
 
 async def test_upload():
     """Test PDF upload and image extraction."""
@@ -30,7 +37,6 @@ async def test_upload():
 
     # Test 1: PDF validation
     print("\n1️⃣  Testing PDF validation...")
-    from services import pdf_ingest
     header = pdf_path.read_bytes()[:100]
     if pdf_ingest.is_pdf(header):
         print("   ✅ Valid PDF")
@@ -63,32 +69,28 @@ async def test_upload():
 
     # Test 4: Storage
     print("\n4️⃣  Testing local storage...")
-    from services.media_storage import get_storage
-    import uuid
     storage = get_storage()
     test_key = f"test/{uuid.uuid4()}.txt"
     test_data = b"test data"
     try:
         obj = await storage.save(test_key, test_data, "text/plain")
-        print(f"   ✅ Successfully stored test file")
+        print("   ✅ Successfully stored test file")
         print(f"      Key: {obj.key}")
         print(f"      URL: {obj.url}")
 
         # Verify it can be loaded back
         loaded = await storage.load(test_key)
         if loaded == test_data:
-            print(f"   ✅ Successfully retrieved test file")
+            print("   ✅ Successfully retrieved test file")
         else:
-            print(f"   ❌ Retrieved data doesn't match")
+            print("   ❌ Retrieved data doesn't match")
     except Exception as e:
         print(f"   ❌ Storage test failed: {e}")
-        import traceback
         traceback.print_exc()
         sys.exit(1)
 
     # Test 5: Vehicle extraction (requires API keys)
     print("\n5️⃣  Testing vehicle extraction...")
-    from core.config import settings
     if not settings.gemini_api_key or settings.gemini_api_key == "your_gemini_api_key_here":
         print("   ⚠️  GEMINI_API_KEY not configured")
         print(f"      Current value: {settings.gemini_api_key[:20]}...")

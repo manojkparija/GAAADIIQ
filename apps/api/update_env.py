@@ -6,8 +6,9 @@ Usage:
   python update_env.py
 """
 
-import os
+import getpass
 from pathlib import Path
+
 
 def update_env():
     """Update .env file with user's Gemini API key."""
@@ -20,7 +21,6 @@ def update_env():
     content = env_file.read_text()
 
     # Ask for key (input is hidden)
-    import getpass
     api_key = getpass.getpass("Enter your GEMINI_API_KEY (input is hidden): ").strip()
 
     if not api_key:
