@@ -32,7 +32,11 @@ def _car_png(colour=(190, 40, 40)) -> bytes:
 
 
 def _brochure_pdf() -> bytes:
-    import fitz
+    try:
+        import fitz
+    except ImportError:
+        pytest.skip("PyMuPDF not installed")
+
     doc = fitz.open()
     p = doc.new_page()
     p.insert_text((60, 70), "MARUTI SUZUKI DZIRE 2025", fontsize=24)
