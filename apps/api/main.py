@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import secrets
@@ -87,6 +88,44 @@ _docs_url = None if settings.is_production else "/docs"
 _redoc_url = None if settings.is_production else "/redoc"
 
 
+async def _fix_schema():
+    """Apply missing schema columns at startup (non-fatal if DB unavailable)."""
+    from urllib.parse import urlparse
+
+    import asyncpg
+
+    try:
+        # Parse database URL
+        db_url = settings.async_database_url
+        db_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+        parsed = urlparse(db_url)
+
+        # Connect directly with timeout
+        conn = await asyncio.wait_for(
+            asyncpg.connect(
+                host=parsed.hostname,
+                port=parsed.port,
+                user=parsed.username,
+                password=parsed.password,
+                database=parsed.path.lstrip("/"),
+                ssl=False,
+                timeout=5,
+            ),
+            timeout=10,
+        )
+
+        try:
+            # Add missing revoked column to refresh_tokens
+            await conn.execute(
+                "ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS revoked BOOLEAN NOT NULL DEFAULT FALSE;"
+            )
+            _log.info("Schema: refresh_tokens.revoked column ensured")
+        finally:
+            await conn.close()
+    except Exception as e:
+        _log.debug("Schema fix skipped (db unavailable): %s", str(e)[:50])
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Run DB migrations on startup (skip in development if DB is unavailable)
@@ -96,16 +135,26 @@ async def lifespan(app: FastAPI):
             ["alembic", "upgrade", "head"],
             capture_output=True, text=True, check=True,
             cwd=api_dir,
+            timeout=15,
         )
         _log.info("Alembic: %s", result.stdout.strip() or "up to date")
+    except subprocess.TimeoutExpired:
+        if settings.is_production:
+            _log.error("Alembic migration timeout")
+            raise
+        else:
+            _log.warning("Alembic migration timeout (development mode) - will retry with direct schema fix")
+            await _fix_schema()
     except subprocess.CalledProcessError as exc:
         if settings.is_production:
             _log.error("Alembic migration failed stdout=%s stderr=%s", exc.stdout, exc.stderr)
             raise
         else:
-            _log.warning("Alembic migration skipped (development mode): %s", exc.stderr[:200] if exc.stderr else "unknown error")
+            _log.warning("Alembic migration skipped (development mode) - attempting direct schema fix")
+            await _fix_schema()
     except FileNotFoundError:
         _log.warning("Alembic command not found in PATH; skipping database migrations")
+        await _fix_schema()
 
     start_scheduler()
 
