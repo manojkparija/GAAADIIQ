@@ -876,8 +876,20 @@ async def tag_images_manually(
     """
     Manually tag untagged images from a specific PDF.
 
-    Used when vehicle extraction fails but the make/model are known from the
-    PDF name or other metadata. Tags all untagged images from the PDF.
+    Admin-only. Used when vehicle extraction fails (e.g., no Gemini API key
+    configured) but the make/model are known from the PDF name or other metadata.
+
+    Example:
+        POST /brochures/tag-images
+        {
+            "pdf_name": "DZIRE.pdf",
+            "make": "Maruti Suzuki",
+            "model": "Dzire",
+            "variant": "ZXi+"
+        }
+
+    This tags all untagged images from DZIRE.pdf so they become queryable via
+    GET /brochures/images?make=Maruti+Suzuki&model=Dzire
     """
     # Find all untagged images from this PDF
     stmt = select(VehicleMedia).where(
