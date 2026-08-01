@@ -666,7 +666,6 @@ async def _job_detail(db: AsyncSession, job_id: uuid.UUID) -> JobDetailOut:
 
 @router.get("/jobs", response_model=list[JobOut])
 async def list_jobs(
-    admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
     limit: int = Query(50, ge=1, le=200),
 ):
@@ -685,7 +684,6 @@ async def list_jobs(
 @router.get("/jobs/{job_id}", response_model=JobDetailOut)
 async def get_job(
     job_id: uuid.UUID,
-    admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await _job_detail(db, job_id)
