@@ -343,10 +343,10 @@ class TestManualImageTaggingSuite:
 
         monkeypatch.setattr("services.pdf_ingest.extract_vehicles", no_extract)
 
-        job_id = (await client.post(
+        await client.post(
             "/brochures/upload",
             files={"file": ("dzire.pdf", _brochure_pdf(), "application/pdf")},
-        )).json()["id"]
+        )
 
         # Verify images exist but are untagged
         images_before = await client.get("/brochures/images?make=Maruti%20Suzuki&model=Dzire")
