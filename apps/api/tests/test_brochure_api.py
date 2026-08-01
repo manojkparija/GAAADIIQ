@@ -124,7 +124,7 @@ class TestBrochureUploadSuite:
     async def test_uploaded_image_is_actually_served(self, client, monkeypatch):
         monkeypatch.setattr(
             "services.pdf_ingest.extract_vehicles",
-            lambda text, source=None: _noop_vehicles(),
+            _noop_vehicles,
         )
         r = await client.post(
             "/brochures/upload",
@@ -173,7 +173,7 @@ class TestBrochureUploadSuite:
         assert r.json()["ai_engine"] == "none"
 
 
-async def _noop_vehicles():
+async def _noop_vehicles(text, source=None):
     return [], "none"
 
 
@@ -201,7 +201,7 @@ class TestBrochureQuerySuite:
 
     @pytest.mark.asyncio
     async def test_deleting_a_job_removes_its_files_and_rows(self, client, monkeypatch):
-        monkeypatch.setattr("services.pdf_ingest.extract_vehicles", lambda t, source=None: _noop_vehicles())
+        monkeypatch.setattr("services.pdf_ingest.extract_vehicles", _noop_vehicles)
         job_id = (await client.post(
             "/brochures/upload",
             files={"file": ("b.pdf", _brochure_pdf(), "application/pdf")},
