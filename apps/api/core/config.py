@@ -45,6 +45,8 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:4200",
         "https://localhost:4200",
+        "http://127.0.0.1:4200",
+        "https://127.0.0.1:4200",
         "capacitor://localhost",
         "ionic://localhost",
         "https://gaadiiq.com",
