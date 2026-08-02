@@ -10,14 +10,16 @@ import uuid
 
 import pytest
 import pytest_asyncio
-from fastapi import HTTPException, status
+from fastapi import Cookie, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from httpx import ASGITransport, AsyncClient
 from jose import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from core.config import settings
-from core.dependencies import get_admin_user
+from core.dependencies import get_admin_user, get_current_user
+from core.security import ACCESS_TOKEN_COOKIE
 from db.session import get_db
 from main import app
 from models.user import User, UserRole
@@ -47,13 +49,22 @@ async def client(db_engine, monkeypatch):
                 await session.rollback()
                 raise
 
-    async def override_get_admin_user():
-        # Enforce authentication in tests — no dev-mode bypass
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    async def override_get_admin_user(
+        credentials: HTTPAuthorizationCredentials | None = Depends(HTTPBearer(auto_error=False)),
+        cookie_token: str | None = Cookie(default=None, alias=ACCESS_TOKEN_COOKIE),
+        db: AsyncSession = Depends(override_get_db),
+    ) -> User:
+        # Skip dev-mode bypass in tests; enforce real authentication
+        user = await get_current_user(credentials, cookie_token, db)
+        # Verify admin role
+        if user.email and user.email.lower() in settings.admin_email_set:
+            return user
+        if user.role != UserRole.admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin access required",
+            )
+        return user
 
     monkeypatch.setattr(settings, "supabase_jwt_secret", SECRET)
     app.dependency_overrides[get_db] = override_get_db
