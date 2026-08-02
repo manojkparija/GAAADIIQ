@@ -2,6 +2,7 @@ import { Component, signal, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CarsDataService, Car } from '../../services/cars-data.service';
+import { VehicleImageService } from '../../services/vehicle-image.service';
 import { SeoService } from '../../services/seo.service';
 import { AnalyticsService } from '../../services/analytics.service';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -320,6 +321,7 @@ export class AiAdvisorComponent {
 
   constructor(
     private carsData: CarsDataService,
+    private vehicleImages: VehicleImageService,
     private seo: SeoService,
     private analytics: AnalyticsService,
     private api: ApiService,
@@ -747,6 +749,18 @@ export class AiAdvisorComponent {
   private calcEmi(principal: number, rate: number, months: number): number {
     const r = rate / 12 / 100;
     return principal * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+  }
+
+  getImageUrl(car: Car): string {
+    // Try to get DAM image from vehicle_media library first
+    const damUrl = this.vehicleImages.imageOr(
+      null,
+      car.make,
+      car.model,
+      car.variant,
+      car.image || 'assets/cars/placeholder.svg'
+    );
+    return damUrl;
   }
 
   fmtP(n: number): string {
