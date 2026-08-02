@@ -29,8 +29,9 @@ async def embed_image_bytes(data: bytes) -> list[float]:
     Returns 512-dim normalized embedding, or empty list if unavailable.
     """
     try:
-        from PIL import Image
         from io import BytesIO
+
+        from PIL import Image
 
         model = _get_model()
         image = Image.open(BytesIO(data))

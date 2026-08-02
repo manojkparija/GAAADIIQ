@@ -1,6 +1,7 @@
 """Integration tests for WAVE 3 upload pipeline with ML fields."""
-import pytest
 from uuid import uuid4
+
+import pytest
 from sqlalchemy import select
 
 from models.vehicle_media import VehicleMedia

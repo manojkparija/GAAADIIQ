@@ -4,7 +4,12 @@ import pytest
 
 def test_safety_detection_imports():
     """Test that safety_detection service can be imported."""
-    from services.safety_detection import detect_nsfw, detect_license_plate, ensure_models_loaded
+
+    from services.safety_detection import (
+        detect_license_plate,
+        detect_nsfw,
+        ensure_models_loaded,
+    )
 
     assert callable(detect_nsfw)
     assert callable(detect_license_plate)

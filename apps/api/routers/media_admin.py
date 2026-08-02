@@ -595,7 +595,6 @@ async def search_media(
         .limit(100)
     )).scalars().all()
 
-    from sqlalchemy import func
     scored = []
     for m in media_rows:
         if m.embedding_vector:

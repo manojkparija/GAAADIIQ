@@ -4,7 +4,8 @@ import pytest
 
 def test_ocr_tesseract_imports():
     """Test that ocr_tesseract service can be imported."""
-    from services.ocr_tesseract import ocr_image_bytes, _extract_entities
+
+    from services.ocr_tesseract import _extract_entities, ocr_image_bytes
 
     assert callable(ocr_image_bytes)
     assert callable(_extract_entities)

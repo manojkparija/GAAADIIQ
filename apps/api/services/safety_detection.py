@@ -1,6 +1,7 @@
 """Safety detection: NSFW and license plate detection."""
 import logging
 from io import BytesIO
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
