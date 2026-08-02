@@ -162,6 +162,26 @@ async def lifespan(app: FastAPI):
     from services.vector_store import ensure_collection
     ensure_collection()
 
+    # ── WAVE 3 ML Model Initialization ────────────────────────────────────────
+    if settings.enable_embeddings:
+        try:
+            from services.embeddings_clip import ensure_model_loaded
+            if ensure_model_loaded():
+                _log.info("CLIP embedding model loaded")
+        except Exception as e:
+            _log.warning(f"Failed to load CLIP model (embeddings disabled): {e}")
+
+    if settings.enable_ocr:
+        _log.info("Tesseract OCR enabled (model loaded on first use)")
+
+    if settings.enable_safety_detection:
+        try:
+            from services.safety_detection import ensure_models_loaded
+            if ensure_models_loaded():
+                _log.info("Safety detection models (NSFW + YOLOv8) loaded")
+        except Exception as e:
+            _log.warning(f"Failed to load safety detection models: {e}")
+
     yield
     stop_scheduler()
 

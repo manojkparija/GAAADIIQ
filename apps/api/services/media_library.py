@@ -30,9 +30,12 @@ from models.media_audit import AuditAction
 from models.media_version import MediaEventType
 from models.vehicle_media import ListingMedia, VehicleMedia
 from services import pdf_ingest
+from services.embeddings_clip import embed_image_bytes
 from services.media_audit import log_audit
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
+from services.ocr_tesseract import ocr_image_bytes
+from services.safety_detection import detect_license_plate, detect_nsfw
 from services.version_history import record_version
 
 logger = logging.getLogger("gaadiiq.media_library")
@@ -210,6 +213,42 @@ async def store_image(
     )
 
     await media_index.index_media(row)
+
+    # WAVE 3: Non-blocking ML enrichment
+    try:
+        embedding = await embed_image_bytes(data)
+        if embedding:
+            row.embedding_vector = embedding
+    except Exception as e:
+        logger.warning(f"Failed to generate embedding for {row.id}: {e}")
+
+    try:
+        ocr_result = await ocr_image_bytes(data)
+        if ocr_result:
+            row.ocr_text = ocr_result.get("text")
+            row.ocr_confidence = ocr_result.get("confidence")
+            row.ocr_entities = ocr_result.get("entities")
+    except Exception as e:
+        logger.warning(f"Failed to extract OCR for {row.id}: {e}")
+
+    try:
+        nsfw_score = await detect_nsfw(data)
+        if nsfw_score is not None:
+            row.nsfw_score = nsfw_score
+    except Exception as e:
+        logger.warning(f"Failed to detect NSFW for {row.id}: {e}")
+
+    try:
+        plate_result = await detect_license_plate(data)
+        if plate_result:
+            row.license_plate_detected = plate_result.get("detected", False)
+            row.license_plate_bbox = plate_result.get("bbox")
+            if plate_result.get("confidence"):
+                row.safety_metadata = {"license_plate_confidence": plate_result.get("confidence")}
+    except Exception as e:
+        logger.warning(f"Failed to detect license plate for {row.id}: {e}")
+
+    await db.flush()
     return row
 
 
