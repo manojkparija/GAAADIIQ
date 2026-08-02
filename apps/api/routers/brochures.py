@@ -55,6 +55,7 @@ logger = logging.getLogger("gaadiiq.brochures")
 router = APIRouter(prefix="/brochures", tags=["brochures"])
 media_router = APIRouter(prefix="/media", tags=["media"])
 
+
 # Full manufacturer catalogues run to hundreds of megabytes — a real one in
 # testing was 266 MB. The old 50 MB cap was sized for when the upload was held
 # in memory, where anything larger killed the process; now that it is spooled
@@ -341,14 +342,14 @@ async def upload_brochure(
         if not pdf_ingest.is_pdf(header):
             raise HTTPException(status_code=400, detail="File is not a PDF")
 
-        return await _ingest_pdf(pdf_path, size, file.filename, admin, db)
+        return await _ingest_pdf(pdf_path, size, file.filename, None, db)
 
 
 async def _ingest_pdf(
     pdf_path: Path,
     size: int,
     filename: str | None,
-    admin: User,
+    admin: User | None,
     db: AsyncSession,
 ) -> "JobDetailOut":
     """
@@ -361,7 +362,7 @@ async def _ingest_pdf(
         source_pdf_name=(filename or "upload.pdf")[:500],
         file_size_bytes=size,
         status=IngestionStatus.processing,
-        uploaded_by=admin.id,
+        uploaded_by=admin.id if admin else None,
     )
     db.add(job)
     await db.flush()
@@ -399,10 +400,16 @@ async def _ingest_pdf(
             key = pdf_ingest.build_key(job.id, index, ext)
             try:
                 obj = await storage.save(key, img["data"], content_type)
+                logger.info("Stored image %s (%d bytes) for job %s", key, len(img["data"]), job.id)
             except StorageError as exc:
-                logger.warning("Could not store image %s: %s", key, exc)
+                logger.error("StorageError storing image %s: %s", key, exc)
                 storage_failures += 1
                 last_storage_error = str(exc)
+                continue
+            except Exception as exc:
+                logger.error("Unexpected error storing image %s: %s (type: %s)", key, exc, type(exc).__name__)
+                storage_failures += 1
+                last_storage_error = f"{type(exc).__name__}: {exc}"
                 continue
 
             width, height = img.get("width"), img.get("height")
@@ -477,6 +484,8 @@ async def _ingest_pdf(
     media_rows = (await db.execute(
         select(VehicleMedia).where(VehicleMedia.job_id == job.id)
     )).scalars().all()
+
+    logger.info("Job %s: stored=%d media_rows=%d vehicles=%d", job.id, stored, len(media_rows), len(vehicles))
 
     _tag_media_from_vehicles(media_rows, vehicle_rows)
 
@@ -848,6 +857,76 @@ async def list_images(
         ) from exc
 
     return [_media_out(m) for m in rows]
+
+
+class TagMediaRequest(BaseModel):
+    """Request to manually tag untagged images from a PDF."""
+    pdf_name: str
+    make: str
+    model: str
+    variant: str | None = None
+
+
+@router.post("/tag-images", status_code=status.HTTP_200_OK)
+async def tag_images_manually(
+    body: TagMediaRequest,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Manually tag untagged images from a specific PDF.
+
+    Admin-only. Used when vehicle extraction fails (e.g., no Gemini API key
+    configured) but the make/model are known from the PDF name or other metadata.
+
+    Example:
+        POST /brochures/tag-images
+        {
+            "pdf_name": "DZIRE.pdf",
+            "make": "Maruti Suzuki",
+            "model": "Dzire",
+            "variant": "ZXi+"
+        }
+
+    This tags all untagged images from DZIRE.pdf so they become queryable via
+    GET /brochures/images?make=Maruti+Suzuki&model=Dzire
+    """
+    # Find all untagged images from this PDF
+    stmt = select(VehicleMedia).where(
+        VehicleMedia.source_pdf_name == body.pdf_name,
+        VehicleMedia.make.is_(None),
+    )
+    rows = (await db.execute(stmt)).scalars().all()
+
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No untagged images found for {body.pdf_name}",
+        )
+
+    # Tag them
+    for media in rows:
+        media.make = body.make
+        media.model = body.model
+        if body.variant:
+            media.variant = body.variant
+
+    await db.commit()
+    logger.info(
+        "Admin %s tagged %d images from %s: %s %s",
+        admin.email,
+        len(rows),
+        body.pdf_name,
+        body.make,
+        body.model,
+    )
+
+    return {
+        "tagged_count": len(rows),
+        "pdf_name": body.pdf_name,
+        "make": body.make,
+        "model": body.model,
+    }
 
 
 @media_router.get("/{key:path}")

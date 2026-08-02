@@ -270,9 +270,55 @@
 
     <!-- INVENTORY TAB -->
     <ng-container *ngIf="activeTab()==='inventory'">
-      <div class="inventory-cta glass-card">
+      <div class="inventory-header">
+        <h2 class="section-head">Your <span class="gradient-text">Car Images</span></h2>
+        <p class="inventory-sub">Manage and organize your uploaded vehicle photographs</p>
+      </div>
+
+      <!-- Loading state -->
+      <div *ngIf="galleryLoading()" class="glass-card" style="padding: 2rem; text-align: center; color: var(--muted)">
+        <div style="font-size: 2rem; margin-bottom: 1rem">📸</div>
+        <p>Loading your images…</p>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="!galleryLoading() && galleryImages().length === 0" class="glass-card" style="padding: 3rem; text-align: center;">
+        <div class="inv-icon" style="font-size: 3rem; margin-bottom: 1rem">📁</div>
+        <h3>No images yet</h3>
+        <p style="color: var(--muted); margin-bottom: 1.5rem">Upload your first car image using the admin panel</p>
+        <a routerLink="/admin/car-images" class="btn-gradient">Upload Images →</a>
+      </div>
+
+      <!-- Gallery -->
+      <div *ngIf="galleryImages().length > 0" class="inventory-gallery">
+        <div class="gallery-stats glass-card">
+          <div class="stat-item">
+            <span class="stat-label">Total Images</span>
+            <span class="stat-value">{{ galleryImages().length }}</span>
+          </div>
+        </div>
+
+        <div class="image-grid">
+          <div class="image-card" *ngFor="let img of galleryImages()">
+            <div class="img-thumb">
+              <img [src]="img.thumbnail_url || img.url" [alt]="img.filename" />
+            </div>
+            <div class="img-info">
+              <div class="img-title">{{ img.make }} {{ img.model }}</div>
+              <div class="img-meta">
+                <span *ngIf="img.image_category" class="badge">{{ img.image_category }}</span>
+                <span *ngIf="img.model_year" class="badge">{{ img.model_year }}</span>
+              </div>
+              <div class="img-filename">{{ img.filename }}</div>
+              <div class="img-date">{{ (img.created_at | date:'short') }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="inventory-cta glass-card" style="margin-top: 2rem">
         <div class="inv-icon"><app-icon name="car" [size]="32"></app-icon></div>
-        <h3>Manage Your Inventory</h3>
+        <h3>Manage Your Listings</h3>
         <p>Add, edit and track all your listed vehicles in one place. Monitor days on lot and price competitiveness.</p>
         <a routerLink="/my-listings" class="btn-gradient">Go to My Listings →</a>
       </div>

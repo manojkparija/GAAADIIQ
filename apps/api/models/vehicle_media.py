@@ -221,6 +221,11 @@ class VehicleMedia(Base):
     # the original over a missing thumbnail would be the wrong trade.
     thumbnail_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
+    # WebP derivative for reduced file size. Stored separately from thumbnail
+    # since WebP is full-resolution while thumbnail is downscaled. Nullable
+    # because generation can fail, and the original is always available.
+    webp_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
     # Provenance — which brochure, which page.
     source_pdf_name: Mapped[str] = mapped_column(String(500), nullable=False)
     page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)

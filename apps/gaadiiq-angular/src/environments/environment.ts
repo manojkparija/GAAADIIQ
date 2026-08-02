@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://gaadiiq-api.onrender.com',
+  apiUrl: 'http://localhost:8000',
   // Address the dev sign-in shortcut recognises. It only becomes a real,
   // API-capable login if a Supabase user exists with this exact email —
   // otherwise the session is browser-only and every API call is anonymous.

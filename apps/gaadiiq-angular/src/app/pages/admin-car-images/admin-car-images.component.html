@@ -1,0 +1,288 @@
+<!-- ── TOAST ── -->
+@if (toastMsg()) {
+  <div class="aci-toast">{{ toastMsg() }}</div>
+}
+
+<!-- ── PAGE SHELL ── -->
+<div class="aci-page">
+
+  <!-- HEADER -->
+  <header class="aci-header">
+    <div class="aci-brand">
+      <span class="aci-brand-icon">📸</span>
+      <div>
+        <div class="aci-brand-name">Car Image Management</div>
+        <div class="aci-brand-sub">Admin · Media Library</div>
+      </div>
+    </div>
+    @if (uploadResults()) {
+      <div class="aci-reset">
+        <button class="btn-ghost" (click)="startOver()" title="Upload more images">
+          ⬆️ Upload More
+        </button>
+      </div>
+    }
+  </header>
+
+  <!-- MAIN AREA -->
+  <main class="aci-main">
+
+    <!-- SECTION 1: FILE SELECTION -->
+    @if (!showMetadataGrid() && !uploadResults()) {
+      <div class="aci-section">
+        <h2 class="aci-section-title">Step 1: Select Images</h2>
+        <p class="aci-section-sub">Choose one or more JPG, PNG, WebP, HEIC, or TIFF files</p>
+
+        <!-- Drop zone -->
+        <div class="drop-zone" [class.drag-over]="dragOver()">
+          <div class="drop-inner">
+            <div class="drop-icon">📸</div>
+            <div class="drop-heading">Drag & drop images here</div>
+            <div class="drop-sub">Vehicle photos · Exterior · Interior · Details</div>
+            <button class="btn-upload" (click)="fileInput.click()">
+              Choose Images
+            </button>
+            <input #fileInput type="file" accept="image/*,.heic,.tiff"
+              multiple hidden (change)="onFileSelect($event)" />
+            <div class="drop-limits">JPG · PNG · WebP · HEIC · TIFF · Up to 50 files per batch</div>
+          </div>
+        </div>
+
+        @if (selectedFiles().length) {
+          <div class="aci-selected-files">
+            <div class="aci-files-title">📁 {{ selectedFiles().length }} file(s) selected</div>
+            <div class="aci-files-list">
+              @for (file of selectedFiles(); track file.name) {
+                <div class="aci-file-item">
+                  <span class="aci-file-name">{{ file.name }}</span>
+                  <span class="aci-file-size">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
+                </div>
+              }
+            </div>
+            <div class="aci-upload-info">
+              <div class="upload-size-bar">
+                <div class="size-bar-track">
+                  <div class="size-bar-fill" [style.width.%]="(totalUploadSize() / maxUploadBytes) * 100"
+                       [class.warning]="uploadSizeWarning() === 'warning'"
+                       [class.danger]="uploadSizeWarning() === 'danger'"></div>
+                </div>
+                <div class="size-label">{{ (totalUploadSize() / 1024 / 1024).toFixed(1) }} MB / {{ maxUploadMb }} MB</div>
+              </div>
+              @if (uploadSizeWarning() === 'warning') {
+                <div class="size-warning">⚠️ Approaching upload limit ({{ ((totalUploadSize() / maxUploadBytes) * 100).toFixed(0) }}%)</div>
+              }
+              @if (uploadSizeExceeded()) {
+                <div class="size-error">❌ Exceeds {{ maxUploadMb }} MB limit. Remove files to proceed.</div>
+              }
+            </div>
+            <button class="btn-primary" (click)="inspectFiles()" [disabled]="isInspecting() || uploadSizeExceeded()">
+              {{ isInspecting() ? 'Inspecting…' : '→ Continue with Metadata' }}
+            </button>
+          </div>
+        }
+
+        @if (uploadError()) {
+          <div class="aci-error">{{ uploadError() }}</div>
+        }
+      </div>
+    }
+
+    <!-- SECTION 2: METADATA GRID & REVIEW -->
+    @if (showMetadataGrid() && !uploadResults()) {
+      <div class="aci-section">
+        <h2 class="aci-section-title">Step 2: Review & Edit Metadata</h2>
+        <p class="aci-section-sub">The AI inspected your filenames. Edit as needed below — all mandatory fields required</p>
+
+        <!-- Mandatory vehicle metadata (shared across all files) -->
+        <div class="aci-form-section">
+          <h3 class="aci-subsection-title">Vehicle Information (Required)</h3>
+          <div class="aci-form-grid">
+            <div class="aci-form-field">
+              <label class="aci-label">Manufacturer *</label>
+              <input class="aci-input" [(ngModel)]="make" placeholder="e.g., Tata, Hyundai, Maruti" />
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">Model *</label>
+              <input class="aci-input" [(ngModel)]="model" placeholder="e.g., Nexon, Creta, Swift" />
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">Variant</label>
+              <input class="aci-input" [(ngModel)]="variant" placeholder="e.g., XE, XT, XT+ (optional)" />
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">Year *</label>
+              <input class="aci-input" type="number" [(ngModel)]="modelYear" placeholder="e.g., 2024" />
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">Body Type *</label>
+              <select class="aci-input" [(ngModel)]="category">
+                <option value="">Select body type…</option>
+                @for (opt of bodyTypeOptions; track opt) {
+                  <option [value]="opt">{{ opt }}</option>
+                }
+              </select>
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">Fuel Type *</label>
+              <select class="aci-input" [(ngModel)]="fuelType">
+                <option value="">Select fuel…</option>
+                @for (opt of fuelOptions; track opt) {
+                  <option [value]="opt">{{ opt }}</option>
+                }
+              </select>
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">Transmission *</label>
+              <select class="aci-input" [(ngModel)]="transmission">
+                <option value="">Select transmission…</option>
+                @for (opt of transmissionOptions; track opt) {
+                  <option [value]="opt">{{ opt }}</option>
+                }
+              </select>
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">Image Category *</label>
+              <select class="aci-input" [(ngModel)]="imageCategory">
+                <option value="">Select category…</option>
+                @for (opt of imageCategoryOptions; track opt) {
+                  <option [value]="opt">{{ formatCategoryName(opt) }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Optional metadata -->
+        <div class="aci-form-section">
+          <h3 class="aci-subsection-title">Additional Information (Optional)</h3>
+          <div class="aci-form-grid">
+            <div class="aci-form-field">
+              <label class="aci-label">Colour</label>
+              <input class="aci-input" [(ngModel)]="colour" placeholder="e.g., Pearl White, Midnight Black" />
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">Source</label>
+              <input class="aci-input" [(ngModel)]="source" placeholder="e.g., Manufacturer brochure, Dealership" />
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">Copyright</label>
+              <input class="aci-input" [(ngModel)]="copyright" placeholder="e.g., © 2024 Tata Motors" />
+            </div>
+            <div class="aci-form-field">
+              <label class="aci-label">License</label>
+              <input class="aci-input" [(ngModel)]="license" placeholder="e.g., CC-BY, Internal Use" />
+            </div>
+          </div>
+        </div>
+
+        <!-- File-specific hints (read-only) -->
+        @if (inspectResults().length) {
+          <div class="aci-form-section">
+            <h3 class="aci-subsection-title">AI Suggestions from Filenames</h3>
+            <p class="aci-section-sub">The form fields above take precedence. These are filename hints only.</p>
+            <div class="aci-hints-grid">
+              @for (hint of inspectResults(); track hint.filename) {
+                <div class="aci-hint-card">
+                  <div class="aci-hint-filename">{{ hint.filename }}</div>
+                  <div class="aci-hint-details">
+                    @if (hint.make) { <span class="aci-hint-badge">Make: {{ hint.make }}</span> }
+                    @if (hint.model) { <span class="aci-hint-badge">Model: {{ hint.model }}</span> }
+                    @if (hint.variant) { <span class="aci-hint-badge">Variant: {{ hint.variant }}</span> }
+                    @if (hint.model_year) { <span class="aci-hint-badge">Year: {{ hint.model_year }}</span> }
+                    @if (hint.image_category) { <span class="aci-hint-badge">Category: {{ hint.image_category }}</span> }
+                    @if (hint.colour) { <span class="aci-hint-badge">Colour: {{ hint.colour }}</span> }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="aci-actions">
+          <button class="btn-primary" (click)="uploadImages()" [disabled]="isUploading()">
+            {{ isUploading() ? 'Uploading…' : '✓ Upload ' + selectedFiles().length + ' Image(s)' }}
+          </button>
+          <button class="btn-ghost" (click)="cancelUpload()" [disabled]="isUploading()">
+            Cancel & Start Over
+          </button>
+        </div>
+
+        @if (uploadError()) {
+          <div class="aci-error">{{ uploadError() }}</div>
+        }
+      </div>
+    }
+
+    <!-- SECTION 3: UPLOAD RESULTS -->
+    @if (uploadResults()) {
+      <div class="aci-section">
+        <h2 class="aci-section-title">✅ Upload Complete</h2>
+        <div class="aci-result-summary">
+          <div class="aci-result-item">
+            <div class="aci-result-label">Stored</div>
+            <div class="aci-result-value">{{ uploadResults()!.stored }}</div>
+            <div class="aci-result-desc">New images in library</div>
+          </div>
+          <div class="aci-result-item">
+            <div class="aci-result-label">Deduplicated</div>
+            <div class="aci-result-value">{{ uploadResults()!.deduplicated }}</div>
+            <div class="aci-result-desc">Already in library</div>
+          </div>
+          @if (uploadResults()!.rejected > 0) {
+            <div class="aci-result-item aci-result-rejected">
+              <div class="aci-result-label">Rejected</div>
+              <div class="aci-result-value">{{ uploadResults()!.rejected }}</div>
+              <div class="aci-result-desc">Failed or unsupported</div>
+            </div>
+          }
+        </div>
+
+        @if (uploadResults()!.errors.length) {
+          <div class="aci-errors">
+            <h4>Errors</h4>
+            <ul>
+              @for (err of uploadResults()!.errors; track err) {
+                <li>{{ err }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (uploadResults()!.images.length) {
+          <div class="aci-uploaded-grid">
+            <h3>Uploaded Images</h3>
+            <div class="aci-image-grid">
+              @for (img of uploadResults()!.images; track img.id) {
+                <div class="aci-image-card">
+                  <img [src]="img.thumbnail_url || img.url" [alt]="img.filename" class="aci-image-thumb" />
+                  <div class="aci-image-info">
+                    <div class="aci-image-name">{{ img.filename }}</div>
+                    <div class="aci-image-meta">
+                      {{ img.make }} {{ img.model }}
+                      @if (img.image_category) {
+                        · {{ img.image_category }}
+                      }
+                    </div>
+                    @if (img.deduplicated) {
+                      <span class="aci-dedup-badge">♻️ Deduplicated</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="aci-actions">
+          <button class="btn-primary" (click)="startOver()">
+            ⬆️ Upload More Images
+          </button>
+          <a routerLink="/admin/pdf-ingestion" class="btn-secondary">
+            ← Back to File Ingestion
+          </a>
+        </div>
+      </div>
+    }
+
+  </main>
+</div>
