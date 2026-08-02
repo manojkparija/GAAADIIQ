@@ -3,14 +3,12 @@ Initialize SQLite schema directly (bypassing Alembic's PostgreSQL-specific SQL).
 Used for local development only - production uses Alembic + PostgreSQL.
 """
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.sql import text
 
-from db.base import Base
-from core.config import settings
+from sqlalchemy.ext.asyncio import create_async_engine
 
-# Import all models so they register with Base.metadata
 import models  # noqa: F401
+from core.config import settings
+from db.base import Base
 
 
 async def init_sqlite_schema():
