@@ -535,6 +535,47 @@
   }
 }
 
+.aci-ml-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.75rem;
+}
+
+.aci-ml-block {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.aci-ml-label {
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 3rem;
+}
+
+.aci-ml-value {
+  color: #1f2937;
+  font-weight: 500;
+
+  &.ml-flagged {
+    color: #dc2626;
+    background: #fee2e2;
+    padding: 0.125rem 0.25rem;
+    border-radius: 2px;
+  }
+}
+
+.aci-ml-confidence {
+  display: block;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  margin-left: 3rem;
+}
+
 @media (max-width: 640px) {
   .aci-main {
     padding: 1rem;
