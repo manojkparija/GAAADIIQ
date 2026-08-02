@@ -111,6 +111,7 @@ export class AdminCarImagesComponent implements OnInit {
   }
 
   async inspectFiles() {
+    alert('DEBUG: inspectFiles() called');
     const files = this.selectedFiles();
     if (!files.length) {
       this.toast('❌ No files selected');
