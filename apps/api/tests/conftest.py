@@ -32,7 +32,8 @@ async def db_engine(tmp_path):
 async def db_session(db_engine):
     """Async SQLAlchemy session for tests."""
     async with AsyncSession(db_engine) as session:
-        yield session
+        async with session.begin():
+            yield session
 
 
 @pytest.fixture(autouse=True)
