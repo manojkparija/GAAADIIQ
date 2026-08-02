@@ -7,7 +7,6 @@ Create Date: 2026-08-02 09:00:00.000000
 """
 from alembic import op
 from sqlalchemy.dialects import postgresql
-
 import sqlalchemy as sa
 
 revision = '0005'
