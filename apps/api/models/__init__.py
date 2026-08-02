@@ -3,6 +3,8 @@ from .customer_intent import CustomerActivity, CustomerIntentScore
 from .dealer import Dealer
 from .listing import Listing
 from .loan_inquiry import LoanInquiry
+from .media_audit import AuditAction, VehicleMediaAudit
+from .media_version import MediaEventType, VehicleMediaVersion
 from .notification import Notification
 from .payment import Payment
 from .price_alert import PriceAlert
@@ -21,8 +23,6 @@ from .vehicle_media import (
     PdfIngestionJob,
     VehicleMedia,
 )
-from .media_version import MediaEventType, VehicleMediaVersion
-from .media_audit import AuditAction, VehicleMediaAudit
 from .voice_diagnosis import DiagnosisAuditEvent, DiagnosisConversation, VoiceTranscript
 
 __all__ = [

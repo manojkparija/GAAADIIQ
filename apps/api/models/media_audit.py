@@ -1,13 +1,16 @@
 """Audit trail for vehicle media operations."""
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
+
+if TYPE_CHECKING:
+    from .vehicle_media import VehicleMedia
 
 
 class AuditAction(str, Enum):
