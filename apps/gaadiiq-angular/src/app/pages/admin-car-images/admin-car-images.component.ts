@@ -149,6 +149,9 @@ export class AdminCarImagesComponent implements OnInit {
       this.toast(`✓ Inspected ${results.length} file(s) — edit metadata below`);
     } catch (err) {
       console.error('Inspect error details:', err);
+      if (err instanceof Error) {
+        console.error('Stack trace:', err.stack);
+      }
       this.toast(`❌ Inspection failed: ${err}`);
     } finally {
       this.isInspecting.set(false);
