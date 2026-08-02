@@ -142,12 +142,25 @@ async def store_image(
             # The original is stored; a missing thumbnail is a degraded gallery.
             logger.warning("Could not store thumbnail for %s: %s", obj.key, exc)
 
+    webp_key_val: str | None = None
+    webp = pdf_ingest.make_webp(data)
+    if webp and content_type != "image/webp":  # Only convert if not already WebP
+        webp_bytes, webp_type = webp
+        try:
+            webp_key_val = (await storage.save(
+                pdf_ingest.webp_key(obj.key), webp_bytes, webp_type
+            )).key
+        except StorageError as exc:
+            # The original is stored; a missing WebP is a degraded gallery.
+            logger.warning("Could not store WebP derivative for %s: %s", obj.key, exc)
+
     width, height = pdf_ingest.image_dimensions(data)
     exif_data = pdf_ingest.extract_exif(data)
 
     row = VehicleMedia(
         storage_key=obj.key,
         thumbnail_key=thumbnail_key,
+        webp_key=webp_key_val,
         content_type=content_type,
         size_bytes=obj.size_bytes,
         width=width,

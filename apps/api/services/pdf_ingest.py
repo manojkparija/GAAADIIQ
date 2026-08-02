@@ -326,6 +326,47 @@ def thumbnail_key(key: str) -> str:
     return f"{stem or key}_thumb.webp" if stem else f"{key}_thumb.webp"
 
 
+def make_webp(data: bytes, quality: int = 80) -> tuple[bytes, str] | None:
+    """
+    Convert an image to WebP format for reduced file size.
+
+    WebP offers better compression than JPEG/PNG while maintaining quality,
+    reducing bandwidth and improving page load times.
+
+    Returns (bytes, content_type) tuple, or None if conversion fails.
+    """
+    try:
+        from PIL import Image
+
+        with Image.open(io.BytesIO(data)) as im:
+            # Handle various image modes
+            if im.mode not in ("RGB", "L"):
+                if im.mode == "RGBA":
+                    # Preserve alpha for RGBA images
+                    pass
+                else:
+                    # Convert to RGB for other modes
+                    im = im.convert("RGB")
+
+            buf = io.BytesIO()
+            im.save(buf, format="WEBP", quality=quality, method=4)
+            return buf.getvalue(), "image/webp"
+    except Exception as exc:
+        logger.warning("Could not convert to WebP: %s", exc)
+        return None
+
+
+def webp_key(key: str) -> str:
+    """
+    Storage key for a WebP derivative, derived from the original's key.
+
+    Derived rather than stored separately so the pair cannot drift apart,
+    and suffixed with _webp so the two sort next to each other.
+    """
+    stem, _, ext = key.rpartition(".")
+    return f"{stem or key}_webp.webp" if stem else f"{key}_webp.webp"
+
+
 def extract_text(pdf_bytes: bytes) -> str:
     """Concatenated page text, truncated so a huge catalogue cannot blow the prompt."""
     doc = _open_pdf(pdf_bytes)
