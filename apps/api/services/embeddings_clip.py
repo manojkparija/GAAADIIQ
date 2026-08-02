@@ -1,7 +1,6 @@
 """CLIP embeddings for semantic search."""
-from typing import TYPE_CHECKING, Optional
-
 import logging
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer
