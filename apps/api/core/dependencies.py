@@ -113,19 +113,40 @@ async def _user_from_supabase_token(
     return user
 
 
-async def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
-    # ADMIN_EMAILS is a server-side allowlist and is honoured alongside the
-    # stored role. It exists because the UI's users live in Supabase while
-    # roles live here, so a genuine admin can otherwise be locked out of admin
-    # endpoints by a row that was created before they were made an admin.
-    if (current_user.email or "").lower() in settings.admin_email_set:
-        return current_user
-    if current_user.role.value != "admin":
+async def get_admin_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    cookie_token: str | None = Cookie(default=None, alias=ACCESS_TOKEN_COOKIE),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """
+    Get admin user. In development, allows dev admin email without JWT.
+    In production, requires valid authentication and admin role.
+    """
+    # Development mode: allow dev admin email without requiring JWT token
+    if not settings.is_production and credentials is None and not cookie_token:
+        # This is for testing only and should NEVER be used in production
+        return User(
+            id=uuid.uuid4(),
+            email=settings.admin_emails.split(",")[0].strip() if settings.admin_emails else "admin@test",
+            hashed_password=None,
+            full_name="Dev Admin",
+            role=UserRole.admin,
+            is_active=True,
+            is_verified=True,
+        )
+
+    # Production or when JWT is provided: validate using get_current_user
+    user = await get_current_user(credentials, cookie_token, db)
+
+    # Verify admin role
+    if user.email and user.email.lower() in settings.admin_email_set:
+        return user
+    if user.role != UserRole.admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
         )
-    return current_user
+    return user
 
 
 async def get_seller_user(current_user: User = Depends(get_current_user)) -> User:

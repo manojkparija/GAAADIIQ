@@ -1,16 +1,26 @@
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from core.config import settings
 
-engine = create_async_engine(
-    settings.async_database_url,
-    echo=settings.debug,
-    pool_size=10,
-    max_overflow=20,
-    connect_args={"ssl": False},
-)
+# SQLite doesn't support pool_size/max_overflow; PostgreSQL does
+engine_kwargs = {
+    "echo": settings.debug,
+}
+
+if settings.async_database_url.startswith("sqlite"):
+    # SQLite: use NullPool (no connection pooling)
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+    engine_kwargs["poolclass"] = NullPool
+else:
+    # PostgreSQL: enable connection pooling
+    engine_kwargs["pool_size"] = 10
+    engine_kwargs["max_overflow"] = 20
+    engine_kwargs["connect_args"] = {"ssl": False}
+
+engine = create_async_engine(settings.async_database_url, **engine_kwargs)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
