@@ -23,6 +23,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    ARRAY,
     JSON,
     Boolean,
     DateTime,
@@ -221,6 +222,11 @@ class VehicleMedia(Base):
     # the original over a missing thumbnail would be the wrong trade.
     thumbnail_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
+    # WebP derivative for reduced file size. Stored separately from thumbnail
+    # since WebP is full-resolution while thumbnail is downscaled. Nullable
+    # because generation can fail, and the original is always available.
+    webp_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
     # Provenance — which brochure, which page.
     source_pdf_name: Mapped[str] = mapped_column(String(500), nullable=False)
     page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -328,6 +334,18 @@ class VehicleMedia(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
+
+    # ── WAVE 3 ML fields ─────────────────────────────────────────────────────
+    embedding_vector: Mapped[list[float] | None] = mapped_column(
+        ARRAY(Float), nullable=True, index=True
+    )
+    ocr_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ocr_confidence: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
+    ocr_entities: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    nsfw_score: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
+    license_plate_detected: Mapped[bool | None] = mapped_column(Boolean, nullable=True, index=True)
+    license_plate_bbox: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    safety_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class ExtractedVehicle(Base):

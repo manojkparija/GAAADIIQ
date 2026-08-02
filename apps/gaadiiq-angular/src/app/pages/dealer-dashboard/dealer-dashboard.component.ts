@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth.service';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { SentimentService, Lead, IntentScore, LeadGrade } from '../../services/sentiment.service';
+import { VehicleImageGalleryService } from '../../services/vehicle-image-gallery.service';
 import { IconComponent } from '../../components/icon/icon.component';
 
 interface CarEnquiry {
@@ -102,9 +103,13 @@ export class DealerDashboardComponent {
     return u.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   });
 
+  galleryImages = this.galleryService.images;
+  galleryLoading = this.galleryService.loading;
+
   constructor(seo: SeoService, private testDriveSvc: TestDriveService,
               private auth: AuthService, private sellersSvc: SellersService,
-              private sb: SupabaseService, public sentimentSvc: SentimentService) {
+              private sb: SupabaseService, public sentimentSvc: SentimentService,
+              private galleryService: VehicleImageGalleryService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
     this.loadSellerInfo();
     this.sentimentSvc.loadLeads();

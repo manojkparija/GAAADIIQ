@@ -3,6 +3,8 @@ from .customer_intent import CustomerActivity, CustomerIntentScore
 from .dealer import Dealer
 from .listing import Listing
 from .loan_inquiry import LoanInquiry
+from .media_audit import AuditAction, VehicleMediaAudit
+from .media_version import MediaEventType, VehicleMediaVersion
 from .notification import Notification
 from .payment import Payment
 from .price_alert import PriceAlert
@@ -29,5 +31,6 @@ __all__ = [
     "CustomerActivity", "CustomerIntentScore",
     "VehicleDiagnosis", "DiagnosisConversation", "VoiceTranscript", "DiagnosisAuditEvent",
     "PdfIngestionJob", "VehicleMedia", "ExtractedVehicle", "ListingMedia",
-    "MediaKind", "MediaView", "ImageCategory",
+    "MediaKind", "MediaView", "ImageCategory", "VehicleMediaVersion", "MediaEventType",
+    "VehicleMediaAudit", "AuditAction",
 ]

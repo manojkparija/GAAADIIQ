@@ -79,8 +79,8 @@
     ════════════════════════════════ -->
     @if (activeTab() === 'upload') {
       <div class="pi-section-hdr">
-        <h1 class="pi-title">Upload Files</h1>
-        <p class="pi-subtitle">Upload automobile brochures, PDFs, images, spreadsheets or documents — the AI pipeline extracts all vehicle data automatically.</p>
+        <h1 class="pi-title">Upload Brochures</h1>
+        <p class="pi-subtitle">Upload PDF brochures — the AI pipeline extracts vehicle data, images, and specifications automatically.</p>
       </div>
 
       <!-- The dev shortcut grants admin in the browser only. Warn before the
@@ -105,12 +105,12 @@
       <div class="drop-zone" [class.drag-over]="dragOver()">
         <div class="drop-inner">
           <div class="drop-icon">📁</div>
-          <div class="drop-heading">Drag & drop files here</div>
-          <div class="drop-sub">Brochures · Price lists · Spec sheets · Catalogues · Images · Spreadsheets</div>
+          <div class="drop-heading">Drag & drop PDF brochures here</div>
+          <div class="drop-sub">Automotive brochures only — specifications, features, and model details</div>
           <button class="btn-upload" (click)="fileInput.click()">
-            Choose Files
+            Choose PDF Files
           </button>
-          <input #fileInput type="file" accept="*/*"
+          <input #fileInput type="file" accept=".pdf,application/pdf"
             multiple hidden (change)="onFileSelect($event)" />
           <!-- Must match MAX_PDF_BYTES in routers/brochures.py. The previous
                "10 GB" was never achievable: the server refuses anything over

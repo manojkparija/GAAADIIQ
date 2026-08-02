@@ -132,11 +132,11 @@ class Settings(BaseSettings):
     # leaving this off costs only the angle and colour, not searchability.
     media_classification_enabled: bool = False
 
-    # Per-file cap for admin image uploads, in megabytes. The BRD asks for this
-    # to be configurable; the default is sized for photography rather than for
-    # the 15 GB in that document, which is video territory and would need a
-    # resumable/chunked upload rather than a request body.
-    media_max_upload_mb: int = 64
+    # Per-file cap for admin image uploads, in megabytes. The BRD mentions 15 GB
+    # for video territory, which requires resumable/chunked upload (WAVE 3).
+    # For WAVE 2, we support high-quality photography (100 MB = ~10-20 full-res images).
+    # Set MEDIA_MAX_UPLOAD_MB to override; values >100 MB require infrastructure changes.
+    media_max_upload_mb: int = 100
 
     # Optional server-side TTS (BR-API-02). "none" disables it and the client
     # falls back to the browser's speechSynthesis, which is the default path.
@@ -168,6 +168,22 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASS: str = ""
     SMTP_FROM: str = "noreply@gaadiiq.com"
+
+    # ── WAVE 3 ML Features ────────────────────────────────────────────────────
+    # CLIP embeddings for semantic search
+    clip_model_name: str = "sentence-transformers/clip-vit-b-32"
+    clip_batch_size: int = 32
+    enable_embeddings: bool = True
+
+    # Tesseract OCR
+    tesseract_timeout_seconds: int = 30
+    enable_ocr: bool = True
+
+    # Safety detection (NSFW + license plate)
+    yolov8_model_name: str = "yolov8n.pt"
+    nsfw_threshold: float = 0.5
+    license_plate_confidence_threshold: float = 0.5
+    enable_safety_detection: bool = True
 
     @property
     def is_production(self) -> bool:

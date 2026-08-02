@@ -18,7 +18,7 @@ NOTE: deliberately NOT using `from __future__ import annotations` — see the no
 in routers/brochures.py about PEP 563 and slowapi's wrapper.
 """
 import logging
-import uuid
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
@@ -29,11 +29,17 @@ from core.config import settings
 from core.dependencies import get_admin_user
 from core.limiter import limiter
 from db.session import get_db
+from models.media_audit import AuditAction
+from models.media_version import MediaEventType
 from models.user import User
 from models.vehicle_media import ImageCategory, VehicleMedia
 from services import filename_metadata, media_library, pdf_ingest
+from services.embeddings_clip import embed_text
+from services.media_audit import get_audit_log as get_audit
+from services.media_audit import log_audit
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
+from services.version_history import get_version_history, record_version, rollback_to_version
 
 logger = logging.getLogger("gaadiiq.media_admin")
 
@@ -53,10 +59,11 @@ class SuggestedMetadata(BaseModel):
     model_year: int | None = None
     image_category: str | None = None
     colour: str | None = None
+    exif_hints: dict | None = None
 
 
 class UploadedImage(BaseModel):
-    id: uuid.UUID
+    id: UUID
     filename: str
     url: str
     thumbnail_url: str | None = None
@@ -251,7 +258,7 @@ async def upload_images(
         try:
             media = await media_library.store_image(
                 db, data, content_type,
-                key_prefix=f"car-images/{make}/{model}/{model_year}".lower().replace(" ", "-"),
+                key_prefix=f"car-images/{make}/{model}/{model_year}/{chosen_category.value}".lower().replace(" ", "-"),
                 source_name=name,
                 make=make, model=model,
                 variant=variant or hint.variant,
@@ -343,7 +350,7 @@ async def _make_primary(db: AsyncSession, media: VehicleMedia) -> None:
 @limiter.limit("60/minute")
 async def update_metadata(
     request: Request,
-    media_id: uuid.UUID,
+    media_id: UUID,
     patch: MetadataPatch,
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
@@ -362,6 +369,19 @@ async def update_metadata(
     if media is None:
         raise HTTPException(status_code=404, detail="Image not found")
 
+    # Capture old values for version history
+    old_value = {
+        "make": media.make,
+        "model": media.model,
+        "variant": media.variant,
+        "model_year": media.model_year,
+        "category": media.category,
+        "image_category": media.image_category.value if media.image_category else None,
+        "colour": media.colour,
+        "fuel_type": media.fuel_type,
+        "transmission": media.transmission,
+    }
+
     data = patch.model_dump(exclude_unset=True)
 
     if "image_category" in data:
@@ -377,6 +397,39 @@ async def update_metadata(
         media.is_primary = False
 
     await db.commit()
+
+    # Record version change if metadata was updated
+    if data or "image_category" in patch.model_dump(exclude_unset=True):
+        new_value = {
+            "make": media.make,
+            "model": media.model,
+            "variant": media.variant,
+            "model_year": media.model_year,
+            "category": media.category,
+            "image_category": media.image_category.value if media.image_category else None,
+            "colour": media.colour,
+            "fuel_type": media.fuel_type,
+            "transmission": media.transmission,
+        }
+        await record_version(
+            db,
+            media_id=media_id,
+            event_type=MediaEventType.METADATA_UPDATED,
+            actor_id=admin.id,
+            old_value=old_value,
+            new_value=new_value,
+        )
+
+        # Log audit: edit event
+        await log_audit(
+            db,
+            media_id=media_id,
+            action=AuditAction.EDIT,
+            actor_id=admin.id,
+            audit_data={"fields_changed": list(data.keys())},
+        )
+        await db.commit()
+
     await db.refresh(media)
     await media_index.index_media(media)
 
@@ -391,3 +444,228 @@ async def update_metadata(
         image_category=media.image_category.value if media.image_category else None,
         colour=media.colour, is_primary=media.is_primary, sort_order=media.sort_order,
     )
+
+
+@router.get("/dealer-images")
+async def get_dealer_images(
+    user: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Fetch recent images uploaded by the admin user, for dashboard display.
+    Returns recent vehicle_media records with their metadata and URLs.
+    """
+    from sqlalchemy import desc
+
+    media = (await db.execute(
+        select(VehicleMedia)
+        .where(VehicleMedia.uploaded_by == user.id)
+        .order_by(desc(VehicleMedia.created_at))
+        .limit(50)
+    )).scalars().all()
+
+    storage = get_storage()
+    images = []
+    for m in media:
+        images.append({
+            "id": str(m.id),
+            "filename": m.source_pdf_name,
+            "url": storage.url_for(m.storage_key),
+            "thumbnail_url": storage.url_for(m.thumbnail_key) if m.thumbnail_key else None,
+            "make": m.make,
+            "model": m.model,
+            "variant": m.variant,
+            "model_year": m.model_year,
+            "image_category": m.image_category.value if m.image_category else None,
+            "colour": m.colour,
+            "created_at": m.created_at.isoformat(),
+        })
+
+    return {"images": images, "total": len(images)}
+
+
+@router.get("/{media_id}/versions", tags=["media-versions"])
+async def get_versions(
+    media_id: str,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """Fetch version history for a media item."""
+    try:
+        mid = UUID(media_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid media_id format")
+
+    versions = await get_version_history(db, mid)
+    return {
+        "media_id": media_id,
+        "versions": [
+            {
+                "id": str(v.id),
+                "event_type": v.event_type.value if hasattr(v.event_type, 'value') else str(v.event_type),
+                "actor_id": str(v.actor_id) if v.actor_id else None,
+                "old_value": v.old_value,
+                "new_value": v.new_value,
+                "created_at": v.created_at.isoformat(),
+            }
+            for v in versions
+        ],
+    }
+
+
+@router.post("/{media_id}/versions/{version_id}/rollback", tags=["media-versions"], status_code=200)
+async def rollback_version(
+    media_id: str,
+    version_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_admin_user),
+):
+    """Rollback media to a previous version."""
+    try:
+        mid = UUID(media_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid media_id format")
+
+    result = await rollback_to_version(db, mid, version_id, actor_id=user.id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Version not found or media not found")
+
+    await db.commit()
+    return {"status": "success", "message": f"Rolled back to version {version_id}"}
+
+
+@router.get("/{media_id}/audit", tags=["media-audit"])
+async def get_audit_log(
+    media_id: str,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """Fetch audit log for a media item."""
+    try:
+        mid = UUID(media_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid media_id format")
+
+    audits = await get_audit(db, mid, limit=limit)
+    return {
+        "media_id": media_id,
+        "total": len(audits),
+        "audits": [
+            {
+                "id": str(a.id),
+                "action": a.action.value if hasattr(a.action, 'value') else str(a.action),
+                "actor_id": str(a.actor_id) if a.actor_id else None,
+                "ip_address": a.ip_address,
+                "audit_data": a.audit_data,
+                "created_at": a.created_at.isoformat(),
+            }
+            for a in audits
+        ],
+    }
+
+
+# ── WAVE 3 Semantic Search & ML Results ──────────────────────────────────
+
+
+@router.get("/search", response_model=list[dict], tags=["wave3-search"])
+@limiter.limit("30/minute")
+async def search_media(
+    request: Request,
+    q: str,
+    limit: int = 10,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Semantic search across all images using CLIP embeddings.
+
+    Returns images ranked by similarity to the search query.
+    """
+    if not q or len(q.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Search query cannot be empty")
+
+    query_embedding = await embed_text(q)
+    if not query_embedding:
+        return []
+
+    media_rows = (await db.execute(
+        select(VehicleMedia)
+        .where(VehicleMedia.embedding_vector.isnot(None))
+        .limit(100)
+    )).scalars().all()
+
+    from sqlalchemy import func
+    scored = []
+    for m in media_rows:
+        if m.embedding_vector:
+            similarity = sum(
+                a * b for a, b in zip(query_embedding, m.embedding_vector)
+            ) / (
+                sum(a ** 2 for a in query_embedding) ** 0.5
+                * sum(b ** 2 for b in m.embedding_vector) ** 0.5 + 1e-8
+            )
+            scored.append((m, similarity))
+
+    scored.sort(key=lambda x: x[1], reverse=True)
+
+    storage = get_storage()
+    results = []
+    for m, score in scored[:limit]:
+        results.append({
+            "id": str(m.id),
+            "url": storage.url_for(m.storage_key),
+            "make": m.make,
+            "model": m.model,
+            "variant": m.variant,
+            "model_year": m.model_year,
+            "similarity_score": float(score),
+        })
+    return results
+
+
+@router.get("/{media_id}/ocr", tags=["wave3-ocr"])
+@limiter.limit("60/minute")
+async def get_ocr_results(
+    media_id: UUID,
+    request: Request,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve OCR extraction results for an image."""
+    media = (await db.execute(
+        select(VehicleMedia).where(VehicleMedia.id == media_id)
+    )).scalar_one_or_none()
+    if media is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    return {
+        "media_id": str(media_id),
+        "text": media.ocr_text,
+        "confidence": media.ocr_confidence,
+        "entities": media.ocr_entities or {},
+    }
+
+
+@router.get("/{media_id}/safety", tags=["wave3-safety"])
+@limiter.limit("60/minute")
+async def get_safety_results(
+    media_id: UUID,
+    request: Request,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve safety detection results for an image."""
+    media = (await db.execute(
+        select(VehicleMedia).where(VehicleMedia.id == media_id)
+    )).scalar_one_or_none()
+    if media is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    return {
+        "media_id": str(media_id),
+        "nsfw_score": media.nsfw_score,
+        "license_plate_detected": media.license_plate_detected,
+        "license_plate_bbox": media.license_plate_bbox,
+        "safety_metadata": media.safety_metadata or {},
+    }

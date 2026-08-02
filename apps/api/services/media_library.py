@@ -26,10 +26,17 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from models.media_audit import AuditAction
+from models.media_version import MediaEventType
 from models.vehicle_media import ListingMedia, VehicleMedia
 from services import pdf_ingest
+from services.embeddings_clip import embed_image_bytes
+from services.media_audit import log_audit
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
+from services.ocr_tesseract import ocr_image_bytes
+from services.safety_detection import detect_license_plate, detect_nsfw
+from services.version_history import record_version
 
 logger = logging.getLogger("gaadiiq.media_library")
 
@@ -142,11 +149,25 @@ async def store_image(
             # The original is stored; a missing thumbnail is a degraded gallery.
             logger.warning("Could not store thumbnail for %s: %s", obj.key, exc)
 
+    webp_key_val: str | None = None
+    webp = pdf_ingest.make_webp(data)
+    if webp and content_type != "image/webp":  # Only convert if not already WebP
+        webp_bytes, webp_type = webp
+        try:
+            webp_key_val = (await storage.save(
+                pdf_ingest.webp_key(obj.key), webp_bytes, webp_type
+            )).key
+        except StorageError as exc:
+            # The original is stored; a missing WebP is a degraded gallery.
+            logger.warning("Could not store WebP derivative for %s: %s", obj.key, exc)
+
     width, height = pdf_ingest.image_dimensions(data)
+    exif_data = pdf_ingest.extract_exif(data)
 
     row = VehicleMedia(
         storage_key=obj.key,
         thumbnail_key=thumbnail_key,
+        webp_key=webp_key_val,
         content_type=content_type,
         size_bytes=obj.size_bytes,
         width=width,
@@ -159,10 +180,75 @@ async def store_image(
         variant=variant,
         model_year=model_year,
         category=category,
+        exif=exif_data,
     )
     db.add(row)
     await db.flush()
+
+    # Record version history: created event
+    await record_version(
+        db,
+        media_id=row.id,
+        event_type=MediaEventType.CREATED,
+        new_value={
+            "make": make,
+            "model": model,
+            "variant": variant,
+            "model_year": model_year,
+            "category": category,
+            "storage_key": obj.key,
+        },
+    )
+
+    # Log audit: upload event
+    await log_audit(
+        db,
+        media_id=row.id,
+        action=AuditAction.UPLOAD,
+        audit_data={
+            "filename": source_name,
+            "size_bytes": obj.size_bytes,
+            "content_type": content_type,
+        },
+    )
+
     await media_index.index_media(row)
+
+    # WAVE 3: Non-blocking ML enrichment
+    try:
+        embedding = await embed_image_bytes(data)
+        if embedding:
+            row.embedding_vector = embedding
+    except Exception as e:
+        logger.warning(f"Failed to generate embedding for {row.id}: {e}")
+
+    try:
+        ocr_result = await ocr_image_bytes(data)
+        if ocr_result:
+            row.ocr_text = ocr_result.get("text")
+            row.ocr_confidence = ocr_result.get("confidence")
+            row.ocr_entities = ocr_result.get("entities")
+    except Exception as e:
+        logger.warning(f"Failed to extract OCR for {row.id}: {e}")
+
+    try:
+        nsfw_score = await detect_nsfw(data)
+        if nsfw_score is not None:
+            row.nsfw_score = nsfw_score
+    except Exception as e:
+        logger.warning(f"Failed to detect NSFW for {row.id}: {e}")
+
+    try:
+        plate_result = await detect_license_plate(data)
+        if plate_result:
+            row.license_plate_detected = plate_result.get("detected", False)
+            row.license_plate_bbox = plate_result.get("bbox")
+            if plate_result.get("confidence"):
+                row.safety_metadata = {"license_plate_confidence": plate_result.get("confidence")}
+    except Exception as e:
+        logger.warning(f"Failed to detect license plate for {row.id}: {e}")
+
+    await db.flush()
     return row
 
 
