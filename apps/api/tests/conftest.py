@@ -31,7 +31,7 @@ async def db_engine(tmp_path):
 @pytest_asyncio.fixture
 async def db_session(db_engine):
     """Async SQLAlchemy session for tests."""
-    async with AsyncSession(db_engine) as session:
+    async with AsyncSession(db_engine, expire_on_commit=False) as session:
         yield session
         await session.rollback()
 
