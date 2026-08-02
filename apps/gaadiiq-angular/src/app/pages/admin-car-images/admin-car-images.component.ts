@@ -122,12 +122,16 @@ export class AdminCarImagesComponent implements OnInit {
     files.forEach(f => formData.append('files', f));
 
     try {
+      const token = await this.getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch('http://localhost:8000/media-admin/inspect', {
         method: 'POST',
         body: formData,
-        headers: {
-          'Authorization': `Bearer ${await this.getToken()}`,
-        },
+        headers,
       });
 
       if (!response.ok) {
@@ -180,12 +184,16 @@ export class AdminCarImagesComponent implements OnInit {
     if (this.license()) formData.append('license', this.license());
 
     try {
+      const token = await this.getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch('http://localhost:8000/media-admin/upload', {
         method: 'POST',
         body: formData,
-        headers: {
-          'Authorization': `Bearer ${await this.getToken()}`,
-        },
+        headers,
       });
 
       if (!response.ok) {
