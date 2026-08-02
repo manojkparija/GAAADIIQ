@@ -1,5 +1,6 @@
 import { Injectable, signal, effect } from '@angular/core';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 interface DealerImage {
   id: string;
@@ -39,7 +40,7 @@ export class VehicleImageGalleryService {
       const token = await (window as any).supabaseClient?.auth.getSession()
         .then((s: any) => s?.data?.session?.access_token);
 
-      const response = await fetch('http://localhost:8000/media-admin/dealer-images', {
+      const response = await fetch(`${environment.apiUrl}/media-admin/dealer-images`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-car-images',
@@ -17,6 +18,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class AdminCarImagesComponent implements OnInit {
   auth = inject(AuthService);
+  private apiUrl = environment.apiUrl;
 
   // File selection
   dragOver = signal(false);
@@ -111,7 +113,6 @@ export class AdminCarImagesComponent implements OnInit {
   }
 
   async inspectFiles() {
-    alert('DEBUG: inspectFiles() called');
     const files = this.selectedFiles();
     if (!files.length) {
       this.toast('❌ No files selected');
@@ -130,7 +131,7 @@ export class AdminCarImagesComponent implements OnInit {
       }
 
       console.log('Fetching /media-admin/inspect with headers:', Object.keys(headers));
-      const response = await fetch('http://localhost:8000/media-admin/inspect', {
+      const response = await fetch(`${this.apiUrl}/media-admin/inspect`, {
         method: 'POST',
         body: formData,
         headers,
@@ -200,7 +201,7 @@ export class AdminCarImagesComponent implements OnInit {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('http://localhost:8000/media-admin/upload', {
+      const response = await fetch(`${this.apiUrl}/media-admin/upload`, {
         method: 'POST',
         body: formData,
         headers,
