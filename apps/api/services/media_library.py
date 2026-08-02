@@ -27,7 +27,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.vehicle_media import ListingMedia, VehicleMedia
+from models.media_version import MediaEventType
 from services import pdf_ingest
+from services.version_history import record_version
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
 
@@ -177,6 +179,22 @@ async def store_image(
     )
     db.add(row)
     await db.flush()
+
+    # Record version history: created event
+    await record_version(
+        db,
+        media_id=row.id,
+        event_type=MediaEventType.CREATED,
+        new_value={
+            "make": make,
+            "model": model,
+            "variant": variant,
+            "model_year": model_year,
+            "category": category,
+            "storage_key": obj.key,
+        },
+    )
+
     await media_index.index_media(row)
     return row
 

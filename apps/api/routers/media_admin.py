@@ -357,11 +357,27 @@ async def update_metadata(
     re-uploading the file. Only supplied fields change — omitting one leaves it
     as it was, rather than blanking it.
     """
+    from services.version_history import record_version
+    from models.media_version import MediaEventType
+
     media = (await db.execute(
         select(VehicleMedia).where(VehicleMedia.id == media_id)
     )).scalar_one_or_none()
     if media is None:
         raise HTTPException(status_code=404, detail="Image not found")
+
+    # Capture old values for version history
+    old_value = {
+        "make": media.make,
+        "model": media.model,
+        "variant": media.variant,
+        "model_year": media.model_year,
+        "category": media.category,
+        "image_category": media.image_category.value if media.image_category else None,
+        "colour": media.colour,
+        "fuel_type": media.fuel_type,
+        "transmission": media.transmission,
+    }
 
     data = patch.model_dump(exclude_unset=True)
 
@@ -378,6 +394,30 @@ async def update_metadata(
         media.is_primary = False
 
     await db.commit()
+
+    # Record version change if metadata was updated
+    if data or "image_category" in patch.model_dump(exclude_unset=True):
+        new_value = {
+            "make": media.make,
+            "model": media.model,
+            "variant": media.variant,
+            "model_year": media.model_year,
+            "category": media.category,
+            "image_category": media.image_category.value if media.image_category else None,
+            "colour": media.colour,
+            "fuel_type": media.fuel_type,
+            "transmission": media.transmission,
+        }
+        await record_version(
+            db,
+            media_id=media_id,
+            event_type=MediaEventType.METADATA_UPDATED,
+            actor_id=admin.id,
+            old_value=old_value,
+            new_value=new_value,
+        )
+        await db.commit()
+
     await db.refresh(media)
     await media_index.index_media(media)
 
@@ -430,3 +470,59 @@ async def get_dealer_images(
         })
 
     return {"images": images, "total": len(images)}
+
+
+@router.get("/{media_id}/versions", tags=["media-versions"])
+async def get_versions(
+    media_id: str,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """Fetch version history for a media item."""
+    from uuid import UUID
+    from services.version_history import get_version_history
+
+    try:
+        mid = UUID(media_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid media_id format")
+
+    versions = await get_version_history(db, mid)
+    return {
+        "media_id": media_id,
+        "versions": [
+            {
+                "id": v.id,
+                "event_type": v.event_type.value if hasattr(v.event_type, 'value') else str(v.event_type),
+                "actor_id": str(v.actor_id) if v.actor_id else None,
+                "old_value": v.old_value,
+                "new_value": v.new_value,
+                "created_at": v.created_at.isoformat(),
+            }
+            for v in versions
+        ],
+    }
+
+
+@router.post("/{media_id}/versions/{version_id}/rollback", tags=["media-versions"], status_code=200)
+async def rollback_version(
+    media_id: str,
+    version_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_admin_user),
+):
+    """Rollback media to a previous version."""
+    from uuid import UUID
+    from services.version_history import rollback_to_version
+
+    try:
+        mid = UUID(media_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid media_id format")
+
+    result = await rollback_to_version(db, mid, version_id, actor_id=user.id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Version not found or media not found")
+
+    await db.commit()
+    return {"status": "success", "message": f"Rolled back to version {version_id}"}
