@@ -246,10 +246,18 @@ export class AdminCarImagesComponent implements OnInit {
   transmissionOptions = ['Manual', 'Automatic', 'CVT'];
   bodyTypeOptions = ['SUV', 'Sedan', 'Hatchback', 'Coupe', 'Convertible', 'MUV', 'Pickup', 'Wagon'];
 
+  formatCategoryName(category: string): string {
+    return category.replace(/_/g, ' ');
+  }
+
   updateInspectResult(index: number, field: string, value: any) {
     const results = this.inspectResults();
     results[index] = { ...results[index], [field]: value };
     this.inspectResults.set([...results]);
+  }
+
+  startOver() {
+    this.resetForm();
   }
 }
 

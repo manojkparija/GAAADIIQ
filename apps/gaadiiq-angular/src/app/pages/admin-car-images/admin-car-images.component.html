@@ -17,7 +17,7 @@
     </div>
     @if (uploadResults()) {
       <div class="aci-reset">
-        <button class="btn-ghost" (click)="resetForm()" title="Upload more images">
+        <button class="btn-ghost" (click)="startOver()" title="Upload more images">
           ⬆️ Upload More
         </button>
       </div>
@@ -129,7 +129,7 @@
               <select class="aci-input" [(ngModel)]="imageCategory">
                 <option value="">Select category…</option>
                 @for (opt of imageCategoryOptions; track opt) {
-                  <option [value]="opt">{{ opt.replace(/_/g, ' ') }}</option>
+                  <option [value]="opt">{{ formatCategoryName(opt) }}</option>
                 }
               </select>
             </div>
@@ -258,7 +258,7 @@
         }
 
         <div class="aci-actions">
-          <button class="btn-primary" (click)="resetForm()">
+          <button class="btn-primary" (click)="startOver()">
             ⬆️ Upload More Images
           </button>
           <a routerLink="/admin/pdf-ingestion" class="btn-secondary">
