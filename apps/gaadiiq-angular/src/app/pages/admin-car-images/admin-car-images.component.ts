@@ -256,8 +256,18 @@ export class AdminCarImagesComponent implements OnInit {
 
   private async getToken(): Promise<string> {
     try {
-      const response = await (window as any).supabaseClient?.auth.getSession();
-      return response?.data?.session?.access_token || '';
+      const supabaseClient = (window as any).supabaseClient;
+      if (!supabaseClient) {
+        return '';
+      }
+      const response = await supabaseClient.auth.getSession();
+      if (!response) {
+        return '';
+      }
+      if (response.data && response.data.session && response.data.session.access_token) {
+        return response.data.session.access_token;
+      }
+      return '';
     } catch (err) {
       console.warn('Failed to get Supabase token:', err);
       return '';
