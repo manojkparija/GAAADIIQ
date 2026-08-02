@@ -30,7 +30,6 @@ async def client(db_engine):
                 raise
 
     async def override_get_admin_user():
-        # Enforce authentication in tests — no dev-mode bypass
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
