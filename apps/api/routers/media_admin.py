@@ -392,3 +392,41 @@ async def update_metadata(
         image_category=media.image_category.value if media.image_category else None,
         colour=media.colour, is_primary=media.is_primary, sort_order=media.sort_order,
     )
+
+
+@router.get("/dealer-images")
+async def get_dealer_images(
+    user: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Fetch recent images uploaded by the admin user, for dashboard display.
+    Returns recent vehicle_media records with their metadata and URLs.
+    """
+    from sqlalchemy import desc
+
+    media = (await db.execute(
+        select(VehicleMedia)
+        .where(VehicleMedia.uploaded_by == user.id)
+        .order_by(desc(VehicleMedia.created_at))
+        .limit(50)
+    )).scalars().all()
+
+    storage = get_storage()
+    images = []
+    for m in media:
+        images.append({
+            "id": str(m.id),
+            "filename": m.source_pdf_name,
+            "url": storage.url_for(m.storage_key),
+            "thumbnail_url": storage.url_for(m.thumbnail_key) if m.thumbnail_key else None,
+            "make": m.make,
+            "model": m.model,
+            "variant": m.variant,
+            "model_year": m.model_year,
+            "image_category": m.image_category.value if m.image_category else None,
+            "colour": m.colour,
+            "created_at": m.created_at.isoformat(),
+        })
+
+    return {"images": images, "total": len(images)}
