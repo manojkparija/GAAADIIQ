@@ -22,6 +22,23 @@ export class AdminCarImagesComponent implements OnInit {
   dragOver = signal(false);
   selectedFiles = signal<File[]>([]);
 
+  // Upload size management
+  maxUploadMb = 100; // Must match backend MEDIA_MAX_UPLOAD_MB
+  maxUploadBytes = this.maxUploadMb * 1024 * 1024;
+  totalUploadSize = computed(() => {
+    return this.selectedFiles().reduce((sum, f) => sum + f.size, 0);
+  });
+  uploadSizeWarning = computed(() => {
+    const total = this.totalUploadSize();
+    const percent = (total / this.maxUploadBytes) * 100;
+    if (percent > 90) return 'danger'; // >90% = red warning
+    if (percent > 75) return 'warning'; // >75% = yellow warning
+    return null;
+  });
+  uploadSizeExceeded = computed(() => {
+    return this.totalUploadSize() > this.maxUploadBytes;
+  });
+
   // UI state
   toastMsg = signal('');
   private toastTimer: any;
