@@ -426,7 +426,7 @@ async def update_metadata(
             media_id=media_id,
             action=AuditAction.EDIT,
             actor_id=admin.id,
-            metadata={"fields_changed": list(data.keys())},
+            audit_data={"fields_changed": list(data.keys())},
         )
         await db.commit()
 
@@ -504,7 +504,7 @@ async def get_versions(
         "media_id": media_id,
         "versions": [
             {
-                "id": v.id,
+                "id": str(v.id),
                 "event_type": v.event_type.value if hasattr(v.event_type, 'value') else str(v.event_type),
                 "actor_id": str(v.actor_id) if v.actor_id else None,
                 "old_value": v.old_value,
@@ -562,11 +562,11 @@ async def get_audit_log(
         "total": len(audits),
         "audits": [
             {
-                "id": a.id,
+                "id": str(a.id),
                 "action": a.action.value if hasattr(a.action, 'value') else str(a.action),
                 "actor_id": str(a.actor_id) if a.actor_id else None,
                 "ip_address": a.ip_address,
-                "metadata": a.metadata,
+                "audit_data": a.audit_data,
                 "created_at": a.created_at.isoformat(),
             }
             for a in audits

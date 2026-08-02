@@ -14,7 +14,7 @@ async def log_audit(
     actor_id: Optional[UUID] = None,
     ip_address: Optional[str] = None,
     user_agent: Optional[str] = None,
-    metadata: Optional[dict] = None,
+    audit_data: Optional[dict] = None,
 ) -> VehicleMediaAudit:
     """Log an audit event for a media operation."""
     audit = VehicleMediaAudit(
@@ -23,7 +23,7 @@ async def log_audit(
         actor_id=actor_id,
         ip_address=ip_address,
         user_agent=user_agent,
-        metadata=metadata,
+        audit_data=audit_data,
     )
     db.add(audit)
     await db.flush()

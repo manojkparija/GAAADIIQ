@@ -18,13 +18,13 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         'vehicle_media_audit',
-        sa.Column('id', sa.BigInteger(), nullable=False),
+        sa.Column('id', sa.UUID(), nullable=False),
         sa.Column('media_id', sa.UUID(), nullable=False),
         sa.Column('action', postgresql.ENUM('upload', 'view', 'edit', 'delete', 'share', 'download', name='audit_action'), nullable=False),
         sa.Column('actor_id', sa.UUID(), nullable=True),
         sa.Column('ip_address', postgresql.INET(), nullable=True),
         sa.Column('user_agent', sa.Text(), nullable=True),
-        sa.Column('metadata', postgresql.JSON(astext_type=sa.Text()), nullable=True),
+        sa.Column('audit_data', postgresql.JSON(astext_type=sa.Text()), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.ForeignKeyConstraint(['media_id'], ['vehicle_media.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id'),

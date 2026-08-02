@@ -202,7 +202,7 @@ async def store_image(
         db,
         media_id=row.id,
         action=AuditAction.UPLOAD,
-        metadata={
+        audit_data={
             "filename": source_name,
             "size_bytes": obj.size_bytes,
             "content_type": content_type,

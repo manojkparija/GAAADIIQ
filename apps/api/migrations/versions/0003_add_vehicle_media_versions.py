@@ -18,7 +18,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         'vehicle_media_versions',
-        sa.Column('id', sa.BigInteger(), nullable=False),
+        sa.Column('id', sa.UUID(), nullable=False),
         sa.Column('media_id', sa.UUID(), nullable=False),
         sa.Column('event_type', postgresql.ENUM('created', 'metadata_updated', 'cropped', 'deleted', name='media_event_type'), nullable=False),
         sa.Column('actor_id', sa.UUID(), nullable=True),
