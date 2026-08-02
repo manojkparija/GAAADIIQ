@@ -128,14 +128,19 @@ export class AdminCarImagesComponent implements OnInit {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      console.log('Fetching /media-admin/inspect with headers:', Object.keys(headers));
       const response = await fetch('http://localhost:8000/media-admin/inspect', {
         method: 'POST',
         body: formData,
         headers,
       });
 
+      console.log('Response status:', response.status, 'Content-Type:', response.headers.get('content-type'));
+
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`API error ${response.status}: ${errorText}`);
       }
 
       const results = await response.json();
@@ -143,6 +148,7 @@ export class AdminCarImagesComponent implements OnInit {
       this.showMetadataGrid.set(true);
       this.toast(`✓ Inspected ${results.length} file(s) — edit metadata below`);
     } catch (err) {
+      console.error('Inspect error details:', err);
       this.toast(`❌ Inspection failed: ${err}`);
     } finally {
       this.isInspecting.set(false);
