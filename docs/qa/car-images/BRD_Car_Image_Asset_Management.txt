@@ -1,0 +1,294 @@
+Business Requirements Document (BRD)
+Feature: AI-Powered Car Image Upload & Intelligent Asset Management
+Project: GAADIIQ – AI-Powered Automotive Intelligence Platform
+Module: Admin Portal – Car Image Management
+Version: 1.0
+________________________________________
+1. Business Objective
+To provide a centralized AI-powered image management system where the Admin uploads a vehicle image only once, and the system automatically categorizes, stores, tags, and displays the image across all applicable sections of the GAADIIQ platform, including Manufacturer, Model, Variant, Search, AI Advisor, Comparison, and Dealer Portal.
+________________________________________
+2. Business Problem
+Current image management systems often require duplicate uploads for different pages (Manufacturer, Model, Variant), resulting in:
+•	Duplicate storage 
+•	Increased maintenance effort 
+•	Inconsistent image updates 
+•	Poor scalability 
+•	Difficult search and retrieval 
+GAADIIQ requires a single-source image repository that intelligently organizes and displays images based on metadata.
+________________________________________
+3. Business Requirements
+BR-001: Image Upload
+The Admin shall be able to upload one or multiple vehicle images from the Admin Portal.
+Supported File Types
+•	JPG 
+•	JPEG 
+•	PNG 
+•	WEBP 
+•	HEIC 
+•	TIFF 
+Maximum upload size shall be configurable (up to 15 GB per file as per project requirement).
+________________________________________
+BR-002: Mandatory Image Details
+During image upload, the Admin shall provide the following information:
+Field	Mandatory	Description
+Manufacturer	Yes	Tata, Mahindra, Hyundai, etc.
+Model	Yes	Nexon, Punch, Safari
+Variant	Optional	Fearless+, Smart+, Pure, etc.
+Model Year	Yes	2025, 2026
+Body Type	Yes	SUV, Sedan, Hatchback
+Fuel Type	Yes	Petrol, Diesel, EV, Hybrid, CNG
+Transmission	Yes	Manual, Automatic, AMT, DCT
+Image Category	Yes	Front, Rear, Side, Interior, Dashboard, Engine, Boot, Safety, Gallery, 360°
+Color	Optional	Red, White, Blue, Grey, etc.
+Primary Image	Optional	Yes/No
+________________________________________
+BR-003: Image Categories
+The system shall support the following predefined image categories:
+•	Exterior Front 
+•	Exterior Rear 
+•	Exterior Left Side 
+•	Exterior Right Side 
+•	Front Quarter View 
+•	Rear Quarter View 
+•	Interior Dashboard 
+•	Steering 
+•	Infotainment 
+•	Seats 
+•	Boot Space 
+•	Engine Bay 
+•	Wheels 
+•	Sunroof 
+•	Safety Features 
+•	Accessories 
+•	Gallery 
+•	360° Images 
+•	Videos (future) 
+________________________________________
+BR-004: AI Metadata Extraction
+If the uploaded file name or embedded metadata contains useful information, the AI engine shall automatically identify:
+•	Manufacturer 
+•	Model 
+•	Variant 
+•	Year 
+•	Image View 
+•	Category 
+•	Color 
+Example:
+Uploaded File
+Tata_Nexon_FearlessPlus_Front_2025.webp
+AI extracts
+Manufacturer = Tata
+Model = Nexon
+Variant = Fearless Plus
+Year = 2025
+Category = Exterior Front
+The Admin may edit the extracted information before saving.
+________________________________________
+BR-005: Image Metadata Storage
+Every uploaded image shall store the following metadata:
+Field
+Image ID
+Manufacturer ID
+Model ID
+Variant ID
+Category
+Image URL
+Thumbnail URL
+Image Resolution
+File Size
+File Format
+Upload Date
+Uploaded By
+Image Hash
+Is Primary
+Sort Order
+Color
+Alt Text
+SEO Keywords
+AI Description
+Source
+Copyright
+License
+EXIF Information
+OCR Data
+Image Embedding Vector
+________________________________________
+4. Database Design
+Manufacturers
+Column
+id
+name
+logo
+________________________________________
+Models
+Column
+id
+manufacturer_id
+name
+slug
+________________________________________
+Variants
+Column
+id
+model_id
+name
+year
+________________________________________
+CarImages
+Column
+id
+manufacturer_id
+model_id
+variant_id
+category
+image_url
+thumbnail
+is_primary
+sort_order
+resolution
+file_size
+alt_text
+ai_description
+uploaded_by
+upload_date
+________________________________________
+5. Cloud Storage Structure
+/car-images
+
+    /tata
+
+        /nexon
+
+            /2025
+
+                /front
+
+                /rear
+
+                /side
+
+                /interior
+
+                /dashboard
+
+                /boot
+
+                /engine
+
+                /360
+
+        /punch
+
+        /harrier
+
+        /safari
+The application shall not duplicate images across multiple folders.
+________________________________________
+6. Automatic Display Logic
+The application shall dynamically retrieve images using metadata.
+Scenario 1 – Manufacturer Page
+User opens
+Tata
+System shall retrieve all vehicles belonging to Tata.
+Displayed:
+•	Nexon 
+•	Punch 
+•	Harrier 
+•	Safari 
+•	Curvv 
+________________________________________
+Scenario 2 – Model Page
+User navigates
+Tata → Nexon
+System shall retrieve all images tagged with:
+•	Manufacturer = Tata 
+•	Model = Nexon 
+All Nexon images shall be displayed.
+________________________________________
+Scenario 3 – Variant Page
+User navigates
+Tata → Nexon → Fearless Plus DCA
+System shall retrieve images tagged with:
+•	Manufacturer = Tata 
+•	Model = Nexon 
+•	Variant = Fearless Plus DCA 
+Only variant-specific images shall be displayed.
+________________________________________
+7. Smart Search
+The platform shall support intelligent image retrieval.
+Examples:
+Search
+Tata
+Displays
+•	Nexon 
+•	Punch 
+•	Harrier 
+•	Safari 
+•	Curvv 
+________________________________________
+Search
+Nexon
+Displays
+All Tata Nexon images.
+________________________________________
+Search
+White Nexon Front View
+Displays
+Only matching white Nexon front images.
+________________________________________
+8. AI-Powered Features
+The system shall support:
+•	AI auto-tagging 
+•	Duplicate image detection 
+•	Automatic image compression 
+•	Thumbnail generation 
+•	AI-generated SEO Alt Text 
+•	AI-generated image description 
+•	Semantic image search 
+•	OCR extraction from brochures 
+•	Reverse image similarity detection 
+•	Image quality validation 
+•	Background removal (future) 
+•	Watermark detection 
+•	NSFW/content moderation 
+•	Face and number plate blur (configurable) 
+________________________________________
+9. Functional Requirements
+ID	Requirement
+FR-001	Admin can upload single or multiple images.
+FR-002	Mandatory metadata validation before save.
+FR-003	AI auto-populates metadata where possible.
+FR-004	Admin can override AI-generated values.
+FR-005	Images stored only once in cloud storage.
+FR-006	Same image reused across Manufacturer, Model, Variant, Search, AI Advisor, Comparison, and Dealer pages.
+FR-007	Automatic thumbnail generation.
+FR-008	Automatic WebP conversion for optimized delivery.
+FR-009	Duplicate image detection before save.
+FR-010	Version history maintained for image updates.
+________________________________________
+10. Non-Functional Requirements
+•	Support uploads up to 15 GB. 
+•	Upload response time ≤ 10 seconds for standard images. 
+•	Cloud storage scalability. 
+•	CDN integration for fast delivery. 
+•	Role-based access control. 
+•	Automatic backup and recovery. 
+•	Encryption of stored assets. 
+•	High availability (99.9% or higher). 
+•	Audit logging for uploads and modifications. 
+________________________________________
+11. Acceptance Criteria
+AC ID	Acceptance Criteria
+AC-001	Admin can upload one or multiple car images successfully.
+AC-002	Mandatory fields must be validated before save.
+AC-003	AI automatically extracts metadata from filenames or image metadata when available.
+AC-004	Admin can review and modify AI-generated metadata before saving.
+AC-005	Images are stored only once and linked using metadata.
+AC-006	Uploaded images automatically appear on Manufacturer, Model, and Variant pages without duplicate uploads.
+AC-007	Search results display the correct images based on metadata filters.
+AC-008	Duplicate image uploads are detected and flagged.
+AC-009	Thumbnails and optimized formats are generated automatically.
+AC-010	Image metadata supports SEO, AI search, and future analytics capabilities.
+Recommendation for GAADIIQ
+To support a large-scale automotive platform, this module should be implemented as an Enterprise Digital Asset Management (DAM) service rather than a simple file upload feature. Treat images as reusable assets with rich metadata and AI enrichment. This design will allow the same image to power the Manufacturer page, Model page, Variant page, AI Advisor, Comparison Engine, Dealer Portal, and future mobile applications without duplication, making the platform easier to maintain and scale.
+
