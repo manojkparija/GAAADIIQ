@@ -1015,3 +1015,39 @@ def image_dimensions(data: bytes) -> tuple[int | None, int | None]:
             return img.size
     except Exception:
         return None, None
+
+
+def extract_exif(data: bytes) -> dict | None:
+    """
+    Extract EXIF metadata from an image file.
+
+    Returns a dictionary of EXIF tags and values, or None if no EXIF data exists
+    or extraction fails. Used for enriching image metadata during upload.
+    """
+    try:
+        from PIL import Image
+        from PIL.ExifTags import TAGS
+
+        with Image.open(io.BytesIO(data)) as img:
+            exif_data = img.getexif()
+            if not exif_data:
+                return None
+
+            # Convert EXIF tag numbers to human-readable names
+            result = {}
+            for tag_id, value in exif_data.items():
+                tag_name = TAGS.get(tag_id, f"Unknown({tag_id})")
+                try:
+                    # Convert bytes to string if needed, handle other non-serializable types
+                    if isinstance(value, bytes):
+                        value = value.decode("utf-8", errors="replace")
+                    elif hasattr(value, "__iter__") and not isinstance(value, (str, dict)):
+                        value = list(value)
+                    result[tag_name] = value
+                except Exception:
+                    # Skip fields that can't be serialized
+                    pass
+
+            return result if result else None
+    except Exception:
+        return None

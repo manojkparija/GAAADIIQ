@@ -143,6 +143,7 @@ async def store_image(
             logger.warning("Could not store thumbnail for %s: %s", obj.key, exc)
 
     width, height = pdf_ingest.image_dimensions(data)
+    exif_data = pdf_ingest.extract_exif(data)
 
     row = VehicleMedia(
         storage_key=obj.key,
@@ -159,6 +160,7 @@ async def store_image(
         variant=variant,
         model_year=model_year,
         category=category,
+        exif=exif_data,
     )
     db.add(row)
     await db.flush()

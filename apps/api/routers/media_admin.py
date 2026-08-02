@@ -53,6 +53,7 @@ class SuggestedMetadata(BaseModel):
     model_year: int | None = None
     image_category: str | None = None
     colour: str | None = None
+    exif_hints: dict | None = None
 
 
 class UploadedImage(BaseModel):
