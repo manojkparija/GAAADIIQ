@@ -397,6 +397,9 @@ async def update_metadata(
 
     # Record version change if metadata was updated
     if data or "image_category" in patch.model_dump(exclude_unset=True):
+        from services.media_audit import log_audit
+        from models.media_audit import AuditAction
+
         new_value = {
             "make": media.make,
             "model": media.model,
@@ -415,6 +418,15 @@ async def update_metadata(
             actor_id=admin.id,
             old_value=old_value,
             new_value=new_value,
+        )
+
+        # Log audit: edit event
+        await log_audit(
+            db,
+            media_id=media_id,
+            action=AuditAction.EDIT,
+            actor_id=admin.id,
+            metadata={"fields_changed": list(data.keys())},
         )
         await db.commit()
 
@@ -526,3 +538,37 @@ async def rollback_version(
 
     await db.commit()
     return {"status": "success", "message": f"Rolled back to version {version_id}"}
+
+
+@router.get("/{media_id}/audit", tags=["media-audit"])
+async def get_audit_log(
+    media_id: str,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """Fetch audit log for a media item."""
+    from uuid import UUID
+    from services.media_audit import get_audit_log as get_audit
+
+    try:
+        mid = UUID(media_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid media_id format")
+
+    audits = await get_audit(db, mid, limit=limit)
+    return {
+        "media_id": media_id,
+        "total": len(audits),
+        "audits": [
+            {
+                "id": a.id,
+                "action": a.action.value if hasattr(a.action, 'value') else str(a.action),
+                "actor_id": str(a.actor_id) if a.actor_id else None,
+                "ip_address": a.ip_address,
+                "metadata": a.metadata,
+                "created_at": a.created_at.isoformat(),
+            }
+            for a in audits
+        ],
+    }

@@ -22,6 +22,7 @@ from .vehicle_media import (
     VehicleMedia,
 )
 from .media_version import MediaEventType, VehicleMediaVersion
+from .media_audit import AuditAction, VehicleMediaAudit
 from .voice_diagnosis import DiagnosisAuditEvent, DiagnosisConversation, VoiceTranscript
 
 __all__ = [
@@ -31,4 +32,5 @@ __all__ = [
     "VehicleDiagnosis", "DiagnosisConversation", "VoiceTranscript", "DiagnosisAuditEvent",
     "PdfIngestionJob", "VehicleMedia", "ExtractedVehicle", "ListingMedia",
     "MediaKind", "MediaView", "ImageCategory", "VehicleMediaVersion", "MediaEventType",
+    "VehicleMediaAudit", "AuditAction",
 ]

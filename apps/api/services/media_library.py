@@ -28,8 +28,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.vehicle_media import ListingMedia, VehicleMedia
 from models.media_version import MediaEventType
+from models.media_audit import AuditAction
 from services import pdf_ingest
 from services.version_history import record_version
+from services.media_audit import log_audit
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
 
@@ -192,6 +194,18 @@ async def store_image(
             "model_year": model_year,
             "category": category,
             "storage_key": obj.key,
+        },
+    )
+
+    # Log audit: upload event
+    await log_audit(
+        db,
+        media_id=row.id,
+        action=AuditAction.UPLOAD,
+        metadata={
+            "filename": source_name,
+            "size_bytes": obj.size_bytes,
+            "content_type": content_type,
         },
     )
 
