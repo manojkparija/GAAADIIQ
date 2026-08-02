@@ -1,7 +1,7 @@
 """Shared pytest fixtures and configuration."""
 import pytest
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from db.base import Base
 from db.session import get_db
@@ -26,6 +26,13 @@ async def db_engine(tmp_path):
         await conn.run_sync(Base.metadata.create_all)
     yield engine
     await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def db_session(db_engine):
+    """Async SQLAlchemy session for tests."""
+    async with AsyncSession(db_engine) as session:
+        yield session
 
 
 @pytest.fixture(autouse=True)
