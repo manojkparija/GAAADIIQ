@@ -4,9 +4,11 @@ Tests for view tracking, admin endpoints, and seller analytics.
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from core.dependencies import get_admin_user
 from db.session import get_db
 from main import app
 from models.user import User, UserRole
@@ -27,7 +29,16 @@ async def client(db_engine):
                 await session.rollback()
                 raise
 
+    async def override_get_admin_user():
+        # Enforce authentication in tests — no dev-mode bypass
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_admin_user] = override_get_admin_user
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()
