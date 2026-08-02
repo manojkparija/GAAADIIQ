@@ -1,6 +1,5 @@
 """Version history tracking for media."""
-import json
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select

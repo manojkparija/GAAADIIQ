@@ -26,14 +26,14 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.vehicle_media import ListingMedia, VehicleMedia
-from models.media_version import MediaEventType
 from models.media_audit import AuditAction
+from models.media_version import MediaEventType
+from models.vehicle_media import ListingMedia, VehicleMedia
 from services import pdf_ingest
-from services.version_history import record_version
 from services.media_audit import log_audit
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
+from services.version_history import record_version
 
 logger = logging.getLogger("gaadiiq.media_library")
 

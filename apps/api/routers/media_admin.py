@@ -18,7 +18,7 @@ NOTE: deliberately NOT using `from __future__ import annotations` — see the no
 in routers/brochures.py about PEP 563 and slowapi's wrapper.
 """
 import logging
-import uuid
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
@@ -29,11 +29,16 @@ from core.config import settings
 from core.dependencies import get_admin_user
 from core.limiter import limiter
 from db.session import get_db
+from models.media_audit import AuditAction
+from models.media_version import MediaEventType
 from models.user import User
 from models.vehicle_media import ImageCategory, VehicleMedia
 from services import filename_metadata, media_library, pdf_ingest
+from services.media_audit import get_audit_log as get_audit
+from services.media_audit import log_audit
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
+from services.version_history import get_version_history, record_version, rollback_to_version
 
 logger = logging.getLogger("gaadiiq.media_admin")
 
@@ -57,7 +62,7 @@ class SuggestedMetadata(BaseModel):
 
 
 class UploadedImage(BaseModel):
-    id: uuid.UUID
+    id: UUID
     filename: str
     url: str
     thumbnail_url: str | None = None
@@ -344,7 +349,7 @@ async def _make_primary(db: AsyncSession, media: VehicleMedia) -> None:
 @limiter.limit("60/minute")
 async def update_metadata(
     request: Request,
-    media_id: uuid.UUID,
+    media_id: UUID,
     patch: MetadataPatch,
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
@@ -357,9 +362,6 @@ async def update_metadata(
     re-uploading the file. Only supplied fields change — omitting one leaves it
     as it was, rather than blanking it.
     """
-    from services.version_history import record_version
-    from models.media_version import MediaEventType
-
     media = (await db.execute(
         select(VehicleMedia).where(VehicleMedia.id == media_id)
     )).scalar_one_or_none()
@@ -397,9 +399,6 @@ async def update_metadata(
 
     # Record version change if metadata was updated
     if data or "image_category" in patch.model_dump(exclude_unset=True):
-        from services.media_audit import log_audit
-        from models.media_audit import AuditAction
-
         new_value = {
             "make": media.make,
             "model": media.model,
@@ -491,9 +490,6 @@ async def get_versions(
     _: User = Depends(get_admin_user),
 ):
     """Fetch version history for a media item."""
-    from uuid import UUID
-    from services.version_history import get_version_history
-
     try:
         mid = UUID(media_id)
     except ValueError:
@@ -524,9 +520,6 @@ async def rollback_version(
     user: User = Depends(get_admin_user),
 ):
     """Rollback media to a previous version."""
-    from uuid import UUID
-    from services.version_history import rollback_to_version
-
     try:
         mid = UUID(media_id)
     except ValueError:
@@ -548,9 +541,6 @@ async def get_audit_log(
     _: User = Depends(get_admin_user),
 ):
     """Fetch audit log for a media item."""
-    from uuid import UUID
-    from services.media_audit import get_audit_log as get_audit
-
     try:
         mid = UUID(media_id)
     except ValueError:
