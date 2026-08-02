@@ -3,8 +3,8 @@ Tests for view tracking, admin endpoints, and seller analytics.
 """
 import pytest
 import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
 from fastapi import HTTPException, status
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
