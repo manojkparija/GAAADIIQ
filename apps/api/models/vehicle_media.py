@@ -23,7 +23,6 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
-    ARRAY,
     JSON,
     Boolean,
     DateTime,
@@ -337,7 +336,7 @@ class VehicleMedia(Base):
 
     # ── WAVE 3 ML fields ─────────────────────────────────────────────────────
     embedding_vector: Mapped[list[float] | None] = mapped_column(
-        ARRAY(Float), nullable=True, index=True
+        JSON, nullable=True
     )
     ocr_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     ocr_confidence: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
