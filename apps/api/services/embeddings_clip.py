@@ -1,18 +1,21 @@
 """CLIP embeddings for semantic search."""
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from sentence_transformers import SentenceTransformer
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
-_model: Optional[SentenceTransformer] = None
+_model: Optional["SentenceTransformer"] = None
 MODEL_NAME = "sentence-transformers/clip-vit-b-32"
 EMBEDDING_DIM = 512
 
 
-def _get_model() -> SentenceTransformer:
+def _get_model() -> "SentenceTransformer":
     """Lazy-load and cache CLIP model."""
+    from sentence_transformers import SentenceTransformer
+
     global _model
     if _model is None:
         _model = SentenceTransformer(MODEL_NAME)

@@ -34,7 +34,6 @@ from models.media_version import MediaEventType
 from models.user import User
 from models.vehicle_media import ImageCategory, VehicleMedia
 from services import filename_metadata, media_library, pdf_ingest
-from services.embeddings_clip import embed_text
 from services.media_audit import get_audit_log as get_audit
 from services.media_audit import log_audit
 from services.media_index import media_index
@@ -585,6 +584,7 @@ async def search_media(
     if not q or len(q.strip()) == 0:
         raise HTTPException(status_code=400, detail="Search query cannot be empty")
 
+    from services.embeddings_clip import embed_text
     query_embedding = await embed_text(q)
     if not query_embedding:
         return []

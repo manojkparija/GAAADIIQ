@@ -1,7 +1,6 @@
 """Safety detection: NSFW and license plate detection."""
 import logging
 from io import BytesIO
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -11,20 +10,20 @@ _yolo_model = None
 
 def _get_nsfw_model():
     """Lazy-load and cache NSFW detection model."""
+    from sentence_transformers import SentenceTransformer
+
     global _nsfw_model
     if _nsfw_model is None:
-        from sentence_transformers import SentenceTransformer
-
         _nsfw_model = SentenceTransformer("Falconsai/nsfw_image_detection")
     return _nsfw_model
 
 
 def _get_yolo_model():
     """Lazy-load and cache YOLOv8 license plate model."""
+    from ultralytics import YOLO
+
     global _yolo_model
     if _yolo_model is None:
-        from ultralytics import YOLO
-
         _yolo_model = YOLO("yolov8n.pt")
     return _yolo_model
 

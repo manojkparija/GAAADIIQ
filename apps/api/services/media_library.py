@@ -30,12 +30,9 @@ from models.media_audit import AuditAction
 from models.media_version import MediaEventType
 from models.vehicle_media import ListingMedia, VehicleMedia
 from services import pdf_ingest
-from services.embeddings_clip import embed_image_bytes
 from services.media_audit import log_audit
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
-from services.ocr_tesseract import ocr_image_bytes
-from services.safety_detection import detect_license_plate, detect_nsfw
 from services.version_history import record_version
 
 logger = logging.getLogger("gaadiiq.media_library")
@@ -216,6 +213,7 @@ async def store_image(
 
     # WAVE 3: Non-blocking ML enrichment
     try:
+        from services.embeddings_clip import embed_image_bytes
         embedding = await embed_image_bytes(data)
         if embedding:
             row.embedding_vector = embedding
@@ -223,6 +221,7 @@ async def store_image(
         logger.warning(f"Failed to generate embedding for {row.id}: {e}")
 
     try:
+        from services.ocr_tesseract import ocr_image_bytes
         ocr_result = await ocr_image_bytes(data)
         if ocr_result:
             row.ocr_text = ocr_result.get("text")
@@ -232,6 +231,7 @@ async def store_image(
         logger.warning(f"Failed to extract OCR for {row.id}: {e}")
 
     try:
+        from services.safety_detection import detect_nsfw
         nsfw_score = await detect_nsfw(data)
         if nsfw_score is not None:
             row.nsfw_score = nsfw_score
@@ -239,6 +239,7 @@ async def store_image(
         logger.warning(f"Failed to detect NSFW for {row.id}: {e}")
 
     try:
+        from services.safety_detection import detect_license_plate
         plate_result = await detect_license_plate(data)
         if plate_result:
             row.license_plate_detected = plate_result.get("detected", False)
