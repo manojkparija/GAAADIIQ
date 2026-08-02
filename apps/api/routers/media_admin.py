@@ -251,7 +251,7 @@ async def upload_images(
         try:
             media = await media_library.store_image(
                 db, data, content_type,
-                key_prefix=f"car-images/{make}/{model}/{model_year}".lower().replace(" ", "-"),
+                key_prefix=f"car-images/{make}/{model}/{model_year}/{chosen_category.value}".lower().replace(" ", "-"),
                 source_name=name,
                 make=make, model=model,
                 variant=variant or hint.variant,
