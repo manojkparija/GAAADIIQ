@@ -169,6 +169,22 @@ class Settings(BaseSettings):
     SMTP_PASS: str = ""
     SMTP_FROM: str = "noreply@gaadiiq.com"
 
+    # ── WAVE 3 ML Features ────────────────────────────────────────────────────
+    # CLIP embeddings for semantic search
+    clip_model_name: str = "sentence-transformers/clip-vit-b-32"
+    clip_batch_size: int = 32
+    enable_embeddings: bool = True
+
+    # Tesseract OCR
+    tesseract_timeout_seconds: int = 30
+    enable_ocr: bool = True
+
+    # Safety detection (NSFW + license plate)
+    yolov8_model_name: str = "yolov8n.pt"
+    nsfw_threshold: float = 0.5
+    license_plate_confidence_threshold: float = 0.5
+    enable_safety_detection: bool = True
+
     @property
     def is_production(self) -> bool:
         return self.environment == "production"

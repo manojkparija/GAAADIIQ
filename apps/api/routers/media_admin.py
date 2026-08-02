@@ -562,3 +562,109 @@ async def get_audit_log(
             for a in audits
         ],
     }
+
+
+# ── WAVE 3 Semantic Search & ML Results ──────────────────────────────────
+
+
+@router.get("/search", response_model=list[dict], tags=["wave3-search"])
+@limiter.limit("30/minute")
+async def search_media(
+    request: Request,
+    q: str,
+    limit: int = 10,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Semantic search across all images using CLIP embeddings.
+
+    Returns images ranked by similarity to the search query.
+    """
+    if not q or len(q.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Search query cannot be empty")
+
+    from services.embeddings_clip import embed_text
+    query_embedding = await embed_text(q)
+    if not query_embedding:
+        return []
+
+    media_rows = (await db.execute(
+        select(VehicleMedia)
+        .where(VehicleMedia.embedding_vector.isnot(None))
+        .limit(100)
+    )).scalars().all()
+
+    scored = []
+    for m in media_rows:
+        if m.embedding_vector:
+            similarity = sum(
+                a * b for a, b in zip(query_embedding, m.embedding_vector)
+            ) / (
+                sum(a ** 2 for a in query_embedding) ** 0.5
+                * sum(b ** 2 for b in m.embedding_vector) ** 0.5 + 1e-8
+            )
+            scored.append((m, similarity))
+
+    scored.sort(key=lambda x: x[1], reverse=True)
+
+    storage = get_storage()
+    results = []
+    for m, score in scored[:limit]:
+        results.append({
+            "id": str(m.id),
+            "url": storage.url_for(m.storage_key),
+            "make": m.make,
+            "model": m.model,
+            "variant": m.variant,
+            "model_year": m.model_year,
+            "similarity_score": float(score),
+        })
+    return results
+
+
+@router.get("/{media_id}/ocr", tags=["wave3-ocr"])
+@limiter.limit("60/minute")
+async def get_ocr_results(
+    media_id: UUID,
+    request: Request,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve OCR extraction results for an image."""
+    media = (await db.execute(
+        select(VehicleMedia).where(VehicleMedia.id == media_id)
+    )).scalar_one_or_none()
+    if media is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    return {
+        "media_id": str(media_id),
+        "text": media.ocr_text,
+        "confidence": media.ocr_confidence,
+        "entities": media.ocr_entities or {},
+    }
+
+
+@router.get("/{media_id}/safety", tags=["wave3-safety"])
+@limiter.limit("60/minute")
+async def get_safety_results(
+    media_id: UUID,
+    request: Request,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve safety detection results for an image."""
+    media = (await db.execute(
+        select(VehicleMedia).where(VehicleMedia.id == media_id)
+    )).scalar_one_or_none()
+    if media is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    return {
+        "media_id": str(media_id),
+        "nsfw_score": media.nsfw_score,
+        "license_plate_detected": media.license_plate_detected,
+        "license_plate_bbox": media.license_plate_bbox,
+        "safety_metadata": media.safety_metadata or {},
+    }

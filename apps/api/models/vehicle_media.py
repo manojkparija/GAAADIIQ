@@ -334,6 +334,18 @@ class VehicleMedia(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
 
+    # ── WAVE 3 ML fields ─────────────────────────────────────────────────────
+    embedding_vector: Mapped[list[float] | None] = mapped_column(
+        JSON, nullable=True
+    )
+    ocr_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ocr_confidence: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
+    ocr_entities: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    nsfw_score: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
+    license_plate_detected: Mapped[bool | None] = mapped_column(Boolean, nullable=True, index=True)
+    license_plate_bbox: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    safety_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
 
 class ExtractedVehicle(Base):
     """
