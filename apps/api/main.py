@@ -233,7 +233,9 @@ app.add_middleware(
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
 
 # Prometheus scrape token — set METRICS_TOKEN env var in production;
