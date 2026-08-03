@@ -18,10 +18,7 @@ from core.limiter import limiter
 
 # Debug: Verify configuration is loaded
 async_url = settings.async_database_url
-print(f"[DEBUG] DATABASE_URL (direct) = {settings.database_url[:100] if settings.database_url else 'NOT SET'}")
-print(f"[DEBUG] DB_USER = {settings.db_user}")
-print(f"[DEBUG] DB_HOST = {settings.db_host}")
-print(f"[DEBUG] DB_PORT = {settings.db_port}")
+print(f"[DEBUG] DATABASE_URL = {settings.database_url[:80] if settings.database_url else 'NOT SET'}")
 print(f"[DEBUG] ASYNC_DATABASE_URL = {async_url[:80] if async_url else 'NOT SET'}")
 print(f"[DEBUG] ENVIRONMENT = {settings.environment}")
 
