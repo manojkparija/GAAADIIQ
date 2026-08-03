@@ -26,6 +26,14 @@ class Settings(BaseSettings):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+
+        # Fallback: if URL ends with just :5432/ (no database name), append 'postgres'
+        # This handles Render env var truncation issues
+        if url.endswith(":5432/") or url.endswith(":5432"):
+            if not url.endswith("/"):
+                url += "/"
+            url += "postgres"
+
         return url
 
     # Redis
