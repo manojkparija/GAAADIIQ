@@ -51,7 +51,7 @@ async def fix_schema():
                     user=parsed.username,
                     password=parsed.password,
                     database=parsed.path.lstrip("/"),
-                    ssl=False,
+                    ssl=True,
                     timeout=30,
                 ),
                 timeout=35,
