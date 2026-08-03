@@ -94,7 +94,7 @@ export default function MediaUpload({
         throw new Error(err.detail ?? `Upload failed: ${res.status}`);
       }
 
-      const media = await res.json();
+      const media: MediaUploadResponse = await res.json();
       setUploadedFiles((prev) => [...prev, media]);
       onUploadSuccess?.(media);
     } catch (err) {
