@@ -68,14 +68,18 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
+    from sqlalchemy.ext.asyncio import create_async_engine
 
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.connect_args"] = {"ssl": True}
+    db_url = config.get_main_option("sqlalchemy.url")
 
-    connectable = async_engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
+    # For cloud databases like Supabase, SSL is required
+    connect_args = {"ssl": True} if "supabase" in db_url or "cloud" in db_url else {}
+
+    connectable = create_async_engine(
+        db_url,
+        connect_args=connect_args,
         poolclass=pool.NullPool,
+        echo=False,
     )
 
     async with connectable.connect() as connection:
