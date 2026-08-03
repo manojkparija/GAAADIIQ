@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # "development" | "staging" | "production"
     environment: str = "development"
 
-    # Database — Railway provides postgresql:// but asyncpg requires postgresql+asyncpg://
+    # Database — Single URL (Supabase or Render PostgreSQL)
     database_url: str = "postgresql+asyncpg://user:password@localhost:5432/gaadiiq"
 
     @property
@@ -26,6 +26,14 @@ class Settings(BaseSettings):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+
+        # Fallback: if URL ends with just :5432/ (no database name), append 'postgres'
+        # This handles Render env var truncation issues
+        if url.endswith(":5432/") or url.endswith(":5432"):
+            if not url.endswith("/"):
+                url += "/"
+            url += "postgres"
+
         return url
 
     # Redis
@@ -45,6 +53,8 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:4200",
         "https://localhost:4200",
+        "http://127.0.0.1:4200",
+        "https://127.0.0.1:4200",
         "capacitor://localhost",
         "ionic://localhost",
         "https://gaadiiq.com",

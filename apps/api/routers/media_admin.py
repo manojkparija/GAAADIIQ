@@ -78,6 +78,15 @@ class UploadedImage(BaseModel):
     # forty uploads produced thirty-eight new images rather than silently
     # wondering where two went.
     deduplicated: bool = False
+    # WAVE 3 ML fields
+    embedding_vector: list[float] | None = None
+    ocr_text: str | None = None
+    ocr_confidence: float | None = None
+    ocr_entities: dict | None = None
+    nsfw_score: float | None = None
+    license_plate_detected: bool | None = None
+    license_plate_bbox: dict | None = None
+    safety_metadata: dict | None = None
 
 
 class UploadResult(BaseModel):
@@ -304,6 +313,14 @@ async def upload_images(
             image_category=media.image_category.value if media.image_category else None,
             colour=media.colour, is_primary=media.is_primary,
             sort_order=media.sort_order, deduplicated=was_duplicate,
+            embedding_vector=media.embedding_vector,
+            ocr_text=media.ocr_text,
+            ocr_confidence=media.ocr_confidence,
+            ocr_entities=media.ocr_entities,
+            nsfw_score=media.nsfw_score,
+            license_plate_detected=media.license_plate_detected,
+            license_plate_bbox=media.license_plate_bbox,
+            safety_metadata=media.safety_metadata,
         ))
 
     await db.commit()

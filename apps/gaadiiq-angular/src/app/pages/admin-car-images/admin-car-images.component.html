@@ -267,6 +267,37 @@
                       <span class="aci-dedup-badge">♻️ Deduplicated</span>
                     }
                   </div>
+                  <!-- WAVE 3 ML Results -->
+                  <div class="aci-ml-section">
+                    <!-- OCR Results -->
+                    @if (img.ocr_text) {
+                      <div class="aci-ml-block">
+                        <span class="aci-ml-label">📄 OCR</span>
+                        <div class="aci-ml-value">
+                          {{ img.ocr_text.substring(0, 50) }}@if (img.ocr_text.length > 50) { ... }
+                        </div>
+                        @if (img.ocr_confidence) {
+                          <div class="aci-ml-confidence">Confidence: {{ (img.ocr_confidence * 100).toFixed(0) }}%</div>
+                        }
+                      </div>
+                    }
+                    <!-- NSFW Detection -->
+                    @if (img.nsfw_score !== null && img.nsfw_score !== undefined) {
+                      <div class="aci-ml-block">
+                        <span class="aci-ml-label">⚠️ NSFW</span>
+                        <div class="aci-ml-value" [class.ml-flagged]="img.nsfw_score > 0.5">
+                          {{ (img.nsfw_score * 100).toFixed(0) }}%
+                        </div>
+                      </div>
+                    }
+                    <!-- License Plate Detection -->
+                    @if (img.license_plate_detected) {
+                      <div class="aci-ml-block">
+                        <span class="aci-ml-label">🚗 Plate</span>
+                        <div class="aci-ml-value">Detected</div>
+                      </div>
+                    }
+                  </div>
                 </div>
               }
             </div>

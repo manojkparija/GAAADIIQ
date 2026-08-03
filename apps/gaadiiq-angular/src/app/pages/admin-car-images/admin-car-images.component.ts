@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-car-images',
@@ -17,6 +18,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class AdminCarImagesComponent implements OnInit {
   auth = inject(AuthService);
+  private apiUrl = environment.apiUrl;
 
   // File selection
   dragOver = signal(false);
@@ -122,16 +124,25 @@ export class AdminCarImagesComponent implements OnInit {
     files.forEach(f => formData.append('files', f));
 
     try {
-      const response = await fetch('http://localhost:8000/media-admin/inspect', {
+      const token = await this.getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      console.log('Fetching /media-admin/inspect with headers:', Object.keys(headers));
+      const response = await fetch(`${this.apiUrl}/media-admin/inspect`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Authorization': `Bearer ${await this.getToken()}`,
-        },
+        headers,
       });
 
+      console.log('Response status:', response.status, 'Content-Type:', response.headers.get('content-type'));
+
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`API error ${response.status}: ${errorText}`);
       }
 
       const results = await response.json();
@@ -139,6 +150,10 @@ export class AdminCarImagesComponent implements OnInit {
       this.showMetadataGrid.set(true);
       this.toast(`✓ Inspected ${results.length} file(s) — edit metadata below`);
     } catch (err) {
+      console.error('Inspect error details:', err);
+      if (err instanceof Error) {
+        console.error('Stack trace:', err.stack);
+      }
       this.toast(`❌ Inspection failed: ${err}`);
     } finally {
       this.isInspecting.set(false);
@@ -180,12 +195,16 @@ export class AdminCarImagesComponent implements OnInit {
     if (this.license()) formData.append('license', this.license());
 
     try {
-      const response = await fetch('http://localhost:8000/media-admin/upload', {
+      const token = await this.getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${this.apiUrl}/media-admin/upload`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Authorization': `Bearer ${await this.getToken()}`,
-        },
+        headers,
       });
 
       if (!response.ok) {
@@ -241,8 +260,23 @@ export class AdminCarImagesComponent implements OnInit {
   }
 
   private async getToken(): Promise<string> {
-    const { data } = await (window as any).supabaseClient?.auth.getSession();
-    return data?.session?.access_token || '';
+    try {
+      const supabaseClient = (window as any).supabaseClient;
+      if (!supabaseClient) {
+        return '';
+      }
+      const response = await supabaseClient.auth.getSession();
+      if (!response) {
+        return '';
+      }
+      if (response.data && response.data.session && response.data.session.access_token) {
+        return response.data.session.access_token;
+      }
+      return '';
+    } catch (err) {
+      console.warn('Failed to get Supabase token:', err);
+      return '';
+    }
   }
 
   private toast(msg: string) {

@@ -16,8 +16,12 @@ from slowapi.errors import RateLimitExceeded
 from core.config import settings
 from core.limiter import limiter
 
-# Debug: Verify configuration is loaded
-print(f"[DEBUG] DATABASE_URL = {settings.database_url[:100] if settings.database_url else 'NOT SET'}")
+# Debug: Verify configuration is loaded (redact credentials)
+async_url = settings.async_database_url
+db_redacted = "***redacted***" if settings.database_url else "NOT SET"
+async_redacted = "***redacted***" if async_url else "NOT SET"
+print(f"[DEBUG] DATABASE_URL = {db_redacted}")
+print(f"[DEBUG] ASYNC_DATABASE_URL = {async_redacted}")
 print(f"[DEBUG] ENVIRONMENT = {settings.environment}")
 
 # Fail fast in production if secrets are missing/default
@@ -108,7 +112,7 @@ async def _fix_schema():
                 user=parsed.username,
                 password=parsed.password,
                 database=parsed.path.lstrip("/"),
-                ssl=False,
+                ssl=True,
                 timeout=5,
             ),
             timeout=10,
@@ -135,7 +139,7 @@ async def lifespan(app: FastAPI):
             ["alembic", "upgrade", "head"],
             capture_output=True, text=True, check=True,
             cwd=api_dir,
-            timeout=15,
+            timeout=30,  # Increased from 15s to accommodate 13 migrations
         )
         _log.info("Alembic: %s", result.stdout.strip() or "up to date")
     except subprocess.TimeoutExpired:
@@ -146,8 +150,11 @@ async def lifespan(app: FastAPI):
             _log.warning("Alembic migration timeout (development mode) - will retry with direct schema fix")
             await _fix_schema()
     except subprocess.CalledProcessError as exc:
+        stderr_msg = exc.stderr or "(no stderr captured)"
+        stdout_msg = exc.stdout or "(no stdout captured)"
+        error_text = f"Alembic stderr:\n{stderr_msg}\nAlembic stdout:\n{stdout_msg}"
+        _log.error(error_text)
         if settings.is_production:
-            _log.error("Alembic migration failed stdout=%s stderr=%s", exc.stdout, exc.stderr)
             raise
         else:
             _log.warning("Alembic migration skipped (development mode) - attempting direct schema fix")
@@ -233,7 +240,9 @@ app.add_middleware(
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
 
 # Prometheus scrape token — set METRICS_TOKEN env var in production;
