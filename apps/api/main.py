@@ -148,8 +148,11 @@ async def lifespan(app: FastAPI):
             _log.warning("Alembic migration timeout (development mode) - will retry with direct schema fix")
             await _fix_schema()
     except subprocess.CalledProcessError as exc:
+        stderr_msg = exc.stderr or "(no stderr captured)"
+        stdout_msg = exc.stdout or "(no stdout captured)"
+        error_text = f"Alembic stderr:\n{stderr_msg}\nAlembic stdout:\n{stdout_msg}"
+        _log.error(error_text)
         if settings.is_production:
-            _log.error("Alembic migration failed stdout=%s stderr=%s", exc.stdout, exc.stderr)
             raise
         else:
             _log.warning("Alembic migration skipped (development mode) - attempting direct schema fix")
