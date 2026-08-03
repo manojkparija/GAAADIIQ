@@ -1,17 +1,25 @@
 """
 POST /upload/image — accept an image file, store in Cloudflare R2, return URL.
 Used by Angular diagnosis wizard to upload photos before submitting diagnosis.
+
+POST /upload — accept an image file for WAVE 3 media library.
+Returns VehicleMedia object with WAVE 3 ML fields (OCR, safety detection, embeddings).
 """
 import io
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.dependencies import get_current_user
 from core.limiter import limiter
+from db.session import get_db
 from models.user import User
-from services.storage import upload_image, upload_media
+from models.vehicle_media import VehicleMedia
+from services import media_library, pdf_ingest
+from services.storage import StorageError, upload_image, upload_media
 from services.stt import estimate_duration_seconds
 
 router = APIRouter(prefix="/upload", tags=["upload"])
@@ -99,6 +107,28 @@ class UploadResponse(BaseModel):
     url: str
     filename: str
     size_bytes: int
+
+
+class MediaUploadResponse(BaseModel):
+    """Response for WAVE 3 media uploads with ML fields."""
+    id: UUID
+    storage_key: str
+    webp_url: str | None = None
+    thumbnail_url: str | None = None
+    file_size: int
+    mime_type: str
+    width: int | None = None
+    height: int | None = None
+    # WAVE 3 ML fields
+    embedding_vector: list[float] | None = None
+    ocr_text: str | None = None
+    ocr_confidence: float | None = None
+    ocr_entities: dict | None = None
+    nsfw_score: float | None = None
+    license_plate_detected: bool | None = None
+    license_plate_bbox: dict | None = None
+    safety_metadata: dict | None = None
+    created_at: str
 
 
 async def _store_av(
@@ -225,3 +255,102 @@ async def upload_video_endpoint(
 ):
     """Upload a short video of the fault. Returns the public URL."""
     return await _store_av(request, file, _ALLOWED_VIDEO_TYPES, _MAX_VIDEO_SIZE, "video")
+
+
+@router.post("", response_model=MediaUploadResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("30/minute")
+async def upload_media_endpoint(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Upload an image for WAVE 3 media library.
+
+    Returns VehicleMedia with ML analysis fields (OCR, safety detection, embeddings).
+    ML features are non-blocking: upload completes even if analysis fails.
+    """
+    if file.content_type not in _ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Only JPEG, PNG, WebP and HEIC images are accepted.",
+        )
+
+    # Check Content-Length before reading
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > _MAX_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Image must be under 20 MB.",
+        )
+
+    content = await file.read()
+
+    # Enforce size after read
+    if len(content) > _MAX_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Image must be under 20 MB.",
+        )
+
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty image file.",
+        )
+
+    # Magic-byte validation
+    if not _check_magic_bytes(content):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="File content does not match a supported image format.",
+        )
+
+    content_type = file.content_type or "image/jpeg"
+
+    try:
+        # Store the image with minimal metadata
+        media = await media_library.store_image(
+            db,
+            content,
+            content_type,
+            key_prefix="user-uploads",
+            source_name=file.filename or "upload.jpg",
+            dedupe=True,
+        )
+        await db.commit()
+
+        # Build response with storage URLs
+        from services.media_storage import get_storage
+        storage = get_storage()
+
+        return MediaUploadResponse(
+            id=media.id,
+            storage_key=media.storage_key,
+            webp_url=storage.url_for(media.webp_key) if media.webp_key else storage.url_for(media.storage_key),
+            thumbnail_url=storage.url_for(media.thumbnail_key) if media.thumbnail_key else None,
+            file_size=media.size_bytes,
+            mime_type=media.content_type,
+            width=media.width,
+            height=media.height,
+            embedding_vector=media.embedding_vector,
+            ocr_text=media.ocr_text,
+            ocr_confidence=media.ocr_confidence,
+            ocr_entities=media.ocr_entities,
+            nsfw_score=media.nsfw_score,
+            license_plate_detected=media.license_plate_detected,
+            license_plate_bbox=media.license_plate_bbox,
+            safety_metadata=media.safety_metadata,
+            created_at=media.created_at.isoformat() if media.created_at else "",
+        )
+    except StorageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Storage error: {exc}",
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Upload failed: {exc}",
+        ) from exc
