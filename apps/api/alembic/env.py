@@ -72,33 +72,20 @@ async def run_async_migrations() -> None:
 
     db_url = config.get_main_option("sqlalchemy.url")
 
-    # Debug: print URL info (first 80 chars to hide password)
-    print(f"[ALEMBIC] URL (first 80): {db_url[:80] if db_url else 'NOT SET'}")
-    print(f"[ALEMBIC] URL length: {len(db_url) if db_url else 0}")
-    print(f"[ALEMBIC] Has /postgres: {'postgres' in db_url}")
-
     # For cloud databases like Supabase, SSL is required
     connect_args = {"ssl": True} if "supabase" in db_url or "cloud" in db_url else {}
-    print(f"[ALEMBIC] connect_args: {connect_args}")
 
-    try:
-        connectable = create_async_engine(
-            db_url,
-            connect_args=connect_args,
-            poolclass=pool.NullPool,
-            echo=False,
-        )
-        print("[ALEMBIC] Engine created successfully")
+    connectable = create_async_engine(
+        db_url,
+        connect_args=connect_args,
+        poolclass=pool.NullPool,
+        echo=False,
+    )
 
-        async with connectable.connect() as connection:
-            print("[ALEMBIC] Connected to database, running migrations...")
-            await connection.run_sync(do_run_migrations)
-            print("[ALEMBIC] Migrations complete")
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
 
-        await connectable.dispose()
-    except Exception as e:
-        print(f"[ALEMBIC] ERROR: {type(e).__name__}: {e}")
-        raise
+    await connectable.dispose()
 
 
 def run_migrations_online() -> None:

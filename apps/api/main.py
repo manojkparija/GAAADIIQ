@@ -16,10 +16,12 @@ from slowapi.errors import RateLimitExceeded
 from core.config import settings
 from core.limiter import limiter
 
-# Debug: Verify configuration is loaded
+# Debug: Verify configuration is loaded (redact credentials)
 async_url = settings.async_database_url
-print(f"[DEBUG] DATABASE_URL = {settings.database_url[:80] if settings.database_url else 'NOT SET'}")
-print(f"[DEBUG] ASYNC_DATABASE_URL = {async_url[:80] if async_url else 'NOT SET'}")
+db_redacted = "***redacted***" if settings.database_url else "NOT SET"
+async_redacted = "***redacted***" if async_url else "NOT SET"
+print(f"[DEBUG] DATABASE_URL = {db_redacted}")
+print(f"[DEBUG] ASYNC_DATABASE_URL = {async_redacted}")
 print(f"[DEBUG] ENVIRONMENT = {settings.environment}")
 
 # Fail fast in production if secrets are missing/default
@@ -137,7 +139,7 @@ async def lifespan(app: FastAPI):
             ["alembic", "upgrade", "head"],
             capture_output=True, text=True, check=True,
             cwd=api_dir,
-            timeout=15,
+            timeout=30,  # Increased from 15s to accommodate 13 migrations
         )
         _log.info("Alembic: %s", result.stdout.strip() or "up to date")
     except subprocess.TimeoutExpired:
