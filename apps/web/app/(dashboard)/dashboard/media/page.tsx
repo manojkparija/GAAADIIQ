@@ -44,7 +44,7 @@ export default function MediaPage() {
     }
   }
 
-  function handleUploadSuccess(newMedia: any) {
+  function handleUploadSuccess(newMedia: VehicleMedia) {
     setMedia((prev) => [newMedia, ...prev]);
     setShowUpload(false);
   }
