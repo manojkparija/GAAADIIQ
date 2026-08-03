@@ -17,7 +17,7 @@ from core.config import settings
 from core.limiter import limiter
 
 # Debug: Verify configuration is loaded
-print(f"[DEBUG] DATABASE_URL = {settings.database_url[:100] if settings.database_url else 'NOT SET'}")
+print(f"[DEBUG] DATABASE_URL = {settings.async_database_url[:100]}")
 print(f"[DEBUG] ENVIRONMENT = {settings.environment}")
 
 # Fail fast in production if secrets are missing/default

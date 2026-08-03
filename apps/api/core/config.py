@@ -16,17 +16,30 @@ class Settings(BaseSettings):
     # "development" | "staging" | "production"
     environment: str = "development"
 
-    # Database — Railway provides postgresql:// but asyncpg requires postgresql+asyncpg://
-    database_url: str = "postgresql+asyncpg://user:password@localhost:5432/gaadiiq"
+    # Database — Separate components to avoid special character issues in env variables
+    # Render users: set DB_USER, DB_PASSWORD, DB_HOST, DB_PORT instead of DATABASE_URL
+    db_user: str = "user"
+    db_password: str = "password"
+    db_host: str = "localhost"
+    db_port: int = 5432
+    db_name: str = "gaadiiq"
+
+    # Fallback for direct DATABASE_URL if set (e.g., local dev, Docker)
+    database_url: str = ""
 
     @property
     def async_database_url(self) -> str:
-        url = self.database_url
-        if url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        elif url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-        return url
+        # If DATABASE_URL is explicitly set, use it (with asyncpg conversion)
+        if self.database_url:
+            url = self.database_url
+            if url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            elif url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+            return url
+
+        # Otherwise, construct from separate components (Render recommended approach)
+        return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
     # Redis
     redis_url: str = "redis://localhost:6379"
