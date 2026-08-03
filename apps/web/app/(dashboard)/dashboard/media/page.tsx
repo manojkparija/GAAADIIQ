@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import MediaUpload from "@/components/media-upload";
 import MediaGallery from "@/components/media-gallery";
 import MediaDetailsModal from "@/components/media-details-modal";
@@ -20,11 +19,7 @@ export default function MediaPage() {
   const token = (session as { accessToken?: string })?.accessToken ?? "";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-  useEffect(() => {
-    fetchMedia();
-  }, [token]);
-
-  async function fetchMedia() {
+  const fetchMedia = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
     try {
@@ -42,7 +37,12 @@ export default function MediaPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [token, apiUrl]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchMedia();
+  }, [fetchMedia]);
 
   function handleUploadSuccess(newMedia: MediaUploadResponse) {
     setMedia((prev) => [newMedia, ...prev]);

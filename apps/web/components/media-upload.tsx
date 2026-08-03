@@ -175,11 +175,14 @@ function MediaPreview({ media }: { media: MediaUploadResponse }) {
   return (
     <div className="rounded-lg border overflow-hidden bg-card">
       {media.webp_url && (
-        <img
-          src={media.webp_url}
-          alt="uploaded"
-          className="w-full h-32 object-cover"
-        />
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={media.webp_url}
+            alt="uploaded"
+            className="w-full h-32 object-cover"
+          />
+        </>
       )}
       <div className="p-3 space-y-1">
         <p className="text-sm font-medium truncate">{media.storage_key.split("/").pop()}</p>

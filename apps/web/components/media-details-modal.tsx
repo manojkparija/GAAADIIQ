@@ -34,6 +34,7 @@ export default function MediaDetailsModal({ media, onClose }: MediaDetailsModalP
           {media.webp_url && (
             <div className="space-y-2">
               <h3 className="font-semibold">Preview</h3>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={media.webp_url}
                 alt="media"

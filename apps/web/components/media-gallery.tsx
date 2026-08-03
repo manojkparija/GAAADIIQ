@@ -51,11 +51,14 @@ function MediaCard({ media, onClick }: { media: VehicleMedia; onClick: () => voi
       {/* Image */}
       <div className="relative overflow-hidden bg-muted aspect-square">
         {media.webp_url ? (
-          <img
-            src={media.webp_url}
-            alt="media"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={media.webp_url}
+              alt="media"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+            />
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-3xl">📄</div>
         )}
