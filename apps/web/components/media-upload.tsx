@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { MediaUploadResponse } from "@/types/media";
 
 interface MediaUploadProps {
-  vehicleId?: string;
-  listingId?: string;
   token?: string;
   onUploadSuccess?: (media: MediaUploadResponse) => void;
   onUploadError?: (error: string) => void;
@@ -15,8 +13,6 @@ interface MediaUploadProps {
 }
 
 export default function MediaUpload({
-  vehicleId,
-  listingId,
   token,
   onUploadSuccess,
   onUploadError,
@@ -83,8 +79,6 @@ export default function MediaUpload({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      if (vehicleId) formData.append("vehicle_id", vehicleId);
-      if (listingId) formData.append("listing_id", listingId);
 
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
