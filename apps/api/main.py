@@ -137,7 +137,7 @@ async def lifespan(app: FastAPI):
         api_dir = os.path.dirname(os.path.abspath(__file__))
         result = subprocess.run(
             ["alembic", "upgrade", "head"],
-            capture_output=True, text=True, check=True,
+            capture_output=True, text=True, check=False,
             cwd=api_dir,
             timeout=30,  # Increased from 15s to accommodate 13 migrations
         )
