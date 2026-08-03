@@ -98,10 +98,10 @@ function MediaCard({ media, onClick }: { media: VehicleMedia; onClick: () => voi
                 OCR: {media.ocr_text?.substring(0, 40)}...
               </p>
             )}
-            {media.nsfw_score !== null && (
+            {media.nsfw_score !== null && media.nsfw_score !== undefined && (
               <p>NSFW Score: {(media.nsfw_score * 100).toFixed(0)}%</p>
             )}
-            {media.ocr_confidence !== null && (
+            {media.ocr_confidence !== null && media.ocr_confidence !== undefined && (
               <p>OCR Confidence: {(media.ocr_confidence * 100).toFixed(0)}%</p>
             )}
           </div>

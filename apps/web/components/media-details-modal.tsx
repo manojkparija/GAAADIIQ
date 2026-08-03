@@ -73,7 +73,7 @@ export default function MediaDetailsModal({ media, onClose }: MediaDetailsModalP
                   <h4 className="font-medium text-sm flex items-center gap-2">
                     🔤 Optical Character Recognition (OCR)
                   </h4>
-                  {media.ocr_confidence !== null && (
+                  {media.ocr_confidence !== null && media.ocr_confidence !== undefined && (
                     <Badge variant="secondary">
                       {(media.ocr_confidence * 100).toFixed(0)}% confidence
                     </Badge>
@@ -124,7 +124,7 @@ export default function MediaDetailsModal({ media, onClose }: MediaDetailsModalP
                         : "N/A"}
                     </span>
                   </div>
-                  {media.nsfw_score !== null && (
+                  {media.nsfw_score !== null && media.nsfw_score !== undefined && (
                     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                       <div
                         className={`h-full transition-all ${
