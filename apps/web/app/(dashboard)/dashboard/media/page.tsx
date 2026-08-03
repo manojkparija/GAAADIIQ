@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import MediaUpload from "@/components/media-upload";
 import MediaGallery from "@/components/media-gallery";
 import MediaDetailsModal from "@/components/media-details-modal";
-import { VehicleMedia, MediaListResponse } from "@/types/media";
+import { VehicleMedia, MediaListResponse, MediaUploadResponse } from "@/types/media";
 
 export default function MediaPage() {
   const { data: session } = useSession();
@@ -44,7 +44,7 @@ export default function MediaPage() {
     }
   }
 
-  function handleUploadSuccess(newMedia: VehicleMedia) {
+  function handleUploadSuccess(newMedia: MediaUploadResponse) {
     setMedia((prev) => [newMedia, ...prev]);
     setShowUpload(false);
   }
