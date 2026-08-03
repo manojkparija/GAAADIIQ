@@ -18,7 +18,7 @@ else:
     # PostgreSQL: enable connection pooling
     engine_kwargs["pool_size"] = 10
     engine_kwargs["max_overflow"] = 20
-    engine_kwargs["connect_args"] = {"ssl": False}
+    engine_kwargs["connect_args"] = {"ssl": True}
 
 engine = create_async_engine(settings.async_database_url, **engine_kwargs)
 

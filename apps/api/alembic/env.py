@@ -69,8 +69,11 @@ async def run_async_migrations() -> None:
 
     """
 
+    configuration = config.get_section(config.config_ini_section, {})
+    configuration["sqlalchemy.connect_args"] = {"ssl": True}
+
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

@@ -26,10 +26,6 @@ class Settings(BaseSettings):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-        # Add SSL requirement for Supabase (and other cloud databases)
-        # PostgreSQL standard parameter: sslmode=require
-        if "?" not in url:
-            url += "?sslmode=require"
         return url
 
     # Redis
