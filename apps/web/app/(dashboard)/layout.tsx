@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/listings", label: "My Listings" },
   { href: "/dashboard/listings/new", label: "Add Listing" },
+  { href: "/dashboard/media", label: "📸 Media (WAVE 3)" },
   { href: "/dashboard/leads", label: "Leads" },
   { href: "/dashboard/analytics", label: "Analytics" },
   { href: "/dashboard/launch", label: "🚀 Launch" },
