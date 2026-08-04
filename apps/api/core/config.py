@@ -60,7 +60,18 @@ class Settings(BaseSettings):
         "https://gaadiiq.com",
         "https://www.gaadiiq.com",
         "https://app.gaadiiq.com",
+        "https://gaaadiiq-web.vercel.app",
     ]
+
+    # Vercel mints a brand-new hostname for every deployment
+    # (gaaadiiq-<hash>-<team>.vercel.app), so a hand-maintained allow-list can
+    # never keep up and each preview build fails CORS with an opaque
+    # "Failed to fetch" in the browser. Matched by pattern instead.
+    #
+    # Deliberately anchored and scoped to this project's own names rather than
+    # a blanket .vercel.app: allow_credentials is True, so a broad pattern
+    # would let any site hosted on Vercel make credentialed calls to this API.
+    allowed_origin_regex: str = r"^https://gaaadiiq[a-z0-9-]*\.vercel\.app$"
 
     # Cloudflare R2 (S3-compatible)
     r2_endpoint_url: str = ""
