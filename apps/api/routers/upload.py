@@ -19,7 +19,8 @@ from db.session import get_db
 from models.user import User
 from models.vehicle_media import VehicleMedia
 from services import media_library, pdf_ingest
-from services.storage import StorageError, upload_image, upload_media
+from services.media_storage import StorageError
+from services.storage import upload_image, upload_media
 from services.stt import estimate_duration_seconds
 
 router = APIRouter(prefix="/upload", tags=["upload"])
