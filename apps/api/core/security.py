@@ -1,4 +1,7 @@
+import logging
+import re
 import secrets
+import textwrap
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -7,10 +10,93 @@ from passlib.context import CryptContext
 
 from core.config import settings
 
+logger = logging.getLogger(__name__)
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 REFRESH_TOKEN_COOKIE = "refresh_token"
 ACCESS_TOKEN_COOKIE = "access_token"
+
+# Unicode dashes that editors, chat clients and word processors substitute for
+# the ASCII hyphens in a PEM's "-----BEGIN ...-----" armour. A single one makes
+# the whole key unparseable, and the resulting error ("Invalid symbol 226") does
+# not hint at the cause.
+_UNICODE_DASHES = dict.fromkeys(map(ord, "‐‑‒–—―−⁃"), "-")
+
+# The hyphen runs are matched as "one or more", not exactly five: autocorrect
+# collapses "-----" into a single em-dash, so the original count is already lost
+# by the time we see the value. The armour is rebuilt canonically below.
+_PEM_RE = re.compile(
+    r"-+ *BEGIN (?P<label>[A-Z][A-Z ]*[A-Z]) *-+(?P<body>.*?)-+ *END (?P=label) *-+",
+    re.DOTALL,
+)
+
+
+def normalize_pem(raw: str) -> str:
+    """Repair the ways a PEM key gets mangled in transit to an env var.
+
+    Handles, in order:
+      • surrounding quotes, added when a value is pasted as a shell literal
+      • Unicode dashes substituted for the armour's ASCII hyphens
+      • literal backslash-n instead of real newlines — the convention that
+        config.py documents ("newlines as \\n") but nothing ever undid
+      • a body flattened onto one line, or wrapped at the wrong width
+
+    Returns the repaired PEM. Does not validate — call load_pem for that.
+    """
+    if not raw:
+        return ""
+
+    text = raw.strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
+        text = text[1:-1]
+
+    text = text.translate(_UNICODE_DASHES)
+    text = text.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+    # Rebuild the armour so the body is base64 wrapped at the canonical 64
+    # columns, whichever way the original was broken up.
+    match = _PEM_RE.search(text)
+    if not match:
+        return text.strip()
+
+    body = re.sub(r"\s+", "", match.group("body"))
+    label = match.group("label").strip()
+    return (
+        f"-----BEGIN {label}-----\n"
+        + "\n".join(textwrap.wrap(body, 64))
+        + f"\n-----END {label}-----\n"
+    )
+
+
+def load_pem(raw: str, *, private: bool) -> str | None:
+    """Normalize a PEM and confirm cryptography can actually parse it.
+
+    Returns the usable PEM, or None if it cannot be loaded. Never raises, and
+    never logs the key material itself.
+    """
+    pem = normalize_pem(raw)
+    if not pem:
+        return None
+    try:
+        from cryptography.hazmat.primitives import serialization
+
+        if private:
+            serialization.load_pem_private_key(pem.encode(), password=None)
+        else:
+            serialization.load_pem_public_key(pem.encode())
+        return pem
+    except Exception as exc:  # noqa: BLE001 — any parse failure means unusable
+        logger.error(
+            "JWT_%s_KEY is set but is not a loadable PEM (%s: %s). "
+            "Common causes: the '-----BEGIN' hyphens were replaced with Unicode "
+            "dashes by an editor or chat client, or the value was truncated.",
+            "PRIVATE" if private else "PUBLIC",
+            type(exc).__name__,
+            exc,
+        )
+        return None
 
 
 def _get_rsa_keys() -> tuple[str, str]:
@@ -19,9 +105,24 @@ def _get_rsa_keys() -> tuple[str, str]:
     In production these come from JWT_PRIVATE_KEY / JWT_PUBLIC_KEY env vars.
     In development a self-signed 2048-bit RSA keypair is generated on first call
     and cached for the process lifetime — no file I/O, no secrets committed.
+
+    Configured keys are normalized and validated before use. If they are set but
+    unusable the process falls back to an ephemeral keypair and logs loudly,
+    rather than letting every token operation fail with an opaque 500. The cost
+    of that fallback is that tokens do not survive a restart, so the log line
+    must be treated as an outage-level warning in production.
     """
+    configured_private = configured_public = None
     if settings.jwt_private_key and settings.jwt_public_key:
-        return settings.jwt_private_key, settings.jwt_public_key
+        configured_private = load_pem(settings.jwt_private_key, private=True)
+        configured_public = load_pem(settings.jwt_public_key, private=False)
+        if configured_private and configured_public:
+            return configured_private, configured_public
+        logger.error(
+            "Falling back to an EPHEMERAL JWT keypair because the configured "
+            "keys could not be loaded. Tokens will be invalidated on every "
+            "restart until JWT_PRIVATE_KEY/JWT_PUBLIC_KEY are fixed."
+        )
     # Dev fallback: generate an ephemeral keypair (new per process restart — fine for dev)
     return _ephemeral_keys()
 
