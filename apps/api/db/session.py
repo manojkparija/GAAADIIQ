@@ -18,7 +18,17 @@ else:
     # PostgreSQL: enable connection pooling
     engine_kwargs["pool_size"] = 10
     engine_kwargs["max_overflow"] = 20
-    engine_kwargs["connect_args"] = {"ssl": True}
+    # "require" encrypts the connection but does not verify the server
+    # certificate chain. Supabase's direct endpoint (db.*.supabase.co) presents
+    # a chain that no standard trust store can validate — asyncpg's ssl=True and
+    # an explicit certifi CA bundle both fail there with
+    # CERTIFICATE_VERIFY_FAILED ("self-signed certificate in certificate
+    # chain"), which took down every database call in the API.
+    #
+    # Trade-off: traffic is encrypted, but an active MITM on the database link
+    # would not be detected. To restore full verification, fetch Supabase's CA
+    # certificate and pass an ssl.SSLContext built with it instead.
+    engine_kwargs["connect_args"] = {"ssl": "require"}
 
 engine = create_async_engine(settings.async_database_url, **engine_kwargs)
 

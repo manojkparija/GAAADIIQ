@@ -72,8 +72,10 @@ async def run_async_migrations() -> None:
 
     db_url = config.get_main_option("sqlalchemy.url")
 
-    # For cloud databases like Supabase, SSL is required
-    connect_args = {"ssl": True} if "supabase" in db_url or "cloud" in db_url else {}
+    # For cloud databases like Supabase, SSL is required. Use "require" rather
+    # than True: Supabase's certificate chain fails verification, so ssl=True
+    # aborts the connection outright (see db/session.py).
+    connect_args = {"ssl": "require"} if "supabase" in db_url or "cloud" in db_url else {}
 
     connectable = create_async_engine(
         db_url,

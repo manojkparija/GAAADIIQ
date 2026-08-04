@@ -51,7 +51,8 @@ async def fix_schema():
                     user=parsed.username,
                     password=parsed.password,
                     database=parsed.path.lstrip("/"),
-                    ssl=True,
+                    # See db/session.py: Supabase's chain fails verification.
+                    ssl="require",
                     timeout=30,
                 ),
                 timeout=35,
