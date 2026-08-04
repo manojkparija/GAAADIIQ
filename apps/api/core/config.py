@@ -183,17 +183,17 @@ class Settings(BaseSettings):
     # CLIP embeddings for semantic search
     clip_model_name: str = "sentence-transformers/clip-vit-b-32"
     clip_batch_size: int = 32
-    enable_embeddings: bool = True
+    enable_embeddings: bool = False
 
     # Tesseract OCR
     tesseract_timeout_seconds: int = 30
-    enable_ocr: bool = True
+    enable_ocr: bool = False
 
     # Safety detection (NSFW + license plate)
     yolov8_model_name: str = "yolov8n.pt"
     nsfw_threshold: float = 0.5
     license_plate_confidence_threshold: float = 0.5
-    enable_safety_detection: bool = True
+    enable_safety_detection: bool = False
 
     @property
     def is_production(self) -> bool:
@@ -219,6 +219,28 @@ class Settings(BaseSettings):
             errors.append("QDRANT_API_KEY must be set in production")
         if not os.environ.get("METRICS_TOKEN"):
             errors.append("METRICS_TOKEN must be set in production")
+
+        # Warned rather than fatal, and deliberately loud.
+        #
+        # The default media backend writes into the container's own filesystem.
+        # On a host with no persistent disk — which is how this deploys — every
+        # restart deletes every stored image while the vehicle_media rows that
+        # reference them survive in Postgres. The result is a catalogue full of
+        # broken thumbnails and no error anywhere explaining it, because from
+        # the API's point of view each upload succeeded.
+        #
+        # Not fatal because refusing to boot would take the whole API down over
+        # a subsystem that only affects images, which is the wrong trade for a
+        # service already serving traffic.
+        if os.getenv("MEDIA_BACKEND", "local").lower() != "s3":
+            print(
+                "WARNING: MEDIA_BACKEND is not 's3' in production. Uploaded images "
+                "are being written to the container filesystem and will be LOST on "
+                "the next deploy or restart, leaving database rows pointing at files "
+                "that no longer exist. Set MEDIA_BACKEND=s3 with the R2_* credentials.",
+                file=sys.stderr,
+            )
+
         if errors:
             print("FATAL: production configuration errors:", file=sys.stderr)
             for e in errors:

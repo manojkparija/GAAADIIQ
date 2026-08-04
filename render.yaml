@@ -57,11 +57,34 @@ services:
         sync: false            # JWT signing key for this backend
       - key: GEMINI_API_KEY
         sync: false
-      # Free hosted vision fallback for brochure pages when Gemini is out of
-      # quota or unset. Needed because the other free provider, Ollama, is
-      # self-hosted and this deployment has none to reach.
-      - key: GROQ_API_KEY
+      # Brochure images MUST go to object storage here. The default backend is
+      # "local", which writes into the container — and this service has no
+      # persistent disk, so every deploy silently deletes every image while
+      # leaving the vehicle_media rows pointing at them. That is what turned
+      # the review screen into a grid of broken thumbnails.
+      - key: MEDIA_BACKEND
+        value: s3
+      - key: R2_ENDPOINT_URL
         sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        sync: false
+      # Public base for served images. Without it the S3 backend still stores
+      # correctly but has no browser-reachable URL to hand back.
+      - key: R2_PUBLIC_URL
+        sync: false
+      # Free hosted vision fallback for brochure pages, currently not in use.
+      #
+      # Uncomment when a Groq key is available. The code already treats an
+      # absent key as "skip this provider", so leaving it out costs nothing —
+      # but it does mean Gemini has no fallback: if Gemini is throttled or
+      # down, brochure extraction fails rather than degrading, because the
+      # only other provider is Ollama and nothing hosts it here.
+      # - key: GROQ_API_KEY
+      #   sync: false
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
