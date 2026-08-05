@@ -70,6 +70,11 @@
     color: var(--text);
     font-weight: 600;
     font-size: 0.82rem;
+    // Labels are single-line by design. Without this a two-word item breaks
+    // across lines once the row runs short of space, and because every item
+    // then grows taller the whole bar looks misaligned rather than merely
+    // tight — which is what adding one long label caused.
+    white-space: nowrap;
     transition: color 0.2s;
     position: relative;
     font-family: 'Manrope', sans-serif;
