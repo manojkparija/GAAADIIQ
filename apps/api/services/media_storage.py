@@ -145,12 +145,19 @@ class S3Storage:
         public_base: str = "",
         access_key: str = "",
         secret_key: str = "",
+        region: str = "auto",
     ):
-        self.bucket = bucket
-        self.endpoint_url = endpoint_url
-        self.public_base = public_base.rstrip("/")
-        self.access_key = access_key
-        self.secret_key = secret_key
+        # Values arrive from environment variables, where a trailing newline or
+        # stray space survives a copy-paste unnoticed and corrupts the TLS SNI
+        # hostname — a failure that surfaces as an unexplained handshake error.
+        self.bucket = bucket.strip()
+        # Trailing slash removed too: boto3 concatenates the path onto this, so
+        # ".../s3/" yields a double slash in the signed URL.
+        self.endpoint_url = (endpoint_url or "").strip().rstrip("/")
+        self.public_base = (public_base or "").strip().rstrip("/")
+        self.access_key = (access_key or "").strip()
+        self.secret_key = (secret_key or "").strip()
+        self.region = (region or "auto").strip()
         self._cached_client = None
 
     def _check_endpoint(self) -> None:
@@ -213,13 +220,16 @@ class S3Storage:
                 signature_version="s3v4",
                 # R2 serves the bucket under the account host; virtual-host
                 # style would put the bucket in the TLS SNI, which its
-                # certificate does not cover.
+                # certificate does not cover. Supabase Storage is path-style
+                # too, so this suits both.
                 s3={"addressing_style": "path"},
                 # A burst of image uploads that trips a transient TLS or network
                 # error should retry rather than lose the image.
                 retries={"max_attempts": 3, "mode": "standard"},
             ),
-            "region_name": "auto",
+            # "auto" suits R2; other S3-compatible stores reject it and sign
+            # against their own region. See settings.media_s3_region.
+            "region_name": self.region,
         }
         if self.access_key and self.secret_key:
             kwargs["aws_access_key_id"] = self.access_key
@@ -321,6 +331,7 @@ def get_storage() -> StorageBackend:
                 public_base=os.getenv("MEDIA_PUBLIC_BASE") or settings.r2_public_url,
                 access_key=access_key,
                 secret_key=secret_key,
+                region=os.getenv("MEDIA_S3_REGION") or settings.media_s3_region,
             )
             return _backend
         logger.warning(

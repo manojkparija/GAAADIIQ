@@ -79,6 +79,14 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket_name: str = "gaadiiq-media"
     r2_public_url: str = "https://media.gaadiiq.com"
+    # SigV4 signing region for the object store.
+    #
+    # "auto" is correct for Cloudflare R2, which rejects a real region name.
+    # Other S3-compatible stores reject "auto" and require their own region —
+    # Supabase Storage signs against its project region (e.g. "ap-south-1"), so
+    # leaving this hardcoded made the endpoint unusable. Override with
+    # MEDIA_S3_REGION when the backend is not R2.
+    media_s3_region: str = "auto"
 
     # OpenSearch — leave blank to use Postgres full-text search
     opensearch_url: str = ""
