@@ -463,13 +463,21 @@ async def update_metadata(
 
 
 @router.get("/dealer-images")
+@limiter.limit("60/minute")
 async def get_dealer_images(
+    request: Request,
     user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Fetch recent images uploaded by the admin user, for dashboard display.
     Returns recent vehicle_media records with their metadata and URLs.
+
+    Rate limited because this was the one endpoint in the router without a
+    limit, and a client-side effect loop hammered it several times a second for
+    an extended period — each request running a 50-row query. A dashboard needs
+    a handful of loads a minute; 60 leaves ample headroom while capping the
+    damage a misbehaving or stale client can do.
     """
     from sqlalchemy import desc
 
