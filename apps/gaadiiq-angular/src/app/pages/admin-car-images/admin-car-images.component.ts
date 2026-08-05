@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { SupabaseService } from '../../services/supabase.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -18,6 +19,7 @@ import { environment } from '../../../environments/environment';
 })
 export class AdminCarImagesComponent implements OnInit {
   auth = inject(AuthService);
+  private supabase = inject(SupabaseService);
   private apiUrl = environment.apiUrl;
 
   // File selection
@@ -259,20 +261,23 @@ export class AdminCarImagesComponent implements OnInit {
     this.license.set('');
   }
 
+  /**
+   * Supabase access token for the signed-in user, or '' when there is none.
+   *
+   * Reads the injected SupabaseService — the same client authInterceptor uses.
+   * This previously read a `window.supabaseClient` global that nothing ever
+   * assigns, so it always returned '', the Authorization header was silently
+   * omitted, and every upload came back "401 Not authenticated" while the UI
+   * showed the user as signed in.
+   *
+   * The uploads on this page use fetch() rather than HttpClient so that
+   * FormData streams without Angular re-encoding it, which means
+   * authInterceptor never sees them and the header has to be attached by hand.
+   */
   private async getToken(): Promise<string> {
     try {
-      const supabaseClient = (window as any).supabaseClient;
-      if (!supabaseClient) {
-        return '';
-      }
-      const response = await supabaseClient.auth.getSession();
-      if (!response) {
-        return '';
-      }
-      if (response.data && response.data.session && response.data.session.access_token) {
-        return response.data.session.access_token;
-      }
-      return '';
+      const { data } = await this.supabase.client.auth.getSession();
+      return data.session?.access_token ?? '';
     } catch (err) {
       console.warn('Failed to get Supabase token:', err);
       return '';

@@ -1,5 +1,6 @@
-import { Injectable, signal, effect } from '@angular/core';
+import { Injectable, signal, effect, inject } from '@angular/core';
 import { AuthService } from './auth.service';
+import { SupabaseService } from './supabase.service';
 import { environment } from '../../environments/environment';
 
 interface DealerImage {
@@ -22,6 +23,8 @@ export class VehicleImageGalleryService {
   loading = signal(false);
   error = signal<string | null>(null);
 
+  private supabase = inject(SupabaseService);
+
   constructor(private auth: AuthService) {
     // Load images when admin logs in
     effect(() => {
@@ -37,13 +40,14 @@ export class VehicleImageGalleryService {
     this.error.set(null);
 
     try {
-      const token = await (window as any).supabaseClient?.auth.getSession()
-        .then((s: any) => s?.data?.session?.access_token);
+      // Read the injected client, not a `window.supabaseClient` global — that
+      // global is never assigned, so this sent "Bearer undefined" and every
+      // gallery load failed with 401 while the user appeared signed in.
+      const { data: sessionData } = await this.supabase.client.auth.getSession();
+      const token = sessionData.session?.access_token;
 
       const response = await fetch(`${environment.apiUrl}/media-admin/dealer-images`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       if (!response.ok) {
