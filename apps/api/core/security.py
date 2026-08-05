@@ -70,11 +70,12 @@ def normalize_pem(raw: str) -> str:
     )
 
 
-def load_pem(raw: str, *, private: bool) -> str | None:
+def load_pem(raw: str, *, private: bool, quiet: bool = False) -> str | None:
     """Normalize a PEM and confirm cryptography can actually parse it.
 
     Returns the usable PEM, or None if it cannot be loaded. Never raises, and
-    never logs the key material itself.
+    never logs the key material itself. Pass quiet=True to suppress the failure
+    log when the caller has already reported it once.
     """
     pem = normalize_pem(raw)
     if not pem:
@@ -88,6 +89,8 @@ def load_pem(raw: str, *, private: bool) -> str | None:
             serialization.load_pem_public_key(pem.encode())
         return pem
     except Exception as exc:  # noqa: BLE001 — any parse failure means unusable
+        if quiet:
+            return None
         logger.error(
             "JWT_%s_KEY is set but is not a loadable PEM (%s: %s). "
             "Common causes: the '-----BEGIN' hyphens were replaced with Unicode "
@@ -112,19 +115,30 @@ def _get_rsa_keys() -> tuple[str, str]:
     of that fallback is that tokens do not survive a restart, so the log line
     must be treated as an outage-level warning in production.
     """
-    configured_private = configured_public = None
+    global _warned_unloadable_keys
+
     if settings.jwt_private_key and settings.jwt_public_key:
-        configured_private = load_pem(settings.jwt_private_key, private=True)
-        configured_public = load_pem(settings.jwt_public_key, private=False)
+        # This runs on every token operation, so the failure is only reported
+        # once per process. Repeating it per request buried the actual errors
+        # in the log — the noise made a real 401 hard to find.
+        quiet = _warned_unloadable_keys
+        configured_private = load_pem(settings.jwt_private_key, private=True, quiet=quiet)
+        configured_public = load_pem(settings.jwt_public_key, private=False, quiet=quiet)
         if configured_private and configured_public:
             return configured_private, configured_public
-        logger.error(
-            "Falling back to an EPHEMERAL JWT keypair because the configured "
-            "keys could not be loaded. Tokens will be invalidated on every "
-            "restart until JWT_PRIVATE_KEY/JWT_PUBLIC_KEY are fixed."
-        )
+        if not _warned_unloadable_keys:
+            _warned_unloadable_keys = True
+            logger.error(
+                "Falling back to an EPHEMERAL JWT keypair because the configured "
+                "keys could not be loaded. Tokens will be invalidated on every "
+                "restart until JWT_PRIVATE_KEY/JWT_PUBLIC_KEY are fixed. "
+                "(This is logged once per process.)"
+            )
     # Dev fallback: generate an ephemeral keypair (new per process restart — fine for dev)
     return _ephemeral_keys()
+
+
+_warned_unloadable_keys: bool = False
 
 
 _ephemeral_private: str = ""
