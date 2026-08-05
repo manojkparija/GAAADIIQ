@@ -26,6 +26,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from models.media_audit import AuditAction
 from models.media_version import MediaEventType
 from models.vehicle_media import ListingMedia, VehicleMedia
@@ -211,43 +212,54 @@ async def store_image(
 
     await media_index.index_media(row)
 
-    # WAVE 3: Non-blocking ML enrichment
-    try:
-        from services.embeddings_clip import embed_image_bytes
-        embedding = await embed_image_bytes(data)
-        if embedding:
-            row.embedding_vector = embedding
-    except Exception as e:
-        logger.warning(f"Failed to generate embedding for {row.id}: {e}")
+    # WAVE 3: Non-blocking ML enrichment.
+    #
+    # Each block is gated on its settings flag. The flags existed but nothing
+    # read them, so every upload tried to load CLIP and YOLOv8 regardless —
+    # models that need ~2GB and cannot load on the current Render plan. The
+    # attempt failed on each upload, was swallowed into a warning, and left the
+    # column null: the cost of loading with none of the benefit, repeated per
+    # image. Set ENABLE_EMBEDDINGS / ENABLE_OCR / ENABLE_SAFETY_DETECTION once
+    # there is enough memory to serve them.
+    if settings.enable_embeddings:
+        try:
+            from services.embeddings_clip import embed_image_bytes
+            embedding = await embed_image_bytes(data)
+            if embedding:
+                row.embedding_vector = embedding
+        except Exception as e:
+            logger.warning(f"Failed to generate embedding for {row.id}: {e}")
 
-    try:
-        from services.ocr_tesseract import ocr_image_bytes
-        ocr_result = await ocr_image_bytes(data)
-        if ocr_result:
-            row.ocr_text = ocr_result.get("text")
-            row.ocr_confidence = ocr_result.get("confidence")
-            row.ocr_entities = ocr_result.get("entities")
-    except Exception as e:
-        logger.warning(f"Failed to extract OCR for {row.id}: {e}")
+    if settings.enable_ocr:
+        try:
+            from services.ocr_tesseract import ocr_image_bytes
+            ocr_result = await ocr_image_bytes(data)
+            if ocr_result:
+                row.ocr_text = ocr_result.get("text")
+                row.ocr_confidence = ocr_result.get("confidence")
+                row.ocr_entities = ocr_result.get("entities")
+        except Exception as e:
+            logger.warning(f"Failed to extract OCR for {row.id}: {e}")
 
-    try:
-        from services.safety_detection import detect_nsfw
-        nsfw_score = await detect_nsfw(data)
-        if nsfw_score is not None:
-            row.nsfw_score = nsfw_score
-    except Exception as e:
-        logger.warning(f"Failed to detect NSFW for {row.id}: {e}")
+    if settings.enable_safety_detection:
+        try:
+            from services.safety_detection import detect_nsfw
+            nsfw_score = await detect_nsfw(data)
+            if nsfw_score is not None:
+                row.nsfw_score = nsfw_score
+        except Exception as e:
+            logger.warning(f"Failed to detect NSFW for {row.id}: {e}")
 
-    try:
-        from services.safety_detection import detect_license_plate
-        plate_result = await detect_license_plate(data)
-        if plate_result:
-            row.license_plate_detected = plate_result.get("detected", False)
-            row.license_plate_bbox = plate_result.get("bbox")
-            if plate_result.get("confidence"):
-                row.safety_metadata = {"license_plate_confidence": plate_result.get("confidence")}
-    except Exception as e:
-        logger.warning(f"Failed to detect license plate for {row.id}: {e}")
+        try:
+            from services.safety_detection import detect_license_plate
+            plate_result = await detect_license_plate(data)
+            if plate_result:
+                row.license_plate_detected = plate_result.get("detected", False)
+                row.license_plate_bbox = plate_result.get("bbox")
+                if plate_result.get("confidence"):
+                    row.safety_metadata = {"license_plate_confidence": plate_result.get("confidence")}
+        except Exception as e:
+            logger.warning(f"Failed to detect license plate for {row.id}: {e}")
 
     await db.flush()
     return row
