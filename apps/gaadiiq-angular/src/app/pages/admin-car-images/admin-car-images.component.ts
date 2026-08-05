@@ -263,11 +263,15 @@ export class AdminCarImagesComponent implements OnInit {
   /**
    * Turn an error response into something a human can act on.
    *
-   * FastAPI returns `detail` as a STRING for HTTPException but as an ARRAY of
-   * objects for a 422 validation failure. The previous code did
-   * `new Error(error.detail)` for both, and an array of objects stringifies to
-   * "[object Object]" — so a 422 told the admin nothing at all, when the body
-   * names the exact field that failed.
+   * `detail` arrives in three different shapes from this API:
+   *   string — plain HTTPException, e.g. an unknown image category
+   *   array  — FastAPI request validation, one entry per bad field
+   *   object — this router's "No image could be stored", where the real
+   *            per-file reasons live in detail.errors
+   *
+   * The previous code did `new Error(error.detail)` for all three, so both
+   * non-string shapes rendered as "[object Object]" — including the one that
+   * carries the actual storage failure.
    */
   private async describeError(response: Response): Promise<string> {
     let body: unknown;
@@ -288,6 +292,14 @@ export class AdminCarImagesComponent implements OnInit {
         return `${field}: ${d.msg ?? 'invalid'}`;
       });
       return `Please check these fields — ${parts.join('; ')}`;
+    }
+
+    if (detail && typeof detail === 'object') {
+      const d = detail as { message?: string; errors?: unknown[] };
+      const reasons = Array.isArray(d.errors) ? d.errors.map(String) : [];
+      return reasons.length
+        ? `${d.message ?? 'Upload failed'} ${reasons.join(' | ')}`
+        : (d.message ?? JSON.stringify(detail));
     }
 
     return `Upload failed: ${response.status} ${response.statusText}`;
