@@ -4,7 +4,8 @@ from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
@@ -29,7 +30,19 @@ class VehicleMediaAudit(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     media_id: Mapped[UUID] = mapped_column(ForeignKey("vehicle_media.id", ondelete="CASCADE"), nullable=False, index=True)
-    action: Mapped[AuditAction] = mapped_column(String, nullable=False, index=True)
+    # Same native-enum mismatch as media_version.event_type: migration 0012
+    # creates "CREATE TYPE audit_action AS ENUM ('upload', 'view', …)", so
+    # binding a VARCHAR here is rejected by Postgres. See that model for why
+    # the SQLite-based test suite does not catch it.
+    action: Mapped[AuditAction] = mapped_column(
+        SAEnum(
+            AuditAction,
+            name="audit_action",
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
+        nullable=False,
+        index=True,
+    )
     actor_id: Mapped[Optional[UUID]] = mapped_column(nullable=True, index=True)
     ip_address: Mapped[Optional[str]] = mapped_column(nullable=True)
     user_agent: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
