@@ -10,9 +10,9 @@
     {
       "name": "web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "cwd": "apps/web",
-      "port": 3000
+      "runtimeArgs": ["run", "start"],
+      "cwd": "apps/gaadiiq-angular",
+      "port": 4200
     }
   ]
 }

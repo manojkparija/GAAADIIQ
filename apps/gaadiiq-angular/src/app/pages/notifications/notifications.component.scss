@@ -1,0 +1,147 @@
+.notif-page {
+  min-height: 100vh;
+  background: var(--navy);
+  padding: 5rem 0 4rem;
+
+  .container {
+    max-width: 44rem;
+  }
+}
+
+.notif-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0;
+  }
+}
+
+.unread-count {
+  font-size: 0.85rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.65));
+  margin: 0.15rem 0 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--teal);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.state {
+  text-align: center;
+  padding: 4rem 0;
+  color: var(--text-muted, rgba(255, 255, 255, 0.6));
+  font-size: 0.9rem;
+}
+
+.empty {
+  background: var(--fill-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 2.2rem;
+  margin: 0 0 0.75rem;
+}
+
+.empty-title {
+  font-weight: 600;
+  margin: 0;
+}
+
+.empty-body {
+  font-size: 0.88rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.6));
+  margin: 0.35rem 0 0;
+}
+
+.notif-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--fill-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.notif-row {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid var(--border-soft);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.unread {
+    background: rgba(59, 130, 246, 0.07);
+  }
+}
+
+.notif-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-title {
+  font-size: 0.9rem;
+  line-height: 1.35;
+  margin: 0;
+
+  &.bold {
+    font-weight: 600;
+  }
+}
+
+.notif-text {
+  font-size: 0.85rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.65));
+  margin: 0.15rem 0 0;
+}
+
+.notif-date {
+  font-size: 0.72rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  margin: 0.3rem 0 0;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--teal);
+  flex-shrink: 0;
+  margin-top: 0.4rem;
+}

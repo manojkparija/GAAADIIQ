@@ -31,6 +31,7 @@
       <li><a routerLink="/vehicle-diagnosis" routerLinkActive="active">AI Diagnosis</a></li>
       <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
       <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI Calc</a></li>
+      <li><a routerLink="/tco" routerLinkActive="active">Cost of Ownership</a></li>
       <li><a routerLink="/reviews-news" routerLinkActive="active">Reviews &amp; News</a></li>
       <li><a routerLink="/buyer-journey" routerLinkActive="active">My Journey</a></li>
     </ul>
@@ -61,7 +62,16 @@
             <a routerLink="/profile" (click)="userMenuOpen.set(false)" class="dropdown-item">
               <app-icon name="user" [size]="14"></app-icon> My Profile
             </a>
+            <a routerLink="/notifications" (click)="userMenuOpen.set(false)" class="dropdown-item">
+              <app-icon name="bell" [size]="14"></app-icon> Notifications
+            </a>
             <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
+              <a routerLink="/leads" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                <app-icon name="mail" [size]="14"></app-icon> Leads
+              </a>
+              <a routerLink="/analytics" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                <app-icon name="bar-chart" [size]="14"></app-icon> Analytics
+              </a>
               <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="car" [size]="14"></app-icon> My Listings
               </a>
@@ -109,6 +119,7 @@
     <a routerLink="/ai-advisor" (click)="closeMenu()">AI Advisor</a>
     <a routerLink="/compare" (click)="closeMenu()">Compare Cars</a>
     <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
+    <a routerLink="/tco" (click)="closeMenu()">Cost of Ownership</a>
     <a routerLink="/reviews-news" (click)="closeMenu()">Reviews &amp; News</a>
     <button class="city-btn-mobile" (click)="closeMenu(); openCityModal()">
       <app-icon name="map-pin" [size]="15"></app-icon>

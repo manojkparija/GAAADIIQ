@@ -1,0 +1,93 @@
+<div class="leads-page">
+  <div class="container">
+    <header class="leads-head">
+      <h1>Leads</h1>
+      <p>Test drive requests and loan inquiries on your listings.</p>
+    </header>
+
+    @if (loading()) {
+      <p class="state">Loading…</p>
+    } @else {
+      <section class="leads-section">
+        <h2>Test Drive Requests</h2>
+
+        @if (bookings().length === 0) {
+          <div class="empty">No test drive requests yet.</div>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Received</th>
+                  <th>Preferred Date</th>
+                  <th>Notes</th>
+                  <th>Status</th>
+                  <th>Update</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (b of bookings(); track b.id) {
+                  <tr>
+                    <td class="muted">{{ b.created_at | date: 'd MMM y' }}</td>
+                    <td>
+                      {{ b.preferred_date ? (b.preferred_date | date: 'd MMM y') : '—' }}
+                      @if (b.preferred_time) { <span class="muted">{{ b.preferred_time }}</span> }
+                    </td>
+                    <td class="muted truncate">{{ b.notes ?? '—' }}</td>
+                    <td>
+                      <span class="pill" [class]="'status-' + b.status">{{ b.status }}</span>
+                    </td>
+                    <td>
+                      <select [ngModel]="b.status" (ngModelChange)="updateStatus(b, $event)">
+                        @for (s of bookingStatuses; track s) {
+                          <option [value]="s">{{ s }}</option>
+                        }
+                      </select>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <section class="leads-section">
+        <h2>Loan Inquiries</h2>
+
+        @if (loanInquiries().length === 0) {
+          <div class="empty">No loan inquiries yet.</div>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Received</th>
+                  <th>Loan Amount</th>
+                  <th>Tenure</th>
+                  <th>Employment</th>
+                  <th>Income</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (q of loanInquiries(); track q.id) {
+                  <tr>
+                    <td class="muted">{{ q.created_at | date: 'd MMM y' }}</td>
+                    <td class="strong">{{ formatINR(q.loan_amount) }}</td>
+                    <td>{{ q.tenure_months ? q.tenure_months + ' mo' : '—' }}</td>
+                    <td class="muted capitalize">{{ employment(q.employment_type) }}</td>
+                    <td>{{ q.annual_income ? formatINR(q.annual_income) + ' p.a.' : '—' }}</td>
+                    <td>
+                      <span class="pill" [class]="'status-' + q.status">{{ q.status }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  </div>
+</div>

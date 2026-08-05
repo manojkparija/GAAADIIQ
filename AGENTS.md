@@ -1,7 +1,12 @@
 # GAADIIQ
 
-Monorepo: `apps/web` (Next.js 16 frontend) + `apps/api` (FastAPI backend). Root uses npm
-workspaces + Turbo. See `README.md` for the product overview and `docs/` for design docs.
+Monorepo: `apps/gaadiiq-angular` (Angular 17 frontend) + `apps/api` (FastAPI backend). Root uses
+npm workspaces + Turbo. See `README.md` for the product overview and `docs/` for design docs.
+
+There was a second, smaller Next.js frontend at `apps/web`. It was removed once Angular became
+the product: its unique pages (TCO calculator, leads, analytics, notifications) were ported
+across first, and the rest already had Angular equivalents. Recover it from git history if
+needed.
 
 ## Cursor Cloud specific instructions
 
@@ -20,15 +25,17 @@ additionally installs, into `apps/api/.venv`:
   hash raises `ValueError: password cannot be longer than 72 bytes`. Keep bcrypt pinned to 4.0.1.
 
 ### Environment files (gitignored — recreate if missing)
-- `apps/web/.env.local` — copy from `apps/web/.env.example`; set `AUTH_SECRET` (e.g.
-  `openssl rand -base64 32`). `NEXT_PUBLIC_API_URL=http://localhost:8000`.
+- The Angular app needs no env file: its config is compiled in from
+  `apps/gaadiiq-angular/src/environments/environment.ts` (dev) and `environment.prod.ts`
+  (production, which points at the Render API).
 - `apps/api/.env` — copy from `apps/api/.env.example`; set `DATABASE_URL` to the local Postgres
   (`postgresql+asyncpg://postgres:postgres@localhost:5432/gaadiiq`) and a `SECRET_KEY`.
 
 ### Running the services (do NOT put these in the update script)
 - API: `cd apps/api && .venv/bin/uvicorn main:app --reload --port 8000` — Swagger UI at
   `http://localhost:8000/docs`.
-- Web: `cd apps/web && npm run dev` (port 3000). `npm run dev` at the repo root runs both via Turbo.
+- Web: `npm run start --workspace=gaadiiq-angular` (port 4200). `npm run dev` at the repo root
+  runs both via Turbo.
 
 ### PostgreSQL (required for all DB-backed endpoints: auth, listings, dealers, etc.)
 Postgres 16 is preinstalled but not auto-started. Start it and (re)create the schema:
@@ -57,4 +64,4 @@ Tests do **not** need Postgres (they use in-memory SQLite via a dependency overr
   (they assert `401` for missing auth but `HTTPBearer` returns `403` in the pinned Starlette).
 - API lint `ruff check .` and web `npm run lint` both report **pre-existing** errors — the linters
   themselves work; the errors are in the committed code.
-- `npm run type-check` and `npm run build` (in `apps/web`) both pass.
+- `npm run build --workspace=gaadiiq-angular` passes.

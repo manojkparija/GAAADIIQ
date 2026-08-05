@@ -38,5 +38,17 @@ export const routes: Routes = [
   { path: 'privacy-policy', loadComponent: () => import('./pages/privacy-policy/privacy-policy.component').then(m => m.PrivacyPolicyComponent) },
   { path: 'terms-of-service', loadComponent: () => import('./pages/terms-of-service/terms-of-service.component').then(m => m.TermsOfServiceComponent) },
   { path: 'cookie-policy', loadComponent: () => import('./pages/cookie-policy/cookie-policy.component').then(m => m.CookiePolicyComponent) },
+  // Ported from the Next.js app before it was removed.
+  //
+  // Its /forgot-password page was deliberately NOT ported: it called the API's
+  // /auth/forgot-password, which resets hashed_password in the API's own users
+  // table. This app signs in through Supabase, where that column is null and
+  // plays no part in login, so the page would have appeared to work while
+  // changing nothing. Password reset here already goes through Supabase, from
+  // the "Forgot password?" link on the login page.
+  { path: 'tco', loadComponent: () => import('./pages/tco/tco.component').then(m => m.TcoComponent) },
+  { path: 'notifications', loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent), canActivate: [authGuard] },
+  { path: 'leads', loadComponent: () => import('./pages/leads/leads.component').then(m => m.LeadsComponent), canActivate: [sellerGuard] },
+  { path: 'analytics', loadComponent: () => import('./pages/analytics/analytics.component').then(m => m.AnalyticsComponent), canActivate: [sellerGuard] },
   { path: '**', redirectTo: '' },
 ];

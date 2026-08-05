@@ -1,0 +1,47 @@
+<div class="notif-page">
+  <div class="container">
+    <header class="notif-head">
+      <div>
+        <h1>Notifications</h1>
+        @if (unread() > 0) {
+          <p class="unread-count">{{ unread() }} unread</p>
+        }
+      </div>
+      @if (unread() > 0) {
+        <button type="button" class="link-btn" (click)="markAllRead()">Mark all read</button>
+      }
+    </header>
+
+    @if (loading()) {
+      <p class="state">Loading…</p>
+    } @else if (notifications().length === 0) {
+      <div class="empty">
+        <p class="empty-icon">🔔</p>
+        <p class="empty-title">No notifications yet</p>
+        <p class="empty-body">
+          You&rsquo;ll get alerts for bookings, inquiries, and price drops here.
+        </p>
+      </div>
+    } @else {
+      <ul class="notif-list">
+        @for (n of notifications(); track n.id) {
+          <li class="notif-row" [class.unread]="!n.is_read" (click)="markRead(n)">
+            <span class="notif-icon">{{ icon(n.type) }}</span>
+            <div class="notif-body">
+              <p class="notif-title" [class.bold]="!n.is_read">{{ n.title }}</p>
+              @if (n.body) {
+                <p class="notif-text">{{ n.body }}</p>
+              }
+              <p class="notif-date">
+                {{ n.created_at | date: 'EEE, d MMM, h:mm a' }}
+              </p>
+            </div>
+            @if (!n.is_read) {
+              <span class="dot" aria-label="unread"></span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

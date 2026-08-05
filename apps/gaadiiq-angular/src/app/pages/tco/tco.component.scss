@@ -1,0 +1,283 @@
+.tco-page {
+  min-height: 100vh;
+  background: var(--navy);
+  padding-bottom: 4rem;
+}
+
+.tco-hero {
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  border-bottom: 1px solid var(--divider);
+  padding: 5rem 0 2.5rem;
+  text-align: center;
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    color: #fff;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.75);
+    margin-top: 0.5rem;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #ffffff, #c4b5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.tco-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 2.5rem 0 1.5rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.controls-card,
+.breakdown-card,
+.resale-card,
+.summary-card {
+  background: var(--fill-soft);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+}
+
+.controls-card {
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    margin: 0;
+  }
+
+  .section-break {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-soft);
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted, rgba(255, 255, 255, 0.7));
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    padding: 0.6rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+    background: rgba(255, 255, 255, 0.04);
+    color: inherit;
+    font-size: 0.95rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--teal);
+    }
+  }
+}
+
+.affix {
+  font-size: 0.9rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.6));
+  flex-shrink: 0;
+}
+
+.field-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    border-color: var(--teal);
+  }
+
+  &.active {
+    border-color: var(--teal);
+    background: rgba(20, 184, 166, 0.12);
+    font-weight: 600;
+  }
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.summary-card {
+  padding: 1rem;
+  text-align: center;
+
+  &.primary {
+    background: rgba(59, 130, 246, 0.14);
+  }
+}
+
+.summary-label {
+  font-size: 0.72rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.65));
+  margin: 0 0 0.25rem;
+}
+
+.summary-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.resale-card {
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.resale-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.15rem 0 0;
+}
+
+.badge {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  font-size: 0.78rem;
+}
+
+.breakdown-card {
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+
+  h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    margin: 0;
+  }
+}
+
+.bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.bar-label {
+  color: var(--text-muted, rgba(255, 255, 255, 0.7));
+}
+
+.bar-figures {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bar-pct {
+  font-size: 0.75rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.55));
+}
+
+.bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.7s ease;
+}
+
+// Distinct hues so each cost line is separable at a glance.
+.bar-depreciation { background: #f472b6; }
+.bar-fuel         { background: #38bdf8; }
+.bar-insurance    { background: #a78bfa; }
+.bar-maintenance  { background: #fbbf24; }
+
+.grand-total {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+
+  strong {
+    font-size: 1.2rem;
+  }
+}
+
+.disclaimer {
+  font-size: 0.75rem;
+  color: var(--text-muted, rgba(255, 255, 255, 0.55));
+  padding: 0 0.25rem;
+  margin: 0;
+}

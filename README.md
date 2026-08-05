@@ -46,8 +46,8 @@ npm install
 ### Run locally
 
 ```bash
-# Frontend
-cd apps/web && npm run dev
+# Frontend (Angular, port 4200)
+npm run start --workspace=gaadiiq-angular
 
 # Backend
 cd apps/api

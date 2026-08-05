@@ -1,0 +1,101 @@
+<div class="analytics-page">
+  <div class="container">
+    <header class="analytics-head">
+      <h1>Analytics</h1>
+      <p>Performance overview for your listings.</p>
+    </header>
+
+    @if (loading()) {
+      <p class="state">Loading…</p>
+    } @else if (failed() || !data()) {
+      <div class="empty">Could not load analytics. Please try again later.</div>
+    } @else {
+      <div class="stat-grid">
+        <div class="stat-card">
+          <p class="stat-label">Total listings</p>
+          <p class="stat-value">{{ data()!.total_listings }}</p>
+          <p class="stat-sub">{{ data()!.active_listings }} active</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Total views</p>
+          <p class="stat-value">{{ data()!.total_views | number }}</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Test drive leads</p>
+          <p class="stat-value">{{ data()!.total_bookings }}</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Loan inquiries</p>
+          <p class="stat-value">{{ data()!.total_loan_inquiries }}</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Reviews</p>
+          <p class="stat-value">{{ data()!.total_reviews }}</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Avg rating</p>
+          <p class="stat-value">
+            {{ data()!.overall_avg_rating !== null ? (data()!.overall_avg_rating | number: '1.1-1') : '—' }}
+          </p>
+          <p class="stat-sub">
+            {{ data()!.overall_avg_rating !== null ? 'out of 5' : 'No reviews yet' }}
+          </p>
+        </div>
+      </div>
+
+      @if (data()!.listings.length === 0) {
+        <div class="empty">
+          No listings yet.
+          <a routerLink="/list-car">Create your first listing →</a>
+        </div>
+      } @else {
+        <h2>Per-Listing Breakdown</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Car</th>
+                <th>Price</th>
+                <th class="num">Views</th>
+                <th class="num">Bookings</th>
+                <th class="num">Loan inqs.</th>
+                <th>Rating</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of data()!.listings; track l.listing_id) {
+                <tr>
+                  <td class="strong">
+                    <a [routerLink]="['/cars', l.listing_id]">{{ l.title }}</a>
+                  </td>
+                  <td class="muted">{{ formatINR(l.price) }}</td>
+                  <td class="num">{{ l.views | number }}</td>
+                  <td class="num">{{ l.bookings }}</td>
+                  <td class="num">{{ l.loan_inquiries }}</td>
+                  <td>
+                    @if (l.avg_rating !== null) {
+                      <span class="stars">
+                        @for (filled of stars(l.avg_rating); track $index) {
+                          <span [class.on]="filled">★</span>
+                        }
+                      </span>
+                      <span class="review-count">({{ l.reviews }})</span>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    <span class="pill" [class.active]="l.is_active">
+                      {{ l.is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </div>
+</div>
