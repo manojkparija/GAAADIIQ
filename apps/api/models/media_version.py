@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import JSON, DateTime, ForeignKey
 from sqlalchemy import Enum as SAEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
@@ -47,8 +48,12 @@ class VehicleMediaVersion(Base):
         nullable=False,
     )
     actor_id: Mapped[Optional[UUID]] = mapped_column(nullable=True, index=True)
-    old_value: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    new_value: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    old_value: Mapped[Optional[dict]] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"), nullable=True
+    )
+    new_value: Mapped[Optional[dict]] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=datetime.utcnow, index=True
     )

@@ -4,8 +4,9 @@ from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
 from sqlalchemy import Enum as SAEnum
+from sqlalchemy.dialects.postgresql import INET, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base
@@ -44,9 +45,19 @@ class VehicleMediaAudit(Base):
         index=True,
     )
     actor_id: Mapped[Optional[UUID]] = mapped_column(nullable=True, index=True)
-    ip_address: Mapped[Optional[str]] = mapped_column(nullable=True)
+    # Postgres declares this INET (migration 0012); SQLite uses String(45).
+    # Left untyped it bound a VARCHAR, and Postgres has no assignment cast from
+    # varchar to inet, so the insert was rejected outright.
+    ip_address: Mapped[Optional[str]] = mapped_column(
+        String(45).with_variant(INET(), "postgresql"), nullable=True
+    )
     user_agent: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    audit_data: Mapped[Optional[dict]] = mapped_column("audit_data", JSON, nullable=True)
+    # JSONB on Postgres to match the migration. json -> jsonb does have an
+    # assignment cast so plain JSON happened to work, but being explicit keeps
+    # the model honest about what the column actually is.
+    audit_data: Mapped[Optional[dict]] = mapped_column(
+        "audit_data", JSON().with_variant(JSONB(), "postgresql"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=datetime.utcnow, index=True
     )
