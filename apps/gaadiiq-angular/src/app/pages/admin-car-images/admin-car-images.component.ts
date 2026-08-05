@@ -210,8 +210,7 @@ export class AdminCarImagesComponent implements OnInit {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || `Upload failed: ${response.status}`);
+        throw new Error(await this.describeError(response));
       }
 
       const result = await response.json();
@@ -259,6 +258,39 @@ export class AdminCarImagesComponent implements OnInit {
     this.source.set('');
     this.copyright.set('');
     this.license.set('');
+  }
+
+  /**
+   * Turn an error response into something a human can act on.
+   *
+   * FastAPI returns `detail` as a STRING for HTTPException but as an ARRAY of
+   * objects for a 422 validation failure. The previous code did
+   * `new Error(error.detail)` for both, and an array of objects stringifies to
+   * "[object Object]" — so a 422 told the admin nothing at all, when the body
+   * names the exact field that failed.
+   */
+  private async describeError(response: Response): Promise<string> {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      return `Upload failed: ${response.status} ${response.statusText}`;
+    }
+
+    const detail = (body as { detail?: unknown })?.detail;
+
+    if (typeof detail === 'string') return detail;
+
+    if (Array.isArray(detail)) {
+      // loc is like ["body", "model_year"]; the last element is the field name.
+      const parts = detail.map((d: { loc?: unknown[]; msg?: string }) => {
+        const field = Array.isArray(d.loc) ? String(d.loc[d.loc.length - 1]) : 'field';
+        return `${field}: ${d.msg ?? 'invalid'}`;
+      });
+      return `Please check these fields — ${parts.join('; ')}`;
+    }
+
+    return `Upload failed: ${response.status} ${response.statusText}`;
   }
 
   /**
