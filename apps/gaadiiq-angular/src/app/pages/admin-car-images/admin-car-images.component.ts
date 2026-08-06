@@ -66,6 +66,10 @@ export class AdminCarImagesComponent implements OnInit {
   fuelType = signal('');
   transmission = signal('');
   imageCategory = signal(''); // exterior_front, interior_dashboard, etc.
+  // Which catalogue surface this image serves: 'new', 'used' or 'both'.
+  // Starts empty and is mandatory, so the admin makes the choice deliberately
+  // rather than inheriting the API's "both" default without noticing.
+  mediaBucket = signal('');
   variant = signal('');
   colour = signal('');
   source = signal('');
@@ -171,8 +175,9 @@ export class AdminCarImagesComponent implements OnInit {
 
     // Validate mandatory fields
     if (!this.make() || !this.model() || !this.modelYear() || !this.category() ||
-        !this.fuelType() || !this.transmission() || !this.imageCategory()) {
-      this.toast('❌ Please fill all mandatory fields: Make, Model, Year, Body Type, Fuel, Transmission, Image Category');
+        !this.fuelType() || !this.transmission() || !this.imageCategory() ||
+        !this.mediaBucket()) {
+      this.toast('❌ Please fill all mandatory fields: Make, Model, Year, Body Type, Fuel, Transmission, Image Category, Show On');
       return;
     }
 
@@ -190,6 +195,7 @@ export class AdminCarImagesComponent implements OnInit {
     formData.append('fuel_type', this.fuelType());
     formData.append('transmission', this.transmission());
     formData.append('image_category', this.imageCategory());
+    formData.append('media_bucket', this.mediaBucket());
     if (this.variant()) formData.append('variant', this.variant());
     if (this.colour()) formData.append('colour', this.colour());
     if (this.source()) formData.append('source', this.source());
@@ -253,6 +259,7 @@ export class AdminCarImagesComponent implements OnInit {
     this.fuelType.set('');
     this.transmission.set('');
     this.imageCategory.set('');
+    this.mediaBucket.set('');
     this.variant.set('');
     this.colour.set('');
     this.source.set('');

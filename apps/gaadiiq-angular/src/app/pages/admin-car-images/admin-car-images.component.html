@@ -149,6 +149,19 @@
                 }
               </select>
             </div>
+
+            <div class="aci-form-field">
+              <label class="aci-label">Show On *</label>
+              <select class="aci-input" [(ngModel)]="mediaBucket">
+                <option value="">Select where…</option>
+                <option value="new">New Cars only</option>
+                <option value="used">Used Cars only</option>
+                <option value="both">Both New &amp; Used</option>
+              </select>
+              <small class="aci-hint">
+                Which catalogue pages this image appears on.
+              </small>
+            </div>
           </div>
         </div>
 

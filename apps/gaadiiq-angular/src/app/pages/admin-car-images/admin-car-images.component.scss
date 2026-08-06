@@ -311,6 +311,15 @@
   color: #374151;
 }
 
+// Sits under a field to explain a choice whose consequence is not obvious from
+// the label alone — "Show On" decides which customer-facing pages the image
+// reaches, which is worth stating.
+.aci-hint {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
 .aci-input {
   padding: 0.75rem;
   border: 1px solid #d1d5db;
