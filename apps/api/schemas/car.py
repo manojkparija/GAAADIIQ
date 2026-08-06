@@ -38,6 +38,13 @@ class CarOut(BaseModel):
     engine_cc: int | None
     created_at: datetime
 
+    # Photographs from the media library that match this car's make, model and
+    # year. Not a stored column: cars carry no image of their own, and an image
+    # is uploaded against a vehicle's identity rather than against a catalogue
+    # row, so the association is resolved at read time. Empty when nothing has
+    # been uploaded for the model yet.
+    image_urls: list[str] = []
+
     model_config = {"from_attributes": True}
 
 

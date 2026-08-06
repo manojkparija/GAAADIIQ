@@ -277,6 +277,23 @@ class VehicleMedia(Base):
     fuel_type: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
     transmission: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
+    # Which catalogue surface this image is meant for, chosen by the admin at
+    # upload: the New Cars pages, the Used Cars pages, or both.
+    #
+    # Stored as plain text rather than the listings.listing_type enum on
+    # purpose. That enum is exactly {new, used} and describes one advert; this
+    # column also needs "both", which is the common case for a manufacturer
+    # photograph that is equally valid on a brand-new model page and on a
+    # second-hand advert for the same car. Reusing the enum would force a
+    # migration of a type that adverts depend on.
+    #
+    # Nullable because the 164 images already stored, and every brochure
+    # extract, predate the choice. Readers treat NULL as "both" so existing
+    # images stay visible rather than disappearing from every surface.
+    media_bucket: Mapped[str | None] = mapped_column(
+        String(8), nullable=True, index=True
+    )
+
     # The hero shot for a vehicle. Enforced per (make, model, variant) in the
     # upload path rather than by a constraint: "primary" is only meaningful
     # within a vehicle, and a partial unique index over three nullable columns

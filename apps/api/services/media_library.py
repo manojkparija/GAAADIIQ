@@ -22,8 +22,10 @@ Deduplication is two-stage, because the two hashes catch different things:
 from __future__ import annotations
 
 import logging
+import uuid
+from typing import TYPE_CHECKING, Sequence
 
-from sqlalchemy import select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
@@ -35,6 +37,9 @@ from services.media_audit import log_audit
 from services.media_index import media_index
 from services.media_storage import StorageError, get_storage
 from services.version_history import record_version
+
+if TYPE_CHECKING:
+    from models.car import Car
 
 logger = logging.getLogger("gaadiiq.media_library")
 
@@ -291,6 +296,87 @@ async def attach_to_listing(
     )).scalars().all())
 
     db.add(ListingMedia(listing_id=listing_id, media_id=media.id, position=count))
+
+
+async def urls_for_cars(
+    db: AsyncSession,
+    cars: "Sequence[Car]",
+    bucket: str | None = None,
+    per_car: int = 8,
+) -> dict[uuid.UUID, list[str]]:
+    """
+    Gallery URLs for a page of catalogue cars, keyed by car id.
+
+    Cars carry no image column. An admin uploads a photograph against a
+    vehicle's identity — make, model, year — before deciding which catalogue row
+    it belongs to, so the association is resolved here at read time rather than
+    stored as a foreign key. That also means one upload serves every car row
+    for the model, which is the point.
+
+    Matching is case-insensitive on make and model, since the media table holds
+    free text from a brochure or an admin's typing ("Maruti" vs "maruti") while
+    the catalogue is curated.
+
+    `bucket` filters to the surface being rendered: "new" for the New Cars
+    pages, "used" for Used Cars. Images marked "both", and the ones stored
+    before the column existed (NULL), match either — otherwise every image
+    uploaded before this feature would vanish from the site.
+
+    One query for the whole page rather than one per car: a 100-car page would
+    otherwise issue 100 round trips to Postgres.
+    """
+    if not cars:
+        return {}
+
+    # Group the page's cars by their identity so a single query can cover them.
+    wanted: dict[tuple[str, str, int], list[uuid.UUID]] = {}
+    for car in cars:
+        if not car.make or not car.model:
+            continue
+        wanted.setdefault(
+            (car.make.strip().lower(), car.model.strip().lower(), car.year), []
+        ).append(car.id)
+    if not wanted:
+        return {}
+
+    conditions = [
+        and_(
+            func.lower(func.trim(VehicleMedia.make)) == make,
+            func.lower(func.trim(VehicleMedia.model)) == model,
+            VehicleMedia.model_year == year,
+        )
+        for (make, model, year) in wanted
+    ]
+
+    q = select(VehicleMedia).where(or_(*conditions))
+    if bucket in ("new", "used"):
+        q = q.where(
+            or_(
+                VehicleMedia.media_bucket == bucket,
+                VehicleMedia.media_bucket == "both",
+                VehicleMedia.media_bucket.is_(None),
+            )
+        )
+    # Hero shot first, then the admin's ordering, then oldest first so the
+    # sequence is stable between requests.
+    q = q.order_by(
+        VehicleMedia.is_primary.desc().nullslast(),
+        VehicleMedia.sort_order.asc().nullslast(),
+        VehicleMedia.created_at.asc(),
+    )
+
+    rows = (await db.execute(q)).scalars().all()
+
+    storage = get_storage()
+    out: dict[uuid.UUID, list[str]] = {car.id: [] for car in cars}
+    for media in rows:
+        if not media.make or not media.model:
+            continue
+        key = (media.make.strip().lower(), media.model.strip().lower(), media.model_year)
+        for car_id in wanted.get(key, ()):
+            if len(out[car_id]) < per_car:
+                out[car_id].append(storage.url_for(media.webp_key or media.storage_key))
+    return out
 
 
 async def urls_for_listing(db: AsyncSession, listing_id) -> list[str]:

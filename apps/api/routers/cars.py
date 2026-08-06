@@ -7,6 +7,7 @@ from db.session import get_db
 from models.car import Car
 from models.user import User
 from schemas.car import CarCreate, CarListOut, CarOut
+from services import media_library
 
 router = APIRouter(prefix="/cars", tags=["cars"])
 
@@ -18,6 +19,13 @@ async def list_cars(
     year: int | None = Query(None),
     fuel_type: str | None = Query(None),
     body_type: str | None = Query(None),
+    bucket: str | None = Query(
+        None,
+        description=(
+            "Which catalogue surface is being rendered: 'new' or 'used'. "
+            "Filters the images returned; omit for all."
+        ),
+    ),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -41,12 +49,16 @@ async def list_cars(
     result = await db.execute(q)
     cars = result.scalars().all()
 
-    return CarListOut(
-        items=[CarOut.model_validate(c) for c in cars],
-        total=total,
-        page=page,
-        page_size=page_size,
-    )
+    # One query for the page's images rather than one per car.
+    images = await media_library.urls_for_cars(db, cars, bucket=bucket)
+
+    items = []
+    for car in cars:
+        out = CarOut.model_validate(car)
+        out.image_urls = images.get(car.id, [])
+        items.append(out)
+
+    return CarListOut(items=items, total=total, page=page, page_size=page_size)
 
 
 @router.get("/{car_id}", response_model=CarOut)
@@ -55,7 +67,11 @@ async def get_car(car_id: str, db: AsyncSession = Depends(get_db)):
     car = result.scalar_one_or_none()
     if not car:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Car not found")
-    return CarOut.model_validate(car)
+
+    out = CarOut.model_validate(car)
+    images = await media_library.urls_for_cars(db, [car])
+    out.image_urls = images.get(car.id, [])
+    return out
 
 
 @router.post("", response_model=CarOut, status_code=status.HTTP_201_CREATED)

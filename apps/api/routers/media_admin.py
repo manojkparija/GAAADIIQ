@@ -132,6 +132,26 @@ def _category(value: str | None) -> ImageCategory | None:
         )
 
 
+#: Which catalogue surface an image serves. Not the listings.listing_type enum:
+#: that is exactly {new, used} and describes one advert, while an image is
+#: commonly valid on both.
+MEDIA_BUCKETS = ("new", "used", "both")
+
+
+def _bucket(value: str | None) -> str:
+    """Map an incoming bucket to the fixed vocabulary, or reject it by name."""
+    normalised = (value or "both").strip().lower()
+    if normalised not in MEDIA_BUCKETS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"Unknown media bucket {value!r}. Valid values: "
+                + ", ".join(MEDIA_BUCKETS)
+            ),
+        )
+    return normalised
+
+
 def _default_alt_text(make, model, variant, year, category) -> str:
     """
     A usable alt text when the admin did not write one.
@@ -195,6 +215,10 @@ async def upload_images(
     fuel_type: str = Form(...),
     transmission: str = Form(...),
     image_category: str = Form(..., description="Front, Interior, Boot…"),
+    media_bucket: str = Form(
+        "both",
+        description="Which catalogue surface this image serves: new, used or both",
+    ),
     # Optional.
     variant: str | None = Form(None),
     colour: str | None = Form(None),
@@ -229,6 +253,7 @@ async def upload_images(
         )
 
     chosen_category = _category(image_category)
+    chosen_bucket = _bucket(media_bucket)
     result = UploadResult(stored=0, deduplicated=0, rejected=0)
     max_bytes = settings.media_max_upload_mb * 1024 * 1024
 
@@ -281,6 +306,10 @@ async def upload_images(
 
         media.fuel_type = media.fuel_type or fuel_type
         media.transmission = media.transmission or transmission
+        # Set unconditionally, unlike the fields above: re-uploading an image
+        # that deduplicates to an existing row is how an admin moves it between
+        # the New and Used surfaces, so the new choice must win.
+        media.media_bucket = chosen_bucket
         media.image_category = media.image_category or chosen_category or hint.image_category
         media.colour = media.colour or colour or hint.colour
         media.source = media.source or source
