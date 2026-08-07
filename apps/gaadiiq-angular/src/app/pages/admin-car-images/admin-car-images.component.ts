@@ -70,6 +70,15 @@ export class AdminCarImagesComponent implements OnInit {
   // Starts empty and is mandatory, so the admin makes the choice deliberately
   // rather than inheriting the API's "both" default without noticing.
   mediaBucket = signal('');
+  // The manufacturer's ex-showroom price for this model. The New Cars pages
+  // only show priced models — a grid that sorts and filters on price cannot
+  // render one without it — so an upload aimed at New Cars that leaves this
+  // blank produces a photograph nobody will ever see. There is no on-road
+  // field: on-road is derived from this figure and varies by state and by what
+  // the buyer chooses, so it cannot be one stored number per model.
+  exShowroomPrice = signal<number | null>(null);
+  //: Whether the chosen surface makes the price mandatory.
+  needsPrice = computed(() => ['new', 'both'].includes(this.mediaBucket()));
   variant = signal('');
   colour = signal('');
   source = signal('');
@@ -181,6 +190,14 @@ export class AdminCarImagesComponent implements OnInit {
       return;
     }
 
+    // Caught here rather than left to the server: an upload aimed at New Cars
+    // without a price succeeds and then shows up nowhere, which reads as the
+    // upload having failed silently.
+    if (this.needsPrice() && !this.exShowroomPrice()) {
+      this.toast('❌ Ex-showroom price is required for a New Cars upload — those pages only show priced models');
+      return;
+    }
+
     this.isUploading.set(true);
     this.uploadError.set('');
 
@@ -196,6 +213,8 @@ export class AdminCarImagesComponent implements OnInit {
     formData.append('transmission', this.transmission());
     formData.append('image_category', this.imageCategory());
     formData.append('media_bucket', this.mediaBucket());
+    const price = this.exShowroomPrice();
+    if (price != null) formData.append('ex_showroom_price', String(price));
     if (this.variant()) formData.append('variant', this.variant());
     if (this.colour()) formData.append('colour', this.colour());
     if (this.source()) formData.append('source', this.source());
@@ -230,6 +249,12 @@ export class AdminCarImagesComponent implements OnInit {
         this.resetForm();
       }
 
+      // A stored image that no page can show is the failure this screen used to
+      // hide, so say it out loud rather than reporting an unqualified success.
+      if (result.catalogue_warning) {
+        this.toast(`⚠️ ${result.catalogue_warning}`);
+      }
+
       if (result.errors.length > 0) {
         this.uploadError.set(`Errors: ${result.errors.join('; ')}`);
       }
@@ -260,6 +285,7 @@ export class AdminCarImagesComponent implements OnInit {
     this.transmission.set('');
     this.imageCategory.set('');
     this.mediaBucket.set('');
+    this.exShowroomPrice.set(null);
     this.variant.set('');
     this.colour.set('');
     this.source.set('');

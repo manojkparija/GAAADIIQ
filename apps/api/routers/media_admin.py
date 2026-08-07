@@ -18,17 +18,19 @@ NOTE: deliberately NOT using `from __future__ import annotations` — see the no
 in routers/brochures.py about PEP 563 and slowapi's wrapper.
 """
 import logging
+from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.dependencies import get_admin_user
 from core.limiter import limiter
 from db.session import get_db
+from models.car import BodyType, Car, FuelType, Transmission
 from models.media_audit import AuditAction
 from models.media_version import MediaEventType
 from models.user import User
@@ -95,6 +97,16 @@ class UploadResult(BaseModel):
     rejected: int
     images: list[UploadedImage] = []
     errors: list[str] = []
+    #: The catalogue model this upload created or matched. Images are joined to
+    #: the catalogue by make, model and year at read time, so without a row
+    #: here an uploaded photograph belongs to no vehicle a buyer can reach.
+    catalogue_car_id: UUID | None = None
+    #: True when this upload is the reason that row exists.
+    catalogue_car_created: bool = False
+    #: Set when the model has no ex-showroom price, which keeps it off the New
+    #: Cars pages. The screen shows this so the omission is visible at upload
+    #: time rather than discovered later as an empty catalogue.
+    catalogue_warning: str | None = None
 
 
 class MetadataPatch(BaseModel):
@@ -150,6 +162,100 @@ def _bucket(value: str | None) -> str:
             ),
         )
     return normalised
+
+
+def _enum_or_none(enum_cls, value: str | None):
+    """
+    Map an admin's word to a catalogue enum, or None when it does not fit.
+
+    The upload form's vocabulary is written for a person ("Hatchback",
+    "Petrol", "Manual") while the catalogue stores lowercase members. A value
+    outside the enum is left unset rather than rejected: the image itself is
+    still worth storing, and a missing body type costs a filter facet, not the
+    photograph.
+    """
+    if not value:
+        return None
+    try:
+        return enum_cls(value.strip().lower())
+    except ValueError:
+        return None
+
+
+async def _ensure_catalogue_car(
+    db: AsyncSession,
+    *,
+    make: str,
+    model: str,
+    variant: str | None,
+    year: int,
+    body_type: str | None,
+    fuel_type: str | None,
+    transmission: str | None,
+    ex_showroom_price: Decimal | None,
+) -> tuple[Car, bool]:
+    """
+    Find or create the catalogue model this upload is a photograph of.
+
+    Images carry a vehicle's identity — make, model, year — and are joined to
+    the catalogue on it at read time rather than by a foreign key, so that one
+    upload serves every catalogue row for the model. The join has an
+    unstated requirement: a catalogue row has to exist. Nothing in the upload
+    path created one, so photographing a model the catalogue had never heard of
+    stored an image that no page could ever reach. An admin who uploaded a
+    SPRESSO and then looked for it on New Cars found nothing, with no error to
+    explain why.
+
+    Matching mirrors the read-time join — case-insensitive on make and model,
+    exact on year — so a row found here is a row the gallery query will find
+    too. Variant is part of the identity because trims are priced differently,
+    and treating them as one model would show a buyer the wrong figure.
+
+    Returns the row and whether this call created it.
+    """
+    existing = await db.execute(
+        select(Car).where(
+            func.lower(func.trim(Car.make)) == make.strip().lower(),
+            func.lower(func.trim(Car.model)) == model.strip().lower(),
+            Car.year == year,
+            (
+                Car.variant.is_(None)
+                if not variant
+                else func.lower(func.trim(Car.variant)) == variant.strip().lower()
+            ),
+        ).limit(1)
+    )
+    car = existing.scalar_one_or_none()
+
+    if car is None:
+        car = Car(
+            make=make.strip(),
+            model=model.strip(),
+            variant=variant.strip() if variant else None,
+            year=year,
+            body_type=_enum_or_none(BodyType, body_type),
+            fuel_type=_enum_or_none(FuelType, fuel_type),
+            transmission=_enum_or_none(Transmission, transmission),
+            ex_showroom_price=ex_showroom_price,
+        )
+        db.add(car)
+        await db.flush()
+        return car, True
+
+    # The admin is stating a price now, so it wins over whatever was there:
+    # a correction is the usual reason to type one against a model that
+    # already exists. Omitting the field leaves the stored price alone rather
+    # than clearing it, so uploading more photographs of a priced model does
+    # not un-price it.
+    if ex_showroom_price is not None:
+        car.ex_showroom_price = ex_showroom_price
+
+    # Fill only what the catalogue is missing. An existing row may have been
+    # curated, and an upload form is not the place to overwrite that.
+    car.body_type = car.body_type or _enum_or_none(BodyType, body_type)
+    car.fuel_type = car.fuel_type or _enum_or_none(FuelType, fuel_type)
+    car.transmission = car.transmission or _enum_or_none(Transmission, transmission)
+    return car, False
 
 
 def _default_alt_text(make, model, variant, year, category) -> str:
@@ -220,6 +326,17 @@ async def upload_images(
         description="Which catalogue surface this image serves: new, used or both",
     ),
     # Optional.
+    ex_showroom_price: Decimal | None = Form(
+        None,
+        description=(
+            "The manufacturer's ex-showroom price for this model, in rupees. "
+            "Required in practice for a New Cars upload: those pages only show "
+            "priced models, because a grid that sorts and filters on price "
+            "cannot render one without it. On-road price is not stored — it is "
+            "derived from this figure, and varies by state and by what the "
+            "buyer chooses."
+        ),
+    ),
     variant: str | None = Form(None),
     colour: str | None = Form(None),
     alt_text: str | None = Form(None),
@@ -351,6 +468,31 @@ async def upload_images(
             license_plate_bbox=media.license_plate_bbox,
             safety_metadata=media.safety_metadata,
         ))
+
+    # Give the photographs a vehicle to belong to. Done once for the batch,
+    # since every file in a request shares the vehicle fields, and only when
+    # something was actually stored — a request where every file was rejected
+    # should not leave a catalogue entry behind.
+    if result.images:
+        car, created = await _ensure_catalogue_car(
+            db,
+            make=make,
+            model=model,
+            variant=variant,
+            year=model_year,
+            body_type=category,
+            fuel_type=fuel_type,
+            transmission=transmission,
+            ex_showroom_price=ex_showroom_price,
+        )
+        result.catalogue_car_id = car.id
+        result.catalogue_car_created = created
+        if car.ex_showroom_price is None and chosen_bucket in ("new", "both"):
+            result.catalogue_warning = (
+                f"{make} {model} {model_year} has no ex-showroom price, so it "
+                "will not appear on the New Cars pages. Add one here or on the "
+                "pricing screen."
+            )
 
     await db.commit()
 

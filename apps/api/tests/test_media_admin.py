@@ -351,3 +351,100 @@ class TestUploadSizeLimitSuite:
             # The image should have a URL and metadata
             assert "url" in img
             assert "make" in img
+
+
+class TestCatalogueEntrySuite:
+    """
+    An uploaded photograph has to reach a buyer.
+
+    Images are joined to the catalogue by make, model and year at read time
+    rather than by a foreign key. That join has an unstated requirement — a
+    catalogue row must exist — and nothing in the upload path created one, so
+    photographing a model the catalogue had never heard of stored an image no
+    page could ever show, with no error to explain the silence.
+    """
+
+    @pytest.mark.asyncio
+    async def test_upload_creates_the_catalogue_model(self, client):
+        resp = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "SPRESSO",
+                  "model_year": "2026", "category": "Hatchback",
+                  "media_bucket": "new", "ex_showroom_price": "599000"},
+            files=[("files", ("spresso.png", io.BytesIO(_png()), "image/png"))],
+        )
+
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["catalogue_car_id"] is not None
+        assert body["catalogue_car_created"] is True
+        # Priced, so nothing keeps it off the New Cars pages.
+        assert body["catalogue_warning"] is None
+
+    @pytest.mark.asyncio
+    async def test_the_created_model_reaches_the_new_cars_catalogue(self, client):
+        await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Dzire",
+                  "model_year": "2026", "category": "Sedan",
+                  "media_bucket": "new", "ex_showroom_price": "899000"},
+            files=[("files", ("dzire.png", io.BytesIO(_png((10, 20, 30))), "image/png"))],
+        )
+
+        # priced_only is what the New Cars pages ask for.
+        resp = await client.get("/cars?bucket=new&priced_only=true")
+
+        assert resp.status_code == 200
+        models = [c["model"] for c in resp.json()["items"]]
+        assert "Dzire" in models
+
+    @pytest.mark.asyncio
+    async def test_an_unpriced_new_cars_upload_says_it_will_not_appear(self, client):
+        resp = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Alto",
+                  "model_year": "2026", "media_bucket": "new"},
+            files=[("files", ("alto.png", io.BytesIO(_png((60, 10, 10))), "image/png"))],
+        )
+
+        assert resp.status_code == 201
+        # Stored, but invisible — and the response says so rather than
+        # reporting an unqualified success.
+        assert "New Cars" in resp.json()["catalogue_warning"]
+
+    @pytest.mark.asyncio
+    async def test_a_second_upload_reuses_the_same_catalogue_model(self, client):
+        data = {**VEHICLE, "make": "Maruti Suzuki", "model": "Baleno",
+                "model_year": "2026", "media_bucket": "new",
+                "ex_showroom_price": "749000"}
+        first = await client.post(
+            "/media-admin/upload", data=data,
+            files=[("files", ("baleno-front.png", io.BytesIO(_png((1, 2, 3))), "image/png"))],
+        )
+        second = await client.post(
+            "/media-admin/upload", data={**data, "image_category": "interior_dashboard"},
+            files=[("files", ("baleno-inside.png", io.BytesIO(_png((4, 5, 6))), "image/png"))],
+        )
+
+        assert second.json()["catalogue_car_id"] == first.json()["catalogue_car_id"]
+        # Only the first upload is the reason the row exists.
+        assert second.json()["catalogue_car_created"] is False
+
+    @pytest.mark.asyncio
+    async def test_more_photographs_do_not_un_price_a_model(self, client):
+        data = {**VEHICLE, "make": "Maruti Suzuki", "model": "Fronx",
+                "model_year": "2026", "media_bucket": "new"}
+        await client.post(
+            "/media-admin/upload", data={**data, "ex_showroom_price": "849000"},
+            files=[("files", ("fronx-a.png", io.BytesIO(_png((7, 8, 9))), "image/png"))],
+        )
+        # Second upload omits the price, as an admin adding another angle would.
+        resp = await client.post(
+            "/media-admin/upload", data=data,
+            files=[("files", ("fronx-b.png", io.BytesIO(_png((9, 8, 7))), "image/png"))],
+        )
+
+        assert resp.json()["catalogue_warning"] is None
+        cars = await client.get("/cars?priced_only=true")
+        prices = {c["model"]: c["ex_showroom_price"] for c in cars.json()["items"]}
+        assert prices.get("Fronx") is not None
