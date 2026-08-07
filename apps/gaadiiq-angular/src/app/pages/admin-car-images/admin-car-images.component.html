@@ -60,19 +60,33 @@
               }
             </div>
             <div class="aci-upload-info">
-              <div class="upload-size-bar">
-                <div class="size-bar-track">
-                  <div class="size-bar-fill" [style.width.%]="(totalUploadSize() / maxUploadBytes) * 100"
-                       [class.warning]="uploadSizeWarning() === 'warning'"
-                       [class.danger]="uploadSizeWarning() === 'danger'"></div>
-                </div>
-                <div class="size-label">{{ (totalUploadSize() / 1024 / 1024).toFixed(1) }} MB / {{ maxUploadMb }} MB</div>
+              <!--
+                State the two rules the API actually enforces, and name the
+                files that break them. A percentage bar against a total budget
+                measured the wrong thing and gave an admin nothing to act on.
+              -->
+              <div class="size-label">
+                {{ selectedFiles().length }} of {{ maxFiles }} files ·
+                {{ (totalUploadSize() / 1024 / 1024).toFixed(1) }} MB ·
+                up to {{ maxFileMb }} MB each
               </div>
-              @if (uploadSizeWarning() === 'warning') {
-                <div class="size-warning">⚠️ Approaching upload limit ({{ ((totalUploadSize() / maxUploadBytes) * 100).toFixed(0) }}%)</div>
+
+              @if (tooManyFiles()) {
+                <div class="size-error">
+                  ❌ {{ selectedFiles().length }} files selected — {{ maxFiles }} is the most
+                  in one upload. Remove {{ selectedFiles().length - maxFiles }}, or upload in two batches.
+                </div>
               }
-              @if (uploadSizeExceeded()) {
-                <div class="size-error">❌ Exceeds {{ maxUploadMb }} MB limit. Remove files to proceed.</div>
+
+              @if (oversizedFiles().length) {
+                <div class="size-error">
+                  ❌ Too large for a single file ({{ maxFileMb }} MB limit):
+                  {{ oversizedFiles()[0].name }}{{ oversizedFiles().length > 1 ? ' and ' + (oversizedFiles().length - 1) + ' more' : '' }}.
+                </div>
+              }
+
+              @if (largeBatchWarning(); as advice) {
+                <div class="size-warning">⚠️ {{ advice }}</div>
               }
             </div>
             <button class="btn-primary" (click)="inspectFiles()" [disabled]="isInspecting() || uploadSizeExceeded()">
@@ -185,7 +199,7 @@
             </div>
 
             <div class="aci-form-field">
-              <label class="aci-label">Variant</label>
+              <label class="aci-label">Variant (optional)</label>
               @if (!customVariant() && variantOptions().length) {
                 <select class="aci-input" [ngModel]="variant()"
                         (ngModelChange)="onIdentityPick('variant', $event)">
@@ -206,6 +220,11 @@
                   </small>
                 }
               }
+              <small class="aci-hint">
+                These photographs are shown for every variant of the model —
+                variants differ in features, not bodywork. Set this only to
+                record which trim was photographed.
+              </small>
             </div>
 
             <div class="aci-form-field">
@@ -296,12 +315,14 @@
                 (ngModelChange)="exShowroomPrice.set($event)" />
               <small class="aci-hint">
                 @if (needsPrice()) {
-                  Required for New Cars: those pages only show priced models.
+                  This model is not in the catalogue yet. New Cars pages only
+                  show priced models, so a price is needed to list it.
+                  On-road price is calculated from it — that varies by state,
+                  so it is not stored.
                 } @else {
-                  The manufacturer's price for this model.
+                  Already in the catalogue — leave blank to keep the existing
+                  price, or fill it in to correct it.
                 }
-                On-road price is calculated from this — it varies by state, so
-                it is not stored.
               </small>
             </div>
           </div>

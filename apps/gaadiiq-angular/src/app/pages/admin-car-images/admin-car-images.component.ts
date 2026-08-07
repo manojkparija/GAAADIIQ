@@ -26,21 +26,41 @@ export class AdminCarImagesComponent implements OnInit {
   dragOver = signal(false);
   selectedFiles = signal<File[]>([]);
 
-  // Upload size management
-  maxUploadMb = 100; // Must match backend MEDIA_MAX_UPLOAD_MB
-  maxUploadBytes = this.maxUploadMb * 1024 * 1024;
-  totalUploadSize = computed(() => {
-    return this.selectedFiles().reduce((sum, f) => sum + f.size, 0);
-  });
-  uploadSizeWarning = computed(() => {
-    const total = this.totalUploadSize();
-    const percent = (total / this.maxUploadBytes) * 100;
-    if (percent > 90) return 'danger'; // >90% = red warning
-    if (percent > 75) return 'warning'; // >75% = yellow warning
-    return null;
-  });
-  uploadSizeExceeded = computed(() => {
-    return this.totalUploadSize() > this.maxUploadBytes;
+  // ── Upload limits ────────────────────────────────────────────────────────
+  //
+  // The API limits each *file* to MEDIA_MAX_UPLOAD_MB and each request to
+  // MAX_FILES_PER_REQUEST. This screen used to block on the *total* size of
+  // the batch instead, a rule the API never had — so fifteen ordinary
+  // photographs, none of them oversized, were refused for exceeding a limit
+  // that did not exist. Worse, the message named megabytes while the admin was
+  // counting files, so the ceiling looked like a count.
+  maxFileMb = 100;      // Must match the API's MEDIA_MAX_UPLOAD_MB
+  maxFiles = 50;        // Must match the API's MAX_FILES_PER_REQUEST
+  maxFileBytes = this.maxFileMb * 1024 * 1024;
+
+  totalUploadSize = computed(() =>
+    this.selectedFiles().reduce((sum, f) => sum + f.size, 0)
+  );
+
+  /** The files the API will reject, named individually so they can be removed. */
+  oversizedFiles = computed(() =>
+    this.selectedFiles().filter(f => f.size > this.maxFileBytes)
+  );
+
+  tooManyFiles = computed(() => this.selectedFiles().length > this.maxFiles);
+
+  /** Blocks the upload — each of these is a rule the API actually enforces. */
+  uploadSizeExceeded = computed(() =>
+    this.oversizedFiles().length > 0 || this.tooManyFiles()
+  );
+
+  /**
+   * A large batch is allowed but slow, and a request that times out mid-upload
+   * looks like a failure rather than a wait. Advice, not a limit.
+   */
+  largeBatchWarning = computed(() => {
+    const mb = this.totalUploadSize() / 1024 / 1024;
+    return mb > 200 ? `${mb.toFixed(0)} MB in one go may be slow — consider two batches.` : null;
   });
 
   // UI state
@@ -190,8 +210,35 @@ export class AdminCarImagesComponent implements OnInit {
   // field: on-road is derived from this figure and varies by state and by what
   // the buyer chooses, so it cannot be one stored number per model.
   exShowroomPrice = signal<number | null>(null);
-  //: Whether the chosen surface makes the price mandatory.
-  needsPrice = computed(() => ['new', 'both'].includes(this.mediaBucket()));
+  /**
+   * Whether this vehicle is already in the catalogue.
+   *
+   * Matched on make, model and year — not variant, because photographs belong
+   * to a model rather than a trim and the catalogue lookup ignores variant for
+   * the same reason.
+   */
+  modelIsKnown = computed(() => {
+    const year = this.modelYear();
+    if (!this.make() || !this.model() || !year) return false;
+    return this.catalogue().some(
+      o => o.make === this.make() && o.model === this.model() && o.year === year
+    );
+  });
+
+  /**
+   * Ask for a price only when this upload would introduce a model the
+   * catalogue has never held.
+   *
+   * A price belongs to a vehicle, not to a photograph, and the pricing screen
+   * is where one is set and revised. Asking on every upload put a money field
+   * in front of an admin doing something else entirely, fifteen times over for
+   * fifteen pictures of one car — and implied the price was a property of the
+   * images. It is still asked for a genuinely new model, because that is the
+   * moment the alternative is a catalogue entry no page will show.
+   */
+  needsPrice = computed(() =>
+    ['new', 'both'].includes(this.mediaBucket()) && !this.modelIsKnown()
+  );
   variant = signal('');
   colour = signal('');
   source = signal('');

@@ -193,7 +193,6 @@ async def _ensure_catalogue_car(
     *,
     make: str,
     model: str,
-    variant: str | None,
     year: int,
     body_type: str | None,
     fuel_type: str | None,
@@ -201,35 +200,39 @@ async def _ensure_catalogue_car(
     ex_showroom_price: Decimal | None,
 ) -> tuple[Car, bool]:
     """
-    Find or create the catalogue model this upload is a photograph of.
+    Find or create a catalogue model this upload is a photograph of.
 
     Images carry a vehicle's identity — make, model, year — and are joined to
     the catalogue on it at read time rather than by a foreign key, so that one
-    upload serves every catalogue row for the model. The join has an
-    unstated requirement: a catalogue row has to exist. Nothing in the upload
-    path created one, so photographing a model the catalogue had never heard of
-    stored an image that no page could ever reach. An admin who uploaded a
-    SPRESSO and then looked for it on New Cars found nothing, with no error to
-    explain why.
+    upload serves every catalogue row for the model. The join has an unstated
+    requirement: a catalogue row has to exist. Nothing in the upload path
+    created one, so photographing a model the catalogue had never heard of
+    stored an image that no page could reach.
 
-    Matching mirrors the read-time join — case-insensitive on make and model,
-    exact on year — so a row found here is a row the gallery query will find
-    too. Variant is part of the identity because trims are priced differently,
-    and treating them as one model would show a buyer the wrong figure.
+    Variant is deliberately not part of the match, and not part of what gets
+    created. Photographs are of a model, not of a trim: the same exterior
+    shots serve every S-Presso whatever the badge on the boot, which is why
+    the read-time join ignores variant too. Including it here meant choosing
+    "VXI" on an upload form invented a second catalogue model, and one
+    photograph turned a car into two — an image upload should not be deciding
+    what trims a manufacturer sells.
+
+    So: any existing row for this make, model and year is used. Only when the
+    catalogue has never heard of the vehicle at all is one created, and then
+    without a variant — a base entry that exists so the photograph is
+    reachable, for a human to refine afterwards.
 
     Returns the row and whether this call created it.
     """
+    # Any variant will do: they share the photographs. Prefer the one without
+    # a variant — the base entry — so repeated uploads settle on the same row
+    # rather than whichever trim happens to sort first.
     existing = await db.execute(
         select(Car).where(
             func.lower(func.trim(Car.make)) == make.strip().lower(),
             func.lower(func.trim(Car.model)) == model.strip().lower(),
             Car.year == year,
-            (
-                Car.variant.is_(None)
-                if not variant
-                else func.lower(func.trim(Car.variant)) == variant.strip().lower()
-            ),
-        ).limit(1)
+        ).order_by(Car.variant.is_(None).desc(), Car.created_at).limit(1)
     )
     car = existing.scalar_one_or_none()
 
@@ -237,7 +240,7 @@ async def _ensure_catalogue_car(
         car = Car(
             make=make.strip(),
             model=model.strip(),
-            variant=variant.strip() if variant else None,
+            variant=None,
             year=year,
             body_type=_enum_or_none(BodyType, body_type),
             fuel_type=_enum_or_none(FuelType, fuel_type),
@@ -507,7 +510,6 @@ async def upload_images(
             db,
             make=make,
             model=model,
-            variant=variant,
             year=model_year,
             body_type=category,
             fuel_type=fuel_type,

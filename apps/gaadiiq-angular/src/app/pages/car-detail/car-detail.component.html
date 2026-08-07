@@ -21,15 +21,17 @@
       <div class="detail-left">
         <!-- IMAGE GALLERY -->
         <div class="gallery glass-card">
-          <div class="main-img">
+          <div class="main-img" (click)="openLightbox()" title="Click to view full screen">
             <img [src]="galleryImages()[activeImg()]" [alt]="car.make + ' ' + car.model"
                  referrerpolicy="no-referrer"
                  [style.objectPosition]="(galleryImages()[activeImg()] || '').includes('swift/front') ? 'center 65%' : 'center center'"
                  onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
             <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
-            <button class="like-fab" (click)="liked.set(!liked())" [class.liked]="liked()">
+            <button class="like-fab" (click)="liked.set(!liked()); $event.stopPropagation()" [class.liked]="liked()">
               {{ liked() ? '❤️' : '🤍' }}
             </button>
+            <button class="zoom-fab" type="button" aria-label="View full screen"
+                    (click)="openLightbox(); $event.stopPropagation()">⤢</button>
           </div>
           <div class="thumbnails">
             <div *ngFor="let img of galleryImages(); let i = index"
@@ -38,6 +40,47 @@
                    [style.objectPosition]="img?.includes('swift/front') ? 'center 65%' : 'center center'"
                    onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
             </div>
+          </div>
+        </div>
+
+        <!-- FULL-SCREEN VIEWER -->
+        <div class="lightbox" *ngIf="lightboxOpen()" (click)="closeLightbox()"
+             (wheel)="onWheel($event)" role="dialog" aria-modal="true"
+             [attr.aria-label]="car.make + ' ' + car.model + ' photographs'">
+          <div class="lightbox-bar" (click)="$event.stopPropagation()">
+            <span class="lightbox-count">{{ activeImg() + 1 }} / {{ galleryImages().length }}</span>
+            <div class="lightbox-tools">
+              <button type="button" (click)="zoomOut()" [disabled]="zoom() <= minZoom" aria-label="Zoom out">−</button>
+              <span class="lightbox-zoom">{{ (zoom() * 100).toFixed(0) }}%</span>
+              <button type="button" (click)="zoomIn()" [disabled]="zoom() >= maxZoom" aria-label="Zoom in">+</button>
+              <button type="button" (click)="resetZoom()" aria-label="Reset zoom">Reset</button>
+              <button type="button" (click)="closeLightbox()" aria-label="Close">✕</button>
+            </div>
+          </div>
+
+          <button *ngIf="galleryImages().length > 1" class="lightbox-nav prev" type="button"
+                  (click)="step(-1); $event.stopPropagation()" aria-label="Previous image">‹</button>
+
+          <img class="lightbox-img" [src]="galleryImages()[activeImg()]"
+               [alt]="car.make + ' ' + car.model"
+               referrerpolicy="no-referrer"
+               [class.zoomed]="zoom() > 1"
+               [style.transform]="'translate(' + panX() + 'px,' + panY() + 'px) scale(' + zoom() + ')'"
+               (click)="toggleZoom(); $event.stopPropagation()"
+               (pointerdown)="startPan($event)"
+               (pointermove)="movePan($event)"
+               (pointerup)="endPan()"
+               (pointercancel)="endPan()"
+               onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+
+          <button *ngIf="galleryImages().length > 1" class="lightbox-nav next" type="button"
+                  (click)="step(1); $event.stopPropagation()" aria-label="Next image">›</button>
+
+          <div class="lightbox-strip" *ngIf="galleryImages().length > 1" (click)="$event.stopPropagation()">
+            <img *ngFor="let img of galleryImages(); let i = index" [src]="img" alt="thumbnail"
+                 referrerpolicy="no-referrer" [class.active]="activeImg() === i"
+                 (click)="activeImg.set(i); resetZoom()"
+                 onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
           </div>
         </div>
 

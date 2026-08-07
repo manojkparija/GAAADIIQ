@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, effect } from '@angular/core';
+import { Component, signal, computed, OnInit, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -218,6 +218,101 @@ export class CarDetailComponent implements OnInit {
     return (this.car?.images?.length ? this.car.images : [this.car?.image])
       .filter(Boolean) as string[];
   }
+
+  /**
+   * Full-screen viewer.
+   *
+   * A thumbnail strip answers "which photograph", not "what does this panel
+   * look like" — and on a car that is the question buyers actually have:
+   * paint finish, upholstery stitching, the scuff on a bumper. So the main
+   * image opens full-screen, where it can be magnified and panned, and the
+   * keyboard moves between shots without reaching for the mouse.
+   */
+  lightboxOpen = signal(false);
+  zoom = signal(1);
+  panX = signal(0);
+  panY = signal(0);
+  private dragFrom: { x: number; y: number; panX: number; panY: number } | null = null;
+
+  readonly maxZoom = 4;
+  readonly minZoom = 1;
+
+  openLightbox(index = this.activeImg()): void {
+    if (!this.galleryImages().length) return;
+    this.activeImg.set(index);
+    this.resetZoom();
+    this.lightboxOpen.set(true);
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeLightbox(): void {
+    this.lightboxOpen.set(false);
+    this.resetZoom();
+    document.body.style.overflow = '';
+  }
+
+  resetZoom(): void {
+    this.zoom.set(1);
+    this.panX.set(0);
+    this.panY.set(0);
+  }
+
+  /** Clamped so the image cannot be shrunk past its natural size or lost. */
+  setZoom(next: number): void {
+    const clamped = Math.min(this.maxZoom, Math.max(this.minZoom, next));
+    this.zoom.set(clamped);
+    if (clamped === 1) {
+      this.panX.set(0);
+      this.panY.set(0);
+    }
+  }
+
+  zoomIn(): void { this.setZoom(this.zoom() + 0.5); }
+  zoomOut(): void { this.setZoom(this.zoom() - 0.5); }
+  toggleZoom(): void { this.setZoom(this.zoom() > 1 ? 1 : 2); }
+
+  step(delta: number): void {
+    const images = this.galleryImages();
+    if (images.length < 2) return;
+    this.activeImg.set((this.activeImg() + delta + images.length) % images.length);
+    this.resetZoom();
+  }
+
+  onWheel(event: WheelEvent): void {
+    if (!this.lightboxOpen()) return;
+    event.preventDefault();
+    this.setZoom(this.zoom() - Math.sign(event.deltaY) * 0.25);
+  }
+
+  startPan(event: PointerEvent): void {
+    if (this.zoom() <= 1) return;
+    this.dragFrom = { x: event.clientX, y: event.clientY, panX: this.panX(), panY: this.panY() };
+    (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+  }
+
+  movePan(event: PointerEvent): void {
+    if (!this.dragFrom) return;
+    this.panX.set(this.dragFrom.panX + (event.clientX - this.dragFrom.x));
+    this.panY.set(this.dragFrom.panY + (event.clientY - this.dragFrom.y));
+  }
+
+  endPan(): void { this.dragFrom = null; }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (!this.lightboxOpen()) return;
+    switch (event.key) {
+      case 'Escape': this.closeLightbox(); break;
+      case 'ArrowRight': this.step(1); break;
+      case 'ArrowLeft': this.step(-1); break;
+      case '+': case '=': this.zoomIn(); break;
+      case '-': this.zoomOut(); break;
+      case '0': this.resetZoom(); break;
+      default: return;
+    }
+    event.preventDefault();
+  }
+
   notFound = false;
   carLoaded = false;
 
