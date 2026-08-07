@@ -299,6 +299,12 @@
   gap: 1rem;
 }
 
+// Spans the grid rather than taking one column: this carries a sentence
+// explaining the fields below it, which reads badly in a 200px column.
+.aci-form-field--full {
+  grid-column: 1 / -1;
+}
+
 .aci-form-field {
   display: flex;
   flex-direction: column;
