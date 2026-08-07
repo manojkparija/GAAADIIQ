@@ -1,6 +1,23 @@
 -- GAADIIQ Database Setup - Batch 1: Enum Types & Core Tables
 -- Execute this in Supabase SQL Editor
 -- This batch creates enum types and core tables with no external dependencies
+--
+-- ⚠️  SUPERSEDED for cars and listings. DO NOT RUN THOSE TWO SECTIONS.
+--
+-- The cars and listings definitions below do not match the application's
+-- models. They name the same concepts differently (listings.price_inr vs
+-- price, mileage vs km_driven, year vs registration_year, location vs city,
+-- views vs views_count), omit columns the models require, and key cars by
+-- bigserial where the application uses uuid.
+--
+-- Because both this file and alembic use "create only if absent", whichever
+-- ran first won and neither corrected the other. In the deployed database
+-- this file won, and every read of a listing failed with "column
+-- listings.price does not exist" until migration 0017 repaired it.
+--
+-- apps/api/alembic is the schema of record: it runs automatically on every
+-- API start, so these tables need no manual step at all. Running the cars or
+-- listings sections below on a fresh database will reintroduce that outage.
 
 -- ============================================================================
 -- PHASE 1: CREATE ENUM TYPES

@@ -295,27 +295,53 @@ export class CarsDataService {
     this.load();
   }
 
+  /**
+   * Fetch one catalogue source, returning null rather than throwing when it
+   * fails.
+   *
+   * null is deliberately distinct from an empty response: it means "this
+   * source did not answer", which lets the caller tell a genuinely empty
+   * catalogue apart from an outage.
+   */
+  private async fetchOrNull<T>(url: string): Promise<T | null> {
+    try {
+      return await firstValueFrom(this.http.get<T>(url));
+    } catch (err) {
+      console.error(`Catalogue source failed (${url}):`, err);
+      return null;
+    }
+  }
+
   private async load() {
     this.loading.set(true);
     try {
+      // Three independent sources, fetched independently. Promise.all would
+      // reject the whole load when any one of them failed, so a broken
+      // /listings emptied the New Cars pages too — even though the catalogue
+      // they are built from had answered perfectly well. A source that fails
+      // now costs only its own rows.
       const [newResp, usedResp, catalogueResp] = await Promise.all([
-        firstValueFrom(
-          this.http.get<ApiListResponse>(`${this.apiUrl}/listings?listing_type=new&page_size=100`)
+        this.fetchOrNull<ApiListResponse>(
+          `${this.apiUrl}/listings?listing_type=new&page_size=100`
         ),
-        firstValueFrom(
-          this.http.get<ApiListResponse>(`${this.apiUrl}/listings?listing_type=used&page_size=100`)
+        this.fetchOrNull<ApiListResponse>(
+          `${this.apiUrl}/listings?listing_type=used&page_size=100`
         ),
         // The catalogue of manufacturer models, which is where admin-uploaded
         // photography lands. Without this the New Cars pages could only show
         // models some seller had happened to advertise, so an uploaded image
         // had no route to a buyer. priced_only keeps models nobody has priced
         // out of a grid that sorts and filters on price.
-        firstValueFrom(
-          this.http.get<ApiCarListResponse>(
-            `${this.apiUrl}/cars?bucket=new&priced_only=true&page_size=100`
-          )
+        this.fetchOrNull<ApiCarListResponse>(
+          `${this.apiUrl}/cars?bucket=new&priced_only=true&page_size=100`
         ),
       ]);
+
+      // Every source down is an outage rather than an empty catalogue, and the
+      // two deserve different treatment — see the fallback below.
+      if (newResp === null && usedResp === null && catalogueResp === null) {
+        throw new Error('every catalogue source failed');
+      }
 
       const newCars = (newResp?.items ?? []).map(mapListing);
       const usedCars = (usedResp?.items ?? []).map(mapListing);
