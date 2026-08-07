@@ -393,9 +393,15 @@
             </select>
           </div>
           <div class="orp-row"><span>Ex-Showroom</span><span>{{ formatPrice(orp.base) }}</span></div>
-          <div class="orp-row"><span>GST ({{ orp.gstRate }}%)</span><span>{{ formatPrice(orp.gst) }}</span></div>
-          <div class="orp-row" *ngIf="orp.cess > 0"><span>Cess ({{ orp.cessRate }}%)</span><span>{{ formatPrice(orp.cess) }}</span></div>
-          <div class="orp-row"><span>Registration ({{ orp.regRate }}%)</span><span>{{ formatPrice(orp.registration) }}</span></div>
+          <!--
+            Indented and greyed: GST and cess are part of the ex-showroom price
+            above, not additions to it, so they must not read as another line
+            a buyer pays. Shown at all because a buyer wants to know what tax
+            is in the price.
+          -->
+          <div class="orp-row orp-row--included"><span>↳ GST ({{ orp.gstRate }}%) — included</span><span>{{ formatPrice(orp.gst) }}</span></div>
+          <div class="orp-row orp-row--included" *ngIf="orp.cess > 0"><span>↳ Cess ({{ orp.cessRate }}%) — included</span><span>{{ formatPrice(orp.cess) }}</span></div>
+          <div class="orp-row"><span>Road Tax ({{ orp.regRate }}%)</span><span>{{ formatPrice(orp.registration) }}</span></div>
           <div class="orp-row"><span>Insurance (TP + OD)</span><span>{{ formatPrice(orp.insurance) }}</span></div>
           <div class="orp-row"><span>Handling Charges</span><span>{{ formatPrice(orp.handling) }}</span></div>
           <div class="orp-total"><span>On-Road Price</span><span class="gradient-text">{{ formatPrice(orp.total) }}</span></div>

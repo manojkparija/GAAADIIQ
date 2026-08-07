@@ -156,6 +156,9 @@
   select { background: var(--fill-soft); border: 1px solid var(--border-soft); border-radius:8px; padding:0.4rem 0.75rem; color: var(--input-color); font-size:0.85rem; outline:none; option { background: var(--dropdown-bg); } }
 }
 .orp-row { display:flex; justify-content:space-between; font-size:0.875rem; padding:0.4rem 0; border-bottom:1px solid rgba(255,255,255,0.05); color: var(--muted); }
+/* Part of the ex-showroom price above, not another charge: indented and
+   dimmed so it cannot be mistaken for a line the buyer pays on top. */
+.orp-row--included { padding-left:0.75rem; opacity:0.72; font-size:0.8rem; }
 .orp-total { display:flex; justify-content:space-between; font-weight:800; font-size:1rem; padding:0.75rem 0; border-top:2px solid rgba(47,107,255,0.3); margin-top:0.5rem; }
 
 /* Reviews */
