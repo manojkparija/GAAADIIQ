@@ -212,6 +212,14 @@ async def lifespan(app: FastAPI):
         _log.warning("Alembic command not found in PATH; skipping database migrations")
         await _fix_schema()
 
+    # After the migrations, so this reports what they left rather than what
+    # they were about to fix. A SELECT fails on the first column Postgres
+    # cannot resolve and says nothing about the rest, so finding these one at a
+    # time costs a deploy each; this finds all of them in one startup.
+    from db.schema_drift import report_schema_drift
+    from db.session import engine
+    await report_schema_drift(engine)
+
     start_scheduler()
 
     # Initialise vector store collection (non-fatal if Qdrant is offline)
