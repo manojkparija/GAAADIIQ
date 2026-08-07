@@ -162,6 +162,30 @@
                 Which catalogue pages this image appears on.
               </small>
             </div>
+
+            <div class="aci-form-field">
+              <label class="aci-label">
+                Ex-Showroom Price (₹)
+                @if (needsPrice()) { <span>*</span> }
+              </label>
+              <input
+                type="number"
+                class="aci-input"
+                min="0"
+                step="1000"
+                placeholder="e.g. 599000"
+                [ngModel]="exShowroomPrice()"
+                (ngModelChange)="exShowroomPrice.set($event)" />
+              <small class="aci-hint">
+                @if (needsPrice()) {
+                  Required for New Cars: those pages only show priced models.
+                } @else {
+                  The manufacturer's price for this model.
+                }
+                On-road price is calculated from this — it varies by state, so
+                it is not stored.
+              </small>
+            </div>
           </div>
         </div>
 
