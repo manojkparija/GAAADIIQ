@@ -6,7 +6,7 @@ import { CarsDataService, Car } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
 import { TestDriveService } from '../../services/test-drive.service';
 import { SellersService } from '../../services/sellers.service';
-import { SentimentService } from '../../services/sentiment.service';
+import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentiment.service';
 import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
@@ -91,7 +91,7 @@ export class TestDriveComponent {
       const { data } = await this.sb.client.auth.getSession();
       const buyerId = data.session?.user?.id;
       if (buyerId) {
-        this.sentimentSvc.trackPublic(seller.email, buyerId, 'test_drive_request');
+        this.sentimentSvc.trackPublic(seller.email, buyerId, 'test_drive_request', BUYER_TRACKING_CONSENT);
       }
     } else {
       this.submitError.set('Booking failed — please try again or call us directly.');

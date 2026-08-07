@@ -86,6 +86,11 @@ class CatalogueOption(BaseModel):
     model: str
     variant: str | None = None
     year: int
+    # New Cars shows only priced models, so a caller deciding whether to ask an
+    # admin for a price needs to know whether this entry already has one.
+    # "Known to the catalogue" and "will actually appear" are not the same
+    # thing, and treating them as one leaves uploads stored but invisible.
+    ex_showroom_price: float | None = None
 
 
 class CatalogueOptions(BaseModel):
@@ -112,15 +117,27 @@ async def catalogue_options(db: AsyncSession = Depends(get_db)):
     exposes nothing a buyer cannot already read from /cars.
     """
     result = await db.execute(
-        select(Car.make, Car.model, Car.variant, Car.year)
+        select(
+            Car.make,
+            Car.model,
+            Car.variant,
+            Car.year,
+            # The cheapest priced row wins: a model is priced if anything under
+            # that identity carries a price, and max() would report NULL as a
+            # price on Postgres only by accident of ordering.
+            func.min(Car.ex_showroom_price),
+        )
         .where(Car.make.is_not(None), Car.model.is_not(None))
-        .distinct()
+        .group_by(Car.make, Car.model, Car.variant, Car.year)
         .order_by(Car.make, Car.model, Car.variant, Car.year)
     )
     return CatalogueOptions(
         items=[
-            CatalogueOption(make=make, model=model, variant=variant, year=year)
-            for make, model, variant, year in result.all()
+            CatalogueOption(
+                make=make, model=model, variant=variant, year=year,
+                ex_showroom_price=float(price) if price is not None else None,
+            )
+            for make, model, variant, year, price in result.all()
         ]
     )
 

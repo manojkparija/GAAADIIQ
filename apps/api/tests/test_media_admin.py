@@ -555,6 +555,53 @@ class TestReuploadCorrectsIdentitySuite:
         assert resp.json()["images"][0]["variant"] == "Adventure"
 
 
+class TestPhotographsBelongToTheModelSuite:
+    """
+    Variants differ in features, not bodywork.
+
+    An upload used to create a catalogue entry per variant, so photographing a
+    car twice — once tagged VXi, once ZXi — split one model into two listings,
+    each holding half the pictures. Admins were also asked for a price on
+    every upload, including uploads of a model already in the catalogue.
+
+    A photograph identifies a make, model and year. The variant is a note
+    about which trim was in front of the camera, and nothing more.
+    """
+
+    @pytest.mark.asyncio
+    async def test_two_variants_of_one_model_stay_one_listing(self, client):
+        for n, variant in enumerate(("VXi", "ZXi")):
+            await client.post(
+                "/media-admin/upload",
+                data={**VEHICLE, "make": "Maruti Suzuki", "model": "S-Presso",
+                      "model_year": "2026", "variant": variant,
+                      "media_bucket": "new", "ex_showroom_price": "530000"},
+                files=[("files", (f"sp{n}.png", io.BytesIO(_png((n, 90, 120))), "image/png"))],
+            )
+
+        resp = await client.get("/cars?bucket=new&priced_only=true")
+        matches = [c for c in resp.json()["items"] if c["model"] == "S-Presso"]
+
+        assert len(matches) == 1, "a variant tag must not fork the catalogue"
+        assert len(matches[0]["image_urls"]) == 2, "both photographs belong to the model"
+
+    @pytest.mark.asyncio
+    async def test_the_catalogue_entry_is_not_tied_to_a_trim(self, client):
+        """The row stands for the model, so it carries no variant of its own."""
+        await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Hyundai", "model": "Exter",
+                  "model_year": "2026", "variant": "SX",
+                  "media_bucket": "new", "ex_showroom_price": "800000"},
+            files=[("files", ("exter.png", io.BytesIO(_png((10, 20, 30))), "image/png"))],
+        )
+
+        resp = await client.get("/cars?bucket=new&priced_only=true")
+        exter = next(c for c in resp.json()["items"] if c["model"] == "Exter")
+
+        assert not exter.get("variant")
+
+
 class TestUploadAuditSuite:
     """
     An audit trail has to say who, not only what.

@@ -196,7 +196,67 @@
 .aci-files-title {
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.aci-files-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.aci-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-add-more {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  border: 1px dashed #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: #dbeafe; border-style: solid; }
+}
+
+.aci-files-title .btn-add-more {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.aci-file-clear {
+  font: inherit;
+  font-weight: 500;
+  color: #6b7280;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  &:hover { color: #dc2626; text-decoration: underline; }
+}
+
+.aci-file-remove {
+  margin-left: 0.75rem;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+  line-height: 1;
+  &:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
 }
 
 .aci-files-list {
@@ -207,6 +267,7 @@
 
 .aci-file-item {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
   background: white;
