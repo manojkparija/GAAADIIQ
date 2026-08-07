@@ -163,3 +163,42 @@ async def test_patch_requires_admin(client: AsyncClient):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code in (401, 403)
+
+
+class TestCatalogueOptionsSuite:
+    """
+    The admin upload screen offers the identities the catalogue already holds.
+
+    Make, model, variant and year are what an image is matched to its car on,
+    so typing them by hand is how the catalogue acquires both "Maruti" and
+    "Maruti Suzuki", and how a photograph misses the model it belongs to.
+    """
+
+    @pytest.mark.asyncio
+    async def test_options_list_the_catalogue_identities(self, client: AsyncClient):
+        token = await _token(client, "options1@test.com")
+        await _create_car(client, token, model="Dzire", variant="ZXi", year=2026)
+
+        resp = await client.get("/cars/catalogue/options")
+
+        assert resp.status_code == 200
+        assert {"make": "Maruti Suzuki", "model": "Dzire",
+                "variant": "ZXi", "year": 2026} in resp.json()["items"]
+
+    @pytest.mark.asyncio
+    async def test_the_same_identity_is_offered_once(self, client: AsyncClient):
+        token = await _token(client, "options2@test.com")
+        for _ in range(2):
+            await _create_car(client, token, make="Tata", model="Nexon",
+                              variant="XZ", year=2026)
+
+        resp = await client.get("/cars/catalogue/options")
+
+        nexons = [i for i in resp.json()["items"]
+                  if i["model"] == "Nexon" and i["variant"] == "XZ"]
+        assert len(nexons) == 1
+
+    @pytest.mark.asyncio
+    async def test_options_do_not_require_a_login(self, client: AsyncClient):
+        # Exposes nothing a buyer cannot already read from /cars.
+        assert (await client.get("/cars/catalogue/options")).status_code == 200

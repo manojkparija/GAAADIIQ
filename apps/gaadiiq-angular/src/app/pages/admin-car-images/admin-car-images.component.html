@@ -97,21 +97,106 @@
         <div class="aci-form-section">
           <h3 class="aci-subsection-title">Vehicle Information (Required)</h3>
           <div class="aci-form-grid">
+            <!--
+              Identity fields. Chosen from the catalogue where it already knows
+              the vehicle, typed where it does not — an image is matched to its
+              car on exactly these four values, so a stray space or a "Maruti"
+              where the catalogue says "Maruti Suzuki" loses the photograph.
+            -->
             <div class="aci-form-field">
               <label class="aci-label">Manufacturer *</label>
-              <input class="aci-input" [(ngModel)]="make" placeholder="e.g., Tata, Hyundai, Maruti" />
+              @if (!customMake() && makeOptions().length) {
+                <select class="aci-input" [ngModel]="make()"
+                        (ngModelChange)="onIdentityPick('make', $event)">
+                  <option value="">Select manufacturer…</option>
+                  @for (opt of makeOptions(); track opt) {
+                    <option [value]="opt">{{ opt }}</option>
+                  }
+                  <option [value]="ADD_NEW">➕ Add new manufacturer…</option>
+                </select>
+              } @else {
+                <input class="aci-input" [(ngModel)]="make"
+                       placeholder="e.g., Tata, Hyundai, Maruti Suzuki" />
+                @if (makeOptions().length) {
+                  <small class="aci-hint">
+                    <a href="javascript:void(0)" (click)="customMake.set(false)">
+                      Choose an existing manufacturer instead
+                    </a>
+                  </small>
+                }
+              }
             </div>
+
             <div class="aci-form-field">
               <label class="aci-label">Model *</label>
-              <input class="aci-input" [(ngModel)]="model" placeholder="e.g., Nexon, Creta, Swift" />
+              @if (!customModel() && modelOptions().length) {
+                <select class="aci-input" [ngModel]="model()"
+                        (ngModelChange)="onIdentityPick('model', $event)">
+                  <option value="">Select model…</option>
+                  @for (opt of modelOptions(); track opt) {
+                    <option [value]="opt">{{ opt }}</option>
+                  }
+                  <option [value]="ADD_NEW">➕ Add new model…</option>
+                </select>
+              } @else {
+                <input class="aci-input" [(ngModel)]="model"
+                       placeholder="e.g., Nexon, Creta, Swift" />
+                @if (modelOptions().length) {
+                  <small class="aci-hint">
+                    <a href="javascript:void(0)" (click)="customModel.set(false)">
+                      Choose an existing model instead
+                    </a>
+                  </small>
+                }
+              }
             </div>
+
             <div class="aci-form-field">
               <label class="aci-label">Variant</label>
-              <input class="aci-input" [(ngModel)]="variant" placeholder="e.g., XE, XT, XT+ (optional)" />
+              @if (!customVariant() && variantOptions().length) {
+                <select class="aci-input" [ngModel]="variant()"
+                        (ngModelChange)="onIdentityPick('variant', $event)">
+                  <option value="">No variant</option>
+                  @for (opt of variantOptions(); track opt) {
+                    <option [value]="opt">{{ opt }}</option>
+                  }
+                  <option [value]="ADD_NEW">➕ Add new variant…</option>
+                </select>
+              } @else {
+                <input class="aci-input" [(ngModel)]="variant"
+                       placeholder="e.g., XE, XT, XT+ (optional)" />
+                @if (variantOptions().length) {
+                  <small class="aci-hint">
+                    <a href="javascript:void(0)" (click)="customVariant.set(false)">
+                      Choose an existing variant instead
+                    </a>
+                  </small>
+                }
+              }
             </div>
+
             <div class="aci-form-field">
               <label class="aci-label">Year *</label>
-              <input class="aci-input" type="number" [(ngModel)]="modelYear" placeholder="e.g., 2024" />
+              @if (!customYear() && yearOptions().length) {
+                <select class="aci-input" [ngModel]="modelYear()"
+                        (ngModelChange)="onIdentityPick('year', $event)">
+                  <option [ngValue]="null">Select year…</option>
+                  @for (opt of yearOptions(); track opt) {
+                    <option [ngValue]="opt">{{ opt }}</option>
+                  }
+                  <option [ngValue]="ADD_NEW">➕ Add new year…</option>
+                </select>
+              } @else {
+                <input class="aci-input" type="number" [(ngModel)]="modelYear"
+                       placeholder="e.g., 2026" />
+                @if (yearOptions().length) {
+                  <small class="aci-hint">
+                    <a href="javascript:void(0)" (click)="customYear.set(false)">
+                      Choose an existing year instead
+                    </a>
+                  </small>
+                }
+              }
             </div>
             <div class="aci-form-field">
               <label class="aci-label">Body Type *</label>
