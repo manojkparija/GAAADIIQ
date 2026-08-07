@@ -8,6 +8,7 @@ distinguishing property against the brochure pipeline is that the metadata is
 untagged image is invisible to every surface and therefore not worth storing.
 """
 import io
+import uuid
 
 import pytest
 import pytest_asyncio
@@ -46,9 +47,12 @@ async def client(db_engine):
     app.dependency_overrides[get_db] = override_db
     # The endpoint's own auth is covered by the shared admin dependency; these
     # tests are about upload behaviour, so the admin is stubbed.
-    app.dependency_overrides[get_admin_user] = lambda: User(
-        email="admin@test.com", hashed_password="x"
-    )
+    #
+    # With an explicit id: the real dependency returns a persisted user, whose
+    # id exists. A transient User leaves id as None until it is inserted, which
+    # would make every audit assertion pass against an actor nobody set.
+    admin = User(id=uuid.uuid4(), email="admin@test.com", hashed_password="x")
+    app.dependency_overrides[get_admin_user] = lambda: admin
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()
@@ -549,3 +553,86 @@ class TestReuploadCorrectsIdentitySuite:
         )
 
         assert resp.json()["images"][0]["variant"] == "Adventure"
+
+
+class TestUploadAuditSuite:
+    """
+    An audit trail has to say who, not only what.
+
+    store_image called log_audit and record_version without an actor, so every
+    upload recorded a nameless event: the table knew a picture had been
+    uploaded and never knew by whom. The edit endpoint passed actor_id
+    correctly, which made the gap easy to miss — edits were attributable and
+    uploads were not.
+
+    Worse, a deduplicated re-upload returned before either call, so it left no
+    record at all — and a re-upload is exactly what moves an image from one
+    vehicle to another.
+    """
+
+    @pytest.mark.asyncio
+    async def test_an_upload_records_who_did_it(self, client):
+        resp = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Kia", "model": "Seltos", "model_year": "2026",
+                  "media_bucket": "new", "ex_showroom_price": "1200000"},
+            files=[("files", ("seltos.png", io.BytesIO(_png((5, 15, 25))), "image/png"))],
+        )
+        media_id = resp.json()["images"][0]["id"]
+
+        audit = await client.get(f"/media-admin/{media_id}/audit")
+
+        entries = audit.json()["audits"]
+        uploads = [e for e in entries if e["action"] == "upload"]
+        assert uploads, entries
+        assert uploads[0]["actor_id"] is not None, "the upload was recorded with no actor"
+
+    @pytest.mark.asyncio
+    async def test_a_reupload_is_audited_even_though_the_file_is_not_stored_again(self, client):
+        image = _png((6, 16, 26))
+        data = {**VEHICLE, "make": "Kia", "model": "Sonet", "model_year": "2026",
+                "media_bucket": "new", "ex_showroom_price": "900000"}
+        first = await client.post(
+            "/media-admin/upload", data=data,
+            files=[("files", ("sonet.png", io.BytesIO(image), "image/png"))],
+        )
+        media_id = first.json()["images"][0]["id"]
+
+        await client.post(
+            "/media-admin/upload", data={**data, "image_category": "interior_dashboard"},
+            files=[("files", ("sonet.png", io.BytesIO(image), "image/png"))],
+        )
+
+        audit = await client.get(f"/media-admin/{media_id}/audit")
+
+        uploads = [e for e in audit.json()["audits"] if e["action"] == "upload"]
+        # Two uploads happened; the second stored no new file, which is not the
+        # same as the second not having happened.
+        assert len(uploads) == 2, uploads
+
+    @pytest.mark.asyncio
+    async def test_moving_an_image_to_another_vehicle_leaves_a_record(self, client):
+        """The change that used to be invisible: a re-upload that re-tags."""
+        image = _png((7, 17, 27))
+        base = {**VEHICLE, "make": "Kia", "model_year": "2026",
+                "media_bucket": "new", "ex_showroom_price": "900000"}
+        first = await client.post(
+            "/media-admin/upload", data={**base, "model": "CARENS"},
+            files=[("files", ("carens.png", io.BytesIO(image), "image/png"))],
+        )
+        media_id = first.json()["images"][0]["id"]
+
+        await client.post(
+            "/media-admin/upload", data={**base, "model": "Carens"},
+            files=[("files", ("carens.png", io.BytesIO(image), "image/png"))],
+        )
+
+        versions = await client.get(f"/media-admin/{media_id}/versions")
+
+        history = versions.json()["versions"]
+        retag = [v for v in history if v["event_type"] == "metadata_updated"]
+        assert retag, history
+        # Both sides of the move, so it can be read back or undone.
+        assert retag[0]["old_value"]["model"] == "CARENS"
+        assert retag[0]["new_value"]["model"] == "Carens"
+        assert retag[0]["actor_id"] is not None

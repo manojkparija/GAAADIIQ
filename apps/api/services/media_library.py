@@ -111,6 +111,9 @@ async def store_image(
     category: str | None = None,
     dedupe: bool = True,
     authoritative: bool = False,
+    actor_id: uuid.UUID | None = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
 ) -> VehicleMedia:
     """
     Store one image in the library and return its row, reusing an existing row
@@ -133,6 +136,13 @@ async def store_image(
     Only fields the caller actually supplies are overwritten; passing None still
     leaves what is there, because saying nothing is not the same as saying
     "empty".
+
+    `actor_id`, `ip_address` and `user_agent` identify who is doing this. They
+    are recorded on both the audit entry and the version entry, including on a
+    deduplicated re-upload — which is the case that mattered and was missing.
+    A re-upload can move an image from one vehicle to another, and that left no
+    trace at all: the audit table knew an upload had happened once, long ago,
+    and had never known who did it.
     """
     content_hash = __import__("hashlib").sha256(data).hexdigest()
     phash = pdf_ingest.perceptual_hash(data)
@@ -140,6 +150,9 @@ async def store_image(
     if dedupe:
         existing = await _find_exact(db, content_hash) or await _find_near(db, phash)
         if existing is not None:
+            identity = ("make", "model", "variant", "model_year", "category")
+            before = {f: getattr(existing, f) for f in identity}
+
             if authoritative:
                 existing.make = make or existing.make
                 existing.model = model or existing.model
@@ -152,6 +165,38 @@ async def store_image(
                 existing.variant = existing.variant or variant
                 existing.model_year = existing.model_year or model_year
                 existing.category = existing.category or category
+
+            after = {f: getattr(existing, f) for f in identity}
+            changed = {f: after[f] for f in identity if before[f] != after[f]}
+
+            # A re-upload that moves an image onto a different vehicle is a
+            # material change to what a buyer sees, so it belongs in the
+            # version history with both sides of it.
+            if changed:
+                await record_version(
+                    db,
+                    media_id=existing.id,
+                    event_type=MediaEventType.METADATA_UPDATED,
+                    actor_id=actor_id,
+                    old_value={f: before[f] for f in changed},
+                    new_value=changed,
+                )
+
+            # Audited whether or not anything changed: that this person
+            # uploaded this file at this moment is the fact being recorded.
+            await log_audit(
+                db,
+                media_id=existing.id,
+                action=AuditAction.UPLOAD,
+                actor_id=actor_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                audit_data={
+                    "filename": source_name,
+                    "deduplicated": True,
+                    "retagged": sorted(changed) or None,
+                },
+            )
             return existing
 
     storage = get_storage()
@@ -214,6 +259,7 @@ async def store_image(
         db,
         media_id=row.id,
         event_type=MediaEventType.CREATED,
+        actor_id=actor_id,
         new_value={
             "make": make,
             "model": model,
@@ -229,6 +275,9 @@ async def store_image(
         db,
         media_id=row.id,
         action=AuditAction.UPLOAD,
+        actor_id=actor_id,
+        ip_address=ip_address,
+        user_agent=user_agent,
         audit_data={
             "filename": source_name,
             "size_bytes": obj.size_bytes,
