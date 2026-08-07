@@ -50,12 +50,22 @@
 
         @if (selectedFiles().length) {
           <div class="aci-selected-files">
-            <div class="aci-files-title">📁 {{ selectedFiles().length }} file(s) selected</div>
+            <div class="aci-files-title">
+              📁 {{ selectedFiles().length }} file(s) selected
+              <button type="button" class="aci-file-clear" (click)="clearFiles()">Clear all</button>
+            </div>
+            <div class="aci-hint">
+              Picking or dropping more images adds to this list — you do not
+              have to choose them all in one go.
+            </div>
             <div class="aci-files-list">
-              @for (file of selectedFiles(); track file.name) {
+              @for (file of selectedFiles(); track file.name + ':' + file.size) {
                 <div class="aci-file-item">
                   <span class="aci-file-name">{{ file.name }}</span>
                   <span class="aci-file-size">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
+                  <button type="button" class="aci-file-remove"
+                          [attr.aria-label]="'Remove ' + file.name"
+                          (click)="removeFile(file)">✕</button>
                 </div>
               }
             </div>

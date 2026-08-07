@@ -274,9 +274,24 @@ export class AdminCarImagesComponent implements OnInit {
     input.value = '';
   }
 
+  /**
+   * Browsers do not always know what a HEIC or TIFF is.
+   *
+   * The file picker offers them — `accept` lists both — but Chrome reports an
+   * empty `type` for a .heic on most platforms, so filtering on `type` alone
+   * threw away exactly the files the picker had just invited. Fall back to the
+   * extension when the browser has no opinion.
+   */
+  private readonly imageExtensions = /\.(jpe?g|png|webp|gif|bmp|heic|heif|tiff?|avif)$/i;
+
+  private isImage(file: File): boolean {
+    return file.type
+      ? file.type.startsWith('image/')
+      : this.imageExtensions.test(file.name);
+  }
+
   private handleFiles(files: File[]) {
-    // Filter for images only
-    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const imageFiles = files.filter(f => this.isImage(f));
     if (imageFiles.length === 0) {
       this.toast('❌ No image files selected. Please choose JPEG, PNG, WebP, HEIC, or TIFF.');
       return;
@@ -284,8 +299,29 @@ export class AdminCarImagesComponent implements OnInit {
     if (imageFiles.length < files.length) {
       this.toast(`⚠ ${files.length - imageFiles.length} non-image file(s) excluded`);
     }
-    this.selectedFiles.set(imageFiles);
+
+    // Add to the selection rather than replace it. Fifteen photographs of one
+    // car rarely arrive in a single gesture — some are dragged, some picked,
+    // some remembered afterwards — and replacing silently discarded whatever
+    // had been gathered so far. Identity is name plus size: the same file
+    // offered twice is the same file, not two.
+    const existing = this.selectedFiles();
+    const seen = new Set(existing.map(f => `${f.name}:${f.size}`));
+    const added = imageFiles.filter(f => !seen.has(`${f.name}:${f.size}`));
+    const duplicates = imageFiles.length - added.length;
+    if (duplicates) {
+      this.toast(`⚠ ${duplicates} file(s) already selected`);
+    }
+    this.selectedFiles.set([...existing, ...added]);
     // Don't show grid yet - let user click "Inspect" first
+  }
+
+  removeFile(file: File) {
+    this.selectedFiles.set(this.selectedFiles().filter(f => f !== file));
+  }
+
+  clearFiles() {
+    this.selectedFiles.set([]);
   }
 
   async inspectFiles() {
