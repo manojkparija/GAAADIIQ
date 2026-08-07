@@ -110,6 +110,7 @@ async def store_image(
     model_year: int | None = None,
     category: str | None = None,
     dedupe: bool = True,
+    authoritative: bool = False,
 ) -> VehicleMedia:
     """
     Store one image in the library and return its row, reusing an existing row
@@ -119,6 +120,19 @@ async def store_image(
     knows the variant a photograph belongs to more precisely than a dealer
     listing does, and the first caller to supply a field should not have it
     overwritten by a later, vaguer one.
+
+    `authoritative` reverses that for a caller who is stating the vehicle rather
+    than inferring it — an admin choosing it on a form. The rule above assumes
+    every caller is guessing, so the first guess stuck permanently: an image
+    first stored under a typed "SPRESSO" kept that name when the same file was
+    re-uploaded against the catalogue's "S-Presso", and since an image finds its
+    car by make, model and year, it then belonged to no car at all. Correcting
+    the mistake by uploading the right thing could not work, which is the one
+    repair an admin would reasonably expect to.
+
+    Only fields the caller actually supplies are overwritten; passing None still
+    leaves what is there, because saying nothing is not the same as saying
+    "empty".
     """
     content_hash = __import__("hashlib").sha256(data).hexdigest()
     phash = pdf_ingest.perceptual_hash(data)
@@ -126,11 +140,18 @@ async def store_image(
     if dedupe:
         existing = await _find_exact(db, content_hash) or await _find_near(db, phash)
         if existing is not None:
-            existing.make = existing.make or make
-            existing.model = existing.model or model
-            existing.variant = existing.variant or variant
-            existing.model_year = existing.model_year or model_year
-            existing.category = existing.category or category
+            if authoritative:
+                existing.make = make or existing.make
+                existing.model = model or existing.model
+                existing.variant = variant or existing.variant
+                existing.model_year = model_year or existing.model_year
+                existing.category = category or existing.category
+            else:
+                existing.make = existing.make or make
+                existing.model = existing.model or model
+                existing.variant = existing.variant or variant
+                existing.model_year = existing.model_year or model_year
+                existing.category = existing.category or category
             return existing
 
     storage = get_storage()

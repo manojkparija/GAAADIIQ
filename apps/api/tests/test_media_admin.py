@@ -470,3 +470,82 @@ class TestCatalogueEntrySuite:
         assert any("advertising" in w for w in warnings), warnings
         # Not blamed on the price: a used image does not need one.
         assert not any("ex-showroom" in w for w in warnings), warnings
+
+
+class TestReuploadCorrectsIdentitySuite:
+    """
+    An admin re-uploading a file to fix its metadata must fix it.
+
+    Images find their car by make, model and year. Deduplication kept the tags
+    of whichever upload arrived first, so a photograph first stored under a
+    typed "SPRESSO" kept that name when the same file was uploaded again
+    against the catalogue's "S-Presso" — and thereafter matched no car at all.
+    Uploading the right thing is the obvious repair, and it silently did
+    nothing.
+    """
+
+    @pytest.mark.asyncio
+    async def test_a_reupload_replaces_a_mistyped_model(self, client):
+        image = _png((11, 22, 33))
+
+        # As it was typed by hand, before the catalogue offered the name.
+        await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "SPRESSO",
+                  "model_year": "2026", "media_bucket": "new",
+                  "ex_showroom_price": "525000"},
+            files=[("files", ("spresso.png", io.BytesIO(image), "image/png"))],
+        )
+
+        # The same file again, this time against the catalogue's spelling.
+        resp = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "S-Presso",
+                  "model_year": "2026", "media_bucket": "new",
+                  "ex_showroom_price": "525000"},
+            files=[("files", ("spresso.png", io.BytesIO(image), "image/png"))],
+        )
+
+        assert resp.status_code == 201
+        # Deduplicated, so the file is stored once — and re-tagged, so it now
+        # belongs to the model the admin named.
+        assert resp.json()["images"][0]["model"] == "S-Presso"
+
+    @pytest.mark.asyncio
+    async def test_the_corrected_image_reaches_its_car(self, client):
+        image = _png((44, 55, 66))
+        for model in ("BALENOO", "Baleno"):
+            await client.post(
+                "/media-admin/upload",
+                data={**VEHICLE, "make": "Maruti Suzuki", "model": model,
+                      "model_year": "2026", "media_bucket": "new",
+                      "ex_showroom_price": "749000"},
+                files=[("files", ("baleno.png", io.BytesIO(image), "image/png"))],
+            )
+
+        resp = await client.get("/cars?bucket=new&priced_only=true")
+
+        baleno = next(c for c in resp.json()["items"] if c["model"] == "Baleno")
+        # The point of the re-upload: the photograph is on the car, not
+        # stranded under a name nothing references.
+        assert baleno["image_urls"], "the corrected image did not reach its car"
+
+    @pytest.mark.asyncio
+    async def test_an_omitted_field_does_not_erase_what_is_there(self, client):
+        """Saying nothing is not the same as saying "empty"."""
+        image = _png((77, 88, 99))
+        await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Tata", "model": "Punch",
+                  "model_year": "2026", "variant": "Adventure",
+                  "media_bucket": "new", "ex_showroom_price": "700000"},
+            files=[("files", ("punch.png", io.BytesIO(image), "image/png"))],
+        )
+        resp = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Tata", "model": "Punch",
+                  "model_year": "2026", "media_bucket": "new"},
+            files=[("files", ("punch.png", io.BytesIO(image), "image/png"))],
+        )
+
+        assert resp.json()["images"][0]["variant"] == "Adventure"
