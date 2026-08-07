@@ -84,6 +84,20 @@
         @if (uploadError()) {
           <div class="aci-error">{{ uploadError() }}</div>
         }
+
+        <!--
+          Why a stored image is not where the admin is about to look for it.
+          On the page rather than only in a toast: the toast goes away, and
+          this is the part that says what to do next.
+        -->
+        @if (catalogueWarnings().length) {
+          <div class="aci-warning">
+            <strong>Uploaded, but not visible yet:</strong>
+            <ul>
+              @for (w of catalogueWarnings(); track w) { <li>{{ w }}</li> }
+            </ul>
+          </div>
+        }
       </div>
     }
 

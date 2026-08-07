@@ -57,6 +57,10 @@ export class AdminCarImagesComponent implements OnInit {
   uploadProgress = signal(0);
   uploadError = signal('');
   uploadResults = signal<UploadResult | null>(null);
+  // Why the upload will not be visible yet. Held in state rather than only
+  // toasted, because a toast disappears and the reason is what the admin needs
+  // while deciding what to do next.
+  catalogueWarnings = signal<string[]>([]);
 
   // Form state - shared across all files in batch
   make = signal('');
@@ -361,8 +365,13 @@ export class AdminCarImagesComponent implements OnInit {
 
       // A stored image that no page can show is the failure this screen used to
       // hide, so say it out loud rather than reporting an unqualified success.
-      if (result.catalogue_warning) {
-        this.toast(`⚠️ ${result.catalogue_warning}`);
+      // Kept on screen rather than only toasted: these explain why a
+      // photograph is not where the admin is about to go looking for it, which
+      // is worth reading after the toast has gone.
+      const warnings: string[] = result.catalogue_warnings ?? [];
+      this.catalogueWarnings.set(warnings);
+      if (warnings.length) {
+        this.toast(`⚠️ ${warnings[0]}`);
       }
 
       if (result.errors.length > 0) {
@@ -523,6 +532,9 @@ interface SuggestedMetadata {
 }
 
 interface UploadResult {
+  catalogue_car_id?: string | null;
+  catalogue_car_created?: boolean;
+  catalogue_warnings?: string[];
   stored: number;
   deduplicated: number;
   rejected: number;
