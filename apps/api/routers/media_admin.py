@@ -419,6 +419,11 @@ async def upload_images(
                 make=make, model=model,
                 variant=variant or hint.variant,
                 model_year=model_year, category=category,
+                # The admin is stating what this vehicle is, not guessing, so
+                # their answer replaces whatever an earlier upload recorded.
+                # Without this, re-uploading a file to correct its identity is
+                # a no-op, and an image mis-tagged once stays lost forever.
+                authoritative=True,
             )
         except StorageError as exc:
             result.rejected += 1
