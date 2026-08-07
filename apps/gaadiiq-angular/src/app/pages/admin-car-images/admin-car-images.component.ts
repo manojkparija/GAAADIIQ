@@ -217,27 +217,41 @@ export class AdminCarImagesComponent implements OnInit {
    * to a model rather than a trim and the catalogue lookup ignores variant for
    * the same reason.
    */
-  modelIsKnown = computed(() => {
+  private matchingCatalogueEntries = computed(() => {
     const year = this.modelYear();
-    if (!this.make() || !this.model() || !year) return false;
-    return this.catalogue().some(
+    if (!this.make() || !this.model() || !year) return [];
+    return this.catalogue().filter(
       o => o.make === this.make() && o.model === this.model() && o.year === year
     );
   });
 
+  modelIsKnown = computed(() => this.matchingCatalogueEntries().length > 0);
+
   /**
-   * Ask for a price only when this upload would introduce a model the
-   * catalogue has never held.
+   * Whether this model already carries a price.
+   *
+   * Not the same question as whether the catalogue knows it. New Cars renders
+   * only priced models, so an entry with a null price is one no buyer will
+   * ever see — and an upload against it succeeds, returns 201, and disappears.
+   */
+  modelHasPrice = computed(() =>
+    this.matchingCatalogueEntries().some(o => o.ex_showroom_price != null)
+  );
+
+  /**
+   * Ask for a price when this upload would otherwise land on a model that no
+   * New Cars page will show.
    *
    * A price belongs to a vehicle, not to a photograph, and the pricing screen
    * is where one is set and revised. Asking on every upload put a money field
    * in front of an admin doing something else entirely, fifteen times over for
-   * fifteen pictures of one car — and implied the price was a property of the
-   * images. It is still asked for a genuinely new model, because that is the
-   * moment the alternative is a catalogue entry no page will show.
+   * fifteen pictures of one car. But "the catalogue knows this model" was the
+   * wrong test for skipping it: a model can be known and unpriced, and then
+   * the upload is stored against a row New Cars filters out — success by every
+   * signal the screen gives, and invisible.
    */
   needsPrice = computed(() =>
-    ['new', 'both'].includes(this.mediaBucket()) && !this.modelIsKnown()
+    ['new', 'both'].includes(this.mediaBucket()) && !this.modelHasPrice()
   );
   variant = signal('');
   colour = signal('');
@@ -602,6 +616,8 @@ interface CatalogueOption {
   model: string;
   variant: string | null;
   year: number;
+  /** Null when the catalogue holds this model but no price for it. */
+  ex_showroom_price?: number | null;
 }
 
 interface SuggestedMetadata {

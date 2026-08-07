@@ -182,7 +182,7 @@ import { computeOnRoadPrice } from '../../utils/on-road-price';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
-import { SentimentService } from '../../services/sentiment.service';
+import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentiment.service';
 
 @Component({
   selector: 'app-car-detail',
@@ -463,7 +463,7 @@ export class CarDetailComponent implements OnInit {
     if (!buyerId) return;
     const seller = await this.sellersSvc.getForCar(this.car.id).catch(() => null);
     if (!seller?.email) return;
-    this.sentimentSvc.trackPublic(seller.email, buyerId, 'listing_view');
+    this.sentimentSvc.trackPublic(seller.email, buyerId, 'listing_view', BUYER_TRACKING_CONSENT);
   }
 
   private async _trackEnquiry(): Promise<void> {
@@ -471,7 +471,7 @@ export class CarDetailComponent implements OnInit {
     if (!buyerId) return;
     const seller = await this.sellersSvc.getForCar(this.car.id).catch(() => null);
     if (!seller?.email) return;
-    this.sentimentSvc.trackPublic(seller.email, buyerId, 'enquiry');
+    this.sentimentSvc.trackPublic(seller.email, buyerId, 'enquiry', BUYER_TRACKING_CONSENT);
   }
 
   constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService) {

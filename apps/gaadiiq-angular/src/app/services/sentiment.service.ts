@@ -53,6 +53,15 @@ export interface SentimentSummary {
   analysed_today: number;
 }
 
+/**
+ * Whether a buyer has agreed to have their activity reported to a dealer.
+ *
+ * There is no consent prompt in the application yet, so the honest answer is
+ * no, everywhere. Flip this to the prompt's answer when one exists — one
+ * constant so the answer cannot drift between the screens that report.
+ */
+export const BUYER_TRACKING_CONSENT = false;
+
 export type ActivityType =
   | 'listing_view' | 'search' | 'enquiry' | 'test_drive_request'
   | 'loan_inquiry' | 'price_alert' | 'whatsapp_click' | 'photo_view'
@@ -125,18 +134,35 @@ export class SentimentService {
     }
   }
 
+  /**
+   * Record a buyer's activity for a dealer — only where the buyer has agreed
+   * to it.
+   *
+   * The endpoint requires an explicit consent flag (MOB-032) and rejects the
+   * request without one. This client never sent it, so every call returned 422
+   * and the caller swallowed the failure: the server logged a steady stream of
+   * rejected requests, no activity was ever recorded, and nothing said so.
+   *
+   * Passing `consent: true` unconditionally would fix the log and forge the
+   * agreement. There is no consent prompt in this application yet, so there is
+   * nothing truthful to send — and until there is, the honest request is no
+   * request. When a prompt exists, pass its answer here.
+   */
   async trackPublic(
     dealerEmail: string,
     buyerId: string,
     activityType: ActivityType,
+    consent: boolean,
     durationSeconds?: number,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
+    if (!consent) return;
     try {
       await this.http.post(`${this.api}/track-public`, {
         dealer_email: dealerEmail,
         buyer_id: buyerId,
         activity_type: activityType,
+        consent,
         duration_seconds: durationSeconds,
         metadata,
       }).toPromise();

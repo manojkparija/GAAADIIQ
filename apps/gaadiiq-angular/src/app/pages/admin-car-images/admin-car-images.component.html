@@ -340,8 +340,14 @@
                 (ngModelChange)="exShowroomPrice.set($event)" />
               <small class="aci-hint">
                 @if (needsPrice()) {
-                  This model is not in the catalogue yet. New Cars pages only
-                  show priced models, so a price is needed to list it.
+                  @if (modelIsKnown()) {
+                    This model is in the catalogue but has no price, so New Cars
+                    does not show it — and images uploaded against it stay
+                    invisible. Give it a price here to list it.
+                  } @else {
+                    This model is not in the catalogue yet. New Cars pages only
+                    show priced models, so a price is needed to list it.
+                  }
                   On-road price is calculated from it — that varies by state,
                   so it is not stored.
                 } @else {

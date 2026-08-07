@@ -182,8 +182,45 @@ class TestCatalogueOptionsSuite:
         resp = await client.get("/cars/catalogue/options")
 
         assert resp.status_code == 200
-        assert {"make": "Maruti Suzuki", "model": "Dzire",
-                "variant": "ZXi", "year": 2026} in resp.json()["items"]
+        assert {"make": "Maruti Suzuki", "model": "Dzire", "variant": "ZXi",
+                "year": 2026, "ex_showroom_price": None} in resp.json()["items"]
+
+    @pytest.mark.asyncio
+    async def test_an_option_says_whether_the_model_has_a_price(self, client: AsyncClient):
+        """
+        "The catalogue knows this model" and "a buyer will see it" are
+        different facts. New Cars renders only priced models, so an upload
+        against a known-but-unpriced model succeeds, returns 201, and is never
+        shown. The upload screen decides whether to ask for a price from this
+        field; without it, it could only ask whether the model was known.
+        """
+        token = await _token(client, "options-price@test.com")
+        await _create_car(client, token, make="Hyundai", model="Exter",
+                          variant="SX", year=2026, ex_showroom_price="812000")
+        await _create_car(client, token, make="Hyundai", model="Venue",
+                          variant="S", year=2026)
+
+        items = (await client.get("/cars/catalogue/options")).json()["items"]
+
+        priced = next(i for i in items if i["model"] == "Exter")
+        unpriced = next(i for i in items if i["model"] == "Venue")
+        assert priced["ex_showroom_price"] == 812000
+        assert unpriced["ex_showroom_price"] is None
+
+    @pytest.mark.asyncio
+    async def test_a_priced_row_makes_the_identity_priced(self, client: AsyncClient):
+        """One priced row is enough: the model is listable."""
+        token = await _token(client, "options-price2@test.com")
+        await _create_car(client, token, make="Kia", model="Sonet",
+                          variant="HTK", year=2026)
+        await _create_car(client, token, make="Kia", model="Sonet",
+                          variant="HTK", year=2026, ex_showroom_price="900000")
+
+        items = (await client.get("/cars/catalogue/options")).json()["items"]
+
+        sonets = [i for i in items if i["model"] == "Sonet"]
+        assert len(sonets) == 1, "the identity is still offered once"
+        assert sonets[0]["ex_showroom_price"] == 900000
 
     @pytest.mark.asyncio
     async def test_the_same_identity_is_offered_once(self, client: AsyncClient):
