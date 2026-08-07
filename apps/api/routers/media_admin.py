@@ -31,6 +31,7 @@ from core.dependencies import get_admin_user
 from core.limiter import limiter
 from db.session import get_db
 from models.car import BodyType, Car, FuelType, Transmission
+from models.listing import Listing
 from models.media_audit import AuditAction
 from models.media_version import MediaEventType
 from models.user import User
@@ -103,10 +104,15 @@ class UploadResult(BaseModel):
     catalogue_car_id: UUID | None = None
     #: True when this upload is the reason that row exists.
     catalogue_car_created: bool = False
-    #: Set when the model has no ex-showroom price, which keeps it off the New
-    #: Cars pages. The screen shows this so the omission is visible at upload
-    #: time rather than discovered later as an empty catalogue.
-    catalogue_warning: str | None = None
+    #: Reasons this upload will not be visible to a buyer yet — no price for a
+    #: New Cars image, no advert for a Used Cars one. Plural because a "both"
+    #: upload can hit each for a different reason, and reporting one while
+    #: staying silent about the other is how an admin fixes half a problem and
+    #: still finds an empty page.
+    #:
+    #: Reported at upload time rather than discovered by looking at a page that
+    #: does not show the photograph and gives no reason.
+    catalogue_warnings: list[str] = []
 
 
 class MetadataPatch(BaseModel):
@@ -487,12 +493,36 @@ async def upload_images(
         )
         result.catalogue_car_id = car.id
         result.catalogue_car_created = created
+        vehicle = f"{make} {model} {model_year}"
+
         if car.ex_showroom_price is None and chosen_bucket in ("new", "both"):
-            result.catalogue_warning = (
-                f"{make} {model} {model_year} has no ex-showroom price, so it "
-                "will not appear on the New Cars pages. Add one here or on the "
-                "pricing screen."
+            result.catalogue_warnings.append(
+                f"{vehicle} has no ex-showroom price, so it will not appear on "
+                "the New Cars pages. Add one here or on the pricing screen."
             )
+
+        # Used Cars is built from listings — one seller's advert for one
+        # vehicle — and not from the catalogue, because a used car a buyer can
+        # act on is an advert someone has placed. A catalogue model has no
+        # mileage, no owner history and no asking price, so showing one there
+        # would offer a vehicle nobody is actually selling.
+        #
+        # That makes a Used Cars image invisible until such an advert exists,
+        # which is not obvious from a screen whose "Show On" control implies
+        # the choice is enough on its own.
+        if chosen_bucket in ("used", "both"):
+            advertised = await db.scalar(
+                select(func.count())
+                .select_from(Listing)
+                .where(Listing.car_id == car.id, Listing.listing_type == "used")
+            )
+            if not advertised:
+                result.catalogue_warnings.append(
+                    f"Nobody is advertising a used {vehicle}, so this image has "
+                    "nothing to appear on. Used Cars shows sellers' adverts, "
+                    "not the catalogue — the image is stored against the model "
+                    "and will appear on the first used listing for it."
+                )
 
     await db.commit()
 

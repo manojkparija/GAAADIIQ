@@ -379,7 +379,7 @@ class TestCatalogueEntrySuite:
         assert body["catalogue_car_id"] is not None
         assert body["catalogue_car_created"] is True
         # Priced, so nothing keeps it off the New Cars pages.
-        assert body["catalogue_warning"] is None
+        assert body["catalogue_warnings"] == []
 
     @pytest.mark.asyncio
     async def test_the_created_model_reaches_the_new_cars_catalogue(self, client):
@@ -410,7 +410,7 @@ class TestCatalogueEntrySuite:
         assert resp.status_code == 201
         # Stored, but invisible — and the response says so rather than
         # reporting an unqualified success.
-        assert "New Cars" in resp.json()["catalogue_warning"]
+        assert any("New Cars" in w for w in resp.json()["catalogue_warnings"])
 
     @pytest.mark.asyncio
     async def test_a_second_upload_reuses_the_same_catalogue_model(self, client):
@@ -444,7 +444,29 @@ class TestCatalogueEntrySuite:
             files=[("files", ("fronx-b.png", io.BytesIO(_png((9, 8, 7))), "image/png"))],
         )
 
-        assert resp.json()["catalogue_warning"] is None
+        assert resp.json()["catalogue_warnings"] == []
         cars = await client.get("/cars?priced_only=true")
         prices = {c["model"]: c["ex_showroom_price"] for c in cars.json()["items"]}
         assert prices.get("Fronx") is not None
+
+
+    @pytest.mark.asyncio
+    async def test_a_used_cars_upload_says_it_has_nothing_to_appear_on(self, client):
+        """
+        Used Cars is built from listings — one seller's advert for one vehicle —
+        not from the catalogue, because a used car a buyer can act on is an
+        advert somebody placed. So a Used Cars image is invisible until such an
+        advert exists, which the Show On control does not suggest.
+        """
+        resp = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "S-Presso",
+                  "model_year": "2026", "media_bucket": "used"},
+            files=[("files", ("spresso-used.png", io.BytesIO(_png((3, 9, 27))), "image/png"))],
+        )
+
+        assert resp.status_code == 201
+        warnings = resp.json()["catalogue_warnings"]
+        assert any("advertising" in w for w in warnings), warnings
+        # Not blamed on the price: a used image does not need one.
+        assert not any("ex-showroom" in w for w in warnings), warnings
