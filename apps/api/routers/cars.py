@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -76,6 +77,52 @@ async def list_cars(
         items.append(out)
 
     return CarListOut(items=items, total=total, page=page, page_size=page_size)
+
+
+class CatalogueOption(BaseModel):
+    """One vehicle identity the catalogue already knows."""
+
+    make: str
+    model: str
+    variant: str | None = None
+    year: int
+
+
+class CatalogueOptions(BaseModel):
+    items: list[CatalogueOption]
+
+
+# Declared before /{car_id}: that route parses its path segment as a UUID, so
+# "options" would be rejected as malformed rather than reaching this.
+@router.get("/catalogue/options", response_model=CatalogueOptions)
+async def catalogue_options(db: AsyncSession = Depends(get_db)):
+    """
+    Every make, model, variant and year the catalogue already holds.
+
+    The admin upload screen types these four fields by hand, which is how the
+    catalogue ends up holding "Maruti" and "Maruti Suzuki" as different
+    manufacturers, and how a photograph misses the model it belongs to by a
+    stray space. Offering what already exists makes the common case a choice
+    rather than a spelling.
+
+    Flat rather than nested: the caller cascades one list four ways, and a
+    nested shape would have to be rebuilt into that anyway.
+
+    Deliberately unauthenticated in the same way the catalogue itself is — it
+    exposes nothing a buyer cannot already read from /cars.
+    """
+    result = await db.execute(
+        select(Car.make, Car.model, Car.variant, Car.year)
+        .where(Car.make.is_not(None), Car.model.is_not(None))
+        .distinct()
+        .order_by(Car.make, Car.model, Car.variant, Car.year)
+    )
+    return CatalogueOptions(
+        items=[
+            CatalogueOption(make=make, model=model, variant=variant, year=year)
+            for make, model, variant, year in result.all()
+        ]
+    )
 
 
 @router.get("/{car_id}", response_model=CarOut)

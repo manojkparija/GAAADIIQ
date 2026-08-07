@@ -66,6 +66,100 @@ export class AdminCarImagesComponent implements OnInit {
   fuelType = signal('');
   transmission = signal('');
   imageCategory = signal(''); // exterior_front, interior_dashboard, etc.
+  // ── Catalogue-driven identity pickers ────────────────────────────────────
+  //
+  // Make, model, variant and year were four free-text boxes, which is how the
+  // catalogue ends up holding "Maruti" and "Maruti Suzuki" as different
+  // manufacturers, and how a photograph misses the model it belongs to by a
+  // stray space — an image matches its car on exactly these fields.
+  //
+  // Each is a dropdown of what the catalogue already holds, cascading so the
+  // models offered belong to the chosen make. Each also keeps a way to type a
+  // new value: a pure dropdown could never add a model the catalogue has not
+  // seen, which is precisely what an admin photographing a new launch is doing.
+  catalogue = signal<CatalogueOption[]>([]);
+
+  makeOptions = computed(() =>
+    [...new Set(this.catalogue().map(o => o.make))].sort()
+  );
+  modelOptions = computed(() =>
+    [...new Set(
+      this.catalogue().filter(o => o.make === this.make()).map(o => o.model)
+    )].sort()
+  );
+  variantOptions = computed(() =>
+    [...new Set(
+      this.catalogue()
+        .filter(o => o.make === this.make() && o.model === this.model())
+        .map(o => o.variant)
+        .filter((v): v is string => !!v)
+    )].sort()
+  );
+  yearOptions = computed(() =>
+    [...new Set(
+      this.catalogue()
+        .filter(o => o.make === this.make() && o.model === this.model())
+        .map(o => o.year)
+    )].sort((a, b) => b - a)
+  );
+
+  // Whether each field is being typed rather than chosen. Set when the admin
+  // picks "Add new…", and forced on when the catalogue offers nothing to pick.
+  customMake = signal(false);
+  customModel = signal(false);
+  customVariant = signal(false);
+  customYear = signal(false);
+
+  /** Sentinel option value meaning "let me type one". */
+  readonly ADD_NEW = '__add_new__';
+
+  /**
+   * Handle a pick from one of the identity dropdowns.
+   *
+   * Choosing a make invalidates the model below it, and so on down: leaving a
+   * Nexon selected under Maruti Suzuki would upload the photograph against a
+   * vehicle that does not exist.
+   */
+  onIdentityPick(field: 'make' | 'model' | 'variant' | 'year', value: string) {
+    const custom = value === this.ADD_NEW;
+
+    if (field === 'make') {
+      this.customMake.set(custom);
+      this.make.set(custom ? '' : value);
+      this.model.set(''); this.customModel.set(false);
+      this.variant.set(''); this.customVariant.set(false);
+      this.modelYear.set(null); this.customYear.set(false);
+    } else if (field === 'model') {
+      this.customModel.set(custom);
+      this.model.set(custom ? '' : value);
+      this.variant.set(''); this.customVariant.set(false);
+      this.modelYear.set(null); this.customYear.set(false);
+    } else if (field === 'variant') {
+      this.customVariant.set(custom);
+      this.variant.set(custom ? '' : value);
+    } else {
+      this.customYear.set(custom);
+      this.modelYear.set(custom ? null : Number(value));
+    }
+  }
+
+  /** Load the identities the catalogue already knows, for the dropdowns. */
+  private async loadCatalogueOptions() {
+    try {
+      const resp = await fetch(`${this.apiUrl}/cars/catalogue/options`);
+      if (!resp.ok) throw new Error(`${resp.status}`);
+      this.catalogue.set((await resp.json()).items ?? []);
+    } catch (err) {
+      // A catalogue that cannot be listed must not block an upload — the
+      // fields simply fall back to being typed, which is what they were.
+      console.error('Catalogue options unavailable, falling back to free text:', err);
+      this.catalogue.set([]);
+      this.customMake.set(true);
+      this.customModel.set(true);
+      this.customYear.set(true);
+    }
+  }
+
   // Which catalogue surface this image serves: 'new', 'used' or 'both'.
   // Starts empty and is mandatory, so the admin makes the choice deliberately
   // rather than inheriting the API's "both" default without noticing.
@@ -90,6 +184,7 @@ export class AdminCarImagesComponent implements OnInit {
     if (!this.auth.isAdmin()) {
       this.toast('Admin access required');
     }
+    this.loadCatalogueOptions();
   }
 
   @HostListener('dragover', ['$event']) onDragOver(e: DragEvent) {
@@ -392,6 +487,14 @@ export class AdminCarImagesComponent implements OnInit {
   startOver() {
     this.resetForm();
   }
+}
+
+/** One vehicle identity the catalogue already holds. */
+interface CatalogueOption {
+  make: string;
+  model: string;
+  variant: string | null;
+  year: number;
 }
 
 interface SuggestedMetadata {
