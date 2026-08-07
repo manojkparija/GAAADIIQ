@@ -312,6 +312,41 @@ export class CarsDataService {
     }
   }
 
+  /**
+   * Fetch every page of a paginated source, not just the first.
+   *
+   * The API caps page_size at 100 and orders the catalogue by make, so asking
+   * for one page of 100 quietly published an alphabetical prefix of it. With
+   * ~155 models, everything from Maruti Suzuki onwards was missing from New
+   * Cars — a car could be priced, photographed and correct, and still never
+   * appear, because Honda through Mahindra had used up the page.
+   *
+   * A truncated catalogue is worse than a slow one: nothing about the page
+   * says a model is absent, so the fault looks like a broken upload.
+   *
+   * `total` bounds the loop, and a short page ends it early, so a source that
+   * miscounts cannot spin forever.
+   */
+  private async fetchAllPages<T extends { items: unknown[]; total: number }>(
+    url: string,
+  ): Promise<T | null> {
+    const PAGE_SIZE = 100;
+    const MAX_PAGES = 50;  // 5,000 models, well past any real catalogue.
+    const sep = url.includes('?') ? '&' : '?';
+
+    const first = await this.fetchOrNull<T>(`${url}${sep}page=1&page_size=${PAGE_SIZE}`);
+    if (!first) return null;
+
+    const items = [...first.items];
+    for (let page = 2; items.length < (first.total ?? 0) && page <= MAX_PAGES; page++) {
+      const next = await this.fetchOrNull<T>(`${url}${sep}page=${page}&page_size=${PAGE_SIZE}`);
+      if (!next?.items?.length) break;  // A failed or empty page ends it.
+      items.push(...next.items);
+    }
+
+    return { ...first, items } as T;
+  }
+
   private async load() {
     this.loading.set(true);
     try {
@@ -321,19 +356,19 @@ export class CarsDataService {
       // they are built from had answered perfectly well. A source that fails
       // now costs only its own rows.
       const [newResp, usedResp, catalogueResp] = await Promise.all([
-        this.fetchOrNull<ApiListResponse>(
-          `${this.apiUrl}/listings?listing_type=new&page_size=100`
+        this.fetchAllPages<ApiListResponse>(
+          `${this.apiUrl}/listings?listing_type=new`
         ),
-        this.fetchOrNull<ApiListResponse>(
-          `${this.apiUrl}/listings?listing_type=used&page_size=100`
+        this.fetchAllPages<ApiListResponse>(
+          `${this.apiUrl}/listings?listing_type=used`
         ),
         // The catalogue of manufacturer models, which is where admin-uploaded
         // photography lands. Without this the New Cars pages could only show
         // models some seller had happened to advertise, so an uploaded image
         // had no route to a buyer. priced_only keeps models nobody has priced
         // out of a grid that sorts and filters on price.
-        this.fetchOrNull<ApiCarListResponse>(
-          `${this.apiUrl}/cars?bucket=new&priced_only=true&page_size=100`
+        this.fetchAllPages<ApiCarListResponse>(
+          `${this.apiUrl}/cars?bucket=new&priced_only=true`
         ),
       ]);
 

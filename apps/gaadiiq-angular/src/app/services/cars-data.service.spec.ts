@@ -33,9 +33,11 @@ describe('CarsDataService — one failing source', () => {
   let http: HttpTestingController;
 
   const urls = {
-    new: `${environment.apiUrl}/listings?listing_type=new&page_size=100`,
-    used: `${environment.apiUrl}/listings?listing_type=used&page_size=100`,
-    catalogue: `${environment.apiUrl}/cars?bucket=new&priced_only=true&page_size=100`,
+    // page=1 is explicit now: the catalogue is fetched page by page, because
+    // the API caps a page at 100 and a longer catalogue was silently truncated.
+    new: `${environment.apiUrl}/listings?listing_type=new&page=1&page_size=100`,
+    used: `${environment.apiUrl}/listings?listing_type=used&page=1&page_size=100`,
+    catalogue: `${environment.apiUrl}/cars?bucket=new&priced_only=true&page=1&page_size=100`,
   };
 
   beforeEach(() => {
