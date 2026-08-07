@@ -143,17 +143,32 @@ export class AdminCarImagesComponent implements OnInit {
     }
   }
 
+  /**
+   * Why the identity fields are text boxes rather than dropdowns, when they
+   * are.
+   *
+   * Falling back silently is indistinguishable from the feature never having
+   * shipped, and the two causes call for different actions: an empty catalogue
+   * is normal and the admin should simply type the first entry, while an
+   * unreachable one means the API is down or behind and the catalogue this
+   * upload creates may not be the one they expect.
+   */
+  catalogueStatus = signal<'ok' | 'empty' | 'unavailable'>('ok');
+
   /** Load the identities the catalogue already knows, for the dropdowns. */
   private async loadCatalogueOptions() {
     try {
       const resp = await fetch(`${this.apiUrl}/cars/catalogue/options`);
-      if (!resp.ok) throw new Error(`${resp.status}`);
-      this.catalogue.set((await resp.json()).items ?? []);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const items = (await resp.json()).items ?? [];
+      this.catalogue.set(items);
+      this.catalogueStatus.set(items.length ? 'ok' : 'empty');
     } catch (err) {
       // A catalogue that cannot be listed must not block an upload — the
       // fields simply fall back to being typed, which is what they were.
       console.error('Catalogue options unavailable, falling back to free text:', err);
       this.catalogue.set([]);
+      this.catalogueStatus.set('unavailable');
       this.customMake.set(true);
       this.customModel.set(true);
       this.customYear.set(true);

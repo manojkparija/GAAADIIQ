@@ -102,7 +102,26 @@
               the vehicle, typed where it does not — an image is matched to its
               car on exactly these four values, so a stray space or a "Maruti"
               where the catalogue says "Maruti Suzuki" loses the photograph.
+
+              When they are text boxes, say why: silently falling back is
+              indistinguishable from the dropdowns never having shipped.
             -->
+            @if (catalogueStatus() !== 'ok') {
+              <div class="aci-form-field aci-form-field--full">
+                <small class="aci-hint">
+                  @if (catalogueStatus() === 'empty') {
+                    The catalogue has no vehicles yet, so there is nothing to
+                    choose from — type this one in and it becomes the first
+                    entry.
+                  } @else {
+                    The catalogue could not be loaded, so these fields are
+                    typed rather than chosen. Check that the API is reachable
+                    before relying on this upload reaching the right vehicle.
+                  }
+                </small>
+              </div>
+            }
+
             <div class="aci-form-field">
               <label class="aci-label">Manufacturer *</label>
               @if (!customMake() && makeOptions().length) {
