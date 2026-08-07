@@ -52,11 +52,16 @@
           <div class="aci-selected-files">
             <div class="aci-files-title">
               📁 {{ selectedFiles().length }} file(s) selected
-              <button type="button" class="aci-file-clear" (click)="clearFiles()">Clear all</button>
+              <span class="aci-files-actions">
+                <button type="button" class="btn-add-more" (click)="fileInput.click()">
+                  ➕ Add more images
+                </button>
+                <button type="button" class="aci-file-clear" (click)="clearFiles()">Clear all</button>
+              </span>
             </div>
             <div class="aci-hint">
-              Picking or dropping more images adds to this list — you do not
-              have to choose them all in one go.
+              Hold Ctrl (⌘ on a Mac) in the file picker to choose several at
+              once, or add them a few at a time — this list keeps everything.
             </div>
             <div class="aci-files-list">
               @for (file of selectedFiles(); track file.name + ':' + file.size) {
@@ -99,9 +104,19 @@
                 <div class="size-warning">⚠️ {{ advice }}</div>
               }
             </div>
-            <button class="btn-primary" (click)="inspectFiles()" [disabled]="isInspecting() || uploadSizeExceeded()">
-              {{ isInspecting() ? 'Inspecting…' : '→ Continue with Metadata' }}
-            </button>
+            <div class="aci-file-actions">
+              <button class="btn-primary" (click)="inspectFiles()" [disabled]="isInspecting() || uploadSizeExceeded()">
+                {{ isInspecting() ? 'Inspecting…' : '→ Continue with Metadata' }}
+              </button>
+              <!--
+                The drop zone sits above and reads as the starting state, so
+                once files are chosen there was nothing in view offering to add
+                more. Put the offer where the decision is made.
+              -->
+              <button type="button" class="btn-add-more" (click)="fileInput.click()">
+                ➕ Add more images
+              </button>
+            </div>
           </div>
         }
 

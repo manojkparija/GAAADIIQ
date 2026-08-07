@@ -203,6 +203,37 @@
   gap: 1rem;
 }
 
+.aci-files-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.aci-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-add-more {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  border: 1px dashed #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: #dbeafe; border-style: solid; }
+}
+
+.aci-files-title .btn-add-more {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
 .aci-file-clear {
   font: inherit;
   font-weight: 500;
