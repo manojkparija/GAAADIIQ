@@ -384,7 +384,20 @@ export class CarsDataService {
       // A model that a seller has already advertised wins: that row carries a
       // real advert a buyer can act on, and showing both would put the same
       // car on the page twice at two different prices.
-      const advertised = new Set(newCars.map(variantKey));
+      //
+      // Only an advert that will actually be shown may do the suppressing.
+      // The New Cars pages display a car with no odometer reading, and an
+      // advert filed under listing_type=new does not have to have one — a
+      // seller can list a driven car as new. Such a row was hidden by the
+      // page's own filter and still claimed the model's identity, so the
+      // catalogue entry it stood for vanished with it: no advert, no catalogue
+      // model, and nothing anywhere saying why.
+      //
+      // Model year needs no such guard: it is part of the identity, so an
+      // advert for a different year cannot collide with the catalogue row.
+      const advertised = new Set(
+        newCars.filter(c => c.km === 0).map(variantKey)
+      );
       const catalogueCars = (catalogueResp?.items ?? [])
         .filter(c => c.ex_showroom_price != null && c.year >= NEW_CAR_MIN_YEAR)
         .map(mapCatalogueCar)

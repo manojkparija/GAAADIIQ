@@ -78,3 +78,79 @@ describe('CarsDataService — one failing source', () => {
       .toBeTruthy();
   });
 });
+
+/**
+ * An advert may replace a catalogue model on the New Cars pages, but only if
+ * the advert is itself shown there.
+ *
+ * The pages display a car with no odometer reading. A listing filed under
+ * listing_type=new need not have one — a seller can advertise a driven car as
+ * new. Such a row was filtered off the page and still claimed its model's
+ * identity, so the catalogue entry it stood for was suppressed too: no advert,
+ * no catalogue model, and no explanation anywhere.
+ */
+describe('CarsDataService — an advert that is not shown must not hide a model', () => {
+  let http: HttpTestingController;
+
+  const urls = {
+    new: `${environment.apiUrl}/listings?listing_type=new&page=1&page_size=100`,
+    used: `${environment.apiUrl}/listings?listing_type=used&page=1&page_size=100`,
+    catalogue: `${environment.apiUrl}/cars?bucket=new&priced_only=true&page=1&page_size=100`,
+  };
+
+  const listingFor = (over: Record<string, unknown>) => ({
+    id: '22222222-2222-2222-2222-222222222222',
+    price: 850000,
+    km_driven: 0,
+    listing_type: 'new',
+    image_urls: [],
+    car: {
+      make: CATALOGUE_CAR.make,
+      model: CATALOGUE_CAR.model,
+      variant: CATALOGUE_CAR.variant,
+      year: CATALOGUE_CAR.year,
+      fuel_type: 'petrol',
+    },
+    ...over,
+  });
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  function answerRound(newListings: unknown[]): void {
+    const page = (items: unknown[]) => ({ items, total: items.length, page: 1, page_size: 100 });
+    http.expectOne(urls.new).flush(page(newListings));
+    http.expectOne(urls.used).flush(page([]));
+    http.expectOne(urls.catalogue).flush(page([CATALOGUE_CAR]));
+  }
+
+  async function loadWith(newListings: unknown[]): Promise<CarsDataService> {
+    const svc = TestBed.inject(CarsDataService);
+    answerRound(newListings);
+    const reloaded = svc.reload();
+    answerRound(newListings);
+    await reloaded;
+    return svc;
+  }
+
+  it('keeps the catalogue model when the advert has an odometer reading', async () => {
+    const svc = await loadWith([listingFor({ km_driven: 34000 })]);
+
+    const shown = svc.getAll().filter(c => c.model === 'Dzire' && c.km === 0);
+    expect(shown.length)
+      .withContext('a driven advert filed as new must not hide the model')
+      .toBe(1);
+  });
+
+  it('still lets a genuine new advert replace the catalogue model', async () => {
+    const svc = await loadWith([listingFor({})]);
+
+    const dzires = svc.getAll().filter(c => c.model === 'Dzire');
+    expect(dzires.length).withContext('the same car must not appear twice').toBe(1);
+    expect(dzires[0].price).withContext('the advert wins, at its own price').toBe(850000);
+  });
+});
