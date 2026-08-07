@@ -5,7 +5,6 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
-import { VehicleImageService } from '../../services/vehicle-image.service';
 
 const PLACEHOLDER = 'assets/cars/placeholder.svg';
 const COMPARE_KEY = 'gaadiiq_compare_keys';
@@ -67,17 +66,16 @@ export class NewCarsComponent implements OnInit {
 
   readonly placeholder = PLACEHOLDER;
 
-  private readonly vehicleImages = inject(VehicleImageService);
 
   /**
-   * A brochure photograph when the catalogue entry has no image of its own.
+   * A catalogue entry's own photograph, or the placeholder.
    *
-   * New-car listings are seeded without photography far more often than not,
-   * so without this the launch grid is a wall of placeholders even when the
-   * manufacturer's own brochure has been ingested.
+   * A model with no picture shows that it has none. Filling the gap with a
+   * brochure image put a manufacturer's stock photograph on a specific car,
+   * which is a different vehicle wearing the right badge.
    */
   imageFor(car: { image?: string | null; make?: string; model?: string }): string {
-    return this.vehicleImages.imageOr(car?.image, car?.make, car?.model);
+    return car?.image || PLACEHOLDER;
   }
 
   constructor(

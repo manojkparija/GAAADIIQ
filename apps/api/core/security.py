@@ -61,7 +61,13 @@ def normalize_pem(raw: str) -> str:
     if not match:
         return text.strip()
 
-    body = re.sub(r"\s+", "", match.group("body"))
+    # Everything that is not base64, not merely whitespace. An invisible
+    # character pasted into the body — a zero-width space, a byte order mark, a
+    # non-breaking space — is not matched by \s and survived into the payload,
+    # where it decoded as "Invalid symbol 226 at offset 0" and cost the service
+    # its signing key. Nothing outside the base64 alphabet can belong here, so
+    # dropping all of it is both safe and complete.
+    body = re.sub(r"[^A-Za-z0-9+/=]", "", match.group("body"))
     label = match.group("label").strip()
     return (
         f"-----BEGIN {label}-----\n"

@@ -6,7 +6,6 @@ import { CarsDataService, Car } from '../../services/cars-data.service';
 import { TcoService, TcoBreakdown } from '../../services/tco.service';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
-import { VehicleImageService } from '../../services/vehicle-image.service';
 
 const COMPARE_KEY = 'gaadiiq_compare_keys';
 
@@ -126,7 +125,6 @@ export class CompareComponent implements OnInit {
 
   formatPrice(p: number) { return `₹${(p/100000).toFixed(1)}L`; }
 
-  private readonly vehicleImages = inject(VehicleImageService);
 
   /**
    * A comparison row without a picture is hard to read, and most catalogue
@@ -135,7 +133,7 @@ export class CompareComponent implements OnInit {
    */
   optimisedImageFor(car: Car): string {
     return this.optimisedImage(
-      this.vehicleImages.imageOr((car as any)?.image, car?.make, car?.model),
+      (car as any)?.image || 'assets/cars/placeholder.svg',
     );
   }
 
