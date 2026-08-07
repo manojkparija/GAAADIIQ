@@ -178,6 +178,7 @@ const COLOUR_HEX: Record<string, string> = {
 import { TcoService } from '../../services/tco.service';
 import { ReviewsService, CarReview } from '../../services/reviews.service';
 import { SeoService } from '../../services/seo.service';
+import { computeOnRoadPrice } from '../../utils/on-road-price';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
@@ -449,92 +450,16 @@ export class CarDetailComponent implements OnInit {
     this.loanEmi.set(this.loan.emi);
   }
 
-  // On-road price calculation
-  // GST & Cess: as per GST Council notification, updated 2023
-  //   Electric:            5% GST, 0% cess
-  //   Hybrid (mild):       same slab as fuel type vehicle
-  //   CNG/Petrol < 4m & engine < 1200cc: 28% GST + 1% cess
-  //   Diesel  < 4m & engine < 1500cc:    28% GST + 3% cess
-  //   Petrol > 4m or engine >= 1200cc:   28% GST + 17% cess
-  //   Diesel > 4m or engine >= 1500cc:   28% GST + 17% cess
-  //   SUV (length > 4m, engine > 1500cc, GC > 170mm): 28% GST + 22% cess
-  // We infer segment from price bands (proxy for length/engine since spec not always available)
-  //   < ₹6L   → small hatchback segment  (1% cess)
-  //   ₹6–12L  → compact/mid hatchback    (3% cess petrol, diesel treated as 3%)
-  //   ₹12–20L → sedan / compact SUV      (17% cess)
-  //   > ₹20L  → large SUV / luxury       (22% cess)
-  // Insurance: IRDAI-mandated 3rd party + estimated comprehensive
-  //   TP premium (IRDAI 2023-24): < 1000cc ₹2,094 | 1000-1500cc ₹3,416 | >1500cc ₹7,897
-  //   Comprehensive (own damage) ≈ 2% of IDV (ex-showroom price)
+  // On-road price. The rules, and why GST and cess are not added to an
+  // ex-showroom price that already contains them, live in utils/on-road-price.
   onRoadPrice = computed(() => {
     if (!this.car) return null;
-    const base = this.car.price;
-    const fuel = this.car.fuel ?? 'Petrol';
-    const bodyType = (this.car as any).body_type ?? (this.car as any).bodyType ?? '';
-
-    // --- GST ---
-    let gstRate = 0.28;
-    if (fuel === 'Electric') gstRate = 0.05;
-
-    // --- Cess ---
-    let cessRate = 0;
-    if (fuel === 'Electric') {
-      cessRate = 0;
-    } else if (fuel === 'Hybrid') {
-      // Strong hybrids (Maruti, Toyota) get 15% cess; mild hybrids same as petrol
-      cessRate = base > 1500000 ? 0.15 : 0.17;
-    } else {
-      // Infer by price band (proxy for vehicle segment)
-      const isSuv = /suv/i.test(bodyType);
-      if (base < 600000) {
-        // Small segment: petrol 1%, diesel 3%
-        cessRate = fuel === 'Diesel' ? 0.03 : 0.01;
-      } else if (base < 1200000) {
-        // Mid segment: petrol 3%, diesel 17%
-        cessRate = fuel === 'Diesel' ? 0.17 : 0.03;
-      } else if (base < 2000000) {
-        cessRate = 0.17;
-      } else {
-        // Large / SUV above ₹20L
-        cessRate = isSuv ? 0.22 : 0.17;
-      }
-    }
-
-    const gst = Math.round(base * gstRate);
-    const cess = Math.round(base * cessRate);
-
-    // --- Registration (state-specific) ---
-    const regRate = this.STATE_REG[this.selectedState()] ?? 0.08;
-    // EV registration is free/50% in most states
-    const effectiveRegRate = fuel === 'Electric' ? regRate * 0.5 : regRate;
-    const registration = Math.round(base * effectiveRegRate);
-
-    // --- Insurance (IRDAI 2023-24 rates) ---
-    // TP premium based on engine size proxy from price, + OD at 2% of IDV
-    let tpPremium: number;
-    if (base < 600000) tpPremium = 2094;
-    else if (base < 1500000) tpPremium = 3416;
-    else tpPremium = 7897;
-    const odPremium = Math.round(base * 0.02);  // own damage @ ~2% IDV
-    const insurance = tpPremium + odPremium;
-
-    // --- Handling / logistics ---
-    const handling = 10000;
-
-    const total = base + gst + cess + registration + insurance + handling;
-
-    return {
-      base,
-      gst,
-      gstRate: Math.round(gstRate * 100),
-      cess,
-      cessRate: Math.round(cessRate * 100),
-      registration,
-      regRate: Math.round(effectiveRegRate * 100),
-      insurance,
-      handling,
-      total: Math.round(total),
-    };
+    return computeOnRoadPrice(
+      this.car.price,
+      this.car.fuel ?? 'Petrol',
+      (this.car as any).body_type ?? (this.car as any).bodyType ?? '',
+      this.STATE_REG[this.selectedState()] ?? 0.08,
+    );
   });
 
   // Ownership cost (annual)
