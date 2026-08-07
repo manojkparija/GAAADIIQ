@@ -1,5 +1,19 @@
 # GAADIIQ Database Schema Setup Instructions
 
+> **⚠️ Superseded for `cars` and `listings`.** Batch 1's definitions of those
+> two tables disagree with the application's models — different column names
+> (`price_inr` vs `price`, `mileage` vs `km_driven`, `year` vs
+> `registration_year`, `location` vs `city`, `views` vs `views_count`), missing
+> columns, and a `bigserial` key where the application uses `uuid`. Both this
+> guide and Alembic create tables only if they are absent, so whichever ran
+> first won silently. In the deployed database this guide won, and every
+> listing read failed with `column listings.price does not exist` — emptying
+> Used Cars, and New Cars with it — until migration `0017` repaired it.
+>
+> `apps/api/alembic` is the schema of record. It runs automatically whenever
+> the API starts, so `cars` and `listings` need no manual step. Skip those
+> sections of Batch 1.
+
 ## Overview
 
 This guide walks you through setting up the complete GAADIIQ database schema in Supabase. The schema has been split into 5 executable batches to ensure proper dependency management and clear troubleshooting.
