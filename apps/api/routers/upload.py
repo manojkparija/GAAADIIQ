@@ -17,8 +17,7 @@ from core.dependencies import get_current_user
 from core.limiter import limiter
 from db.session import get_db
 from models.user import User
-from models.vehicle_media import VehicleMedia
-from services import media_library, pdf_ingest
+from services import media_library
 from services.media_storage import StorageError
 from services.storage import upload_image, upload_media
 from services.stt import estimate_duration_seconds

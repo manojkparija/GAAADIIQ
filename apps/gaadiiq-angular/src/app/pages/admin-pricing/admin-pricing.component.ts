@@ -1,19 +1,59 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CarsDataService, Car } from '../../services/cars-data.service';
-import { SupabaseService } from '../../services/supabase.service';
-import { AuthService } from '../../services/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { CarsDataService } from '../../services/cars-data.service';
+import { environment } from '../../../environments/environment';
 
-interface PriceRow extends Car {
-  editPrice: number;
-  editing: boolean;
-  saving: boolean;
-  marketAvg: number | null;
-  pctVsMarket: number | null;
+interface ApiCatalogueCar {
+  id: string;
+  make: string;
+  model: string;
+  variant: string | null;
+  year: number;
+  fuel_type: string | null;
+  body_type: string | null;
+  ex_showroom_price: string | null;
+  image_urls: string[];
 }
 
+interface ApiCarListResponse {
+  items: ApiCatalogueCar[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+interface PriceRow {
+  id: string;
+  make: string;
+  model: string;
+  variant: string | null;
+  year: number;
+  /** Rupees, or null when nobody has priced this model yet. */
+  price: number | null;
+  imageCount: number;
+  editPrice: number | null;
+  editing: boolean;
+  saving: boolean;
+  error: string;
+}
+
+/**
+ * Ex-showroom prices for the new-car catalogue.
+ *
+ * This edits the manufacturer's published price for a model, which is what
+ * every buyer sees on the New Cars pages — not a seller's asking price on a
+ * particular advert. Those belong to the listing and are edited by whoever
+ * owns it.
+ *
+ * A model with no price is left visible and marked as such rather than hidden:
+ * the gaps are the point of this screen, since an unpriced model never reaches
+ * the New Cars pages.
+ */
 @Component({
   selector: 'app-admin-pricing',
   standalone: true,
@@ -22,82 +62,127 @@ interface PriceRow extends Car {
   styleUrl: './admin-pricing.component.scss'
 })
 export class AdminPricingComponent {
+  private http = inject(HttpClient);
+  private carsData = inject(CarsDataService);
+  private apiUrl = environment.apiUrl;
+
   searchQ = signal('');
   filterMake = signal('All');
+  onlyUnpriced = signal(false);
   savedMsg = signal('');
+  loading = signal(true);
+  loadError = signal('');
 
-  constructor(
-    private carsData: CarsDataService,
-    private sb: SupabaseService,
-    private auth: AuthService,
-    private router: Router
-  ) {
-    if (!auth.isAdmin()) router.navigate(['/']);
+  private cars = signal<PriceRow[]>([]);
+
+  constructor(auth: AuthService, router: Router) {
+    if (!auth.isAdmin()) {
+      router.navigate(['/']);
+      return;
+    }
+    void this.load();
   }
 
-  makes = computed(() => ['All', ...new Set(this.carsData.cars().map(c => c.make))].sort());
+  private async load() {
+    this.loading.set(true);
+    this.loadError.set('');
+    try {
+      // The whole catalogue, priced or not: an admin needs to see which models
+      // are still missing a price, so priced_only is deliberately not set.
+      const resp = await firstValueFrom(
+        this.http.get<ApiCarListResponse>(`${this.apiUrl}/cars?page_size=100`)
+      );
+      this.cars.set((resp?.items ?? []).map(c => ({
+        id: c.id,
+        make: c.make,
+        model: c.model,
+        variant: c.variant,
+        year: c.year,
+        price: c.ex_showroom_price == null ? null : Number(c.ex_showroom_price),
+        imageCount: (c.image_urls ?? []).length,
+        editPrice: c.ex_showroom_price == null ? null : Number(c.ex_showroom_price),
+        editing: false,
+        saving: false,
+        error: '',
+      })));
+    } catch (err) {
+      this.loadError.set('Could not load the catalogue. Please retry.');
+      console.error('Catalogue load failed:', err);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  retry() { void this.load(); }
+
+  makes = computed(() => ['All', ...new Set(this.cars().map(c => c.make))].sort());
+
+  unpricedCount = computed(() => this.cars().filter(c => c.price == null).length);
 
   rows = computed<PriceRow[]>(() => {
     const q = this.searchQ().toLowerCase();
     const make = this.filterMake();
-    const cars = this.carsData.cars().filter(c => {
+    const unpricedOnly = this.onlyUnpriced();
+
+    return this.cars().filter(c => {
       if (make !== 'All' && c.make !== make) return false;
+      if (unpricedOnly && c.price != null) return false;
       if (q && !`${c.make} ${c.model} ${c.variant ?? ''}`.toLowerCase().includes(q)) return false;
       return true;
     });
-
-    // Build market avg per make+model from non-seller listings
-    const avgMap = new Map<string, number>();
-    const allCars = this.carsData.cars();
-    const makeModels = [...new Set(allCars.map(c => `${c.make}|${c.model}`))];
-    for (const key of makeModels) {
-      const [m, mo] = key.split('|');
-      const group = allCars.filter(c => c.make === m && c.model === mo && !c.isSellerListing);
-      if (group.length > 0) avgMap.set(key, Math.round(group.reduce((s, c) => s + c.price, 0) / group.length));
-    }
-
-    return cars.map(c => {
-      const avg = avgMap.get(`${c.make}|${c.model}`) ?? null;
-      const pct = avg ? Math.round(((c.price - avg) / avg) * 100) : null;
-      return { ...c, editPrice: c.price, editing: false, saving: false, marketAvg: avg, pctVsMarket: pct };
-    });
   });
 
-  startEdit(row: PriceRow) { row.editing = true; row.editPrice = row.price; }
-  cancelEdit(row: PriceRow) { row.editing = false; }
-
-  async savePrice(row: PriceRow) {
-    if (!row.editPrice || row.editPrice < 1000) return;
-    row.saving = true;
-    const { error } = await this.sb.client.from('cars').update({ price: row.editPrice }).eq('id', row.id);
-    if (!error) {
-      row.price = row.editPrice;
-      row.editing = false;
-      this.savedMsg.set(`✓ Price updated for ${row.make} ${row.model}`);
-      setTimeout(() => this.savedMsg.set(''), 3000);
-      // Reload cars data to reflect change
-      (this.carsData as any).load?.();
-    }
-    row.saving = false;
+  startEdit(row: PriceRow) {
+    row.editing = true;
+    row.editPrice = row.price;
+    row.error = '';
   }
 
-  formatPrice(p: number) {
+  cancelEdit(row: PriceRow) {
+    row.editing = false;
+    row.editPrice = row.price;
+    row.error = '';
+  }
+
+  async savePrice(row: PriceRow) {
+    const value = row.editPrice;
+    if (value != null && (!Number.isFinite(value) || value < 0)) {
+      row.error = 'Enter a price of ₹0 or more, or clear the field.';
+      return;
+    }
+
+    row.saving = true;
+    row.error = '';
+    try {
+      // An empty field clears the price back to "price on request", which is
+      // how a model is taken off the New Cars pages without deleting it.
+      const body = { ex_showroom_price: value == null ? null : String(value) };
+      const updated = await firstValueFrom(
+        this.http.patch<ApiCatalogueCar>(`${this.apiUrl}/cars/${row.id}`, body)
+      );
+
+      row.price = updated.ex_showroom_price == null ? null : Number(updated.ex_showroom_price);
+      row.editPrice = row.price;
+      row.editing = false;
+      this.savedMsg.set(
+        row.price == null
+          ? `✓ Price cleared for ${row.make} ${row.model} — now shown as price on request`
+          : `✓ Price updated for ${row.make} ${row.model}`
+      );
+      setTimeout(() => this.savedMsg.set(''), 3000);
+      this.carsData.reload();
+    } catch (err) {
+      row.error = 'Could not save that price. Please retry.';
+      console.error('Price update failed:', err);
+    } finally {
+      row.saving = false;
+    }
+  }
+
+  formatPrice(p: number | null) {
+    if (p == null) return '—';
     return p >= 10000000 ? `₹${(p / 10000000).toFixed(2)} Cr`
       : p >= 100000 ? `₹${(p / 100000).toFixed(1)}L`
       : `₹${p.toLocaleString('en-IN')}`;
-  }
-
-  verdictClass(pct: number | null) {
-    if (pct === null) return '';
-    if (pct < -5) return 'v-low';
-    if (pct > 5) return 'v-high';
-    return 'v-fair';
-  }
-
-  verdictLabel(pct: number | null) {
-    if (pct === null) return '—';
-    if (pct < -5) return `↓ ${Math.abs(pct)}% below avg`;
-    if (pct > 5) return `↑ ${pct}% above avg`;
-    return '≈ At market';
   }
 }

@@ -20,6 +20,12 @@ interface ApiCar {
   id: string; make: string; model: string; variant: string | null; year: number;
   fuel_type: string | null; transmission: string | null; body_type: string | null;
   seating_capacity: number | null; engine_cc: number | null;
+  // Present on /cars (the catalogue) and absent from the car nested inside a
+  // listing, where the advert's own price is what matters. Serialised as a
+  // string because it is a NUMERIC: JSON numbers are floats, and rupee amounts
+  // should not pick up rounding on the way here.
+  ex_showroom_price?: string | null;
+  image_urls?: string[];
 }
 
 interface ApiListing {
@@ -31,6 +37,7 @@ interface ApiListing {
 }
 
 interface ApiListResponse { items: ApiListing[]; total: number; page: number; page_size: number; }
+interface ApiCarListResponse { items: ApiCar[]; total: number; page: number; page_size: number; }
 
 // ── Local assets ───────────────────────────────────────────────────────────────
 const PLACEHOLDER = 'assets/cars/placeholder.svg';
@@ -207,6 +214,74 @@ function mapListing(lst: ApiListing): Car {
   };
 }
 
+/**
+ * A catalogue car — a model the manufacturer sells — as a `Car`.
+ *
+ * Distinct from mapListing: a listing is one seller's advert for one vehicle,
+ * whereas this is the model itself. That difference decides the price (the
+ * published ex-showroom figure, not an asking price) and `km`, which is 0
+ * because a new model has no odometer reading rather than because someone
+ * happened to enter zero.
+ *
+ * Only called for models that carry a price. An unpriced model has no honest
+ * rendering on a grid built around price, so those are filtered out upstream
+ * rather than shown at ₹0.
+ */
+function mapCatalogueCar(car: ApiCar): Car {
+  const apiImgs = (car.image_urls ?? []).filter(
+    u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'),
+  );
+  const images = apiImgs.length ? apiImgs
+               : (localImagesFor(car.make, car.model) ?? [PLACEHOLDER]);
+
+  const badge = car.fuel_type === 'electric' ? 'EV'
+              : car.fuel_type === 'hybrid' ? 'Eco'
+              : car.fuel_type === 'cng' ? 'CNG'
+              : '';
+
+  return {
+    id: car.id,
+    make: car.make,
+    model: car.model,
+    variant: car.variant ?? undefined,
+    year: car.year,
+    price: Number(car.ex_showroom_price),
+    km: 0,
+    fuel: FUEL_LABEL[car.fuel_type ?? ''] ?? car.fuel_type ?? '',
+    transmission: TX_LABEL[car.transmission ?? ''] ?? car.transmission ?? '',
+    badge,
+    badgeType: badge ? 'featured' : '',
+    image: images[0],
+    images,
+    rating: 0,
+    reviews: 0,
+    verified: true,
+    bodyType: BODY_LABEL[car.body_type ?? ''] ?? car.body_type ?? '',
+    isSellerListing: false,
+    specs: car.engine_cc ? [
+      { label: 'Engine', value: `${car.engine_cc} cc` },
+      ...(car.seating_capacity ? [{ label: 'Seating', value: `${car.seating_capacity} seats` }] : []),
+    ] : [],
+    features: [],
+  };
+}
+
+/**
+ * Earliest model year the site treats as a new car.
+ *
+ * The catalogue pages classify a car as new when it has no odometer reading
+ * and a model year at or after this, and as used otherwise. Catalogue models
+ * are filtered by the same rule before they are published, because an older
+ * model year would otherwise be classified used and appear on the Used Cars
+ * pages as a vehicle for sale that no seller is actually offering.
+ */
+const NEW_CAR_MIN_YEAR = 2024;
+
+/** Identity of a specific model+variant+year, for de-duplication. */
+function variantKey(c: { make: string; model: string; variant?: string; year: number }): string {
+  return `${c.make}|${c.model}|${c.variant ?? ''}|${c.year}`.toLowerCase().trim();
+}
+
 // ── Service ────────────────────────────────────────────────────────────────────
 @Injectable({ providedIn: 'root' })
 export class CarsDataService {
@@ -223,19 +298,38 @@ export class CarsDataService {
   private async load() {
     this.loading.set(true);
     try {
-      const [newResp, usedResp] = await Promise.all([
+      const [newResp, usedResp, catalogueResp] = await Promise.all([
         firstValueFrom(
           this.http.get<ApiListResponse>(`${this.apiUrl}/listings?listing_type=new&page_size=100`)
         ),
         firstValueFrom(
           this.http.get<ApiListResponse>(`${this.apiUrl}/listings?listing_type=used&page_size=100`)
         ),
+        // The catalogue of manufacturer models, which is where admin-uploaded
+        // photography lands. Without this the New Cars pages could only show
+        // models some seller had happened to advertise, so an uploaded image
+        // had no route to a buyer. priced_only keeps models nobody has priced
+        // out of a grid that sorts and filters on price.
+        firstValueFrom(
+          this.http.get<ApiCarListResponse>(
+            `${this.apiUrl}/cars?bucket=new&priced_only=true&page_size=100`
+          )
+        ),
       ]);
 
       const newCars = (newResp?.items ?? []).map(mapListing);
       const usedCars = (usedResp?.items ?? []).map(mapListing);
 
-      const all = [...newCars, ...usedCars];
+      // A model that a seller has already advertised wins: that row carries a
+      // real advert a buyer can act on, and showing both would put the same
+      // car on the page twice at two different prices.
+      const advertised = new Set(newCars.map(variantKey));
+      const catalogueCars = (catalogueResp?.items ?? [])
+        .filter(c => c.ex_showroom_price != null && c.year >= NEW_CAR_MIN_YEAR)
+        .map(mapCatalogueCar)
+        .filter(c => !advertised.has(variantKey(c)));
+
+      const all = [...newCars, ...usedCars, ...catalogueCars];
 
       // Demo cars fill out a thin catalogue during development so the UI can
       // be exercised against a realistic number of results. They are never
@@ -265,6 +359,16 @@ export class CarsDataService {
       this.loading.set(false);
     }
   }
+
+  /**
+   * Re-fetch the catalogue.
+   *
+   * Called after an admin changes something every page reads — a price, say —
+   * so the rest of the app reflects it without a full reload. The admin
+   * pricing screen previously reached for a private `load` through an `any`
+   * cast, which silently did nothing.
+   */
+  reload(): Promise<void> { return this.load(); }
 
   getAll(): Car[] { return this._cars(); }
 

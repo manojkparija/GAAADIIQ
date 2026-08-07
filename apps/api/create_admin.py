@@ -11,8 +11,9 @@ import sys
 sys.path.insert(0, ".")
 
 from sqlalchemy import select
-from db.session import AsyncSessionLocal
+
 from core.security import hash_password
+from db.session import AsyncSessionLocal
 from models.user import User
 
 ADMIN_EMAIL = "manojkparija@gaadiiq.com"
@@ -38,13 +39,13 @@ async def create_admin():
             )
             session.add(admin)
             await session.commit()
-            print(f"✓ Admin user created successfully!")
+            print("✓ Admin user created successfully!")
             print(f"  Email: {ADMIN_EMAIL}")
             print(f"  Password: {ADMIN_PASSWORD}")
-            print(f"\nYou can now log in with these credentials.")
+            print("\nYou can now log in with these credentials.")
         else:
             print(f"ℹ Admin user already exists: {ADMIN_EMAIL}")
-            print(f"  If you forgot the password, you'll need to reset it.")
+            print("  If you forgot the password, you'll need to reset it.")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 import enum
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum, Index, SmallInteger, String
+from sqlalchemy import Enum, Index, Numeric, SmallInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base, TimestampMixin, UUIDMixin
@@ -54,6 +55,15 @@ class Car(UUIDMixin, TimestampMixin, Base):
     body_type: Mapped[BodyType | None] = mapped_column(Enum(BodyType, name="body_type"))
     seating_capacity: Mapped[int | None] = mapped_column(SmallInteger)
     engine_cc: Mapped[int | None] = mapped_column(SmallInteger)
+
+    # Manufacturer's ex-showroom price for this model, in rupees.
+    #
+    # Distinct from listings.price, which is one seller's asking price for one
+    # vehicle. A new car has a published price whether or not anyone has
+    # advertised it, so it belongs to the catalogue row rather than to an
+    # advert. NULL means nobody has entered a price yet — readers must show
+    # that as unpriced, never as zero.
+    ex_showroom_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
 
     # Relationships
     listings: Mapped[list["Listing"]] = relationship(back_populates="car")

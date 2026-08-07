@@ -3,8 +3,11 @@
   <div class="ap-hero">
     <div class="container">
       <div class="ap-badge">🔐 Admin Only</div>
-      <h1>Price <span class="gradient-text">Manager</span></h1>
-      <p>Edit prices for any car in the database. Changes sync to Supabase instantly.</p>
+      <h1>New Car <span class="gradient-text">Price Manager</span></h1>
+      <p>
+        Set the manufacturer's ex-showroom price for each catalogue model.
+        A model only appears on the New Cars pages once it has a price.
+      </p>
     </div>
   </div>
 
@@ -12,70 +15,92 @@
 
     <div class="toast" *ngIf="savedMsg()">{{ savedMsg() }}</div>
 
-    <!-- Filters -->
-    <div class="ap-filters glass-card">
-      <input class="search-input" type="text" placeholder="Search make, model, variant…"
-        [ngModel]="searchQ()" (ngModelChange)="searchQ.set($event)" />
-      <select class="make-select" [ngModel]="filterMake()" (ngModelChange)="filterMake.set($event)">
-        <option *ngFor="let m of makes()">{{ m }}</option>
-      </select>
-      <div class="result-count">{{ rows().length }} cars</div>
+    <div class="state-msg" *ngIf="loading()">Loading catalogue…</div>
+
+    <div class="state-msg error" *ngIf="loadError()">
+      {{ loadError() }}
+      <button class="btn-edit" (click)="retry()">Retry</button>
     </div>
 
-    <!-- Table -->
-    <div class="table-wrap glass-card">
-      <table class="price-table">
-        <thead>
-          <tr>
-            <th>Car</th>
-            <th>Year</th>
-            <th>Type</th>
-            <th>Current Price</th>
-            <th>Market Avg</th>
-            <th>vs Market</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of rows()" [class.editing-row]="row.editing">
-            <td class="car-cell">
-              <div class="car-name">{{ row.make }} {{ row.model }}</div>
-              <div class="car-variant">{{ row.variant }}</div>
-            </td>
-            <td>{{ row.year }}</td>
-            <td><span class="type-chip">{{ row.isSellerListing ? '🏪 Seller' : '🏭 Catalog' }}</span></td>
-            <td class="price-cell">
-              <ng-container *ngIf="!row.editing">
-                <span class="price-val">{{ formatPrice(row.price) }}</span>
-              </ng-container>
-              <ng-container *ngIf="row.editing">
-                <input class="price-input" type="number" [(ngModel)]="row.editPrice"
-                  min="1000" placeholder="Price in ₹" />
-              </ng-container>
-            </td>
-            <td class="muted-cell">
-              {{ row.marketAvg ? formatPrice(row.marketAvg) : '—' }}
-            </td>
-            <td>
-              <span class="verdict-chip" [class]="verdictClass(row.pctVsMarket)">
-                {{ verdictLabel(row.pctVsMarket) }}
-              </span>
-            </td>
-            <td class="actions-cell">
-              <ng-container *ngIf="!row.editing">
-                <button class="btn-edit" (click)="startEdit(row)">✏️ Edit</button>
-              </ng-container>
-              <ng-container *ngIf="row.editing">
-                <button class="btn-save" (click)="savePrice(row)" [disabled]="row.saving">
-                  {{ row.saving ? '…' : '✓ Save' }}
-                </button>
-                <button class="btn-cancel" (click)="cancelEdit(row)">✕</button>
-              </ng-container>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <ng-container *ngIf="!loading() && !loadError()">
+
+      <div class="unpriced-note" *ngIf="unpricedCount() > 0">
+        {{ unpricedCount() }} model(s) have no price yet and are hidden from the New Cars pages.
+      </div>
+
+      <!-- Filters -->
+      <div class="ap-filters glass-card">
+        <input class="search-input" type="text" placeholder="Search make, model, variant…"
+          [ngModel]="searchQ()" (ngModelChange)="searchQ.set($event)" />
+        <select class="make-select" [ngModel]="filterMake()" (ngModelChange)="filterMake.set($event)">
+          <option *ngFor="let m of makes()">{{ m }}</option>
+        </select>
+        <label class="unpriced-toggle">
+          <input type="checkbox" [ngModel]="onlyUnpriced()" (ngModelChange)="onlyUnpriced.set($event)" />
+          Unpriced only
+        </label>
+        <div class="result-count">{{ rows().length }} models</div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap glass-card">
+        <table class="price-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Year</th>
+              <th>Images</th>
+              <th>Ex-showroom Price</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of rows()" [class.editing-row]="row.editing">
+              <td class="car-cell">
+                <div class="car-name">{{ row.make }} {{ row.model }}</div>
+                <div class="car-variant">{{ row.variant }}</div>
+              </td>
+              <td>{{ row.year }}</td>
+              <td class="muted-cell">{{ row.imageCount || '—' }}</td>
+              <td class="price-cell">
+                <ng-container *ngIf="!row.editing">
+                  <span class="price-val" [class.unpriced]="row.price === null">
+                    {{ row.price === null ? 'Not priced' : formatPrice(row.price) }}
+                  </span>
+                </ng-container>
+                <ng-container *ngIf="row.editing">
+                  <input class="price-input" type="number" [(ngModel)]="row.editPrice"
+                    min="0" placeholder="Leave blank to clear" />
+                  <div class="row-error" *ngIf="row.error">{{ row.error }}</div>
+                </ng-container>
+              </td>
+              <td>
+                <span class="verdict-chip" [class.v-fair]="row.price === null" [class.v-low]="row.price !== null">
+                  {{ row.price === null ? 'Hidden from New Cars' : 'Live on New Cars' }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <ng-container *ngIf="!row.editing">
+                  <button class="btn-edit" (click)="startEdit(row)">✏️ Edit</button>
+                </ng-container>
+                <ng-container *ngIf="row.editing">
+                  <button class="btn-save" (click)="savePrice(row)" [disabled]="row.saving">
+                    {{ row.saving ? '…' : '✓ Save' }}
+                  </button>
+                  <button class="btn-cancel" (click)="cancelEdit(row)">✕</button>
+                </ng-container>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="state-msg" *ngIf="rows().length === 0">
+          No models match these filters.
+        </div>
+      </div>
+
+    </ng-container>
 
   </div>
 </div>
