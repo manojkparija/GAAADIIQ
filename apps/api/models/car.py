@@ -1,7 +1,6 @@
 import enum
-from typing import TYPE_CHECKING
-
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum, Index, Numeric, SmallInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
