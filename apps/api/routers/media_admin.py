@@ -377,6 +377,16 @@ async def upload_images(
 
     chosen_category = _category(image_category)
     chosen_bucket = _bucket(media_bucket)
+
+    # The forwarded address, not the socket's: behind Render's proxy every
+    # request appears to come from the proxy, which would make the audit trail
+    # record the same address for every admin in the country.
+    forwarded = request.headers.get("x-forwarded-for", "")
+    client_ip = (
+        forwarded.split(",")[0].strip()
+        or (request.client.host if request.client else None)
+    )
+    user_agent = request.headers.get("user-agent")
     result = UploadResult(stored=0, deduplicated=0, rejected=0)
     max_bytes = settings.media_max_upload_mb * 1024 * 1024
 
@@ -424,6 +434,14 @@ async def upload_images(
                 # Without this, re-uploading a file to correct its identity is
                 # a no-op, and an image mis-tagged once stays lost forever.
                 authoritative=True,
+                # Who did it, for the audit trail. vehicle_media.uploaded_by
+                # records who first introduced a file and is SET NULL when that
+                # account goes; the audit row is what survives, and it is the
+                # only record of a re-upload that moved an image to another
+                # vehicle.
+                actor_id=admin.id,
+                ip_address=client_ip,
+                user_agent=user_agent,
             )
         except StorageError as exc:
             result.rejected += 1
