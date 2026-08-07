@@ -85,6 +85,21 @@ RECOMMEND_REQUESTS_TOTAL = Counter(
     "Total calls to POST /recommend",
 )
 
+# Without this, nothing the application logs is ever emitted. A logger with no
+# handler falls back to the root logger, which defaults to WARNING and has no
+# handler of its own, so every _log.info in this codebase went nowhere — which
+# is why "Alembic: …" never appeared in the deployment logs and a database the
+# application could not read looked exactly like a healthy one.
+#
+# force=True because uvicorn installs its own handlers first; without it this
+# call is a no-op under the server that actually runs in production, which is
+# the only place it matters.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s [%(name)s] %(message)s",
+    force=True,
+)
+
 _log = logging.getLogger("gaadiiq")
 
 # Hide API docs in production
@@ -141,9 +156,41 @@ async def lifespan(app: FastAPI):
             ["alembic", "upgrade", "head"],
             capture_output=True, text=True, check=False,
             cwd=api_dir,
-            timeout=30,  # Increased from 15s to accommodate 13 migrations
+            timeout=60,  # Reconciling a legacy table takes longer than creating one
         )
-        _log.info("Alembic: %s", result.stdout.strip() or "up to date")
+
+        # Alembic reports on stderr, not stdout: its progress lines, the
+        # migrations it applied, RAISE WARNING from a migration, and the
+        # traceback when one fails all arrive there. Logging only stdout
+        # printed "Alembic: up to date" whether the upgrade had succeeded,
+        # failed, or never run — which is how a database whose listings and
+        # cars tables the application could not read went unnoticed through
+        # dozens of restarts.
+        detail = (result.stderr or result.stdout or "").strip()
+
+        if result.returncode != 0:
+            # check=False, so a failed upgrade never raised and the except
+            # clauses below were unreachable. The application would then serve
+            # traffic against a schema it cannot read, which fails later, far
+            # from the cause. In production that is worth refusing to start
+            # for; in development an unavailable database is routine.
+            _log.error("Alembic upgrade failed (exit %s):\n%s", result.returncode, detail)
+            if settings.is_production:
+                raise RuntimeError(
+                    f"Database migration failed (exit {result.returncode}). "
+                    "Refusing to start against a schema the application cannot read."
+                )
+            _log.warning("Continuing without migrations (development mode)")
+            await _fix_schema()
+        else:
+            _log.info("Alembic upgrade complete:\n%s", detail or "already at head")
+            # A migration that could not finish its job says so with RAISE
+            # WARNING rather than failing — reconciling a legacy table can
+            # need a decision no migration should make alone. Surface those at
+            # error level so they are not lost among the progress lines.
+            for line in detail.splitlines():
+                if "WARNING" in line:
+                    _log.error("Migration warning: %s", line.strip())
     except subprocess.TimeoutExpired:
         if settings.is_production:
             _log.error("Alembic migration timeout")
