@@ -2,7 +2,6 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
-import { VehicleImageService } from '../../services/vehicle-image.service';
 
 interface Car {
   id: string; make: string; model: string; year: number; price: number;
@@ -22,7 +21,6 @@ export class CarCardComponent {
   liked = false;
   Math = Math;
 
-  private readonly vehicleImages = inject(VehicleImageService);
 
   toggleLike(e: Event) { e.preventDefault(); e.stopPropagation(); this.liked = !this.liked; }
 
@@ -49,17 +47,16 @@ export class CarCardComponent {
   }
 
   /**
-   * Serve Cloudinary images at card size with auto format+quality; fall back to
-   * a brochure photograph before the placeholder.
+   * Serve Cloudinary images at card size with auto format+quality, falling back
+   * to the placeholder when a car has no photograph of its own.
    *
-   * Most catalogue cars carry no image of their own, so this is the difference
-   * between a grid of placeholders and a grid of the manufacturer's own
-   * photography for any model whose brochure has been ingested.
+   * Brochure photography used to fill that gap. It no longer does: a picture
+   * scraped out of a manufacturer PDF is not this car, and a card that shows
+   * one is showing a stock image as though it were the vehicle. A placeholder
+   * says "no photograph" honestly.
    */
   optimisedImage(url: string): string {
-    const resolved = this.vehicleImages.imageOr(
-      url, this.car?.make, this.car?.model,
-    );
+    const resolved = url || 'assets/cars/placeholder.svg';
     const match = resolved.match(/res\.cloudinary\.com\/([^/]+)\/image\/upload\/(?:[^/]+\/)?(.+)/);
     if (match) {
       const [, cloud, publicId] = match;
