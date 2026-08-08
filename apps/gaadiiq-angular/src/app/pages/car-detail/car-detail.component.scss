@@ -11,12 +11,23 @@
 
 .detail-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: 2rem;
   align-items: start;
+
+  // A grid item's default min-width is auto, so a long feature line or a wide
+  // table pushes the column past its track and the whole page scrolls
+  // sideways — taking the sidebar off screen with it. minmax(0, 1fr) above and
+  // this together let the content shrink instead.
+  > * { min-width: 0; }
 }
 
-.detail-left { display: flex; flex-direction: column; gap: 1.5rem; }
+.detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
 
 .gallery {
   padding: 1.25rem;
@@ -550,12 +561,31 @@
 /* A trim row carrying its own specification, not just a price */
 .variant-row--detailed {
   align-items: flex-start;
+  gap: 1rem;
+  cursor: pointer;
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
+  border-radius: 10px;
+  transition: background 0.15s;
+
+  &:hover { background: var(--fill-soft); }
+
+  // Selected: this trim is what the on-road panel is pricing.
+  &.is-selected {
+    background: var(--fill-soft);
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
 
   .variant-name-wrap {
     display: flex;
     flex-direction: column;
+    // The base .variant-name-wrap centres its children, which reads as ragged
+    // once each row is a stack of name, specification and features.
+    align-items: flex-start;
+    text-align: left;
     gap: 0.2rem;
     min-width: 0;
+    flex: 1 1 auto;
   }
 }
 
@@ -567,4 +597,11 @@
 .variant-features {
   font-size: 0.78rem;
   color: var(--text-muted, #9ca3af);
+}
+
+.orp-for {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: -0.25rem 0 0.75rem;
+  a { color: var(--primary); }
 }

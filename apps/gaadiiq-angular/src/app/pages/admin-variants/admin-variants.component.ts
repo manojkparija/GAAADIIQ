@@ -178,6 +178,40 @@ export class AdminVariantsComponent {
     }
   }
 
+  /**
+   * Draft the model's specification and feature list.
+   *
+   * Separate from trim research because it answers a different question — what
+   * the car is, rather than what you can buy — and fills the Specs and
+   * Features tabs, which read "haven't been added yet" for every model until
+   * somebody fills them.
+   */
+  researchingDetails = signal(false);
+
+  async researchDetails() {
+    const carId = this.selectedCarId();
+    if (!carId) return;
+    this.researchingDetails.set(true);
+    try {
+      const resp = await fetch(`${this.apiUrl}/cars/${carId}/research-details`, {
+        method: 'POST',
+        headers: await this.authHeaders(),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const car = await resp.json();
+      const specs = car.specs?.length ?? 0;
+      this.toast(
+        specs
+          ? `📋 ${specs} specification(s) and ${car.features?.length ?? 0} feature(s) saved`
+          : 'Nothing found — the specification may already be filled in.'
+      );
+    } catch (err) {
+      this.error.set(`Specification research failed: ${err}`);
+    } finally {
+      this.researchingDetails.set(false);
+    }
+  }
+
   startAdd() {
     this.editingId.set('new');
     this.form.set({ ...EMPTY_FORM });

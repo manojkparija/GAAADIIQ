@@ -71,14 +71,36 @@ async def list_cars(
 
     # One query for the page's images rather than one per car.
     images = await media_library.urls_for_cars(db, cars, bucket=bucket)
+    counts = await _variant_counts(db, [c.id for c in cars])
 
     items = []
     for car in cars:
         out = CarOut.model_validate(car)
         out.image_urls = images.get(car.id, [])
+        out.variant_count = counts.get(car.id, 0)
         items.append(out)
 
     return CarListOut(items=items, total=total, page=page, page_size=page_size)
+
+
+async def _variant_counts(db: AsyncSession, car_ids: list[uuid.UUID]) -> dict:
+    """
+    Published trims per car, in one query rather than one per row.
+
+    Published only: a draft is a figure nobody has read, so counting it would
+    promise a buyer a choice that is not on offer.
+    """
+    if not car_ids:
+        return {}
+    rows = await db.execute(
+        select(CarVariant.car_id, func.count())
+        .where(
+            CarVariant.car_id.in_(car_ids),
+            CarVariant.status == VariantStatus.published,
+        )
+        .group_by(CarVariant.car_id)
+    )
+    return dict(rows.all())
 
 
 class CatalogueOption(BaseModel):
@@ -157,6 +179,7 @@ async def get_car(car_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
         db, [car], per_car=media_library.GALLERY_FULL_LIMIT
     )
     out.image_urls = images.get(car.id, [])
+    out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
     return out
 
 
@@ -194,6 +217,7 @@ async def update_car(
         db, [car], per_car=media_library.GALLERY_FULL_LIMIT
     )
     out.image_urls = images.get(car.id, [])
+    out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
     return out
 
 
@@ -434,3 +458,42 @@ async def research_car_variants(
     for variant in created:
         await db.refresh(variant)
     return [_variant_out(v) for v in created]
+
+
+@router.post("/{car_id}/research-details", response_model=CarOut)
+async def research_car_details(
+    car_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """
+    Draft a model's specification and feature list with a language model.
+
+    Unlike trims, these are written straight onto the car: a specification is
+    descriptive rather than a figure a buyer budgets against, so a wrong line
+    misinforms without costing anyone money, and the admin screen shows the
+    result immediately for correction.
+
+    Existing values are left alone. Research fills a gap; it does not overwrite
+    what somebody has already curated.
+    """
+    car = await _get_car_or_404(db, car_id)
+
+    if car.specs and car.features:
+        out = CarOut.model_validate(car)
+        out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
+        return out
+
+    details = await variant_research.research_model_details(
+        car.make, car.model, car.year
+    )
+    if details["specs"] and not car.specs:
+        car.specs = details["specs"]
+    if details["features"] and not car.features:
+        car.features = details["features"]
+    await db.commit()
+    await db.refresh(car)
+
+    out = CarOut.model_validate(car)
+    out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
+    return out

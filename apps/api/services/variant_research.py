@@ -180,3 +180,97 @@ async def research_variants(make: str, model: str, year: int) -> list[dict]:
     except Exception as exc:
         logger.warning("Variant research failed for %s %s %s: %s", make, model, year, exc)
         return []
+
+
+MODEL_PROMPT = """\
+Give the specification and feature list for the {year} {make} {model} sold new \
+in India.
+
+Return JSON only, matching exactly:
+
+{{"specs": [{{"label": "Engine", "value": "1.0L K10C"}},
+           {{"label": "Power", "value": "67 PS"}}],
+  "features": ["6 Airbags", "Touchscreen infotainment"]}}
+
+Rules:
+- specs: at most {spec_limit} label/value pairs, covering engine, power, torque,
+  mileage, transmission, boot space, fuel and safety rating where known.
+- Both label and value are short strings. Omit any pair you are not confident
+  about rather than guessing — a person will read these as fact.
+- features: at most {feature_limit} short phrases, the ones a buyer would
+  compare across models.
+- If you do not know this model, return {{"specs": [], "features": []}}. Do not
+  substitute a similar car.
+"""
+
+MAX_SPECS = 12
+MAX_FEATURES = 16
+
+
+def _clean_specs(raw: object) -> list[dict]:
+    """Label/value pairs, both non-empty strings, bounded in number."""
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for item in raw[:MAX_SPECS]:
+        if not isinstance(item, dict):
+            continue
+        label = str(item.get("label") or "").strip()
+        value = str(item.get("value") or "").strip()
+        if label and value:
+            out.append({"label": label[:60], "value": value[:80]})
+    return out
+
+
+async def research_model_details(make: str, model: str, year: int) -> dict:
+    """
+    A model's specification and features, or empty lists.
+
+    Same bargain as research_variants: this drafts, a person checks. Never
+    raises — an admin pressing a research button on a screen that also has a
+    manual path should get the manual path back, not an error.
+    """
+    if not available():
+        return {"specs": [], "features": []}
+
+    prompt = MODEL_PROMPT.format(
+        make=make, model=model, year=year,
+        spec_limit=MAX_SPECS, feature_limit=MAX_FEATURES,
+    )
+    url = (
+        f"{settings.gemini_api_url.rstrip('/')}/models/"
+        f"{settings.gemini_model}:generateContent"
+    )
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.0, "responseMimeType": "application/json"},
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=settings.gemini_timeout_seconds) as client:
+            resp = await client.post(
+                url, params={"key": settings.gemini_api_key}, json=payload
+            )
+            resp.raise_for_status()
+            body = resp.json()
+
+        candidates = body.get("candidates") or []
+        parts = (candidates[0].get("content") or {}).get("parts") or [] if candidates else []
+        text = "".join(p.get("text", "") for p in parts).strip()
+        if not text:
+            return {"specs": [], "features": []}
+
+        raw = json.loads(text)
+        if not isinstance(raw, dict):
+            return {"specs": [], "features": []}
+        features = raw.get("features")
+        return {
+            "specs": _clean_specs(raw.get("specs")),
+            "features": (
+                [str(f).strip()[:80] for f in features[:MAX_FEATURES] if str(f).strip()]
+                if isinstance(features, list) else []
+            ),
+        }
+    except Exception as exc:
+        logger.warning("Model detail research failed for %s %s: %s", make, model, exc)
+        return {"specs": [], "features": []}

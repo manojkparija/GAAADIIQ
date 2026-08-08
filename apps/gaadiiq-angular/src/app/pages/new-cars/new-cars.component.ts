@@ -207,7 +207,9 @@ export class NewCarsComponent implements OnInit {
         image,
         minPrice: Math.min(...prices),
         maxPrice: Math.max(...prices),
-        variantCount: inBand.length,
+        // Published trims, not catalogue rows. A model is one catalogue row,
+        // so this said "1 Variant" beside a page listing eight of them.
+        variantCount: Math.max(...inBand.map(c => c.variantCount ?? 0), inBand.length),
         bodyType,
         fuels,
         rating: rep.rating,

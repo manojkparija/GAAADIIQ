@@ -124,7 +124,11 @@
               </p>
             </div>
             <div class="variants-list">
-              <div class="variant-row variant-row--detailed" *ngFor="let v of variants()">
+              <div class="variant-row variant-row--detailed"
+                   *ngFor="let v of variants()"
+                   [class.is-selected]="selectedVariantId() === v.id"
+                   (click)="selectVariant(v)"
+                   [title]="v.ex_showroom_price ? 'Price the on-road cost for this trim' : ''">
                 <div class="variant-name-wrap">
                   <span class="variant-name">{{ car.model }} {{ v.name }}</span>
                   <span class="variant-spec-line">
@@ -462,6 +466,18 @@
         <!-- ON-ROAD PRICE -->
         <div class="onroad-card glass-card" *ngIf="onRoadPrice() as orp">
           <h3>🛣️ On-Road Price</h3>
+          <!--
+            Which car this is pricing. Trims differ by a lakh or more and can
+            fall in different tax bands, so a figure with no trim against it is
+            ambiguous the moment a model has more than one.
+          -->
+          <p class="orp-for" *ngIf="selectedVariant() as trim">
+            {{ car.model }} <strong>{{ trim.name }}</strong>
+            · <a href="javascript:void(0)" (click)="selectedVariantId.set(null)">clear</a>
+          </p>
+          <p class="orp-for" *ngIf="!selectedVariant() && variants().length">
+            Base model — pick a trim under Variants to price that one.
+          </p>
           <div class="state-select">
             <label>State:</label>
             <select [ngModel]="selectedState()" (ngModelChange)="selectedState.set($event)" name="state">

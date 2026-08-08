@@ -514,11 +514,18 @@ export class CarDetailComponent implements OnInit {
       // waiting for it would hold up the whole page.
       if (!this.car.isSellerListing) {
         void this.loadVariants(this.car.id);
-        this.carsData.fullGallery(this.car.id).then(urls => {
-          if (urls && urls.length > (this.car.images?.length ?? 0)) {
-            this.car = { ...this.car, images: urls, image: urls[0] };
-            this.activeImg.set(0);
-          }
+        this.carsData.fullCar(this.car.id).then(fresh => {
+          if (!fresh) return;
+          const urls = fresh.images ?? [];
+          this.car = {
+            ...this.car,
+            images: urls.length > (this.car.images?.length ?? 0) ? urls : this.car.images,
+            image: urls.length ? urls[0] : this.car.image,
+            // Curated specification wins over the hardcoded map.
+            specs: fresh.specs?.length ? fresh.specs : this.car.specs,
+            features: fresh.features?.length ? fresh.features : this.car.features,
+          };
+          if (urls.length) this.activeImg.set(0);
         });
       }
       this.loan.amount = this.car.price;
@@ -550,9 +557,14 @@ export class CarDetailComponent implements OnInit {
   // ex-showroom price that already contains them, live in utils/on-road-price.
   onRoadPrice = computed(() => {
     if (!this.car) return null;
+    // A trim's own price when one is selected. Trims of a model differ by a
+    // lakh or more, and the tax band can differ with them, so quoting the
+    // model's base figure beside a chosen ZXi+ is quoting the wrong car.
+    const trim = this.selectedVariant();
+    const price = Number(trim?.ex_showroom_price) || this.car.price;
     return computeOnRoadPrice(
-      this.car.price,
-      this.car.fuel ?? 'Petrol',
+      price,
+      trim?.fuel_type || this.car.fuel || 'Petrol',
       (this.car as any).body_type ?? (this.car as any).bodyType ?? '',
       this.STATE_REG[this.selectedState()] ?? 0.08,
     );
@@ -657,6 +669,18 @@ export class CarDetailComponent implements OnInit {
       .filter(p => Number.isFinite(p) && p > 0);
     return prices.length ? [Math.min(...prices), Math.max(...prices)] : null;
   });
+
+  /** The trim the buyer is pricing, or null for the model's base figure. */
+  selectedVariantId = signal<string | null>(null);
+  selectedVariant = computed(() =>
+    this.variants().find(v => v.id === this.selectedVariantId()) ?? null
+  );
+
+  /** Selecting the chosen trim again clears it, back to the model's price. */
+  selectVariant(v: CarVariant) {
+    if (!v.ex_showroom_price) return;
+    this.selectedVariantId.set(this.selectedVariantId() === v.id ? null : v.id);
+  }
 
   private async loadVariants(carId: string) {
     this.variants.set(await this.carsData.variantsFor(carId));
