@@ -3,12 +3,12 @@
  *
  *     on-road = ex-showroom + road tax + insurance + handling
  *
- * GST and cess are not added. An ex-showroom price already contains them — it
- * is the ex-factory price plus GST, plus cess, plus the dealer's margin, which
- * is why it is the figure a manufacturer publishes and a buyer compares across
- * models. Adding them again charged a ₹5.25L S-Presso 28% GST and 1% cess a
- * second time and quoted ₹7.4L on the road for a car that costs about ₹5.8L —
- * an overstatement of ₹1.5L on the number a buyer budgets against.
+ * GST is not added. An ex-showroom price already contains it — it is the
+ * ex-factory price plus GST plus the dealer's margin, which is why it is the
+ * figure a manufacturer publishes and a buyer compares across models. Adding
+ * it again charged a ₹5.25L S-Presso tax a second time and quoted ₹7.4L on the
+ * road for a car that costs about ₹5.8L — an overstatement of ₹1.5L on the
+ * number a buyer budgets against.
  *
  * They are still reported, because a buyer wants to know what tax is in the
  * price, but as a breakdown OF the ex-showroom figure: the taxable value is
@@ -38,36 +38,46 @@ export interface OnRoadPrice {
 const HANDLING = 10000;
 
 /**
- * GST & cess rates, per the GST Council notification as updated in 2023:
+ * GST rates, per the 56th GST Council meeting of 3 September 2025, in force
+ * from 22 September 2025.
  *
- *   Electric:                          5% GST, no cess
- *   CNG/Petrol < 4m, engine < 1200cc:  28% GST + 1% cess
- *   Diesel < 4m, engine < 1500cc:      28% GST + 3% cess
- *   Petrol > 4m or engine >= 1200cc:   28% GST + 17% cess
- *   SUV (>4m, >1500cc, GC > 170mm):    28% GST + 22% cess
+ *   Electric:                                            5%
+ *   Small car — petrol/CNG/LPG <= 1200cc, diesel
+ *   <= 1500cc, and length <= 4000mm:                    18%
+ *   Everything larger, including SUVs:                  40%
+ *
+ * Compensation cess was abolished for automobiles by the same reform. It is
+ * still reported as a line so an older quote can be read against a newer one,
+ * but the rate is zero and no longer varies by segment.
+ *
+ * These replaced a 28% slab plus a cess of 1% to 22% that varied by length,
+ * engine capacity, fuel and ground clearance. Carrying the old numbers meant
+ * quoting a tax breakdown no buyer would recognise from a showroom invoice.
  *
  * Segment is inferred from the price band, because length and engine capacity
- * are not always recorded against a catalogue model.
+ * are not recorded against every catalogue model. That is a heuristic and it
+ * will misjudge a cheap large car or an expensive small one; the ex-showroom
+ * figure it explains is unaffected either way, since these rates describe what
+ * is already inside that price rather than anything added to it.
  */
-function rates(base: number, fuel: string, bodyType: string) {
-  if (fuel === 'Electric') return { gstRate: 0.05, cessRate: 0 };
-  if (fuel === 'Hybrid') {
-    // Strong hybrids take 15%; mild hybrids sit with their fuel type.
-    return { gstRate: 0.28, cessRate: base > 1500000 ? 0.15 : 0.17 };
-  }
+const SMALL_CAR_GST = 0.18;
+const LARGE_CAR_GST = 0.40;
+const EV_GST = 0.05;
 
-  const isSuv = /suv/i.test(bodyType);
-  let cessRate: number;
-  if (base < 600000) {
-    cessRate = fuel === 'Diesel' ? 0.03 : 0.01;
-  } else if (base < 1200000) {
-    cessRate = fuel === 'Diesel' ? 0.17 : 0.03;
-  } else if (base < 2000000) {
-    cessRate = 0.17;
-  } else {
-    cessRate = isSuv ? 0.22 : 0.17;
-  }
-  return { gstRate: 0.28, cessRate };
+/** Above this, a car is priced like something outside the small-car limits. */
+const SMALL_CAR_PRICE_CEILING = 1000000;
+
+function rates(base: number, fuel: string, bodyType: string) {
+  if (fuel === 'Electric') return { gstRate: EV_GST, cessRate: 0 };
+
+  // An SUV is outside the small-car definition by length and ground clearance
+  // whatever it costs, so body type decides before price does.
+  if (/suv/i.test(bodyType)) return { gstRate: LARGE_CAR_GST, cessRate: 0 };
+
+  return {
+    gstRate: base <= SMALL_CAR_PRICE_CEILING ? SMALL_CAR_GST : LARGE_CAR_GST,
+    cessRate: 0,
+  };
 }
 
 /**
