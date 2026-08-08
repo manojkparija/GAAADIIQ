@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, effect, HostListener } from '@angu
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CarsDataService, Car } from '../../services/cars-data.service';
+import { CarsDataService, Car, CarVariant } from '../../services/cars-data.service';
 import { IconComponent } from '../../components/icon/icon.component';
 
 interface NewCarVariant { name: string; minPrice: number; maxPrice: number; count?: number; }
@@ -513,6 +513,7 @@ export class CarDetailComponent implements OnInit {
       // it. Asked for after the car renders: it only ever adds pictures, and
       // waiting for it would hold up the whole page.
       if (!this.car.isSellerListing) {
+        void this.loadVariants(this.car.id);
         this.carsData.fullGallery(this.car.id).then(urls => {
           if (urls && urls.length > (this.car.images?.length ?? 0)) {
             this.car = { ...this.car, images: urls, image: urls[0] };
@@ -640,6 +641,26 @@ export class CarDetailComponent implements OnInit {
 
   formatPrice(p: number) { return p >= 100000 ? `₹${(p / 100000).toFixed(1)}L` : `₹${p.toLocaleString()}`; }
   stars(n: number) { return Array.from({length: 5}, (_, i) => i < n ? '★' : '☆'); }
+
+  // ── Variants ──────────────────────────────────────────────────────────────
+  //
+  // These were a hardcoded map covering seven models, so every other model
+  // showed no variants at all and no admin action could change it. They are
+  // now rows an admin maintains, drafted by research and published after
+  // review — a price a buyer budgets against does not belong in a component.
+  variants = signal<CarVariant[]>([]);
+
+  /** The published price band, or null when no trim carries a price. */
+  variantPriceRange = computed<[number, number] | null>(() => {
+    const prices = this.variants()
+      .map(v => Number(v.ex_showroom_price))
+      .filter(p => Number.isFinite(p) && p > 0);
+    return prices.length ? [Math.min(...prices), Math.max(...prices)] : null;
+  });
+
+  private async loadVariants(carId: string) {
+    this.variants.set(await this.carsData.variantsFor(carId));
+  }
 
   get isNewCar() { return this.car?.km === 0 && this.car?.year >= 2024; }
   get newCarMeta(): NewCarMeta | null {

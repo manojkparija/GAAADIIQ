@@ -26,6 +26,7 @@ export const routes: Routes = [
   { path: 'dealer-dashboard', loadComponent: () => import('./pages/dealer-dashboard/dealer-dashboard.component').then(m => m.DealerDashboardComponent), canActivate: [sellerGuard] },
   { path: 'admin/pricing', loadComponent: () => import('./pages/admin-pricing/admin-pricing.component').then(m => m.AdminPricingComponent), canActivate: [sellerGuard] },
   { path: 'admin/pdf-ingestion', loadComponent: () => import('./pages/admin-pdf-ingestion/admin-pdf-ingestion.component').then(m => m.AdminPdfIngestionComponent), canActivate: [adminGuard] },
+  { path: 'admin/variants', loadComponent: () => import('./pages/admin-variants/admin-variants.component').then(m => m.AdminVariantsComponent), canActivate: [adminGuard] },
   { path: 'admin/car-images', loadComponent: () => import('./pages/admin-car-images/admin-car-images.component').then(m => m.AdminCarImagesComponent), canActivate: [adminGuard] },
   { path: 'pricing-plans', loadComponent: () => import('./pages/pricing-plans/pricing-plans.component').then(m => m.PricingPlansComponent) },
   { path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent) },

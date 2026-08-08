@@ -1,4 +1,5 @@
 from .car import Car
+from .car_variant import CarVariant, VariantSource, VariantStatus
 from .customer_intent import CustomerActivity, CustomerIntentScore
 from .dealer import Dealer
 from .listing import Listing
@@ -26,7 +27,7 @@ from .vehicle_media import (
 from .voice_diagnosis import DiagnosisAuditEvent, DiagnosisConversation, VoiceTranscript
 
 __all__ = [
-    "User", "Dealer", "Car", "Listing", "TestDriveBooking", "LoanInquiry",
+    "User", "Dealer", "Car", "CarVariant", "VariantStatus", "VariantSource", "Listing", "TestDriveBooking", "LoanInquiry",
     "Notification", "PriceAlert", "Review", "Payment", "Subscription", "RefreshToken",
     "CustomerActivity", "CustomerIntentScore",
     "VehicleDiagnosis", "DiagnosisConversation", "VoiceTranscript", "DiagnosisAuditEvent",

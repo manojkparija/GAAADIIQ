@@ -88,7 +88,7 @@
         <div class="tabs glass-card">
           <div class="tab-nav">
             <button [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">Overview</button>
-            <button *ngIf="isNewCar && newCarMeta" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">Variants</button>
+            <button *ngIf="isNewCar && (variants().length || newCarMeta)" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">Variants</button>
             <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">Specs</button>
             <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">Features</button>
             <button *ngIf="modelColours().length > 0" [class.active]="activeTab()==='colours'" (click)="activeTab.set('colours')">Colours</button>
@@ -108,19 +108,52 @@
           </div>
 
           <!-- VARIANTS (new cars only) -->
-          <div class="tab-content" *ngIf="activeTab()==='variants' && newCarMeta">
+          <!--
+            Trims an admin maintains, with the old hardcoded map as a fallback
+            for the seven models it covered until they are entered properly.
+          -->
+          <div class="tab-content" *ngIf="activeTab()==='variants' && variants().length">
+            <div class="variants-header">
+              <p class="variants-sub" *ngIf="variantPriceRange() as band">
+                {{ car.make }} {{ car.model }} price starts at
+                <strong class="gradient-text">{{ formatLakh(band[0]) }}</strong>
+                <ng-container *ngIf="band[1] > band[0]">
+                  and goes up to <strong class="gradient-text">{{ formatLakh(band[1]) }}</strong>
+                </ng-container>
+                (ex-showroom).
+              </p>
+            </div>
+            <div class="variants-list">
+              <div class="variant-row variant-row--detailed" *ngFor="let v of variants()">
+                <div class="variant-name-wrap">
+                  <span class="variant-name">{{ car.model }} {{ v.name }}</span>
+                  <span class="variant-spec-line">
+                    <ng-container *ngIf="v.fuel_type">{{ v.fuel_type }}</ng-container>
+                    <ng-container *ngIf="v.transmission"> · {{ v.transmission }}</ng-container>
+                    <ng-container *ngIf="v.engine_cc"> · {{ v.engine_cc }} cc</ng-container>
+                    <ng-container *ngIf="v.mileage"> · {{ v.mileage }}</ng-container>
+                  </span>
+                  <span class="variant-features" *ngIf="v.features?.length">
+                    {{ v.features!.join(' · ') }}
+                  </span>
+                </div>
+                <span class="variant-price gradient-text">
+                  <ng-container *ngIf="v.ex_showroom_price">
+                    {{ formatLakh(+v.ex_showroom_price) }}
+                  </ng-container>
+                  <!-- Never render an unpriced trim as ₹0. -->
+                  <ng-container *ngIf="!v.ex_showroom_price">Price on request</ng-container>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-content" *ngIf="activeTab()==='variants' && !variants().length && newCarMeta">
             <div class="variants-header">
               <p class="variants-sub">{{ car.make }} {{ car.model }} price starts at
                 <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[0]) }}</strong> and goes up to
                 <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[1]) }}</strong> (ex-showroom).
               </p>
-              <div class="variants-filter-chips">
-                <span class="chip active">All</span>
-                <span class="chip">Petrol</span>
-                <span class="chip">CNG</span>
-                <span class="chip">Manual</span>
-                <span class="chip">Automatic</span>
-              </div>
             </div>
             <div class="variants-list">
               <div class="variant-row" *ngFor="let v of newCarMeta!.variants">

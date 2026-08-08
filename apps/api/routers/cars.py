@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -8,9 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.dependencies import get_admin_user, get_current_user
 from db.session import get_db
 from models.car import Car
+from models.car_variant import CarVariant, VariantSource, VariantStatus
 from models.user import User
 from schemas.car import CarCreate, CarListOut, CarOut, CarUpdate
-from services import media_library
+from services import media_library, variant_research
 
 router = APIRouter(prefix="/cars", tags=["cars"])
 
@@ -206,3 +208,229 @@ async def create_car(
     await db.commit()
     await db.refresh(car)
     return CarOut.model_validate(car)
+
+
+# ── Variants ────────────────────────────────────────────────────────────────
+#
+# A catalogue row stands for a model; a variant is a trim of it. What a buyer
+# asks after choosing a model is which trim to buy, and that is entirely about
+# what each costs and what each gives you.
+
+
+class VariantIn(BaseModel):
+    name: str
+    ex_showroom_price: Decimal | None = None
+    fuel_type: str | None = None
+    transmission: str | None = None
+    engine_cc: int | None = None
+    seating_capacity: int | None = None
+    mileage: str | None = None
+    features: list[str] | None = None
+    sort_order: int | None = None
+
+
+class VariantPatch(BaseModel):
+    """Every field optional: omitting one leaves it, sending null clears it."""
+
+    name: str | None = None
+    ex_showroom_price: Decimal | None = None
+    fuel_type: str | None = None
+    transmission: str | None = None
+    engine_cc: int | None = None
+    seating_capacity: int | None = None
+    mileage: str | None = None
+    features: list[str] | None = None
+    sort_order: int | None = None
+    status: VariantStatus | None = None
+
+
+class VariantOut(BaseModel):
+    id: uuid.UUID
+    car_id: uuid.UUID
+    name: str
+    ex_showroom_price: Decimal | None = None
+    fuel_type: str | None = None
+    transmission: str | None = None
+    engine_cc: int | None = None
+    seating_capacity: int | None = None
+    mileage: str | None = None
+    # Nullable in the row, always a list here: a caller rendering a bullet list
+    # should not have to distinguish "no features recorded" from "none".
+    features: list[str] | None = None
+    status: VariantStatus
+    source: VariantSource
+    sort_order: int
+
+    model_config = {"from_attributes": True}
+
+
+def _variant_out(v: CarVariant) -> VariantOut:
+    out = VariantOut.model_validate(v)
+    out.features = list(v.features or [])
+    return out
+
+
+async def _get_car_or_404(db: AsyncSession, car_id: uuid.UUID) -> Car:
+    car = (await db.execute(select(Car).where(Car.id == car_id))).scalar_one_or_none()
+    if not car:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Car not found")
+    return car
+
+
+@router.get("/{car_id}/variants", response_model=list[VariantOut])
+async def list_variants(
+    car_id: uuid.UUID,
+    include_drafts: bool = Query(
+        False,
+        description=(
+            "Include trims awaiting review. Admin screens set this; buyer-"
+            "facing pages must not, because a draft is a figure nobody has "
+            "checked."
+        ),
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    q = select(CarVariant).where(CarVariant.car_id == car_id)
+    if not include_drafts:
+        q = q.where(CarVariant.status == VariantStatus.published)
+    q = q.order_by(CarVariant.sort_order, CarVariant.name)
+    return [_variant_out(v) for v in (await db.execute(q)).scalars().all()]
+
+
+@router.post(
+    "/{car_id}/variants",
+    response_model=VariantOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_variant(
+    car_id: uuid.UUID,
+    payload: VariantIn,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """
+    Add a trim by hand.
+
+    Published immediately, unlike a researched one: an admin typing a price has
+    already done the checking that review exists to force.
+    """
+    await _get_car_or_404(db, car_id)
+
+    data = payload.model_dump(exclude_unset=True)
+    sort_order = data.pop("sort_order", None)
+    variant = CarVariant(
+        car_id=car_id,
+        **data,
+        status=VariantStatus.published,
+        source=VariantSource.manual,
+        sort_order=sort_order if sort_order is not None else 0,
+    )
+    db.add(variant)
+    await db.commit()
+    await db.refresh(variant)
+    return _variant_out(variant)
+
+
+@router.patch("/{car_id}/variants/{variant_id}", response_model=VariantOut)
+async def update_variant(
+    car_id: uuid.UUID,
+    variant_id: uuid.UUID,
+    payload: VariantPatch,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """
+    Correct a trim, or publish one.
+
+    This is what makes researched figures safe to keep at all: anything the
+    model got wrong is fixable in place, and setting status to published is the
+    act of vouching for it.
+    """
+    variant = (await db.execute(
+        select(CarVariant).where(
+            CarVariant.id == variant_id, CarVariant.car_id == car_id
+        )
+    )).scalar_one_or_none()
+    if not variant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
+
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(variant, field, value)
+
+    await db.commit()
+    await db.refresh(variant)
+    return _variant_out(variant)
+
+
+@router.delete("/{car_id}/variants/{variant_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_variant(
+    car_id: uuid.UUID,
+    variant_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """
+    Drop a trim.
+
+    Hard, unlike an image: a variant is a short row an admin typed or a model
+    drafted, carrying no audit history and no stored file, and a discontinued
+    trim is simply not a fact about the car any more.
+    """
+    variant = (await db.execute(
+        select(CarVariant).where(
+            CarVariant.id == variant_id, CarVariant.car_id == car_id
+        )
+    )).scalar_one_or_none()
+    if not variant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
+
+    await db.delete(variant)
+    await db.commit()
+
+
+@router.post("/{car_id}/variants/research", response_model=list[VariantOut])
+async def research_car_variants(
+    car_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """
+    Draft this model's trims with a language model.
+
+    Everything it returns lands as a draft. A language model states a plausible
+    price with complete confidence, and these are figures a buyer budgets
+    against, so a person reads them before a buyer does.
+
+    Trims already recorded are left exactly as they are — a published price an
+    admin vouched for must not be overwritten by a guess — so this fills gaps
+    rather than replacing work.
+    """
+    car = await _get_car_or_404(db, car_id)
+
+    drafts = await variant_research.research_variants(car.make, car.model, car.year)
+
+    existing = {
+        v.name.strip().lower()
+        for v in (await db.execute(
+            select(CarVariant).where(CarVariant.car_id == car_id)
+        )).scalars().all()
+    }
+
+    created: list[CarVariant] = []
+    for order, draft in enumerate(drafts):
+        if draft["name"].strip().lower() in existing:
+            continue
+        variant = CarVariant(
+            car_id=car_id,
+            status=VariantStatus.draft,
+            source=VariantSource.ai,
+            sort_order=order,
+            **draft,
+        )
+        db.add(variant)
+        created.append(variant)
+
+    await db.commit()
+    for variant in created:
+        await db.refresh(variant)
+    return [_variant_out(v) for v in created]
