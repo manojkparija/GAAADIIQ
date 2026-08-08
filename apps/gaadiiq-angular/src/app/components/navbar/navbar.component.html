@@ -89,6 +89,9 @@
               <a routerLink="/admin/car-images" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="image" [size]="14"></app-icon> Car Images
               </a>
+              <a routerLink="/admin/variants" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                <app-icon name="settings" [size]="14"></app-icon> Variants
+              </a>
               <a routerLink="/admin/pdf-ingestion" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="file-text" [size]="14"></app-icon> File Ingestion
               </a>
@@ -142,6 +145,7 @@
           <a routerLink="/dealer-dashboard" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Dealer Dashboard</a>
           <a *ngIf="auth.isAdmin()" routerLink="/admin/pricing" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Price Manager</a>
           <a *ngIf="auth.isAdmin()" routerLink="/admin/car-images" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Car Images</a>
+          <a *ngIf="auth.isAdmin()" routerLink="/admin/variants" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Variants</a>
           <a *ngIf="auth.isAdmin()" routerLink="/admin/pdf-ingestion" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">File Ingestion</a>
           <a routerLink="/my-listings" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">My Listings</a>
         </ng-container>
