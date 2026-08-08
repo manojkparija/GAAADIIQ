@@ -567,6 +567,94 @@ export class AdminCarImagesComponent implements OnInit {
    * FormData streams without Angular re-encoding it, which means
    * authInterceptor never sees them and the header has to be attached by hand.
    */
+  // ── Existing images: what is actually on the site for this vehicle ────────
+  //
+  // An image uploaded against the wrong car is a mistake a buyer can see, and
+  // the only way to correct one was to change its metadata — which moves it to
+  // another car rather than taking it off the site. A bad shot had no exit at
+  // all.
+  existingImages = signal<VehicleImage[]>([]);
+  existingLoading = signal(false);
+  existingError = signal('');
+  removingId = signal<string | null>(null);
+  /** The last removal, so it can be undone without hunting for it. */
+  lastRemoved = signal<VehicleImage | null>(null);
+
+  /** Whether the identity is complete enough to ask what is on the site. */
+  canListExisting = computed(() => !!this.make() && !!this.model());
+
+  async loadExistingImages() {
+    if (!this.canListExisting()) return;
+    this.existingLoading.set(true);
+    this.existingError.set('');
+    try {
+      const params = new URLSearchParams({ make: this.make(), model: this.model() });
+      const year = this.modelYear();
+      if (year) params.set('model_year', String(year));
+
+      const resp = await fetch(
+        `${this.apiUrl}/media-admin/vehicle-images?${params}`,
+        { headers: await this.authHeaders() },
+      );
+      if (!resp.ok) throw new Error(await this.describeError(resp));
+      this.existingImages.set(await resp.json());
+    } catch (err) {
+      this.existingError.set(String(err));
+      this.existingImages.set([]);
+    } finally {
+      this.existingLoading.set(false);
+    }
+  }
+
+  async removeImage(image: VehicleImage) {
+    // Removal is undoable and the confirmation says so, which is what keeps it
+    // a question rather than a warning.
+    const ok = confirm(
+      `Remove "${image.filename}" from the site?\n\n` +
+      'It stops appearing for buyers immediately. You can put it back.'
+    );
+    if (!ok) return;
+
+    this.removingId.set(image.id);
+    try {
+      const resp = await fetch(`${this.apiUrl}/media-admin/${image.id}`, {
+        method: 'DELETE',
+        headers: await this.authHeaders(),
+      });
+      if (!resp.ok) throw new Error(await this.describeError(resp));
+      this.existingImages.set(this.existingImages().filter(i => i.id !== image.id));
+      this.lastRemoved.set(image);
+      this.toast('🗑 Image removed — it is off the site');
+    } catch (err) {
+      this.toast(`❌ Could not remove it: ${err}`);
+    } finally {
+      this.removingId.set(null);
+    }
+  }
+
+  async undoRemove() {
+    const image = this.lastRemoved();
+    if (!image) return;
+    try {
+      const resp = await fetch(`${this.apiUrl}/media-admin/${image.id}/restore`, {
+        method: 'POST',
+        headers: await this.authHeaders(),
+      });
+      if (!resp.ok) throw new Error(await this.describeError(resp));
+      this.lastRemoved.set(null);
+      this.toast('↩ Image restored');
+      await this.loadExistingImages();
+    } catch (err) {
+      this.toast(`❌ Could not restore it: ${err}`);
+    }
+  }
+
+  /** Bearer header, or none when there is no session to speak of. */
+  private async authHeaders(): Promise<Record<string, string>> {
+    const token = await this.getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
   private async getToken(): Promise<string> {
     try {
       const { data } = await this.supabase.client.auth.getSession();
@@ -608,6 +696,19 @@ export class AdminCarImagesComponent implements OnInit {
   startOver() {
     this.resetForm();
   }
+}
+
+/** One photograph currently on the site for a vehicle. */
+interface VehicleImage {
+  id: string;
+  filename: string;
+  url: string;
+  thumbnail_url: string | null;
+  image_category: string | null;
+  variant: string | null;
+  colour: string | null;
+  media_bucket: string | null;
+  created_at: string;
 }
 
 /** One vehicle identity the catalogue already holds. */

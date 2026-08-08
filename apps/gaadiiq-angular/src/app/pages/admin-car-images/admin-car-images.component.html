@@ -359,6 +359,62 @@
           </div>
         </div>
 
+        <!--
+          What is already on the site for this vehicle.
+
+          An image uploaded against the wrong car is a mistake a buyer can see,
+          and correcting its metadata only moves it to another car. This is the
+          way to take one off the site.
+        -->
+        <div class="aci-form-section" *ngIf="canListExisting()">
+          <h3 class="aci-subsection-title">
+            Images already on the site
+            <button type="button" class="btn-add-more" (click)="loadExistingImages()"
+                    [disabled]="existingLoading()">
+              {{ existingLoading() ? 'Loading…' : '🔄 Show current images' }}
+            </button>
+          </h3>
+
+          @if (existingError()) {
+            <div class="size-error">❌ {{ existingError() }}</div>
+          }
+
+          @if (lastRemoved(); as removed) {
+            <div class="size-warning">
+              🗑 Removed “{{ removed.filename }}”.
+              <a href="javascript:void(0)" (click)="undoRemove()">Undo</a>
+            </div>
+          }
+
+          @if (existingImages().length) {
+            <div class="aci-existing-grid">
+              @for (img of existingImages(); track img.id) {
+                <div class="aci-existing-card">
+                  <img [src]="img.thumbnail_url || img.url" [alt]="img.filename"
+                       referrerpolicy="no-referrer" loading="lazy" />
+                  <div class="aci-existing-meta">
+                    <span class="aci-existing-name" [title]="img.filename">{{ img.filename }}</span>
+                    <span class="aci-existing-tags">
+                      {{ img.image_category || 'uncategorised' }}
+                      @if (img.variant) { · {{ img.variant }} }
+                    </span>
+                  </div>
+                  <button type="button" class="aci-remove-image"
+                          [disabled]="removingId() === img.id"
+                          (click)="removeImage(img)">
+                    {{ removingId() === img.id ? 'Removing…' : 'Remove' }}
+                  </button>
+                </div>
+              }
+            </div>
+          } @else if (!existingLoading()) {
+            <small class="aci-hint">
+              Nothing loaded yet — press “Show current images” to see what
+              buyers see for this vehicle, and remove anything wrong.
+            </small>
+          }
+        </div>
+
         <!-- Optional metadata -->
         <div class="aci-form-section">
           <h3 class="aci-subsection-title">Additional Information (Optional)</h3>

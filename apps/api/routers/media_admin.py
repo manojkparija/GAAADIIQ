@@ -18,6 +18,7 @@ NOTE: deliberately NOT using `from __future__ import annotations` — see the no
 in routers/brochures.py about PEP 563 and slowapi's wrapper.
 """
 import logging
+from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
@@ -381,14 +382,7 @@ async def upload_images(
     chosen_category = _category(image_category)
     chosen_bucket = _bucket(media_bucket)
 
-    # The forwarded address, not the socket's: behind Render's proxy every
-    # request appears to come from the proxy, which would make the audit trail
-    # record the same address for every admin in the country.
-    forwarded = request.headers.get("x-forwarded-for", "")
-    client_ip = (
-        forwarded.split(",")[0].strip()
-        or (request.client.host if request.client else None)
-    )
+    client_ip = _client_ip(request)
     user_agent = request.headers.get("user-agent")
     result = UploadResult(stored=0, deduplicated=0, rejected=0)
     max_bytes = settings.media_max_upload_mb * 1024 * 1024
@@ -588,6 +582,203 @@ async def _make_primary(db: AsyncSession, media: VehicleMedia) -> None:
     media.is_primary = True
 
 
+def _client_ip(request: Request) -> str | None:
+    """
+    The forwarded address, not the socket's.
+
+    Behind Render's proxy every request appears to come from the proxy, which
+    would make the audit trail record the same address for every admin in the
+    country.
+    """
+    forwarded = request.headers.get("x-forwarded-for", "")
+    return (
+        forwarded.split(",")[0].strip()
+        or (request.client.host if request.client else None)
+    )
+
+
+class VehicleImageOut(BaseModel):
+    """One stored photograph, as the admin screen lists it."""
+
+    id: UUID
+    filename: str
+    url: str
+    thumbnail_url: str | None = None
+    image_category: str | None = None
+    variant: str | None = None
+    colour: str | None = None
+    media_bucket: str | None = None
+    created_at: str
+    uploaded_by: str | None = None
+
+
+@router.get("/vehicle-images", response_model=list[VehicleImageOut])
+@limiter.limit("60/minute")
+async def list_vehicle_images(
+    request: Request,
+    make: str,
+    model: str,
+    model_year: int | None = None,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Every photograph currently showing for a vehicle.
+
+    An admin correcting a mistake needs to see what is actually on the site for
+    a car, which is not the same as what they personally uploaded recently —
+    the existing dashboard listing is filtered to the current user and the last
+    fifty rows, so a wrong image uploaded by a colleague, or a while ago, was
+    not reachable at all.
+
+    Matched the way the catalogue matches at read time: make and model
+    case-insensitively, and year only when given, so an admin can find an image
+    filed under the wrong year.
+    """
+    q = select(VehicleMedia).where(
+        func.lower(func.trim(VehicleMedia.make)) == make.strip().lower(),
+        func.lower(func.trim(VehicleMedia.model)) == model.strip().lower(),
+        VehicleMedia.deleted_at.is_(None),
+    )
+    if model_year is not None:
+        q = q.where(VehicleMedia.model_year == model_year)
+    q = q.order_by(
+        VehicleMedia.is_primary.desc(),
+        VehicleMedia.sort_order.asc(),
+        VehicleMedia.created_at.asc(),
+    )
+
+    storage = get_storage()
+    return [
+        VehicleImageOut(
+            id=m.id,
+            filename=m.source_pdf_name,
+            url=storage.url_for(m.webp_key or m.storage_key),
+            thumbnail_url=storage.url_for(m.thumbnail_key) if m.thumbnail_key else None,
+            image_category=m.image_category.value if m.image_category else None,
+            variant=m.variant,
+            colour=m.colour,
+            media_bucket=m.media_bucket,
+            created_at=m.created_at.isoformat(),
+            uploaded_by=str(m.uploaded_by) if m.uploaded_by else None,
+        )
+        for m in (await db.execute(q)).scalars().all()
+    ]
+
+
+@router.delete("/{media_id}", status_code=status.HTTP_200_OK)
+@limiter.limit("60/minute")
+async def remove_image(
+    request: Request,
+    media_id: UUID,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Take a photograph off the site.
+
+    A picture uploaded against the wrong car, or simply a bad shot, is a
+    mistake a buyer can see, and until now the only way to remove one was to
+    open the database. Metadata could be corrected and an image re-pointed at
+    another vehicle, but an image that should not exist anywhere had no exit.
+
+    Marked removed rather than destroyed. The audit log and version history
+    reference this row, and they hold the facts most worth keeping about a
+    mistake — who uploaded it, when, what it claimed to be. Destroying the row
+    would take those with it and make an accidental removal permanent. The
+    stored file stays too, which is what makes restoring it instant.
+
+    Idempotent: removing an already-removed image is not an error, because the
+    caller's intent is already satisfied.
+    """
+    media = (await db.execute(
+        select(VehicleMedia).where(VehicleMedia.id == media_id)
+    )).scalar_one_or_none()
+    if media is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    if media.deleted_at is None:
+        media.deleted_at = datetime.now(timezone.utc)
+        media.deleted_by = admin.id
+
+        await record_version(
+            db,
+            media_id=media.id,
+            event_type=MediaEventType.DELETED,
+            actor_id=admin.id,
+            old_value={"deleted_at": None},
+            new_value={"deleted_at": media.deleted_at.isoformat()},
+        )
+        await log_audit(
+            db,
+            media_id=media.id,
+            action=AuditAction.DELETE,
+            actor_id=admin.id,
+            ip_address=_client_ip(request),
+            user_agent=request.headers.get("user-agent"),
+            audit_data={"filename": media.source_pdf_name,
+                        "vehicle": f"{media.make} {media.model} {media.model_year}"},
+        )
+        await db.commit()
+
+        # The search index is a cache of the rows, so a removed image must
+        # leave it too — but a failure here must not undo a removal the admin
+        # has already been told about.
+        try:
+            await media_index.delete_media(str(media.id))
+        except Exception:
+            logger.warning("Could not drop %s from the search index", media.id, exc_info=True)
+
+    return {"id": str(media.id), "deleted": True}
+
+
+@router.post("/{media_id}/restore", status_code=status.HTTP_200_OK)
+@limiter.limit("60/minute")
+async def restore_image(
+    request: Request,
+    media_id: UUID,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Put a removed photograph back.
+
+    Removal is one click and mistakes are ordinary, so the way back has to be
+    as easy as the way out.
+    """
+    media = (await db.execute(
+        select(VehicleMedia).where(VehicleMedia.id == media_id)
+    )).scalar_one_or_none()
+    if media is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    if media.deleted_at is not None:
+        was = media.deleted_at.isoformat()
+        media.deleted_at = None
+        media.deleted_by = None
+
+        await record_version(
+            db,
+            media_id=media.id,
+            event_type=MediaEventType.METADATA_UPDATED,
+            actor_id=admin.id,
+            old_value={"deleted_at": was},
+            new_value={"deleted_at": None},
+        )
+        await log_audit(
+            db,
+            media_id=media.id,
+            action=AuditAction.EDIT,
+            actor_id=admin.id,
+            ip_address=_client_ip(request),
+            user_agent=request.headers.get("user-agent"),
+            audit_data={"restored": True, "filename": media.source_pdf_name},
+        )
+        await db.commit()
+
+    return {"id": str(media.id), "deleted": False}
+
+
 @router.patch("/{media_id}", response_model=UploadedImage)
 @limiter.limit("60/minute")
 async def update_metadata(
@@ -709,7 +900,7 @@ async def get_dealer_images(
 
     media = (await db.execute(
         select(VehicleMedia)
-        .where(VehicleMedia.uploaded_by == user.id)
+        .where(VehicleMedia.uploaded_by == user.id, VehicleMedia.deleted_at.is_(None))
         .order_by(desc(VehicleMedia.created_at))
         .limit(50)
     )).scalars().all()
@@ -842,7 +1033,10 @@ async def search_media(
 
     media_rows = (await db.execute(
         select(VehicleMedia)
-        .where(VehicleMedia.embedding_vector.isnot(None))
+        .where(
+            VehicleMedia.embedding_vector.isnot(None),
+            VehicleMedia.deleted_at.is_(None),
+        )
         .limit(100)
     )).scalars().all()
 
