@@ -555,6 +555,109 @@ class TestReuploadCorrectsIdentitySuite:
         assert resp.json()["images"][0]["variant"] == "Adventure"
 
 
+def _striped(seed: int, size=(640, 420)) -> bytes:
+    """
+    An image with a real perceptual signature.
+
+    A flat colour swatch has no gradient, so perceptual_hash returns None for
+    it and the near-duplicate path is never exercised. These stripes give the
+    hash something to encode.
+    """
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", size)
+    draw = ImageDraw.Draw(im)
+    for x in range(0, size[0], 8):
+        draw.rectangle(
+            [x, 0, x + 8, size[1]],
+            fill=((x * seed) % 256, (x * 3 + seed * 7) % 256, (seed * 29) % 256),
+        )
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def _rescaled(data: bytes, size=(320, 210)) -> bytes:
+    """The same photograph, re-encoded smaller: different bytes, same picture."""
+    from PIL import Image
+    buf = io.BytesIO()
+    with Image.open(io.BytesIO(data)) as im:
+        im.resize(size).save(buf, "PNG")
+    return buf.getvalue()
+
+
+class TestNearDuplicateSuite:
+    """
+    A near match is a guess, and reuse acts on it.
+
+    Reusing an image retags it to the vehicle being uploaded against, so a
+    match across two vehicles does not merely skip an upload: it takes an
+    existing photograph off the car it belonged to and moves it onto this one.
+    Both cars are wrong afterwards, and the upload reports success.
+
+    The scan was unrestricted, so any picture in the library could be chosen.
+    Now only photographs of the same vehicle are candidates — and an exact
+    byte-for-byte match is still found anywhere, because re-uploading a file to
+    correct its vehicle is a deliberate feature.
+    """
+
+    @pytest.mark.asyncio
+    async def test_the_same_photograph_rescaled_is_still_one_picture(self, client):
+        """What the near-duplicate match exists for: one press shot, two sizes."""
+        original = _striped(1)
+        resp = await client.post(
+            "/media-admin/upload", data=VEHICLE,
+            files=[
+                ("files", ("big.png", io.BytesIO(original), "image/png")),
+                ("files", ("small.png", io.BytesIO(_rescaled(original)), "image/png")),
+            ],
+        )
+
+        body = resp.json()
+        assert body["stored"] == 1
+        assert body["deduplicated"] == 1
+
+    @pytest.mark.asyncio
+    async def test_a_resemblance_across_vehicles_does_not_move_a_photograph(self, client):
+        original = _striped(1)
+        first = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Tata", "model": "Nexon", "model_year": "2026"},
+            files=[("files", ("nexon.png", io.BytesIO(original), "image/png"))],
+        )
+        nexon_media = first.json()["images"][0]["id"]
+
+        second = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "S-Presso",
+                  "model_year": "2026"},
+            files=[("files", ("spresso.png", io.BytesIO(_rescaled(original)), "image/png"))],
+        )
+
+        body = second.json()
+        assert body["stored"] == 1, "a different vehicle's photograph must be its own"
+        assert body["deduplicated"] == 0
+        assert body["images"][0]["id"] != nexon_media
+        assert body["images"][0]["make"] == "Maruti Suzuki"
+
+    @pytest.mark.asyncio
+    async def test_the_very_same_file_still_moves_when_re_uploaded(self, client):
+        """Identical bytes are the same file: re-uploading corrects its vehicle."""
+        data = _striped(4)
+        first = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Tata", "model": "Punch", "model_year": "2026"},
+            files=[("files", ("shot.png", io.BytesIO(data), "image/png"))],
+        )
+        second = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Tata", "model": "Nexon", "model_year": "2026"},
+            files=[("files", ("shot.png", io.BytesIO(data), "image/png"))],
+        )
+
+        assert second.json()["images"][0]["id"] == first.json()["images"][0]["id"]
+        assert second.json()["images"][0]["model"] == "Nexon"
+
+
 class TestPhotographsBelongToTheModelSuite:
     """
     Variants differ in features, not bodywork.
