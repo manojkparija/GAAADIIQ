@@ -140,6 +140,100 @@
       </div>
     }
 
+    <!--
+      SECTION 1b: MANAGE WHAT IS ALREADY ON THE SITE
+
+      A photograph uploaded against the wrong car is a mistake a buyer can see,
+      and removing it is not a step in uploading something — this lived inside
+      the metadata step at first, which meant starting an upload nobody wanted
+      in order to delete something. Its own section, on the screen an admin
+      lands on.
+    -->
+    @if (!showMetadataGrid() && !uploadResults()) {
+      <div class="aci-section">
+        <h2 class="aci-section-title">Manage images already on the site</h2>
+        <p class="aci-section-sub">
+          Pick a vehicle to see exactly what buyers see for it, and remove
+          anything that should not be there. Removals can be undone.
+        </p>
+
+        <div class="aci-form-grid">
+          <div class="aci-form-field">
+            <label class="aci-label">Manufacturer</label>
+            <select class="aci-input" [ngModel]="manageMake()"
+                    (ngModelChange)="onManageMake($event)">
+              <option value="">Select manufacturer…</option>
+              @for (opt of makeOptions(); track opt) {
+                <option [value]="opt">{{ opt }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="aci-form-field">
+            <label class="aci-label">Model</label>
+            <select class="aci-input" [ngModel]="manageModel()"
+                    (ngModelChange)="onManageModel($event)"
+                    [disabled]="!manageMake()">
+              <option value="">Select model…</option>
+              @for (opt of manageModelOptions(); track opt) {
+                <option [value]="opt">{{ opt }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="aci-form-field">
+            <label class="aci-label">Year (optional)</label>
+            <select class="aci-input" [ngModel]="manageYear()"
+                    (ngModelChange)="manageYear.set($event); loadExistingImages()"
+                    [disabled]="!manageModel()">
+              <option [ngValue]="null">All years</option>
+              @for (opt of manageYearOptions(); track opt) {
+                <option [ngValue]="opt">{{ opt }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        @if (existingError()) {
+          <div class="size-error">❌ {{ existingError() }}</div>
+        }
+
+        @if (lastRemoved(); as removed) {
+          <div class="size-warning">
+            🗑 Removed “{{ removed.filename }}”.
+            <a href="javascript:void(0)" (click)="undoRemove()">Undo</a>
+          </div>
+        }
+
+        @if (existingLoading()) {
+          <small class="aci-hint">Loading…</small>
+        } @else if (existingImages().length) {
+          <div class="aci-existing-grid">
+            @for (img of existingImages(); track img.id) {
+              <div class="aci-existing-card">
+                <img [src]="img.thumbnail_url || img.url" [alt]="img.filename"
+                     referrerpolicy="no-referrer" loading="lazy" />
+                <div class="aci-existing-meta">
+                  <span class="aci-existing-name" [title]="img.filename">{{ img.filename }}</span>
+                  <span class="aci-existing-tags">
+                    {{ img.image_category || 'uncategorised' }}
+                    @if (img.variant) { · {{ img.variant }} }
+                  </span>
+                </div>
+                <button type="button" class="aci-remove-image"
+                        [disabled]="removingId() === img.id"
+                        (click)="removeImage(img)">
+                  {{ removingId() === img.id ? 'Removing…' : '🗑 Remove' }}
+                </button>
+              </div>
+            }
+          </div>
+        } @else if (canListExisting()) {
+          <small class="aci-hint">No images on the site for this vehicle.</small>
+        }
+      </div>
+    }
+
     <!-- SECTION 2: METADATA GRID & REVIEW -->
     @if (showMetadataGrid() && !uploadResults()) {
       <div class="aci-section">
@@ -357,62 +451,6 @@
               </small>
             </div>
           </div>
-        </div>
-
-        <!--
-          What is already on the site for this vehicle.
-
-          An image uploaded against the wrong car is a mistake a buyer can see,
-          and correcting its metadata only moves it to another car. This is the
-          way to take one off the site.
-        -->
-        <div class="aci-form-section" *ngIf="canListExisting()">
-          <h3 class="aci-subsection-title">
-            Images already on the site
-            <button type="button" class="btn-add-more" (click)="loadExistingImages()"
-                    [disabled]="existingLoading()">
-              {{ existingLoading() ? 'Loading…' : '🔄 Show current images' }}
-            </button>
-          </h3>
-
-          @if (existingError()) {
-            <div class="size-error">❌ {{ existingError() }}</div>
-          }
-
-          @if (lastRemoved(); as removed) {
-            <div class="size-warning">
-              🗑 Removed “{{ removed.filename }}”.
-              <a href="javascript:void(0)" (click)="undoRemove()">Undo</a>
-            </div>
-          }
-
-          @if (existingImages().length) {
-            <div class="aci-existing-grid">
-              @for (img of existingImages(); track img.id) {
-                <div class="aci-existing-card">
-                  <img [src]="img.thumbnail_url || img.url" [alt]="img.filename"
-                       referrerpolicy="no-referrer" loading="lazy" />
-                  <div class="aci-existing-meta">
-                    <span class="aci-existing-name" [title]="img.filename">{{ img.filename }}</span>
-                    <span class="aci-existing-tags">
-                      {{ img.image_category || 'uncategorised' }}
-                      @if (img.variant) { · {{ img.variant }} }
-                    </span>
-                  </div>
-                  <button type="button" class="aci-remove-image"
-                          [disabled]="removingId() === img.id"
-                          (click)="removeImage(img)">
-                    {{ removingId() === img.id ? 'Removing…' : 'Remove' }}
-                  </button>
-                </div>
-              }
-            </div>
-          } @else if (!existingLoading()) {
-            <small class="aci-hint">
-              Nothing loaded yet — press “Show current images” to see what
-              buyers see for this vehicle, and remove anything wrong.
-            </small>
-          }
         </div>
 
         <!-- Optional metadata -->

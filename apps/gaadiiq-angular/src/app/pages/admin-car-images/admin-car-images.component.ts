@@ -580,16 +580,57 @@ export class AdminCarImagesComponent implements OnInit {
   /** The last removal, so it can be undone without hunting for it. */
   lastRemoved = signal<VehicleImage | null>(null);
 
+  // Its own vehicle picker, independent of the upload form's.
+  //
+  // Removing a wrong photograph is not a step in uploading one — this section
+  // first lived inside the metadata step, which meant an admin had to start an
+  // upload they did not want in order to delete something. It also must not
+  // borrow the upload form's make and model, or choosing what to inspect would
+  // quietly rewrite what is about to be uploaded.
+  manageMake = signal('');
+  manageModel = signal('');
+  manageYear = signal<number | null>(null);
+
+  manageModelOptions = computed(() =>
+    [...new Set(
+      this.catalogue().filter(o => o.make === this.manageMake()).map(o => o.model)
+    )].sort()
+  );
+  manageYearOptions = computed(() =>
+    [...new Set(
+      this.catalogue()
+        .filter(o => o.make === this.manageMake() && o.model === this.manageModel())
+        .map(o => o.year)
+    )].sort((a, b) => b - a)
+  );
+
+  onManageMake(make: string) {
+    this.manageMake.set(make);
+    this.manageModel.set('');
+    this.manageYear.set(null);
+    this.existingImages.set([]);
+  }
+
+  onManageModel(model: string) {
+    this.manageModel.set(model);
+    this.manageYear.set(null);
+    // The model is the whole identity a photograph is matched on, so this is
+    // enough to show what is on the site — no second click needed.
+    void this.loadExistingImages();
+  }
+
   /** Whether the identity is complete enough to ask what is on the site. */
-  canListExisting = computed(() => !!this.make() && !!this.model());
+  canListExisting = computed(() => !!this.manageMake() && !!this.manageModel());
 
   async loadExistingImages() {
     if (!this.canListExisting()) return;
     this.existingLoading.set(true);
     this.existingError.set('');
     try {
-      const params = new URLSearchParams({ make: this.make(), model: this.model() });
-      const year = this.modelYear();
+      const params = new URLSearchParams({
+        make: this.manageMake(), model: this.manageModel(),
+      });
+      const year = this.manageYear();
       if (year) params.set('model_year', String(year));
 
       const resp = await fetch(
