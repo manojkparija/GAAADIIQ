@@ -550,12 +550,31 @@
 /* A trim row carrying its own specification, not just a price */
 .variant-row--detailed {
   align-items: flex-start;
+  gap: 1rem;
+  cursor: pointer;
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
+  border-radius: 10px;
+  transition: background 0.15s;
+
+  &:hover { background: var(--fill-soft); }
+
+  // Selected: this trim is what the on-road panel is pricing.
+  &.is-selected {
+    background: var(--fill-soft);
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
 
   .variant-name-wrap {
     display: flex;
     flex-direction: column;
+    // The base .variant-name-wrap centres its children, which reads as ragged
+    // once each row is a stack of name, specification and features.
+    align-items: flex-start;
+    text-align: left;
     gap: 0.2rem;
     min-width: 0;
+    flex: 1 1 auto;
   }
 }
 
@@ -567,4 +586,11 @@
 .variant-features {
   font-size: 0.78rem;
   color: var(--text-muted, #9ca3af);
+}
+
+.orp-for {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: -0.25rem 0 0.75rem;
+  a { color: var(--primary); }
 }
