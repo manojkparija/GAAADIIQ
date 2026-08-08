@@ -1,0 +1,194 @@
+@if (toastMsg()) {
+  <div class="av-toast">{{ toastMsg() }}</div>
+}
+
+<div class="av-page">
+  <header class="av-header">
+    <div>
+      <h1>Variants</h1>
+      <p class="av-sub">
+        The trims a model is sold in — what each costs and what each gives you.
+      </p>
+    </div>
+    <a class="btn-ghost" routerLink="/admin/car-images">📸 Car Images</a>
+  </header>
+
+  <main class="av-main">
+    @if (error()) {
+      <div class="av-error">{{ error() }}</div>
+    }
+
+    <!-- Pick a vehicle -->
+    <section class="av-card">
+      <div class="av-grid">
+        <div class="av-field">
+          <label>Manufacturer</label>
+          <select [ngModel]="selectedMake()" (ngModelChange)="onMakeChange($event)">
+            <option value="">Select manufacturer…</option>
+            @for (make of makeOptions(); track make) {
+              <option [value]="make">{{ make }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="av-field">
+          <label>Model</label>
+          <select [ngModel]="selectedCarId()" (ngModelChange)="onCarChange($event)"
+                  [disabled]="!selectedMake()">
+            <option value="">Select model…</option>
+            @for (car of modelsForMake(); track car.id) {
+              <option [value]="car.id">{{ car.model }} ({{ car.year }})</option>
+            }
+          </select>
+        </div>
+      </div>
+    </section>
+
+    @if (selectedCar(); as car) {
+      <section class="av-card">
+        <div class="av-card-head">
+          <h2>{{ car.make }} {{ car.model }} {{ car.year }}</h2>
+          <div class="av-actions">
+            <button type="button" class="btn-secondary" (click)="startAdd()">➕ Add trim</button>
+            <button type="button" class="btn-ai" (click)="research()" [disabled]="researching()">
+              {{ researching() ? 'Researching…' : '✨ Draft with AI' }}
+            </button>
+          </div>
+        </div>
+
+        <p class="av-note">
+          AI drafts are a starting point, not a source. A language model will
+          state a price that is confidently wrong, so every drafted figure
+          stays hidden from buyers until you publish it.
+        </p>
+
+        <!-- Add / edit form -->
+        @if (editingId(); as editing) {
+          <div class="av-form">
+            <h3>{{ editing === 'new' ? 'New trim' : 'Edit trim' }}</h3>
+            <div class="av-grid">
+              <div class="av-field">
+                <label>Trim name *</label>
+                <input [ngModel]="form().name"
+                       (ngModelChange)="setField('name', $event)"
+                       placeholder="e.g. VXi, ZXi+ AMT" />
+              </div>
+              <div class="av-field">
+                <label>Ex-showroom price (₹)</label>
+                <input type="number" [ngModel]="form().ex_showroom_price"
+                       (ngModelChange)="setField('ex_showroom_price', $event)"
+                       placeholder="549000" />
+              </div>
+              <div class="av-field">
+                <label>Fuel</label>
+                <input [ngModel]="form().fuel_type"
+                       (ngModelChange)="setField('fuel_type', $event)"
+                       placeholder="Petrol, Petrol + CNG…" />
+              </div>
+              <div class="av-field">
+                <label>Transmission</label>
+                <input [ngModel]="form().transmission"
+                       (ngModelChange)="setField('transmission', $event)"
+                       placeholder="Manual, AMT…" />
+              </div>
+              <div class="av-field">
+                <label>Engine (cc)</label>
+                <input type="number" [ngModel]="form().engine_cc"
+                       (ngModelChange)="setField('engine_cc', $event)" />
+              </div>
+              <div class="av-field">
+                <label>Seats</label>
+                <input type="number" [ngModel]="form().seating_capacity"
+                       (ngModelChange)="setField('seating_capacity', $event)" />
+              </div>
+              <div class="av-field">
+                <label>Mileage</label>
+                <input [ngModel]="form().mileage"
+                       (ngModelChange)="setField('mileage', $event)"
+                       placeholder="24.76 km/l" />
+              </div>
+              <div class="av-field av-field--full">
+                <label>Features</label>
+                <input [ngModel]="form().features"
+                       (ngModelChange)="setField('features', $event)"
+                       placeholder="Touchscreen, 6 Airbags, Cruise Control" />
+                <small>Comma separated.</small>
+              </div>
+            </div>
+            <div class="av-actions">
+              <button type="button" class="btn-primary" (click)="save()"
+                      [disabled]="!form().name.trim()">Save</button>
+              <button type="button" class="btn-ghost" (click)="cancelEdit()">Cancel</button>
+            </div>
+          </div>
+        }
+
+        <!-- Drafts awaiting review -->
+        @if (drafts().length) {
+          <div class="av-section av-section--draft">
+            <div class="av-section-head">
+              <h3>⚠ {{ drafts().length }} draft(s) — not visible to buyers</h3>
+              <button type="button" class="btn-secondary" (click)="publishAllDrafts()">
+                Publish all
+              </button>
+            </div>
+            @for (v of drafts(); track v.id) {
+              <div class="av-row av-row--draft">
+                <div class="av-row-main">
+                  <span class="av-name">{{ v.name }}</span>
+                  <span class="av-specs">
+                    {{ v.fuel_type }}<ng-container *ngIf="v.transmission"> · {{ v.transmission }}</ng-container>
+                    <ng-container *ngIf="v.mileage"> · {{ v.mileage }}</ng-container>
+                  </span>
+                  @if (v.features?.length) {
+                    <span class="av-features">{{ v.features!.join(' · ') }}</span>
+                  }
+                </div>
+                <span class="av-price">{{ formatPrice(v.ex_showroom_price) }}</span>
+                <div class="av-row-actions">
+                  <button type="button" (click)="startEdit(v)">Edit</button>
+                  <button type="button" class="av-publish" (click)="publish(v)">Publish</button>
+                  <button type="button" class="av-delete" (click)="remove(v)">Delete</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Live on the site -->
+        <div class="av-section">
+          <h3>Visible to buyers ({{ published().length }})</h3>
+          @if (!published().length && !loading()) {
+            <p class="av-empty">
+              No trims published yet. Add one by hand, or draft the list with AI
+              and publish what checks out.
+            </p>
+          }
+          @for (v of published(); track v.id) {
+            <div class="av-row">
+              <div class="av-row-main">
+                <span class="av-name">
+                  {{ v.name }}
+                  @if (v.source === 'ai') { <span class="av-badge">AI</span> }
+                </span>
+                <span class="av-specs">
+                  {{ v.fuel_type }}<ng-container *ngIf="v.transmission"> · {{ v.transmission }}</ng-container>
+                  <ng-container *ngIf="v.mileage"> · {{ v.mileage }}</ng-container>
+                </span>
+                @if (v.features?.length) {
+                  <span class="av-features">{{ v.features!.join(' · ') }}</span>
+                }
+              </div>
+              <span class="av-price">{{ formatPrice(v.ex_showroom_price) }}</span>
+              <div class="av-row-actions">
+                <button type="button" (click)="startEdit(v)">Edit</button>
+                <button type="button" (click)="unpublish(v)">Hide</button>
+                <button type="button" class="av-delete" (click)="remove(v)">Delete</button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </main>
+</div>

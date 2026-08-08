@@ -36,6 +36,24 @@ interface ApiListing {
   car: ApiCar; seller: { id: string; email: string; full_name: string | null } | null;
 }
 
+/** One trim of a model, priced as the manufacturer publishes it. */
+export interface CarVariant {
+  id: string;
+  car_id: string;
+  name: string;
+  /** NUMERIC over the wire, so a rupee amount does not pick up rounding. */
+  ex_showroom_price: string | null;
+  fuel_type: string | null;
+  transmission: string | null;
+  engine_cc: number | null;
+  seating_capacity: number | null;
+  mileage: string | null;
+  features: string[] | null;
+  status: 'draft' | 'published';
+  source: 'manual' | 'ai';
+  sort_order: number;
+}
+
 interface ApiListResponse { items: ApiListing[]; total: number; page: number; page_size: number; }
 interface ApiCarListResponse { items: ApiCar[]; total: number; page: number; page_size: number; }
 
@@ -447,6 +465,20 @@ export class CarsDataService {
   getAll(): Car[] { return this._cars(); }
 
   getById(id: string): Car | undefined { return this._cars().find(c => c.id === id); }
+
+  /**
+   * The trims a model is sold in, as buyers see them.
+   *
+   * Published only: a draft is a figure a language model produced and nobody
+   * has read. Returns [] on any failure, so a page renders without a variants
+   * section rather than not at all.
+   */
+  async variantsFor(carId: string): Promise<CarVariant[]> {
+    const rows = await this.fetchOrNull<CarVariant[]>(
+      `${this.apiUrl}/cars/${carId}/variants`,
+    );
+    return rows ?? [];
+  }
 
   /**
    * Every photograph a catalogue model has, not the sample a listing page

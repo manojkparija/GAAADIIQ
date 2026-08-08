@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from db.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
+    from .car_variant import CarVariant
     from .listing import Listing
 
 
@@ -67,6 +68,12 @@ class Car(UUIDMixin, TimestampMixin, Base):
 
     # Relationships
     listings: Mapped[list["Listing"]] = relationship(back_populates="car")
+
+    # Cascade because a trim has no meaning without its model: deleting the
+    # catalogue row and leaving its variants would strand rows nothing reads.
+    variants: Mapped[list["CarVariant"]] = relationship(
+        back_populates="car", cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Car {self.year} {self.make} {self.model}>"

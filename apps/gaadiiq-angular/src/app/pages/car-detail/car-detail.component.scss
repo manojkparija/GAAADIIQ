@@ -546,3 +546,25 @@
   color: var(--muted);
   font-size: 0.925rem;
 }
+
+/* A trim row carrying its own specification, not just a price */
+.variant-row--detailed {
+  align-items: flex-start;
+
+  .variant-name-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+}
+
+.variant-spec-line {
+  font-size: 0.82rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.variant-features {
+  font-size: 0.78rem;
+  color: var(--text-muted, #9ca3af);
+}
