@@ -82,8 +82,15 @@ PHASH_SCAN_LIMIT = 500
 async def _find_exact(db: AsyncSession, content_hash: str | None) -> VehicleMedia | None:
     if not content_hash:
         return None
+    # Removed rows are included deliberately. The storage key is derived from
+    # the content hash and is unique, so a second row for the same bytes cannot
+    # exist — and uploading a file again is an admin asking for it to be on the
+    # site, which is what restoring it does. store_image revives it and records
+    # that it did.
     return (await db.execute(
-        select(VehicleMedia).where(VehicleMedia.content_hash == content_hash).limit(1)
+        select(VehicleMedia)
+        .where(VehicleMedia.content_hash == content_hash)
+        .limit(1)
     )).scalar_one_or_none()
 
 
@@ -116,7 +123,7 @@ async def _find_near(
 
     q = (
         select(VehicleMedia)
-        .where(VehicleMedia.phash.is_not(None))
+        .where(VehicleMedia.phash.is_not(None), VehicleMedia.deleted_at.is_(None))
         .order_by(VehicleMedia.created_at.desc())
         .limit(PHASH_SCAN_LIMIT)
     )
@@ -197,6 +204,13 @@ async def store_image(
         existing = (await _find_exact(db, content_hash)
                     or await _find_near(db, phash, make=make, model=model))
         if existing is not None:
+            # Uploading a removed photograph again puts it back. Anything else
+            # would hand the caller a row every read path filters out: the
+            # upload reports success and the picture never appears.
+            restored = existing.deleted_at is not None
+            if restored:
+                existing.deleted_at = None
+                existing.deleted_by = None
             identity = ("make", "model", "variant", "model_year", "category")
             before = {f: getattr(existing, f) for f in identity}
 
@@ -242,6 +256,7 @@ async def store_image(
                     "filename": source_name,
                     "deduplicated": True,
                     "retagged": sorted(changed) or None,
+                    "restored": restored or None,
                 },
             )
             return existing
@@ -471,7 +486,11 @@ async def urls_for_cars(
         for (make, model, year) in wanted
     ]
 
-    q = select(VehicleMedia).where(or_(*conditions))
+    q = select(VehicleMedia).where(
+        or_(*conditions),
+        # Removed images are gone from every buyer-facing surface.
+        VehicleMedia.deleted_at.is_(None),
+    )
     if bucket in ("new", "used"):
         q = q.where(
             or_(
@@ -513,7 +532,10 @@ async def urls_for_listing(db: AsyncSession, listing_id) -> list[str]:
     rows = (await db.execute(
         select(VehicleMedia, ListingMedia.position)
         .join(ListingMedia, ListingMedia.media_id == VehicleMedia.id)
-        .where(ListingMedia.listing_id == listing_id)
+        .where(
+            ListingMedia.listing_id == listing_id,
+            VehicleMedia.deleted_at.is_(None),
+        )
         .order_by(ListingMedia.position)
     )).all()
 

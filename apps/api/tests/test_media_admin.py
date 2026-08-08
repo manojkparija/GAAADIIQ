@@ -740,6 +740,127 @@ class TestGalleryLimitSuite:
         assert len(detail["image_urls"]) == 10, "one car means all of its photographs"
 
 
+class TestRemoveImageSuite:
+    """
+    A photograph uploaded against the wrong car is a mistake a buyer can see.
+
+    Metadata could be corrected and an image re-pointed at another vehicle, but
+    an image that should not exist anywhere had no exit at all — the only way
+    to take one off the site was to open the database.
+
+    Removal is recorded, not performed: the audit log and version history
+    reference the row and hold the facts worth keeping about a mistake, and an
+    accidental removal must be undoable.
+    """
+
+    async def _upload(self, client, **over):
+        resp = await client.post(
+            "/media-admin/upload", data={**VEHICLE, **over},
+            files=[("files", ("a.png", io.BytesIO(_striped(11)), "image/png"))],
+        )
+        return resp.json()["images"][0]["id"]
+
+    @pytest.mark.asyncio
+    async def test_a_removed_image_leaves_the_catalogue(self, client):
+        await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Tata", "model": "Tiago", "model_year": "2026",
+                  "media_bucket": "new", "ex_showroom_price": "600000"},
+            files=[
+                ("files", ("keep.png", io.BytesIO(_striped(21)), "image/png")),
+                ("files", ("wrong.png", io.BytesIO(_striped(22)), "image/png")),
+            ],
+        )
+        listed = (await client.get("/cars?priced_only=true")).json()["items"]
+        tiago = next(c for c in listed if c["model"] == "Tiago")
+        assert len(tiago["image_urls"]) == 2
+
+        images = (await client.get(
+            "/media-admin/vehicle-images?make=Tata&model=Tiago&model_year=2026"
+        )).json()
+        wrong = next(i for i in images if i["filename"] == "wrong.png")
+        resp = await client.delete(f"/media-admin/{wrong['id']}")
+
+        assert resp.status_code == 200
+        after = (await client.get(f"/cars/{tiago['id']}")).json()
+        assert len(after["image_urls"]) == 1, "the removed photograph is off the site"
+
+    @pytest.mark.asyncio
+    async def test_a_removed_image_is_no_longer_listed_for_the_vehicle(self, client):
+        media_id = await self._upload(client)
+        await client.delete(f"/media-admin/{media_id}")
+
+        images = (await client.get(
+            "/media-admin/vehicle-images?make=Tata&model=Nexon"
+        )).json()
+
+        assert all(i["id"] != media_id for i in images)
+
+    @pytest.mark.asyncio
+    async def test_removal_records_who_did_it(self, client):
+        media_id = await self._upload(client)
+
+        await client.delete(f"/media-admin/{media_id}")
+
+        audit = (await client.get(f"/media-admin/{media_id}/audit")).json()
+        entry = next(e for e in audit["audits"] if e["action"] == "delete")
+        assert entry["actor_id"], "a removal with no actor is not an audit trail"
+
+    @pytest.mark.asyncio
+    async def test_a_removal_can_be_undone(self, client):
+        media_id = await self._upload(client)
+        await client.delete(f"/media-admin/{media_id}")
+
+        resp = await client.post(f"/media-admin/{media_id}/restore")
+
+        assert resp.status_code == 200
+        images = (await client.get(
+            "/media-admin/vehicle-images?make=Tata&model=Nexon"
+        )).json()
+        assert any(i["id"] == media_id for i in images)
+
+    @pytest.mark.asyncio
+    async def test_removing_twice_is_not_an_error(self, client):
+        """The caller's intent is already satisfied the second time."""
+        media_id = await self._upload(client)
+
+        assert (await client.delete(f"/media-admin/{media_id}")).status_code == 200
+        assert (await client.delete(f"/media-admin/{media_id}")).status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_removing_an_unknown_image_is_a_404(self, client):
+        resp = await client.delete(f"/media-admin/{uuid.uuid4()}")
+        assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_uploading_a_removed_file_again_puts_it_back(self, client):
+        """
+        The storage key is derived from the file's content hash and is unique,
+        so a second row for the same bytes cannot exist. Uploading a file again
+        is an admin asking for it to be on the site — so it is restored rather
+        than stored beside itself or handed back still removed, which would
+        report success and show nothing.
+        """
+        data = _striped(31)
+        first = await client.post(
+            "/media-admin/upload", data=VEHICLE,
+            files=[("files", ("shot.png", io.BytesIO(data), "image/png"))],
+        )
+        media_id = first.json()["images"][0]["id"]
+        await client.delete(f"/media-admin/{media_id}")
+
+        second = await client.post(
+            "/media-admin/upload", data=VEHICLE,
+            files=[("files", ("shot.png", io.BytesIO(data), "image/png"))],
+        )
+
+        assert second.status_code == 201
+        images = (await client.get(
+            "/media-admin/vehicle-images?make=Tata&model=Nexon"
+        )).json()
+        assert any(i["id"] == media_id for i in images), "the photograph is back"
+
+
 class TestUploadAuditSuite:
     """
     An audit trail has to say who, not only what.

@@ -328,6 +328,29 @@ class VehicleMedia(Base):
         nullable=True, index=True,
     )
 
+    # Removal, recorded rather than performed.
+    #
+    # An image uploaded against the wrong car is a mistake a buyer can see, and
+    # an admin needs it off the site immediately. Destroying the row would take
+    # the audit log and version history with it — the record of who uploaded
+    # it, when, and what it was tagged as — and those are exactly the facts
+    # worth keeping about a mistake. It would also make an accidental removal
+    # unrecoverable.
+    #
+    # Set means gone from every buyer-facing surface. Every read path filters
+    # on it; forgetting to is how a removed image comes back.
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    deleted_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    @property
+    def is_deleted(self) -> bool:
+        return self.deleted_at is not None
+
     # When the enrichment backfill last processed this row.
     #
     # A marker is needed because "has no perceptual hash" and "has no make" are
