@@ -705,6 +705,41 @@ class TestPhotographsBelongToTheModelSuite:
         assert not exter.get("variant")
 
 
+class TestGalleryLimitSuite:
+    """
+    A listing page carries a sample of each car; a single car carries its
+    gallery.
+
+    urls_for_cars bounds how many photographs each car contributes, so a
+    hundred-car page does not haul thousands of URLs. The bound applied to
+    asking for one car too, which made an eighth photograph the last one that
+    could ever appear: further uploads were stored, sorted into the list, and
+    pushed an older picture out of the response. Nothing on the page or in the
+    API said a limit had been reached, so an admin uploading a ninth photograph
+    saw eight and concluded the upload had failed.
+    """
+
+    @pytest.mark.asyncio
+    async def test_a_single_car_returns_more_than_a_listing_page_does(self, client):
+        vehicle = {**VEHICLE, "make": "Tata", "model": "Harrier",
+                   "model_year": "2026", "media_bucket": "new",
+                   "ex_showroom_price": "1600000"}
+        await client.post(
+            "/media-admin/upload", data=vehicle,
+            files=[
+                ("files", (f"h{i}.png", io.BytesIO(_striped(i + 2)), "image/png"))
+                for i in range(10)
+            ],
+        )
+
+        listed = (await client.get("/cars?priced_only=true")).json()["items"]
+        harrier = next(c for c in listed if c["model"] == "Harrier")
+        detail = (await client.get(f"/cars/{harrier['id']}")).json()
+
+        assert len(harrier["image_urls"]) == 8, "a page keeps its payload bounded"
+        assert len(detail["image_urls"]) == 10, "one car means all of its photographs"
+
+
 class TestUploadAuditSuite:
     """
     An audit trail has to say who, not only what.

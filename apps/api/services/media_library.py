@@ -61,6 +61,18 @@ logger = logging.getLogger("gaadiiq.media_library")
 # this costs nothing on the case it actually exists to serve.
 PHASH_MATCH_DISTANCE = 6
 
+# How many photographs each car contributes to a multi-car page. A grid shows
+# one image per card and a carousel a handful, so a low bound here keeps a
+# 100-car response from carrying thousands of URLs.
+GALLERY_PAGE_LIMIT = 8
+
+# How many a single car may return. Asking for one car is asking for that car,
+# and the answer should be its gallery rather than a sample of it: an admin who
+# uploads a fifteenth photograph and sees eight has been told, wrongly, that
+# the upload did not work. Bounded at all only so one pathological row cannot
+# produce an unbounded response.
+GALLERY_FULL_LIMIT = 60
+
 # Bounded because the scan is a linear comparison in Python, not an indexed
 # lookup. Newest-first is the right order: a duplicate almost always arrives
 # near in time to its twin, from the same brochure batch or the same dealer.
@@ -407,7 +419,7 @@ async def urls_for_cars(
     db: AsyncSession,
     cars: "Sequence[Car]",
     bucket: str | None = None,
-    per_car: int = 8,
+    per_car: int = GALLERY_PAGE_LIMIT,
 ) -> dict[uuid.UUID, list[str]]:
     """
     Gallery URLs for a page of catalogue cars, keyed by car id.
@@ -429,6 +441,12 @@ async def urls_for_cars(
 
     One query for the whole page rather than one per car: a 100-car page would
     otherwise issue 100 round trips to Postgres.
+
+    `per_car` bounds how many URLs each car contributes. It exists to keep a
+    100-car listing page from carrying thousands of URLs, and it is a
+    presentation limit, not a fact about the vehicle — a car with more
+    photographs than this still has them. Ask for a single car (see
+    GALLERY_FULL_LIMIT) to get its whole gallery.
     """
     if not cars:
         return {}

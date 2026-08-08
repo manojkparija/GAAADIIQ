@@ -448,6 +448,26 @@ export class CarsDataService {
 
   getById(id: string): Car | undefined { return this._cars().find(c => c.id === id); }
 
+  /**
+   * Every photograph a catalogue model has, not the sample a listing page
+   * carries.
+   *
+   * /cars caps the images it returns per car, because a hundred-car page would
+   * otherwise haul thousands of URLs across the wire. A detail page is showing
+   * one car and wants all of it: an admin who uploads a fifteenth photograph
+   * and finds eight on the page concludes the upload failed.
+   *
+   * Returns null when the car is not a catalogue model or the request fails,
+   * so the caller keeps whatever it already had.
+   */
+  async fullGallery(id: string): Promise<string[] | null> {
+    const car = await this.fetchOrNull<ApiCar>(`${this.apiUrl}/cars/${id}`);
+    const urls = (car?.image_urls ?? []).filter(
+      u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'),
+    );
+    return urls.length ? urls : null;
+  }
+
   addApprovedVehicle(car: Car): void {
     // Avoid duplicates by id
     if (this._cars().some(c => c.id === car.id)) return;
