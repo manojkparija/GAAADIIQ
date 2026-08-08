@@ -508,6 +508,18 @@ export class CarDetailComponent implements OnInit {
       this.carLoaded = true;
     }
     if (this.carLoaded) {
+      // The listing page caps how many photographs each car carries, so the
+      // gallery would otherwise show a sample of this car rather than all of
+      // it. Asked for after the car renders: it only ever adds pictures, and
+      // waiting for it would hold up the whole page.
+      if (!this.car.isSellerListing) {
+        this.carsData.fullGallery(this.car.id).then(urls => {
+          if (urls && urls.length > (this.car.images?.length ?? 0)) {
+            this.car = { ...this.car, images: urls, image: urls[0] };
+            this.activeImg.set(0);
+          }
+        });
+      }
       this.loan.amount = this.car.price;
       this.calcEmi();
       if (this.car.color) this.selectedColour.set(this.car.color);

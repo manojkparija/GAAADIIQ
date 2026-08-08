@@ -150,7 +150,10 @@ async def get_car(car_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Car not found")
 
     out = CarOut.model_validate(car)
-    images = await media_library.urls_for_cars(db, [car])
+    # One car, so return its gallery rather than a listing page's sample of it.
+    images = await media_library.urls_for_cars(
+        db, [car], per_car=media_library.GALLERY_FULL_LIMIT
+    )
     out.image_urls = images.get(car.id, [])
     return out
 
@@ -184,7 +187,10 @@ async def update_car(
     await db.refresh(car)
 
     out = CarOut.model_validate(car)
-    images = await media_library.urls_for_cars(db, [car])
+    # One car, so return its gallery rather than a listing page's sample of it.
+    images = await media_library.urls_for_cars(
+        db, [car], per_car=media_library.GALLERY_FULL_LIMIT
+    )
     out.image_urls = images.get(car.id, [])
     return out
 
