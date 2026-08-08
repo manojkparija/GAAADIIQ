@@ -44,10 +44,22 @@ if TYPE_CHECKING:
 logger = logging.getLogger("gaadiiq.media_library")
 
 # Bit distance below which two perceptual hashes are treated as the same
-# picture. Ten of sixty-four is the conventional working threshold: re-encoding
-# and rescaling move a handful of bits, while genuinely different photographs
-# sit far higher — a red car and a green one measured 29 apart in testing.
-PHASH_MATCH_DISTANCE = 10
+# picture.
+#
+# Ten of sixty-four is the conventional threshold, and it was too generous
+# here. An admin uploaded two fresh photographs of a car already in the
+# catalogue and both were absorbed into an existing image at distance exactly
+# ten — the pictures were never stored, the gallery did not change, and the
+# upload reported success. Perceptual hashing is coarse by design: two
+# photographs of the same vehicle from slightly different angles, or two pale
+# hatchbacks against a pale background, land far closer together than two
+# unrelated pictures do.
+#
+# Six still absorbs what this is for — re-encoding, rescaling and recompression
+# move a handful of bits — while leaving room for photographs that genuinely
+# differ. Identical files are caught by content hash regardless, so tightening
+# this costs nothing on the case it actually exists to serve.
+PHASH_MATCH_DISTANCE = 6
 
 # Bounded because the scan is a linear comparison in Python, not an indexed
 # lookup. Newest-first is the right order: a duplicate almost always arrives
@@ -63,23 +75,45 @@ async def _find_exact(db: AsyncSession, content_hash: str | None) -> VehicleMedi
     )).scalar_one_or_none()
 
 
-async def _find_near(db: AsyncSession, phash: str | None) -> VehicleMedia | None:
+async def _find_near(
+    db: AsyncSession,
+    phash: str | None,
+    *,
+    make: str | None = None,
+    model: str | None = None,
+) -> VehicleMedia | None:
     """
-    The closest stored image within PHASH_MATCH_DISTANCE, or None.
+    The closest stored image of the same vehicle within PHASH_MATCH_DISTANCE.
 
     Closest rather than first match: two brochures of the same model can both be
     near, and reusing the nearest keeps the reference pointing at the picture
     that is actually the same shot.
+
+    Restricted to the vehicle being uploaded against, because a near match is a
+    guess and this one has consequences. Reuse retags the image it matched, so a
+    loose match across vehicles does not merely skip an upload — it moves an
+    existing photograph off the car it belonged to and onto this one. Two cars
+    lose a picture to settle a resemblance no one asked about.
+
+    An exact content-hash match is still matched across the whole library:
+    identical bytes are the same file, and re-uploading one to correct its
+    vehicle is a deliberate feature.
     """
     if not phash:
         return None
 
-    candidates = (await db.execute(
+    q = (
         select(VehicleMedia)
         .where(VehicleMedia.phash.is_not(None))
         .order_by(VehicleMedia.created_at.desc())
         .limit(PHASH_SCAN_LIMIT)
-    )).scalars().all()
+    )
+    if make and model:
+        q = q.where(
+            func.lower(func.trim(VehicleMedia.make)) == make.strip().lower(),
+            func.lower(func.trim(VehicleMedia.model)) == model.strip().lower(),
+        )
+    candidates = (await db.execute(q)).scalars().all()
 
     best: VehicleMedia | None = None
     best_distance = PHASH_MATCH_DISTANCE + 1
@@ -148,7 +182,8 @@ async def store_image(
     phash = pdf_ingest.perceptual_hash(data)
 
     if dedupe:
-        existing = await _find_exact(db, content_hash) or await _find_near(db, phash)
+        existing = (await _find_exact(db, content_hash)
+                    or await _find_near(db, phash, make=make, model=model))
         if existing is not None:
             identity = ("make", "model", "variant", "model_year", "category")
             before = {f: getattr(existing, f) for f in identity}
