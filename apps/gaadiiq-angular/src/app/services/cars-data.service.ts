@@ -9,6 +9,8 @@ export interface Car {
   image: string; images?: string[]; rating: number; reviews: number; verified: boolean;
   city?: string; bodyType?: string; color?: string; owners?: string;
   isSellerListing?: boolean;
+  /** Published trims for this model, 0 when none have been entered. */
+  variantCount?: number;
   sellerEmail?: string;
   specs?: { label: string; value: string }[];
   features?: string[];
@@ -26,6 +28,10 @@ interface ApiCar {
   // should not pick up rounding on the way here.
   ex_showroom_price?: string | null;
   image_urls?: string[];
+  /** Published trims, counted by the API. */
+  variant_count?: number;
+  specs?: { label: string; value: string }[] | null;
+  features?: string[] | null;
 }
 
 interface ApiListing {
@@ -276,11 +282,14 @@ function mapCatalogueCar(car: ApiCar): Car {
     verified: true,
     bodyType: BODY_LABEL[car.body_type ?? ''] ?? car.body_type ?? '',
     isSellerListing: false,
-    specs: car.engine_cc ? [
+    variantCount: car.variant_count ?? 0,
+    // A curated specification wins; the engine/seating pair is the fallback
+    // for a model nobody has researched yet.
+    specs: car.specs?.length ? car.specs : (car.engine_cc ? [
       { label: 'Engine', value: `${car.engine_cc} cc` },
       ...(car.seating_capacity ? [{ label: 'Seating', value: `${car.seating_capacity} seats` }] : []),
-    ] : [],
-    features: [],
+    ] : []),
+    features: car.features ?? [],
   };
 }
 
@@ -481,8 +490,8 @@ export class CarsDataService {
   }
 
   /**
-   * Every photograph a catalogue model has, not the sample a listing page
-   * carries.
+   * One car in full: every photograph it has, plus the specification and
+   * feature list curated against it.
    *
    * /cars caps the images it returns per car, because a hundred-car page would
    * otherwise haul thousands of URLs across the wire. A detail page is showing
@@ -492,12 +501,17 @@ export class CarsDataService {
    * Returns null when the car is not a catalogue model or the request fails,
    * so the caller keeps whatever it already had.
    */
-  async fullGallery(id: string): Promise<string[] | null> {
+  async fullCar(id: string): Promise<Partial<Car> | null> {
     const car = await this.fetchOrNull<ApiCar>(`${this.apiUrl}/cars/${id}`);
-    const urls = (car?.image_urls ?? []).filter(
-      u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'),
-    );
-    return urls.length ? urls : null;
+    if (!car) return null;
+    return {
+      images: (car.image_urls ?? []).filter(
+        u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'),
+      ),
+      specs: car.specs ?? undefined,
+      features: car.features ?? undefined,
+      variantCount: car.variant_count ?? 0,
+    };
   }
 
   addApprovedVehicle(car: Car): void {

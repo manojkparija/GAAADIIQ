@@ -51,7 +51,12 @@
           <div class="av-actions">
             <button type="button" class="btn-secondary" (click)="startAdd()">➕ Add trim</button>
             <button type="button" class="btn-ai" (click)="research()" [disabled]="researching()">
-              {{ researching() ? 'Researching…' : '✨ Draft with AI' }}
+              {{ researching() ? 'Researching…' : '✨ Draft trims with AI' }}
+            </button>
+            <button type="button" class="btn-ai" (click)="researchDetails()"
+                    [disabled]="researchingDetails()"
+                    title="Fills the Specs and Features tabs on the car page">
+              {{ researchingDetails() ? 'Researching…' : '📋 Draft specs & features' }}
             </button>
           </div>
         </div>

@@ -514,11 +514,18 @@ export class CarDetailComponent implements OnInit {
       // waiting for it would hold up the whole page.
       if (!this.car.isSellerListing) {
         void this.loadVariants(this.car.id);
-        this.carsData.fullGallery(this.car.id).then(urls => {
-          if (urls && urls.length > (this.car.images?.length ?? 0)) {
-            this.car = { ...this.car, images: urls, image: urls[0] };
-            this.activeImg.set(0);
-          }
+        this.carsData.fullCar(this.car.id).then(fresh => {
+          if (!fresh) return;
+          const urls = fresh.images ?? [];
+          this.car = {
+            ...this.car,
+            images: urls.length > (this.car.images?.length ?? 0) ? urls : this.car.images,
+            image: urls.length ? urls[0] : this.car.image,
+            // Curated specification wins over the hardcoded map.
+            specs: fresh.specs?.length ? fresh.specs : this.car.specs,
+            features: fresh.features?.length ? fresh.features : this.car.features,
+          };
+          if (urls.length) this.activeImg.set(0);
         });
       }
       this.loan.amount = this.car.price;

@@ -2,7 +2,7 @@ import enum
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum, Index, Numeric, SmallInteger, String
+from sqlalchemy import JSON, Enum, Index, Numeric, SmallInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base, TimestampMixin, UUIDMixin
@@ -65,6 +65,12 @@ class Car(UUIDMixin, TimestampMixin, Base):
     # advert. NULL means nobody has entered a price yet — readers must show
     # that as unpriced, never as zero.
     ex_showroom_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+
+    # The model's specification, as label/value pairs read top to bottom, and
+    # its feature list. JSON because nothing queries across them and a join
+    # table would cost a migration every time a manufacturer names a cupholder.
+    specs: Mapped[list | None] = mapped_column(JSON)
+    features: Mapped[list | None] = mapped_column(JSON)
 
     # Relationships
     listings: Mapped[list["Listing"]] = relationship(back_populates="car")

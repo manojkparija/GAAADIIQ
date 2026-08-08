@@ -11,12 +11,23 @@
 
 .detail-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: 2rem;
   align-items: start;
+
+  // A grid item's default min-width is auto, so a long feature line or a wide
+  // table pushes the column past its track and the whole page scrolls
+  // sideways — taking the sidebar off screen with it. minmax(0, 1fr) above and
+  // this together let the content shrink instead.
+  > * { min-width: 0; }
 }
 
-.detail-left { display: flex; flex-direction: column; gap: 1.5rem; }
+.detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
 
 .gallery {
   padding: 1.25rem;

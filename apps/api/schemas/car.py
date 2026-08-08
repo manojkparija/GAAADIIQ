@@ -52,6 +52,12 @@ class CarOut(BaseModel):
     # row, so the association is resolved at read time. Empty when nothing has
     # been uploaded for the model yet.
     image_urls: list[str] = []
+    # How many trims a buyer can actually choose between. Counted rather than
+    # inferred from catalogue rows: a model is one row, and the card that says
+    # "1 Variant" beside eight published trims is simply wrong.
+    variant_count: int = 0
+    specs: list | None = None
+    features: list | None = None
 
     model_config = {"from_attributes": True}
 

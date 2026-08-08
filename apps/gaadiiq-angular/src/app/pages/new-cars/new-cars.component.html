@@ -256,7 +256,7 @@
                   </div>
                   <div class="model-details">
                     <span class="model-fuels">⛽ {{ model.fuels.join(' / ') }}</span>
-                    <span class="model-variants">{{ model.variantCount }} Variant{{ model.variantCount > 1 ? 's' : '' }}</span>
+                    <span class="model-variants" *ngIf="model.variantCount > 1">{{ model.variantCount }} Variants</span>
                   </div>
                   <div class="model-actions">
                     <a [routerLink]="['/listings']"
