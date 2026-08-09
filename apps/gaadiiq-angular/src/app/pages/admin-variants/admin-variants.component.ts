@@ -200,10 +200,15 @@ export class AdminVariantsComponent {
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const car = await resp.json();
       const specs = car.specs?.length ?? 0;
+      const features = car.features?.length ?? 0;
+      // Two failures look identical from here — the AI returning nothing, and
+      // the write not landing — so say which one this was. A toast that reads
+      // "nothing found" when the car came back empty sends the next person
+      // looking at the prompt instead of at the database.
       this.toast(
-        specs
-          ? `📋 ${specs} specification(s) and ${car.features?.length ?? 0} feature(s) saved`
-          : 'Nothing found — the specification may already be filled in.'
+        specs || features
+          ? `📋 ${specs} specification(s) and ${features} feature(s) saved`
+          : 'The AI returned no specification for this model. Nothing was saved.'
       );
     } catch (err) {
       this.error.set(`Specification research failed: ${err}`);
