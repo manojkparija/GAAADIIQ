@@ -305,12 +305,12 @@
                   <div class="oc-item"><span><app-icon name="shield" [size]="13"></app-icon> Insurance (5yr)</span><span>{{ tco.fmt(t.insurance5yr) }}</span></div>
                   <div class="oc-item"><span>⛽ Fuel (5yr)</span><span>{{ tco.fmt(t.fuel5yr) }}</span></div>
                   <div class="oc-item"><span>🔧 Maintenance (5yr)</span><span>{{ tco.fmt(t.maintenance5yr) }}</span></div>
-                  <div class="oc-item" style="color:#43E97B"><span>📈 Resale Value</span><span>−{{ tco.fmt(t.resaleValue) }}</span></div>
+                  <div class="oc-item" style="color:var(--teal)"><span>📈 Resale Value</span><span>−{{ tco.fmt(t.resaleValue) }}</span></div>
                   <div class="oc-total"><span>Net 5-yr Cost</span><span class="gradient-text">{{ tco.fmt(t.netCost5yr) }}</span></div>
                   <div class="oc-perkm">≈ {{ tco.fmt(t.monthlyCost) }}/month total ownership cost</div>
                   <ng-container *ngIf="tco.calculateResale(car) as r">
-                    <div style="margin-top:1rem;padding:1rem;background:rgba(67,233,123,0.08);border-radius:10px;border:1px solid rgba(67,233,123,0.2)">
-                      <div style="font-weight:700;margin-bottom:0.5rem;color:#43E97B">Depreciation Outlook</div>
+                    <div style="margin-top:1rem;padding:1rem;background:color-mix(in srgb, var(--teal) 8%, transparent);border-radius:10px;border:1px solid color-mix(in srgb, var(--teal) 20%, transparent)">
+                      <div style="font-weight:700;margin-bottom:0.5rem;color:var(--teal)">Depreciation Outlook</div>
                       <div style="font-size:0.85rem;color:var(--muted)">{{ r.verdict }} · {{ r.depreciationRate }}% per year</div>
                       <div style="display:flex;gap:1.5rem;margin-top:0.75rem;font-size:0.875rem">
                         <div><div style="color:var(--muted);font-size:0.72rem">1 Year</div><strong>{{ tco.fmt(r.value1yr) }}</strong></div>
