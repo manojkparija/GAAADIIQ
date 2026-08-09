@@ -240,10 +240,59 @@
               <div class="oc-total"><span>Total Annual Cost</span><span>₹{{ oc.total.toLocaleString('en-IN') }}</span></div>
               <div class="oc-perkm">≈ ₹{{ oc.perKm }} per km</div>
             </div>
-            <div class="resale-card" *ngIf="resaleValue() as rv">
-              <div style="font-weight:700;margin-bottom:0.5rem">📈 Estimated Resale Value (1 yr)</div>
-              <div class="gradient-text" style="font-size:1.5rem;font-weight:900">{{ formatPrice(rv.value) }}</div>
-              <div style="font-size:0.8rem;color:var(--muted)">Retains {{ rv.pct }}% of purchase value</div>
+            <!-- Year-by-year resale forecast -->
+            <div class="resale-forecast glass-card">
+              <div class="rf-head">
+                <div>
+                  <div class="rf-title">📈 What can I sell it for?</div>
+                  <div class="rf-sub">Projected resale value, year by year</div>
+                </div>
+                <div class="rf-years">
+                  <button *ngFor="let n of [3, 5, 7]" type="button"
+                          [class.active]="forecastYears() === n"
+                          (click)="setForecastYears(n)">{{ n }}y</button>
+                </div>
+              </div>
+
+              <div class="rf-rows">
+                <div class="rf-row" *ngFor="let f of resaleCurve()">
+                  <div class="rf-year">Year {{ f.year }}</div>
+                  <div class="rf-bar"><span [style.width.%]="barWidth(f.value)"></span></div>
+                  <div class="rf-val">
+                    <strong>{{ formatPrice(f.value) }}</strong>
+                    <small>{{ f.retained_pct }}%</small>
+                  </div>
+                  <div class="rf-note" *ngIf="f.note">{{ f.note }}</div>
+                </div>
+              </div>
+
+              <div class="rf-total">
+                Total value lost over {{ forecastYears() }} years
+                <strong>{{ formatPrice(totalDepreciation()) }}</strong>
+              </div>
+
+              <div class="rf-summary" *ngIf="aiSummary()">🤖 {{ aiSummary() }}</div>
+
+              <div class="rf-foot">
+                <span class="rf-source" *ngIf="aiForecast(); else estimateLabel">
+                  ✨ Refined by Gemini for this exact model
+                </span>
+                <ng-template #estimateLabel>
+                  <span class="rf-source muted">
+                    Standard depreciation estimate
+                    <ng-container *ngIf="forecastTried() && !forecastLoading()">
+                      — AI had no specific data for this model
+                    </ng-container>
+                  </span>
+                </ng-template>
+                <button type="button" class="rf-refine" *ngIf="!aiForecast()"
+                        [disabled]="forecastLoading()" (click)="refineForecast()">
+                  {{ forecastLoading() ? 'Analysing…' : '✨ Refine with AI' }}
+                </button>
+              </div>
+              <div class="rf-disclaimer">
+                Projection only — actual resale depends on condition, service history and local demand.
+              </div>
             </div>
 
             <!-- 5-Year TCO Analysis -->

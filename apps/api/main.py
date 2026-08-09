@@ -51,6 +51,7 @@ from routers import (  # noqa: E402
     payments,
     price_alerts,
     recommend,
+    resale,
     reviews,
     search,
     sentiment,
@@ -366,6 +367,7 @@ app.include_router(brochures.media_router)
 app.include_router(media_admin.router)
 app.include_router(upload.router)
 app.include_router(insurance.router)
+app.include_router(resale.router)
 
 
 @app.get("/")
