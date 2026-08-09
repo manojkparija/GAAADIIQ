@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GAADIIQ">
+  <!--
+    Master for the PWA icon set. Rendered to PNG at every size the manifest
+    declares; do not hand-edit the PNGs, regenerate them from here.
+
+    Differs from favicon.svg in two ways, both because these are declared
+    `purpose: "maskable any"`:
+
+      * The ground is a full-bleed square with no corner radius. Android crops
+        maskable icons to its own shape — a circle, a squircle, a rounded
+        square depending on the launcher — so baking in corners would show as a
+        dark ring inside the OS's own mask.
+
+      * The mark is smaller. A maskable icon must keep its content inside a
+        centred circle of 80% diameter, or the launcher clips it. Here the
+        mark's furthest point sits ~170 units from centre against a 205 safe
+        radius, which leaves room on every mask shape.
+  -->
+  <rect width="512" height="512" fill="#2F6BFF"/>
+
+  <circle cx="256" cy="256" r="120" fill="none"
+          stroke="#FFFFFF" stroke-width="46" stroke-linecap="round"
+          stroke-dasharray="591 163" stroke-dashoffset="-81.5"/>
+
+  <line x1="250" y1="256" x2="376" y2="256"
+        stroke="#2DD4BF" stroke-width="46" stroke-linecap="round"/>
+  <polyline points="336,216 376,256 336,296" fill="none"
+            stroke="#2DD4BF" stroke-width="38"
+            stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

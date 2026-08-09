@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GAADIIQ">
+  <!--
+    Browser-tab mark: the arc-and-arrow from the logo, alone.
+
+    The wordmark is dropped entirely. At 16px a seven-letter word is a grey
+    smudge, so the icon has to carry the brand on the shape alone.
+
+    Solid blue ground rather than a transparent mark: a transparent icon
+    disappears against a browser tab of a similar colour, and the blue is the
+    same value as the manifest theme_color, so the tab, the splash screen and
+    the address bar agree.
+
+    Strokes are deliberately heavy — 52 units on a 512 canvas, about 10% — so
+    the shape survives being resampled down to 16px.
+  -->
+  <rect width="512" height="512" rx="114" fill="#2F6BFF"/>
+
+  <!-- Open arc reading as G, with the gap facing right. -->
+  <circle cx="256" cy="256" r="132" fill="none"
+          stroke="#FFFFFF" stroke-width="52" stroke-linecap="round"
+          stroke-dasharray="650 179" stroke-dashoffset="-89.5"/>
+
+  <!-- Crossbar leaving through the gap, ending in a chevron. -->
+  <line x1="248" y1="256" x2="388" y2="256"
+        stroke="#2DD4BF" stroke-width="52" stroke-linecap="round"/>
+  <polyline points="344,212 388,256 344,300" fill="none"
+            stroke="#2DD4BF" stroke-width="42"
+            stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
