@@ -176,6 +176,7 @@ const COLOUR_HEX: Record<string, string> = {
 };
 
 import { TcoService } from '../../services/tco.service';
+import { ForecastYear, ResaleForecastService } from '../../services/resale-forecast.service';
 import { ReviewsService, CarReview } from '../../services/reviews.service';
 import { SeoService } from '../../services/seo.service';
 import { computeOnRoadPrice } from '../../utils/on-road-price';
@@ -474,7 +475,7 @@ export class CarDetailComponent implements OnInit {
     this.sentimentSvc.trackPublic(seller.email, buyerId, 'enquiry', BUYER_TRACKING_CONSENT);
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService) {
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, private resaleSvc: ResaleForecastService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService) {
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       // Ids are opaque strings — coercing to Number turned non-numeric ids
@@ -585,6 +586,76 @@ export class CarDetailComponent implements OnInit {
     const total = fuelCost + maintenance + insurance + depreciation;
     return { fuelCost, maintenance, insurance, depreciation, total, perKm: Math.round(total / km) };
   });
+
+  // ── Year-by-year resale forecast ──────────────────────────────────────────
+  // How many years the projection covers. 5 matches the 5-year TCO panel below,
+  // which is the horizon the rest of this tab already reasons about.
+  forecastYears = signal(5);
+  // Set once Gemini returns a curve we accepted; until then the local heuristic
+  // is displayed, so the table is never empty and never shows a spinner.
+  aiForecast = signal<ForecastYear[] | null>(null);
+  aiSummary = signal('');
+  forecastLoading = signal(false);
+  // Distinguishes "not asked yet" from "asked, and the model had nothing" —
+  // without it a failed refine looks identical to a page that was never touched.
+  forecastTried = signal(false);
+
+  /** The curve on screen: Gemini's if we have one, otherwise the local one. */
+  resaleCurve = computed<ForecastYear[]>(() => {
+    if (!this.car) return [];
+    const ai = this.aiForecast();
+    if (ai) return ai;
+    const age = Math.max(0, new Date().getFullYear() - this.car.year);
+    return this.resaleSvc.local(this.car.price, this.car.fuel || 'Petrol', this.forecastYears(), age);
+  });
+
+  /** Total value lost across the whole projection — the headline number. */
+  totalDepreciation = computed(() => {
+    const curve = this.resaleCurve();
+    if (!this.car || !curve.length) return 0;
+    return this.car.price - curve[curve.length - 1].value;
+  });
+
+  async refineForecast() {
+    if (!this.car || this.forecastLoading()) return;
+    this.forecastLoading.set(true);
+    this.forecastTried.set(true);
+    try {
+      const result = await this.resaleSvc.refine({
+        make: this.car.make || '',
+        model: this.car.model || '',
+        variant: this.selectedVariant()?.name || this.car.variant || '',
+        year: this.car.year,
+        fuel: this.car.fuel || 'Petrol',
+        transmission: this.car.transmission || '',
+        price: this.car.price,
+        years: this.forecastYears(),
+      });
+      if (result?.source === 'ai') {
+        this.aiForecast.set(result.forecast);
+        this.aiSummary.set(result.summary || '');
+      }
+    } finally {
+      this.forecastLoading.set(false);
+    }
+  }
+
+  setForecastYears(n: number) {
+    if (n === this.forecastYears()) return;
+    this.forecastYears.set(n);
+    // The AI curve was computed for the old horizon, so it no longer answers
+    // the question on screen. Drop back to the local curve rather than padding
+    // or truncating someone else's projection.
+    this.aiForecast.set(null);
+    this.aiSummary.set('');
+    this.forecastTried.set(false);
+  }
+
+  // Bar width for the mini chart, as a share of today's price.
+  barWidth(v: number): number {
+    if (!this.car?.price) return 0;
+    return Math.round((v / this.car.price) * 100);
+  }
 
   // Resale prediction
   resaleValue = computed(() => {
