@@ -212,7 +212,24 @@ export class ListingsComponent implements OnInit {
       .sort((a, b) => a.price - b.price);
   });
 
-  selectModel(m: NewCarModel) { this.selectedModel.set(`${m.make}||${m.model}`); }
+  /**
+   * Open a model.
+   *
+   * This used to set a filter, drilling into a variant list inside the
+   * listings page. "Explore Variants" reads as an invitation to go and look at
+   * the car, and the car's own page is where its photographs, trims, price
+   * breakdown and specification actually are — a filtered strip of the grid
+   * was a smaller version of the page the buyer was already on.
+   */
+  selectModel(m: NewCarModel) {
+    if (m.representativeId) {
+      void this.router.navigate(['/cars', m.representativeId]);
+      return;
+    }
+    // No id to open — fall back to the old in-page filter rather than
+    // swallowing the click.
+    this.selectedModel.set(`${m.make}||${m.model}`);
+  }
   clearModel() { this.selectedModel.set(null); }
 
   formatPriceLakh(p: number) {
