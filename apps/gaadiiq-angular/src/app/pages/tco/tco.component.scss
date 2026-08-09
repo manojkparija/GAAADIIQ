@@ -145,13 +145,14 @@
     border-color: var(--primary);
   }
 
+  // Solid fill matching .btn-gradient, so a picked chip reads like the
+  // app's other primary buttons rather than a tinted outline.
   &.active {
-    border-color: var(--primary);
-    background: linear-gradient(135deg,
-      color-mix(in srgb, var(--primary) 16%, transparent),
-      color-mix(in srgb, var(--teal) 16%, transparent));
-    color: var(--primary);
-    font-weight: 600;
+    border-color: transparent;
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.28);
   }
 }
 
