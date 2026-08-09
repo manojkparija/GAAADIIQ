@@ -20,10 +20,10 @@
 }
 
 .cs-value { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cs-value.placeholder { color: var(--text-muted, #9CA3AF); }
+.cs-value.placeholder { color: var(--text-muted); }
 
 .cs-arrow {
-  flex-shrink: 0; color: var(--text-muted, #6B7280);
+  flex-shrink: 0; color: var(--text-muted);
   transition: transform 0.2s, color 0.2s;
   display: flex; align-items: center;
 }
@@ -40,7 +40,7 @@
   padding: 10px 14px; font-size: 14px; cursor: pointer; transition: background 0.12s, color 0.12s;
   color: var(--text, #111);
 
-  &.placeholder-opt { color: var(--text-muted, #9CA3AF); }
+  &.placeholder-opt { color: var(--text-muted); }
 
   &:hover {
     background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
