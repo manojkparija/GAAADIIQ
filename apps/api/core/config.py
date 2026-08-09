@@ -209,6 +209,12 @@ class Settings(BaseSettings):
     enable_ocr: bool = False
 
     # ── Roadside repair marketplace ───────────────────────────────────────────
+    # Off by default. The feature needs an operator-supplied secret
+    # (KYC_HASH_PEPPER) that no existing deployment has, and turning the
+    # requirement on unconditionally would abort startup on every environment
+    # that has not been given one yet. Flip this on once the pepper is set.
+    marketplace_enabled: bool = False
+
     # Platform commission on a completed repair. See services/commission.py for
     # how 10% / ₹49 floor / ₹2,500 cap was arrived at.
     commission_rate_bps: int = 1000
@@ -267,10 +273,14 @@ class Settings(BaseSettings):
             errors.append("QDRANT_API_KEY must be set in production")
         if not os.environ.get("METRICS_TOKEN"):
             errors.append("METRICS_TOKEN must be set in production")
-        # Without a pepper the Aadhaar digest is a plain SHA-256 of a 12-digit
-        # number — a space small enough to brute-force exhaustively, which would
-        # make the digest as good as storing the number itself.
-        if not self.kyc_hash_pepper:
+        # Only when the marketplace is actually switched on. Without a pepper the
+        # Aadhaar digest is a plain SHA-256 of a 12-digit number — a space small
+        # enough to brute-force exhaustively, which would make the digest as good
+        # as storing the number itself. Registration also refuses to run in
+        # production without it (see routers/mechanics.py), so a deployment that
+        # has not set MARKETPLACE_ENABLED cannot write an unsafe digest either
+        # way; failing startup over an unused feature would be the wrong trade.
+        if self.marketplace_enabled and not self.kyc_hash_pepper:
             errors.append("KYC_HASH_PEPPER must be set in production (Aadhaar digests are unsafe without it)")
 
         # Warned rather than fatal, and deliberately loud.

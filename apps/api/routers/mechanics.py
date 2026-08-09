@@ -76,6 +76,16 @@ async def register_mechanic(
 
     The Aadhaar number is validated, hashed, and dropped — see services/kyc.py.
     """
+    # An unpeppered digest of a 12-digit number is reversible by brute force, so
+    # refuse to create one rather than write a row that leaks on disclosure.
+    # Startup already blocks this combination when MARKETPLACE_ENABLED is on;
+    # this covers the deployment that has the flag off and the route still mounted.
+    if settings.is_production and not settings.kyc_hash_pepper:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Mechanic registration is not configured",
+        )
+
     try:
         pan = kyc.normalise_pan(payload.pan_number)
         aadhaar_digits = kyc.normalise_aadhaar(payload.aadhaar_number)

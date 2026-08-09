@@ -431,3 +431,35 @@ async def test_one_user_cannot_read_another_users_service_request(client):
         f"/service-requests/{sr_id}", headers={"Authorization": f"Bearer {intruder}"}
     )
     assert r.status_code == 403
+
+
+# ── Deployment safety ────────────────────────────────────────────────────────
+
+
+def test_marketplace_flag_off_does_not_block_startup_without_a_pepper():
+    """An unused feature must not abort a deployment that has no pepper set.
+
+    Regression test: requiring KYC_HASH_PEPPER unconditionally broke the Railway
+    deploy, because no existing environment had been given one.
+    """
+    import os
+
+    from core.config import Settings
+
+    os.environ.setdefault("METRICS_TOKEN", "test-token")
+    base = dict(
+        environment="production",
+        jwt_private_key="x",
+        jwt_public_key="y",
+        RAZORPAY_KEY_ID="a",
+        RAZORPAY_KEY_SECRET="b",
+        SMTP_HOST="smtp.example.com",
+        qdrant_api_key="q",
+        kyc_hash_pepper="",
+    )
+
+    Settings(**base, marketplace_enabled=False).validate_production_config()
+
+    # But with the feature switched on, a missing pepper is fatal.
+    with pytest.raises(SystemExit):
+        Settings(**base, marketplace_enabled=True).validate_production_config()
