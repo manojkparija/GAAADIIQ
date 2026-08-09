@@ -35,3 +35,7 @@ sentence-transformers>=2.2.0
 ultralytics>=8.0.0
 pytesseract>=0.3.10
 pgvector>=0.1.0
+
+# Roadside repair marketplace — UPI scan-to-pay QR rendering.
+# Optional: services/upi.py degrades to a tappable UPI link without it.
+qrcode[pil]>=7.4

@@ -8,6 +8,24 @@ the product: its unique pages (TCO calculator, leads, analytics, notifications) 
 across first, and the rest already had Angular equivalents. Recover it from git history if
 needed.
 
+## Where this deploys
+
+Two targets, and only two:
+
+- **API** → Render (`gaadiiq-api.onrender.com`), a Docker service defined by `render.yaml`.
+  That hostname is compiled into `environment.prod.ts`, so it is what the app actually calls.
+- **Web** → Vercel, from `apps/gaadiiq-angular`.
+
+Railway used to build this repo too and has been removed. Nothing shipped ever pointed at it,
+but it ran the same `apps/api` with `ENVIRONMENT=production`, so it was a useful canary: it
+caught a `validate_production_config` addition that would otherwise have taken Render down on
+the next deploy. If its GitHub check is still posting on pull requests, disconnect the
+integration in the Railway dashboard — deleting files here does not stop it.
+
+Anything added to `validate_production_config()` becomes a hard `sys.exit(1)` on Render. Before
+adding a required setting, either give `render.yaml` the variable or gate the requirement behind
+a feature flag, or the next deploy of an unrelated change will fail to boot.
+
 ## Cursor Cloud specific instructions
 
 Toolchain: Node 22 + npm 10, Python 3.12. The startup update script installs all dependencies

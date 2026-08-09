@@ -208,6 +208,41 @@ class Settings(BaseSettings):
     tesseract_timeout_seconds: int = 30
     enable_ocr: bool = False
 
+    # ── Roadside repair marketplace ───────────────────────────────────────────
+    # Off by default. The feature needs an operator-supplied secret
+    # (KYC_HASH_PEPPER) that no existing deployment has, and turning the
+    # requirement on unconditionally would abort startup on every environment
+    # that has not been given one yet. Flip this on once the pepper is set.
+    marketplace_enabled: bool = False
+
+    # Platform commission on a completed repair. See services/commission.py for
+    # how 10% / ₹49 floor / ₹2,500 cap was arrived at.
+    commission_rate_bps: int = 1000
+    commission_min_paise: int = 4900
+    commission_max_paise: int = 250000
+
+    # Pepper for the one-way Aadhaar digest. MUST be set in production and MUST
+    # NOT be rotated casually — changing it orphans every existing digest, so
+    # duplicate-registration detection silently stops working.
+    kyc_hash_pepper: str = ""
+
+    # Nearest-mechanic search defaults.
+    mechanic_search_radius_km: int = 15
+    mechanic_search_max_radius_km: int = 50
+
+    # WhatsApp receipts. Blank token = dev mode: messages are logged to the
+    # database and marked sent without any outbound call.
+    whatsapp_provider: str = "meta_cloud"
+    whatsapp_api_token: str = ""
+    whatsapp_phone_number_id: str = ""
+    whatsapp_api_base: str = "https://graph.facebook.com/v21.0"
+
+    # Payee name shown in the customer's UPI app when they scan the QR.
+    upi_payee_name: str = "GAADIIQ"
+    # Platform VPA the scan-to-pay QR collects into. Blank disables the QR and
+    # leaves Razorpay checkout as the only payment route.
+    upi_payee_vpa: str = ""
+
     # Safety detection (NSFW + license plate)
     yolov8_model_name: str = "yolov8n.pt"
     nsfw_threshold: float = 0.5
@@ -238,6 +273,15 @@ class Settings(BaseSettings):
             errors.append("QDRANT_API_KEY must be set in production")
         if not os.environ.get("METRICS_TOKEN"):
             errors.append("METRICS_TOKEN must be set in production")
+        # Only when the marketplace is actually switched on. Without a pepper the
+        # Aadhaar digest is a plain SHA-256 of a 12-digit number — a space small
+        # enough to brute-force exhaustively, which would make the digest as good
+        # as storing the number itself. Registration also refuses to run in
+        # production without it (see routers/mechanics.py), so a deployment that
+        # has not set MARKETPLACE_ENABLED cannot write an unsafe digest either
+        # way; failing startup over an unused feature would be the wrong trade.
+        if self.marketplace_enabled and not self.kyc_hash_pepper:
+            errors.append("KYC_HASH_PEPPER must be set in production (Aadhaar digests are unsafe without it)")
 
         # Warned rather than fatal, and deliberately loud.
         #

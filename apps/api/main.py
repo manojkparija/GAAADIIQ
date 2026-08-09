@@ -45,6 +45,7 @@ from routers import (  # noqa: E402
     insurance,
     listings,
     loans,
+    mechanics,
     media_admin,
     notifications,
     otp,
@@ -55,6 +56,7 @@ from routers import (  # noqa: E402
     reviews,
     search,
     sentiment,
+    service_requests,
     upload,
 )
 from services.scheduler import start_scheduler, stop_scheduler  # noqa: E402
@@ -368,6 +370,8 @@ app.include_router(media_admin.router)
 app.include_router(upload.router)
 app.include_router(insurance.router)
 app.include_router(resale.router)
+app.include_router(mechanics.router)
+app.include_router(service_requests.router)
 
 
 @app.get("/")

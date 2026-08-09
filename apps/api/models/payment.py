@@ -23,6 +23,7 @@ class PaymentPurpose(str, enum.Enum):
     featured_listing = "featured_listing"
     subscription_pro = "subscription_pro"
     subscription_dealer = "subscription_dealer"
+    service_request = "service_request"
 
 
 class Payment(UUIDMixin, TimestampMixin, Base):
@@ -44,6 +45,23 @@ class Payment(UUIDMixin, TimestampMixin, Base):
     )
     razorpay_order_id: Mapped[str | None] = mapped_column(String(100))
     razorpay_payment_id: Mapped[str | None] = mapped_column(String(100))
+
+    # --- Marketplace settlement (purpose == service_request) -----------------
+    # `amount_paise` above stays the gross the customer paid. The split is frozen
+    # onto the row at capture time rather than recomputed on read: the commission
+    # rate is a business setting that will change, and a receipt issued last year
+    # must keep showing last year's numbers.
+    service_request_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("service_requests.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    mechanic_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("mechanics.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # Basis points (700 = 7.00%) so the rate is exact and auditable — a float
+    # percentage would not reproduce the paise split reliably.
+    commission_rate_bps: Mapped[int | None] = mapped_column(Integer)
+    commission_paise: Mapped[int | None] = mapped_column(Integer)
+    mechanic_payout_paise: Mapped[int | None] = mapped_column(Integer)
 
     user: Mapped["User"] = relationship(back_populates="payments")
 

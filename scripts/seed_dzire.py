@@ -2,11 +2,11 @@
 """
 Seed Maruti Suzuki Dzire (2024) car entries and new-car template listings.
 
-Run from the Railway bash console:
+Run from the Render shell for gaadiiq-api:
   cd /app && python scripts/seed_dzire.py
 
 Environment variable required:
-  DATABASE_URL  — set automatically by Railway Postgres plugin
+  DATABASE_URL  — the Supabase connection string, already set on the service
 
 Each of the 9 Dzire variants gets:
   - one row in `cars`
@@ -210,7 +210,7 @@ async def seed() -> None:
         print(f"  Images/listing: {len(BROCHURE_IMAGES)} placeholder URLs")
         print(f"\n  NOTE: Replace placeholder URLs with real uploads once")
         print(f"        R2_ENDPOINT_URL / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY")
-        print(f"        are configured in Railway environment variables.")
+        print(f"        are configured in the Render service environment.")
 
     await engine.dispose()
 
