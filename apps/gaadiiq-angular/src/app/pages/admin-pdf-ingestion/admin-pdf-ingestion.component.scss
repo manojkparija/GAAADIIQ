@@ -416,7 +416,7 @@
   border: 1px solid rgba(239, 68, 68, 0.35);
 
   strong { display: block; color: #DC2626; font-size: 0.9rem; margin-bottom: 0.25rem; }
-  p { margin: 0; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted, #6B7280); }
+  p { margin: 0; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted); }
 }
 
 /* Images pulled out of the brochure, shown regardless of whether the AI
@@ -441,7 +441,7 @@
     img { width: 100%; height: 120px; object-fit: cover; display: block; }
     figcaption {
       padding: 0.4rem 0.6rem; font-size: 0.72rem;
-      color: var(--text-muted, #6B7280);
+      color: var(--text-muted);
     }
   }
 }
@@ -452,7 +452,7 @@
   border: 1px solid rgba(245, 158, 11, 0.32);
 
   strong { display: block; font-size: 0.9rem; color: var(--text); margin-bottom: 0.3rem; }
-  p { margin: 0; font-size: 0.83rem; line-height: 1.55; color: var(--text-muted, #6B7280); }
+  p { margin: 0; font-size: 0.83rem; line-height: 1.55; color: var(--text-muted); }
 }
 
 .local-only-warning {
@@ -463,7 +463,7 @@
   border: 1px solid rgba(245, 158, 11, 0.4);
 
   strong { display: block; font-size: 0.9rem; color: #B45309; margin-bottom: 0.3rem; }
-  p { margin: 0; font-size: 0.84rem; line-height: 1.55; color: var(--text-muted, #6B7280); }
+  p { margin: 0; font-size: 0.84rem; line-height: 1.55; color: var(--text-muted); }
   code {
     background: rgba(0,0,0,0.06); padding: 0.05rem 0.3rem;
     border-radius: 4px; font-size: 0.82em;
