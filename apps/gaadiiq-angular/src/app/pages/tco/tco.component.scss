@@ -32,7 +32,7 @@
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, #ffffff, #c4b5fd);
+    background: linear-gradient(135deg, #ffffff, #99F6E4);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -142,12 +142,15 @@
   transition: border-color 0.2s, background 0.2s;
 
   &:hover {
-    border-color: var(--teal);
+    border-color: var(--primary);
   }
 
   &.active {
-    border-color: var(--teal);
-    background: rgba(20, 184, 166, 0.12);
+    border-color: var(--primary);
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--primary) 16%, transparent),
+      color-mix(in srgb, var(--teal) 16%, transparent));
+    color: var(--primary);
     font-weight: 600;
   }
 }
@@ -169,7 +172,10 @@
   text-align: center;
 
   &.primary {
-    background: rgba(59, 130, 246, 0.14);
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--primary) 14%, transparent),
+      color-mix(in srgb, var(--teal) 14%, transparent));
+    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
   }
 }
 
@@ -203,7 +209,10 @@
   flex-shrink: 0;
   padding: 0.3rem 0.7rem;
   border-radius: 999px;
-  border: 1px solid var(--border-soft);
+  border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
+  background: color-mix(in srgb, var(--teal) 12%, transparent);
+  color: var(--teal);
+  font-weight: 600;
   font-size: 0.78rem;
 }
 
@@ -246,7 +255,7 @@
 .bar-track {
   height: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--divider);
   overflow: hidden;
 }
 
@@ -256,11 +265,12 @@
   transition: width 0.7s ease;
 }
 
-// Distinct hues so each cost line is separable at a glance.
-.bar-depreciation { background: #f472b6; }
-.bar-fuel         { background: #38bdf8; }
-.bar-insurance    { background: #a78bfa; }
-.bar-maintenance  { background: #fbbf24; }
+// Four steps down the brand blue→teal ramp, so the cost lines stay
+// separable without pulling in hues from outside the palette.
+.bar-depreciation { background: #1E40AF; }
+.bar-fuel         { background: #2F6BFF; }
+.bar-insurance    { background: #14B8A6; }
+.bar-maintenance  { background: #5EEAD4; }
 
 .grand-total {
   padding-top: 1rem;
