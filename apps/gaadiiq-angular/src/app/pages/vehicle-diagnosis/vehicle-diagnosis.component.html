@@ -781,7 +781,7 @@
 
         <!-- Actions -->
         <div class="report-actions">
-          <button class="btn-primary" (click)="bookService()">📍 Find Nearest Service Centre</button>
+          <button class="btn-primary" (click)="bookService()">📍 Find a mechanic</button>
           <button class="btn-ghost" (click)="reset()">+ New Diagnosis</button>
         </div>
       </ng-container>
@@ -795,12 +795,29 @@
   <div class="sc-modal" (click)="$event.stopPropagation()">
     <div class="sc-modal-header">
       <div>
-        <h2>📍 Nearest Authorised Service Centres</h2>
+        <h2>📍 Get this fixed</h2>
         <p class="sc-subtitle">{{ form.manufacturer }} · {{ city.selectedCity() || 'Your City' }}</p>
       </div>
       <button class="sc-close" (click)="closeServiceModal()">✕</button>
     </div>
-    <div class="sc-list">
+
+    <div class="sc-tabs">
+      <button type="button" [class.active]="helpTab() === 'mechanics'"
+              (click)="helpTab.set('mechanics')">Mechanics near you</button>
+      <button type="button" [class.active]="helpTab() === 'authorised'"
+              (click)="helpTab.set('authorised')">Authorised centres</button>
+    </div>
+
+    <!-- GAADIIQ partner mechanics: can be booked and paid here -->
+    <app-service-request *ngIf="helpTab() === 'mechanics'"
+      [manufacturer]="form.manufacturer"
+      [model]="form.model"
+      [problemSummary]="problemDescription"
+      [severity]="severity"
+      (closed)="closeServiceModal()">
+    </app-service-request>
+
+    <div class="sc-list" *ngIf="helpTab() === 'authorised'">
       <div class="sc-card" *ngFor="let c of nearbyServiceCenters()">
         <div class="sc-name-row">
           <div class="sc-name">{{ c.name }}</div>
@@ -817,6 +834,8 @@
         <p>No service centres listed for your city. Visit the manufacturer's website to find the nearest one.</p>
       </div>
     </div>
-    <p class="sc-disclaimer">Listings are for reference only. Call ahead to confirm availability and book an appointment.</p>
+    <p class="sc-disclaimer" *ngIf="helpTab() === 'authorised'">
+      Listings are for reference only. Call ahead to confirm availability and book an appointment.
+    </p>
   </div>
 </div>

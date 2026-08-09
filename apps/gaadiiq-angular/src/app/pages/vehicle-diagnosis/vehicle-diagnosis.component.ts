@@ -13,6 +13,7 @@ import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../ser
 import { VoiceModeComponent, VoiceSessionResult } from '../../components/voice-mode/voice-mode.component';
 import { firstValueFrom } from 'rxjs';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
+import { ServiceRequestComponent } from '../../components/service-request/service-request.component';
 
 interface ServiceCenter {
   name: string;
@@ -192,7 +193,7 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
 @Component({
   selector: 'app-vehicle-diagnosis',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent, ServiceRequestComponent],
   templateUrl: './vehicle-diagnosis.component.html',
   styleUrl: './vehicle-diagnosis.component.scss',
 })
@@ -358,6 +359,16 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   }
 
   serviceCenterModal = signal(false);
+  /**
+   * Which half of the "find help" modal is showing.
+   *
+   * Defaults to the GAADIIQ mechanic network rather than the hardcoded
+   * dealership list: the network can actually take the job, quote it and be
+   * paid, whereas the authorised centres are a reference list the user has to
+   * chase themselves. The old list stays as the fallback for areas with no
+   * registered mechanics yet.
+   */
+  helpTab = signal<'mechanics' | 'authorised'>('mechanics');
   nearbyServiceCenters = signal<ServiceCenter[]>([]);
 
   // Diagnosis history (MOB-036)
@@ -683,6 +694,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
 
   closeServiceModal() {
     this.serviceCenterModal.set(false);
+    this.helpTab.set('mechanics');
   }
 
   callCenter(phone: string) {

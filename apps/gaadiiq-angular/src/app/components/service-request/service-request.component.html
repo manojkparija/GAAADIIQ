@@ -1,0 +1,161 @@
+<div class="sr-wrap">
+
+  <!-- Waiting on the browser's location permission -->
+  <div class="sr-locating" *ngIf="stage() === 'locating'">
+    <div class="sr-spinner"></div>
+    <p class="sr-locating-text">Finding mechanics near your car…</p>
+    <p class="sr-hint">Allow location access so we can send help to where you actually are.</p>
+  </div>
+
+  <!-- Pick a mechanic -->
+  <ng-container *ngIf="stage() === 'choose'">
+    <div class="sr-error" *ngIf="error()">{{ error() }}
+      <button type="button" class="sr-retry" (click)="locate()">Try again</button>
+    </div>
+
+    <div class="sr-fix" *ngIf="fix() as f">
+      📍 Searching within 15 km of your position
+      <span class="sr-accuracy" *ngIf="f.accuracy_m">· accurate to ~{{ f.accuracy_m | number:'1.0-0' }} m</span>
+    </div>
+
+    <div class="sr-list">
+      <button type="button" class="sr-mech" *ngFor="let m of mechanics()" (click)="choose(m)">
+        <div class="sr-mech-head">
+          <span class="sr-mech-name">{{ m.shop_name || m.full_name }}</span>
+          <span class="sr-mech-dist" *ngIf="m.distance_km != null">{{ m.distance_km | number:'1.1-1' }} km</span>
+        </div>
+        <div class="sr-mech-sub">{{ m.full_name }} · {{ m.city }} {{ m.area_pincode }}</div>
+        <div class="sr-mech-meta">
+          <span class="sr-tag" *ngFor="let s of (m.specialisations || [])">{{ s }}</span>
+          <span class="sr-jobs" *ngIf="m.jobs_completed">{{ m.jobs_completed }} jobs</span>
+          <span class="sr-rating" *ngIf="m.rating != null">★ {{ m.rating | number:'1.1-1' }}</span>
+        </div>
+      </button>
+    </div>
+
+    <div class="sr-empty" *ngIf="!mechanics().length && !error()">
+      <p>No GAADIIQ partner mechanics are registered near you yet.</p>
+      <p class="sr-hint">The authorised service centres listed below are still an option.</p>
+    </div>
+  </ng-container>
+
+  <!-- Vehicle and contact details -->
+  <ng-container *ngIf="stage() === 'details'">
+    <button type="button" class="sr-back" (click)="backToList()">← Choose a different mechanic</button>
+
+    <div class="sr-chosen" *ngIf="chosen() as m">
+      <div class="sr-chosen-name">{{ m.shop_name || m.full_name }}</div>
+      <div class="sr-chosen-sub">
+        {{ m.full_name }}
+        <span *ngIf="m.distance_km != null">· {{ m.distance_km | number:'1.1-1' }} km away</span>
+      </div>
+    </div>
+
+    <label class="sr-field">
+      <span class="sr-label">Car registration number</span>
+      <input type="text" [(ngModel)]="carNumber" name="carNumber"
+             placeholder="OD02AB1234" autocomplete="off" maxlength="15" />
+    </label>
+
+    <label class="sr-field">
+      <span class="sr-label">Your phone number</span>
+      <input type="tel" [(ngModel)]="contactPhone" name="contactPhone"
+             placeholder="98765 43210" maxlength="15" />
+      <span class="sr-help">The mechanic calls this number, and your payment receipt goes here on WhatsApp.</span>
+    </label>
+
+    <label class="sr-field">
+      <span class="sr-label">Landmark <span class="sr-optional">(optional)</span></span>
+      <input type="text" [(ngModel)]="landmark" name="landmark"
+             placeholder="Near the petrol pump on NH-16" maxlength="200" />
+    </label>
+
+    <div class="sr-error" *ngIf="error()">{{ error() }}</div>
+
+    <button type="button" class="sr-primary" [disabled]="busy()" (click)="submit()">
+      {{ busy() ? 'Sending…' : 'Send request to this mechanic' }}
+    </button>
+  </ng-container>
+
+  <!-- Raised; waiting for the mechanic to quote -->
+  <ng-container *ngIf="stage() === 'awaiting'">
+    <div class="sr-status" *ngIf="request() as r">
+      <div class="sr-ref">{{ r.reference }}</div>
+      <div class="sr-status-line">Request sent · {{ r.car_number }}</div>
+
+      <div class="sr-assigned" *ngIf="r.mechanic as m">
+        <div class="sr-assigned-name">{{ m.shop_name || m.full_name }}</div>
+        <a class="sr-call" [href]="telHref(m.phone)">📞 {{ m.phone }}</a>
+      </div>
+
+      <div class="sr-quote" *ngIf="r.quoted_amount_paise != null; else noQuote">
+        <div class="sr-quote-label">Mechanic's quote</div>
+        <div class="sr-quote-amount">{{ money(r.quoted_amount_paise) }}</div>
+        <button type="button" class="sr-primary" [disabled]="busy()" (click)="pay()">
+          {{ busy() ? 'Opening…' : 'Pay now' }}
+        </button>
+      </div>
+
+      <ng-template #noQuote>
+        <p class="sr-hint">
+          Waiting for the mechanic to inspect and quote. You will be asked to pay only after
+          they have priced the work.
+        </p>
+        <button type="button" class="sr-ghost" [disabled]="busy()" (click)="refresh()">
+          {{ busy() ? 'Checking…' : 'Check for a quote' }}
+        </button>
+      </ng-template>
+    </div>
+
+    <div class="sr-error" *ngIf="error()">{{ error() }}</div>
+  </ng-container>
+
+  <!-- Scan to pay -->
+  <ng-container *ngIf="stage() === 'paying'">
+    <div class="sr-pay" *ngIf="payment() as p">
+      <div class="sr-ref">{{ p.reference }}</div>
+      <div class="sr-pay-amount">{{ money(p.amount_paise) }}</div>
+
+      <img class="sr-qr" *ngIf="p.upi_qr_data_uri" [src]="p.upi_qr_data_uri"
+           alt="UPI QR code to pay this repair" />
+
+      <a class="sr-primary sr-upi" *ngIf="p.upi_uri" [href]="safeUpi(p.upi_uri)">
+        Pay with a UPI app
+      </a>
+
+      <p class="sr-hint" *ngIf="!p.upi_uri && !p.upi_qr_data_uri">
+        Scan-to-pay is not configured. Settle directly with the mechanic and mark it paid below.
+      </p>
+
+      <div class="sr-split" *ngIf="commission() as c">
+        <div class="sr-split-row">
+          <span>Mechanic receives</span><span>{{ money(c.mechanic_payout_paise) }}</span>
+        </div>
+        <div class="sr-split-row sr-split-muted">
+          <span>GAADIIQ platform fee ({{ c.effective_rate_pct }}%)</span>
+          <span>{{ money(c.commission_paise) }}</span>
+        </div>
+      </div>
+
+      <button type="button" class="sr-ghost" [disabled]="busy()" (click)="confirmPaid()">
+        {{ busy() ? 'Confirming…' : 'I have paid' }}
+      </button>
+      <p class="sr-hint">Your receipt arrives on WhatsApp once the payment is confirmed.</p>
+    </div>
+
+    <div class="sr-error" *ngIf="error()">{{ error() }}</div>
+  </ng-container>
+
+  <!-- Paid -->
+  <ng-container *ngIf="stage() === 'done'">
+    <div class="sr-done" *ngIf="request() as r">
+      <div class="sr-done-tick">✓</div>
+      <div class="sr-done-title">Payment confirmed</div>
+      <div class="sr-ref">{{ r.reference }}</div>
+      <div class="sr-done-amount">{{ money(r.final_amount_paise) }}</div>
+      <p class="sr-hint">The receipt has been sent to your WhatsApp number.</p>
+      <button type="button" class="sr-primary" (click)="close()">Done</button>
+    </div>
+  </ng-container>
+
+</div>
