@@ -751,3 +751,35 @@
     .lm-dot { background: #F59E0B; }
   }
 }
+
+// Switches the "get this fixed" modal between the bookable GAADIIQ mechanic
+// network and the reference list of authorised centres.
+.sc-tabs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0 1.25rem 0.85rem;
+
+  button {
+    flex: 1;
+    background: var(--fill-soft);
+    border: 1px solid var(--border-soft);
+    color: var(--text-muted);
+    border-radius: 10px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.18s, border-color 0.18s;
+
+    &:hover { color: var(--text); }
+
+    &.active {
+      border-color: transparent;
+      background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+      color: #fff;
+    }
+  }
+}
+
+app-service-request { padding: 0 1.25rem 1rem; display: block; }
