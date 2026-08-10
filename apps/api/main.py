@@ -44,6 +44,7 @@ from routers import (  # noqa: E402
     health,
     insurance,
     listings,
+    loan_applications,
     loans,
     mechanics,
     media_admin,
@@ -356,6 +357,10 @@ app.include_router(dealers.router)
 app.include_router(bookings.router)
 app.include_router(search.router)
 app.include_router(loans.router)
+# Mounted after `loans` and sharing its /loans prefix: the two are one surface to
+# a caller, and splitting the file only keeps the older seller-lead flow apart
+# from the application module rather than giving it a separate URL space.
+app.include_router(loan_applications.router)
 app.include_router(notifications.router)
 app.include_router(price_alerts.router)
 app.include_router(recommend.router)

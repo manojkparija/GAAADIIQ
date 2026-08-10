@@ -2,7 +2,21 @@ from .car import Car
 from .car_variant import CarVariant, VariantSource, VariantStatus
 from .customer_intent import CustomerActivity, CustomerIntentScore
 from .dealer import Dealer
+from .lending_partner import (
+    CreditBand,
+    LenderRateSlab,
+    LendingPartner,
+    PartnerType,
+)
 from .listing import Listing
+from .loan_application import (
+    CreditCheck,
+    CreditSource,
+    LoanApplication,
+    LoanApplicationStatus,
+    LoanOffer,
+    VehicleCondition,
+)
 from .loan_inquiry import LoanInquiry
 from .mechanic import Mechanic, MechanicSpecialisation, MechanicStatus
 from .media_audit import AuditAction, VehicleMediaAudit
@@ -38,6 +52,9 @@ __all__ = [
     "MediaKind", "MediaView", "ImageCategory", "VehicleMediaVersion", "MediaEventType",
     "VehicleMediaAudit", "AuditAction",
     "Mechanic", "MechanicStatus", "MechanicSpecialisation",
+    "LendingPartner", "LenderRateSlab", "PartnerType", "CreditBand",
+    "LoanApplication", "LoanApplicationStatus", "LoanOffer", "CreditCheck",
+    "CreditSource", "VehicleCondition",
     "ServiceRequest", "ServiceRequestStatus",
     "WhatsAppMessage", "WhatsAppTemplate", "WhatsAppStatus",
 ]

@@ -1,0 +1,325 @@
+<div class="loan-page">
+  <div class="container">
+
+    <!-- ═══ RESULT: offers ══════════════════════════════════════════════════ -->
+    <ng-container *ngIf="application() as app; else applyForm">
+      <div class="loan-head">
+        <h1>Your loan offers</h1>
+        <p class="loan-sub">
+          Application <strong>{{ app.reference }}</strong> ·
+          {{ formatRupees(app.loan_amount) }} over {{ app.tenure_months }} months ·
+          PAN {{ app.pan_masked }}
+        </p>
+      </div>
+
+      <!-- The band drives every rate below it, so it is stated plainly along
+           with where it came from. A declared score and a checked one are very
+           different things and must not look the same. -->
+      <div class="band-note">
+        <app-icon name="shield" [size]="16"></app-icon>
+        <div>
+          <strong>Credit profile: {{ app.credit_band_label }}</strong>
+          <span *ngIf="app.credit_source === 'self_declared'">
+            — based on the score you entered. Your lender will run their own
+            check, and their offer may differ.
+          </span>
+          <span *ngIf="app.credit_source === 'unavailable'">
+            — you didn't provide a score, so these are the lenders' rates for an
+            unchecked profile. Adding your CIBIL score usually improves them.
+          </span>
+        </div>
+      </div>
+
+      <div class="offers" *ngIf="eligibleOffers().length; else noneEligible">
+        <div class="offer-card" *ngFor="let offer of eligibleOffers()"
+             [class.recommended]="offer.is_recommended"
+             [class.chosen]="app.selected_offer_id === offer.id">
+          <div class="offer-badge" *ngIf="offer.is_recommended">
+            <app-icon name="star" [size]="13"></app-icon> Best value
+          </div>
+
+          <div class="offer-lender">
+            <h3>{{ offer.partner.name }}</h3>
+            <span class="offer-type">{{ offer.partner.partner_type | titlecase }}</span>
+          </div>
+
+          <div class="offer-rate">
+            <span class="rate-value">{{ offer.annual_rate_pct }}%</span>
+            <span class="rate-label">per annum</span>
+          </div>
+
+          <div class="offer-grid">
+            <div><span>Monthly EMI</span><strong>{{ formatRupees(offer.monthly_emi) }}</strong></div>
+            <div><span>Loan approved</span><strong>{{ formatRupees(offer.approved_amount) }}</strong></div>
+            <div><span>Total interest</span><strong>{{ formatRupees(offer.total_interest) }}</strong></div>
+            <div><span>Processing fee</span><strong>{{ formatRupees(offer.processing_fee) }}</strong></div>
+          </div>
+
+          <!-- The number the ranking is actually made on, shown rather than
+               hidden: "best" has to be checkable. -->
+          <div class="offer-cost">
+            Total cost of this loan
+            <strong>{{ formatRupees(offer.total_cost) }}</strong>
+            <small>interest + fees over {{ offer.tenure_months }} months</small>
+          </div>
+
+          <!-- Said plainly when the lender will fund less than was asked for. -->
+          <p class="offer-short" *ngIf="offer.approved_amount !== null && offer.approved_amount < app.loan_amount">
+            <app-icon name="info" [size]="13"></app-icon>
+            This lender will fund {{ formatRupees(offer.approved_amount) }} of the
+            {{ formatRupees(app.loan_amount) }} you asked for.
+          </p>
+
+          <button class="btn btn-primary offer-cta"
+                  *ngIf="app.selected_offer_id !== offer.id"
+                  [disabled]="selecting() === offer.id"
+                  (click)="choose(offer)">
+            {{ selecting() === offer.id ? 'Selecting…' : 'Continue with ' + offer.partner.name }}
+          </button>
+          <div class="offer-chosen" *ngIf="app.selected_offer_id === offer.id">
+            <app-icon name="check" [size]="15"></app-icon> Selected — we'll be in touch
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noneEligible>
+        <div class="none-eligible">
+          <h3>No lender can fund this application as it stands</h3>
+          <p>
+            Every lender's reason is listed below. Usually a larger down payment,
+            a longer tenure, or clearing an existing EMI opens several of them up.
+          </p>
+        </div>
+      </ng-template>
+
+      <!-- Shown, not hidden. "Why isn't SBI here?" is a worse page than
+           "SBI needs ₹25,000 a month". -->
+      <div class="rejected" *ngIf="ineligibleOffers().length">
+        <h3>Not available for this application</h3>
+        <div class="rejected-row" *ngFor="let offer of ineligibleOffers()">
+          <span class="rejected-name">{{ offer.partner.name }}</span>
+          <span class="rejected-why">{{ offer.ineligible_reason }}</span>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        These figures are indicative, calculated from rates the lenders publish.
+        The binding offer comes from the lender after their own credit assessment,
+        and may differ.
+      </p>
+
+      <button class="btn btn-outline" (click)="startOver()">Change my details</button>
+    </ng-container>
+
+    <!-- ═══ FORM ════════════════════════════════════════════════════════════ -->
+    <ng-template #applyForm>
+      <div class="loan-head">
+        <h1>Looking for a <span class="gradient-text">car loan</span>?</h1>
+        <p class="loan-sub">
+          Tell us about the car and yourself, and we'll compare what every lender
+          on the panel would charge — ranked by what the loan actually costs, not
+          by the headline rate.
+        </p>
+      </div>
+
+      <div class="loan-grid">
+        <!-- LEFT: the form -->
+        <form class="loan-form glass-card" (ngSubmit)="submit()">
+          <h2>Your application</h2>
+
+          <div class="seg">
+            <button type="button" [class.active]="form.vehicle_condition === 'new'"
+                    (click)="form.vehicle_condition = 'new'">New car</button>
+            <button type="button" [class.active]="form.vehicle_condition === 'used'"
+                    (click)="form.vehicle_condition = 'used'">Used car</button>
+          </div>
+
+          <div class="field">
+            <label>Car</label>
+            <input type="text" [(ngModel)]="form.vehicle_description" name="vehicle_description"
+                   placeholder="e.g. Maruti Suzuki S-Presso VXi">
+          </div>
+
+          <div class="field" *ngIf="form.vehicle_condition === 'used'">
+            <label>Year of manufacture</label>
+            <input type="number" [(ngModel)]="form.vehicle_year" name="vehicle_year"
+                   placeholder="e.g. 2021">
+            <small>Most lenders won't fund a car that will be over 8-10 years old.</small>
+          </div>
+
+          <div class="field">
+            <label>On-road price <strong>{{ formatRupees(vehiclePrice()) }}</strong></label>
+            <input type="range" min="100000" max="5000000" step="25000"
+                   [ngModel]="vehiclePrice()" (ngModelChange)="vehiclePrice.set(+$event)"
+                   name="vehicle_price">
+          </div>
+
+          <div class="field">
+            <label>Loan amount <strong>{{ formatRupees(loanAmount()) }}</strong></label>
+            <input type="range" min="100000" max="5000000" step="25000"
+                   [ngModel]="loanAmount()" (ngModelChange)="loanAmount.set(+$event)"
+                   name="loan_amount">
+            <small [class.warn]="loanAmount() > vehiclePrice()">
+              Down payment {{ formatRupees(downPayment()) }} ({{ downPaymentPct() }}%)
+              <ng-container *ngIf="loanAmount() > vehiclePrice()">
+                — the loan can't exceed the price of the car.
+              </ng-container>
+            </small>
+          </div>
+
+          <div class="field">
+            <label>Tenure <strong>{{ tenureMonths() }} months</strong></label>
+            <input type="range" min="12" max="84" step="6"
+                   [ngModel]="tenureMonths()" (ngModelChange)="tenureMonths.set(+$event)"
+                   name="tenure_months">
+          </div>
+
+          <hr>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Full name (as on PAN) *</label>
+              <input type="text" [(ngModel)]="form.applicant_name" name="applicant_name"
+                     placeholder="Full name">
+            </div>
+            <div class="field">
+              <label>Mobile *</label>
+              <input type="tel" [(ngModel)]="form.mobile" name="mobile"
+                     maxlength="10" placeholder="10-digit number">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>PAN number *</label>
+            <input type="text" [(ngModel)]="form.pan_number" name="pan_number"
+                   maxlength="10" placeholder="ABCDE1234F"
+                   style="text-transform:uppercase"
+                   [class.invalid]="form.pan_number.length === 10 && !panLooksValid()">
+            <!-- The reassurance belongs next to the field being asked for, not
+                 in a privacy policy the applicant will not open. -->
+            <small class="pan-note">
+              <strong>Why we need this:</strong> lenders assess an application
+              against your PAN. We show it back to you masked, and share it only
+              with the lender you choose.
+            </small>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>City</label>
+              <input type="text" [(ngModel)]="form.city" name="city" placeholder="e.g. Bhubaneswar">
+            </div>
+            <div class="field">
+              <label>Pincode</label>
+              <input type="text" [(ngModel)]="form.pincode" name="pincode" maxlength="6"
+                     placeholder="751001">
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="field">
+            <label>Employment *</label>
+            <select [(ngModel)]="form.employment_type" name="employment_type">
+              <option value="salaried">Salaried</option>
+              <option value="self_employed">Self-employed professional</option>
+              <option value="business">Business owner</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Monthly income *</label>
+              <input type="number" [ngModel]="monthlyIncome()"
+                     (ngModelChange)="monthlyIncome.set(+$event)" name="monthly_income"
+                     placeholder="50000">
+            </div>
+            <div class="field">
+              <label>Existing EMIs</label>
+              <input type="number" [(ngModel)]="form.existing_emi" name="existing_emi"
+                     placeholder="0">
+              <small>Total of any loans you're already repaying.</small>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Your CIBIL score (if you know it)</label>
+            <input type="number" [(ngModel)]="form.credit_score" name="credit_score"
+                   min="300" max="900" placeholder="e.g. 780">
+            <small>
+              Optional, and taken as your own estimate — we don't check it. Leaving
+              it blank means lenders quote their rate for an unchecked profile,
+              which is usually higher.
+            </small>
+          </div>
+
+          <label class="consent">
+            <input type="checkbox" [(ngModel)]="form.credit_consent" name="credit_consent">
+            <span>
+              I agree that GAADIIQ and the lender I choose may check my credit
+              record with a credit bureau in connection with this application.
+            </span>
+          </label>
+
+          <p class="form-error" *ngIf="error()">{{ error() }}</p>
+
+          <p class="signin-note" *ngIf="!isSignedIn()">
+            You'll need to <a routerLink="/login">sign in</a> to submit — an
+            application carries your PAN and income details.
+          </p>
+
+          <button type="submit" class="btn btn-primary submit-btn" [disabled]="submitting()">
+            {{ submitting() ? 'Comparing lenders…' : 'Compare loan offers' }}
+          </button>
+        </form>
+
+        <!-- RIGHT: the panel and its published rates -->
+        <aside class="loan-aside">
+          <div class="glass-card panel" *ngIf="partners().length">
+            <h2>Our lending partners</h2>
+            <div class="partner-grid">
+              <div class="partner" *ngFor="let p of partners()">
+                <span class="partner-name">{{ p.name }}</span>
+                <span class="partner-type">{{ p.partner_type | titlecase }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card panel" *ngIf="partners().length">
+            <h2>Interest rate comparison</h2>
+            <table class="rate-table">
+              <thead>
+                <tr><th>Lender</th><th>Car loan rate</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of partners()">
+                  <td>{{ p.name }}</td>
+                  <td class="rate-cell">
+                    <ng-container *ngIf="p.rate_from_pct !== null; else noRate">
+                      {{ p.rate_from_pct }}% p.a. onwards
+                    </ng-container>
+                    <ng-template #noRate>—</ng-template>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="rate-note">
+              The lowest published rate for each lender, which needs an excellent
+              credit record. Your own rate depends on the lender's assessment.
+            </p>
+          </div>
+
+          <div class="glass-card panel">
+            <h2>How we pick the best</h2>
+            <p class="how-note">
+              We rank by the <strong>total cost of the loan</strong> — interest
+              plus processing fees over your tenure — not by the advertised rate.
+              A lower rate with a heavy fee can easily cost more.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </ng-template>
+
+  </div>
+</div>
