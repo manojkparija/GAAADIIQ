@@ -394,7 +394,9 @@ UNION ALL SELECT 'lender_rate_slabs',  count(*) FROM lender_rate_slabs
 UNION ALL SELECT 'loan_applications',  count(*) FROM loan_applications
 UNION ALL SELECT 'loan_offers',        count(*) FROM loan_offers
 UNION ALL SELECT 'credit_checks',      count(*) FROM credit_checks;
--- Expect 11 partners and 58 rate slabs on a fresh run; the last three are 0.
+-- Expect 11 partners and 57 rate slabs on a fresh run; the last three are 0.
+-- (Nine lenders carry five bands each, and SBI and HDFC add a sixth
+-- self-employed row: 45 + 12 = 57.)
 
 -- Every active lender must have a rate for every band, or an applicant in a
 -- band it has no row for silently drops out of the comparison.
