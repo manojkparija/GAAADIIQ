@@ -704,6 +704,24 @@ input, select, textarea {
   &::placeholder { color: var(--text-tertiary); }
 }
 
+// Tick boxes are not text boxes.
+//
+// The rule above sets width:100% for every input, which is right for the text
+// fields it was written for and wrong for a checkbox: the control stretched to
+// the full width of its row and shoved the label it belongs to out of the card
+// entirely. It also gave a native tick box the padding and border of a text
+// field. Both are undone here rather than in each form, because the next
+// checkbox anyone adds would inherit the same problem.
+input[type="checkbox"], input[type="radio"] {
+  width: auto;
+  min-width: 0;
+  flex: 0 0 auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
 @media (max-width: 768px) {
   .container { padding: 0 1rem; }
   .hide-mobile { display: none !important; }
