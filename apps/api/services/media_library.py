@@ -509,24 +509,34 @@ async def urls_for_cars(
 
     rows = (await db.execute(q)).scalars().all()
 
+    def _key(media: VehicleMedia):
+        return (media.make.strip().lower(), media.model.strip().lower(), media.model_year)
+
+    # Which identities hold a real spin sequence.
+    #
+    # A genuine 24-36 frame sequence has to leave the flat gallery: the frames
+    # read as the same photograph over and over and push the real ones off the
+    # strip. But the category is also set by filename guessing and by hand, so a
+    # handful of ordinary photographs routinely carry it — and those must stay.
+    #
+    # Excluding on the category alone deleted whole galleries from the site:
+    # a few three_sixty photos are too few for the spin viewer to offer, so they
+    # left the gallery and never came back anywhere. The count is the honest
+    # test, and it is the same threshold spin_urls_for_car applies, so an image
+    # is hidden here only when it is genuinely shown there.
+    spin_counts: dict[tuple, int] = {}
+    for media in rows:
+        if media.make and media.model and is_spin_frame(media):
+            spin_counts[_key(media)] = spin_counts.get(_key(media), 0) + 1
+
     storage = get_storage()
     out: dict[uuid.UUID, list[str]] = {car.id: [] for car in cars}
     for media in rows:
         if not media.make or not media.model:
             continue
-        # A spin sequence is 24-36 near-identical frames. In a flat gallery they
-        # read as the same photograph over and over and push the real ones off
-        # the strip, so they leave here and come back through spin_urls_for_car.
-        #
-        # Filtered in Python, not in the WHERE clause. image_category is a
-        # native Postgres enum, and comparing it against a literal makes the
-        # server parse that label — which fails outright on a database whose
-        # enum type predates the value. That is not a missing image, it is a
-        # 500 on every catalogue request, so the whole listing goes blank.
-        # Reading the column back is safe; naming a value in a query is not.
-        if is_spin_frame(media):
+        if is_spin_frame(media) and spin_counts.get(_key(media), 0) >= SPIN_MIN_FRAMES:
             continue
-        key = (media.make.strip().lower(), media.model.strip().lower(), media.model_year)
+        key = _key(media)
         for car_id in wanted.get(key, ()):
             if len(out[car_id]) < per_car:
                 out[car_id].append(storage.url_for(media.webp_key or media.storage_key))
