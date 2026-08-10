@@ -295,3 +295,46 @@ async def test_catalogue_queries_never_name_the_three_sixty_enum_label(db_sessio
     assert statements, "no SQL was captured"
     for sql in statements:
         assert "three_sixty" not in sql, f"enum label leaked into SQL: {sql}"
+
+
+@pytest.mark.asyncio
+async def test_a_few_three_sixty_photos_stay_in_the_gallery(db_session):
+    """
+    The category is set by filename guessing and by hand, so ordinary
+    photographs routinely carry `three_sixty` without being a spin sequence.
+
+    Hiding those cost a real site its galleries: too few frames for the spin
+    viewer to offer, so they left the gallery and reappeared nowhere. Below the
+    spin threshold they are simply photographs.
+    """
+    car = Car(make="Maruti", model="S-Presso", year=2026)
+    db_session.add(car)
+    await db_session.flush()
+
+    db_session.add_all(_spin_frames(5))
+    await db_session.flush()
+
+    urls = await media_library.urls_for_cars(db_session, [car])
+    assert [_basename(u) for u in urls[car.id]] == [f"spin_{i:02d}.png" for i in range(5)]
+    # ...and no spin is offered for them either, so nothing is hidden anywhere.
+    assert await media_library.spin_urls_for_car(db_session, car) == []
+
+
+@pytest.mark.asyncio
+async def test_the_gallery_and_the_spin_agree_on_the_threshold(db_session):
+    """
+    An image may be hidden from the gallery only when the viewer actually shows
+    it. The two paths share SPIN_MIN_FRAMES so they cannot drift apart and
+    strand images between them.
+    """
+    car = Car(make="Maruti", model="S-Presso", year=2026)
+    db_session.add(car)
+    await db_session.flush()
+
+    db_session.add_all(_spin_frames(media_library.SPIN_MIN_FRAMES))
+    await db_session.flush()
+
+    gallery = await media_library.urls_for_cars(db_session, [car])
+    spin = await media_library.spin_urls_for_car(db_session, car)
+    assert gallery[car.id] == []
+    assert len(spin) == media_library.SPIN_MIN_FRAMES
