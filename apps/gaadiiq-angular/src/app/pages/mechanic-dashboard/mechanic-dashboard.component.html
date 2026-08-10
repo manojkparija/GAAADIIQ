@@ -1,0 +1,165 @@
+<div class="md-page">
+  <div class="md-hero">
+    <div class="container">
+      <div class="md-badge">🔧 Partner Workshop</div>
+      <h1>Mechanic <span class="gradient-text">Dashboard</span></h1>
+      <p class="md-sub">Jobs assigned to you, priced and closed out in one place.</p>
+    </div>
+  </div>
+
+  <div class="container md-body">
+
+    <div class="md-error" *ngIf="error()" role="alert">{{ error() }}</div>
+
+    <div class="md-loading" *ngIf="loading()">
+      <div class="md-spinner"></div>
+      <p>Loading your jobs…</p>
+    </div>
+
+    <ng-container *ngIf="!loading()">
+
+      <!-- Not signed in -->
+      <div class="md-empty" *ngIf="!auth.currentUser()">
+        <h2>Sign in to see your jobs</h2>
+        <p>This dashboard is for registered GAADIIQ partner mechanics.</p>
+        <a routerLink="/login" class="md-primary">Sign in</a>
+      </div>
+
+      <!-- Signed in, but no mechanic profile linked -->
+      <div class="md-empty" *ngIf="auth.currentUser() && !profile()">
+        <h2>You're not registered as a mechanic yet</h2>
+        <p>
+          Partner mechanics receive jobs from drivers nearby, set their own price, and are paid
+          through the platform. Registration needs your PAN and Aadhaar, and an admin approves
+          the account before jobs start arriving.
+        </p>
+        <a routerLink="/mechanic-signup" class="md-primary">Register as a mechanic</a>
+      </div>
+
+      <ng-container *ngIf="profile() as p">
+
+        <!-- Profile summary -->
+        <div class="md-profile">
+          <div class="md-profile-main">
+            <div class="md-profile-name">{{ p.shop_name || p.full_name }}</div>
+            <div class="md-profile-sub">
+              {{ p.city }} {{ p.area_pincode }} · {{ p.jobs_completed }} jobs completed
+              <span *ngIf="p.rating != null"> · ★ {{ p.rating | number:'1.1-1' }}</span>
+            </div>
+          </div>
+
+          <div class="md-profile-side">
+            <span class="md-status" [class.pending]="p.status !== 'active'">
+              {{ p.status === 'active' ? 'Active' : 'Pending verification' }}
+            </span>
+            <button type="button" class="md-toggle" [class.on]="p.is_available"
+                    [disabled]="busyId() === p.id" (click)="toggleAvailability()">
+              {{ p.is_available ? 'Accepting jobs' : 'Not accepting' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- An unverified mechanic is invisible to the search, so say so plainly
+             rather than leaving them wondering why no work arrives. -->
+        <div class="md-note" *ngIf="p.status !== 'active'">
+          Your account is awaiting admin verification. You won't appear in driver searches until
+          it's approved.
+        </div>
+
+        <!-- Active jobs -->
+        <h2 class="md-h">Current jobs <span class="md-count">{{ activeJobs().length }}</span></h2>
+
+        <div class="md-empty-small" *ngIf="!activeJobs().length">
+          No jobs assigned right now. Drivers nearby will see you when they search.
+        </div>
+
+        <div class="md-job" *ngFor="let job of activeJobs()">
+          <div class="md-job-head">
+            <div>
+              <span class="md-ref">{{ job.reference }}</span>
+              <span class="md-pill" [attr.data-status]="job.status">{{ statusLabel(job.status) }}</span>
+            </div>
+            <span class="md-dist" *ngIf="job.matched_distance_km != null">
+              {{ job.matched_distance_km | number:'1.1-1' }} km away
+            </span>
+          </div>
+
+          <div class="md-car">
+            {{ job.car_number }}
+            <span class="md-car-model" *ngIf="job.manufacturer">
+              · {{ job.manufacturer }} {{ job.model }}
+            </span>
+          </div>
+
+          <p class="md-problem">{{ job.problem_summary }}</p>
+
+          <div class="md-actions">
+            <a class="md-ghost" [href]="directionsUrl(job)" target="_blank" rel="noopener">🗺️ Directions</a>
+
+            <button type="button" class="md-primary" *ngIf="job.status === 'assigned'"
+                    [disabled]="busyId() === job.id" (click)="start(job)">
+              {{ busyId() === job.id ? 'Starting…' : 'Accept & start' }}
+            </button>
+
+            <button type="button" class="md-primary"
+                    *ngIf="job.status === 'in_progress' || job.status === 'awaiting_payment'"
+                    (click)="openQuote(job)">
+              {{ job.quoted_amount_paise ? 'Change price' : 'Set price' }}
+            </button>
+
+            <button type="button" class="md-primary" *ngIf="job.status === 'paid'"
+                    [disabled]="busyId() === job.id" (click)="complete(job)">
+              {{ busyId() === job.id ? 'Closing…' : 'Mark complete' }}
+            </button>
+          </div>
+
+          <div class="md-quoted" *ngIf="job.quoted_amount_paise && quotingId() !== job.id">
+            Quoted <strong>{{ money(job.quoted_amount_paise) }}</strong>
+            <span *ngIf="job.status === 'awaiting_payment'"> · waiting for the customer to pay</span>
+            <span *ngIf="job.status === 'paid'"> · paid</span>
+          </div>
+
+          <!-- Quote box -->
+          <div class="md-quote-box" *ngIf="quotingId() === job.id">
+            <label class="md-field">
+              <span class="md-label">Your price for this repair (₹)</span>
+              <input type="number" min="1" step="1" [ngModel]="quoteRupees()" (ngModelChange)="quoteRupees.set($event)" name="quoteRupees"
+                     placeholder="2400" />
+            </label>
+
+            <!-- The split, before committing. Computed locally for instant
+                 feedback; the server's figures are what actually settle. -->
+            <div class="md-split" *ngIf="livePreview() as lp">
+              <div class="md-split-row md-split-take">
+                <span>You receive</span><strong>{{ money(lp.payout) }}</strong>
+              </div>
+              <div class="md-split-row">
+                <span>GAADIIQ fee</span><span>{{ money(lp.commission) }}</span>
+              </div>
+            </div>
+
+            <div class="md-quote-actions">
+              <button type="button" class="md-primary" [disabled]="busyId() === job.id"
+                      (click)="submitQuote(job)">
+                {{ busyId() === job.id ? 'Sending…' : 'Send price to customer' }}
+              </button>
+              <button type="button" class="md-ghost" (click)="cancelQuote()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <ng-container *ngIf="pastJobs().length">
+          <h2 class="md-h">Past jobs</h2>
+          <div class="md-past" *ngFor="let job of pastJobs()">
+            <span class="md-ref">{{ job.reference }}</span>
+            <span class="md-past-car">{{ job.car_number }}</span>
+            <span class="md-pill" [attr.data-status]="job.status">{{ statusLabel(job.status) }}</span>
+            <span class="md-past-amount">{{ money(job.final_amount_paise) }}</span>
+          </div>
+        </ng-container>
+
+      </ng-container>
+    </ng-container>
+  </div>
+</div>

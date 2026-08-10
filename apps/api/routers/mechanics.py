@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
-from core.dependencies import get_admin_user, get_current_user
+from core.dependencies import get_admin_user, get_current_user, get_optional_user
 from core.limiter import limiter
 from db.session import get_db
 from models.mechanic import Mechanic, MechanicStatus
@@ -35,6 +35,7 @@ router = APIRouter(prefix="/mechanics", tags=["mechanics"])
 DbDep = Annotated[AsyncSession, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(get_admin_user)]
+OptionalUser = Annotated[User | None, Depends(get_optional_user)]
 
 
 def _to_out(m: Mechanic) -> MechanicOut:
@@ -71,6 +72,7 @@ async def register_mechanic(
     request: Request,
     payload: MechanicRegisterRequest,
     db: DbDep,
+    current_user: OptionalUser,
 ) -> MechanicOut:
     """Register a mechanic. PAN and Aadhaar are both mandatory.
 
@@ -116,6 +118,10 @@ async def register_mechanic(
         upi_vpa=payload.upi_vpa,
         specialisations=payload.specialisations,
         status=MechanicStatus.pending_verification,
+        # Anonymous registration stays possible — a mechanic signing up has no
+        # account yet — but when a token is present the row is linked, which is
+        # what later lets them quote their own jobs.
+        user_id=current_user.id if current_user else None,
     )
     db.add(mechanic)
     try:
@@ -175,6 +181,29 @@ async def nearby_mechanics(
         )
         for m in matches
     ]
+
+
+@router.get("/me", response_model=MechanicOut)
+async def my_mechanic_profile(db: DbDep, current_user: CurrentUser) -> MechanicOut:
+    """The mechanic profile linked to the caller's account.
+
+    Declared above `/{mechanic_id}`: FastAPI matches routes in definition order,
+    so registering a literal path after a UUID parameter means "me" is parsed as
+    an id and rejected as malformed.
+
+    404 rather than an empty body when the caller is not a mechanic — the client
+    needs to distinguish "you have no mechanic profile" from "here is a blank
+    one", and only the former should send them to the registration screen.
+    """
+    mechanic = (
+        await db.execute(select(Mechanic).where(Mechanic.user_id == current_user.id))
+    ).scalar_one_or_none()
+    if mechanic is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No mechanic profile is linked to this account",
+        )
+    return _to_out(mechanic)
 
 
 @router.get("/{mechanic_id}", response_model=MechanicOut)

@@ -56,6 +56,46 @@ export interface ServicePayment {
   commission: CommissionPreview;
 }
 
+/** The mechanic's own record — includes KYC fields, so only ever their own. */
+export interface MechanicProfile {
+  id: string;
+  full_name: string;
+  shop_name: string | null;
+  phone: string;
+  city: string;
+  state: string;
+  area_pincode: string;
+  service_radius_km: number;
+  pan_number: string;
+  aadhaar_masked: string;
+  upi_vpa: string | null;
+  specialisations: string[] | null;
+  status: 'pending_verification' | 'active' | 'suspended' | 'rejected';
+  is_available: boolean;
+  rating: number | null;
+  jobs_completed: number;
+}
+
+export interface MechanicRegistration {
+  full_name: string;
+  shop_name?: string;
+  phone: string;
+  whatsapp_phone?: string;
+  email?: string;
+  address_line1: string;
+  city: string;
+  state: string;
+  area_pincode: string;
+  latitude?: number;
+  longitude?: number;
+  service_radius_km?: number;
+  pan_number: string;
+  /** Sent once, never stored — see services/kyc.py. */
+  aadhaar_number: string;
+  upi_vpa?: string;
+  specialisations?: string[];
+}
+
 export interface CreateServiceRequest {
   car_number: string;
   manufacturer?: string;
@@ -185,6 +225,84 @@ export class MarketplaceService {
       this.http.get<ServiceRequest[]>(`${this.apiUrl}/service-requests`, {
         params: { limit: String(limit) },
       }),
+    );
+  }
+
+  // ── Mechanic side ─────────────────────────────────────────────────────────
+
+  /**
+   * The mechanic profile linked to the signed-in account, or null.
+   *
+   * A 404 is the API saying "you are not a mechanic", which is an ordinary
+   * answer rather than a failure — it is how the dashboard knows to offer
+   * registration instead of a job list.
+   */
+  /**
+   * Register as a mechanic.
+   *
+   * Send this while signed in: the API links the new row to the caller's
+   * account, and without that link the mechanic cannot later quote their own
+   * jobs. The Aadhaar number is validated server-side and never stored — only a
+   * hash and the last four digits survive.
+   */
+  async registerMechanic(payload: MechanicRegistration): Promise<MechanicProfile> {
+    return firstValueFrom(
+      this.http.post<MechanicProfile>(`${this.apiUrl}/mechanics`, payload),
+    );
+  }
+
+  async myMechanicProfile(): Promise<MechanicProfile | null> {
+    try {
+      return await firstValueFrom(
+        this.http.get<MechanicProfile>(`${this.apiUrl}/mechanics/me`),
+      );
+    } catch (e) {
+      if ((e as { status?: number })?.status === 404) return null;
+      throw e;
+    }
+  }
+
+  /** Jobs assigned to the caller's mechanic, newest first. */
+  async assignedToMe(limit = 50): Promise<ServiceRequest[]> {
+    return firstValueFrom(
+      this.http.get<ServiceRequest[]>(`${this.apiUrl}/service-requests/assigned-to-me`, {
+        params: { limit: String(limit) },
+      }),
+    );
+  }
+
+  /** Mechanic accepts the job: assigned -> in_progress. */
+  async startWork(requestId: string): Promise<ServiceRequest> {
+    return firstValueFrom(
+      this.http.post<ServiceRequest>(`${this.apiUrl}/service-requests/${requestId}/start`, {}),
+    );
+  }
+
+  /**
+   * Price the job. Rupees in, paise on the wire — money never crosses the
+   * network as a float.
+   */
+  async quote(requestId: string, amountRupees: number): Promise<CommissionPreview> {
+    return firstValueFrom(
+      this.http.post<CommissionPreview>(
+        `${this.apiUrl}/service-requests/${requestId}/quote`,
+        { amount_paise: Math.round(amountRupees * 100) },
+      ),
+    );
+  }
+
+  async completeRequest(requestId: string): Promise<ServiceRequest> {
+    return firstValueFrom(
+      this.http.post<ServiceRequest>(`${this.apiUrl}/service-requests/${requestId}/complete`, {}),
+    );
+  }
+
+  async setAvailability(mechanicId: string, isAvailable: boolean): Promise<MechanicProfile> {
+    return firstValueFrom(
+      this.http.patch<MechanicProfile>(
+        `${this.apiUrl}/mechanics/${mechanicId}/availability`,
+        { is_available: isAvailable },
+      ),
     );
   }
 

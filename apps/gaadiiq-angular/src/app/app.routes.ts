@@ -30,6 +30,11 @@ export const routes: Routes = [
   { path: 'admin/car-images', loadComponent: () => import('./pages/admin-car-images/admin-car-images.component').then(m => m.AdminCarImagesComponent), canActivate: [adminGuard] },
   { path: 'pricing-plans', loadComponent: () => import('./pages/pricing-plans/pricing-plans.component').then(m => m.PricingPlansComponent) },
   { path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent) },
+  // No guard: the page itself distinguishes signed-out, signed-in-but-not-a-
+  // mechanic, and mechanic — a guard would only be able to bounce all three the
+  // same way.
+  { path: 'mechanic-dashboard', loadComponent: () => import('./pages/mechanic-dashboard/mechanic-dashboard.component').then(m => m.MechanicDashboardComponent) },
+  { path: 'mechanic-signup', loadComponent: () => import('./pages/mechanic-signup/mechanic-signup.component').then(m => m.MechanicSignupComponent) },
   { path: 'vehicle-diagnosis', loadComponent: () => import('./pages/vehicle-diagnosis/vehicle-diagnosis.component').then(m => m.VehicleDiagnosisComponent) },
   { path: 'about', loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent) },
   { path: 'brand-logos', loadComponent: () => import('./pages/brand-logos/brand-logos.component').then(m => m.BrandLogosComponent) },
