@@ -31,7 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from models.media_audit import AuditAction
 from models.media_version import MediaEventType
-from models.vehicle_media import ListingMedia, VehicleMedia
+from models.vehicle_media import ImageCategory, ListingMedia, VehicleMedia
 from services import pdf_ingest
 from services.media_audit import log_audit
 from services.media_index import media_index
@@ -490,6 +490,13 @@ async def urls_for_cars(
         or_(*conditions),
         # Removed images are gone from every buyer-facing surface.
         VehicleMedia.deleted_at.is_(None),
+        # A spin sequence is 24-36 near-identical frames. In a flat gallery they
+        # read as the same photograph over and over and push the real ones off
+        # the strip, so they leave here and come back through spin_urls_for_car.
+        or_(
+            VehicleMedia.image_category.is_(None),
+            VehicleMedia.image_category != ImageCategory.three_sixty,
+        ),
     )
     if bucket in ("new", "used"):
         q = q.where(
@@ -519,6 +526,66 @@ async def urls_for_cars(
             if len(out[car_id]) < per_car:
                 out[car_id].append(storage.url_for(media.webp_key or media.storage_key))
     return out
+
+
+#: Below this many frames a spin is not a spin — it jumps between angles rather
+#: than turning, and showing it as one would be worse than showing nothing. A
+#: 15° step (24 frames) is the usual studio rig; 12 allows a coarser 30° set.
+SPIN_MIN_FRAMES = 12
+
+#: Above this, the browser is downloading megabytes before the car turns once.
+SPIN_MAX_FRAMES = 72
+
+
+async def spin_urls_for_car(
+    db: AsyncSession,
+    car: "Car",
+    bucket: str | None = None,
+) -> list[str]:
+    """
+    The 360° frame sequence for one car, in turn order.
+
+    Separate from `urls_for_cars` because these images are not gallery
+    photographs — individually they say nothing, and only the ordered set means
+    anything. Returned empty unless there are enough frames to actually turn the
+    car (SPIN_MIN_FRAMES), so the viewer either works or is absent; a four-frame
+    "360" that lurches between quarters is the worse of the two.
+
+    Order is the admin's `sort_order`, then upload time. A rig shoots frames in
+    sequence, so upload order is the turn order often enough to be the sensible
+    fallback — but sort_order is what lets an admin fix it when it is not.
+    """
+    if not car.make or not car.model:
+        return []
+
+    q = select(VehicleMedia).where(
+        func.lower(func.trim(VehicleMedia.make)) == car.make.strip().lower(),
+        func.lower(func.trim(VehicleMedia.model)) == car.model.strip().lower(),
+        VehicleMedia.model_year == car.year,
+        VehicleMedia.image_category == ImageCategory.three_sixty,
+        VehicleMedia.deleted_at.is_(None),
+    )
+    if bucket in ("new", "used"):
+        q = q.where(
+            or_(
+                VehicleMedia.media_bucket == bucket,
+                VehicleMedia.media_bucket == "both",
+                VehicleMedia.media_bucket.is_(None),
+            )
+        )
+    # No is_primary here: a spin has no hero frame, and honouring one would
+    # rotate the whole sequence so the car starts mid-turn.
+    q = q.order_by(
+        VehicleMedia.sort_order.asc().nullslast(),
+        VehicleMedia.created_at.asc(),
+    ).limit(SPIN_MAX_FRAMES)
+
+    rows = (await db.execute(q)).scalars().all()
+    if len(rows) < SPIN_MIN_FRAMES:
+        return []
+
+    storage = get_storage()
+    return [storage.url_for(m.webp_key or m.storage_key) for m in rows]
 
 
 async def urls_for_listing(db: AsyncSession, listing_id) -> list[str]:

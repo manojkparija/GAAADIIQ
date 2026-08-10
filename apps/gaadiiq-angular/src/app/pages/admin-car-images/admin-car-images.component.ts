@@ -119,13 +119,34 @@ export class AdminCarImagesComponent implements OnInit {
         .filter((v): v is string => !!v)
     )].sort()
   );
-  yearOptions = computed(() =>
-    [...new Set(
-      this.catalogue()
-        .filter(o => o.make === this.make() && o.model === this.model())
-        .map(o => o.year)
-    )].sort((a, b) => b - a)
-  );
+  /**
+   * The current model year, and the one manufacturers are already selling into.
+   *
+   * Indian OEMs list next year's model well before January, so a photograph
+   * taken today may legitimately belong to either.
+   */
+  private currentModelYears(): number[] {
+    const now = new Date().getFullYear();
+    return [now + 1, now];
+  }
+
+  /**
+   * Years to offer, newest first.
+   *
+   * The catalogue's own years alone were wrong for the case this screen exists
+   * for: photographing a new launch. A model whose catalogue rows are 2020-2023
+   * offered only those, so a picture of the current car was filed under an
+   * older year and never appeared on the New Cars page — the images match a car
+   * on make, model *and* year. The current years are always available, whether
+   * or not the catalogue has caught up.
+   */
+  yearOptions = computed(() => {
+    const catalogueYears = this.catalogue()
+      .filter(o => o.make === this.make() && o.model === this.model())
+      .map(o => o.year);
+    return [...new Set([...this.currentModelYears(), ...catalogueYears])]
+      .sort((a, b) => b - a);
+  });
 
   // Whether each field is being typed rather than chosen. Set when the admin
   // picks "Add new…", and forced on when the catalogue offers nothing to pick.
@@ -157,7 +178,12 @@ export class AdminCarImagesComponent implements OnInit {
       this.customModel.set(custom);
       this.model.set(custom ? '' : value);
       this.variant.set(''); this.customVariant.set(false);
-      this.modelYear.set(null); this.customYear.set(false);
+      this.customYear.set(false);
+      // Default to the current model year rather than leaving the field empty.
+      // An admin uploading photographs is nearly always shooting the car on
+      // sale now, and an empty box invited picking whichever old year happened
+      // to sit at the top of the list.
+      this.modelYear.set(custom ? null : this.currentModelYears()[1]);
     } else if (field === 'variant') {
       this.customVariant.set(custom);
       this.variant.set(custom ? '' : value);

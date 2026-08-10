@@ -459,6 +459,9 @@ input[type="number"], table, tbody, th, td,
   font-size: 0.95rem;
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
+  // A button label is a label, not prose. Without this, "Sign In" breaks onto
+  // two lines and doubles the navbar's height the moment the bar gets tight.
+  white-space: nowrap;
   transition: all 0.22s ease;
   &:hover {
     border-color: #2563EB;

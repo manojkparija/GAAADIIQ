@@ -37,9 +37,12 @@
 
 .hero-text {
   h1 {
-    font-size: clamp(2.4rem, 4.5vw, 3.75rem);
+    // Down from 60px originally, then 46px, now ~40px on a desktop. Still the
+    // largest type on the page by a clear margin, but it now sits level with
+    // the valuation card rather than towering over it.
+    font-size: clamp(1.8rem, 2.9vw, 2.5rem);
     font-weight: 800;
-    line-height: 1.1;
+    line-height: 1.12;
     letter-spacing: -0.03em;
     margin: 0.75rem 0 0.5rem;
   }

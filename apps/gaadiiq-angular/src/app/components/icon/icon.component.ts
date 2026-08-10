@@ -4,6 +4,10 @@ import { CommonModule } from '@angular/common';
 
 const ICONS: Record<string, string> = {
   'zap': '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  // Left/right arrows only: the 360 viewer turns on one axis, and the usual
+  // four-way "move" glyph would promise a vertical drag that does nothing.
+  'move': '<path d="m9 7-5 5 5 5M15 7l5 5-5 5M4 12h16"/>',
+  'rotate-3d': '<path d="M12 5c4.97 0 9 1.79 9 4s-4.03 4-9 4-9-1.79-9-4 4.03-4 9-4Z"/><path d="M3 9v6c0 2.21 4.03 4 9 4s9-1.79 9-4V9"/>',
   'map-pin': '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
   'sun': '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
   'moon': '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',

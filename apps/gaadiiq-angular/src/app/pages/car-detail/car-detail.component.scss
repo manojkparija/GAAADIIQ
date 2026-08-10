@@ -40,6 +40,66 @@
     cursor: zoom-in;
     img { width:100%;height:100%;object-fit:cover; }
   }
+  // ── 360° spin ─────────────────────────────────────────────────────────────
+  .spin-stage {
+    // grab, not zoom-in: the gesture here turns the car, it does not magnify.
+    cursor: grab;
+    background: var(--fill-dim);
+    touch-action: pan-y;   // vertical scroll still works; horizontal is ours
+    user-select: none;
+    &:active { cursor: grabbing; }
+
+    .spin-frame {
+      position: absolute; inset: 0;
+      // Every frame is loaded and stacked; only the current one is painted.
+      // display:none would make the browser drop decoded frames and re-decode
+      // them on the way back round, which shows up as a stutter mid-turn.
+      opacity: 0;
+      pointer-events: none;
+      &.shown { opacity: 1; }
+    }
+  }
+
+  .spin-loading {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.75rem;
+    background: var(--fill-dim);
+    p { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+    .spin-loading-bar {
+      width: min(240px, 60%); height: 4px; border-radius: 999px;
+      background: var(--divider); overflow: hidden;
+      span {
+        display: block; height: 100%; border-radius: 999px;
+        background: linear-gradient(90deg, var(--primary), var(--teal));
+        transition: width 0.2s ease;
+      }
+    }
+  }
+
+  .spin-hint {
+    position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.75rem; border-radius: 999px;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .spin-toggle {
+    position: absolute; bottom: 1rem; left: 1rem;
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 0.85rem; border-radius: 999px;
+    border: none; cursor: pointer; white-space: nowrap;
+    background: linear-gradient(135deg, var(--primary), var(--teal));
+    color: #fff; font-size: 0.82rem; font-weight: 700;
+    transition: transform 0.2s, box-shadow 0.2s;
+    &:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(47,107,255,0.35); }
+    // Leaving the viewer is a neutral action, so it drops the brand gradient
+    // and stops competing with the car for attention.
+    &.active { background: rgba(0,0,0,0.6); font-weight: 600; }
+  }
+
   .zoom-fab {
     position: absolute; bottom: 1rem; right: 1rem;
     width: 42px; height: 42px; border-radius: 50%;
@@ -381,7 +441,9 @@
   &:last-child { border-bottom: none; }
 }
 .variant-name-wrap { display: flex; align-items: center; gap: 0.75rem; }
-.variant-name { font-weight: 600; font-size: 0.95rem; color: var(--primary); }
+// Plain text, not brand blue: these names are labels, not links, and colouring
+// them like the tappable prices beside them invited clicks that go nowhere.
+.variant-name { font-weight: 600; font-size: 0.95rem; color: var(--text); }
 .variant-count-badge {
   font-size: 0.72rem; font-weight: 700; color: var(--muted);
   border: 1px solid var(--glass-border); border-radius: 8px;
