@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, effect, HostListener } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -192,7 +192,7 @@ import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentime
   templateUrl: './car-detail.component.html',
   styleUrl: './car-detail.component.scss'
 })
-export class CarDetailComponent implements OnInit {
+export class CarDetailComponent implements OnInit, OnDestroy {
   activeTab = signal('overview');
   liked = signal(false);
   sellerModalOpen = signal(false);
@@ -220,6 +220,72 @@ export class CarDetailComponent implements OnInit {
       .filter(Boolean) as string[];
   }
 
+  // ── 360° spin ──────────────────────────────────────────────────────────────
+  //
+  // A turntable sequence, scrubbed by dragging. Deliberately not an autoplaying
+  // animation: a buyer looking at a 360 wants to stop on the C-pillar or the
+  // wheel arch, and a loop that keeps turning under them takes that away. It
+  // rotates on its own only until first touched, purely to signal that it can.
+
+  spinMode = signal(false);
+  spinFrame = signal(0);
+  /** Frames the browser has actually fetched — the viewer waits for all of them. */
+  spinLoaded = signal(0);
+  private spinDragFrom: { x: number; frame: number } | null = null;
+  private spinHintTimer: ReturnType<typeof setInterval> | null = null;
+
+  spinImages(): string[] { return this.car?.spinImages ?? []; }
+  hasSpin(): boolean { return this.spinImages().length > 0; }
+  spinReady(): boolean { return this.spinLoaded() >= this.spinImages().length; }
+
+  spinProgress(): number {
+    const total = this.spinImages().length;
+    return total ? Math.round((this.spinLoaded() / total) * 100) : 0;
+  }
+
+  toggleSpin(): void {
+    const next = !this.spinMode();
+    this.spinMode.set(next);
+    this.stopSpinHint();
+    if (next) {
+      // One idle rotation so the control reads as "drag me" without a caption.
+      // Cleared the moment a pointer lands, and on leaving spin mode.
+      this.spinHintTimer = setInterval(() => this.stepSpin(1), 90);
+    }
+  }
+
+  private stopSpinHint(): void {
+    if (this.spinHintTimer) { clearInterval(this.spinHintTimer); this.spinHintTimer = null; }
+  }
+
+  onSpinFrameLoad(): void { this.spinLoaded.update(n => n + 1); }
+
+  private stepSpin(delta: number): void {
+    const total = this.spinImages().length;
+    if (!total) return;
+    this.spinFrame.set(((this.spinFrame() + delta) % total + total) % total);
+  }
+
+  startSpin(event: PointerEvent): void {
+    this.stopSpinHint();
+    this.spinDragFrom = { x: event.clientX, frame: this.spinFrame() };
+    (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+  }
+
+  moveSpin(event: PointerEvent): void {
+    if (!this.spinDragFrom) return;
+    const total = this.spinImages().length;
+    // A full drag across the viewer turns the car once, whatever the frame
+    // count and whatever the screen width — so the gesture feels the same on a
+    // phone and a desktop, and on a 24-frame set and a 72-frame one.
+    const width = (event.currentTarget as HTMLElement)?.clientWidth || 600;
+    const moved = (event.clientX - this.spinDragFrom.x) / width;
+    const next = this.spinDragFrom.frame + Math.round(moved * total);
+    this.spinFrame.set(((next % total) + total) % total);
+  }
+
+  endSpin(): void { this.spinDragFrom = null; }
+
   /**
    * Full-screen viewer.
    *
@@ -244,6 +310,10 @@ export class CarDetailComponent implements OnInit {
     this.resetZoom();
     this.lightboxOpen.set(true);
     document.body.style.overflow = 'hidden';
+  }
+
+  ngOnDestroy(): void {
+    this.stopSpinHint();
   }
 
   closeLightbox(): void {
@@ -521,6 +591,7 @@ export class CarDetailComponent implements OnInit {
           this.car = {
             ...this.car,
             images: urls.length > (this.car.images?.length ?? 0) ? urls : this.car.images,
+            spinImages: fresh.spinImages ?? [],
             image: urls.length ? urls[0] : this.car.image,
             // Curated specification wins over the hardcoded map.
             specs: fresh.specs?.length ? fresh.specs : this.car.specs,

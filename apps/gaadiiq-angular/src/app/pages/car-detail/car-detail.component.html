@@ -21,7 +21,39 @@
       <div class="detail-left">
         <!-- IMAGE GALLERY -->
         <div class="gallery glass-card">
-          <div class="main-img" (click)="openLightbox()" title="Click to view full screen">
+          <!-- 360° SPIN — replaces the still while it is on, rather than sitting
+               beside it: two pictures of the same car competing for the same
+               attention is how a buyer misses both. -->
+          <div class="main-img spin-stage" *ngIf="spinMode()"
+               (pointerdown)="startSpin($event)"
+               (pointermove)="moveSpin($event)"
+               (pointerup)="endSpin()"
+               (pointercancel)="endSpin()"
+               (pointerleave)="endSpin()">
+            <!-- Every frame is in the DOM and only one is shown. Loading them on
+                 demand makes the first turn stutter through a blank stage,
+                 which reads as a broken viewer rather than a slow one. -->
+            <img *ngFor="let frame of spinImages(); let i = index"
+                 [src]="frame" [alt]="car.make + ' ' + car.model + ' 360 degree view'"
+                 class="spin-frame" [class.shown]="i === spinFrame() && spinReady()"
+                 referrerpolicy="no-referrer" draggable="false"
+                 (load)="onSpinFrameLoad()" (error)="onSpinFrameLoad()">
+
+            <div class="spin-loading" *ngIf="!spinReady()">
+              <div class="spin-loading-bar"><span [style.width.%]="spinProgress()"></span></div>
+              <p>Loading 360° view… {{ spinProgress() }}%</p>
+            </div>
+
+            <div class="spin-hint" *ngIf="spinReady()">
+              <app-icon name="move" [size]="14"></app-icon> Drag to rotate
+            </div>
+
+            <button class="spin-toggle active" type="button"
+                    (click)="toggleSpin(); $event.stopPropagation()"
+                    aria-label="Exit 360 degree view">✕ Exit 360°</button>
+          </div>
+
+          <div class="main-img" *ngIf="!spinMode()" (click)="openLightbox()" title="Click to view full screen">
             <img [src]="galleryImages()[activeImg()]" [alt]="car.make + ' ' + car.model"
                  referrerpolicy="no-referrer"
                  [style.objectPosition]="(galleryImages()[activeImg()] || '').includes('swift/front') ? 'center 65%' : 'center center'"
@@ -32,6 +64,14 @@
             </button>
             <button class="zoom-fab" type="button" aria-label="View full screen"
                     (click)="openLightbox(); $event.stopPropagation()">⤢</button>
+            <!-- Only when a spin sequence actually exists. A permanently
+                 disabled 360 button on the hundreds of cars without one
+                 advertises a feature the buyer cannot have. -->
+            <button *ngIf="hasSpin()" class="spin-toggle" type="button"
+                    (click)="toggleSpin(); $event.stopPropagation()"
+                    aria-label="View in 360 degrees">
+              <app-icon name="rotate-3d" [size]="15"></app-icon> 360° View
+            </button>
           </div>
           <div class="thumbnails">
             <div *ngFor="let img of galleryImages(); let i = index"
@@ -101,9 +141,14 @@
             <div class="overview-pills">
               <div class="pill"><span>⛽</span><div><div class="pill-label">Fuel</div><div class="pill-val">{{ car.fuel }}</div></div></div>
               <div class="pill"><span>⚙️</span><div><div class="pill-label">Gearbox</div><div class="pill-val">{{ car.transmission }}</div></div></div>
-              <div class="pill"><span>👤</span><div><div class="pill-label">Owners</div><div class="pill-val">{{ car.owners }}</div></div></div>
-              <div class="pill"><span>🎨</span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
-              <div class="pill"><span><app-icon name="map-pin" [size]="14"></app-icon></span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
+              <!-- Owner count is a used-car fact. On a new car it is either
+                   blank or "0", and both read as missing data rather than as
+                   "nobody has owned this yet" — so it does not appear at all. -->
+              <div class="pill" *ngIf="!isNewCar && car.owners"><span>👤</span><div><div class="pill-label">Owners</div><div class="pill-val">{{ car.owners }}</div></div></div>
+              <!-- Same rule as Owners: a pill with a label and no value is a
+                   gap dressed up as a fact. Catalogue models carry no colour. -->
+              <div class="pill" *ngIf="car.color"><span>🎨</span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
+              <div class="pill" *ngIf="car.city"><span><app-icon name="map-pin" [size]="14"></app-icon></span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
             </div>
           </div>
 

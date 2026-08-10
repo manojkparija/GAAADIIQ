@@ -179,6 +179,7 @@ async def get_car(car_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
         db, [car], per_car=media_library.GALLERY_FULL_LIMIT
     )
     out.image_urls = images.get(car.id, [])
+    out.spin_urls = await media_library.spin_urls_for_car(db, car)
     out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
     return out
 

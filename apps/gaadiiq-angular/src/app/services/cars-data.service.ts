@@ -7,6 +7,12 @@ export interface Car {
   id: string; make: string; model: string; variant?: string; year: number; price: number;
   km: number; fuel: string; transmission: string; badge: string; badgeType: string;
   image: string; images?: string[]; rating: number; reviews: number; verified: boolean;
+  /**
+   * Ordered 360° frames, when the model has been shot on a turntable. Kept
+   * apart from `images` because one frame on its own is meaningless — the
+   * sequence is the asset. Empty or absent on almost every car.
+   */
+  spinImages?: string[];
   city?: string; bodyType?: string; color?: string; owners?: string;
   isSellerListing?: boolean;
   /** Published trims for this model, 0 when none have been entered. */
@@ -28,6 +34,8 @@ interface ApiCar {
   // should not pick up rounding on the way here.
   ex_showroom_price?: string | null;
   image_urls?: string[];
+  /** Ordered 360° frames. Only the single-car endpoint returns these. */
+  spin_urls?: string[];
   /** Published trims, counted by the API. */
   variant_count?: number;
   specs?: { label: string; value: string }[] | null;
@@ -508,6 +516,7 @@ export class CarsDataService {
       images: (car.image_urls ?? []).filter(
         u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'),
       ),
+      spinImages: car.spin_urls ?? [],
       specs: car.specs ?? undefined,
       features: car.features ?? undefined,
       variantCount: car.variant_count ?? 0,

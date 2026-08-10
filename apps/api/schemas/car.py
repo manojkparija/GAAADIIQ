@@ -52,6 +52,13 @@ class CarOut(BaseModel):
     # row, so the association is resolved at read time. Empty when nothing has
     # been uploaded for the model yet.
     image_urls: list[str] = []
+    # The 360° spin sequence, in turn order, kept apart from image_urls because
+    # a spin frame is not a gallery photograph — one frame on its own says
+    # nothing and only the ordered set means anything. Empty unless enough
+    # frames exist to genuinely turn the car; see media_library.SPIN_MIN_FRAMES.
+    # Only the single-car endpoint fills this: a listing page renders one
+    # thumbnail per car and has no use for thirty-six frames of each.
+    spin_urls: list[str] = []
     # How many trims a buyer can actually choose between. Counted rather than
     # inferred from catalogue rows: a model is one row, and the card that says
     # "1 Variant" beside eight published trims is simply wrong.

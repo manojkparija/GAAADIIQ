@@ -10,7 +10,7 @@ pages, or both.
 import pytest
 
 from models.car import Car
-from models.vehicle_media import VehicleMedia
+from models.vehicle_media import ImageCategory, VehicleMedia
 from services import media_library
 
 
@@ -177,3 +177,89 @@ async def test_webp_derivative_is_preferred_over_the_original(db_session):
 
     urls = await media_library.urls_for_cars(db_session, [car])
     assert _basename(urls[car.id][0]) == "small.webp"
+
+
+# ── 360° spin sequences ──────────────────────────────────────────────────────
+#
+# A turntable set is 24-36 frames of the same car a few degrees apart. It is
+# stored in the same table as gallery photographs and has to behave differently
+# in both directions: out of the flat gallery, and into the spin viewer only
+# when there are enough frames to actually turn the car.
+
+
+def _spin_frames(count: int, *, make="Maruti", model="S-Presso", year=2026):
+    return [
+        VehicleMedia(
+            source_pdf_name=f"spin_{i:02d}.png", storage_key=f"spin_{i:02d}.png",
+            make=make, model=model, model_year=year,
+            image_category=ImageCategory.three_sixty, sort_order=i,
+        )
+        for i in range(count)
+    ]
+
+
+@pytest.mark.asyncio
+async def test_spin_frames_are_kept_out_of_the_flat_gallery(db_session):
+    """
+    Thirty-six near-identical frames in the thumbnail strip read as the same
+    picture over and over and push the real photographs off the end of it.
+    """
+    car = Car(make="Maruti", model="S-Presso", year=2026)
+    db_session.add(car)
+    await db_session.flush()
+
+    db_session.add_all(_spin_frames(24))
+    db_session.add(
+        VehicleMedia(
+            source_pdf_name="front.png", storage_key="front.png",
+            make="Maruti", model="S-Presso", model_year=2026,
+        )
+    )
+    await db_session.flush()
+
+    urls = await media_library.urls_for_cars(db_session, [car])
+    assert [_basename(u) for u in urls[car.id]] == ["front.png"]
+
+
+@pytest.mark.asyncio
+async def test_spin_urls_are_returned_in_turn_order(db_session):
+    car = Car(make="Maruti", model="S-Presso", year=2026)
+    db_session.add(car)
+    await db_session.flush()
+
+    # Added out of order: sort_order is what defines the turn, not insertion.
+    frames = _spin_frames(24)
+    db_session.add_all(list(reversed(frames)))
+    await db_session.flush()
+
+    urls = await media_library.spin_urls_for_car(db_session, car)
+    assert [_basename(u) for u in urls] == [f"spin_{i:02d}.png" for i in range(24)]
+
+
+@pytest.mark.asyncio
+async def test_too_few_frames_is_no_spin_at_all(db_session):
+    """
+    Four frames is not a rotation, it is four photographs. Returning them would
+    give the buyer a viewer that lurches between quarters — worse than absent.
+    """
+    car = Car(make="Maruti", model="S-Presso", year=2026)
+    db_session.add(car)
+    await db_session.flush()
+
+    db_session.add_all(_spin_frames(4))
+    await db_session.flush()
+
+    assert await media_library.spin_urls_for_car(db_session, car) == []
+
+
+@pytest.mark.asyncio
+async def test_spin_matches_the_same_identity_rules_as_the_gallery(db_session):
+    """A 2025 spin does not belong to the 2026 car."""
+    car = Car(make="Maruti", model="S-Presso", year=2026)
+    db_session.add(car)
+    await db_session.flush()
+
+    db_session.add_all(_spin_frames(24, year=2025))
+    await db_session.flush()
+
+    assert await media_library.spin_urls_for_car(db_session, car) == []
