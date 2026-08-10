@@ -1,0 +1,389 @@
+.loan-page {
+  // --nav-offset, per LAY-007 in styles.scss: the navbar is fixed, so a plain
+  // 2rem left the heading sitting underneath it.
+  padding: max(7rem, var(--nav-offset)) 0 4rem;
+  min-height: 70vh;
+}
+
+.loan-head {
+  margin-bottom: 1.75rem;
+  h1 {
+    font-size: clamp(1.6rem, 2.6vw, 2.25rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem;
+  }
+}
+
+.loan-sub {
+  color: var(--text-muted);
+  max-width: 60ch;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.loan-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+// ── Form ────────────────────────────────────────────────────────────────────
+
+.loan-form {
+  padding: 1.5rem;
+  h2 { font-size: 1.1rem; margin: 0 0 1.25rem; }
+  hr {
+    border: none;
+    border-top: 1px solid var(--divider);
+    margin: 1.5rem 0;
+  }
+}
+
+.seg {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  button {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--divider);
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    &.active {
+      background: linear-gradient(135deg, var(--primary), var(--teal));
+      border-color: transparent;
+      color: #fff;
+    }
+  }
+}
+
+.field {
+  margin-bottom: 1.1rem;
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    strong { color: var(--primary); font-weight: 700; }
+  }
+  input[type="text"], input[type="tel"], input[type="number"], select {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border-radius: 10px;
+    border: 1px solid var(--divider);
+    background: var(--fill-dim);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.92rem;
+    &:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+    // Only after a full-length entry, so the box does not turn red at the
+    // first keystroke of a PAN that is going to be perfectly valid.
+    &.invalid { border-color: #EF4444; }
+  }
+  input[type="range"] { width: 100%; accent-color: var(--primary); }
+  small {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    &.warn { color: #EF4444; font-weight: 600; }
+  }
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  @media (max-width: 560px) { grid-template-columns: 1fr; }
+}
+
+// The treatment that reads as "read this one": a bold lead-in, a tinted card
+// and airier line-height. Used where we ask for something sensitive and owe an
+// explanation in return.
+.pan-note {
+  background: var(--fill-dim);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  margin-top: 0.5rem;
+  line-height: 1.65;
+  strong { color: var(--text); }
+}
+
+.consent {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 1.25rem 0;
+  cursor: pointer;
+  input { margin-top: 0.2rem; accent-color: var(--primary); flex-shrink: 0; }
+}
+
+.form-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #B91C1C;
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.86rem;
+  margin: 0 0 1rem;
+}
+:root[data-theme="dark"] .form-error { color: #FCA5A5; }
+
+.signin-note {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+  a { color: var(--primary); font-weight: 600; }
+}
+
+.submit-btn { width: 100%; }
+
+// ── Aside ───────────────────────────────────────────────────────────────────
+
+.loan-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: sticky;
+  top: 90px;
+  @media (max-width: 900px) { position: static; }
+}
+
+.panel {
+  padding: 1.25rem;
+  h2 { font-size: 1rem; margin: 0 0 0.9rem; }
+}
+
+.partner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.partner {
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  .partner-name { font-size: 0.82rem; font-weight: 700; line-height: 1.3; }
+  .partner-type { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+}
+
+.rate-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  th {
+    text-align: left;
+    padding: 0.5rem 0.4rem;
+    border-bottom: 1px solid var(--divider);
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  td { padding: 0.55rem 0.4rem; border-bottom: 1px solid var(--divider); }
+  tr:last-child td { border-bottom: none; }
+  .rate-cell { font-weight: 700; color: var(--primary); white-space: nowrap; }
+}
+
+.rate-note, .how-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin: 0.75rem 0 0;
+  strong { color: var(--text); }
+}
+.how-note { margin-top: 0; }
+
+// ── Offers ──────────────────────────────────────────────────────────────────
+
+.band-note {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  background: var(--fill-dim);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.86rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  strong { color: var(--text); }
+  app-icon { color: var(--primary); flex-shrink: 0; margin-top: 0.15rem; }
+}
+
+.offers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.offer-card {
+  position: relative;
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  padding: 1.35rem;
+  background: var(--surface, var(--fill-dim));
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+
+  // The recommendation is the page's one loud element. Everything else stays
+  // quiet so it means something.
+  &.recommended {
+    border-color: transparent;
+    box-shadow: 0 0 0 2px var(--primary), 0 12px 32px rgba(47, 107, 255, 0.18);
+  }
+  &.chosen { box-shadow: 0 0 0 2px var(--teal); }
+}
+
+.offer-badge {
+  position: absolute;
+  top: -11px;
+  left: 1.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--teal));
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.offer-lender {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  h3 { margin: 0; font-size: 1.05rem; }
+  .offer-type {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.offer-rate {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  .rate-value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--primary), var(--teal));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .rate-label { font-size: 0.8rem; color: var(--text-muted); }
+}
+
+.offer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem 1rem;
+  div { display: flex; flex-direction: column; gap: 0.1rem; }
+  span { font-size: 0.74rem; color: var(--text-muted); }
+  strong { font-size: 0.95rem; }
+}
+
+.offer-cost {
+  border-top: 1px solid var(--divider);
+  padding-top: 0.8rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  strong { display: block; font-size: 1.15rem; color: var(--text); margin: 0.15rem 0; }
+  small { font-size: 0.72rem; }
+}
+
+.offer-short {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  app-icon { flex-shrink: 0; margin-top: 0.15rem; }
+}
+
+.offer-cta { width: 100%; margin-top: auto; white-space: nowrap; }
+
+.offer-chosen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding: 0.6rem;
+  border-radius: 10px;
+  background: rgba(20, 184, 166, 0.12);
+  color: var(--teal);
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+
+.none-eligible {
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+  p { margin: 0; color: var(--text-muted); line-height: 1.65; font-size: 0.9rem; }
+}
+
+.rejected {
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  h3 {
+    margin: 0 0 0.9rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+}
+
+.rejected-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 0.86rem;
+  &:last-child { border-bottom: none; }
+  .rejected-name { font-weight: 600; }
+  .rejected-why { color: var(--text-muted); text-align: right; }
+}
+
+.disclaimer {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  max-width: 70ch;
+  margin: 0 0 1.25rem;
+}

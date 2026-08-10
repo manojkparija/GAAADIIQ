@@ -110,3 +110,26 @@ def aadhaar_last4(digits: str) -> str:
 def mask_aadhaar(last4: str) -> str:
     """Render the fragment the way UIDAI requires it to be displayed."""
     return f"XXXX XXXX {last4}"
+
+
+def pan_digest(pan: str) -> str:
+    """Peppered SHA-256 of a validated PAN.
+
+    Unlike Aadhaar, the PAN itself is stored — a loan application is useless to
+    a lender without it, and a digest cannot be forwarded. This exists for
+    lookup: finding an applicant's history by PAN should not mean scanning the
+    column holding the number.
+
+    Peppered for the same reason as Aadhaar. PAN has a small structured space
+    (five letters, four digits, a letter), so an unpeppered digest is a
+    dictionary attack rather than a real one-way function.
+    """
+    pepper = settings.kyc_hash_pepper or ""
+    return hashlib.sha256(f"pan:{pepper}:{pan}".encode()).hexdigest()
+
+
+def mask_pan(pan: str | None) -> str:
+    """`ABCDE1234F` -> `ABCDE****F`. The only form the API returns."""
+    if not pan or len(pan) != 10:
+        return "****"
+    return f"{pan[:5]}****{pan[9:]}"
