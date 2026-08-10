@@ -157,3 +157,28 @@ async def get_seller_user(current_user: User = Depends(get_current_user)) -> Use
             detail="Dealer/seller access required",
         )
     return current_user
+
+
+async def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    cookie_token: str | None = Cookie(default=None, alias=ACCESS_TOKEN_COOKIE),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """The signed-in user, or None — never raises.
+
+    For endpoints that are open to anonymous callers but behave better when they
+    can tell who is calling. Mechanic registration is the case that prompted
+    this: it must work for someone with no account yet, but when a token *is*
+    present the new row should be linked to that account so the mechanic can
+    later act as themselves.
+
+    Any authentication failure is swallowed deliberately. A malformed or expired
+    token on an endpoint that does not require one should leave the caller
+    anonymous, not reject a request they were entitled to make.
+    """
+    if credentials is None and not cookie_token:
+        return None
+    try:
+        return await get_current_user(credentials, cookie_token, db)
+    except HTTPException:
+        return None

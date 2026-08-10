@@ -121,6 +121,32 @@ async def _load_owned(db: AsyncSession, request_id: uuid.UUID, user: User) -> Se
     return sr
 
 
+async def _load_for_mechanic(db: AsyncSession, request_id: uuid.UUID, user: User) -> ServiceRequest:
+    """Fetch a request, authorising the mechanic it is assigned to.
+
+    The mirror of `_load_owned`. Pricing and progress belong to the person doing
+    the work, not the person paying for it — a customer who can set the quote
+    can set it to zero.
+    """
+    stmt = (
+        select(ServiceRequest)
+        .options(selectinload(ServiceRequest.mechanic))
+        .where(ServiceRequest.id == request_id)
+    )
+    sr = (await db.execute(stmt)).scalar_one_or_none()
+    if sr is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service request not found")
+
+    if user.role == UserRole.admin:
+        return sr
+    # An unassigned request has nobody to authorise, and a mechanic row with no
+    # linked account cannot be acted for — both are a plain 403 rather than a
+    # message that would confirm the request exists to a stranger.
+    if sr.mechanic is None or sr.mechanic.user_id is None or sr.mechanic.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not permitted")
+    return sr
+
+
 @router.post("", response_model=ServiceRequestOut, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
 async def create_service_request(
@@ -168,6 +194,39 @@ async def list_my_requests(
         select(ServiceRequest)
         .options(selectinload(ServiceRequest.mechanic))
         .where(ServiceRequest.user_id == current_user.id)
+        .order_by(ServiceRequest.created_at.desc())
+        .limit(limit)
+    )
+    return [_to_out(sr) for sr in (await db.execute(stmt)).scalars().all()]
+
+
+@router.get("/assigned-to-me", response_model=list[ServiceRequestOut])
+async def jobs_assigned_to_me(
+    db: DbDep,
+    current_user: CurrentUser,
+    limit: int = Query(default=50, ge=1, le=200),
+) -> list[ServiceRequestOut]:
+    """Every job assigned to the mechanic linked to the caller's account.
+
+    Declared above `/{request_id}` on purpose: FastAPI matches in definition
+    order, so a literal path registered after a UUID parameter would be parsed
+    as an id and rejected as malformed.
+
+    Cancelled and completed jobs are included — a mechanic needs their history,
+    not just today's work — and the ordering puts live jobs first.
+    """
+    mechanic = (
+        await db.execute(select(Mechanic).where(Mechanic.user_id == current_user.id))
+    ).scalar_one_or_none()
+    if mechanic is None:
+        # Not an error: a signed-in user who simply is not a mechanic has an
+        # empty queue rather than a failure.
+        return []
+
+    stmt = (
+        select(ServiceRequest)
+        .options(selectinload(ServiceRequest.mechanic))
+        .where(ServiceRequest.mechanic_id == mechanic.id)
         .order_by(ServiceRequest.created_at.desc())
         .limit(limit)
     )
@@ -243,6 +302,23 @@ async def assign_mechanic(
     return _to_out(sr)
 
 
+@router.post("/{request_id}/start", response_model=ServiceRequestOut)
+async def start_work(
+    request_id: uuid.UUID, db: DbDep, current_user: CurrentUser
+) -> ServiceRequestOut:
+    """Mechanic accepts the job and is on their way / on site."""
+    sr = await _load_for_mechanic(db, request_id, current_user)
+    if sr.status != ServiceRequestStatus.assigned:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot start a request in status '{sr.status.value}'",
+        )
+    sr.status = ServiceRequestStatus.in_progress
+    await db.commit()
+    await db.refresh(sr, attribute_names=["mechanic"])
+    return _to_out(sr)
+
+
 @router.post("/{request_id}/quote", response_model=CommissionPreviewOut)
 async def quote_service_request(
     request_id: uuid.UUID,
@@ -252,10 +328,14 @@ async def quote_service_request(
 ) -> CommissionPreviewOut:
     """Price the job and show the commission split it will settle at.
 
+    Authorised for the assigned mechanic, not the customer. This used to accept
+    the customer's token, which meant the person paying could set the price they
+    paid — the endpoint existed but was pointed at the wrong party.
+
     Returns the split rather than a bare acknowledgement so the mechanic sees
     their take-home before the customer is asked to pay.
     """
-    sr = await _load_owned(db, request_id, current_user)
+    sr = await _load_for_mechanic(db, request_id, current_user)
     if sr.mechanic_id is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Assign a mechanic before quoting"
@@ -442,8 +522,11 @@ async def verify_payment(
 async def complete_service_request(
     request_id: uuid.UUID, db: DbDep, current_user: CurrentUser
 ) -> ServiceRequestOut:
-    """Close out a paid job."""
-    sr = await _load_owned(db, request_id, current_user)
+    """Close out a paid job. Either party may do it — both know when it is done."""
+    try:
+        sr = await _load_owned(db, request_id, current_user)
+    except HTTPException:
+        sr = await _load_for_mechanic(db, request_id, current_user)
     if sr.status != ServiceRequestStatus.paid:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

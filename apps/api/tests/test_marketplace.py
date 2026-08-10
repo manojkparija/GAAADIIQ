@@ -80,6 +80,28 @@ def _mechanic_payload(**overrides) -> dict:
     return payload
 
 
+async def _register_mechanic_for_user(
+    client: AsyncClient, session_factory, token: str, **overrides
+) -> str:
+    """Register a mechanic linked to `token`'s account, and activate it.
+
+    The link is what lets that user quote their own jobs; an unlinked mechanic
+    row has nobody entitled to act for it.
+    """
+    r = await client.post(
+        "/mechanics",
+        json=_mechanic_payload(**overrides),
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 201, r.text
+    mechanic_id = r.json()["id"]
+    async with session_factory() as s:
+        m = await s.get(Mechanic, __import__("uuid").UUID(mechanic_id))
+        m.status = MechanicStatus.active
+        await s.commit()
+    return mechanic_id
+
+
 async def _register_active_mechanic(client: AsyncClient, session_factory, **overrides) -> str:
     """Register a mechanic and push it straight to `active`.
 
@@ -276,7 +298,10 @@ async def test_a_nonsense_car_number_is_rejected(client):
 
 @pytest.mark.asyncio
 async def test_full_flow_raises_matches_quotes_pays_and_sends_a_receipt(client, session_factory):
-    mechanic_id = await _register_active_mechanic(client, session_factory)
+    mech_token = await _token(client, "mech3@test.com")
+    mechanic_id = await _register_mechanic_for_user(client, session_factory, mech_token)
+    mech_auth = {"Authorization": f"Bearer {mech_token}"}
+
     token = await _token(client, "driver3@test.com")
     auth = {"Authorization": f"Bearer {token}"}
 
@@ -309,9 +334,10 @@ async def test_full_flow_raises_matches_quotes_pays_and_sends_a_receipt(client, 
     assert assigned.json()["mechanic"]["full_name"] == "Ramesh Sahoo"
     assert assigned.json()["matched_distance_km"] > 0
 
-    # Quote returns the split so the mechanic sees their take-home up front.
+    # Quote returns the split so the mechanic sees their take-home up front —
+    # and is sent with the *mechanic's* token, not the customer's.
     quoted = await client.post(
-        f"/service-requests/{sr_id}/quote", json={"amount_paise": 240000}, headers=auth
+        f"/service-requests/{sr_id}/quote", json={"amount_paise": 240000}, headers=mech_auth
     )
     assert quoted.status_code == 200, quoted.text
     assert quoted.json() == {
@@ -350,7 +376,8 @@ async def test_full_flow_raises_matches_quotes_pays_and_sends_a_receipt(client, 
 async def test_paying_sends_one_whatsapp_receipt_even_if_verify_is_replayed(
     client, session_factory
 ):
-    mechanic_id = await _register_active_mechanic(client, session_factory)
+    mech_token = await _token(client, "mech4@test.com")
+    mechanic_id = await _register_mechanic_for_user(client, session_factory, mech_token)
     token = await _token(client, "driver4@test.com")
     auth = {"Authorization": f"Bearer {token}"}
 
@@ -369,7 +396,11 @@ async def test_paying_sends_one_whatsapp_receipt_even_if_verify_is_replayed(
     await client.post(
         f"/service-requests/{sr_id}/assign", json={"mechanic_id": mechanic_id}, headers=auth
     )
-    await client.post(f"/service-requests/{sr_id}/quote", json={"amount_paise": 500000}, headers=auth)
+    await client.post(
+        f"/service-requests/{sr_id}/quote",
+        json={"amount_paise": 500000},
+        headers={"Authorization": f"Bearer {mech_token}"},
+    )
     await client.post(f"/service-requests/{sr_id}/pay", headers=auth)
 
     first = await client.post(f"/service-requests/{sr_id}/pay/verify", json={}, headers=auth)
@@ -463,3 +494,186 @@ def test_marketplace_flag_off_does_not_block_startup_without_a_pepper():
     # But with the feature switched on, a missing pepper is fatal.
     with pytest.raises(SystemExit):
         Settings(**base, marketplace_enabled=True).validate_production_config()
+
+
+# ── Mechanic side ────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_registering_while_signed_in_links_the_account(client, session_factory):
+    token = await _token(client, "mech-link@test.com")
+    mechanic_id = await _register_mechanic_for_user(client, session_factory, token)
+
+    me = await client.get("/mechanics/me", headers={"Authorization": f"Bearer {token}"})
+    assert me.status_code == 200, me.text
+    assert me.json()["id"] == mechanic_id
+
+
+@pytest.mark.asyncio
+async def test_a_user_who_is_not_a_mechanic_gets_404_not_a_blank_profile(client):
+    token = await _token(client, "just-a-driver@test.com")
+    r = await client.get("/mechanics/me", headers={"Authorization": f"Bearer {token}"})
+    # 404 so the client can send them to registration rather than render an
+    # empty profile as though they had one.
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_the_customer_cannot_price_their_own_repair(client, session_factory):
+    """The bug this endpoint had: whoever pays must not set the amount."""
+    mech_token = await _token(client, "mech-price@test.com")
+    mechanic_id = await _register_mechanic_for_user(client, session_factory, mech_token)
+
+    token = await _token(client, "driver-price@test.com")
+    auth = {"Authorization": f"Bearer {token}"}
+    created = await client.post(
+        "/service-requests",
+        json={
+            "car_number": "OD02AB1234",
+            "latitude": LAT,
+            "longitude": LNG,
+            "problem_summary": "Radiator leaking coolant steadily",
+        },
+        headers=auth,
+    )
+    sr_id = created.json()["id"]
+    await client.post(
+        f"/service-requests/{sr_id}/assign", json={"mechanic_id": mechanic_id}, headers=auth
+    )
+
+    # The customer trying to set the price they will pay.
+    r = await client.post(
+        f"/service-requests/{sr_id}/quote", json={"amount_paise": 100}, headers=auth
+    )
+    assert r.status_code == 403
+
+    # The mechanic can.
+    ok = await client.post(
+        f"/service-requests/{sr_id}/quote",
+        json={"amount_paise": 240000},
+        headers={"Authorization": f"Bearer {mech_token}"},
+    )
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["mechanic_payout_paise"] == 216000
+
+
+@pytest.mark.asyncio
+async def test_an_unrelated_mechanic_cannot_quote_someone_elses_job(client, session_factory):
+    mine = await _token(client, "mech-a@test.com")
+    mechanic_id = await _register_mechanic_for_user(client, session_factory, mine)
+
+    # A second registered mechanic, with their own account.
+    theirs = await _token(client, "mech-b@test.com")
+    await _register_mechanic_for_user(
+        client, session_factory, theirs,
+        phone="9800000099", aadhaar_number=VALID_AADHAAR_2, latitude=20.31, longitude=85.83,
+    )
+
+    driver = await _token(client, "driver-x@test.com")
+    auth = {"Authorization": f"Bearer {driver}"}
+    created = await client.post(
+        "/service-requests",
+        json={
+            "car_number": "OD02AB1234",
+            "latitude": LAT,
+            "longitude": LNG,
+            "problem_summary": "Gearbox whining in second gear",
+        },
+        headers=auth,
+    )
+    sr_id = created.json()["id"]
+    await client.post(
+        f"/service-requests/{sr_id}/assign", json={"mechanic_id": mechanic_id}, headers=auth
+    )
+
+    r = await client.post(
+        f"/service-requests/{sr_id}/quote",
+        json={"amount_paise": 500000},
+        headers={"Authorization": f"Bearer {theirs}"},
+    )
+    assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_assigned_to_me_lists_only_this_mechanics_jobs(client, session_factory):
+    mech_token = await _token(client, "mech-jobs@test.com")
+    mechanic_id = await _register_mechanic_for_user(client, session_factory, mech_token)
+    mech_auth = {"Authorization": f"Bearer {mech_token}"}
+
+    # Nothing assigned yet.
+    empty = await client.get("/service-requests/assigned-to-me", headers=mech_auth)
+    assert empty.status_code == 200, empty.text
+    assert empty.json() == []
+
+    driver = await _token(client, "driver-jobs@test.com")
+    auth = {"Authorization": f"Bearer {driver}"}
+    created = await client.post(
+        "/service-requests",
+        json={
+            "car_number": "OD02AB1234",
+            "latitude": LAT,
+            "longitude": LNG,
+            "problem_summary": "Starter motor clicking but not turning over",
+        },
+        headers=auth,
+    )
+    sr_id = created.json()["id"]
+
+    # Raised but unassigned — still not this mechanic's job.
+    assert (await client.get("/service-requests/assigned-to-me", headers=mech_auth)).json() == []
+
+    await client.post(
+        f"/service-requests/{sr_id}/assign", json={"mechanic_id": mechanic_id}, headers=auth
+    )
+    jobs = await client.get("/service-requests/assigned-to-me", headers=mech_auth)
+    assert [j["id"] for j in jobs.json()] == [sr_id]
+
+    # A signed-in user who is not a mechanic has an empty queue, not an error.
+    other = await _token(client, "not-a-mech@test.com")
+    r = await client.get(
+        "/service-requests/assigned-to-me", headers={"Authorization": f"Bearer {other}"}
+    )
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+@pytest.mark.asyncio
+async def test_mechanic_moves_the_job_through_its_states(client, session_factory):
+    mech_token = await _token(client, "mech-states@test.com")
+    mechanic_id = await _register_mechanic_for_user(client, session_factory, mech_token)
+    mech_auth = {"Authorization": f"Bearer {mech_token}"}
+
+    driver = await _token(client, "driver-states@test.com")
+    auth = {"Authorization": f"Bearer {driver}"}
+    created = await client.post(
+        "/service-requests",
+        json={
+            "car_number": "OD02AB1234",
+            "latitude": LAT,
+            "longitude": LNG,
+            "problem_summary": "Brake pads worn to the metal",
+        },
+        headers=auth,
+    )
+    sr_id = created.json()["id"]
+    await client.post(
+        f"/service-requests/{sr_id}/assign", json={"mechanic_id": mechanic_id}, headers=auth
+    )
+
+    started = await client.post(f"/service-requests/{sr_id}/start", headers=mech_auth)
+    assert started.status_code == 200, started.text
+    assert started.json()["status"] == "in_progress"
+
+    # Starting twice is a conflict, not a silent no-op.
+    assert (await client.post(f"/service-requests/{sr_id}/start", headers=mech_auth)).status_code == 409
+
+    await client.post(
+        f"/service-requests/{sr_id}/quote", json={"amount_paise": 240000}, headers=mech_auth
+    )
+    await client.post(f"/service-requests/{sr_id}/pay", headers=auth)
+    await client.post(f"/service-requests/{sr_id}/pay/verify", json={}, headers=auth)
+
+    # Either party may close a paid job; here the mechanic does.
+    done = await client.post(f"/service-requests/{sr_id}/complete", headers=mech_auth)
+    assert done.status_code == 200, done.text
+    assert done.json()["status"] == "completed"

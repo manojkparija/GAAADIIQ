@@ -1,0 +1,141 @@
+<div class="ms-page">
+  <div class="ms-hero">
+    <div class="container">
+      <div class="ms-badge">🔧 Partner Workshop</div>
+      <h1>Register as a <span class="gradient-text">Mechanic</span></h1>
+      <p class="ms-sub">
+        Receive jobs from drivers nearby, set your own price, and get paid through the platform.
+      </p>
+    </div>
+  </div>
+
+  <div class="container ms-body">
+
+    <div class="ms-signin" *ngIf="!auth.currentUser()">
+      <strong>Sign in first.</strong>
+      Your mechanic profile is linked to your account — that link is what lets you price your own
+      jobs later.
+      <a routerLink="/login" class="ms-signin-link">Sign in</a>
+    </div>
+
+    <form class="ms-form" (ngSubmit)="submit()" #f="ngForm">
+
+      <h2 class="ms-h">About you</h2>
+
+      <div class="ms-grid">
+        <label class="ms-field">
+          <span class="ms-label">Your name *</span>
+          <input type="text" name="full_name" [(ngModel)]="form.full_name" required maxlength="150" />
+        </label>
+
+        <label class="ms-field">
+          <span class="ms-label">Workshop name</span>
+          <input type="text" name="shop_name" [(ngModel)]="form.shop_name" maxlength="200"
+                 placeholder="Sahoo Auto Works" />
+        </label>
+
+        <label class="ms-field">
+          <span class="ms-label">Phone *</span>
+          <input type="tel" name="phone" [(ngModel)]="form.phone" required maxlength="15"
+                 placeholder="98765 43210" />
+          <span class="ms-help">Drivers call this number. Job updates go here on WhatsApp.</span>
+        </label>
+
+        <label class="ms-field">
+          <span class="ms-label">UPI ID</span>
+          <input type="text" name="upi_vpa" [(ngModel)]="form.upi_vpa" maxlength="120"
+                 placeholder="name@okaxis" />
+          <span class="ms-help">Where your payouts are settled.</span>
+        </label>
+      </div>
+
+      <h2 class="ms-h">Workshop address</h2>
+
+      <label class="ms-field">
+        <span class="ms-label">Address *</span>
+        <input type="text" name="address_line1" [(ngModel)]="form.address_line1" required maxlength="255" />
+      </label>
+
+      <div class="ms-grid">
+        <label class="ms-field">
+          <span class="ms-label">City *</span>
+          <input type="text" name="city" [(ngModel)]="form.city" required maxlength="100" />
+        </label>
+
+        <label class="ms-field">
+          <span class="ms-label">State *</span>
+          <input type="text" name="state" [(ngModel)]="form.state" required maxlength="100" />
+        </label>
+
+        <label class="ms-field">
+          <span class="ms-label">Pincode *</span>
+          <input type="text" name="area_pincode" [(ngModel)]="form.area_pincode" required
+                 minlength="6" maxlength="6" placeholder="751012" />
+        </label>
+
+        <label class="ms-field">
+          <span class="ms-label">How far will you travel? (km)</span>
+          <input type="number" name="service_radius_km" [(ngModel)]="form.service_radius_km"
+                 min="1" max="100" />
+        </label>
+      </div>
+
+      <div class="ms-location">
+        <button type="button" class="ms-ghost" [disabled]="locating()" (click)="useMyLocation()">
+          {{ locating() ? 'Getting location…' : '📍 Use my current location' }}
+        </button>
+        <span class="ms-located" *ngIf="located()">
+          ✓ Location captured — drivers within {{ form.service_radius_km }} km will see you
+        </span>
+        <span class="ms-help" *ngIf="!located()">
+          Required. Drivers find you by distance from where their car is stranded, so we need
+          your workshop's coordinates.
+        </span>
+      </div>
+
+      <h2 class="ms-h">Verification</h2>
+
+      <div class="ms-kyc-note">
+        <strong>Your Aadhaar number is not stored.</strong>
+        It is checked once to verify you, then reduced to the last four digits and a one-way
+        code. Keeping the full number would be an offence under the Aadhaar Act, so we don't.
+      </div>
+
+      <div class="ms-grid">
+        <label class="ms-field">
+          <span class="ms-label">PAN *</span>
+          <input type="text" name="pan_number" [(ngModel)]="form.pan_number" required
+                 minlength="10" maxlength="10" placeholder="ABCDE1234F" style="text-transform:uppercase" />
+        </label>
+
+        <label class="ms-field">
+          <span class="ms-label">Aadhaar *</span>
+          <input type="text" name="aadhaar_number" [(ngModel)]="form.aadhaar_number" required
+                 minlength="12" maxlength="14" inputmode="numeric" placeholder="1234 5678 9012" />
+          <span class="ms-help">12 digits. Checked immediately — a mistyped number is rejected.</span>
+        </label>
+      </div>
+
+      <h2 class="ms-h">What do you work on?</h2>
+
+      <div class="ms-chips">
+        <button type="button" *ngFor="let s of specialisations"
+                class="ms-chip" [class.on]="isSelected(s)" (click)="toggleSpecialisation(s)">
+          {{ s }}
+        </button>
+      </div>
+
+      <div class="ms-error" *ngIf="error()" role="alert">{{ error() }}</div>
+
+      <div class="ms-submit">
+        <button type="submit" class="ms-primary" [disabled]="busy() || !f.form.valid">
+          {{ busy() ? 'Registering…' : 'Register' }}
+        </button>
+        <p class="ms-help">
+          An admin reviews every registration. You won't appear in driver searches until your
+          account is approved.
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
