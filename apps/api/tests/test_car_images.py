@@ -263,3 +263,35 @@ async def test_spin_matches_the_same_identity_rules_as_the_gallery(db_session):
     await db_session.flush()
 
     assert await media_library.spin_urls_for_car(db_session, car) == []
+
+
+@pytest.mark.asyncio
+async def test_catalogue_queries_never_name_the_three_sixty_enum_label(db_session, monkeypatch):
+    """
+    The spin filter must not reach Postgres as an enum literal.
+
+    `image_category` is a native Postgres enum. Naming a label the deployed type
+    does not carry does not quietly return nothing — it raises, and since this
+    query backs both /cars and /listings, the entire catalogue goes blank. That
+    is exactly what happened once. The filtering happens in Python instead, and
+    this pins it there by inspecting the SQL actually issued.
+    """
+    statements: list[str] = []
+    original = type(db_session).execute
+
+    async def spy(self, statement, *args, **kwargs):
+        statements.append(str(statement.compile(compile_kwargs={"literal_binds": True})))
+        return await original(self, statement, *args, **kwargs)
+
+    monkeypatch.setattr(type(db_session), "execute", spy)
+
+    car = Car(make="Maruti", model="S-Presso", year=2026)
+    db_session.add(car)
+    await db_session.flush()
+
+    await media_library.urls_for_cars(db_session, [car])
+    await media_library.spin_urls_for_car(db_session, car)
+
+    assert statements, "no SQL was captured"
+    for sql in statements:
+        assert "three_sixty" not in sql, f"enum label leaked into SQL: {sql}"

@@ -490,13 +490,6 @@ async def urls_for_cars(
         or_(*conditions),
         # Removed images are gone from every buyer-facing surface.
         VehicleMedia.deleted_at.is_(None),
-        # A spin sequence is 24-36 near-identical frames. In a flat gallery they
-        # read as the same photograph over and over and push the real ones off
-        # the strip, so they leave here and come back through spin_urls_for_car.
-        or_(
-            VehicleMedia.image_category.is_(None),
-            VehicleMedia.image_category != ImageCategory.three_sixty,
-        ),
     )
     if bucket in ("new", "used"):
         q = q.where(
@@ -521,6 +514,18 @@ async def urls_for_cars(
     for media in rows:
         if not media.make or not media.model:
             continue
+        # A spin sequence is 24-36 near-identical frames. In a flat gallery they
+        # read as the same photograph over and over and push the real ones off
+        # the strip, so they leave here and come back through spin_urls_for_car.
+        #
+        # Filtered in Python, not in the WHERE clause. image_category is a
+        # native Postgres enum, and comparing it against a literal makes the
+        # server parse that label — which fails outright on a database whose
+        # enum type predates the value. That is not a missing image, it is a
+        # 500 on every catalogue request, so the whole listing goes blank.
+        # Reading the column back is safe; naming a value in a query is not.
+        if is_spin_frame(media):
+            continue
         key = (media.make.strip().lower(), media.model.strip().lower(), media.model_year)
         for car_id in wanted.get(key, ()):
             if len(out[car_id]) < per_car:
@@ -535,6 +540,19 @@ SPIN_MIN_FRAMES = 12
 
 #: Above this, the browser is downloading megabytes before the car turns once.
 SPIN_MAX_FRAMES = 72
+
+
+def is_spin_frame(media: VehicleMedia) -> bool:
+    """
+    Whether a row is a frame of a 360° sequence.
+
+    Compares by name rather than against the enum member so a database whose
+    `image_category` type has not been extended with `three_sixty` reads back
+    as a plain string without raising. The catalogue must keep working on a
+    schema that predates this feature.
+    """
+    category = media.image_category
+    return getattr(category, "value", category) == ImageCategory.three_sixty.value
 
 
 async def spin_urls_for_car(
@@ -562,7 +580,6 @@ async def spin_urls_for_car(
         func.lower(func.trim(VehicleMedia.make)) == car.make.strip().lower(),
         func.lower(func.trim(VehicleMedia.model)) == car.model.strip().lower(),
         VehicleMedia.model_year == car.year,
-        VehicleMedia.image_category == ImageCategory.three_sixty,
         VehicleMedia.deleted_at.is_(None),
     )
     if bucket in ("new", "used"):
@@ -578,9 +595,14 @@ async def spin_urls_for_car(
     q = q.order_by(
         VehicleMedia.sort_order.asc().nullslast(),
         VehicleMedia.created_at.asc(),
-    ).limit(SPIN_MAX_FRAMES)
+    )
 
-    rows = (await db.execute(q)).scalars().all()
+    # Selecting the category in Python rather than in the WHERE clause, for the
+    # reason given in urls_for_cars: naming an enum label Postgres does not know
+    # fails the whole query. The cap applies after the filter, so a model with
+    # more than SPIN_MAX_FRAMES gallery photographs cannot crowd the spin out.
+    rows = [m for m in (await db.execute(q)).scalars().all() if is_spin_frame(m)]
+    rows = rows[:SPIN_MAX_FRAMES]
     if len(rows) < SPIN_MIN_FRAMES:
         return []
 
