@@ -37,11 +37,10 @@
 
 .hero-text {
   h1 {
-    // Was clamp(2.4rem, 4.5vw, 3.75rem) — 60px on a desktop, which crowded the
-    // valuation card beside it and left the headline shouting over the rest of
-    // the page. This tops out around 46px: still clearly the loudest thing in
-    // the hero, without dominating it.
-    font-size: clamp(2rem, 3.4vw, 2.85rem);
+    // Down from 60px originally, then 46px, now ~40px on a desktop. Still the
+    // largest type on the page by a clear margin, but it now sits level with
+    // the valuation card rather than towering over it.
+    font-size: clamp(1.8rem, 2.9vw, 2.5rem);
     font-weight: 800;
     line-height: 1.12;
     letter-spacing: -0.03em;
