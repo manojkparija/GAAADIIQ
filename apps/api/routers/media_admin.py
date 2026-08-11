@@ -37,7 +37,7 @@ from models.media_audit import AuditAction
 from models.media_version import MediaEventType
 from models.user import User
 from models.vehicle_media import ImageCategory, VehicleMedia
-from services import filename_metadata, media_library, pdf_ingest
+from services import filename_metadata, media_library, pdf_ingest, vehicle_identity
 from services.media_audit import get_audit_log as get_audit
 from services.media_audit import log_audit
 from services.media_index import media_index
@@ -417,6 +417,13 @@ async def upload_images(
         # Per-file hints fill only what the shared form left blank — the admin's
         # values always win over a filename guess.
         hint = filename_metadata.parse(name)
+
+        # One spelling per manufacturer. An image finds its car by matching
+        # make + model + year exactly, so "Maruti" and "Maruti Suzuki" are two
+        # different vehicles as far as the catalogue is concerned — and a
+        # gallery uploaded under the short name is invisible on the long one.
+        make = vehicle_identity.canonical_make(make) or make
+        model = vehicle_identity.canonical_model(model) or model
 
         try:
             media = await media_library.store_image(

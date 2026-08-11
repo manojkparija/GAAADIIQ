@@ -226,9 +226,21 @@ async def lifespan(app: FastAPI):
 
     start_scheduler()
 
-    # Initialise vector store collection (non-fatal if Qdrant is offline)
-    from services.vector_store import ensure_collection
-    ensure_collection()
+    # Semantic search is opt-in. When it is off there is no cluster to reach,
+    # and calling this only produced a connection-refused warning on every boot
+    # — the kind of permanent warning people learn to scroll past.
+    if settings.semantic_search_enabled:
+        from services.vector_store import ensure_collection
+        if ensure_collection():
+            _log.info("Qdrant collection ready: %s", settings.qdrant_collection)
+        else:
+            _log.warning(
+                "SEMANTIC_SEARCH_ENABLED is on but Qdrant is unreachable at %s — "
+                "search and recommendations will fall back to rule-based matching",
+                settings.qdrant_url,
+            )
+    else:
+        _log.info("Semantic search disabled (SEMANTIC_SEARCH_ENABLED unset)")
 
     # ── WAVE 3 ML Model Initialization ────────────────────────────────────────
     if settings.enable_embeddings:

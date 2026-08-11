@@ -46,3 +46,7 @@ Thumbs.db
 /android/app/build
 /android/build
 /android/local.properties
+
+# Playwright
+/test-results/
+/playwright-report/

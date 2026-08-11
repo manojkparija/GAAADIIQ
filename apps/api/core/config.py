@@ -175,10 +175,23 @@ class Settings(BaseSettings):
     tts_timeout_seconds: int = 20
     tts_max_chars: int = 3000
 
-    # Qdrant vector database
+    # Qdrant vector database, and whether semantic search is on at all.
+    #
+    # Off by default, and that is the honest default: no Qdrant has ever been
+    # provisioned for this product. Until this flag was added, production
+    # *required* QDRANT_API_KEY to boot, so the deployed service carried
+    # QDRANT_API_KEY="dummy" — the check was satisfied by a value that proved
+    # nothing, semantic search silently fell back to rule-based matching, and
+    # every listing failed to index against a Qdrant that was not there.
+    #
+    # A required secret people satisfy with the word "dummy" is worse than no
+    # requirement: it blocks a deploy until someone lies to it and then reports
+    # success. Turning the feature on is now a deliberate act, and the
+    # validation below applies only when it is.
+    semantic_search_enabled: bool = False
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "gaadiiq_listings"
-    qdrant_api_key: str = ""  # set QDRANT_API_KEY in production
+    qdrant_api_key: str = ""
 
     # n8n workflow automation
     n8n_webhook_url: str = ""
@@ -269,8 +282,20 @@ class Settings(BaseSettings):
             errors.append("RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in production")
         if not self.SMTP_HOST:
             errors.append("SMTP_HOST must be configured in production")
-        if not self.qdrant_api_key:
-            errors.append("QDRANT_API_KEY must be set in production")
+        # Only when the feature is actually switched on. Placeholder values are
+        # rejected explicitly: "dummy" in this slot is how semantic search came
+        # to be broken in production for months while the check passed.
+        if self.semantic_search_enabled:
+            if not self.qdrant_url or "localhost" in self.qdrant_url:
+                errors.append(
+                    "QDRANT_URL must point at a real cluster when "
+                    "SEMANTIC_SEARCH_ENABLED is true"
+                )
+            if self.qdrant_api_key.strip().lower() in ("", "dummy", "changeme", "placeholder", "todo"):
+                errors.append(
+                    "QDRANT_API_KEY must be a real key when SEMANTIC_SEARCH_ENABLED "
+                    "is true (a placeholder is not a configuration)"
+                )
         if not os.environ.get("METRICS_TOKEN"):
             errors.append("METRICS_TOKEN must be set in production")
         # Only when the marketplace is actually switched on. Without a pepper the

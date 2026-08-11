@@ -1,0 +1,67 @@
+name: CI — Web (Angular)
+
+on:
+  push:
+    paths:
+      - "apps/gaadiiq-angular/**"
+      - ".github/workflows/ci-web.yml"
+  pull_request:
+    paths:
+      - "apps/gaadiiq-angular/**"
+
+jobs:
+  smoke:
+    name: Build & smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Installed from the repo ROOT, which is the part that took three
+      # attempts to get right. The root package.json declares npm workspaces
+      # *and* its own devDependencies — @playwright/test among them — and
+      # running `npm install` inside apps/gaadiiq-angular does not install the
+      # root's own dependencies. The smoke job kept failing with
+      # "Cannot find module '@playwright/test'" while npx quietly fetched a
+      # different copy that could not see the workspace.
+      #
+      # `npm install` rather than `npm ci`: no package-lock.json is tracked.
+      # Committing one would make this reproducible and is worth doing on its
+      # own, since it can change dependency resolution.
+      - name: Install dependencies
+        run: npm install
+
+      # The development configuration, not production: it points the app at
+      # localhost, so a missing API fails immediately instead of hanging on a
+      # request to the live one. CI must not depend on — or hammer — production
+      # to decide whether a page renders.
+      # npx, not an npm script: this repo is an npm workspace, so packages
+      # hoist to the root node_modules and a lifecycle script started from the
+      # app directory did not find the binary. build-apk.yml already calls its
+      # tools this way, and that workflow works.
+      - name: Build
+        working-directory: apps/gaadiiq-angular
+        run: npx ng build --configuration development
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      # Does the app still work at all? `ng build` cannot answer that, and the
+      # bugs this repo actually ships are the ones only a browser sees: a blank
+      # gallery, a heading under the fixed navbar, a stretched checkbox.
+      - name: Smoke tests
+        working-directory: apps/gaadiiq-angular
+        run: npx playwright test --project=desktop-chrome
+
+      - name: Upload failure artefacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            apps/gaadiiq-angular/test-results/
+            apps/gaadiiq-angular/playwright-report/
+          retention-days: 7
