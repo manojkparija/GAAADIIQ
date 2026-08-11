@@ -36,8 +36,12 @@ jobs:
       # localhost, so a missing API fails immediately instead of hanging on a
       # request to the live one. CI must not depend on — or hammer — production
       # to decide whether a page renders.
+      # npx, not an npm script: this repo is an npm workspace, so packages
+      # hoist to the root node_modules and a lifecycle script started from the
+      # app directory did not find the binary. build-apk.yml already calls its
+      # tools this way, and that workflow works.
       - name: Build
-        run: npm run build -- --configuration development
+        run: npx ng build --configuration development
 
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
@@ -46,7 +50,7 @@ jobs:
       # bugs this repo actually ships are the ones only a browser sees: a blank
       # gallery, a heading under the fixed navbar, a stretched checkbox.
       - name: Smoke tests
-        run: npm run test:smoke
+        run: npx playwright test --project=desktop-chrome
 
       - name: Upload failure artefacts
         if: failure()
