@@ -38,7 +38,7 @@
       display: flex; align-items: center; justify-content: center;
       background: var(--fill-medium); color: var(--muted); border: 1px solid var(--glass-border); transition: all 0.2s;
       &.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-      &.done { background: rgba(67,233,123,0.2); color: #43E97B; border-color: #43E97B; }
+      &.done { background: rgba(67,233,123,0.2); color: var(--success-ink); border-color: var(--success-ink); }
     }
   }
   .q-text { font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; line-height: 1.4; }
@@ -141,7 +141,7 @@
   .ms-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
   .ms-status-badge {
     font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 50px;
-    background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3);
+    background: rgba(67,233,123,0.15); color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3);
     &.active-badge { background: rgba(47,107,255,0.15); color: var(--teal-ink); border-color: rgba(47,107,255,0.3); }
   }
   .ms-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }

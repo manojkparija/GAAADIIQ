@@ -16,7 +16,7 @@ h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; }
 
 .danger-card { border-color: rgba(239,68,68,0.3); }
 .danger-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.6; }
-.confirm-text { font-size: 0.9rem; font-weight: 600; color: #EF4444; margin-bottom: 0.75rem; }
+.confirm-text { font-size: 0.9rem; font-weight: 600; color: var(--danger-ink); margin-bottom: 0.75rem; }
 .confirm-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
 .btn-danger {

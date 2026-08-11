@@ -164,9 +164,9 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.cat-badge-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
+.cat-badge-blue   { background: rgba(96,165,250,0.15);  color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
 .cat-badge-purple { background: rgba(47,107,255,0.15);  color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
-.cat-badge-green  { background: rgba(67,233,123,0.15);  color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
+.cat-badge-green  { background: rgba(67,233,123,0.15);  color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
 .cat-badge-gold   { background: rgba(255,215,0,0.15);   color: #B8860B; border: 1px solid rgba(255,215,0,0.3); }
 
 // ── Write a Review CTA ──────────────────────────────────────────────────────
@@ -370,7 +370,7 @@
   align-items: center;
   gap: 0.15rem;
   font-size: 0.85rem;
-  .star { color: #FFD700; }
+  .star { color: var(--warning-ink); }
   .rating-num { font-size: 0.8rem; font-weight: 700; margin-left: 0.25rem; color: var(--muted); }
   .car-model { font-size: 0.78rem; color: var(--muted); margin-left: 0.2rem; }
 }
@@ -386,10 +386,10 @@
   letter-spacing: 0.05em;
 }
 
-.tag-green  { background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
-.tag-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
+.tag-green  { background: rgba(67,233,123,0.15); color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
+.tag-blue   { background: rgba(96,165,250,0.15);  color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
 .tag-purple { background: rgba(47,107,255,0.15);  color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
-.tag-gold   { background: rgba(255,215,0,0.15);   color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
+.tag-gold   { background: rgba(255,215,0,0.15);   color: var(--warning-ink); border: 1px solid rgba(255,215,0,0.3); }
 .tag-red    { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
 
 // ── Live News ────────────────────────────────────────────────────────────────

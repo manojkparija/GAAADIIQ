@@ -13,7 +13,7 @@
   button { padding: .5rem 1.5rem; border: none; border-radius: 2rem; background: transparent; color: var(--muted); font-size: .9rem; cursor: pointer; transition: all .2s; font-weight: 600; }
   button.active { background: var(--primary); color: #fff; }
 }
-.save-chip { background: rgba(67,233,123,.2); color: #43E97B; font-size: .7rem; border-radius: 1rem; padding: .15rem .5rem; margin-left: .4rem; font-weight: 700; }
+.save-chip { background: rgba(67,233,123,.2); color: var(--success-ink); font-size: .7rem; border-radius: 1rem; padding: .15rem .5rem; margin-left: .4rem; font-weight: 700; }
 
 // Plans Grid
 .plans-section { padding-bottom: 4rem; }
@@ -27,7 +27,7 @@
 }
 .plan-badge { display: inline-block; border-radius: 2rem; padding: .2rem .8rem; font-size: .78rem; font-weight: 700; margin-bottom: .25rem; width: fit-content; }
 .badge-purple { background: rgba(47,107,255,.2); color: var(--teal-ink); border: 1px solid rgba(47,107,255,.3); }
-.badge-gold { background: rgba(255,215,0,.15); color: #FFD700; border: 1px solid rgba(255,215,0,.3); }
+.badge-gold { background: rgba(255,215,0,.15); color: var(--warning-ink); border: 1px solid rgba(255,215,0,.3); }
 
 .plan-name { font-size: 1.1rem; font-weight: 700; }
 .plan-price { display: flex; align-items: baseline; gap: .3rem; }
@@ -38,7 +38,7 @@
 .yearly-savings {
   display: inline-block;
   background: rgba(67,233,123,0.15);
-  color: #43E97B;
+  color: var(--success-ink);
   border: 1px solid rgba(67,233,123,0.3);
   border-radius: 2rem;
   padding: .2rem .65rem;

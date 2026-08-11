@@ -129,10 +129,15 @@ export class EmiCalculatorComponent implements OnInit {
 
   affordabilityLabel = computed(() => {
     const s = this.affordabilityScore();
-    if (s >= 80) return { label: 'Excellent', color: '#43E97B' };
-    if (s >= 60) return { label: 'Good', color: '#60A5FA' };
-    if (s >= 40) return { label: 'Fair', color: '#FFD700' };
-    return { label: 'Stretched', color: '#EF4444' };
+    // Tokens, not hex. These feed [style.color] on the gauge's score and label,
+    // which sit on a white card: #43E97B measured about 1.8:1 there, so
+    // "Excellent" was legible only to someone who already knew what it said.
+    // The *ink tokens carry a light-mode value that passes AA and resolve back
+    // to these exact bright colours in dark mode.
+    if (s >= 80) return { label: 'Excellent', color: 'var(--success-ink)' };
+    if (s >= 60) return { label: 'Good', color: 'var(--info-ink)' };
+    if (s >= 40) return { label: 'Fair', color: 'var(--warning-ink)' };
+    return { label: 'Stretched', color: 'var(--danger-ink)' };
   });
 
   monthlySurplus = computed(() =>

@@ -97,7 +97,7 @@
   font-size: 0.8rem; font-weight: 600;
   transition: all 0.3s;
   &.active { border-color: #2563EB; background: rgba(47,107,255,0.2); color: #2563EB; }
-  &.done { border-color: #43E97B; background: rgba(67,233,123,0.2); color: #43E97B; }
+  &.done { border-color: var(--success-ink); background: rgba(67,233,123,0.2); color: var(--success-ink); }
 }
 
 .step-line {

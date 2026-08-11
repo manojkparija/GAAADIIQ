@@ -244,15 +244,37 @@
 //
 // In dark mode they resolve back to the bright originals, which is correct —
 // the contrast problem only exists against a light background.
+// The status palette has the same problem and a wider blast radius. #43E97B
+// (mint), #FFD700 (gold) and #60A5FA were picked when these panels sat on a
+// dark surface, where they read well. On the light theme #43E97B measures
+// about 1.8:1 — the EMI calculator's "Excellent", "Within safe range" and its
+// whole Principal column were effectively invisible.
+//
+// Same reasoning as --teal-ink: these colours are also gauge arcs, chips and
+// gradient stops, and changing them at source would repaint all of that. These
+// are the text-only counterparts, and they resolve back to the bright originals
+// in dark mode where the originals are correct.
 :root {
   --teal-ink:    #0F766E;
-  --success-ink: #047857;
+  --success-ink: #065F46;
+  --warning-ink: #B45309;
+  --danger-ink:  #B91C1C;
+  --info-ink:    #1D4ED8;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --teal-ink: #2DD4BF; --success-ink: #34D399; }
+  :root {
+    --teal-ink: #2DD4BF; --success-ink: #34D399;
+    --warning-ink: #FBBF24; --danger-ink: #F87171; --info-ink: #60A5FA;
+  }
 }
-:root[data-theme="dark"]  { --teal-ink: #2DD4BF; --success-ink: #34D399; }
-:root[data-theme="light"] { --teal-ink: #0F766E; --success-ink: #047857; }
+:root[data-theme="dark"] {
+  --teal-ink: #2DD4BF; --success-ink: #34D399;
+  --warning-ink: #FBBF24; --danger-ink: #F87171; --info-ink: #60A5FA;
+}
+:root[data-theme="light"] {
+  --teal-ink: #0F766E; --success-ink: #065F46;
+  --warning-ink: #B45309; --danger-ink: #B91C1C; --info-ink: #1D4ED8;
+}
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

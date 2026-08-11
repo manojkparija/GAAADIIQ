@@ -52,7 +52,7 @@
     transition: all 0.2s;
 
     &:hover { background: rgba(0,0,0,0.55); transform: scale(1.1); }
-    &.liked { background: rgba(239,68,68,0.25); border-color: rgba(239,68,68,0.4); color: #EF4444; }
+    &.liked { background: rgba(239,68,68,0.25); border-color: rgba(239,68,68,0.4); color: var(--danger-ink); }
   }
 
   .verified-tag {

@@ -24,7 +24,7 @@
 
 .toast {
   background: rgba(67,233,123,0.15); border: 1px solid rgba(67,233,123,0.4);
-  color: #43E97B; border-radius: 10px; padding: 0.75rem 1.25rem;
+  color: var(--success-ink); border-radius: 10px; padding: 0.75rem 1.25rem;
   font-weight: 600; font-size: 0.9rem; margin-bottom: 1rem;
 }
 
@@ -87,7 +87,7 @@
 .verdict-chip {
   font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.65rem;
   border-radius: 50px; white-space: nowrap;
-  &.v-low  { background: rgba(67,233,123,0.15);  color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
+  &.v-low  { background: rgba(67,233,123,0.15);  color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
   &.v-fair { background: rgba(251,191,36,0.15);   color: #FBBF24; border: 1px solid rgba(251,191,36,0.3); }
   &.v-high { background: rgba(248,113,113,0.15);  color: #F87171; border: 1px solid rgba(248,113,113,0.3); }
 }

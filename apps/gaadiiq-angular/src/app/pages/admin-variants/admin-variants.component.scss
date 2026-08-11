@@ -1,6 +1,10 @@
+// The page root no longer paints its own background. It carried
+// `linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)` — a grey-blue wash
+// predating the theme tokens, so this screen did not match the rest of the
+// app in either theme, and being opaque it also hid the page watermark.
+// The page now sits on --navy like every other, with the pattern showing.
 .av-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 .av-header {

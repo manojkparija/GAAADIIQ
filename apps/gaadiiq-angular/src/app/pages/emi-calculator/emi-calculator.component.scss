@@ -114,7 +114,7 @@
   .dti-ideal { flex: 1; }
   .ideal-badge {
     font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 50px; display: inline-block;
-    &.ok { background: rgba(67,233,123,0.15); color: #43E97B; }
+    &.ok { background: rgba(67,233,123,0.15); color: var(--success-ink); }
     &.over { background: rgba(239,68,68,0.15); color: var(--danger); }
   }
 }
@@ -126,7 +126,7 @@
   border: 1px solid var(--divider); border-radius: 12px;
   .am-icon { font-size: 1.25rem; margin-bottom: 0.4rem; }
   .am-val { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem;
-    &.good { color: #43E97B; } &.bad { color: var(--danger); }
+    &.good { color: var(--success-ink); } &.bad { color: var(--danger); }
   }
   .am-label { font-size: 0.72rem; color: var(--muted); }
 }

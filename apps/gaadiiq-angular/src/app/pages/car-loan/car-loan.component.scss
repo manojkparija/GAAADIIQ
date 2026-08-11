@@ -86,7 +86,7 @@
     &:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
     // Only after a full-length entry, so the box does not turn red at the
     // first keystroke of a PAN that is going to be perfectly valid.
-    &.invalid { border-color: #EF4444; }
+    &.invalid { border-color: var(--danger-ink); }
   }
   input[type="range"] { width: 100%; accent-color: var(--primary); }
   small {
@@ -95,7 +95,7 @@
     font-size: 0.78rem;
     color: var(--text-muted);
     line-height: 1.5;
-    &.warn { color: #EF4444; font-weight: 600; }
+    &.warn { color: var(--danger-ink); font-weight: 600; }
   }
 }
 
