@@ -43,11 +43,27 @@ from models.vehicle_media import VehicleMedia  # noqa: E402
 from services import vehicle_identity  # noqa: E402
 
 
+def _live(table):
+    """Rows that still exist as far as the product is concerned.
+
+    vehicle_media is soft-deleted: a removed image keeps its row with
+    `deleted_at` set, and every buyer-facing query filters on that. Reporting
+    those rows here made the tool describe work that does not need doing — the
+    first run flagged an S-Presso spelling clash that was entirely a row deleted
+    the day before, which is exactly the kind of false alarm that gets a
+    maintenance script ignored.
+    """
+    stmt = select(table)
+    if table is VehicleMedia:
+        stmt = stmt.where(VehicleMedia.deleted_at.is_(None))
+    return stmt
+
+
 async def _rename_makes(db: AsyncSession, apply: bool) -> int:
     """Rewrite every make to its canonical spelling."""
     changed = 0
     for table, label in ((Car, "cars"), (VehicleMedia, "vehicle_media")):
-        rows = (await db.execute(select(table))).scalars().all()
+        rows = (await db.execute(_live(table))).scalars().all()
         for row in rows:
             canonical = vehicle_identity.canonical_make(row.make)
             if canonical and canonical != row.make:
@@ -62,7 +78,7 @@ async def _report_model_variants(db: AsyncSession) -> None:
     """List model names that differ only in spelling, for a human to resolve."""
     seen: dict[tuple[str, str], set[str]] = defaultdict(set)
     for table in (Car, VehicleMedia):
-        rows = (await db.execute(select(table))).scalars().all()
+        rows = (await db.execute(_live(table))).scalars().all()
         for row in rows:
             make = vehicle_identity.canonical_make(row.make)
             if not make or not row.model:
@@ -85,7 +101,8 @@ async def _report_model_variants(db: AsyncSession) -> None:
             print(f"    UPDATE cars SET model = '{keep}' "
                   f"WHERE make = '{make}' AND model = '{drop}';")
             print(f"    UPDATE vehicle_media SET model = '{keep}' "
-                  f"WHERE make = '{make}' AND model = '{drop}';")
+                  f"WHERE make = '{make}' AND model = '{drop}' "
+                  f"AND deleted_at IS NULL;")
 
 
 async def main() -> None:
