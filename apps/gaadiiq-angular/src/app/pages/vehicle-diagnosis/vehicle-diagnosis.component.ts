@@ -10,6 +10,7 @@ import { CityService } from '../../services/city.service';
 import { ApiService } from '../../services/api.service';
 import { OfflineQueueService } from '../../services/offline-queue.service';
 import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../services/voice-diagnosis.service';
+import { IconComponent } from '../../components/icon/icon.component';
 import { VoiceModeComponent, VoiceSessionResult } from '../../components/voice-mode/voice-mode.component';
 import { firstValueFrom } from 'rxjs';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
@@ -193,7 +194,7 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
 @Component({
   selector: 'app-vehicle-diagnosis',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent, ServiceRequestComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent, ServiceRequestComponent, IconComponent],
   templateUrl: './vehicle-diagnosis.component.html',
   styleUrl: './vehicle-diagnosis.component.scss',
 })
