@@ -1,4 +1,9 @@
-.dd-wrap { min-height: 100vh; background: var(--navy); padding-bottom: 4rem; }
+// No background here. The page root used to paint var(--navy) — the exact
+// colour <body> already is — so it changed nothing visually while sitting
+// opaque over the page watermark and hiding it. See body::before in
+// styles.scss: the pattern is behind the page, so anything painting over
+// it must have a reason to.
+.dd-wrap { min-height: 100vh; padding-bottom: 4rem; }
 
 .dd-hero {
   padding: 7rem 1.5rem 2rem;
@@ -7,7 +12,7 @@
   .hero-badge {
     display: inline-block; padding: 0.3rem 1rem; border-radius: 50px;
     font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    background: rgba(47,107,255,0.15); color: var(--teal); border: 1px solid rgba(47,107,255,0.3); margin-bottom: 1rem;
+    background: rgba(47,107,255,0.15); color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); margin-bottom: 1rem;
   }
   .dd-title { font-size: clamp(1.8rem,4vw,3rem); font-weight: 800; margin-bottom: 0.5rem; }
   .dd-sub { color: var(--muted); font-size: 1rem; max-width: 420px; }
@@ -34,7 +39,7 @@
   /* Hover and active were styled identically, so hovering an inactive tab
      made it look selected. Active is now the filled brand gradient; hover is
      a tint that hints at it without impersonating it. */
-  &:hover { background: linear-gradient(90deg, rgba(37,99,235,0.12), rgba(20,184,166,0.12)); border-color: #14B8A6; color: var(--text); }
+  &:hover { background: linear-gradient(90deg, rgba(37,99,235,0.12), rgba(20,184,166,0.12)); border-color: var(--teal-ink); color: var(--text); }
   &.active {
     background: linear-gradient(90deg, #2563EB, #14B8A6);
     border-color: transparent; color: #fff;
@@ -52,7 +57,7 @@
   .mc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
   .mc-icon { font-size: 1.5rem; }
   .mc-change { font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 50px;
-    &.up { background: rgba(67,233,123,0.15); color: #43E97B; }
+    &.up { background: rgba(67,233,123,0.15); color: var(--success-ink); }
     &.down { background: rgba(239,68,68,0.15); color: var(--danger); }
   }
   .mc-value { font-size: 1.75rem; font-weight: 800; line-height: 1; margin-bottom: 0.25rem; }
@@ -79,10 +84,10 @@
   }
 }
 .stage-red    { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
-.stage-purple { background: rgba(47,107,255,0.15); color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
-.stage-gold   { background: rgba(255,215,0,0.15); color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
-.stage-blue   { background: rgba(96,165,250,0.15); color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-.stage-green  { background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
+.stage-purple { background: rgba(47,107,255,0.15); color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
+.stage-gold   { background: rgba(255,215,0,0.15); color: var(--warning-ink); border: 1px solid rgba(255,215,0,0.3); }
+.stage-blue   { background: rgba(96,165,250,0.15); color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
+.stage-green  { background: rgba(67,233,123,0.15); color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
 
 .top-models {
   padding: 0; overflow: hidden;
@@ -95,7 +100,7 @@
   .tm-rank-name { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; }
   .tm-rank {
     width: 22px; height: 22px; border-radius: 50%; background: rgba(47,107,255,0.2);
-    color: var(--teal); font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    color: var(--teal-ink); font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
   .tm-rate { font-weight: 700; color: var(--primary); font-size: 0.85rem; }
 }
@@ -132,9 +137,9 @@
 .lead-grade {
   font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.55rem;
   border-radius: 6px; display: inline-block; text-align: center; letter-spacing: 0.04em;
-  &.grade-A { background: rgba(67,233,123,0.2); color: #43E97B; border: 1px solid rgba(67,233,123,0.4); }
-  &.grade-B { background: rgba(96,165,250,0.15); color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-  &.grade-C { background: rgba(255,215,0,0.15); color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
+  &.grade-A { background: rgba(67,233,123,0.2); color: var(--success-ink); border: 1px solid rgba(67,233,123,0.4); }
+  &.grade-B { background: rgba(96,165,250,0.15); color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
+  &.grade-C { background: rgba(255,215,0,0.15); color: var(--warning-ink); border: 1px solid rgba(255,215,0,0.3); }
   &.grade-D { background: rgba(239,68,68,0.12); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
   &.lg-large { font-size: 0.9rem; padding: 0.3rem 0.75rem; }
 }
@@ -149,9 +154,9 @@
     flex: 1; min-width: 110px; padding: 1rem; border-radius: 12px; text-align: center;
     .chip-num { font-size: 1.75rem; font-weight: 800; display: block; }
     .chip-label { font-size: 0.72rem; font-weight: 600; margin-top: 0.2rem; display: block; color: var(--muted); }
-    &.hot   { background: rgba(67,233,123,0.1); border: 1px solid rgba(67,233,123,0.25); .chip-num { color: #43E97B; } }
-    &.warm  { background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25); .chip-num { color: #60A5FA; } }
-    &.cool  { background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.25); .chip-num { color: #FFD700; } }
+    &.hot   { background: rgba(67,233,123,0.1); border: 1px solid rgba(67,233,123,0.25); .chip-num { color: var(--success-ink); } }
+    &.warm  { background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25); .chip-num { color: var(--info-ink); } }
+    &.cool  { background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.25); .chip-num { color: var(--warning-ink); } }
     &.cold  { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); .chip-num { color: var(--danger); } }
   }
   .ai-top-lead {
@@ -160,7 +165,7 @@
     border: 1px solid rgba(47,107,255,0.2);
     .atl-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
     .atl-name  { font-weight: 700; color: var(--text); }
-    .atl-score { font-size: 0.82rem; color: var(--muted); em { color: var(--teal); font-style: normal; font-weight: 600; } }
+    .atl-score { font-size: 0.82rem; color: var(--muted); em { color: var(--teal-ink); font-style: normal; font-weight: 600; } }
   }
 }
 
@@ -193,15 +198,15 @@
       &.medium { background: linear-gradient(90deg, #FFD700, #FF9A00); }
       &.low    { background: linear-gradient(90deg, var(--danger), #FF4B6E); }
     }
-    .intent-pct { font-size: 0.8rem; font-weight: 700; width: 38px; text-align: right; &.high { color: #43E97B; } }
+    .intent-pct { font-size: 0.8rem; font-weight: 700; width: 38px; text-align: right; &.high { color: var(--success-ink); } }
   }
   .alc-ai-row {
     display: flex; gap: 0.75rem; flex-wrap: wrap;
     .alc-ai-chip {
       font-size: 0.78rem; padding: 0.35rem 0.75rem; border-radius: 50px; display: flex; align-items: center; gap: 0.35rem;
       strong { font-weight: 700; }
-      &.contact { background: rgba(96,165,250,0.12); color: #60A5FA; border: 1px solid rgba(96,165,250,0.25); }
-      &.nba     { background: rgba(47,107,255,0.12); color: var(--teal); border: 1px solid rgba(47,107,255,0.25); }
+      &.contact { background: rgba(96,165,250,0.12); color: var(--info-ink); border: 1px solid rgba(96,165,250,0.25); }
+      &.nba     { background: rgba(47,107,255,0.12); color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.25); }
     }
   }
 }
@@ -267,7 +272,7 @@
   display: flex; gap: 1rem; align-items: center; margin-top: 1rem;
   font-size: 0.82rem; color: var(--muted); flex-wrap: wrap;
   strong { color: var(--text); }
-  .hot-num { color: #EF4444; }
+  .hot-num { color: var(--danger-ink); }
 }
 
 .leads-header {
@@ -284,7 +289,7 @@
   font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent;
   color: var(--muted); transition: all 0.2s;
   &.active, &:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
-  &.gf-a.active { background: #EF4444; border-color: #EF4444; }
+  &.gf-a.active { background: #EF4444; border-color: var(--danger-ink); }
   &.gf-b.active { background: #F59E0B; border-color: #F59E0B; }
   &.gf-c.active { background: #3B82F6; border-color: #3B82F6; }
   &.gf-d.active { background: #6B7280; border-color: #6B7280; }

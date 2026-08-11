@@ -115,7 +115,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #10B981;
+  color: var(--success-ink);
   background: rgba(16,185,129,0.1);
   border: 1px solid rgba(16,185,129,0.2);
   padding: 0.25rem 0.75rem;
@@ -217,7 +217,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   margin-top: 0.3rem;
-  &.positive { color: #10B981; }
+  &.positive { color: var(--success-ink); }
 }
 .vp-range-row {
   display: flex;
@@ -646,7 +646,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    .perk-icon { color: #10B981; }
+    .perk-icon { color: var(--success-ink); }
   }
 }
 
@@ -892,7 +892,7 @@
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  &.success { color: var(--teal); }
+  &.success { color: var(--teal-ink); }
 }
 
 /* Swift highlight icon */

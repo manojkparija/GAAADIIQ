@@ -1,6 +1,10 @@
+// No background here. The page root used to paint var(--navy) — the exact
+// colour <body> already is — so it changed nothing visually while sitting
+// opaque over the page watermark and hiding it. See body::before in
+// styles.scss: the pattern is behind the page, so anything painting over
+// it must have a reason to.
 .compare-page {
   min-height: 100vh;
-  background: var(--navy);
   padding-bottom: 4rem;
 }
 
@@ -140,7 +144,7 @@
   padding: 1rem; text-align: center; font-size: 0.9rem;
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
   transition: background 0.2s;
-  &.winner { background: rgba(67,233,123,0.12); color: #43E97B; font-weight: 600; }
+  &.winner { background: rgba(67,233,123,0.12); color: var(--success-ink); font-weight: 600; }
 }
 .win-badge { font-size: 0.75rem; }
 
@@ -183,12 +187,12 @@
 .comp-row { border-bottom:1px solid rgba(255,255,255,0.05); &.alt{background:rgba(255,255,255,0.02);} }
 .comp-label, .feat-label { padding:0.85rem 1.25rem; font-size:0.85rem; color:var(--muted); font-weight:600; }
 .comp-val, .feat-val { padding:0.85rem 1rem; text-align:center; font-size:0.875rem; display:flex; align-items:center; justify-content:center; gap:0.4rem;
-  &.winner { color:#43E97B; font-weight:700; background:rgba(67,233,123,0.06); }
+  &.winner { color:var(--success-ink); font-weight:700; background:rgba(67,233,123,0.06); }
 }
 .win-crown { font-size:0.9rem; }
 .features-comp { padding:1.5rem 0 0; h3{padding:0 1.25rem 1rem;font-size:1rem;} }
 .feat-row { border-bottom:1px solid rgba(255,255,255,0.04); &:last-child{border-bottom:none;} }
 .empty-hint { margin-top:1rem; }
 .tco-section { border-top: 2px solid rgba(30,64,175,0.3); margin-top:1rem; }
-.tco-row { &.tco-total { background: rgba(30,64,175,0.1); font-weight:700; .feat-label,.tco-val{color:var(--text);font-weight:700;} } &.tco-resale { .feat-label{color:var(--teal);} .tco-val{color:var(--teal);} } }
-.tco-val { padding:0.85rem 1rem; text-align:center; font-size:0.875rem; display:flex; align-items:center; justify-content:center; gap:0.4rem; &.winner{color:#43E97B;font-weight:700;background:rgba(67,233,123,0.06);} }
+.tco-row { &.tco-total { background: rgba(30,64,175,0.1); font-weight:700; .feat-label,.tco-val{color:var(--text);font-weight:700;} } &.tco-resale { .feat-label{color: var(--teal-ink);} .tco-val{color: var(--teal-ink);} } }
+.tco-val { padding:0.85rem 1rem; text-align:center; font-size:0.875rem; display:flex; align-items:center; justify-content:center; gap:0.4rem; &.winner{color:var(--success-ink);font-weight:700;background:rgba(67,233,123,0.06);} }

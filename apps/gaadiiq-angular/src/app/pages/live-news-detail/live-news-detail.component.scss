@@ -133,7 +133,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.tag-blue { background: rgba(96,165,250,0.15); color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
+.tag-blue { background: rgba(96,165,250,0.15); color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
 
 @media (max-width: 768px) {
   .lnd-card { padding: 1.5rem 1.25rem; }

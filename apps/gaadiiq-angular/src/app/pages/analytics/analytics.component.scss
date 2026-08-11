@@ -1,6 +1,10 @@
+// No background here. The page root used to paint var(--navy) — the exact
+// colour <body> already is — so it changed nothing visually while sitting
+// opaque over the page watermark and hiding it. See body::before in
+// styles.scss: the pattern is behind the page, so anything painting over
+// it must have a reason to.
 .analytics-page {
   min-height: 100vh;
-  background: var(--navy);
   padding: 5rem 0 4rem;
 
   .container {
@@ -48,7 +52,7 @@
   color: var(--text-muted);
 
   a {
-    color: var(--teal);
+    color: var(--teal-ink);
     text-decoration: none;
 
     &:hover {
@@ -152,7 +156,7 @@ td {
     text-decoration: none;
 
     &:hover {
-      color: var(--teal);
+      color: var(--teal-ink);
       text-decoration: underline;
     }
   }

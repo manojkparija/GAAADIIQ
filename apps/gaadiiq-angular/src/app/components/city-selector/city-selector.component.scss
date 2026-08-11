@@ -152,7 +152,7 @@
     box-shadow: 0 0 0 2px rgba(47,107,255,0.3);
   }
 
-  .city-icon { font-size: 1.6rem; }
+  .city-icon { color: var(--primary); display: inline-flex; }
 
   .city-name {
     font-size: 0.75rem;

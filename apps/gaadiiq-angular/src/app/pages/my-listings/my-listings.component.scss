@@ -107,7 +107,7 @@
 .market-verdict {
   font-size: 0.8rem;
   font-weight: 600;
-  &.verdict-low  { color: #43E97B; }
+  &.verdict-low  { color: var(--success-ink); }
   &.verdict-fair { color: #FBBF24; }
   &.verdict-high { color: #F87171; }
 }
@@ -181,7 +181,7 @@
 .btn-remove {
   background: rgba(239,68,68,0.1);
   border: 1px solid rgba(239,68,68,0.2);
-  color: #EF4444;
+  color: var(--danger-ink);
   border-radius: 8px;
   padding: 0.3rem 0.7rem;
   font-size: 0.78rem;
@@ -198,8 +198,8 @@
   font-weight: 600;
   white-space: nowrap;
 
-  &.badge-gold { background: rgba(255,215,0,0.15); color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
-  &.badge-green { background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
+  &.badge-gold { background: rgba(255,215,0,0.15); color: var(--warning-ink); border: 1px solid rgba(255,215,0,0.3); }
+  &.badge-green { background: rgba(67,233,123,0.15); color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
   &.badge-purple { background: rgba(47,107,255,0.15); color: #a9a3ff; border: 1px solid rgba(47,107,255,0.3); }
 }
 

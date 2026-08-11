@@ -56,7 +56,7 @@
             <div class="bodytype-quick-grid">
               @for (bt of bodyTypeCards; track bt.name) {
                 <button class="bodytype-pill" (click)="navigateToBodyType(bt.name)">
-                  <span>{{ bt.icon }}</span> {{ bt.name }}
+                  <app-body-type-icon [shape]="bt.shape" class="pill-icon" /> {{ bt.name }}
                 </button>
               }
             </div>
@@ -94,7 +94,7 @@
     <div class="bodytype-grid">
       @for (bt of bodyTypeCards; track bt.name) {
         <button class="bodytype-card glass-card" (click)="navigateToBodyType(bt.name)">
-          <div class="bt-icon">{{ bt.icon }}</div>
+          <div class="bt-icon"><app-body-type-icon [shape]="bt.shape" /></div>
           <div class="bt-name">{{ bt.name }}</div>
           <div class="bt-desc">{{ bt.desc }}</div>
         </button>

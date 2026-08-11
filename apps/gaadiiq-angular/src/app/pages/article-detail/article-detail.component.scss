@@ -159,7 +159,7 @@
     align-items: center;
     gap: 0.2rem;
     font-size: 1.1rem;
-    .star { color: #FFD700; }
+    .star { color: var(--warning-ink); }
     strong { margin-left: 0.5rem; font-size: 1rem; }
   }
 
@@ -199,10 +199,10 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.tag-green  { background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
-.tag-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-.tag-purple { background: rgba(47,107,255,0.15);  color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
-.tag-gold   { background: rgba(255,215,0,0.15);   color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
+.tag-green  { background: rgba(67,233,123,0.15); color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
+.tag-blue   { background: rgba(96,165,250,0.15);  color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
+.tag-purple { background: rgba(47,107,255,0.15);  color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
+.tag-gold   { background: rgba(255,215,0,0.15);   color: var(--warning-ink); border: 1px solid rgba(255,215,0,0.3); }
 .tag-red    { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
 
 .cat-chip {
@@ -231,7 +231,7 @@
   align-items: center;
   gap: 0.15rem;
   font-size: 0.9rem;
-  .star { color: #FFD700; }
+  .star { color: var(--warning-ink); }
   .rating-num { font-size: 0.82rem; font-weight: 700; margin-left: 0.3rem; color: var(--muted); }
 }
 

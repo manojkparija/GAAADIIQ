@@ -184,7 +184,7 @@
 
   &:hover, &.uploading {
     background: rgba(47, 107, 255, 0.06);
-    border-color: var(--teal);
+    border-color: var(--teal-ink);
   }
 
   .upload-zone-inner {
@@ -275,7 +275,7 @@
   .val-num { font-size:1.1rem; font-weight:800; }
   .val-col.mid .val-num { font-size:1.4rem; color:#2F6BFF; }
   .val-num.low { color:var(--muted); }
-  .val-num.high { color:#43E97B; }
+  .val-num.high { color:var(--success-ink); }
   .val-trend { font-size:0.82rem; color:var(--muted); margin-bottom:0.5rem; }
   .val-tip { font-size:0.82rem; color:var(--text-secondary); background:rgba(255,255,255,0.04); border-radius:8px; padding:0.5rem 0.75rem; }
 }

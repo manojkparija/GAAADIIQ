@@ -1,4 +1,9 @@
-.ap-page { min-height: 100vh; background: var(--navy); padding-bottom: 4rem; }
+// No background here. The page root used to paint var(--navy) — the exact
+// colour <body> already is — so it changed nothing visually while sitting
+// opaque over the page watermark and hiding it. See body::before in
+// styles.scss: the pattern is behind the page, so anything painting over
+// it must have a reason to.
+.ap-page { min-height: 100vh; padding-bottom: 4rem; }
 
 .ap-hero {
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
@@ -19,7 +24,7 @@
 
 .toast {
   background: rgba(67,233,123,0.15); border: 1px solid rgba(67,233,123,0.4);
-  color: #43E97B; border-radius: 10px; padding: 0.75rem 1.25rem;
+  color: var(--success-ink); border-radius: 10px; padding: 0.75rem 1.25rem;
   font-weight: 600; font-size: 0.9rem; margin-bottom: 1rem;
 }
 
@@ -82,7 +87,7 @@
 .verdict-chip {
   font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.65rem;
   border-radius: 50px; white-space: nowrap;
-  &.v-low  { background: rgba(67,233,123,0.15);  color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
+  &.v-low  { background: rgba(67,233,123,0.15);  color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
   &.v-fair { background: rgba(251,191,36,0.15);   color: #FBBF24; border: 1px solid rgba(251,191,36,0.3); }
   &.v-high { background: rgba(248,113,113,0.15);  color: #F87171; border: 1px solid rgba(248,113,113,0.3); }
 }

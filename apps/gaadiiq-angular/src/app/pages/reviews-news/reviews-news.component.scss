@@ -4,7 +4,9 @@
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
 
   .hero-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     padding: 0.35rem 1rem;
     border-radius: 50px;
     font-size: 0.75rem;
@@ -117,7 +119,10 @@
   & > * { position: relative; z-index: 1; }
 
   .cat-icon {
-    font-size: 2.5rem;
+    // These held an emoji character, so font-size WAS the icon size.
+    // <app-icon> takes an explicit [size] instead, and the useful
+    // property here is now colour, which the SVG inherits.
+    color: var(--primary);
     width: 64px; height: 64px;
     display: flex; align-items: center; justify-content: center;
     background: var(--fill-soft);
@@ -159,9 +164,9 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.cat-badge-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-.cat-badge-purple { background: rgba(47,107,255,0.15);  color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
-.cat-badge-green  { background: rgba(67,233,123,0.15);  color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
+.cat-badge-blue   { background: rgba(96,165,250,0.15);  color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
+.cat-badge-purple { background: rgba(47,107,255,0.15);  color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
+.cat-badge-green  { background: rgba(67,233,123,0.15);  color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
 .cat-badge-gold   { background: rgba(255,215,0,0.15);   color: #B8860B; border: 1px solid rgba(255,215,0,0.3); }
 
 // ── Write a Review CTA ──────────────────────────────────────────────────────
@@ -173,7 +178,7 @@
   border: 1px solid rgba(47,107,255,0.3);
 }
 .wrc-left { display: flex; align-items: center; gap: 1.25rem; }
-.wrc-icon { font-size: 2.5rem; flex-shrink: 0; }
+.wrc-icon { color: var(--primary); display: inline-flex; flex-shrink: 0; }
 .wrc-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.25rem; }
 .wrc-sub { font-size: 0.85rem; color: var(--muted); }
 .wrc-btn { white-space: nowrap; flex-shrink: 0; }
@@ -206,7 +211,7 @@
   &:hover { transform: translateY(-3px); }
 
   .fc-image {
-    font-size: 4rem;
+    color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -224,7 +229,13 @@
   .fc-excerpt { font-size: 0.875rem; color: var(--muted); line-height: 1.6; flex: 1; }
 
   .fc-footer { display: flex; flex-direction: column; gap: 0.4rem; }
-  .fc-info { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--muted); }
+  // Each span now holds an <app-icon> followed by text. An icon is an
+  // inline-flex box, not a glyph in the text run, so the span has to align the
+  // two itself — without this the label sits a few pixels below its icon.
+  .fc-info {
+    display: flex; gap: 1rem; font-size: 0.8rem; color: var(--muted);
+    span { display: inline-flex; align-items: center; gap: 0.3rem; }
+  }
 }
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
@@ -259,7 +270,7 @@
   &.active, &:hover {
     background: rgba(47,107,255,0.2);
     border-color: var(--primary);
-    color: var(--teal);
+    color: var(--teal-ink);
   }
 
   .tab-count {
@@ -291,7 +302,7 @@
   &:hover { transform: translateY(-3px); }
 
   .ac-image {
-    font-size: 3rem;
+    color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -359,7 +370,7 @@
   align-items: center;
   gap: 0.15rem;
   font-size: 0.85rem;
-  .star { color: #FFD700; }
+  .star { color: var(--warning-ink); }
   .rating-num { font-size: 0.8rem; font-weight: 700; margin-left: 0.25rem; color: var(--muted); }
   .car-model { font-size: 0.78rem; color: var(--muted); margin-left: 0.2rem; }
 }
@@ -375,10 +386,10 @@
   letter-spacing: 0.05em;
 }
 
-.tag-green  { background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
-.tag-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-.tag-purple { background: rgba(47,107,255,0.15);  color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
-.tag-gold   { background: rgba(255,215,0,0.15);   color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
+.tag-green  { background: rgba(67,233,123,0.15); color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
+.tag-blue   { background: rgba(96,165,250,0.15);  color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
+.tag-purple { background: rgba(47,107,255,0.15);  color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
+.tag-gold   { background: rgba(255,215,0,0.15);   color: var(--warning-ink); border: 1px solid rgba(255,215,0,0.3); }
 .tag-red    { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
 
 // ── Live News ────────────────────────────────────────────────────────────────
@@ -427,7 +438,7 @@
     background-position: center;
     border-bottom: 1px solid var(--glass-border);
     display: flex; align-items: center; justify-content: center;
-    .lc-thumb-emoji { font-size: 3rem; }
+    .lc-thumb-emoji { color: var(--primary); display: inline-flex; }
   }
 
   .lc-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; flex: 1; }

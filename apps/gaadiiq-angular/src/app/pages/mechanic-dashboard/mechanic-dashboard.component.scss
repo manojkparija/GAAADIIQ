@@ -1,7 +1,12 @@
+// No background here. The page root used to paint var(--navy) — the exact
+// colour <body> already is — so it changed nothing visually while sitting
+// opaque over the page watermark and hiding it. See body::before in
+// styles.scss: the pattern is behind the page, so anything painting over
+// it must have a reason to.
 // Theme tokens throughout, so the page reads correctly in light and dark
 // without a second set of rules.
 
-.md-page { min-height: 100vh; background: var(--navy); padding-bottom: 4rem; }
+.md-page { min-height: 100vh; padding-bottom: 4rem; }
 
 .md-hero {
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
@@ -82,7 +87,7 @@
 
 .md-status {
   font-size: 0.75rem; font-weight: 700; border-radius: 999px; padding: 0.25rem 0.7rem;
-  background: color-mix(in srgb, var(--teal) 14%, transparent); color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 14%, transparent); color: var(--teal-ink);
 
   &.pending { background: color-mix(in srgb, #F59E0B 16%, transparent); color: #B45309; }
 }
@@ -131,9 +136,9 @@
 
   // Colour only the states that need the mechanic to do something.
   &[data-status='assigned']         { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
-  &[data-status='in_progress']      { background: color-mix(in srgb, var(--teal) 14%, transparent); color: var(--teal); }
+  &[data-status='in_progress']      { background: color-mix(in srgb, var(--teal) 14%, transparent); color: var(--teal-ink); }
   &[data-status='awaiting_payment'] { background: color-mix(in srgb, #F59E0B 16%, transparent); color: #B45309; }
-  &[data-status='paid']             { background: color-mix(in srgb, var(--teal) 18%, transparent); color: var(--teal); }
+  &[data-status='paid']             { background: color-mix(in srgb, var(--teal) 18%, transparent); color: var(--teal-ink); }
 }
 
 .md-dist { font-size: 0.78rem; color: var(--text-muted); flex-shrink: 0; }

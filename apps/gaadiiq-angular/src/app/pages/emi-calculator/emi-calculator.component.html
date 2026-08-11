@@ -63,7 +63,7 @@
           </div>
           <div class="sum-row">
             <span>Total Interest</span>
-            <strong style="color:#EF4444">{{ fmtExact(totalInterest()) }}</strong>
+            <strong style="color:var(--danger-ink)">{{ fmtExact(totalInterest()) }}</strong>
           </div>
           <div class="sum-row">
             <span>Total Amount</span>
@@ -253,8 +253,8 @@
               <tr>
                 <td>{{ row.month }}</td>
                 <td>{{ fmt(row.emi) }}</td>
-                <td style="color:#43E97B">{{ fmt(row.principal) }}</td>
-                <td style="color:#EF4444">{{ fmt(row.interest) }}</td>
+                <td style="color:var(--success-ink)">{{ fmt(row.principal) }}</td>
+                <td style="color:var(--danger-ink)">{{ fmt(row.interest) }}</td>
                 <td>{{ fmt(row.balance) }}</td>
               </tr>
             }

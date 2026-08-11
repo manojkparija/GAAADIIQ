@@ -1,4 +1,9 @@
-.bj-wrap { min-height: 100vh; background: var(--navy); padding-bottom: 4rem; }
+// No background here. The page root used to paint var(--navy) — the exact
+// colour <body> already is — so it changed nothing visually while sitting
+// opaque over the page watermark and hiding it. See body::before in
+// styles.scss: the pattern is behind the page, so anything painting over
+// it must have a reason to.
+.bj-wrap { min-height: 100vh; padding-bottom: 4rem; }
 .bj-container { max-width: 720px; padding: 2rem 1.5rem 4rem; }
 
 .bj-hero {
@@ -33,7 +38,7 @@
       display: flex; align-items: center; justify-content: center;
       background: var(--fill-medium); color: var(--muted); border: 1px solid var(--glass-border); transition: all 0.2s;
       &.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-      &.done { background: rgba(67,233,123,0.2); color: #43E97B; border-color: #43E97B; }
+      &.done { background: rgba(67,233,123,0.2); color: var(--success-ink); border-color: var(--success-ink); }
     }
   }
   .q-text { font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; line-height: 1.4; }
@@ -52,7 +57,7 @@
   color: var(--text); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.18s;
   display: flex; align-items: center; gap: 0.6rem;
   &:hover { background: rgba(47,107,255,0.12); border-color: var(--primary); }
-  &.selected { background: rgba(47,107,255,0.2); border-color: var(--primary); color: var(--teal); font-weight: 700; }
+  &.selected { background: rgba(47,107,255,0.2); border-color: var(--primary); color: var(--teal-ink); font-weight: 700; }
 }
 
 .opt-check {
@@ -136,8 +141,8 @@
   .ms-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
   .ms-status-badge {
     font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 50px;
-    background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3);
-    &.active-badge { background: rgba(47,107,255,0.15); color: var(--teal); border-color: rgba(47,107,255,0.3); }
+    background: rgba(67,233,123,0.15); color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3);
+    &.active-badge { background: rgba(47,107,255,0.15); color: var(--teal-ink); border-color: rgba(47,107,255,0.3); }
   }
   .ms-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
   .ms-link { font-size: 0.82rem; font-weight: 700; color: var(--primary); text-decoration: none; &:hover { text-decoration: underline; } }
