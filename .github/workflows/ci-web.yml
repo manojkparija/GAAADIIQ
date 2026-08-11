@@ -13,10 +13,6 @@ jobs:
   smoke:
     name: Build & smoke test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/gaadiiq-angular
-
     steps:
       - uses: actions/checkout@v4
 
@@ -24,11 +20,17 @@ jobs:
         with:
           node-version: "22"
 
-      # `npm install`, not `npm ci`, and no cache: this repo tracks no
-      # package-lock.json, so there is nothing to install from or key a cache
-      # on. Matches build-apk.yml. Committing a lockfile would make these
-      # installs reproducible and is worth doing separately — it can change
-      # dependency resolution, which is not a thing to slip into a CI change.
+      # Installed from the repo ROOT, which is the part that took three
+      # attempts to get right. The root package.json declares npm workspaces
+      # *and* its own devDependencies — @playwright/test among them — and
+      # running `npm install` inside apps/gaadiiq-angular does not install the
+      # root's own dependencies. The smoke job kept failing with
+      # "Cannot find module '@playwright/test'" while npx quietly fetched a
+      # different copy that could not see the workspace.
+      #
+      # `npm install` rather than `npm ci`: no package-lock.json is tracked.
+      # Committing one would make this reproducible and is worth doing on its
+      # own, since it can change dependency resolution.
       - name: Install dependencies
         run: npm install
 
@@ -41,6 +43,7 @@ jobs:
       # app directory did not find the binary. build-apk.yml already calls its
       # tools this way, and that workflow works.
       - name: Build
+        working-directory: apps/gaadiiq-angular
         run: npx ng build --configuration development
 
       - name: Install Chromium for Playwright
@@ -50,6 +53,7 @@ jobs:
       # bugs this repo actually ships are the ones only a browser sees: a blank
       # gallery, a heading under the fixed navbar, a stretched checkbox.
       - name: Smoke tests
+        working-directory: apps/gaadiiq-angular
         run: npx playwright test --project=desktop-chrome
 
       - name: Upload failure artefacts
