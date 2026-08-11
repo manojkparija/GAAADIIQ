@@ -1,4 +1,11 @@
-"""Qdrant vector store — index and search car listings."""
+"""Qdrant vector store — index and search car listings.
+
+Inert unless `SEMANTIC_SEARCH_ENABLED` is set. No Qdrant has been provisioned
+for this product, so every function here returns its "unavailable" answer and
+the callers fall back: `recommend` uses its rule-based path, and listing
+creation simply does not index. Those fallbacks are real and tested; what was
+missing was any honest signal that this is the state we are in.
+"""
 from __future__ import annotations
 
 import logging
@@ -11,6 +18,12 @@ VECTOR_SIZE = 384  # matches bge-small-en-v1.5
 
 
 def _client():
+    # One gate for the whole module. With the feature off there is no cluster to
+    # talk to, and every call here would spend its timeout discovering that —
+    # once per listing created, and once per boot in a warning that says nothing
+    # actionable.
+    if not settings.semantic_search_enabled:
+        return None
     try:
         from qdrant_client import QdrantClient
         api_key = settings.qdrant_api_key or None

@@ -210,6 +210,40 @@ levels, and the difference is not visible in how the claim is phrased.
 
 ---
 
+## 7. A required secret satisfied by the word "dummy" — fixed 11 Aug
+
+Found while reading a Render log for something else:
+
+```
+WARNING [gaadiiq.qdrant] Qdrant ensure_collection: [Errno 111] Connection refused
+```
+
+`validate_production_config()` treated a missing `QDRANT_API_KEY` as fatal —
+`sys.exit(1)`. No Qdrant had ever been provisioned, so the only way to deploy
+was to put something in the box, and production ran with
+`QDRANT_API_KEY="dummy"`. The check then passed on every boot while:
+
+- AI Advisor silently fell back to rule-based matching,
+- every listing failed to index against a cluster that was not there,
+- and nothing anywhere said semantic search was off.
+
+**The lesson is the general one.** A required secret people satisfy with a
+placeholder is worse than no requirement: it blocks a deploy until someone
+lies to it, and then reports success forever. Worth checking any other entry in
+that function against the value actually deployed.
+
+**Fixed** with `SEMANTIC_SEARCH_ENABLED`, off by default, which is the honest
+default. With it off, nothing about Qdrant can block a deploy and the vector
+store is inert — no per-listing connection timeout, no permanent boot warning.
+With it on, the configuration has to be real: a localhost URL or a placeholder
+key (`dummy`, `changeme`, `placeholder`, `todo`, empty) now fails loudly at the
+point of the lie.
+
+Still open, if semantic search is ever wanted: provision Qdrant or move to
+pgvector on Supabase — and either way **write the listings backfill**, which
+does not exist. Without it, switching the feature on indexes only listings
+created from that moment; everything already listed stays invisible to it.
+
 ## Product state as of tonight
 
 Working and merged: 360° spin viewer, roadside repair marketplace, car loan
