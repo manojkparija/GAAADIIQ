@@ -7,7 +7,7 @@
   .hero-badge {
     display: inline-block; padding: 0.3rem 1rem; border-radius: 50px;
     font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    background: rgba(47,107,255,0.15); color: var(--teal); border: 1px solid rgba(47,107,255,0.3); margin-bottom: 1rem;
+    background: rgba(47,107,255,0.15); color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); margin-bottom: 1rem;
   }
   .dd-title { font-size: clamp(1.8rem,4vw,3rem); font-weight: 800; margin-bottom: 0.5rem; }
   .dd-sub { color: var(--muted); font-size: 1rem; max-width: 420px; }
@@ -34,7 +34,7 @@
   /* Hover and active were styled identically, so hovering an inactive tab
      made it look selected. Active is now the filled brand gradient; hover is
      a tint that hints at it without impersonating it. */
-  &:hover { background: linear-gradient(90deg, rgba(37,99,235,0.12), rgba(20,184,166,0.12)); border-color: #14B8A6; color: var(--text); }
+  &:hover { background: linear-gradient(90deg, rgba(37,99,235,0.12), rgba(20,184,166,0.12)); border-color: var(--teal-ink); color: var(--text); }
   &.active {
     background: linear-gradient(90deg, #2563EB, #14B8A6);
     border-color: transparent; color: #fff;
@@ -79,7 +79,7 @@
   }
 }
 .stage-red    { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
-.stage-purple { background: rgba(47,107,255,0.15); color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
+.stage-purple { background: rgba(47,107,255,0.15); color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
 .stage-gold   { background: rgba(255,215,0,0.15); color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
 .stage-blue   { background: rgba(96,165,250,0.15); color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
 .stage-green  { background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
@@ -95,7 +95,7 @@
   .tm-rank-name { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; }
   .tm-rank {
     width: 22px; height: 22px; border-radius: 50%; background: rgba(47,107,255,0.2);
-    color: var(--teal); font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    color: var(--teal-ink); font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
   .tm-rate { font-weight: 700; color: var(--primary); font-size: 0.85rem; }
 }
@@ -160,7 +160,7 @@
     border: 1px solid rgba(47,107,255,0.2);
     .atl-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
     .atl-name  { font-weight: 700; color: var(--text); }
-    .atl-score { font-size: 0.82rem; color: var(--muted); em { color: var(--teal); font-style: normal; font-weight: 600; } }
+    .atl-score { font-size: 0.82rem; color: var(--muted); em { color: var(--teal-ink); font-style: normal; font-weight: 600; } }
   }
 }
 
@@ -201,7 +201,7 @@
       font-size: 0.78rem; padding: 0.35rem 0.75rem; border-radius: 50px; display: flex; align-items: center; gap: 0.35rem;
       strong { font-weight: 700; }
       &.contact { background: rgba(96,165,250,0.12); color: #60A5FA; border: 1px solid rgba(96,165,250,0.25); }
-      &.nba     { background: rgba(47,107,255,0.12); color: var(--teal); border: 1px solid rgba(47,107,255,0.25); }
+      &.nba     { background: rgba(47,107,255,0.12); color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.25); }
     }
   }
 }

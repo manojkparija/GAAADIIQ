@@ -63,7 +63,7 @@
     gap: 0.3rem;
     background: rgba(16,185,129,0.18);
     border: 1px solid rgba(16,185,129,0.35);
-    color: #10B981;
+    color: var(--success-ink);
     font-size: 0.68rem;
     font-weight: 700;
     padding: 0.22rem 0.55rem;
@@ -142,7 +142,7 @@
       align-items: center;
       gap: 0.3rem;
       font-size: 0.72rem;
-      color: var(--ai-accent);
+      color: var(--teal-ink);
       font-weight: 700;
       font-family: 'Manrope', sans-serif;
       letter-spacing: 0.02em;

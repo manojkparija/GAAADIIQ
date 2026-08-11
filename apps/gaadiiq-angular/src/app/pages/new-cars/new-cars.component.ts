@@ -48,6 +48,8 @@ interface UpcomingCar {
   image: string;
 }
 
+import { BodyTypeIconComponent } from '../../components/body-type-icon/body-type-icon.component';
+
 interface BudgetRange {
   label: string;
   min: number;
@@ -57,7 +59,7 @@ interface BudgetRange {
 @Component({
   selector: 'app-new-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, BodyTypeIconComponent],
   templateUrl: './new-cars.component.html',
   styleUrl: './new-cars.component.scss'
 })
@@ -108,13 +110,22 @@ export class NewCarsComponent implements OnInit {
 
   get brands() { return this.brandsService.brands(); }
 
+  // The icon is drawn in the template, selected by `shape`, rather than being a
+  // character in this array.
+  //
+  // These were emoji (🚗 🚘 🚙 🚐 ⚡ ✨), which is why they looked ordinary: an
+  // emoji is rendered by the operating system's font, so the same six cards are
+  // flat-and-pastel on Windows, glossy on macOS, and outlined on Android — none
+  // of them GAADIIQ's. Worse, 🚗 and 🚘 are near-identical at 2.2rem on Windows,
+  // so Hatchback and Sedan were not visually distinguishable at all. Inline SVG
+  // renders identically everywhere and inherits the brand colour.
   bodyTypeCards = [
-    { name: 'Hatchback', icon: '🚗', desc: 'Compact & city-friendly' },
-    { name: 'Sedan', icon: '🚘', desc: 'Comfortable & stylish' },
-    { name: 'SUV', icon: '🚙', desc: 'Powerful & versatile' },
-    { name: 'MUV', icon: '🚐', desc: 'Space for the family' },
-    { name: 'Electric', icon: '⚡', desc: 'Future-ready EVs' },
-    { name: 'Luxury', icon: '✨', desc: 'Premium experience' },
+    { name: 'Hatchback', shape: 'hatchback', desc: 'Compact & city-friendly' },
+    { name: 'Sedan',     shape: 'sedan',     desc: 'Comfortable & stylish' },
+    { name: 'SUV',       shape: 'suv',       desc: 'Powerful & versatile' },
+    { name: 'MUV',       shape: 'muv',       desc: 'Space for the family' },
+    { name: 'Electric',  shape: 'electric',  desc: 'Future-ready EVs' },
+    { name: 'Luxury',    shape: 'luxury',    desc: 'Premium experience' },
   ];
 
   budgetRanges: BudgetRange[] = [

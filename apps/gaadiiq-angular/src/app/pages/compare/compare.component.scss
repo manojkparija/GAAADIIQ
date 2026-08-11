@@ -190,5 +190,5 @@
 .feat-row { border-bottom:1px solid rgba(255,255,255,0.04); &:last-child{border-bottom:none;} }
 .empty-hint { margin-top:1rem; }
 .tco-section { border-top: 2px solid rgba(30,64,175,0.3); margin-top:1rem; }
-.tco-row { &.tco-total { background: rgba(30,64,175,0.1); font-weight:700; .feat-label,.tco-val{color:var(--text);font-weight:700;} } &.tco-resale { .feat-label{color:var(--teal);} .tco-val{color:var(--teal);} } }
+.tco-row { &.tco-total { background: rgba(30,64,175,0.1); font-weight:700; .feat-label,.tco-val{color:var(--text);font-weight:700;} } &.tco-resale { .feat-label{color: var(--teal-ink);} .tco-val{color: var(--teal-ink);} } }
 .tco-val { padding:0.85rem 1rem; text-align:center; font-size:0.875rem; display:flex; align-items:center; justify-content:center; gap:0.4rem; &.winner{color:#43E97B;font-weight:700;background:rgba(67,233,123,0.06);} }

@@ -108,7 +108,7 @@
 
     &:focus {
       outline: none;
-      border-color: var(--teal);
+      border-color: var(--teal-ink);
     }
   }
 }
@@ -212,7 +212,7 @@
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
   background: color-mix(in srgb, var(--teal) 12%, transparent);
-  color: var(--teal);
+  color: var(--teal-ink);
   font-weight: 600;
   font-size: 0.78rem;
 }

@@ -355,7 +355,7 @@
   }
 
   .rf-foot { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-top:0.9rem; flex-wrap:wrap; }
-  .rf-source { font-size:0.75rem; color:var(--teal); font-weight:600; &.muted { color:var(--muted); font-weight:500; } }
+  .rf-source { font-size:0.75rem; color: var(--teal-ink); font-weight:600; &.muted { color:var(--muted); font-weight:500; } }
 
   .rf-refine {
     background:var(--fill-soft); border:1px solid var(--border-soft); color:var(--text);

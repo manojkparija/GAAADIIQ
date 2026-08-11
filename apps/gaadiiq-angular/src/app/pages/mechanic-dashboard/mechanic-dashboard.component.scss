@@ -82,7 +82,7 @@
 
 .md-status {
   font-size: 0.75rem; font-weight: 700; border-radius: 999px; padding: 0.25rem 0.7rem;
-  background: color-mix(in srgb, var(--teal) 14%, transparent); color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 14%, transparent); color: var(--teal-ink);
 
   &.pending { background: color-mix(in srgb, #F59E0B 16%, transparent); color: #B45309; }
 }
@@ -131,9 +131,9 @@
 
   // Colour only the states that need the mechanic to do something.
   &[data-status='assigned']         { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
-  &[data-status='in_progress']      { background: color-mix(in srgb, var(--teal) 14%, transparent); color: var(--teal); }
+  &[data-status='in_progress']      { background: color-mix(in srgb, var(--teal) 14%, transparent); color: var(--teal-ink); }
   &[data-status='awaiting_payment'] { background: color-mix(in srgb, #F59E0B 16%, transparent); color: #B45309; }
-  &[data-status='paid']             { background: color-mix(in srgb, var(--teal) 18%, transparent); color: var(--teal); }
+  &[data-status='paid']             { background: color-mix(in srgb, var(--teal) 18%, transparent); color: var(--teal-ink); }
 }
 
 .md-dist { font-size: 0.78rem; color: var(--text-muted); flex-shrink: 0; }

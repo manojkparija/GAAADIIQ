@@ -308,7 +308,7 @@
   .rdc-header { display: flex; justify-content: space-between; align-items: center; }
   .rdc-risk { font-weight: 700; }
   .rdc-safe { font-size: 0.75rem; }
-  .rdc-safe.safe { color: #10B981; }
+  .rdc-safe.safe { color: var(--success-ink); }
   .rdc-safe.unsafe { color: #EF4444; }
 
   .rdc-label { font-size: 0.72rem; font-weight: 600; color: var(--text-secondary, #6b7280); margin-bottom: 0.3rem; }

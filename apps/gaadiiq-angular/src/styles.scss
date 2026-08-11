@@ -30,7 +30,11 @@
   --glass:          rgba(255,255,255,0.85);
   --glass-border:   rgba(47,107,255,0.10);
   --text:           #0F172A;
-  --muted:          #64748B;
+  // Was #64748B. Secondary text across the app read as grey-on-white at a
+  // weight that looked unfinished rather than quiet, and it is the token most
+  // components reach for. See the note on the tertiary/secondary/muted ramp
+  // below: these three are deliberately kept far darker than a typical scale.
+  --muted:          #334155;
 
   --gradient:       linear-gradient(135deg, #2F6BFF 0%, #14B8A6 100%);
   --gradient-gold:  linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
@@ -43,9 +47,21 @@
   --fill-dim:       rgba(15,23,42,0.02);
   --fill-soft:      rgba(15,23,42,0.035);
   --fill-medium:    rgba(15,23,42,0.065);
-  --text-tertiary:  #94A3B8;
-  --text-secondary: #475569;
-  --text-muted:     #64748B;
+  // The light-mode text ramp, deliberately compressed and darkened.
+  //
+  // These were #94A3B8 / #475569 / #64748B — a conventional Tailwind-ish scale
+  // that measures fine in isolation and reads badly here. Two reasons it fails
+  // in this app specifically: the page sits on --navy (#F4F7FB), not white, so
+  // every ratio is lower than a contrast checker on a white swatch reports;
+  // and most secondary text is set at 0.78–0.85rem, where thin strokes lose
+  // far more perceived weight than body copy does.
+  //
+  // The rule now: nothing below #475569 in light mode. Even --text-tertiary,
+  // the faintest, clears 7:1 on white and 6.8:1 on --navy — comfortably past
+  // WCAG AA, which is the floor rather than the goal.
+  --text-tertiary:  #475569;
+  --text-secondary: #1E293B;
+  --text-muted:     #334155;
   --input-bg:       #FFFFFF;
   --input-color:    #0F172A;
   --dropdown-bg:    #FFFFFF;
@@ -153,7 +169,7 @@
   --glass:          rgba(255,255,255,0.85);
   --glass-border:   rgba(47,107,255,0.10);
   --text:           #0F172A;
-  --muted:          #64748B;
+  --muted:          #334155;
   --gradient:       linear-gradient(135deg, #2F6BFF 0%, #14B8A6 100%);
   --gradient-gold:  linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
   --glow:           0 4px 24px rgba(47,107,255,0.18);
@@ -164,9 +180,12 @@
   --fill-dim:       rgba(15,23,42,0.02);
   --fill-soft:      rgba(15,23,42,0.035);
   --fill-medium:    rgba(15,23,42,0.065);
-  --text-tertiary:  #94A3B8;
-  --text-secondary: #475569;
-  --text-muted:     #64748B;
+  // Kept identical to the bare :root ramp above — see the reasoning there.
+  // These two blocks disagreeing is how a theme toggle produces a page that
+  // looks different from the same page loaded fresh.
+  --text-tertiary:  #475569;
+  --text-secondary: #1E293B;
+  --text-muted:     #334155;
   --input-bg:       #FFFFFF;
   --input-color:    #0F172A;
   --dropdown-bg:    #FFFFFF;
@@ -194,7 +213,46 @@
   --text-primary: var(--text);
   --border-color: var(--border-soft);
   --glass-bg:     var(--glass);
+
+  // ── Page watermark ─────────────────────────────────────────────────────────
+  // A hexagon lattice in brand blue, drawn once here and painted by body::before
+  // on every page.
+  //
+  // Defined in the shared alias block rather than per theme on purpose: the
+  // stroke is one brand blue at a low alpha, which reads correctly on the light
+  // --navy (#F4F7FB) and on the dark #0B1220 without needing two copies. A
+  // colour cannot be substituted into a data URI by var(), so a per-theme
+  // version would mean maintaining the same path geometry in four places, and
+  // those copies drift.
+  //
+  // URL-encoded, not base64: it stays readable and greppable in the source. The
+  // '#' in the stroke colour MUST stay percent-encoded as %23 — a literal '#'
+  // terminates the URL and the whole rule is dropped silently.
+  --page-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%232F6BFF' stroke-opacity='0.07' stroke-width='1.25' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --page-pattern-size: 84px 150px;
 }
+
+// ── Accent colours, as TEXT ───────────────────────────────────────────────────
+// --teal (#14B8A6) and the success green (#10B981) are chosen to be seen as
+// fills: a button, a chip background, a gradient stop. Used as *text* on a light
+// page they measure about 2.3:1 — below the 4.5:1 AA floor and, more to the
+// point, they were among the labels that prompted "letters are very light".
+//
+// Darkening --teal itself was the wrong fix: it is a fill in far more places
+// than it is a text colour, and every button and gradient would have shifted
+// with it. These are the text-only counterparts.
+//
+// In dark mode they resolve back to the bright originals, which is correct —
+// the contrast problem only exists against a light background.
+:root {
+  --teal-ink:    #0F766E;
+  --success-ink: #047857;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --teal-ink: #2DD4BF; --success-ink: #34D399; }
+}
+:root[data-theme="dark"]  { --teal-ink: #2DD4BF; --success-ink: #34D399; }
+:root[data-theme="light"] { --teal-ink: #0F766E; --success-ink: #047857; }
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -215,6 +273,34 @@ body {
   // children must be fixed at their own level instead.
   line-height: 1.6;
   transition: background 0.3s ease, color 0.3s ease;
+}
+
+// The watermark, on every page.
+//
+// A fixed pseudo-element rather than a background-image on body itself. Two
+// reasons: `background-attachment: fixed` on body is janky-to-broken on iOS
+// Safari, and body's own background is already var(--navy), so painting the
+// pattern there would mean a shorthand that a page-level override could
+// silently drop.
+//
+// position:fixed keeps the lattice still while content scrolls, which is what
+// makes it read as stationery rather than as part of the page. z-index:-1 puts
+// it behind everything without entering the stacking order of any component,
+// and pointer-events:none guarantees it can never intercept a click.
+//
+// NOTE: this sits behind the page, so any section painting its own opaque
+// background (--card-bg, --navy, a gradient hero) hides it by design. The
+// pattern shows through in the gaps between sections and behind transparent
+// ones — a watermark, not a wallpaper.
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--page-pattern);
+  background-size: var(--page-pattern-size);
+  background-repeat: repeat;
 }
 
 h1, h2, h3, h4, h5, h6 {

@@ -160,7 +160,7 @@
   letter-spacing: 0.05em;
 }
 .cat-badge-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-.cat-badge-purple { background: rgba(47,107,255,0.15);  color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
+.cat-badge-purple { background: rgba(47,107,255,0.15);  color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
 .cat-badge-green  { background: rgba(67,233,123,0.15);  color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
 .cat-badge-gold   { background: rgba(255,215,0,0.15);   color: #B8860B; border: 1px solid rgba(255,215,0,0.3); }
 
@@ -259,7 +259,7 @@
   &.active, &:hover {
     background: rgba(47,107,255,0.2);
     border-color: var(--primary);
-    color: var(--teal);
+    color: var(--teal-ink);
   }
 
   .tab-count {
@@ -377,7 +377,7 @@
 
 .tag-green  { background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3); }
 .tag-blue   { background: rgba(96,165,250,0.15);  color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
-.tag-purple { background: rgba(47,107,255,0.15);  color: var(--teal); border: 1px solid rgba(47,107,255,0.3); }
+.tag-purple { background: rgba(47,107,255,0.15);  color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
 .tag-gold   { background: rgba(255,215,0,0.15);   color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
 .tag-red    { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
 

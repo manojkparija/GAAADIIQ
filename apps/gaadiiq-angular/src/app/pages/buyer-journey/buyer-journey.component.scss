@@ -52,7 +52,7 @@
   color: var(--text); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.18s;
   display: flex; align-items: center; gap: 0.6rem;
   &:hover { background: rgba(47,107,255,0.12); border-color: var(--primary); }
-  &.selected { background: rgba(47,107,255,0.2); border-color: var(--primary); color: var(--teal); font-weight: 700; }
+  &.selected { background: rgba(47,107,255,0.2); border-color: var(--primary); color: var(--teal-ink); font-weight: 700; }
 }
 
 .opt-check {
@@ -137,7 +137,7 @@
   .ms-status-badge {
     font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 50px;
     background: rgba(67,233,123,0.15); color: #43E97B; border: 1px solid rgba(67,233,123,0.3);
-    &.active-badge { background: rgba(47,107,255,0.15); color: var(--teal); border-color: rgba(47,107,255,0.3); }
+    &.active-badge { background: rgba(47,107,255,0.15); color: var(--teal-ink); border-color: rgba(47,107,255,0.3); }
   }
   .ms-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
   .ms-link { font-size: 0.82rem; font-weight: 700; color: var(--primary); text-decoration: none; &:hover { text-decoration: underline; } }

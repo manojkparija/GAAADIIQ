@@ -301,7 +301,37 @@
   }
 }
 
-.bt-icon { font-size: 2.2rem; }
+// Was `font-size: 2.2rem` when the icon was an emoji character. Now it sizes
+// the SVG and supplies the colour the paths inherit via currentColor.
+.bt-icon {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.4rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+
+  // font-size, NOT a width on the svg. The icon lives inside a child component
+  // with emulated encapsulation, so `.bt-icon svg` here is compiled to a
+  // selector carrying THIS component's _ngcontent attribute — which that svg
+  // does not have, so the rule never applies and the icon rendered at its
+  // inherited size (about 13px, which is what "too small to see" looked like).
+  // The component sizes itself in `em`, so the parent's font-size is the
+  // supported way in, and it crosses the boundary because inheritance does.
+  font-size: 2.4rem;
+}
+
+.bodytype-card:hover .bt-icon {
+  color: var(--teal-ink);
+  transform: translateY(-2px);
+}
+
+// A card that animates on hover has no business animating for someone who has
+// asked the OS to stop that.
+@media (prefers-reduced-motion: reduce) {
+  .bt-icon { transition: none; }
+  .bodytype-card:hover .bt-icon { transform: none; }
+}
 .bt-name { font-size: 0.95rem; font-weight: 700; color: var(--text); }
 .bt-desc { font-size: 0.78rem; color: var(--muted); }
 
@@ -511,7 +541,7 @@
     padding: 0;
     margin-left: 2px;
 
-    &:hover { color: var(--ai-accent); }
+    &:hover { color: var(--teal-ink); }
   }
 }
 
@@ -607,7 +637,7 @@
 .model-bt-badge {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--ai-accent);
+  color: var(--teal-ink);
   background: rgba(20,184,166,0.1);
   border-radius: 4px;
   padding: 0.15rem 0.5rem;
@@ -819,7 +849,7 @@
 .upcoming-expected {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--ai-accent);
+  color: var(--teal-ink);
   background: rgba(20,184,166,0.1);
   padding: 0.2rem 0.6rem;
   border-radius: 4px;
