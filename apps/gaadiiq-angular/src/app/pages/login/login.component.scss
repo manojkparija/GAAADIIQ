@@ -1,3 +1,8 @@
+// No background here. The page root used to paint var(--navy) — the exact
+// colour <body> already is — so it changed nothing visually while sitting
+// opaque over the page watermark and hiding it. See body::before in
+// styles.scss: the pattern is behind the page, so anything painting over
+// it must have a reason to.
 .login-page {
   min-height: 100vh;
   display: flex;
@@ -6,7 +11,6 @@
   padding: 2rem;
   position: relative;
   overflow: hidden;
-  background: var(--navy);
 }
 
 .orb {

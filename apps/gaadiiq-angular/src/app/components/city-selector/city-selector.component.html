@@ -19,7 +19,7 @@
 
     <!-- Detect location -->
     <button class="detect-btn" (click)="detectLocation()" [disabled]="locating()">
-      <span class="detect-icon">{{ locating() ? '⏳' : '📍' }}</span>
+      <span class="detect-icon"><app-icon [name]="locating() ? 'loader' : 'map-pin'" [size]="16"></app-icon></span>
       <span>{{ locating() ? 'Detecting…' : 'Detect my location' }}</span>
     </button>
 
@@ -35,7 +35,7 @@
         *ngFor="let c of filteredCities()"
         [class.selected]="cityService.selectedCity() === c.name"
         (click)="select(c.name)">
-        <span class="city-icon">{{ c.icon }}</span>
+        <span class="city-icon"><app-icon name="map-pin" [size]="20"></app-icon></span>
         <span class="city-name">{{ c.name }}</span>
       </button>
     </div>

@@ -1,4 +1,9 @@
-.ms-page { min-height: 100vh; background: var(--navy); padding-bottom: 4rem; }
+// No background here. The page root used to paint var(--navy) — the exact
+// colour <body> already is — so it changed nothing visually while sitting
+// opaque over the page watermark and hiding it. See body::before in
+// styles.scss: the pattern is behind the page, so anything painting over
+// it must have a reason to.
+.ms-page { min-height: 100vh; padding-bottom: 4rem; }
 
 .ms-hero {
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);

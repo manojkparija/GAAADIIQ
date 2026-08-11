@@ -2,24 +2,29 @@ import { Injectable, signal } from '@angular/core';
 
 export interface City {
   name: string;
-  icon: string;
 }
 
+// No per-city icon. These carried a landmark emoji each — 🏛️ for Mumbai, 🌊
+// for Chennai, 💎 for Surat — which was decorative rather than informative, was
+// drawn by the reader's operating system rather than by us, and had already
+// collided: Pune and Jaipur were both 🏰. The selector now marks every city the
+// same way, with one map pin, because that is the honest amount of information
+// an icon adds here.
 export const POPULAR_CITIES: City[] = [
-  { name: 'Mumbai',      icon: '🏛️' },
-  { name: 'Bangalore',   icon: '🌆' },
-  { name: 'Delhi',       icon: '🕌' },
-  { name: 'Pune',        icon: '🏰' },
-  { name: 'Navi Mumbai', icon: '🌃' },
-  { name: 'Hyderabad',   icon: '🕍' },
-  { name: 'Ahmedabad',   icon: '🏯' },
-  { name: 'Chennai',     icon: '🌊' },
-  { name: 'Kolkata',     icon: '🌉' },
-  { name: 'Chandigarh',  icon: '🌸' },
-  { name: 'Jaipur',       icon: '🏰' },
-  { name: 'Surat',        icon: '💎' },
-  { name: 'Bhubaneswar',  icon: '🛕' },
-  { name: 'Rourkela',     icon: '⚙️' },
+  { name: 'Mumbai' },
+  { name: 'Bangalore' },
+  { name: 'Delhi' },
+  { name: 'Pune' },
+  { name: 'Navi Mumbai' },
+  { name: 'Hyderabad' },
+  { name: 'Ahmedabad' },
+  { name: 'Chennai' },
+  { name: 'Kolkata' },
+  { name: 'Chandigarh' },
+  { name: 'Jaipur' },
+  { name: 'Surat' },
+  { name: 'Bhubaneswar' },
+  { name: 'Rourkela' },
 ];
 
 @Injectable({ providedIn: 'root' })
