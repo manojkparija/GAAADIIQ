@@ -1,0 +1,128 @@
+import { test, expect, Page } from '@playwright/test';
+
+/**
+ * Smoke tests — does the app still work at all?
+ *
+ * Narrow on purpose. These do not check that a feature is correct; they check
+ * that a page renders, that its main content appears, and that nothing threw on
+ * the way. That is the failure this repo keeps hitting: a change compiles, the
+ * unit tests pass, and a page is blank or broken in a way only a browser sees.
+ *
+ * Every assertion here would have caught something that actually shipped:
+ *   - a gallery that rendered no images
+ *   - a heading hidden underneath the fixed navbar
+ *   - a checkbox stretched to the full width of its row
+ *   - a console error from a component that failed to initialise
+ *
+ * They run without an API. The app falls back to demo data when the catalogue
+ * cannot be reached, so these must pass offline — a smoke test that needs a
+ * live backend is one that gets disabled the first time the backend is down.
+ */
+
+/** Errors that say nothing about our code — a missing backend, mostly. */
+const IGNORABLE = [
+  /Failed to load resource/i,
+  /ERR_CONNECTION_REFUSED/i,
+  /ERR_NAME_NOT_RESOLVED/i,
+  /net::ERR_/i,
+  /Catalogue source failed/i,
+  /falling back to demo data/i,
+  /supabase/i,
+];
+
+function collectConsoleErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on('console', msg => {
+    if (msg.type() !== 'error') return;
+    const text = msg.text();
+    if (!IGNORABLE.some(pattern => pattern.test(text))) errors.push(text);
+  });
+  page.on('pageerror', err => errors.push(String(err)));
+  return errors;
+}
+
+/** Every page in the app is expected to render these. */
+async function expectChrome(page: Page) {
+  // `nav`, not `app-navbar`: the component host is a zero-height wrapper around
+  // the fixed bar, and Playwright rightly calls a zero-size element hidden.
+  await expect(page.locator('nav').first()).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('footer').first()).toBeVisible({ timeout: 20000 });
+}
+
+const PAGES = [
+  { path: '/', name: 'home' },
+  { path: '/listings', name: 'listings' },
+  { path: '/car-loan', name: 'car loan' },
+  { path: '/emi-calculator', name: 'EMI calculator' },
+  { path: '/compare', name: 'compare' },
+];
+
+for (const { path, name } of PAGES) {
+  test(`${name} renders`, async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+
+    const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
+    expect(response?.status(), `${path} returned ${response?.status()}`).toBeLessThan(400);
+
+    await expectChrome(page);
+
+    // A heading, and one that is not empty — a page that renders its shell and
+    // nothing else looks fine to `ng build` and broken to a person.
+    const heading = page.locator('h1, h2').first();
+    await expect(heading).toBeVisible({ timeout: 15000 });
+    expect((await heading.innerText()).trim().length).toBeGreaterThan(2);
+
+    // LAY-007: the navbar is fixed, so a page that forgets --nav-offset renders
+    // its own title underneath it. Shipped at least once.
+    const navBox = await page.locator('nav').first().boundingBox();
+    const headBox = await heading.boundingBox();
+    if (navBox && headBox) {
+      expect(
+        headBox.y,
+        `${path}: heading starts at ${headBox.y}, navbar ends at ${navBox.y + navBox.height}`,
+      ).toBeGreaterThanOrEqual(navBox.y + navBox.height - 1);
+    }
+
+    expect(errors, `console errors on ${path}:\n${errors.join('\n')}`).toEqual([]);
+  });
+}
+
+test('no input is stretched to the width of its row', async ({ page }) => {
+  // A global `input { width: 100% }` once applied to checkboxes too, which
+  // pushed their labels clean out of the card they belonged to.
+  for (const path of ['/car-loan', '/listings']) {
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1500);
+    const widths = await page.$$eval(
+      'input[type="checkbox"], input[type="radio"]',
+      els => els.filter(e => (e as HTMLElement).offsetParent !== null)
+                .map(e => e.getBoundingClientRect().width),
+    );
+    for (const width of widths) {
+      expect(width, `${path}: a tick box is ${width}px wide`).toBeLessThan(40);
+    }
+  }
+});
+
+test('the car detail page shows a car and its gallery', async ({ page }) => {
+  // The page that broke hardest: images resolve onto a car through a
+  // make/model/year match, and a change to that filter emptied every gallery
+  // on the site while every test still passed.
+  const errors = collectConsoleErrors(page);
+
+  // Straight to a car rather than clicking through /listings: with no API the
+  // listing page legitimately shows nothing, and this test is about the detail
+  // page. `d8001` is from the in-repo demo catalogue (cars-data.service.ts), so
+  // it resolves offline; against a real API the page substitutes another car
+  // and still has to render a gallery, which is what is being checked.
+  await page.goto('/cars/d8001', { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('.gallery, .main-img').first()).toBeVisible({ timeout: 20000 });
+  // At least one image element, and one that resolved to something.
+  const images = page.locator('.main-img img');
+  await expect(images.first()).toBeVisible();
+  const box = await images.first().boundingBox();
+  expect(box?.width ?? 0).toBeGreaterThan(50);
+
+  expect(errors, `console errors:\n${errors.join('\n')}`).toEqual([]);
+});

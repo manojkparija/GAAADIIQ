@@ -12,7 +12,7 @@ from models.car import Car
 from models.car_variant import CarVariant, VariantSource, VariantStatus
 from models.user import User
 from schemas.car import CarCreate, CarListOut, CarOut, CarUpdate
-from services import media_library, variant_research
+from services import media_library, variant_research, vehicle_identity
 
 router = APIRouter(prefix="/cars", tags=["cars"])
 
@@ -207,6 +207,10 @@ async def update_car(
     # clears it. Reading the values instead would make the two cases
     # indistinguishable and a price impossible to remove once set.
     for field, value in payload.model_dump(exclude_unset=True).items():
+        if field == "make":
+            value = vehicle_identity.canonical_make(value) or value
+        elif field == "model":
+            value = vehicle_identity.canonical_model(value) or value
         setattr(car, field, value)
 
     await db.commit()
@@ -228,7 +232,14 @@ async def create_car(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    car = Car(**payload.model_dump())
+    # One spelling per manufacturer, decided in one place. Images resolve onto
+    # a car by make + model + year exactly, so a second spelling of a brand
+    # creates a second car that none of the first one's photographs can reach.
+    fields = payload.model_dump()
+    fields["make"] = vehicle_identity.canonical_make(fields.get("make")) or fields.get("make")
+    fields["model"] = vehicle_identity.canonical_model(fields.get("model")) or fields.get("model")
+
+    car = Car(**fields)
     db.add(car)
     await db.commit()
     await db.refresh(car)
