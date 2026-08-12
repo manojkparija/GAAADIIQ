@@ -249,3 +249,48 @@ async def test_non_dealer_cannot_track(client):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_an_account_without_a_dealer_profile_is_told_which_and_why(db_engine):
+    """
+    The two 403s on these endpoints have to be tellable apart.
+
+    A buyer is rejected by the role guard with "Dealer/seller access required".
+    An admin, or a seller whose dealer row was never created, passes that guard
+    and is rejected by _get_dealer instead. Both arrived in the log as a bare
+    403, which is how a steady stream of them on /sentiment/leads and
+    /sentiment/summary went undiagnosed — the dashboard looked populated,
+    because the client substituted fabricated leads whenever the call failed.
+    """
+    import uuid as _uuid
+
+    from fastapi import HTTPException
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    from models.user import User, UserRole
+    from routers.sentiment import _get_dealer
+
+    factory = async_sessionmaker(db_engine, expire_on_commit=False, class_=AsyncSession)
+    # Never persisted: _get_dealer only looks for a dealers row against this id,
+    # and there is none — which is exactly the state being tested.
+    orphan = User(
+        id=_uuid.uuid4(),
+        email="seller_no_profile@test.com",
+        hashed_password="x",
+        role=UserRole.seller,
+        is_active=True,
+        is_verified=True,
+    )
+
+    async with factory() as session:
+        with pytest.raises(HTTPException) as exc:
+            await _get_dealer(session, orphan)
+
+    assert exc.value.status_code == 403
+    detail = exc.value.detail
+    # Names the account, so the log says whose profile is missing.
+    assert "seller_no_profile@test.com" in detail
+    # And cannot be confused with the role guard's rejection.
+    assert "dealer profile" in detail.lower()
+    assert "access required" not in detail.lower()

@@ -226,9 +226,24 @@
           </div>
         </div>
 
-        <!-- Empty state -->
-        <div *ngIf="filteredLeads().length === 0" class="glass-card" style="padding:3rem;text-align:center;color:var(--muted)">
-          <div style="font-size:3rem;margin-bottom:1rem">🎯</div>
+        <!-- The panel failed. Distinct from "no leads yet", and it has to be,
+             because the two look identical to a dealer and mean opposite
+             things: one is a quiet week, the other is a broken dashboard. -->
+        <div *ngIf="filteredLeads().length === 0 && sentimentSvc.error()" class="glass-card"
+             style="padding:3rem;text-align:center">
+          <app-icon name="alert-triangle" [size]="34"></app-icon>
+          <p style="color:var(--text);font-weight:600;margin:0.75rem 0 0.25rem">
+            We could not load your leads.
+          </p>
+          <p style="color:var(--muted);margin:0">{{ sentimentSvc.error() }}</p>
+          <button class="btn-outline" style="margin-top:1.25rem" (click)="reloadSentiment()">
+            Try again
+          </button>
+        </div>
+
+        <!-- Genuinely empty -->
+        <div *ngIf="filteredLeads().length === 0 && !sentimentSvc.error()" class="glass-card" style="padding:3rem;text-align:center;color:var(--muted)">
+          <div style="font-size:3rem;margin-bottom:1rem"><app-icon name="target" [size]="34"></app-icon></div>
           <p>No leads in this grade yet. Customer activity will be scored automatically.</p>
         </div>
       </div>
