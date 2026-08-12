@@ -185,7 +185,9 @@ _PAID_TIERS = {SubscriptionTier.pro, SubscriptionTier.dealer}
 
 def gemini_available() -> bool:
     """True when a Gemini key is configured. Without one, everyone uses Ollama."""
-    return bool(settings.gemini_api_key)
+    from services import gemini_gateway
+
+    return gemini_gateway.is_available()
 
 
 async def resolve_tier(db: AsyncSession, caller: VerifiedCaller | None) -> ModelTier:

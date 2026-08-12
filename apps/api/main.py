@@ -48,6 +48,7 @@ from routers import (  # noqa: E402
     loans,
     mechanics,
     media_admin,
+    news,
     notifications,
     otp,
     payments,
@@ -382,6 +383,7 @@ app.include_router(payments.subs_router)
 app.include_router(sentiment.router)
 app.include_router(diagnosis.router)
 app.include_router(brochures.router)
+app.include_router(news.router)
 app.include_router(brochures.media_router)
 app.include_router(media_admin.router)
 app.include_router(upload.router)

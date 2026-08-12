@@ -44,6 +44,14 @@ from collections.abc import Iterator
 import httpx
 
 from core.config import settings
+from services import gemini_gateway
+
+# Re-exported rather than redefined. Gemini calls raise this from the gateway
+# and the Groq fallback raises it from here, so both must be the *same* class
+# or `except pdf_ingest.RateLimited` in routers/brochures.py would catch only
+# one of them. Importing it keeps that name working for every existing caller
+# and test while leaving exactly one throttling type in the codebase.
+from services.gemini_gateway import RateLimited
 
 logger = logging.getLogger("gaadiiq.pdf_ingest")
 
@@ -464,15 +472,6 @@ Rules:
 """
 
 
-class RateLimited(Exception):
-    """
-    A provider throttled us rather than failing.
-
-    Worth its own type because it needs a different response from every other
-    error: an invalid key or an unreachable host will not fix itself, but a rate
-    limit clears on its own. Reporting the two alike sends an operator to
-    recheck a key that was correct all along.
-    """
 
 
 # Both providers meter free usage, and a brochure is a heavy request: eight page
@@ -538,30 +537,17 @@ async def _call_gemini(prompt: str, images: list[bytes] | None = None) -> str:
     and silently did nothing to brochures — and the pinned value outlived the
     model it named.
     """
-    url = (
-        f"{settings.gemini_api_url.rstrip('/')}/models/"
-        f"{settings.gemini_model}:generateContent?key={settings.gemini_api_key}"
+    return await gemini_gateway.generate_text(
+        prompt,
+        caller="brochure ingest",
+        temperature=0.1,
+        # Brochure answers are long spec dumps; the default cap truncates them.
+        max_output_tokens=8192,
+        # Free text, not JSON: this path asks for prose the caller parses itself.
+        json_response=False,
+        images=images,
+        timeout=VISION_TIMEOUT if images else INGEST_TIMEOUT,
     )
-    parts: list[dict] = [{"text": prompt}]
-    for png in images or []:
-        parts.append({
-            "inline_data": {
-                "mime_type": "image/png",
-                "data": base64.b64encode(png).decode("ascii"),
-            }
-        })
-
-    timeout = VISION_TIMEOUT if images else INGEST_TIMEOUT
-    payload = {
-        "contents": [{"parts": parts}],
-        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 8192},
-    }
-
-    async def post(client):
-        return await client.post(url, json=payload)
-
-    data = (await _post_retrying_429("Gemini", post, timeout)).json()
-    return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
 def render_pages(source, max_pages: int = VISION_MAX_PAGES, dpi: int = VISION_DPI) -> list[bytes]:
@@ -762,7 +748,7 @@ async def classify_images(images: list[bytes]) -> list[dict]:
         return []
 
     providers: list[tuple[str, object, int]] = []
-    if settings.gemini_api_key:
+    if gemini_gateway.is_available():
         providers.append(("gemini", _call_gemini, len(images)))
     if settings.groq_api_key:
         providers.append(("groq", _call_groq_vision, max(1, settings.groq_max_images_per_request)))
@@ -924,7 +910,7 @@ async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
         # fallback exists for — skipped vision entirely and reported "none",
         # so the free providers could never be reached.
         providers: list[tuple[str, object]] = []
-        if settings.gemini_api_key:
+        if gemini_gateway.is_available():
             providers.append(("gemini-vision", _call_gemini))
         if settings.groq_api_key:
             providers.append(("groq-vision", _call_groq_vision))
@@ -988,7 +974,7 @@ async def extract_vehicles(text: str, source=None) -> tuple[list[dict], str]:
     # does have a text layer hits the identical dead end when Gemini is out and
     # the only remaining provider is an Ollama host that is not deployed.
     text_providers: list[tuple[str, object]] = []
-    if settings.gemini_api_key:
+    if gemini_gateway.is_available():
         text_providers.append(("gemini", _call_gemini))
     if settings.groq_api_key:
         text_providers.append(("groq", _call_groq))

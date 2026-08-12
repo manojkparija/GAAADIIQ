@@ -19,9 +19,7 @@ were, with an empty draft list and a manual form, not an error page.
 import json
 import logging
 
-import httpx
-
-from core.config import settings
+from services import gemini_gateway
 
 logger = logging.getLogger("gaadiiq.variant_research")
 
@@ -64,7 +62,7 @@ Rules:
 
 def available() -> bool:
     """Whether research can be attempted at all."""
-    return bool(settings.gemini_api_key)
+    return gemini_gateway.is_available()
 
 
 def _clean_price(value: object) -> float | None:
@@ -148,34 +146,14 @@ async def research_variants(make: str, model: str, year: int) -> list[dict]:
         return []
 
     prompt = PROMPT.format(make=make, model=model, year=year, limit=MAX_VARIANTS)
-    url = (
-        f"{settings.gemini_api_url.rstrip('/')}/models/"
-        f"{settings.gemini_model}:generateContent"
-    )
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            # These are facts with right answers, so sampling is not wanted.
-            "temperature": 0.0,
-            "responseMimeType": "application/json",
-        },
-    }
 
     try:
-        async with httpx.AsyncClient(timeout=settings.gemini_timeout_seconds) as client:
-            resp = await client.post(
-                url, params={"key": settings.gemini_api_key}, json=payload
-            )
-            resp.raise_for_status()
-            body = resp.json()
-
-        candidates = body.get("candidates") or []
-        parts = (candidates[0].get("content") or {}).get("parts") or [] if candidates else []
-        text = "".join(p.get("text", "") for p in parts).strip()
-        if not text:
-            logger.warning("Variant research returned no text for %s %s", make, model)
-            return []
-
+        text = await gemini_gateway.generate_text(
+            prompt,
+            caller="variant research",
+            # These are facts with right answers, so sampling is not wanted.
+            temperature=0.0,
+        )
         return _clean(json.loads(text))
     except Exception as exc:
         logger.warning("Variant research failed for %s %s %s: %s", make, model, year, exc)
@@ -237,29 +215,12 @@ async def research_model_details(make: str, model: str, year: int) -> dict:
         make=make, model=model, year=year,
         spec_limit=MAX_SPECS, feature_limit=MAX_FEATURES,
     )
-    url = (
-        f"{settings.gemini_api_url.rstrip('/')}/models/"
-        f"{settings.gemini_model}:generateContent"
-    )
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.0, "responseMimeType": "application/json"},
-    }
-
     try:
-        async with httpx.AsyncClient(timeout=settings.gemini_timeout_seconds) as client:
-            resp = await client.post(
-                url, params={"key": settings.gemini_api_key}, json=payload
-            )
-            resp.raise_for_status()
-            body = resp.json()
-
-        candidates = body.get("candidates") or []
-        parts = (candidates[0].get("content") or {}).get("parts") or [] if candidates else []
-        text = "".join(p.get("text", "") for p in parts).strip()
-        if not text:
-            return {"specs": [], "features": []}
-
+        text = await gemini_gateway.generate_text(
+            prompt,
+            caller="variant specs",
+            temperature=0.0,
+        )
         raw = json.loads(text)
         if not isinstance(raw, dict):
             return {"specs": [], "features": []}

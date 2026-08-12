@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 export interface NewsArticle {
   id: string;
@@ -11,58 +12,65 @@ export interface NewsArticle {
   source: { name: string; url: string };
 }
 
-interface Rss2JsonItem {
+interface NewsApiArticle {
+  id: string;
   title: string;
-  link: string;
-  pubDate: string;
-  author: string;
-  thumbnail: string;
   description: string;
-  content: string;
+  url: string;
+  image: string | null;
+  publishedAt: string;
+  source: string;
 }
 
-interface Rss2JsonResponse {
-  status: string;
-  feed: { title: string; link: string; image: string };
-  items: Rss2JsonItem[];
+interface NewsApiResponse {
+  query: string;
+  count: number;
+  articles: NewsApiArticle[];
 }
 
-// Google News RSS → rss2json proxy (free, no API key, 10k req/month)
-const RSS2JSON = 'https://api.rss2json.com/v1/api.json';
-const GOOGLE_NEWS_RSS = 'https://news.google.com/rss/search?q={QUERY}&hl=en-IN&gl=IN&ceid=IN:en';
-
+/**
+ * Live car news, fetched through our own API.
+ *
+ * This used to call api.rss2json.com directly from the browser, which called
+ * Google News. That sent every visitor's IP and search terms to a third party
+ * with no agreement in place, ran on a 10k/month quota shared by all users with
+ * no key to rotate or throttle — which is why the page had been showing
+ * "Could not load live news" — and cached nothing.
+ *
+ * The API now fetches the feed itself, so the browser only ever talks to our
+ * own origin. Note there is no Authorization header here: the auth interceptor
+ * attaches the Supabase token to anything aimed at environment.apiUrl, and
+ * setting one by hand would shadow it.
+ */
 @Injectable({ providedIn: 'root' })
 export class NewsService {
   readonly articles = signal<NewsArticle[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly hasApiKey: boolean = true;
 
   constructor(private http: HttpClient) {}
 
-  fetchNews(query = 'India car automobile EV launch', maxResults = 12) {
+  fetchNews(query = '', maxResults = 12) {
     this.loading.set(true);
     this.error.set(null);
 
-    const rssUrl = GOOGLE_NEWS_RSS.replace('{QUERY}', encodeURIComponent(query));
-    const url = `${RSS2JSON}?rss_url=${encodeURIComponent(rssUrl)}&count=${maxResults}`;
+    const params = new HttpParams()
+      .set('q', query ?? '')
+      .set('limit', String(maxResults));
 
-    this.http.get<Rss2JsonResponse>(url).subscribe({
+    this.http.get<NewsApiResponse>(`${environment.apiUrl}/news`, { params }).subscribe({
       next: res => {
-        if (res.status !== 'ok') {
-          this.error.set('Could not load live news. Showing curated articles instead.');
-          this.articles.set([]);
-        } else {
-          this.articles.set(res.items.map((item, i) => ({
-            id: `live-${i}`,
-            title: this.cleanTitle(item.title),
-            description: this.stripHtml(item.description || item.content || ''),
-            url: item.link,
-            image: item.thumbnail || null,
-            publishedAt: item.pubDate,
-            source: { name: 'Google News', url: '' },
-          })));
-        }
+        this.articles.set((res.articles ?? []).map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          url: item.url,
+          image: item.image,
+          publishedAt: item.publishedAt,
+          // The publisher, not "Google News": it is the name a reader needs to
+          // judge the headline, and the API now returns it per article.
+          source: { name: item.source, url: '' },
+        })));
         this.loading.set(false);
       },
       error: () => {
@@ -74,17 +82,10 @@ export class NewsService {
   }
 
   formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-
-  // Strip " - SiteName" or " | SiteName" suffixes Google News appends to titles
-  private cleanTitle(title: string): string {
-    return title
-      .replace(/\s[-–|]\s[^-–|]+$/, '')
-      .trim();
-  }
-
-  private stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, ' ').trim().slice(0, 300);
+    const parsed = new Date(iso);
+    // RSS dates are RFC-822 ("Tue, 11 Aug 2026 09:12:00 GMT"). Browsers parse
+    // that, but an unparseable one must not render as "Invalid Date".
+    if (isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 }

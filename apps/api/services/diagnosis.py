@@ -494,37 +494,14 @@ async def _call_gemini(prompt: str) -> dict:
     Raises on any failure so the caller can fall back to Ollama — a paid user
     should get a slightly worse answer, never no answer.
     """
-    from core.config import settings
+    from services import gemini_gateway
 
-    url = (
-        f"{settings.gemini_api_url.rstrip('/')}/models/"
-        f"{settings.gemini_model}:generateContent"
+    text = await gemini_gateway.generate_text(
+        prompt,
+        caller="diagnosis",
+        # Low temperature: this is safety guidance, not creative writing.
+        temperature=0.2,
     )
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            # Low temperature: this is safety guidance, not creative writing.
-            "temperature": 0.2,
-            "responseMimeType": "application/json",
-        },
-    }
-
-    async with httpx.AsyncClient(timeout=settings.gemini_timeout_seconds) as client:
-        resp = await client.post(
-            url,
-            params={"key": settings.gemini_api_key},
-            json=payload,
-        )
-        resp.raise_for_status()
-        body = resp.json()
-
-    candidates = body.get("candidates") or []
-    if not candidates:
-        raise ValueError("Gemini returned no candidates")
-    parts = (candidates[0].get("content") or {}).get("parts") or []
-    text = "".join(p.get("text", "") for p in parts).strip()
-    if not text:
-        raise ValueError("Gemini returned empty text")
     return json.loads(text)
 
 
