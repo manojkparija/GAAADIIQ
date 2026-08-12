@@ -22,6 +22,20 @@ export interface Article {
   featured?: boolean;
 }
 
+// Search pacing, set from what production actually did rather than a guess.
+//
+// At 400ms, typing "TATA CAR LAUNCH DATE" produced FIVE separate fetches of
+// Google News — one per word, because an ordinary pause between words clears a
+// 400ms timer. Each distinct query is a cache miss server-side, so every
+// fragment became a real upstream request, including "TATA CAR LAU".
+//
+// 900ms is longer than the gap between words and shorter than the gap after
+// finishing a thought, which is the distinction that matters here.
+const SEARCH_DEBOUNCE_MS = 900;
+
+// A prefix this short is a fragment, not a search.
+const SEARCH_MIN_CHARS = 4;
+
 export const ARTICLES: Article[] = [
   // ── NEWS ────────────────────────────────────────────────────────────────────
   {
@@ -209,7 +223,22 @@ export class ReviewsNewsComponent implements OnDestroy {
     if (!this.isNewsPage()) return;
 
     clearTimeout(this.searchDebounce);
-    this.searchDebounce = setTimeout(() => this.news.fetchNews(value.trim()), 400);
+
+    const query = value.trim();
+
+    // Clearing the box goes straight back to the default feed. That query is
+    // always warm in the server's cache, so there is nothing to wait for.
+    if (!query) {
+      this.news.fetchNews('');
+      return;
+    }
+
+    // Below this, a query is a fragment rather than a search. Production
+    // showed "TATA CAR LAU" reaching Google as a real request; a two- or
+    // three-letter prefix is worse and returns nothing anyone wanted.
+    if (query.length < SEARCH_MIN_CHARS) return;
+
+    this.searchDebounce = setTimeout(() => this.news.fetchNews(query), SEARCH_DEBOUNCE_MS);
   }
 
   ngOnDestroy() {
