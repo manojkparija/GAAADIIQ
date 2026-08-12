@@ -109,20 +109,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   get activeOptions() { return this.findCarsOptions[this.findCarsTab] ?? []; }
 
-  featuredCars: Car[] = [
-    // Maruti Suzuki lineup
-    { id:'1', make:'Maruti Suzuki', model:'Swift', year:2024, price:749000, km:5000, fuel:'Petrol', transmission:'Manual', badge:'🔥 Bestseller', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/159089/swift-exterior-right-front-three-quarter-3.jpeg', rating:4.7, reviews:512, verified:true },
-    { id:'2', make:'Maruti Suzuki', model:'Baleno', year:2024, price:669000, km:8000, fuel:'Petrol', transmission:'AMT', badge:'⭐ Top Rated', badgeType:'badge-gold', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/54523/baleno-exterior-right-front-three-quarter.jpeg', rating:4.7, reviews:445, verified:true },
-    { id:'3', make:'Maruti Suzuki', model:'Brezza', year:2024, price:1349000, km:6000, fuel:'Petrol', transmission:'Automatic', badge:'💰 Best Value', badgeType:'badge-gold', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/146811/brezza-exterior-right-front-three-quarter-4.jpeg', rating:4.6, reviews:389, verified:true },
-    { id:'4', make:'Maruti Suzuki', model:'Grand Vitara', year:2024, price:1799000, km:4000, fuel:'Hybrid', transmission:'Automatic', badge:'⚡ Hybrid', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/155843/grand-vitara-exterior-right-front-three-quarter-2.jpeg', rating:4.8, reviews:267, verified:true },
-    { id:'5', make:'Maruti Suzuki', model:'Fronx', year:2024, price:899000, km:3000, fuel:'Petrol', transmission:'AMT', badge:'🆕 Nearly New', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/189349/fronx-exterior-right-front-three-quarter.jpeg', rating:4.6, reviews:198, verified:true },
-    { id:'6', make:'Maruti Suzuki', model:'Jimny', year:2024, price:1299000, km:2000, fuel:'Petrol', transmission:'Manual', badge:'🏔️ Off-Road', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/130591/jimny-exterior-right-front-three-quarter-2.jpeg', rating:4.9, reviews:143, verified:true },
-    // Other popular models
-    { id:'7', make:'Hyundai', model:'Creta', year:2023, price:1450000, km:12000, fuel:'Petrol', transmission:'Automatic', badge:'🔥 Trending', badgeType:'badge-red', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/106815/creta-exterior-right-front-three-quarter-2.jpeg', rating:4.8, reviews:234, verified:true },
-    { id:'8', make:'Tata', model:'Nexon EV', year:2024, price:1850000, km:5000, fuel:'Electric', transmission:'Automatic', badge:'⚡ Electric', badgeType:'badge-green', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/166657/nexon-ev-exterior-right-front-three-quarter.jpeg', rating:4.9, reviews:189, verified:true },
-    { id:'9', make:'Mahindra', model:'XUV700', year:2022, price:2100000, km:22000, fuel:'Diesel', transmission:'Automatic', badge:'👑 Premium', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/42355/xuv700-exterior-right-front-three-quarter.jpeg', rating:4.7, reviews:156, verified:true },
-    { id:'10', make:'Kia', model:'Seltos', year:2024, price:1680000, km:3000, fuel:'Petrol', transmission:'DCT', badge:'🆕 Nearly New', badgeType:'badge-purple', image:'https://imgd.aeplcdn.com/1200x900/n/cw/ec/115025/seltos-exterior-right-front-three-quarter-3.jpeg', rating:4.8, reviews:201, verified:true },
-  ];
+  // featuredCars lived here: ten hardcoded cars with prices, star ratings and
+  // review counts ("reviews: 512") that no one ever wrote. It was never
+  // rendered — no template referenced it — so it was ten invented listings
+  // waiting for someone to wire up a "Featured" strip and ship them as real
+  // inventory. Removed rather than left loaded.
+
 
   features = [
     { icon:'brain', title:'AI Price Valuation', desc:'Instant fair market valuation — depreciation model + AI analysis when available.', color:'#2F6BFF', route:'/ai-valuation' },
