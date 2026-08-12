@@ -165,9 +165,12 @@
   letter-spacing: 0.05em;
 }
 .cat-badge-blue   { background: rgba(96,165,250,0.15);  color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
-.cat-badge-purple { background: rgba(47,107,255,0.15);  color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); }
+// Teal text on a blue tint measured 4.45:1 — just under, and an odd pairing
+// besides. --info-ink is the blue counterpart and gives 5.45:1.
+.cat-badge-purple { background: rgba(47,107,255,0.15);  color: var(--info-ink); border: 1px solid rgba(47,107,255,0.3); }
 .cat-badge-green  { background: rgba(67,233,123,0.15);  color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
-.cat-badge-gold   { background: rgba(255,215,0,0.15);   color: #B8860B; border: 1px solid rgba(255,215,0,0.3); }
+// #B8860B measured 3.04:1 on its own tint; --warning-ink gives 4.69:1.
+.cat-badge-gold   { background: rgba(255,215,0,0.15);   color: var(--warning-ink); border: 1px solid rgba(255,215,0,0.3); }
 
 // ── Write a Review CTA ──────────────────────────────────────────────────────
 .write-review-cta { padding: 0 1.5rem 2rem; }

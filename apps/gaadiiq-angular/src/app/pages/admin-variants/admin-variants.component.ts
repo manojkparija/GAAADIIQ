@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { IconComponent } from '../../components/icon/icon.component';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { CarVariant } from '../../services/cars-data.service';
@@ -48,7 +49,7 @@ const EMPTY_FORM: VariantForm = {
 @Component({
   selector: 'app-admin-variants',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   templateUrl: './admin-variants.component.html',
   styleUrls: ['./admin-variants.component.scss'],
 })

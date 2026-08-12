@@ -33,7 +33,10 @@ export default defineConfig({
       // installs and the smoke tests are about "does this page work at all"
       // rather than about a particular engine.
       name: 'desktop-chrome',
-      testMatch: /smoke\.spec\.ts/,
+      // Every project here declares a testMatch, so a new spec file that is
+      // not named by one runs nowhere and reports nothing — which looks
+      // exactly like passing. Add new desktop specs to this pattern.
+      testMatch: /(smoke|contrast)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 } },
     },
     {

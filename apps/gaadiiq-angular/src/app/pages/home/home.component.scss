@@ -269,7 +269,10 @@
     background: var(--fill-soft);
     border: 1px solid var(--border-soft);
     color: var(--muted);
-    &.good { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.2); color: #059669; }
+    // #059669 measured 3.46:1 on its own 8% tint over the page — this chip is
+    // 11.5px, so it needs 4.5. --success-ink is the text-only counterpart and
+    // reverts to the bright green in dark mode, where the original is correct.
+    &.good { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.2); color: var(--success-ink); }
   }
 }
 
