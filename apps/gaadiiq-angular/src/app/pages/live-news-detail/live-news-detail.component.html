@@ -1,48 +1,55 @@
+<!--
+  This page is a referral to the publisher, not an article.
+
+  It used to carry two hardcoded sections — "What This Means for Indian Buyers"
+  and "Key Highlights" — with the same four bullets and the same two paragraphs
+  under EVERY headline, including "Industry experts suggest…", which attributed
+  a claim to experts who do not exist. A reader had no way to tell that from
+  reporting about the story they had just clicked. It also offered no link to
+  the real article, so there was nowhere to go and check.
+
+  What we actually hold is a headline, a publisher, a timestamp and a URL. That
+  is what this page shows now, and the main action is to go and read the real
+  thing.
+-->
 <ng-container *ngIf="article() as a">
   <section class="lnd-hero">
     <div class="container">
       <a routerLink="/reviews-news/news" class="back-link">← News</a>
       <div class="lnd-meta">
-        <span class="tag tag-blue">India Auto News</span>
-        <span class="lnd-date">📅 {{ news.formatDate(a.publishedAt) }}</span>
+        <span class="tag tag-blue">{{ a.source.name || 'India Auto News' }}</span>
+        <span class="lnd-date" *ngIf="news.formatDate(a.publishedAt) as when">
+          <app-icon name="calendar" [size]="14"></app-icon> {{ when }}
+        </span>
       </div>
       <h1 class="lnd-title">{{ a.title }}</h1>
     </div>
   </section>
 
-  <!-- Cover image -->
-  <div class="lnd-cover" *ngIf="a.image">
-    <img [src]="a.image" [alt]="a.title" class="cover-img" />
-  </div>
-  <div class="lnd-cover lnd-cover-placeholder" *ngIf="!a.image">
-    <span class="cover-emoji">📰</span>
-  </div>
-
   <article class="lnd-body container">
     <div class="lnd-card glass-card">
-      <div class="lnd-section">
+      <!-- Only when the feed carried a real summary. Google News usually
+           repeats the headline, and the API drops that rather than echo it. -->
+      <div class="lnd-section" *ngIf="a.description">
         <h2 class="section-label">Summary</h2>
         <p class="lnd-excerpt">{{ a.description }}</p>
       </div>
 
-      <div class="lnd-section">
-        <h2 class="section-label">What This Means for Indian Buyers</h2>
-        <p>This latest development reflects the rapidly evolving Indian automobile market. With manufacturers accelerating product launches and technology upgrades, consumers can expect greater choice, improved features, and more competitive pricing across all segments in 2026.</p>
-        <p>Industry experts suggest this will further strengthen India's position as a key global market for both traditional and electric vehicles.</p>
-      </div>
-
-      <div class="lnd-section">
-        <h2 class="section-label">Key Highlights</h2>
-        <ul class="lnd-list">
-          <li>Significant development in the Indian automobile industry</li>
-          <li>Expected to impact buyer decisions and market dynamics</li>
-          <li>Aligned with India's push towards cleaner and safer mobility</li>
-          <li>More details expected from manufacturers in the coming weeks</li>
-        </ul>
+      <div class="lnd-section lnd-source">
+        <p class="lnd-source-note">
+          This story was published by
+          <strong>{{ a.source.name || 'the source' }}</strong>. GAADIIQ links to
+          it — the full report is on their site.
+        </p>
+        <a [href]="a.url" target="_blank" rel="noopener noreferrer"
+           class="btn-gradient lnd-read">
+          Read the full story at {{ a.source.name || 'the source' }}
+          <app-icon name="external-link" [size]="16"></app-icon>
+        </a>
       </div>
 
       <div class="lnd-footer">
-        <span class="tag tag-blue">India Auto News</span>
+        <span class="tag tag-blue">{{ a.source.name || 'India Auto News' }}</span>
         <a routerLink="/reviews-news/news" class="btn-outline">← Back to News</a>
       </div>
     </div>
@@ -54,8 +61,11 @@
   <section class="lnd-hero container">
     <a routerLink="/reviews-news/news" class="back-link">← News</a>
     <div class="not-found">
-      <div class="nf-icon">📰</div>
-      <p>Loading article…</p>
+      <div class="nf-icon"><app-icon name="newspaper" [size]="40"></app-icon></div>
+      <p>{{ loadFailed() ? 'That story is no longer in the feed.' : 'Loading article…' }}</p>
+      <a routerLink="/reviews-news/news" class="btn-outline" *ngIf="loadFailed()">
+        Back to News
+      </a>
     </div>
   </section>
 </ng-container>
