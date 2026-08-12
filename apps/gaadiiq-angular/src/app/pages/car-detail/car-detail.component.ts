@@ -388,6 +388,16 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   notFound = false;
   carLoaded = false;
 
+  /**
+   * Every catalogue source failed and no car resolved.
+   *
+   * Distinct from `notFound`, which means "this id is unknown but we do have a
+   * catalogue". This one means we have nothing at all, and the difference
+   * matters to the reader: one is a bad link, the other is the site being
+   * unable to reach its data.
+   */
+  loadFailed = signal(false);
+
   // On-road price
   // Colour picker
   selectedColour = signal('');
@@ -567,6 +577,19 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   }
 
 
+  /**
+   * Ask the catalogue to load again after a failure.
+   *
+   * The effect in the constructor only re-runs when carsData.loading() flips,
+   * so reload() is what makes the retry button do anything — clearing the flag
+   * alone would leave the page on a spinner with nothing in flight.
+   */
+  async retryLoad() {
+    this.loadFailed.set(false);
+    await this.carsData.reload();
+    this.resolveCar(this.route.snapshot.paramMap.get('id') ?? '');
+  }
+
   private resolveCar(id: string | number) {
     if (this.carLoaded) return;
     const found = this.carsData.getById(String(id));
@@ -578,7 +601,18 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       this.notFound = true;
       this.car = all[0];
       this.carLoaded = true;
+    } else {
+      // Nothing resolved and the catalogue has finished loading empty — every
+      // source failed. Neither branch above fired, carLoaded stayed false, and
+      // the page sat on "Loading car details…" for as long as anyone waited.
+      //
+      // A spinner that never resolves is the worst of the options: it reads as
+      // a slow page rather than a broken one, so a buyer waits instead of
+      // retrying or leaving. Say so and offer a way out.
+      this.loadFailed.set(true);
+      return;
     }
+    this.loadFailed.set(false);
     if (this.carLoaded) {
       // The listing page caps how many photographs each car carries, so the
       // gallery would otherwise show a sample of this car rather than all of
@@ -634,7 +668,12 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     // lakh or more, and the tax band can differ with them, so quoting the
     // model's base figure beside a chosen ZXi+ is quoting the wrong car.
     const trim = this.selectedVariant();
-    const price = Number(trim?.ex_showroom_price) || this.car.price;
+    // With no trim chosen, price the same figure the hero is quoting rather
+    // than the catalogue row. Those disagreed: the hero read the published
+    // trims and this read car.price, so a Swift showed "from ₹4.26 Lakh" at
+    // the top and "Ex-Showroom ₹9.0L" in the panel beside it — a difference
+    // of more than double, on the two numbers a buyer compares first.
+    const price = Number(trim?.ex_showroom_price) || this.displayPrice()?.amount || this.car.price;
     return computeOnRoadPrice(
       price,
       trim?.fuel_type || this.car.fuel || 'Petrol',
@@ -818,6 +857,78 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   selectedVariant = computed(() =>
     this.variants().find(v => v.id === this.selectedVariantId()) ?? null
   );
+
+  /**
+   * The headline price, and what it refers to.
+   *
+   * This page was quoting three different figures at once for the S-Presso:
+   * ₹3.5L in the hero, "starts at ₹4.26 Lakh" in the variants tab immediately
+   * below it, and ₹4.3L ex-showroom in the On-Road panel beside it. All three
+   * were "right" for their own source — the hero read the catalogue row, the
+   * other two read the published trims — and a buyer has no way to know that.
+   * The one they are most likely to believe is the big one at the top, which
+   * was the stale one.
+   *
+   * The published trims are the source of truth: an admin maintains them, they
+   * are what onRoadPrice() already prices, and they are the numbers a buyer
+   * budgets against. The hero follows them, and falls back to the catalogue
+   * figure only when a model has no priced trims at all.
+   */
+  displayPrice = computed<{ amount: number; text: string; caption: string } | null>(() => {
+    if (!this.car) return null;
+
+    const trim = this.selectedVariant();
+    if (trim && Number(trim.ex_showroom_price) > 0) {
+      const amount = Number(trim.ex_showroom_price);
+      return {
+        amount,
+        text: this.formatLakh(amount),
+        // Naming the trim matters: the same model spans a lakh or more, so a
+        // bare figure with no trim beside it is ambiguous by itself.
+        caption: `Ex-Showroom · ${trim.name}`,
+      };
+    }
+
+    const band = this.variantPriceRange();
+    if (band) {
+      return {
+        amount: band[0],
+        text: this.formatLakhRange(band[0], band[1]),
+        caption: 'Ex-Showroom Price',
+      };
+    }
+
+    const meta = this.isNewCar ? this.newCarMeta : null;
+    if (meta) {
+      return {
+        amount: meta.priceRange[0],
+        text: this.formatLakhRange(meta.priceRange[0], meta.priceRange[1]),
+        caption: 'Ex-Showroom Price',
+      };
+    }
+
+    return {
+      amount: this.car.price,
+      text: this.formatPrice(this.car.price),
+      caption: this.isNewCar ? 'Ex-Showroom Price' : '',
+    };
+  });
+
+  /**
+   * EMI on whatever the hero is quoting.
+   *
+   * It was computed once from the catalogue price and never moved, so choosing
+   * a ZXi+ left "EMI from ₹7,169/mo" underneath it — an instalment for a car
+   * the buyer had just navigated away from. For a range, the low end, which is
+   * what "EMI from" says.
+   */
+  displayEmi = computed(() => {
+    const price = this.displayPrice()?.amount ?? 0;
+    if (price <= 0) return 0;
+    const r = this.loan.rate / 100 / 12;
+    const n = this.loan.tenure;
+    return Math.round(price * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1));
+  });
 
   /** Selecting the chosen trim again clears it, back to the model's price. */
   selectVariant(v: CarVariant) {
