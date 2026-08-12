@@ -9,7 +9,7 @@
   <!-- HEADER -->
   <header class="aci-header">
     <div class="aci-brand">
-      <span class="aci-brand-icon">📸</span>
+      <span class="aci-brand-icon"><app-icon name="camera" [size]="26"></app-icon></span>
       <div>
         <div class="aci-brand-name">Car Image Management</div>
         <div class="aci-brand-sub">Admin · Media Library</div>
@@ -36,7 +36,7 @@
         <!-- Drop zone -->
         <div class="drop-zone" [class.drag-over]="dragOver()">
           <div class="drop-inner">
-            <div class="drop-icon">📸</div>
+            <div class="drop-icon"><app-icon name="camera" [size]="44"></app-icon></div>
             <div class="drop-heading">Drag & drop images here</div>
             <div class="drop-sub">Vehicle photos · Exterior · Interior · Details</div>
             <button class="btn-upload" (click)="fileInput.click()">

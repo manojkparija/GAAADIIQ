@@ -131,6 +131,44 @@ def _clean_title(title: str) -> str:
     return re.sub(r"\s[-–|]\s[^-–|]+$", "", title).strip()
 
 
+def _normalise(value: str) -> str:
+    """Lower-cased alphanumerics only, for comparing two renderings of a headline."""
+    return re.sub(r"[^a-z0-9]+", "", value.lower())
+
+
+def _summary(description: str, title: str, source: str) -> str:
+    """
+    The description, or nothing when it is only the headline again.
+
+    Google News RSS has no real summary field. Its <description> is an anchor
+    tag wrapping the headline, so stripping the markup yields the title back
+    with the publisher appended — which rendered every card as its own headline
+    printed twice, once bold and once grey.
+
+    Returning "" is the honest outcome: there is no summary to show, and the
+    card should be a headline rather than a headline and its own echo. A
+    publisher who does supply a real description still gets it.
+    """
+    cleaned = _strip_html(description)
+    if not cleaned:
+        return ""
+
+    remainder = cleaned
+    # Drop the headline from the front, and the publisher from the end, then
+    # see whether anything of substance is left.
+    if _normalise(remainder).startswith(_normalise(title)):
+        remainder = remainder[len(title):] if remainder[: len(title)] == title else remainder
+        if _normalise(remainder) == _normalise(cleaned):
+            # The prefix matched only after normalising, so trim by comparison
+            # rather than by length — punctuation differs between the two.
+            remainder = ""
+    if source and _normalise(remainder).endswith(_normalise(source)):
+        remainder = remainder[: len(remainder) - len(source)]
+
+    # A dozen characters of leftover punctuation is not a summary.
+    return remainder.strip(" -–|·,") if len(_normalise(remainder)) > 12 else ""
+
+
 def _parse(xml_bytes: bytes) -> list[Article]:
     if _ENTITY_DECLARATION.search(xml_bytes):
         raise NewsUnavailable("feed declared XML entities; refusing to parse")
@@ -153,11 +191,14 @@ def _parse(xml_bytes: bytes) -> list[Article]:
             continue
 
         source = (item.findtext("source") or "").strip()
+        clean_title = _clean_title(title)
         articles.append(
             Article(
                 id=f"live-{index}",
-                title=_clean_title(title),
-                description=_strip_html(item.findtext("description") or "")[:300],
+                title=clean_title,
+                description=_summary(
+                    item.findtext("description") or "", clean_title, source
+                )[:300],
                 url=link,
                 # Google News RSS carries no per-article image. The old client
                 # read `thumbnail` from the rss2json wrapper, which was empty

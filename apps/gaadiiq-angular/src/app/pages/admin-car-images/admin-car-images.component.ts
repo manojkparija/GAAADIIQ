@@ -5,6 +5,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { IconComponent } from '../../components/icon/icon.component';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { environment } from '../../../environments/environment';
@@ -12,7 +13,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-admin-car-images',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   templateUrl: './admin-car-images.component.html',
   styleUrls: ['./admin-car-images.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

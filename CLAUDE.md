@@ -47,9 +47,23 @@ outage. In particular:
 - Test classes must be named `Test*Suite` or `Test*Case` (`pyproject.toml`).
   Anything else collects **zero tests** and passes silently. Prefer plain
   functions.
-- CSS theme tokens: `--primary` `#2F6BFF`, `--teal` `#14B8A6`, plus
+- CSS theme tokens: `--primary` `#295EE0`, `--teal` `#14B8A6`, plus
   `--fill-dim`, `--divider`, `--text-muted`. Page content clears the fixed
-  navbar with `padding-top: max(7rem, var(--nav-offset))` (LAY-007).
+  navbar with `padding-top: max(7rem, var(--nav-offset))` (LAY-007) — both
+  admin screens were missing it and rendered their own titles under the nav,
+  which went unnoticed because they sit behind `adminGuard` and nobody had
+  opened them in a browser.
+- **Contrast is measured on the page, not on a swatch.** Small text sits on a
+  tint of its own hue over `--navy`, several points lower than the same colour
+  on white: `--primary` measured 4.50:1 on a white card and 4.27:1 in an 11px
+  badge. `e2e/contrast.spec.ts` walks the rendered DOM and fails under AA.
+  Light theme only for now — dark still has ~20 failures from hardcoded hexes
+  (`#2563EB`, `#1E40AF`) that predate the tokens.
+- For text on a coloured tint use the `--*-ink` tokens (`--success-ink`,
+  `--warning-ink`, `--info-ink`, `--teal-ink`), not the brand colour. They are
+  text-only counterparts that revert to the bright originals in dark mode.
+- Every Playwright project declares a `testMatch`, so a new spec no pattern
+  names runs nowhere and reports nothing — which looks exactly like passing.
 
 ## Sensitive data
 

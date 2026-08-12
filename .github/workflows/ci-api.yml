@@ -89,6 +89,17 @@ jobs:
           PGPASSWORD=gaadiiq createdb -h localhost -U gaadiiq gaadiiq_migrations
           alembic upgrade head
 
+      # Applying cleanly is not the same as producing the right shape. A model
+      # column nobody wrote a migration for applies perfectly and then 500s on
+      # the first query that names it — which is the dealers outage in
+      # miniature. This compares the migrated schema against the models.
+      - name: Migrations produce the schema the models declare
+        env:
+          DATABASE_URL: postgresql+asyncpg://gaadiiq:gaadiiq@localhost:5432/gaadiiq_migrations
+          ASYNC_DATABASE_URL: postgresql+asyncpg://gaadiiq:gaadiiq@localhost:5432/gaadiiq_migrations
+          ENVIRONMENT: development
+        run: pytest tests/test_migrations_match_models.py -q
+
       # Twelve files are excluded, and the reason is worth reading before
       # adding a thirteenth.
       #

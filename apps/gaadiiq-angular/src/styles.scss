@@ -13,7 +13,25 @@
 
 // ── Light (default) ──────────────────────────────────────────────────────────
 :root {
-  --primary:        #2F6BFF;
+  // Was #2F6BFF, which is used as text in ~150 places and did not clear WCAG
+  // AA where it mattered: 4.19:1 on the page background (--navy #F4F7FB) is a
+  // fail for normal text, and 4.50:1 on a white card is exactly the threshold
+  // with nothing to spare.
+  //
+  // This value was chosen by measuring the rendered pages rather than the
+  // palette — small tag and badge text sits on a tint of this colour over the
+  // page background, which is several points lower than the same blue on a
+  // white swatch, and that is where it was actually failing:
+  //
+  //   white card #FFFFFF         5.57:1
+  //   page background #F4F7FB    5.18:1
+  //   --footer-bg #EDF1FB        4.93:1
+  //   .section-tag tint #E4ECFB  4.69:1
+  //   .badge-blue tint #E0E9FB   4.57:1
+  //
+  // White text on it as a button fill improves too, 4.50 -> 5.57. As a brand
+  // blue it is indistinguishable from the original at a glance.
+  --primary:        #295EE0;
   --primary-dark:   #1A4FD8;
   --teal:           #14B8A6;
   --ai-accent:      #14B8A6;
@@ -153,7 +171,9 @@
 }
 
 [data-theme="light"] {
-  --primary:        #2F6BFF;
+  // Kept in step with the :root light palette above — see the contrast note
+  // there. If these two drift, the theme toggle silently reverts the fix.
+  --primary:        #295EE0;
   --primary-dark:   #1A4FD8;
   --teal:           #14B8A6;
   --ai-accent:      #14B8A6;
@@ -659,11 +679,16 @@ input[type="number"], table, tbody, th, td,
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-family: 'Manrope', sans-serif;
-  &.badge-blue   { background: rgba(47,107,255,0.10); color: #2F6BFF; border: 1px solid rgba(47,107,255,0.2); }
-  &.badge-teal   { background: rgba(20,184,166,0.10); color: #0E9E8E; border: 1px solid rgba(20,184,166,0.2); }
-  &.badge-purple { background: rgba(47,107,255,0.10); color: #2F6BFF; border: 1px solid rgba(47,107,255,0.2); }
+  // Badge text sits on a 10% tint of its own hue, so the usable contrast is far
+  // lower than the same colour on white — and this text is small and uppercase,
+  // which gets no large-text allowance. Measured on the blended background:
+  //   blue  #2F6BFF on #EAF0FF = 3.94  (fail) -> var(--primary) = 4.90
+  //   teal  #0E9E8E on #E8F8F6 = 3.05  (fail) -> #0A786B       = 4.91
+  &.badge-blue   { background: rgba(47,107,255,0.10); color: var(--primary); border: 1px solid rgba(47,107,255,0.2); }
+  &.badge-teal   { background: rgba(20,184,166,0.10); color: #0A786B; border: 1px solid rgba(20,184,166,0.2); }
+  &.badge-purple { background: rgba(47,107,255,0.10); color: var(--primary); border: 1px solid rgba(47,107,255,0.2); }
   &.badge-gold   { background: rgba(245,158,11,0.12); color: #B45309; border: 1px solid rgba(245,158,11,0.25); }
-  &.badge-green  { background: rgba(16,185,129,0.10); color: #059669; border: 1px solid rgba(16,185,129,0.2); }
+  &.badge-green  { background: rgba(16,185,129,0.10); color: var(--success-ink); border: 1px solid rgba(16,185,129,0.2); }
   &.badge-red    { background: rgba(239,68,68,0.10);  color: #DC2626; border: 1px solid rgba(239,68,68,0.2); }
 }
 [data-theme="dark"] .badge {

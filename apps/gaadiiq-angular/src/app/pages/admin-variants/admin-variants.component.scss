@@ -5,6 +5,12 @@
 // The page now sits on --navy like every other, with the pattern showing.
 .av-page {
   min-height: 100vh;
+  // LAY-007: the navbar is fixed, so a page that starts at the top of the
+  // viewport renders its own title underneath it. Both admin screens did —
+  // "Car Image Management" and "Variants" were sitting behind the nav and
+  // unreadable, which nothing caught because neither page had ever been opened
+  // in a browser (they are behind adminGuard).
+  padding-top: max(7rem, var(--nav-offset));
 }
 
 .av-header {

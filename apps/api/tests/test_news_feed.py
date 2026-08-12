@@ -87,6 +87,54 @@ async def test_real_headlines_are_parsed_with_publisher_and_link(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_a_description_that_is_only_the_headline_again_is_dropped(monkeypatch):
+    """
+    Google News has no real summary field.
+
+    Its <description> is an anchor tag wrapping the headline, so stripping the
+    markup gives the title back with the publisher appended. In production every
+    card rendered as its own headline printed twice — once bold, once grey.
+    Returning nothing is the honest answer: there is no summary to show.
+    """
+    echo = (
+        b"<rss><channel><item>"
+        b"<title>Tata Motors to Launch 3 New Cars This Calendar Year - CarLelo</title>"
+        b"<link>https://example.com/a</link>"
+        b'<description>&lt;a href="https://carlelo.com/x"&gt;Tata Motors to Launch 3 New '
+        b"Cars This Calendar Year&lt;/a&gt;&amp;nbsp;&lt;font&gt;CarLelo&lt;/font&gt;</description>"
+        b"<source url='https://carlelo.com'>CarLelo</source>"
+        b"</item></channel></rss>"
+    )
+    _stub_get(monkeypatch, body=echo)
+
+    articles = await news_feed.fetch("q")
+
+    assert articles[0]["title"] == "Tata Motors to Launch 3 New Cars This Calendar Year"
+    assert articles[0]["description"] == ""
+
+
+@pytest.mark.asyncio
+async def test_a_real_summary_is_kept(monkeypatch):
+    """A publisher that does supply prose must not lose it to the echo check."""
+    real = (
+        b"<rss><channel><item>"
+        b"<title>Tata Punch EV facelift spied - Autocar India</title>"
+        b"<link>https://example.com/b</link>"
+        b'<description>&lt;a href="https://x"&gt;Tata Punch EV facelift spied&lt;/a&gt; '
+        b"Tata has been testing a facelifted Punch EV with a larger battery pack and a "
+        b"revised front fascia.&amp;nbsp;&lt;font&gt;Autocar India&lt;/font&gt;</description>"
+        b"<source url='https://autocarindia.com'>Autocar India</source>"
+        b"</item></channel></rss>"
+    )
+    _stub_get(monkeypatch, body=real)
+
+    articles = await news_feed.fetch("q")
+
+    assert "larger battery pack" in articles[0]["description"]
+    assert "<" not in articles[0]["description"]
+
+
+@pytest.mark.asyncio
 async def test_a_feed_declaring_entities_is_refused(monkeypatch):
     """
     Billion laughs: a kilobyte of XML that expands to gigabytes in memory.

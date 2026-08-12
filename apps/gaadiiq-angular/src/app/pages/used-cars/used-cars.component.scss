@@ -814,7 +814,11 @@
   position: absolute;
   top: 0.6rem;
   left: 0.6rem;
-  background: #10B981;
+  // White on #10B981 measured 2.54:1 — this badge is 10.9px bold, so it needs
+  // 4.5. Darkened to clear it at 4.64:1. A literal rather than --success-ink:
+  // that token is for text on a light tint and inverts to a bright green in
+  // dark mode, which as a *background* under white text would fail again.
+  background: #0B855C;
   color: #fff;
   font-size: 0.68rem;
   font-weight: 700;
@@ -927,9 +931,11 @@
   display: inline-block;
 }
 
+// #059669 measured 3.34:1 on its own tint; --success-ink gives 6.82:1, and
+// reverts to the bright green in dark mode where that one is correct.
 .verdict-fair {
   background: rgba(16,185,129,0.12);
-  color: #059669;
+  color: var(--success-ink);
   border: 1px solid rgba(16,185,129,0.25);
 }
 
@@ -939,9 +945,10 @@
   border: 1px solid rgba(234,179,8,0.25);
 }
 
+// #DC2626 measured 4.19:1 on its own tint; --danger-ink gives 5.62:1.
 .verdict-high {
   background: rgba(239,68,68,0.1);
-  color: #DC2626;
+  color: var(--danger-ink);
   border: 1px solid rgba(239,68,68,0.2);
 }
 
