@@ -113,7 +113,7 @@
                *ngFor="let m of newCarModels()"
                (click)="selectModel(m)">
             <div class="nc-card-img-wrap">
-              <img *ngIf="m.image" [src]="m.image" [alt]="m.make + ' ' + m.model" class="nc-card-img" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+              <img *ngIf="m.image" [src]="m.image" [alt]="m.make + ' ' + m.model" class="nc-card-img" referrerpolicy="no-referrer" imgFallback>
               <div *ngIf="!m.image" class="nc-card-no-img">
                 <svg viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg" class="nc-car-svg">
                   <rect x="5" y="32" width="110" height="16" rx="5" fill="currentColor" opacity=".12"/>
@@ -163,7 +163,7 @@
           <!-- Left: Hero image -->
           <div class="nc-variant-hero">
             <div class="nc-variant-img-wrap glass-card">
-              <img *ngIf="newModelVariants()[0]?.image" [src]="newModelVariants()[0].image" [alt]="selectedModel()!" class="nc-variant-main-img" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+              <img *ngIf="newModelVariants()[0]?.image" [src]="newModelVariants()[0].image" [alt]="selectedModel()!" class="nc-variant-main-img" referrerpolicy="no-referrer" imgFallback>
               <div *ngIf="!newModelVariants()[0]?.image" class="nc-card-no-img" style="height:260px">
                 <svg viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg" class="nc-car-svg" style="width:160px;height:80px">
                   <rect x="5" y="32" width="110" height="16" rx="5" fill="currentColor" opacity=".12"/>

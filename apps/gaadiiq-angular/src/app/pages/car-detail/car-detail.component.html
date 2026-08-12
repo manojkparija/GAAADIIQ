@@ -57,7 +57,7 @@
             <img [src]="galleryImages()[activeImg()]" [alt]="car.make + ' ' + car.model"
                  referrerpolicy="no-referrer"
                  [style.objectPosition]="(galleryImages()[activeImg()] || '').includes('swift/front') ? 'center 65%' : 'center center'"
-                 onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                 imgFallback>
             <span class="badge badge-red" style="position:absolute;top:1rem;left:1rem">{{ car.badge }}</span>
             <button class="like-fab" (click)="liked.set(!liked()); $event.stopPropagation()" [class.liked]="liked()">
               <app-icon name="heart" [size]="18"></app-icon>
@@ -78,7 +78,7 @@
               class="thumb" [class.active]="activeImg() === i" (click)="activeImg.set(i)">
               <img [src]="img" alt="thumb" referrerpolicy="no-referrer"
                    [style.objectPosition]="img?.includes('swift/front') ? 'center 65%' : 'center center'"
-                   onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                   imgFallback>
             </div>
           </div>
         </div>
@@ -111,7 +111,7 @@
                (pointermove)="movePan($event)"
                (pointerup)="endPan()"
                (pointercancel)="endPan()"
-               onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+               imgFallback>
 
           <button *ngIf="galleryImages().length > 1" class="lightbox-nav next" type="button"
                   (click)="step(1); $event.stopPropagation()" aria-label="Next image">›</button>
@@ -120,7 +120,7 @@
             <img *ngFor="let img of galleryImages(); let i = index" [src]="img" alt="thumbnail"
                  referrerpolicy="no-referrer" [class.active]="activeImg() === i"
                  (click)="activeImg.set(i); resetZoom()"
-                 onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                 imgFallback>
           </div>
         </div>
 
@@ -491,7 +491,7 @@
                   <td class="similar-car-name">{{ car.make }} {{ car.model }}</td>
                   <td class="similar-img-cell">
                     <img [src]="car.image" [alt]="car.make + ' ' + car.model"
-                         referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                         referrerpolicy="no-referrer" imgFallback>
                   </td>
                   <td>
                     <span class="similar-price">{{ formatPrice(car.price) }}</span>
@@ -512,7 +512,7 @@
                   <td class="similar-img-cell">
                     <a [routerLink]="['/car', s.id]">
                       <img [src]="s.image" [alt]="s.make + ' ' + s.model"
-                           referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                           referrerpolicy="no-referrer" imgFallback>
                     </a>
                   </td>
                   <td>

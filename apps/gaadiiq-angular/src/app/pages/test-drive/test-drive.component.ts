@@ -8,11 +8,12 @@ import { TestDriveService } from '../../services/test-drive.service';
 import { SellersService } from '../../services/sellers.service';
 import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentiment.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 
 @Component({
   selector: 'app-test-drive',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ImgFallbackDirective],
   templateUrl: './test-drive.component.html',
   styleUrl: './test-drive.component.scss'
 })

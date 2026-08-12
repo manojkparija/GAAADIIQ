@@ -336,6 +336,16 @@ async def _security_headers_middleware(request: Request, call_next):
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self)"
     if settings.is_production:
         response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+        # This service returns JSON and nothing else — in production /docs and
+        # /redoc are disabled, so no response of ours has any business loading
+        # a script, a style or an image. Saying so turns a response that a
+        # browser can be talked into rendering as HTML into an inert one.
+        #
+        # Production only: in development the Swagger UI at /docs pulls its
+        # assets from a CDN, and 'none' would leave an empty page.
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+        )
     return response
 
 

@@ -16,7 +16,7 @@
             placeholder="Search make or model..." (focus)="showDropdown.set(true)">
           <div class="search-dropdown" *ngIf="showDropdown() && searchQuery()">
             <div class="drop-item" *ngFor="let c of filteredCars" (click)="selectCar(c)">
-              <img [src]="c.image" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/60x40/1a1f35/6C63FF?text=img'" style="width:60px;height:40px;object-fit:cover;border-radius:.4rem">
+              <img [src]="c.image" referrerpolicy="no-referrer" imgFallback="https://placehold.co/60x40/1a1f35/6C63FF?text=img" style="width:60px;height:40px;object-fit:cover;border-radius:.4rem">
               <div>
                 <div style="font-weight:600">{{ c.year }} {{ c.make }} {{ c.model }}</div>
                 <div style="font-size:.8rem;color:var(--muted)">{{ formatPrice(c.price) }} · {{ c.fuel }}</div>
@@ -32,7 +32,7 @@
           </div>
         </div>
         <div class="selected-car glass-card" *ngIf="selectedCar() as car">
-          <img [src]="car.image" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/200x120/1a1f35/6C63FF?text=No+Image'">
+          <img [src]="car.image" referrerpolicy="no-referrer" imgFallback="https://placehold.co/200x120/1a1f35/6C63FF?text=No+Image">
           <div class="selected-info">
             <h3>{{ car.year }} {{ car.make }} {{ car.model }}</h3>
             <div class="gradient-text" style="font-weight:800">{{ formatPrice(car.price) }}</div>
