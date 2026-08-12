@@ -8,6 +8,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { ApiService } from '../../services/api.service';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ export interface RecommendedCar extends Car {
 @Component({
   selector: 'app-ai-advisor',
   standalone: true,
-  imports: [RouterLink, CommonModule, IconComponent],
+  imports: [RouterLink, CommonModule, IconComponent, ImgFallbackDirective],
   templateUrl: './ai-advisor.component.html',
   styleUrl: './ai-advisor.component.scss'
 })

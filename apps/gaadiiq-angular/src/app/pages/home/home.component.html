@@ -185,7 +185,7 @@
           class="brand-card glass-card"
         >
           <div class="brand-logo">
-            <img [src]="make.logo" [alt]="make.name" onerror="this.style.opacity='0'">
+            <img [src]="make.logo" [alt]="make.name" imgFallback="hide">
           </div>
           <span class="brand-name">{{ make.name }}</span>
         </a>

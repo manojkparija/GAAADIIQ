@@ -118,7 +118,7 @@
                 <div class="cmp-car-head">
                   <img [src]="getImageUrl(car)"
                     [alt]="car.make + ' ' + car.model" referrerpolicy="no-referrer"
-                    onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+                    imgFallback>
                   <div class="cmp-name">{{ car.make }} {{ car.model }}</div>
                   <div class="match-chip" [class.high]="car.matchScore >= 80">{{ car.matchScore }}% match</div>
                 </div>
@@ -165,7 +165,7 @@
           <div class="rec-img-wrap">
             <img [src]="getImageUrl(car)"
               [alt]="car.make + ' ' + car.model" referrerpolicy="no-referrer"
-              onerror="this.onerror=null;this.src='assets/cars/placeholder.svg'">
+              imgFallback>
           </div>
           <div class="rec-car-meta">
             <h3>{{ car.make }} {{ car.model }}</h3>
