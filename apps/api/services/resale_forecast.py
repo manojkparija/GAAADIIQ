@@ -28,9 +28,7 @@ import json
 import logging
 from datetime import datetime
 
-import httpx
-
-from core.config import settings
+from services import gemini_gateway
 
 logger = logging.getLogger("gaadiiq.resale_forecast")
 
@@ -63,7 +61,7 @@ _FLOOR_FRACTION = 0.10
 
 def gemini_available() -> bool:
     """True when a Gemini key is configured."""
-    return bool(settings.gemini_api_key)
+    return gemini_gateway.is_available()
 
 
 def heuristic_forecast(
@@ -213,32 +211,12 @@ async def ai_forecast(
         price=price,
     )
 
-    url = (
-        f"{settings.gemini_api_url.rstrip('/')}/models/"
-        f"{settings.gemini_model}:generateContent"
-    )
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.0,
-            "responseMimeType": "application/json",
-        },
-    }
-
     try:
-        async with httpx.AsyncClient(timeout=settings.gemini_timeout_seconds) as client:
-            resp = await client.post(url, params={"key": settings.gemini_api_key}, json=payload)
-            resp.raise_for_status()
-            body = resp.json()
-        text = (
-            body.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "")
+        text = await gemini_gateway.generate_text(
+            prompt,
+            caller="resale forecast",
+            temperature=0.0,
         )
-        if not text:
-            logger.warning("Resale forecast returned no text for %s %s", make, model)
-            return [], ""
         return _clean(json.loads(text), price, years)
     except Exception as exc:
         logger.warning("Resale forecast failed for %s %s: %s", make, model, exc)

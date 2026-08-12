@@ -89,10 +89,12 @@
       <p class="hero-sub">{{ counts()[activeTab()] }} articles</p>
 
       <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Search articles…"
+        <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
+        <input type="text"
+               [placeholder]="isNewsPage() ? 'Search the latest car news…' : 'Search articles…'"
+               [attr.aria-label]="isNewsPage() ? 'Search the latest car news' : 'Search articles'"
                [value]="searchQuery()"
-               (input)="searchQuery.set($any($event.target).value)" />
+               (input)="onSearch($any($event.target).value)" />
       </div>
     </div>
   </section>
@@ -103,7 +105,7 @@
     <ng-container *ngIf="isNewsPage()">
 
       <!-- Loading skeleton -->
-      <div class="live-grid" *ngIf="hasApiKey && liveLoading()">
+      <div class="live-grid" *ngIf="liveLoading()">
         <div class="live-card glass-card skeleton" *ngFor="let i of [1,2,3,4,5,6]">
           <div class="lc-thumb sk-block"></div>
           <div class="lc-body">
@@ -116,11 +118,11 @@
 
       <!-- Error banner -->
       <div class="error-banner" *ngIf="liveError()">
-        <span>⚠️ {{ liveError() }}</span>
+        <span><app-icon name="alert-triangle" [size]="16"></app-icon> {{ liveError() }}</span>
       </div>
 
       <!-- Live articles -->
-      <div class="live-grid" *ngIf="hasApiKey && !liveLoading() && liveArticles().length">
+      <div class="live-grid" *ngIf="!liveLoading() && liveArticles().length">
         <div class="live-card glass-card" *ngFor="let a of liveArticles(); let i = index"
              [routerLink]="['/reviews-news', 'news', 'live', i]">
           <div class="lc-thumb" [style.backgroundImage]="a.image ? 'url(' + a.image + ')' : 'none'">
@@ -128,7 +130,11 @@
           </div>
           <div class="lc-body">
             <div class="lc-meta">
-              <span class="tag tag-blue">India Auto News</span>
+              <!-- The publisher, not a fixed label. Titles have their
+                   " - Publisher" suffix stripped, so this is the only thing
+                   telling a reader who reported it — and on an aggregated feed
+                   that is what decides whether a headline is worth trusting. -->
+              <span class="tag tag-blue">{{ a.source.name || 'India Auto News' }}</span>
               <span class="lc-date">{{ news.formatDate(a.publishedAt) }}</span>
             </div>
             <h3 class="lc-title">{{ a.title }}</h3>
@@ -174,9 +180,14 @@
     </div>
     <ng-template #noResults>
       <div class="no-results">
-        <div class="nr-icon">🔍</div>
-        <p>No articles found for "<strong>{{ searchQuery() }}</strong>"</p>
-        <button class="btn-outline" (click)="searchQuery.set('')">Clear Search</button>
+        <div class="nr-icon"><app-icon name="search" [size]="34"></app-icon></div>
+        <p>No curated articles found for "<strong>{{ searchQuery() }}</strong>"</p>
+        <!-- On the news page the live results above are searched separately, so
+             this only ever means the hand-written articles had no match. -->
+        <p class="nr-hint" *ngIf="isNewsPage() && liveArticles().length">
+          The latest news results above still match your search.
+        </p>
+        <button class="btn-outline" (click)="onSearch('')">Clear Search</button>
       </div>
     </ng-template>
   </section>

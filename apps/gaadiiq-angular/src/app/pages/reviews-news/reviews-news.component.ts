@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
@@ -168,7 +168,7 @@ export const CATEGORY_META = [
   templateUrl: './reviews-news.component.html',
   styleUrl: './reviews-news.component.scss',
 })
-export class ReviewsNewsComponent {
+export class ReviewsNewsComponent implements OnDestroy {
   readonly tabs = TABS;
   readonly categoryMeta = CATEGORY_META;
 
@@ -186,11 +186,36 @@ export class ReviewsNewsComponent {
     'Special Report': 'special-reports',
   };
 
-  // Live news (GNews API)
+  // Live news, fetched through our own API (see services/news.service.ts).
   liveArticles = this.news.articles;
   liveLoading = this.news.loading;
   liveError = this.news.error;
-  hasApiKey = this.news.hasApiKey;
+
+  private searchDebounce?: ReturnType<typeof setTimeout>;
+
+  /**
+   * Update the query, and on the News page actually search the news.
+   *
+   * The box used to filter only the hand-written articles below, so typing a
+   * car's name on the News page searched five local entries and reported "no
+   * articles found" while live headlines about it went unqueried.
+   *
+   * Debounced because each distinct query is a fetch on the API and, past the
+   * cache, a request to Google News — firing one per keystroke would spend a
+   * request on every prefix of what someone is still typing.
+   */
+  onSearch(value: string) {
+    this.searchQuery.set(value);
+    if (!this.isNewsPage()) return;
+
+    clearTimeout(this.searchDebounce);
+    this.searchDebounce = setTimeout(() => this.news.fetchNews(value.trim()), 400);
+  }
+
+  ngOnDestroy() {
+    // A pending timer would otherwise fire a fetch into a destroyed component.
+    clearTimeout(this.searchDebounce);
+  }
 
   articles = computed(() => {
     const tab = this.activeTab();
@@ -226,7 +251,7 @@ export class ReviewsNewsComponent {
         this.isHub.set(false);
         this.activeTab.set(CATEGORY_SLUGS[slug]);
         this.isNewsPage.set(slug === 'news');
-        if (slug === 'news') this.news.fetchNews('India car automobile launch EV');
+        if (slug === 'news') this.news.fetchNews();
         seo.setPage(CATEGORY_SLUGS[slug], `${CATEGORY_SLUGS[slug]} articles on GAADIIQ`);
       } else {
         this.isHub.set(true);
