@@ -1,6 +1,7 @@
 import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ServiceRequestComponent } from '../../components/service-request/service-request.component';
 
 type FuelType = 'petrol' | 'diesel' | 'electric' | 'cng';
 
@@ -29,11 +30,20 @@ const DEPRECIATION = [0.2, 0.15, 0.12, 0.10, 0.08];
 @Component({
   selector: 'app-tco',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ServiceRequestComponent],
   templateUrl: './tco.component.html',
   styleUrl: './tco.component.scss',
 })
 export class TcoComponent {
+  /**
+   * The roadside-help modal.
+   *
+   * Offered here because this is the page people are on when they are working
+   * out what a car costs to keep running — which is often prompted by something
+   * having just gone wrong with it.
+   */
+  readonly helpOpen = signal(false);
+
   readonly fuelTypes = Object.keys(FUEL_DEFAULTS) as FuelType[];
   readonly fuelDefaults = FUEL_DEFAULTS;
 

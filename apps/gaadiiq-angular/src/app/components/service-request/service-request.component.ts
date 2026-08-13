@@ -4,10 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import {
   CommissionPreview,
+  DispatchResult,
   MarketplaceService,
   NearbyMechanic,
   ServicePayment,
   ServiceRequest,
+  StartOtp,
 } from '../../services/marketplace.service';
 
 type Stage = 'locating' | 'choose' | 'details' | 'awaiting' | 'paying' | 'done';
@@ -54,6 +56,21 @@ export class ServiceRequestComponent {
   readonly request = signal<ServiceRequest | null>(null);
   readonly payment = signal<ServicePayment | null>(null);
 
+  /** Result of a broadcast, when the user chose not to pick a mechanic. */
+  readonly dispatch = signal<DispatchResult | null>(null);
+
+  /**
+   * The arrival code, fetched once and then held.
+   *
+   * Deliberately not re-fetched on refresh() or on any timer. Every call to the
+   * API mints a fresh code and retires the previous one, so polling would
+   * change the number on screen while the customer is part-way through reading
+   * it out — and the digits the mechanic already typed would stop working for
+   * no visible reason.
+   */
+  readonly startOtp = signal<StartOtp | null>(null);
+  readonly otpBusy = signal(false);
+
   // Form fields the diagnosis cannot supply.
   carNumber = '';
   contactPhone = '';
@@ -79,6 +96,19 @@ export class ServiceRequestComponent {
     }
   }
 
+  /**
+   * Broadcast to every available mechanic nearby instead of picking one.
+   *
+   * The default at the roadside: someone whose car has stopped should not be
+   * comparison-shopping, and whoever happens to sort first in the list is not
+   * whoever can arrive soonest.
+   */
+  broadcastInstead(): void {
+    this.chosen.set(null);
+    this.error.set(null);
+    this.stage.set('details');
+  }
+
   choose(m: NearbyMechanic): void {
     this.chosen.set(m);
     this.error.set(null);
@@ -94,7 +124,8 @@ export class ServiceRequestComponent {
   async submit(): Promise<void> {
     const fix = this.fix();
     const mechanic = this.chosen();
-    if (!fix || !mechanic) return;
+    // No mechanic is the broadcast path, not a missing selection.
+    if (!fix) return;
 
     const car = this.carNumber.replace(/[\s-]/g, '').toUpperCase();
     if (car.length < 6) {
@@ -118,14 +149,42 @@ export class ServiceRequestComponent {
         severity: this.severity || undefined,
         diagnosis_id: this.diagnosisId,
       });
-      const assigned = await this.market.assignMechanic(created.id, mechanic.id);
-      this.request.set(assigned);
+      if (mechanic) {
+        this.request.set(await this.market.assignMechanic(created.id, mechanic.id));
+      } else {
+        this.dispatch.set(await this.market.dispatch(created.id));
+        this.request.set(created);
+      }
+      // Fetched here, once, while the customer is looking at the screen — not
+      // in awaiting's refresh(), which they may trigger repeatedly.
+      await this.loadStartOtp(created.id);
       this.stage.set('awaiting');
     } catch (e) {
       this.error.set(this.readableError(e));
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Fetch the arrival code once. Safe to call again only on explicit request. */
+  async loadStartOtp(requestId: string): Promise<void> {
+    this.otpBusy.set(true);
+    try {
+      this.startOtp.set(await this.market.startOtp(requestId));
+    } catch {
+      // Not fatal: the job is raised either way, and the mechanic can be
+      // started by the customer confirming in person. Better a missing code
+      // than a red banner over a request that did go through.
+      this.startOtp.set(null);
+    } finally {
+      this.otpBusy.set(false);
+    }
+  }
+
+  /** Explicit "I need a new code" — retires the old one on the server. */
+  async regenerateOtp(): Promise<void> {
+    const sr = this.request();
+    if (sr) await this.loadStartOtp(sr.id);
   }
 
   /**

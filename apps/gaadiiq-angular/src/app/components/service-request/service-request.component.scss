@@ -339,3 +339,96 @@
 
 .sr-done-title { font-weight: 800; font-size: 1.1rem; }
 .sr-done-amount { font-size: 1.5rem; font-weight: 800; }
+
+/* ── Broadcast ("send to the nearest available mechanic") ──────────────────
+   Given more visual weight than the individual mechanic rows because it is the
+   recommended action at the roadside, not an equal alternative to scrolling a
+   list while stranded. */
+.sr-broadcast {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.75rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  /* Ends on the darker teal, not --teal: the sub-line is 0.8rem, and white on
+     #14B8A6 measures ~2.2:1 at that size. #0A786B clears AA. */
+  background: linear-gradient(135deg, var(--primary) 0%, #0A786B 100%);
+  color: #fff;
+}
+
+.sr-broadcast-title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+
+.sr-broadcast-sub {
+  display: block;
+  font-size: 0.8rem;
+  opacity: 0.92;
+  line-height: 1.35;
+}
+
+.sr-or {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0 0.75rem;
+}
+
+.sr-broadcasting {
+  background: var(--fill-dim);
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+/* ── Arrival code ──────────────────────────────────────────────────────────
+   The one number on this screen the customer has to read aloud accurately,
+   possibly at night by the side of a road, so it is set large, spaced, and in
+   tabular figures. */
+.sr-otp {
+  border: 1px solid var(--teal);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.9rem;
+  text-align: center;
+}
+
+.sr-otp-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.sr-otp-code {
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  /* text-indent offsets the trailing letter-spacing so the digits sit centred
+     rather than a third of a character to the left. */
+  text-indent: 0.28em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1.15;
+}
+
+.sr-otp-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0.45rem 0 0.6rem;
+  line-height: 1.4;
+}
+
+.sr-otp-new {
+  font-size: 0.8rem;
+}
