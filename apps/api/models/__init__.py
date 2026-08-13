@@ -2,6 +2,20 @@ from .car import Car
 from .car_variant import CarVariant, VariantSource, VariantStatus
 from .customer_intent import CustomerActivity, CustomerIntentScore
 from .dealer import Dealer
+from .diagnosis_kb import (
+    CanDrive,
+    DiagnosisImportRun,
+    DiagnosisMaster,
+    DiagnosisSolution,
+    DiagnosisSymptomAlias,
+    Difficulty,
+    RecordStatus,
+    Severity,
+    SolutionType,
+    SourceType,
+    VerificationStatus,
+    WarrantyImpact,
+)
 from .lending_partner import (
     CreditBand,
     LenderRateSlab,
@@ -60,6 +74,9 @@ __all__ = [
     "LendingPartner", "LenderRateSlab", "PartnerType", "CreditBand",
     "LoanApplication", "LoanApplicationStatus", "LoanOffer", "CreditCheck",
     "CreditSource", "VehicleCondition",
+    "DiagnosisMaster", "DiagnosisSolution", "DiagnosisSymptomAlias", "DiagnosisImportRun",
+    "VerificationStatus", "RecordStatus", "SourceType", "Severity", "CanDrive",
+    "SolutionType", "Difficulty", "WarrantyImpact",
     "ServiceOfferStatus",
     "ServiceRequest",
     "ServiceRequestOffer", "ServiceRequestStatus",
