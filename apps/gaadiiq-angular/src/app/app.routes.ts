@@ -54,6 +54,10 @@ export const routes: Routes = [
   // changing nothing. Password reset here already goes through Supabase, from
   // the "Forgot password?" link on the login page.
   { path: 'tco', loadComponent: () => import('./pages/tco/tco.component').then(m => m.TcoComponent) },
+  // Roadside help. A route of its own rather than only a modal, so it can sit in
+  // the navbar, be bookmarked before it is needed, and be sent to someone in a
+  // message — which is how a stranded person actually reaches it.
+  { path: 'find-mechanic', loadComponent: () => import('./pages/find-mechanic/find-mechanic.component').then(m => m.FindMechanicComponent) },
   { path: 'notifications', loadComponent: () => import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent), canActivate: [authGuard] },
   { path: 'leads', loadComponent: () => import('./pages/leads/leads.component').then(m => m.LeadsComponent), canActivate: [sellerGuard] },
   { path: 'analytics', loadComponent: () => import('./pages/analytics/analytics.component').then(m => m.AnalyticsComponent), canActivate: [sellerGuard] },
