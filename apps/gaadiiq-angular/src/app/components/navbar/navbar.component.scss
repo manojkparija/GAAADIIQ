@@ -22,6 +22,14 @@
   }
 }
 
+// The navbar is not page content and should not be boxed by the 1280px
+// .container: at that width the twelve links needed 970px and were given 753,
+// so "Reviews & News" and "My Journey" were simply cut off with the scrollbar
+// hidden — no affordance, no indication anything was missing.
+.navbar .container {
+  max-width: 1580px;
+}
+
 .nav-inner {
   display: flex;
   align-items: center;
@@ -65,7 +73,9 @@
 .nav-links {
   display: flex;
   list-style: none;
-  gap: 0.85rem;
+  // Tightened from 0.85rem. Eleven gaps at the old value cost 150px of a row
+  // that had none to spare.
+  gap: 0.55rem;
 
   // The row of labels is the part that gives way when the bar runs out of
   // width, not the actions beside it. Before this the list refused to shrink,
@@ -77,16 +87,22 @@
   // scroll, so the links scroll and the actions stay put.
   min-width: 0;
   overflow-x: auto;
-  scrollbar-width: none;          // Firefox
-  -ms-overflow-style: none;
-  &::-webkit-scrollbar { display: none; }
+  // Thin rather than hidden. Hiding it is what turned "three items are off the
+  // end" into "three items do not exist" — there was nothing on screen to say
+  // the row continued.
+  scrollbar-width: thin;
+  &::-webkit-scrollbar { height: 3px; }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 3px;
+  }
   // Room for the focus underline, which sits at bottom: -4px and would be
   // clipped by the scroll container otherwise.
   padding-bottom: 4px;
   a {
     color: var(--text);
     font-weight: 600;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     // Labels are single-line by design. Without this a two-word item breaks
     // across lines once the row runs short of space, and because every item
     // then grows taller the whole bar looks misaligned rather than merely
@@ -157,15 +173,23 @@
 .mobile-menu {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
+  // 100dvh, not 100vh: on mobile Safari the latter is the *largest* viewport,
+  // so the last item sits under the browser chrome until the user scrolls.
+  height: 100dvh;
   // LAY-001: account for home indicator at bottom
   padding-bottom: var(--safe-bottom);
+  padding-top: 4.5rem;
   background: var(--navy);
-  backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
+  // Was `center`, which is only correct while the menu is shorter than the
+  // screen. Once it is not, centring pushes the first items off the top edge
+  // where they cannot be scrolled back to. Top-aligned and scrollable instead.
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  gap: 1.1rem;
   z-index: 999;
   opacity: 0;
   pointer-events: none;
@@ -355,4 +379,12 @@
 
   &:hover { background: rgba(47,107,255,0.08); color: var(--primary); }
   &.logout { color: var(--danger); &:hover { background: rgba(239,68,68,0.08); color: var(--danger); } }
+}
+
+// Roadside help in the mobile menu. Tinted for the same reason as its desktop
+// counterpart: it is the one item here you reach for in an emergency rather
+// than while browsing.
+.mobile-urgent {
+  color: var(--primary) !important;
+  font-weight: 700;
 }

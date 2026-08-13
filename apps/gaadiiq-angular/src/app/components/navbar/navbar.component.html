@@ -17,7 +17,7 @@
       <!-- Given its own emphasis: every other item here is something you browse
            at leisure, this one is what you need when the car has already
            stopped. -->
-      <li><a routerLink="/find-mechanic" routerLinkActive="active" class="nav-urgent">🔧 Find Mechanic</a></li>
+      <li><a routerLink="/find-mechanic" routerLinkActive="active" class="nav-urgent">Find Mechanic</a></li>
       <li><a routerLink="/reviews-news" routerLinkActive="active">Reviews &amp; News</a></li>
       <li><a routerLink="/buyer-journey" routerLinkActive="active">My Journey</a></li>
     </ul>
@@ -101,47 +101,61 @@
     </button>
   </div>
 
-  <div class="mobile-menu hide-desktop" [class.open]="menuOpen()">
-    <a routerLink="/" (click)="closeMenu()">Home</a>
-    <a routerLink="/new-cars" (click)="closeMenu()">New Cars</a>
-    <a routerLink="/used-cars" (click)="closeMenu()">Used Cars</a>
-    <a routerLink="/ai-advisor" (click)="closeMenu()">AI Advisor</a>
-    <a routerLink="/compare" (click)="closeMenu()">Compare Cars</a>
-    <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
-    <a routerLink="/car-loan" (click)="closeMenu()">Apply for a Car Loan</a>
-    <a routerLink="/tco" (click)="closeMenu()">Cost of Ownership</a>
-    <a routerLink="/reviews-news" (click)="closeMenu()">Reviews &amp; News</a>
-    <button class="city-btn-mobile" (click)="closeMenu(); openCityModal()">
-      <app-icon name="map-pin" [size]="15"></app-icon>
-      {{ city.selectedCity() || 'Select City' }}
-    </button>
-    <div class="mobile-theme-row">
-      <span style="font-size:0.9rem;color:var(--muted)">{{ theme.isDark() ? 'Dark Mode' : 'Light Mode' }}</span>
-      <button class="theme-toggle" (click)="theme.toggle()">
-        <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" [size]="15"></app-icon>
-      </button>
-    </div>
-    <div class="mobile-btns">
-      <ng-container *ngIf="!auth.isLoggedIn()">
-        <a routerLink="/login" (click)="closeMenu()" class="btn-outline" style="width:100%;display:block;text-align:center">Sign In</a>
-        <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient" style="width:100%;display:block;text-align:center">List Your Car</a>
-      </ng-container>
-      <ng-container *ngIf="auth.isLoggedIn()">
-        <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
-          <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">List Your Car</a>
-          <a routerLink="/dealer-dashboard" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Dealer Dashboard</a>
-          <a *ngIf="auth.isAdmin()" routerLink="/admin/pricing" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Price Manager</a>
-          <a *ngIf="auth.isAdmin()" routerLink="/admin/car-images" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Car Images</a>
-          <a *ngIf="auth.isAdmin()" routerLink="/admin/variants" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Variants</a>
-          <a *ngIf="auth.isAdmin()" routerLink="/admin/pdf-ingestion" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">File Ingestion</a>
-          <a routerLink="/my-listings" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">My Listings</a>
-        </ng-container>
-        <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Sell My Car</a>
-        <div style="padding:0.5rem 0;font-size:0.85rem;color:var(--muted)">{{ auth.currentUser()?.name }}</div>
-        <button class="btn-outline" style="width:100%" (click)="logout(); closeMenu()">Sign Out</button>
-      </ng-container>
-    </div>
-  </div>
 </nav>
 
 <app-city-selector *ngIf="cityModalOpen()" (closed)="closeCityModal()"></app-city-selector>
+
+<!-- Deliberately a sibling of <nav>, not a child of it.
+     .navbar has backdrop-filter, and a filtered element becomes the
+     containing block for its position:fixed descendants — so nested here
+     the menu sized itself against the 61px navbar instead of the viewport,
+     and 542px of links spilled out over the page with the first item at
+     top:-480px. Measured, not theorised. Keep it outside. -->
+<div class="mobile-menu hide-desktop" [class.open]="menuOpen()">
+  <a routerLink="/" (click)="closeMenu()">Home</a>
+  <a routerLink="/new-cars" (click)="closeMenu()">New Cars</a>
+  <a routerLink="/used-cars" (click)="closeMenu()">Used Cars</a>
+  <a routerLink="/ai-advisor" (click)="closeMenu()">AI Advisor</a>
+  <a routerLink="/vehicle-diagnosis" (click)="closeMenu()">AI Diagnosis</a>
+  <a routerLink="/compare" (click)="closeMenu()">Compare Cars</a>
+  <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
+  <a routerLink="/car-loan" (click)="closeMenu()">Apply for a Car Loan</a>
+  <a routerLink="/tco" (click)="closeMenu()">Cost of Ownership</a>
+  <a routerLink="/reviews-news" (click)="closeMenu()">Reviews &amp; News</a>
+  <a routerLink="/buyer-journey" (click)="closeMenu()">My Journey</a>
+  <!-- Last and emphasised. This menu IS the navigation on a phone, and a
+       phone is what a stranded person is holding — leaving roadside help out
+       of it, as the desktop-only nav item did, makes the feature unreachable
+       exactly where it matters most. -->
+  <a routerLink="/find-mechanic" (click)="closeMenu()" class="mobile-urgent">🔧 Find a Nearby Mechanic</a>
+  <button class="city-btn-mobile" (click)="closeMenu(); openCityModal()">
+    <app-icon name="map-pin" [size]="15"></app-icon>
+    {{ city.selectedCity() || 'Select City' }}
+  </button>
+  <div class="mobile-theme-row">
+    <span style="font-size:0.9rem;color:var(--muted)">{{ theme.isDark() ? 'Dark Mode' : 'Light Mode' }}</span>
+    <button class="theme-toggle" (click)="theme.toggle()">
+      <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" [size]="15"></app-icon>
+    </button>
+  </div>
+  <div class="mobile-btns">
+    <ng-container *ngIf="!auth.isLoggedIn()">
+      <a routerLink="/login" (click)="closeMenu()" class="btn-outline" style="width:100%;display:block;text-align:center">Sign In</a>
+      <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient" style="width:100%;display:block;text-align:center">List Your Car</a>
+    </ng-container>
+    <ng-container *ngIf="auth.isLoggedIn()">
+      <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
+        <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">List Your Car</a>
+        <a routerLink="/dealer-dashboard" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Dealer Dashboard</a>
+        <a *ngIf="auth.isAdmin()" routerLink="/admin/pricing" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Price Manager</a>
+        <a *ngIf="auth.isAdmin()" routerLink="/admin/car-images" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Car Images</a>
+        <a *ngIf="auth.isAdmin()" routerLink="/admin/variants" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Variants</a>
+        <a *ngIf="auth.isAdmin()" routerLink="/admin/pdf-ingestion" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">File Ingestion</a>
+        <a routerLink="/my-listings" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">My Listings</a>
+      </ng-container>
+      <a routerLink="/list-car" (click)="closeMenu()" class="dropdown-item" style="display:block;padding:0.6rem 0">Sell My Car</a>
+      <div style="padding:0.5rem 0;font-size:0.85rem;color:var(--muted)">{{ auth.currentUser()?.name }}</div>
+      <button class="btn-outline" style="width:100%" (click)="logout(); closeMenu()">Sign Out</button>
+    </ng-container>
+  </div>
+</div>
