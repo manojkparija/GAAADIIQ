@@ -124,10 +124,29 @@ def _aware_dt(dt: datetime) -> datetime:
 
 
 async def _get_dealer(db: AsyncSession, user: User) -> Dealer:
+    """
+    The dealer profile these lead endpoints are scoped to.
+
+    Two different failures used to arrive here as the same 403. The role guard
+    rejects a buyer with "Dealer/seller access required"; this rejected an
+    account that passed that guard but has no row in `dealers` — an admin, or a
+    seller whose profile was never created — with "Dealer profile not found".
+    In a log they are indistinguishable, which is why a steady stream of 403s
+    on /sentiment/leads and /sentiment/summary went undiagnosed.
+
+    The message now says which account and what would fix it, because the
+    likeliest reader is whoever is staring at the log wondering why the dealer
+    dashboard is empty.
+    """
     q = await db.execute(select(Dealer).where(Dealer.user_id == user.id))
     dealer = q.scalar_one_or_none()
     if not dealer:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Dealer profile not found")
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            f"No dealer profile is linked to {user.email}. These figures are "
+            f"scoped to one dealer, so an account without a dealer profile — "
+            f"an admin, or a seller not yet set up — has none to show.",
+        )
     return dealer
 
 

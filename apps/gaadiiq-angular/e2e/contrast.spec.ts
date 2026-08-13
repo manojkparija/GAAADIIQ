@@ -10,14 +10,21 @@ import { test, expect, Page } from '@playwright/test';
  * a pass — while the same blue in an 11px badge measured 4.27:1 on the tint it
  * actually sits on, which is a fail nobody would find by eye.
  *
- * LIGHT THEME ONLY, deliberately.
+ * BOTH THEMES.
  *
- * Dark mode currently has around twenty failures of the same kind, all from
- * hardcoded hexes that predate the theme tokens (#2563EB and #1E40AF in
- * particular, plus --text-tertiary at rgba(255,255,255,0.38) on tinted
- * panels). They are real and worth fixing, but they are not this change, and a
- * test that starts red is a test people learn to ignore. Add `dark` to THEMES
- * once those are cleared.
+ * Dark mode used to be excluded with a note saying it had "around twenty"
+ * failures. Measured, it had 23 distinct ones across these seven pages, from
+ * three causes:
+ *
+ *   - hardcoded blues (#2563EB, #1E40AF) predating the tokens, the worst at
+ *     1.58:1;
+ *   - --text-tertiary at rgba(255,255,255,0.38), 3.3-3.5:1 on tinted panels;
+ *   - and a subtler one worth naming: var(--primary) used as text on surfaces
+ *     that stay white in *both* themes. --primary brightens to #5B8FFF for
+ *     dark backgrounds, so on a white pill it fell to 3.08:1. A token that
+ *     flips, on a surface that does not. --ink-on-white exists for that case.
+ *
+ * All cleared, so dark is measured here too and stays measured.
  */
 
 const PAGES = ['/', '/new-cars', '/used-cars', '/compare', '/emi-calculator', '/reviews-news', '/car-loan'];
@@ -125,9 +132,18 @@ async function findLowContrastText(page: Page): Promise<Failure[]> {
   }) as Promise<Failure[]>;
 }
 
+const THEMES = ['light', 'dark'] as const;
+
+for (const theme of THEMES)
 for (const path of PAGES) {
-  test(`text on ${path} meets WCAG AA in the light theme`, async ({ page }) => {
-    await page.emulateMedia({ colorScheme: 'light' });
+  test(`text on ${path} meets WCAG AA in the ${theme} theme`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme });
+    // Both signals: the media query covers a viewer on "system", the attribute
+    // covers one who has explicitly chosen. They are set independently in
+    // styles.scss and a rule can be right under one and wrong under the other.
+    await page.addInitScript(t => {
+      document.documentElement.setAttribute('data-theme', t);
+    }, theme);
     await page.goto(path, { waitUntil: 'domcontentloaded' });
     // The pages fetch a catalogue on load; give the real content time to land,
     // since a skeleton has different colours from the thing it stands in for.
@@ -150,6 +166,6 @@ for (const path of PAGES) {
                 `fg=${f.color} bg=${f.bg}  x${f.count}  "${f.text}"`)
       .join('\n');
 
-    expect(distinct.size, `Text below WCAG AA on ${path}:\n${report}\n`).toBe(0);
+    expect(distinct.size, `Text below WCAG AA on ${path} (${theme}):\n${report}\n`).toBe(0);
   });
 }

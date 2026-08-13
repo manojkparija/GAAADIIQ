@@ -1,5 +1,25 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/**
+ * Optional override pointing at a Chromium the machine already has.
+ *
+ * Needed wherever the pinned @playwright/test expects a browser build that is
+ * not installed — a sandbox or CI image shipping its own Chromium. Without it
+ * the run dies at launch with "Executable doesn't exist", which reads as a
+ * screen full of failing tests rather than a browser that never started.
+ *
+ * Applied per-project rather than in the top-level `use`, and ONLY to the
+ * Chromium ones. mobile-390 uses devices['iPhone 14'], which is WebKit —
+ * handing WebKit a Chromium binary makes it launch and immediately die, so a
+ * global override turned nine passing layout tests into nine failures that
+ * looked like a layout regression.
+ *
+ * Unset by default, so normal runs and CI are untouched.
+ */
+const chromiumOverride = process.env['PLAYWRIGHT_CHROMIUM_PATH']
+  ? { launchOptions: { executablePath: process.env['PLAYWRIGHT_CHROMIUM_PATH'] } }
+  : {};
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -37,7 +57,7 @@ export default defineConfig({
       // not named by one runs nowhere and reports nothing — which looks
       // exactly like passing. Add new desktop specs to this pattern.
       testMatch: /(smoke|contrast)\.spec\.ts/,
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 } },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {
       name: 'mobile-390',
@@ -53,6 +73,7 @@ export default defineConfig({
       use: {
         ...devices['Pixel 5'],
         viewport: { width: 360, height: 800 },
+        ...chromiumOverride,
       },
     },
     {
@@ -61,6 +82,7 @@ export default defineConfig({
       use: {
         ...devices['Pixel 7'],
         viewport: { width: 412, height: 915 },
+        ...chromiumOverride,
       },
     },
   ],

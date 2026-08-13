@@ -243,6 +243,14 @@ class Settings(BaseSettings):
     mechanic_search_radius_km: int = 15
     mechanic_search_max_radius_km: int = 50
 
+    # Roadside dispatch. Deliberately much tighter than the browse radius: a
+    # broadcast is an interruption sent to someone who did not ask for it, and
+    # "within 1 km" is the promise being made to the customer about how fast
+    # help can arrive. The re-dispatch path widens it when nobody answers.
+    dispatch_radius_km: float = 1.0
+    dispatch_max_offers: int = 10
+    dispatch_offer_ttl_minutes: int = 10
+
     # WhatsApp receipts. Blank token = dev mode: messages are logged to the
     # database and marked sent without any outbound call.
     whatsapp_provider: str = "meta_cloud"

@@ -1,0 +1,71 @@
+<div class="fm-page">
+  <header class="fm-hero">
+    <div class="container">
+      <span class="eyebrow">Roadside Assistance</span>
+      <h1>Find a Nearby <span class="gradient-text">Mechanic</span></h1>
+      <p>
+        Broken down? We alert every available GAADIIQ partner mechanic within 1 km.
+        The first to accept comes to you.
+      </p>
+    </div>
+  </header>
+
+  <div class="container fm-body">
+
+    @if (!started()) {
+      <!-- The panel is mounted only on this click. It asks for a location fix as
+           soon as it exists, and requesting GPS from someone who has not yet said
+           they need help is how you teach people to refuse the prompt. -->
+      <button type="button" class="fm-start" (click)="started.set(true)">
+        🔧 Request help now
+      </button>
+
+      <ol class="fm-steps">
+        <li>
+          <span class="fm-step-n">1</span>
+          <div>
+            <strong>Share where you are</strong>
+            <p>We use your live location, not your profile address — what matters is where the car actually stopped.</p>
+          </div>
+        </li>
+        <li>
+          <span class="fm-step-n">2</span>
+          <div>
+            <strong>We alert mechanics within 1 km</strong>
+            <p>All of them at once. The first to accept is assigned, so you are not left choosing from a list while stranded.</p>
+          </div>
+        </li>
+        <li>
+          <span class="fm-step-n">3</span>
+          <div>
+            <strong>Share your code when they arrive</strong>
+            <p>You get a 6-digit code. The mechanic cannot start the job without it — that is how you know the person at your car is the one we sent.</p>
+          </div>
+        </li>
+        <li>
+          <span class="fm-step-n">4</span>
+          <div>
+            <strong>Pay after the work is priced</strong>
+            <p>The mechanic inspects and quotes. You are asked to pay only once there is something to pay for.</p>
+          </div>
+        </li>
+      </ol>
+
+      <p class="fm-note">
+        Not broken down right now? Bookmark this page — it is easier to find before you need it.
+        You can also <a routerLink="/vehicle-diagnosis">run an AI diagnosis</a> first if you are
+        unsure how serious the problem is.
+      </p>
+
+      <p class="fm-note fm-mech">
+        Are you a mechanic? <a routerLink="/mechanic-signup">Register as a partner</a> to receive
+        jobs from drivers nearby.
+      </p>
+    } @else {
+      <div class="fm-panel">
+        <app-service-request (closed)="started.set(false)"></app-service-request>
+      </div>
+    }
+
+  </div>
+</div>

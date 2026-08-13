@@ -66,6 +66,56 @@
           it's approved.
         </div>
 
+        <!-- Broadcast offers: jobs sent to every available mechanic nearby.
+             First to accept wins, so these are shown above the assigned list —
+             they are time-limited and the assigned jobs are not. -->
+        <h2 class="md-h" *ngIf="offers().length">
+          New requests near you <span class="md-count">{{ offers().length }}</span>
+        </h2>
+
+        <div class="md-lost" *ngIf="lostMessage()" role="status">{{ lostMessage() }}</div>
+
+        <div class="md-offer" *ngFor="let offer of offers()">
+          <div class="md-job-head">
+            <div>
+              <span class="md-ref">{{ offer.reference }}</span>
+              <span class="md-pill" data-status="open">Broadcast</span>
+            </div>
+            <span class="md-dist">{{ offer.distance_km | number:'1.1-1' }} km away</span>
+          </div>
+
+          <!-- Area only. The customer's name, phone and exact location are not
+               sent until this mechanic has actually won the job. -->
+          <div class="md-car">
+            <span *ngIf="offer.manufacturer">{{ offer.manufacturer }} {{ offer.model }}</span>
+            <span class="md-car-model" *ngIf="offer.pincode"> · {{ offer.pincode }}</span>
+            <!-- No "near" prefix: landmarks are typed by the customer and very
+                 often already start with it, which rendered "near near X". -->
+            <span class="md-car-model" *ngIf="offer.landmark"> · {{ offer.landmark }}</span>
+          </div>
+
+          <p class="md-problem">{{ offer.problem_summary }}</p>
+
+          <div class="md-offer-meta">
+            <span *ngIf="offer.severity">Severity: {{ offer.severity }}</span>
+            <span *ngIf="offer.is_vehicle_drivable === false">🚫 Not drivable</span>
+            <span *ngIf="minutesLeft(offer) !== null">
+              Expires in {{ minutesLeft(offer) }} min
+            </span>
+          </div>
+
+          <div class="md-actions">
+            <button type="button" class="md-primary"
+                    [disabled]="busyId() === offer.request_id" (click)="acceptOffer(offer)">
+              {{ busyId() === offer.request_id ? 'Accepting…' : 'Accept job' }}
+            </button>
+            <button type="button" class="md-ghost"
+                    [disabled]="busyId() === offer.request_id" (click)="declineOffer(offer)">
+              Decline
+            </button>
+          </div>
+        </div>
+
         <!-- Active jobs -->
         <h2 class="md-h">Current jobs <span class="md-count">{{ activeJobs().length }}</span></h2>
 
@@ -96,9 +146,12 @@
           <div class="md-actions">
             <a class="md-ghost" [href]="directionsUrl(job)" target="_blank" rel="noopener">🗺️ Directions</a>
 
+            <!-- Work starts on the customer's code, not on the mechanic's own
+                 say-so. That is the whole point of the OTP: it is only
+                 obtainable face to face. -->
             <button type="button" class="md-primary" *ngIf="job.status === 'assigned'"
-                    [disabled]="busyId() === job.id" (click)="start(job)">
-              {{ busyId() === job.id ? 'Starting…' : 'Accept & start' }}
+                    [disabled]="busyId() === job.id" (click)="openOtp(job)">
+              Start with customer code
             </button>
 
             <button type="button" class="md-primary"
@@ -111,6 +164,25 @@
                     [disabled]="busyId() === job.id" (click)="complete(job)">
               {{ busyId() === job.id ? 'Closing…' : 'Mark complete' }}
             </button>
+          </div>
+
+
+          <div class="md-otp" *ngIf="otpJobId() === job.id">
+            <label [attr.for]="'otp-' + job.id">
+              Ask the customer for the 6-digit code shown on their screen
+            </label>
+            <div class="md-otp-row">
+              <input [id]="'otp-' + job.id" type="text" inputmode="numeric" autocomplete="off"
+                     maxlength="8" placeholder="000000"
+                     [ngModel]="otpEntry()" (ngModelChange)="otpEntry.set($event)"
+                     name="otp" />
+              <button type="button" class="md-primary"
+                      [disabled]="busyId() === job.id" (click)="submitOtp(job)">
+                {{ busyId() === job.id ? 'Checking…' : 'Start job' }}
+              </button>
+              <button type="button" class="md-ghost" (click)="cancelOtp()">Cancel</button>
+            </div>
+            <div class="md-otp-error" *ngIf="otpError()" role="alert">{{ otpError() }}</div>
           </div>
 
           <div class="md-quoted" *ngIf="job.quoted_amount_paise && quotingId() !== job.id">

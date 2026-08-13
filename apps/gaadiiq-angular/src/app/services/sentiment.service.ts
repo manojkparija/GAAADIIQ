@@ -77,6 +77,9 @@ export class SentimentService {
   analysingId = signal<string | null>(null);
   error = signal<string | null>(null);
 
+  /** The summary call failed, as distinct from a dealer who genuinely has none. */
+  summaryFailed = signal(false);
+
   gradeALeads = computed(() => this.leads().filter(l => l.lead_grade === 'A'));
   gradeBLeads = computed(() => this.leads().filter(l => l.lead_grade === 'B'));
 
@@ -93,19 +96,32 @@ export class SentimentService {
         .toPromise();
       this.leads.set(data ?? []);
     } catch (e: any) {
+      // Empty, never invented. This used to fall back to six fabricated leads
+      // — names, e-mail addresses and mobile numbers, scored and ranked, with
+      // scored_at set to the current time so they always looked freshly
+      // analysed. /sentiment/leads has been returning 403 on every dashboard
+      // load in production, which means that is what dealers have been seeing:
+      // a full lead list for customers who do not exist, with "Schedule test
+      // drive immediately" beside a phone number someone might actually ring.
+      //
+      // The failure was invisible precisely because the fallback looked right.
       this.error.set(e?.error?.detail ?? 'Failed to load leads');
-      this.leads.set(this._demoLeads());
+      this.leads.set([]);
     } finally {
       this.loading.set(false);
     }
   }
 
   async loadSummary(): Promise<void> {
+    this.summaryFailed.set(false);
     try {
       const data = await this.http.get<SentimentSummary>(`${this.api}/summary`).toPromise();
       this.summary.set(data ?? null);
     } catch {
-      this.summary.set(this._demoSummary());
+      // Same rule. The demo summary claimed "6 leads, 2 hot, avg score 66.2"
+      // regardless of what the dealer actually had.
+      this.summary.set(null);
+      this.summaryFailed.set(true);
     }
   }
 
@@ -205,22 +221,5 @@ export class SentimentService {
     if (score >= 60) return '#F59E0B';
     if (score >= 40) return '#3B82F6';
     return '#6B7280';
-  }
-
-  // ── Demo data (shown when API is unreachable) ─────────────────────────────
-  private _demoLeads(): Lead[] {
-    return [
-      { user_id: 'u1', customer_name: 'Arjun Mehta', email: 'arjun@example.com', phone: '+91 98765 43210', intent_score: 92, lead_grade: 'A', next_best_action: 'Schedule test drive immediately', best_contact_time: 'Morning 10am–12pm', predicted_purchase_window: 'This week', total_enquiries: 3, total_test_drives: 1, scored_at: new Date().toISOString() },
-      { user_id: 'u2', customer_name: 'Priya Nair', email: 'priya@example.com', phone: '+91 98745 12340', intent_score: 85, lead_grade: 'A', next_best_action: 'Send EMI & finance offer', best_contact_time: 'Evening 6–8pm', predicted_purchase_window: 'This week', total_enquiries: 2, total_test_drives: 1, scored_at: new Date().toISOString() },
-      { user_id: 'u3', customer_name: 'Deepak Rao', email: 'deepak@example.com', phone: '+91 95643 21098', intent_score: 79, lead_grade: 'B', next_best_action: 'Share subsidy & EV benefits', best_contact_time: 'Morning 9–11am', predicted_purchase_window: '1-2 weeks', total_enquiries: 2, total_test_drives: 0, scored_at: new Date().toISOString() },
-      { user_id: 'u4', customer_name: 'Sneha Joshi', email: 'sneha@example.com', phone: '+91 96754 32109', intent_score: 61, lead_grade: 'B', next_best_action: 'Send digital brochure', best_contact_time: 'Noon 12–2pm', predicted_purchase_window: '1-2 weeks', total_enquiries: 1, total_test_drives: 0, scored_at: new Date().toISOString() },
-      { user_id: 'u5', customer_name: 'Ravi Kumar', email: 'ravi@example.com', phone: '+91 97865 43201', intent_score: 48, lead_grade: 'C', next_best_action: 'Add to drip email sequence', best_contact_time: 'Evening 5–7pm', predicted_purchase_window: '1 month', total_enquiries: 1, total_test_drives: 0, scored_at: new Date().toISOString() },
-      { user_id: 'u6', customer_name: 'Lalita Sharma', email: 'lalita@example.com', phone: '+91 94532 10987', intent_score: 32, lead_grade: 'D', next_best_action: 'Re-engage via WhatsApp', best_contact_time: 'Evening 7–9pm', predicted_purchase_window: '3+ months', total_enquiries: 0, total_test_drives: 0, scored_at: new Date().toISOString() },
-    ];
-  }
-
-  private _demoSummary(): SentimentSummary {
-    return { total_leads: 6, grade_a: 2, grade_b: 2, grade_c: 1, grade_d: 1,
-             avg_score: 66.2, hot_leads: 2, needs_followup: 1, analysed_today: 4 };
   }
 }

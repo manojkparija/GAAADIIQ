@@ -4,8 +4,23 @@
       <span class="eyebrow">Cost Analysis</span>
       <h1>Total Cost of <span class="gradient-text">Ownership</span></h1>
       <p>Beyond the sticker price — understand the true multi-year cost of owning any car.</p>
+
+      <button type="button" class="tco-help" (click)="helpOpen.set(true)">
+        🔧 Find a nearby mechanic
+      </button>
     </div>
   </header>
+
+  <!-- Rendered only while open: the component asks for a location fix in its
+       constructor, and prompting for GPS on a page nobody asked for help on
+       would be an ambush. -->
+  <div class="tco-modal" *ngIf="helpOpen()" role="dialog" aria-modal="true"
+       aria-label="Find a nearby mechanic">
+    <div class="tco-modal-backdrop" (click)="helpOpen.set(false)"></div>
+    <div class="tco-modal-body">
+      <app-service-request (closed)="helpOpen.set(false)"></app-service-request>
+    </div>
+  </div>
 
   <div class="container">
     <div class="tco-grid">

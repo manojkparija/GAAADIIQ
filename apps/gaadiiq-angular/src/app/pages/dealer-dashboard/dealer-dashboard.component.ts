@@ -116,6 +116,12 @@ export class DealerDashboardComponent {
     this.sentimentSvc.loadSummary();
   }
 
+  /** Retry the sentiment panel after a failure, from the dashboard's own button. */
+  reloadSentiment() {
+    this.sentimentSvc.loadLeads();
+    this.sentimentSvc.loadSummary();
+  }
+
   private async loadSellerInfo() {
     const user = this.auth.currentUser();
     if (!user) return;

@@ -88,8 +88,10 @@
   transition: all 0.2s;
 
   &.active {
+    // The pill is white in both themes, so its text must be too — see
+    // --ink-on-white in styles.scss.
     background: #fff;
-    color: var(--primary, #2563EB);
+    color: var(--ink-on-white);
     border-color: #fff;
     font-weight: 700;
   }

@@ -71,7 +71,7 @@
     flex-shrink: 0; align-self: center;
     padding: 7px 14px; border-radius: 8px; cursor: pointer;
     border: 1px solid rgba(245,158,11,0.5); background: transparent;
-    color: #B45309; font-size: 13px; font-weight: 600;
+    color: var(--warning-ink); font-size: 13px; font-weight: 600;
     &:hover { background: rgba(245,158,11,0.15); }
   }
 }
@@ -298,7 +298,7 @@
   color: var(--text); transition: all .15s;
   // Hover previews the selected look — a flat blue outline read as a
   // different colour system from the blue-to-teal buttons elsewhere.
-  &:hover { border-color: var(--teal-ink); background: linear-gradient(90deg, rgba(37,99,235,0.10), rgba(20,184,166,0.10)); color: #0F766E; }
+  &:hover { border-color: var(--teal-ink); background: linear-gradient(90deg, rgba(37,99,235,0.10), rgba(20,184,166,0.10)); color: var(--teal-ink); }
   &.selected { background: linear-gradient(90deg, #2563EB, #14B8A6); border-color: #2563EB; color: #fff; }
   &.selected:hover { background: linear-gradient(90deg, #1D4ED8, #0D9488); color: #fff; }
 }

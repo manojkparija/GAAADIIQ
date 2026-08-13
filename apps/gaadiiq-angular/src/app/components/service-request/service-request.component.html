@@ -18,6 +18,18 @@
       <span class="sr-accuracy" *ngIf="f.accuracy_m">· accurate to ~{{ f.accuracy_m | number:'1.0-0' }} m</span>
     </div>
 
+    <!-- The default at the roadside. Offered above the list because someone
+         whose car has stopped should not be comparison-shopping, and whoever
+         sorts first here is not whoever can arrive soonest. -->
+    <button type="button" class="sr-broadcast" (click)="broadcastInstead()">
+      <span class="sr-broadcast-title">⚡ Send to the nearest available mechanic</span>
+      <span class="sr-broadcast-sub">
+        We alert every available mechanic within 1 km. The first to accept comes to you.
+      </span>
+    </button>
+
+    <div class="sr-or" *ngIf="mechanics().length">or choose one yourself</div>
+
     <div class="sr-list">
       <button type="button" class="sr-mech" *ngFor="let m of mechanics()" (click)="choose(m)">
         <div class="sr-mech-head">
@@ -86,6 +98,28 @@
       <div class="sr-assigned" *ngIf="r.mechanic as m">
         <div class="sr-assigned-name">{{ m.shop_name || m.full_name }}</div>
         <a class="sr-call" [href]="telHref(m.phone)">📞 {{ m.phone }}</a>
+      </div>
+
+      <!-- Broadcast, so there is no mechanic to name yet. Say what is actually
+           happening rather than leaving an empty space where a name goes. -->
+      <div class="sr-broadcasting" *ngIf="!r.mechanic && dispatch() as d">
+        {{ d.message }}
+      </div>
+
+      <!-- The arrival code. Shown as soon as the request is raised, because the
+           mechanic will ask for it the moment they arrive and hunting for it
+           then is the wrong time. -->
+      <div class="sr-otp" *ngIf="startOtp() as o">
+        <div class="sr-otp-label">Your start code</div>
+        <div class="sr-otp-code">{{ o.otp }}</div>
+        <p class="sr-otp-hint">
+          Read this out to the mechanic when they arrive. They cannot start the job without
+          it — that is how you know the person at your car is the one we sent.
+        </p>
+        <button type="button" class="sr-ghost sr-otp-new" [disabled]="otpBusy()"
+                (click)="regenerateOtp()">
+          {{ otpBusy() ? 'Getting a new code…' : 'Get a new code' }}
+        </button>
       </div>
 
       <div class="sr-quote" *ngIf="r.quoted_amount_paise != null; else noQuote">

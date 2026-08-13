@@ -126,6 +126,28 @@ class ServiceRequest(UUIDMixin, TimestampMixin, Base):
     # frozen here because the mechanic's own coordinates can change later.
     matched_distance_km: Mapped[float | None] = mapped_column(Float)
 
+    # --- Start OTP ----------------------------------------------------------
+    # Proof that the mechanic physically reached the customer. Generated when
+    # the job is raised, shown only to the customer, and collected verbally by
+    # the mechanic on arrival.
+    #
+    # The hash is stored, never the code. A six-digit number is not a password,
+    # but the row is readable by anything that can read the table, and a stored
+    # plaintext OTP means a database read is indistinguishable from having
+    # turned up — which is the single thing this mechanism exists to prove.
+    start_otp_hash: Mapped[str | None] = mapped_column(String(64))
+    start_otp_issued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    start_otp_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    start_otp_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # --- Dispatch -----------------------------------------------------------
+    # Set when the request is broadcast. Frozen rather than recomputed, so the
+    # audit answers "who was actually offered this job" and not "who would be
+    # offered it if we asked again now".
+    dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    dispatch_radius_km: Mapped[float | None] = mapped_column(Float)
+    dispatch_offer_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     user: Mapped["User"] = relationship()
     mechanic: Mapped["Mechanic | None"] = relationship(back_populates="service_requests")
 
@@ -135,3 +157,71 @@ class ServiceRequest(UUIDMixin, TimestampMixin, Base):
 
     def __repr__(self) -> str:
         return f"<ServiceRequest {self.reference} status={self.status}>"
+
+
+class ServiceOfferStatus(str, enum.Enum):
+    """What became of one mechanic's copy of a broadcast."""
+
+    offered = "offered"      # sent, awaiting a response
+    accepted = "accepted"    # this mechanic won the job
+    declined = "declined"    # explicitly turned down
+    expired = "expired"      # the window closed with no answer
+    lost = "lost"            # someone else accepted first
+
+
+class ServiceRequestOffer(UUIDMixin, TimestampMixin, Base):
+    """One mechanic's copy of a broadcast job.
+
+    A row per (request, mechanic) rather than a list column on the request, for
+    two reasons. Acceptance has to be race-safe — two mechanics tapping at the
+    same moment must not both win — and a unique constraint plus a conditional
+    UPDATE gives that for free, where a JSON list gives a lost update.
+
+    The second reason is that this is the only record of who was asked. A
+    mechanic who complains they never see work, or a customer disputing how long
+    help took, is answered from these rows. Recomputing the radius later would
+    answer a different question, because mechanics move and go offline.
+    """
+
+    __tablename__ = "service_request_offers"
+
+    request_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("service_requests.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    mechanic_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("mechanics.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    status: Mapped[ServiceOfferStatus] = mapped_column(
+        Enum(ServiceOfferStatus, name="service_offer_status"),
+        default=ServiceOfferStatus.offered,
+        nullable=False,
+        index=True,
+    )
+
+    # Distance at the moment of the broadcast, not now. The mechanic who was
+    # 800 m away when offered the job may be 6 km away by the time anyone reads
+    # this row, and the question being asked is always "was it fair to offer".
+    distance_km: Mapped[float] = mapped_column(Float, nullable=False)
+
+    responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    request: Mapped["ServiceRequest"] = relationship()
+    mechanic: Mapped["Mechanic"] = relationship()
+
+    __table_args__ = (
+        # One offer per mechanic per job. Also the lock that makes a
+        # double-accept impossible rather than merely unlikely.
+        Index("uq_service_offer_request_mechanic", "request_id", "mechanic_id", unique=True),
+        Index("ix_service_offers_mechanic_status", "mechanic_id", "status"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<ServiceRequestOffer request={self.request_id} status={self.status}>"

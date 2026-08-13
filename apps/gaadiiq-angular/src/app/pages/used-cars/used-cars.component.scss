@@ -121,7 +121,9 @@
   font-weight: 700;
   border-radius: 8px;
   background: #fff;
-  color: var(--primary);
+  // White button in both themes; --primary brightens for dark backgrounds and
+  // would sit on this at 3.08:1. See --ink-on-white.
+  color: var(--ink-on-white);
   border: none;
   cursor: pointer;
   font-size: 0.95rem;
@@ -667,7 +669,7 @@
   .banner-link {
     background: none; border: none; cursor: pointer; color: #2563eb;
     font-weight: 700; font-size: 0.85rem; text-decoration: underline; padding: 0;
-    &:hover { color: #1d4ed8; }
+    &:hover { color: var(--info-ink); }
   }
 }
 
@@ -763,8 +765,11 @@
     display: inline-block;
     padding: 0.75rem 1.75rem;
     border-radius: 10px;
-    border: 1.5px solid #2563EB;
-    color: #2563EB;
+    // Transparent background means this text lands on the page, which does
+    // flip — so the token that flips is the right one here. Was #2563EB,
+    // measured 3.15:1 on the dark page.
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
     background: transparent;
     font-size: 0.95rem;
     font-weight: 700;
@@ -941,7 +946,10 @@
 
 .verdict-good {
   background: rgba(234,179,8,0.12);
-  color: #B45309;
+  // Was the literal #B45309 while its two siblings above and below already
+  // used tokens. Because that hex IS the light value of --warning-ink, light
+  // mode passed and dark mode simply never reverted: 2.57:1 on the amber tint.
+  color: var(--warning-ink);
   border: 1px solid rgba(234,179,8,0.25);
 }
 
