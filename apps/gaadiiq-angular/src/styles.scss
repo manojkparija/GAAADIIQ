@@ -706,7 +706,7 @@ input[type="number"], table, tbody, th, td,
   &.badge-blue   { background: rgba(47,107,255,0.10); color: var(--primary); border: 1px solid rgba(47,107,255,0.2); }
   &.badge-teal   { background: rgba(20,184,166,0.10); color: #0A786B; border: 1px solid rgba(20,184,166,0.2); }
   &.badge-purple { background: rgba(47,107,255,0.10); color: var(--primary); border: 1px solid rgba(47,107,255,0.2); }
-  &.badge-gold   { background: rgba(245,158,11,0.12); color: #B45309; border: 1px solid rgba(245,158,11,0.25); }
+  &.badge-gold   { background: rgba(245,158,11,0.12); color: var(--warning-ink); border: 1px solid rgba(245,158,11,0.25); }
   &.badge-green  { background: rgba(16,185,129,0.10); color: var(--success-ink); border: 1px solid rgba(16,185,129,0.2); }
   &.badge-red    { background: rgba(239,68,68,0.10);  color: #DC2626; border: 1px solid rgba(239,68,68,0.2); }
 }

@@ -128,7 +128,7 @@
 .unpriced-note {
   margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 10px;
   background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3);
-  color: #B45309; font-size: 0.85rem; font-weight: 600;
+  color: var(--warning-ink); font-size: 0.85rem; font-weight: 600;
 }
 
 .unpriced-toggle {
