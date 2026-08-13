@@ -62,6 +62,16 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get loading() { return this.carsData.loading; }
 
+  /**
+   * The used listings call failed, as distinct from a catalogue with no used
+   * cars in it. Both render zero rows; only one of them is the buyer's problem.
+   */
+  readonly listingsFailed = this.carsData.usedListingsFailed;
+
+  retryLoad(): void {
+    void this.carsData.reload();
+  }
+
   // Hero search fields
   heroMake = signal('');
   heroModel = signal('');

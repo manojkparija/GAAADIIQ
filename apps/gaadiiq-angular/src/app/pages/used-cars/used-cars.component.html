@@ -6,7 +6,11 @@
 <section class="uc-hero">
   <div class="container">
     <div class="hero-content">
-      <span class="hero-badge">{{ usedCarCount() }} Used Cars Available</span>
+      <!-- A count of zero is a claim about the catalogue. When the listings
+           call failed we do not know the number, so we do not state one. -->
+      <span class="hero-badge">
+        {{ listingsFailed() ? 'Used Cars' : usedCarCount() + ' Used Cars Available' }}
+      </span>
       <h1 class="hero-heading">Find Your Perfect <span class="gradient-text">Used Car</span></h1>
       <p class="hero-sub">AI-verified pricing, certified inspections, and the best deals in your city</p>
 
@@ -84,7 +88,7 @@
       </div>
       <div class="stat-item">
         <div class="stat-icon"><app-icon name="car" [size]="28"></app-icon></div>
-        <div class="stat-value">{{ usedCarCount() }}+</div>
+        <div class="stat-value">{{ listingsFailed() ? '—' : usedCarCount() + '+' }}</div>
         <div class="stat-label">listed cars</div>
       </div>
       <div class="stat-item">
@@ -249,7 +253,11 @@
             @if (loading()) {
               <span>Loading cars...</span>
             } @else {
-              <strong>{{ totalCount() }}</strong> used cars found
+              @if (listingsFailed()) {
+                Used cars
+              } @else {
+                <strong>{{ totalCount() }}</strong> used cars found
+              }
             }
           </div>
           <div class="sort-area">
@@ -324,6 +332,20 @@
           <div class="loading-state">
             <div class="spinner"></div>
             <p>Fetching best used cars for you...</p>
+          </div>
+        } @else if (listingsFailed()) {
+          <!-- Checked BEFORE the empty state, because the two look identical and
+               mean opposite things. "No cars match your filters" invites the
+               buyer to widen a search that was never run — the request failed,
+               so no filter change can help. -->
+          <div class="empty-state glass-card">
+            <div class="empty-icon"><app-icon name="alert-triangle" [size]="48"></app-icon></div>
+            <h3>We couldn't load used car listings</h3>
+            <p>
+              This is a problem at our end, not with your search — nothing has been filtered out.
+              Please try again in a moment.
+            </p>
+            <button class="btn-gradient" (click)="retryLoad()">Try again</button>
           </div>
         } @else if (displayedCars().length === 0) {
           <div class="empty-state glass-card">

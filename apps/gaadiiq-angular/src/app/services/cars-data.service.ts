@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -324,6 +324,25 @@ export class CarsDataService {
   readonly cars = this._cars.asReadonly();
   readonly loading = signal(true);
 
+  /**
+   * Which catalogue sources failed on the last load.
+   *
+   * Without this, an outage and an empty catalogue are the same screen. Both
+   * render "0 cars found", and a buyer — or whoever is checking whether the
+   * site works — has no way to tell "nobody has listed a used car" from "the
+   * listings endpoint is down". That has already cost time on this project once,
+   * on the dealer dashboard.
+   *
+   * Empty rather than a boolean, so a page can say which half is missing: the
+   * used grid should not claim an outage because the *new* catalogue failed.
+   */
+  readonly failedSources = signal<readonly ('new' | 'used' | 'catalogue')[]>([]);
+
+  readonly usedListingsFailed = computed(() => this.failedSources().includes('used'));
+  readonly newListingsFailed = computed(
+    () => this.failedSources().includes('new') || this.failedSources().includes('catalogue'),
+  );
+
   private readonly apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {
@@ -384,6 +403,7 @@ export class CarsDataService {
 
   private async load() {
     this.loading.set(true);
+    this.failedSources.set([]);
     try {
       // Three independent sources, fetched independently. Promise.all would
       // reject the whole load when any one of them failed, so a broken
@@ -406,6 +426,16 @@ export class CarsDataService {
           `${this.apiUrl}/cars?bucket=new&priced_only=true`
         ),
       ]);
+
+      // fetchAllPages returns null for a source that failed, as distinct from
+      // one that answered with nothing. Recorded before the rows are mapped,
+      // because after that point the two are indistinguishable — both are an
+      // empty array.
+      const failed: ('new' | 'used' | 'catalogue')[] = [];
+      if (newResp === null) failed.push('new');
+      if (usedResp === null) failed.push('used');
+      if (catalogueResp === null) failed.push('catalogue');
+      this.failedSources.set(failed);
 
       // Every source down is an outage rather than an empty catalogue, and the
       // two deserve different treatment — see the fallback below.
@@ -461,6 +491,7 @@ export class CarsDataService {
       }
     } catch (err) {
       console.error('API fetch error — falling back to demo data:', err);
+      this.failedSources.set(['new', 'used', 'catalogue']);
       // Same rule as above: demo cars are a development aid, never something a
       // real buyer sees. In production an outage shows an empty catalogue.
       this._cars.set(environment.production ? [] : [...DEMO_NEW_CARS, ...DEMO_USED_CARS]);
