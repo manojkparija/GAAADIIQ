@@ -47,6 +47,11 @@ class WhatsAppTemplate(str, enum.Enum):
     payment_receipt = "payment_receipt"
     mechanic_assigned = "mechanic_assigned"
     service_request_raised = "service_request_raised"
+    # Broadcast offer. Carries distance and problem only — the customer's
+    # identity and exact position are not in the template variables, for the
+    # same reason they are not in the offer API response: this goes to every
+    # mechanic in the radius, none of whom has accepted anything yet.
+    job_offer = "job_offer"
 
 
 class WhatsAppStatus(str, enum.Enum):

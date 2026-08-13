@@ -265,3 +265,80 @@ async def test_expired_offer_is_not_returned_as_live(db_session):
     await db_session.flush()
 
     assert offer.expires_at < datetime.now(timezone.utc)
+
+
+# ── Offer notifications ─────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_dispatch_notifies_each_offered_mechanic(db_session):
+    from models.notification import Notification, NotificationType
+    from models.whatsapp_message import WhatsAppMessage
+
+    customer = await _make_user(db_session, "cust9@example.com")
+    mechanic = await _make_mechanic(db_session, "NotifyShop", *NEARBY_MECHANIC)
+    sr = await _make_request(db_session, customer)
+
+    await dispatch_request(db_session, sr, radius_km=1.0)
+    await db_session.flush()
+
+    notes = (
+        (
+            await db_session.execute(
+                select(Notification).where(Notification.user_id == mechanic.user_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(notes) == 1
+    assert notes[0].type == NotificationType.job_offer
+
+    queued = (
+        (await db_session.execute(select(WhatsAppMessage))).scalars().all()
+    )
+    assert len(queued) == 1
+    assert queued[0].idempotency_key == f"job_offer:{sr.id}:{mechanic.id}"
+
+
+@pytest.mark.asyncio
+async def test_offer_notification_does_not_carry_customer_identity(db_session):
+    """The message goes to everyone in the radius; it must not identify anyone."""
+    from models.whatsapp_message import WhatsAppMessage
+
+    customer = await _make_user(db_session, "cust10@example.com")
+    await _make_mechanic(db_session, "PrivacyShop", *NEARBY_MECHANIC)
+    sr = await _make_request(db_session, customer)
+    sr.contact_phone = "+919812345678"
+    sr.address_text = "12 Example Street, Bhubaneswar"
+    await db_session.flush()
+
+    await dispatch_request(db_session, sr, radius_km=1.0)
+    await db_session.flush()
+
+    msg = (await db_session.execute(select(WhatsAppMessage))).scalar_one()
+    blob = str(msg.variables)
+    assert "9812345678" not in blob
+    assert "Example Street" not in blob
+    assert str(sr.latitude) not in blob
+    assert str(sr.longitude) not in blob
+
+
+@pytest.mark.asyncio
+async def test_notification_failure_does_not_lose_the_offer(db_session, monkeypatch):
+    """A dead WhatsApp provider must not cost the mechanic the job."""
+    import services.service_dispatch as dispatch_mod
+
+    async def boom(*_a, **_kw):
+        raise RuntimeError("provider down")
+
+    monkeypatch.setattr(dispatch_mod, "queue_message", boom)
+
+    customer = await _make_user(db_session, "cust11@example.com")
+    mechanic = await _make_mechanic(db_session, "ResilientShop", *NEARBY_MECHANIC)
+    sr = await _make_request(db_session, customer)
+
+    offers = await dispatch_request(db_session, sr, radius_km=1.0)
+    await db_session.flush()
+
+    assert len(offers) == 1
+    assert offers[0].mechanic_id == mechanic.id

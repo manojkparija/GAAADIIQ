@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -36,6 +36,18 @@ export class MechanicDashboardComponent {
   private readonly market = inject(MarketplaceService);
   readonly auth = inject(AuthService);
   private readonly seo = inject(SeoService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /**
+   * Offers expire in minutes, so a dashboard left open must not go stale.
+   *
+   * Polling rather than a socket: this is one small GET, and a socket would be
+   * a second delivery path to keep correct for a screen that is open for
+   * minutes at a time. The interval is cleared on destroy — an uncleared timer
+   * keeps firing after the mechanic navigates away and quietly becomes a
+   * request every 20s for the life of the tab.
+   */
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -75,6 +87,11 @@ export class MechanicDashboardComponent {
   constructor() {
     this.seo.setPage('Mechanic Dashboard — GAADIIQ', 'Manage the repair jobs assigned to your workshop: accept, price and close them out.');
     void this.load();
+
+    this.pollTimer = setInterval(() => void this.pollOffers(), 20_000);
+    this.destroyRef.onDestroy(() => {
+      if (this.pollTimer) clearInterval(this.pollTimer);
+    });
   }
 
   async load(): Promise<void> {
@@ -193,6 +210,24 @@ export class MechanicDashboardComponent {
       this.otpError.set(this.readableError(e));
     } finally {
       this.busyId.set(null);
+    }
+  }
+
+  /**
+   * Background refresh of the offer list only.
+   *
+   * Silent by design: a failed poll must not raise the error banner over a
+   * screen the mechanic is reading, and must not clear the offers already on
+   * it. The next tick tries again. It also skips while a tap is in flight, so
+   * a poll landing mid-accept cannot repaint the card out from under the
+   * finger that is pressing it.
+   */
+  private async pollOffers(): Promise<void> {
+    if (!this.profile() || this.busyId() || this.otpJobId()) return;
+    try {
+      this.offers.set(await this.market.myOffers());
+    } catch {
+      // Deliberately silent — see above.
     }
   }
 

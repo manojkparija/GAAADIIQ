@@ -53,13 +53,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from models.mechanic import Mechanic
+from models.notification import Notification, NotificationType
 from models.service_request import (
     ServiceOfferStatus,
     ServiceRequest,
     ServiceRequestOffer,
     ServiceRequestStatus,
 )
+from models.whatsapp_message import WhatsAppTemplate
 from services.geo import find_nearest_mechanics
+from services.whatsapp import queue_message
 
 logger = logging.getLogger("gaadiiq.dispatch")
 
@@ -201,6 +204,7 @@ async def dispatch_request(
         )
         db.add(offer)
         created.append(offer)
+        await notify_offer(db, sr, offer, match.mechanic)
 
     sr.dispatched_at = now
     sr.dispatch_radius_km = radius
@@ -214,6 +218,64 @@ async def dispatch_request(
         len(created),
     )
     return created
+
+
+async def notify_offer(
+    db: AsyncSession, sr: ServiceRequest, offer: ServiceRequestOffer, mechanic: Mechanic
+) -> None:
+    """Tell one mechanic a job is waiting, on every channel available.
+
+    Two channels, because they fail in opposite situations. The in-app
+    notification is reliable and reaches nobody who is not looking; WhatsApp
+    reaches a mechanic whose browser is shut, and depends on a provider and an
+    approved template. A broadcast expires in minutes, so a mechanic who has to
+    be already staring at a dashboard to see one is a mechanic who mostly
+    misses them.
+
+    Never raises. A notification that fails must not roll back the dispatch —
+    the offer row is the thing that matters, and a mechanic who opens the
+    dashboard will still see it.
+
+    What is deliberately NOT sent: the customer's name, phone number, street
+    address or coordinates. Same rule as the offer API. This message goes to
+    every mechanic in the radius and none of them has committed to anything.
+    """
+    try:
+        if mechanic.user_id is not None:
+            db.add(
+                Notification(
+                    user_id=mechanic.user_id,
+                    type=NotificationType.job_offer,
+                    title=f"New job {offer.distance_km:g} km away",
+                    body=(
+                        f"{sr.problem_summary[:160]} — open your dashboard to accept. "
+                        f"Reference {sr.reference}."
+                    ),
+                )
+            )
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("in-app offer notification failed for mechanic=%s", mechanic.id)
+
+    try:
+        phone = mechanic.whatsapp_phone or mechanic.phone
+        if phone:
+            await queue_message(
+                db,
+                to_phone=phone,
+                template=WhatsAppTemplate.job_offer,
+                variables={
+                    "reference": sr.reference,
+                    "distance_km": f"{offer.distance_km:g}",
+                    "problem": sr.problem_summary[:120],
+                    "area": sr.pincode or "",
+                },
+                # One message per (request, mechanic), so a re-dispatch after a
+                # timeout cannot send the same mechanic the same job twice.
+                idempotency_key=f"job_offer:{sr.id}:{mechanic.id}",
+                service_request_id=sr.id,
+            )
+    except Exception:
+        logger.exception("whatsapp offer notification failed for mechanic=%s", mechanic.id)
 
 
 async def accept_offer(

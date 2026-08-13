@@ -19,6 +19,7 @@ class NotificationType(str, enum.Enum):
     loan_inquiry_received = "loan_inquiry_received"
     price_drop = "price_drop"
     listing_viewed = "listing_viewed"
+    job_offer = "job_offer"
     system = "system"
 
 
