@@ -26,7 +26,12 @@ from .payment import Payment
 from .price_alert import PriceAlert
 from .refresh_token import RefreshToken
 from .review import Review
-from .service_request import ServiceRequest, ServiceRequestStatus
+from .service_request import (
+    ServiceOfferStatus,
+    ServiceRequest,
+    ServiceRequestOffer,
+    ServiceRequestStatus,
+)
 from .subscription import Subscription
 from .test_drive_booking import TestDriveBooking
 from .user import User
@@ -55,6 +60,8 @@ __all__ = [
     "LendingPartner", "LenderRateSlab", "PartnerType", "CreditBand",
     "LoanApplication", "LoanApplicationStatus", "LoanOffer", "CreditCheck",
     "CreditSource", "VehicleCondition",
-    "ServiceRequest", "ServiceRequestStatus",
+    "ServiceOfferStatus",
+    "ServiceRequest",
+    "ServiceRequestOffer", "ServiceRequestStatus",
     "WhatsAppMessage", "WhatsAppTemplate", "WhatsAppStatus",
 ]

@@ -31,21 +31,42 @@ from core.limiter import limiter
 from db.session import get_db
 from models.mechanic import Mechanic, MechanicStatus
 from models.payment import Payment, PaymentPurpose, PaymentStatus
-from models.service_request import ServiceRequest, ServiceRequestStatus
+from models.service_request import (
+    ServiceOfferStatus,
+    ServiceRequest,
+    ServiceRequestOffer,
+    ServiceRequestStatus,
+)
 from models.user import User, UserRole
 from routers.payments import _verify_razorpay_signature
 from schemas.mechanic import MechanicPublicOut
 from schemas.service_request import (
+    AcceptOfferOut,
     AssignMechanicRequest,
     CommissionPreviewOut,
+    DispatchRequestIn,
+    DispatchResultOut,
+    OfferOut,
     QuoteRequest,
     ServicePaymentOut,
     ServiceRequestCreate,
     ServiceRequestOut,
+    StartOtpOut,
+    VerifyStartOtpIn,
 )
 from services import upi
 from services.commission import calculate_commission
 from services.geo import find_nearest_mechanics, haversine_km
+from services.service_dispatch import (
+    OTP_MAX_ATTEMPTS,
+    DispatchError,
+    NoMechanicsAvailable,
+    accept_offer,
+    decline_offer,
+    dispatch_request,
+    issue_start_otp,
+    verify_otp,
+)
 from services.whatsapp import send_payment_receipt
 
 router = APIRouter(prefix="/service-requests", tags=["service-requests"])
@@ -555,6 +576,280 @@ async def cancel_service_request(
         )
     sr.status = ServiceRequestStatus.cancelled
     sr.cancelled_reason = reason
+    await db.commit()
+    await db.refresh(sr, attribute_names=["mechanic"])
+    return _to_out(sr)
+
+
+# ── Dispatch: broadcast, accept, start OTP ──────────────────────────────────
+#
+# The Uber-shaped path, alongside the customer-picks-a-mechanic path above:
+#
+#   POST /{id}/dispatch          customer broadcasts to everyone within 1 km
+#   GET  /offers/available       mechanic sees jobs offered to them
+#   POST /{id}/accept            first to accept wins, atomically
+#   POST /{id}/decline           pass, leaving it open for the rest
+#   GET  /{id}/start-otp         customer reads the code off their screen
+#   POST /{id}/verify-start-otp  mechanic enters it on arrival → in_progress
+
+
+async def _mechanic_for_user(db: AsyncSession, user: User) -> Mechanic:
+    """The mechanic profile acting for this account, or 403."""
+    m = (
+        await db.execute(select(Mechanic).where(Mechanic.user_id == user.id))
+    ).scalar_one_or_none()
+    if m is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"No mechanic profile is linked to {user.email}. "
+                   "Register as a mechanic before picking up jobs.",
+        )
+    if m.status != MechanicStatus.active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Your mechanic account is '{m.status.value}' and cannot take jobs yet.",
+        )
+    return m
+
+
+@router.post("/{request_id}/dispatch", response_model=DispatchResultOut)
+@limiter.limit("10/hour")
+async def dispatch_service_request(
+    request: Request,
+    request_id: uuid.UUID,
+    payload: DispatchRequestIn,
+    db: DbDep,
+    current_user: CurrentUser,
+) -> DispatchResultOut:
+    """Broadcast an open request to available mechanics nearby.
+
+    Rate-limited per customer: a broadcast interrupts every mechanic in the
+    area, so re-sending it in a loop is not a free action.
+    """
+    sr = await _load_owned(db, request_id, current_user)
+
+    try:
+        offers = await dispatch_request(
+            db, sr, radius_km=payload.radius_km, limit=payload.limit
+        )
+    except NoMechanicsAvailable as exc:
+        # 404 would say the request does not exist; 500 would say we broke.
+        # Neither is true — the honest answer is that nobody is around, and the
+        # customer needs to know that rather than watch a spinner.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
+    except DispatchError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    await db.commit()
+
+    return DispatchResultOut(
+        request_id=sr.id,
+        reference=sr.reference,
+        radius_km=sr.dispatch_radius_km or 0.0,
+        offers_sent=sr.dispatch_offer_count,
+        expires_at=offers[0].expires_at if offers else None,
+        message=(
+            f"Sent to {sr.dispatch_offer_count} mechanic(s) within "
+            f"{sr.dispatch_radius_km:g} km. The first to accept will be assigned."
+        ),
+    )
+
+
+@router.get("/offers/available", response_model=list[OfferOut])
+async def my_offers(db: DbDep, current_user: CurrentUser) -> list[OfferOut]:
+    """Live job offers for the signed-in mechanic, nearest first."""
+    mechanic = await _mechanic_for_user(db, current_user)
+    now = datetime.now(timezone.utc)
+
+    stmt = (
+        select(ServiceRequestOffer, ServiceRequest)
+        .join(ServiceRequest, ServiceRequest.id == ServiceRequestOffer.request_id)
+        .where(
+            ServiceRequestOffer.mechanic_id == mechanic.id,
+            ServiceRequestOffer.status == ServiceOfferStatus.offered,
+            # Still genuinely available: an offer whose request was taken or
+            # cancelled must not sit in the queue looking actionable.
+            ServiceRequest.status == ServiceRequestStatus.open,
+        )
+        .order_by(ServiceRequestOffer.distance_km)
+    )
+    rows = (await db.execute(stmt)).all()
+
+    return [
+        OfferOut(
+            offer_id=offer.id,
+            request_id=sr.id,
+            reference=sr.reference,
+            distance_km=offer.distance_km,
+            problem_summary=sr.problem_summary,
+            severity=sr.severity,
+            is_vehicle_drivable=sr.is_vehicle_drivable,
+            manufacturer=sr.manufacturer,
+            model=sr.model,
+            pincode=sr.pincode,
+            landmark=sr.landmark,
+            created_at=sr.created_at,
+            expires_at=offer.expires_at,
+        )
+        for offer, sr in rows
+        if offer.expires_at is None or offer.expires_at > now
+    ]
+
+
+@router.post("/{request_id}/accept", response_model=AcceptOfferOut)
+async def accept_service_request(
+    request_id: uuid.UUID, db: DbDep, current_user: CurrentUser
+) -> AcceptOfferOut:
+    """Mechanic claims a broadcast job. First to arrive here wins."""
+    mechanic = await _mechanic_for_user(db, current_user)
+
+    sr = (
+        await db.execute(
+            select(ServiceRequest)
+            .options(selectinload(ServiceRequest.mechanic))
+            .where(ServiceRequest.id == request_id)
+        )
+    ).scalar_one_or_none()
+    if sr is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service request not found")
+
+    # Only someone who was actually offered the job may take it. Without this,
+    # the endpoint is an open queue any registered mechanic could claim from by
+    # guessing a request id, which defeats the radius entirely.
+    offer = (
+        await db.execute(
+            select(ServiceRequestOffer).where(
+                ServiceRequestOffer.request_id == sr.id,
+                ServiceRequestOffer.mechanic_id == mechanic.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if offer is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This job was not offered to you",
+        )
+    if offer.expires_at is not None and offer.expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE, detail="This offer has expired"
+        )
+
+    won = await accept_offer(db, sr, mechanic)
+    await db.commit()
+
+    if not won:
+        return AcceptOfferOut(
+            won=False,
+            request_id=sr.id,
+            message="Another mechanic accepted this job first.",
+        )
+
+    await db.refresh(sr, attribute_names=["mechanic"])
+    return AcceptOfferOut(
+        won=True,
+        request_id=sr.id,
+        message="Job assigned to you. Ask the customer for their 6-digit start code on arrival.",
+        request=_to_out(sr),
+    )
+
+
+@router.post("/{request_id}/decline", status_code=status.HTTP_204_NO_CONTENT)
+async def decline_service_request(
+    request_id: uuid.UUID, db: DbDep, current_user: CurrentUser
+) -> None:
+    """Mechanic passes on a job, leaving it open for the others."""
+    mechanic = await _mechanic_for_user(db, current_user)
+    sr = await db.get(ServiceRequest, request_id)
+    if sr is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service request not found")
+    await decline_offer(db, sr, mechanic)
+    await db.commit()
+
+
+@router.get("/{request_id}/start-otp", response_model=StartOtpOut)
+async def get_start_otp(
+    request_id: uuid.UUID, db: DbDep, current_user: CurrentUser
+) -> StartOtpOut:
+    """The start code, for the customer who raised the request.
+
+    Behind `_load_owned`, so only the customer (or an admin) can reach it. The
+    mechanic must obtain it from the customer in person — which is the entire
+    reason the code exists.
+    """
+    sr = await _load_owned(db, request_id, current_user)
+    if sr.status not in (ServiceRequestStatus.open, ServiceRequestStatus.assigned):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"No start code is needed for a request in status '{sr.status.value}'",
+        )
+
+    # Issued on demand rather than at creation: the plaintext is unrecoverable
+    # once returned, so "show me the code again" has to mint a fresh one. Any
+    # code the mechanic was already told stops working at that moment, which is
+    # the correct behaviour if the customer suspects it was overheard.
+    otp = issue_start_otp(sr)
+    await db.commit()
+
+    return StartOtpOut(
+        request_id=sr.id,
+        reference=sr.reference,
+        otp=otp,
+        issued_at=sr.start_otp_issued_at or datetime.now(timezone.utc),
+    )
+
+
+@router.post("/{request_id}/verify-start-otp", response_model=ServiceRequestOut)
+@limiter.limit("20/hour")
+async def verify_start_otp(
+    request: Request,
+    request_id: uuid.UUID,
+    payload: VerifyStartOtpIn,
+    db: DbDep,
+    current_user: CurrentUser,
+) -> ServiceRequestOut:
+    """Mechanic enters the customer's code on arrival; the job starts.
+
+    This replaces the bare `/start` transition for dispatched jobs: work now
+    begins on proof of arrival rather than on the mechanic's own say-so.
+    """
+    sr = await _load_for_mechanic(db, request_id, current_user)
+
+    if sr.status != ServiceRequestStatus.assigned:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot start a request in status '{sr.status.value}'",
+        )
+    if not sr.start_otp_hash:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No start code has been issued yet — ask the customer to open the job and read it out.",
+        )
+
+    # Counted before the comparison, so a crash or a disconnect mid-request
+    # cannot be used to get a free guess.
+    if sr.start_otp_attempts >= OTP_MAX_ATTEMPTS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many incorrect attempts. Ask the customer to generate a new code.",
+        )
+    sr.start_otp_attempts += 1
+
+    if not verify_otp(payload.otp, sr.id, sr.start_otp_hash):
+        await db.commit()  # persist the attempt even though the request fails
+        remaining = max(0, OTP_MAX_ATTEMPTS - sr.start_otp_attempts)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Incorrect code. {remaining} attempt(s) remaining.",
+        )
+
+    now = datetime.now(timezone.utc)
+    sr.start_otp_verified_at = now
+    sr.status = ServiceRequestStatus.in_progress
+    # Single-use: the code has done its job, and leaving it live would let it be
+    # replayed if the work is paused and resumed.
+    sr.start_otp_hash = None
     await db.commit()
     await db.refresh(sr, attribute_names=["mechanic"])
     return _to_out(sr)

@@ -124,3 +124,100 @@ class ServicePaymentOut(BaseModel):
     upi_uri: str | None
     upi_qr_data_uri: str | None
     commission: CommissionPreviewOut
+
+
+# ── Dispatch: broadcast, accept, start OTP ──────────────────────────────────
+
+class DispatchRequestIn(BaseModel):
+    """Optional overrides for a broadcast. Defaults come from settings."""
+
+    radius_km: float | None = Field(default=None, gt=0, le=50)
+    limit: int | None = Field(default=None, ge=1, le=50)
+
+
+class DispatchResultOut(BaseModel):
+    """What the broadcast did, from the customer's side.
+
+    Deliberately a count and a distance, not a list of mechanics. The customer
+    does not choose here — telling them who was asked invites them to ring
+    around, which is the behaviour the broadcast exists to replace.
+    """
+
+    request_id: uuid.UUID
+    reference: str
+    radius_km: float
+    offers_sent: int
+    expires_at: datetime | None
+    message: str
+
+
+class StartOtpOut(BaseModel):
+    """The start code, returned to the customer and to nobody else.
+
+    This is the only response in the module that carries the plaintext OTP, and
+    it is reachable only by the customer who owns the request. Every
+    mechanic-facing schema below omits it by construction rather than by
+    remembering to strip it.
+    """
+
+    request_id: uuid.UUID
+    reference: str
+    otp: str
+    issued_at: datetime
+
+
+class VerifyStartOtpIn(BaseModel):
+    otp: str = Field(min_length=4, max_length=8)
+
+    @field_validator("otp")
+    @classmethod
+    def _digits_only(cls, v: str) -> str:
+        if not v.isdigit():
+            raise ValueError("OTP must be digits only")
+        return v
+
+
+class OfferOut(BaseModel):
+    """A broadcast job as the *mechanic* sees it, before accepting.
+
+    Carries enough to decide — how far, what is wrong, whether the car moves —
+    and none of the customer's identity. No name, no phone number, no exact
+    coordinates and no street address: those appear only on the job detail once
+    this mechanic has actually won it.
+
+    A 1 km broadcast reaches every mechanic in the area at once. Putting a
+    stranded person's precise position and the fact that they are alone with a
+    broken car into all of those hands, on the strength of a tap nobody has
+    committed to, is not a trade worth making for a slightly richer card.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    offer_id: uuid.UUID
+    request_id: uuid.UUID
+    reference: str
+    distance_km: float
+    problem_summary: str
+    severity: str | None
+    is_vehicle_drivable: bool | None
+    manufacturer: str | None
+    model: str | None
+    # Area only — the pincode and a landmark, never the street address.
+    pincode: str | None
+    landmark: str | None
+    created_at: datetime
+    expires_at: datetime | None
+
+
+class AcceptOfferOut(BaseModel):
+    """Result of a mechanic tapping Accept.
+
+    `won` is false when another mechanic got there first. That is an ordinary
+    outcome of a broadcast, not an error, so it returns 200 with won=false
+    rather than a 409 the app has to interpret.
+    """
+
+    won: bool
+    request_id: uuid.UUID
+    message: str
+    request: ServiceRequestOut | None = None
