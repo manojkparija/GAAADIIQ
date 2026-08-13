@@ -41,6 +41,7 @@ from routers import (  # noqa: E402
     cars,
     dealers,
     diagnosis,
+    diagnosis_kb,
     health,
     insurance,
     listings,
@@ -372,6 +373,7 @@ async def metrics(request: Request):
 
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(diagnosis_kb.router)
 app.include_router(otp.router)
 app.include_router(admin.router)
 app.include_router(cars.router)
