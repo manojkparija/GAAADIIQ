@@ -7,6 +7,8 @@ boto3>=1.35.0
 Pillow>=11.0.0
 # Brochure ingestion: extracts embedded images and text from car PDFs
 PyMuPDF>=1.24.0
+# Diagnosis knowledge base: reads the editor-facing .xlsx workbook
+openpyxl>=3.1.0
 opensearch-py>=2.7.0
 aiosqlite>=0.20.0
 sqlalchemy==2.0.36
