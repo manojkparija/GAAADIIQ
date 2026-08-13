@@ -101,7 +101,7 @@
   padding-bottom: 4px;
   a {
     color: var(--text);
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.8rem;
     // Labels are single-line by design. Without this a two-word item breaks
     // across lines once the row runs short of space, and because every item
@@ -123,16 +123,11 @@
     }
     &:hover, &.active { color: var(--text); &::after { transform: scaleX(1); } }
 
-    // Roadside help. Everything else in this bar is browsed at leisure; this is
-    // the one you need when the car has already stopped, so it is tinted rather
-    // than left to blend into a row of eleven identical labels.
-    //
-    // --primary, not the teal: this is 0.82rem text on the navbar surface, and
-    // the teal does not clear AA at that size.
+    // Roadside help reads in the same ink as every other label, by request. It
+    // was tinted to stand out; the row is uniform now, and the hover underline
+    // every other item has is what marks it instead.
     &.nav-urgent {
-      color: var(--primary);
-      &::after { background: var(--primary); }
-      &:hover, &.active { color: var(--primary); }
+      color: var(--text);
     }
   }
 }
@@ -381,10 +376,7 @@
   &.logout { color: var(--danger); &:hover { background: rgba(239,68,68,0.08); color: var(--danger); } }
 }
 
-// Roadside help in the mobile menu. Tinted for the same reason as its desktop
-// counterpart: it is the one item here you reach for in an emergency rather
-// than while browsing.
+// Matches the rest of the menu, same as its desktop counterpart.
 .mobile-urgent {
-  color: var(--primary) !important;
   font-weight: 700;
 }
