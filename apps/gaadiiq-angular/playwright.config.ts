@@ -13,6 +13,18 @@ export default defineConfig({
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:4200',
     trace: 'on-first-retry',
+    // Allows pointing at a Chromium that Playwright did not download itself.
+    //
+    // Needed wherever the pinned @playwright/test expects a browser build the
+    // machine does not have — a sandbox or CI image that ships its own
+    // Chromium, for instance. Without it the run fails at launch with
+    // "Executable doesn't exist", which looks exactly like seven failing tests
+    // rather than a browser that never started.
+    //
+    // Unset by default, so normal runs and CI are untouched.
+    launchOptions: process.env['PLAYWRIGHT_CHROMIUM_PATH']
+      ? { executablePath: process.env['PLAYWRIGHT_CHROMIUM_PATH'] }
+      : {},
   },
   // Serves the production build, not `ng serve`. The dev server compiles each
   // lazy route on first request, which is slow enough that the smoke suite

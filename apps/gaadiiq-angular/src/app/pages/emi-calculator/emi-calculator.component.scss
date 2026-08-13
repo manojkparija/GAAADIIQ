@@ -74,7 +74,9 @@
 .bank-name { font-size: 0.9rem; font-weight: 600; }
 .bank-rate { font-size: 0.8rem; color: var(--text-tertiary); }
 .bank-emi { text-align: right; }
-.emi-val { font-size: 1rem; font-weight: 700; color: #1e40af; }
+// Was #1e40af — a light-theme blue that measured 1.58:1 against the dark
+// panel it sits on, the worst reading on the site.
+.emi-val { font-size: 1rem; font-weight: 700; color: var(--primary-ink); }
 .emi-label { font-size: 0.7rem; color: var(--text-tertiary); }
 .best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #1e40af, var(--teal)); color: var(--text); font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 .selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
