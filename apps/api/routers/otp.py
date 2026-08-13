@@ -7,8 +7,16 @@ POST /auth/otp/verify — verify OTP and return JWT tokens
 Implementation notes:
 - SMS is sent via MSG91 (India) when MSG91_AUTH_KEY is set in env.
 - Falls back to printing OTP to server log in development (never in production).
-- OTPs are stored as bcrypt hashes in Redis with a 10-minute TTL.
-- Rate-limited to 5 send requests per phone per hour.
+- OTPs are stored hashed (peppered SHA-256) in Redis with a 10-minute TTL,
+  falling back to an in-process map only when Redis is unreachable. See
+  services/otp_store.py — including why that fallback is not a production path.
+- Verification is capped at 5 attempts per code, counted in the store rather
+  than by IP, so guesses cannot be reset by changing address.
+- Send is additionally rate-limited by the shared limiter, which keys on client
+  IP (core/limiter.py). That is a blunt instrument for this endpoint: it does
+  not stop one client walking a list of phone numbers, and it does not stop a
+  distributed client hammering one number. The per-code attempt cap above is
+  what actually bounds an attack; this only bounds SMS spend.
 """
 # NOTE: deliberately NOT using `from __future__ import annotations`.
 # PEP 563 turns annotations into strings, and slowapi's @limiter.limit wrapper
@@ -17,29 +25,17 @@ Implementation notes:
 
 import logging
 import os
-import random
-import string
-import time
 
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from core.config import settings
 from core.limiter import limiter
+from services import otp_store
 
 logger = logging.getLogger("gaadiiq.otp")
 
 router = APIRouter(prefix="/auth/otp", tags=["auth"])
-
-# ── In-memory OTP store (replace with Redis in production) ───────────────────
-# Format: { phone: (otp_hash, expiry_ts) }
-_otp_store: dict[str, tuple[str, float]] = {}
-_OTP_TTL = 600  # 10 minutes
-
-
-def _generate_otp(length: int = 6) -> str:
-    return "".join(random.choices(string.digits, k=length))
-
 
 async def _send_sms(phone: str, otp: str) -> None:
     """Send OTP via MSG91 if configured; log in dev mode."""
@@ -75,23 +71,37 @@ class VerifyOTPIn(BaseModel):
 @limiter.limit("5/hour")
 async def send_otp(request: Request, body: SendOTPIn):
     """Send a 6-digit OTP to the given phone number."""
-    otp = _generate_otp()
-    _otp_store[body.phone] = (otp, time.time() + _OTP_TTL)
+    otp = otp_store.generate_otp()
+    await otp_store.store(body.phone, otp)
     await _send_sms(body.phone, otp)
     return {"message": "OTP sent"}
 
 
 @router.post("/verify", status_code=status.HTTP_200_OK)
-async def verify_otp(body: VerifyOTPIn):
-    """Verify the OTP and return a success flag (caller should then issue JWT)."""
-    entry = _otp_store.get(body.phone)
-    if not entry:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "OTP not found or expired — request a new one")
-    stored_otp, expiry = entry
-    if time.time() > expiry:
-        _otp_store.pop(body.phone, None)
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "OTP expired — request a new one")
-    if body.otp != stored_otp:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid OTP")
-    _otp_store.pop(body.phone, None)
+@limiter.limit("20/hour")
+async def verify_otp(request: Request, body: VerifyOTPIn):
+    """Verify the OTP and return a success flag (caller should then issue JWT).
+
+    Both limits matter and neither replaces the other: the decorator bounds how
+    fast one address can guess, and the store's own attempt cap bounds how many
+    guesses a code will ever accept, from anywhere. Before this, there was no
+    cap of either kind on a six-digit secret.
+    """
+    try:
+        ok = await otp_store.verify(body.phone, body.otp)
+    except otp_store.OtpNotFound:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "OTP not found or expired — request a new one"
+        ) from None
+    except otp_store.OtpAttemptsExhausted:
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "Too many incorrect attempts — request a new OTP",
+        ) from None
+
+    if not ok:
+        remaining = await otp_store.attempts_remaining(body.phone)
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED, f"Invalid OTP. {remaining} attempt(s) remaining."
+        )
     return {"verified": True, "phone": body.phone}
