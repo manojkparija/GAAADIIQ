@@ -145,12 +145,19 @@
 .pref-chip {
   padding: 0.4rem 1rem;
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid var(--divider);
   background: var(--fill-dim);
   color: var(--text-secondary);
   font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
-  &.selected { background: rgba(47,107,255,0.3); border-color: #2563EB; color: var(--text); }
-  &:hover { background: var(--fill-medium); }
+  // Blue-to-teal, matching .btn-gradient — but ending on the darker teal
+  // (#0A786B) rather than --teal. The chip label is 0.85rem, so it is small
+  // text under AA: white on --teal measures ~2.2:1, white on #0A786B ~5.3:1.
+  &.selected {
+    background: linear-gradient(135deg, var(--primary) 0%, #0A786B 100%);
+    border-color: transparent;
+    color: #fff;
+  }
+  &:hover:not(.selected) { background: var(--fill-medium); }
 }
 
 .role-picker {
