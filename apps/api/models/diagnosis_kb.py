@@ -221,6 +221,7 @@ class DiagnosisMaster(UUIDMixin, TimestampMixin, Base):
     )
     last_verified: Mapped[date | None] = mapped_column(Date)
     reviewed_by: Mapped[str | None] = mapped_column(String(255))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[RecordStatus] = mapped_column(
         _pg_enum(RecordStatus, "diagnosis_record_status"),
         nullable=False,
@@ -337,6 +338,8 @@ class DiagnosisSolution(UUIDMixin, TimestampMixin, Base):
         default=RecordStatus.draft,
         index=True,
     )
+    reviewed_by: Mapped[str | None] = mapped_column(String(255))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     notes: Mapped[str | None] = mapped_column(Text)
 
     diagnosis: Mapped["DiagnosisMaster"] = relationship(back_populates="solutions")
@@ -388,6 +391,55 @@ class DiagnosisSymptomAlias(UUIDMixin, TimestampMixin, Base):
 
     def __repr__(self) -> str:
         return f"<DiagnosisSymptomAlias {self.normalised_phrase} → {self.canonical_symptom}>"
+
+
+class ReviewDecision(str, enum.Enum):
+    approved = "APPROVED"
+    rejected = "REJECTED"
+    # Sent back to the author with notes: not wrong, not yet right. Without it
+    # a reviewer's only options are to publish something they doubt or to
+    # reject work that mostly stands, and neither leaves a usable record.
+    returned = "RETURNED"
+
+
+class DiagnosisReviewEvent(UUIDMixin, TimestampMixin, Base):
+    """Who decided what about which row, and why.
+
+    The row itself carries only its current state — ACTIVE, VERIFIED, the name
+    of the last reviewer. That is enough to serve traffic and not enough to
+    answer the question that actually gets asked after a bad answer reaches a
+    driver: who approved this, when, and what did they say about it. This table
+    is that record, and it is append-only for the same reason.
+
+    Nullable on both sides because a decision is about a diagnosis *or* a single
+    solution; exactly one is set, enforced by a check constraint in the
+    migration rather than by convention.
+    """
+
+    __tablename__ = "diagnosis_review_events"
+
+    diagnosis_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("diagnosis_master.id", ondelete="CASCADE"), index=True
+    )
+    solution_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("diagnosis_solutions.id", ondelete="CASCADE"), index=True
+    )
+    decision: Mapped[ReviewDecision] = mapped_column(
+        _pg_enum(ReviewDecision, "diagnosis_review_decision"), nullable=False, index=True
+    )
+    reviewer: Mapped[str] = mapped_column(String(255), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text)
+    # What the row looked like before, so a decision can be read without
+    # reconstructing history from the rows it touched.
+    previous_status: Mapped[str | None] = mapped_column(String(30))
+    previous_verification: Mapped[str | None] = mapped_column(String(30))
+
+    __table_args__ = (
+        Index("ix_dre_recent", "created_at", "reviewer"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<DiagnosisReviewEvent {self.decision} by {self.reviewer}>"
 
 
 class DiagnosisImportRun(UUIDMixin, TimestampMixin, Base):
