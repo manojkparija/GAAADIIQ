@@ -121,6 +121,53 @@ export interface GeoFix {
 }
 
 /**
+ * A broadcast job as the mechanic sees it *before* accepting.
+ *
+ * Deliberately has no customer name, phone number or coordinates. The server
+ * does not send them, and it should not: a 1 km broadcast reaches every
+ * mechanic in the area at once, and none of them has committed to anything yet.
+ * Those fields arrive on the ServiceRequest once this mechanic has won the job.
+ */
+export interface JobOffer {
+  offer_id: string;
+  request_id: string;
+  reference: string;
+  distance_km: number;
+  problem_summary: string;
+  severity: string | null;
+  is_vehicle_drivable: boolean | null;
+  manufacturer: string | null;
+  model: string | null;
+  pincode: string | null;
+  landmark: string | null;
+  created_at: string;
+  expires_at: string | null;
+}
+
+export interface AcceptResult {
+  won: boolean;
+  request_id: string;
+  message: string;
+  request: ServiceRequest | null;
+}
+
+export interface DispatchResult {
+  request_id: string;
+  reference: string;
+  radius_km: number;
+  offers_sent: number;
+  expires_at: string | null;
+  message: string;
+}
+
+export interface StartOtp {
+  request_id: string;
+  reference: string;
+  otp: string;
+  issued_at: string;
+}
+
+/**
  * Client for the roadside repair marketplace.
  *
  * Two halves with deliberately different auth requirements: finding a mechanic
@@ -272,6 +319,68 @@ export class MarketplaceService {
   }
 
   /** Mechanic accepts the job: assigned -> in_progress. */
+  // ── Dispatch: broadcast, accept, arrival OTP ──────────────────────────────
+
+  /** Broadcast an open request to available mechanics nearby (customer). */
+  async dispatch(requestId: string, radiusKm?: number): Promise<DispatchResult> {
+    return firstValueFrom(
+      this.http.post<DispatchResult>(
+        `${this.apiUrl}/service-requests/${requestId}/dispatch`,
+        radiusKm ? { radius_km: radiusKm } : {},
+      ),
+    );
+  }
+
+  /** Live job offers for the signed-in mechanic, nearest first. */
+  async myOffers(): Promise<JobOffer[]> {
+    return firstValueFrom(
+      this.http.get<JobOffer[]>(`${this.apiUrl}/service-requests/offers/available`),
+    );
+  }
+
+  /**
+   * Claim a broadcast job.
+   *
+   * `won: false` is an ordinary outcome, not an error — someone else was
+   * quicker. The server returns 200 for it precisely so the caller does not
+   * have to tell a lost race apart from a real failure by reading a status code.
+   */
+  async acceptOffer(requestId: string): Promise<AcceptResult> {
+    return firstValueFrom(
+      this.http.post<AcceptResult>(`${this.apiUrl}/service-requests/${requestId}/accept`, {}),
+    );
+  }
+
+  /** Pass on a job, leaving it open for the other mechanics. */
+  async declineOffer(requestId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post<void>(`${this.apiUrl}/service-requests/${requestId}/decline`, {}),
+    );
+  }
+
+  /**
+   * The arrival code, for the customer who raised the request.
+   *
+   * Only ever called from the customer's own screen. Each call mints a fresh
+   * code and retires the previous one, so this is not a "peek" — do not call it
+   * on a timer or on every render.
+   */
+  async startOtp(requestId: string): Promise<StartOtp> {
+    return firstValueFrom(
+      this.http.get<StartOtp>(`${this.apiUrl}/service-requests/${requestId}/start-otp`),
+    );
+  }
+
+  /** Mechanic enters the customer's code on arrival; the job starts. */
+  async verifyStartOtp(requestId: string, otp: string): Promise<ServiceRequest> {
+    return firstValueFrom(
+      this.http.post<ServiceRequest>(
+        `${this.apiUrl}/service-requests/${requestId}/verify-start-otp`,
+        { otp },
+      ),
+    );
+  }
+
   async startWork(requestId: string): Promise<ServiceRequest> {
     return firstValueFrom(
       this.http.post<ServiceRequest>(`${this.apiUrl}/service-requests/${requestId}/start`, {}),

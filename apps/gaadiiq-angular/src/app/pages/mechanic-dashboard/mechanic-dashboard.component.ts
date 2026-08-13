@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
+  AcceptResult,
   CommissionPreview,
+  JobOffer,
   MarketplaceService,
   MechanicProfile,
   ServiceRequest,
@@ -42,6 +44,18 @@ export class MechanicDashboardComponent {
   readonly profile = signal<MechanicProfile | null>(null);
   readonly jobs = signal<ServiceRequest[]>([]);
 
+  /** Broadcast jobs offered to this mechanic and not yet answered. */
+  readonly offers = signal<JobOffer[]>([]);
+  /** Set when a race is lost, so the UI can say why a card vanished. */
+  readonly lostMessage = signal<string | null>(null);
+
+  /** Which job's OTP box is open, and what has been typed into it. */
+  readonly otpJobId = signal<string | null>(null);
+  // A signal rather than a plain field bound with ngModel: a computed() over a
+  // plain property evaluates once and then reports a stale answer forever.
+  readonly otpEntry = signal('');
+  readonly otpError = signal<string | null>(null);
+
   /** Which job's quote box is open, and what has been typed into it. */
   readonly quotingId = signal<string | null>(null);
   // A signal, not a plain field: `livePreview` is a computed() and only tracks
@@ -73,6 +87,7 @@ export class MechanicDashboardComponent {
     if (!this.auth.currentUser()) {
       this.profile.set(null);
       this.jobs.set([]);
+      this.offers.set([]);
       this.loading.set(false);
       return;
     }
@@ -83,11 +98,107 @@ export class MechanicDashboardComponent {
       // No profile means "not a mechanic", so there is nothing to list and the
       // template offers registration instead.
       this.jobs.set(profile ? await this.market.assignedToMe() : []);
+      this.offers.set(profile ? await this.market.myOffers() : []);
     } catch (e) {
       this.error.set(this.readableError(e));
     } finally {
       this.loading.set(false);
     }
+  }
+
+  // ── Broadcast offers ──────────────────────────────────────────────────────
+
+  /**
+   * Take a broadcast job.
+   *
+   * A lost race is not an error. `won: false` means another mechanic was
+   * quicker, which is the ordinary outcome of a broadcast — so it is reported
+   * as a plain message and the card is dropped, not raised in the red error
+   * banner beside "Something went wrong".
+   */
+  async acceptOffer(offer: JobOffer): Promise<void> {
+    this.busyId.set(offer.request_id);
+    this.error.set(null);
+    this.lostMessage.set(null);
+    try {
+      const result: AcceptResult = await this.market.acceptOffer(offer.request_id);
+      if (!result.won) {
+        this.lostMessage.set(result.message);
+      }
+      // Refetched either way. On a win the job appears in the assigned list; on
+      // a loss the offer is gone. Removing it locally instead would leave the
+      // two lists disagreeing with the server until the next reload.
+      await this.refreshLists();
+    } catch (e) {
+      this.error.set(this.readableError(e));
+    } finally {
+      this.busyId.set(null);
+    }
+  }
+
+  async declineOffer(offer: JobOffer): Promise<void> {
+    this.busyId.set(offer.request_id);
+    this.error.set(null);
+    try {
+      await this.market.declineOffer(offer.request_id);
+      this.offers.update(list => list.filter(o => o.request_id !== offer.request_id));
+    } catch (e) {
+      this.error.set(this.readableError(e));
+    } finally {
+      this.busyId.set(null);
+    }
+  }
+
+  /** Minutes left before an offer lapses, or null when it does not expire. */
+  minutesLeft(offer: JobOffer): number | null {
+    if (!offer.expires_at) return null;
+    const ms = new Date(offer.expires_at).getTime() - Date.now();
+    return ms <= 0 ? 0 : Math.ceil(ms / 60000);
+  }
+
+  // ── Arrival OTP ───────────────────────────────────────────────────────────
+
+  openOtp(job: ServiceRequest): void {
+    this.otpJobId.set(job.id);
+    this.otpEntry.set('');
+    this.otpError.set(null);
+  }
+
+  cancelOtp(): void {
+    this.otpJobId.set(null);
+    this.otpEntry.set('');
+    this.otpError.set(null);
+  }
+
+  /**
+   * Start the job by entering the code the customer reads out on arrival.
+   *
+   * The error is shown inside the OTP box rather than the page-level banner:
+   * "2 attempts remaining" is about this input, and the mechanic is standing
+   * beside the car reading it off a phone.
+   */
+  async submitOtp(job: ServiceRequest): Promise<void> {
+    const otp = this.otpEntry().trim();
+    if (!/^\d{4,8}$/.test(otp)) {
+      this.otpError.set('Enter the digits the customer reads out.');
+      return;
+    }
+    this.busyId.set(job.id);
+    this.otpError.set(null);
+    try {
+      await this.market.verifyStartOtp(job.id, otp);
+      this.cancelOtp();
+      await this.refreshLists();
+    } catch (e) {
+      this.otpError.set(this.readableError(e));
+    } finally {
+      this.busyId.set(null);
+    }
+  }
+
+  private async refreshLists(): Promise<void> {
+    this.jobs.set(await this.market.assignedToMe());
+    this.offers.set(await this.market.myOffers());
   }
 
   async start(job: ServiceRequest): Promise<void> {
