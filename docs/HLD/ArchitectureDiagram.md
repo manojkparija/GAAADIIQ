@@ -1,244 +1,189 @@
-# GAADIIQ.COM — Architecture Diagrams
+# GAADIIQ.COM — Architecture Diagram
 
-**Version:** 1.0  
-**Date:** 2026-06-24
+**Version:** 2.0
+**Date:** 2026-08-14
+**Status:** As-built. Every component below was verified against the code and
+`render.yaml` on the date above, not against the original design.
 
-All diagrams use Mermaid syntax (renders in GitHub, Notion, and VS Code with Mermaid extension).
+> **What changed from v1.0.** The first version described a design that was
+> never built: a Next.js frontend and a single Oracle Cloud host running the
+> API, Redis, OpenSearch and Ollama. The frontend is Angular 17 and the API
+> runs on Render. Section 5 lists the services that are configured in code but
+> have no endpoint set in production — those are the parts that quietly fall
+> back rather than fail, and they are the reason the old diagram looked right.
 
 ---
 
-## 1. System Context Diagram
+## 1. System Context
 
 ```mermaid
 C4Context
-  title System Context — GAADIIQ.COM
+  title GAADIIQ — System Context
 
-  Person(buyer, "Car Buyer", "Indian consumer researching vehicles")
-  Person(dealer, "Dealer", "Automotive dealer receiving leads")
-  Person(admin, "Admin / Founder", "Platform administrator")
+  Person(buyer, "Car buyer", "Searches, compares, books test drives, describes faults")
+  Person(dealer, "Dealer", "Lists inventory, manages leads")
+  Person(mechanic, "Mechanic", "Accepts roadside repair requests")
+  Person(admin, "Admin", "Curates catalogue, reviews the diagnosis knowledge base")
 
-  System(gaadiiq, "GAADIIQ.COM", "AI-powered automotive intelligence platform")
+  System(gaadiiq, "GAADIIQ", "Indian car marketplace")
 
-  System_Ext(supabase, "Supabase", "Managed PostgreSQL database")
-  System_Ext(vercel, "Vercel", "Next.js hosting & CDN")
-  System_Ext(oracle, "Oracle Cloud", "Backend compute, Redis, OpenSearch, Ollama")
-  System_Ext(cloudflare, "Cloudflare", "CDN, R2 storage, DNS, DDoS protection")
-  System_Ext(google, "Google OAuth", "Social authentication")
-  System_Ext(email, "Brevo SMTP", "Transactional email")
+  System_Ext(vercel, "Vercel", "Angular web app hosting & CDN")
+  System_Ext(render, "Render", "FastAPI service, deployed from master as a Docker image")
+  System_Ext(supabase, "Supabase", "Managed PostgreSQL + auth (JWT issuer)")
+  System_Ext(r2, "Cloudflare R2", "Vehicle images and brochure assets, S3 API")
+  System_Ext(gemini, "Google Gemini", "LLM for premium-tier diagnosis and content")
+  System_Ext(razorpay, "Razorpay", "Payments")
+  System_Ext(brevo, "Brevo SMTP", "Transactional email")
 
-  Rel(buyer, gaadiiq, "Searches, compares, gets AI recommendations, books test drive")
-  Rel(dealer, gaadiiq, "Views leads, manages test drive appointments")
-  Rel(admin, gaadiiq, "Manages cars, dealers, content, analytics")
+  Rel(buyer, gaadiiq, "Browses, compares, diagnoses")
+  Rel(dealer, gaadiiq, "Lists and manages inventory")
+  Rel(mechanic, gaadiiq, "Receives and accepts jobs")
+  Rel(admin, gaadiiq, "Curates and reviews")
 
-  Rel(gaadiiq, supabase, "Reads/writes car data, users, leads")
-  Rel(gaadiiq, vercel, "Frontend deployed and served")
-  Rel(gaadiiq, oracle, "Backend API, AI inference, cache, search")
-  Rel(gaadiiq, cloudflare, "Static assets, images, CDN routing")
-  Rel(gaadiiq, google, "OAuth token exchange")
-  Rel(gaadiiq, email, "Lead notifications, booking confirmations")
+  Rel(gaadiiq, vercel, "Web app built and served")
+  Rel(gaadiiq, render, "API served")
+  Rel(gaadiiq, supabase, "Reads/writes all persistent data; verifies JWTs")
+  Rel(gaadiiq, r2, "Stores and serves media")
+  Rel(gaadiiq, gemini, "Premium diagnosis, sentiment, content")
+  Rel(gaadiiq, razorpay, "Subscription and commission payments")
+  Rel(gaadiiq, brevo, "Notifications")
 ```
+
+**One arrow is missing from the picture above, and it is missing on purpose so
+it gets stated in words:** the Angular `list-car` page calls a **Supabase Edge
+Function** directly (`functions.invoke('ai-valuation')`), and that function
+calls **Anthropic**. It bypasses the API, the Gemini gateway, and every control
+that lives there. See `HLD/SystemOverview.md` §3.2.
+
+**Not in the picture, deliberately:** Oracle Cloud and Railway. Neither hosts
+anything. The Oracle deploy job was removed from `.github/workflows/ci-api.yml`
+after it was found to have never run — it was gated on a `main` branch that does
+not exist in this repository.
 
 ---
 
-## 2. Component Diagram
+## 2. Containers
 
 ```mermaid
-C4Component
-  title Component Diagram — GAADIIQ.COM
+C4Container
+  title GAADIIQ — Containers
 
-  Container_Boundary(frontend, "Frontend — Vercel") {
-    Component(pages, "Next.js Pages", "App Router, SSG/ISR/CSR")
-    Component(components, "UI Components", "ShadCN, Tailwind, React")
-    Component(hooks, "React Hooks & Query", "Server state, caching")
-    Component(auth_fe, "NextAuth", "JWT session management")
+  Person(user, "User")
+
+  Container_Boundary(web, "Web — Vercel") {
+    Container(ng, "Angular 17 app", "TypeScript, standalone components, signals", "44 routes; no NgRx — state lives in services as signals")
+    Container(intercept, "auth.interceptor", "TypeScript", "Attaches the Supabase token to every request aimed at environment.apiUrl")
   }
 
-  Container_Boundary(backend, "Backend — Oracle Cloud") {
-    Component(api, "FastAPI Router", "REST endpoints /api/v1/*")
-    Component(catalog_svc, "CatalogService", "Brand, car, variant, spec logic")
-    Component(search_svc, "SearchService", "OpenSearch query builder")
-    Component(compare_svc, "ComparisonService", "Spec diff engine")
-    Component(tco_svc, "OwnershipCostService", "TCO calculation engine")
-    Component(lead_svc, "LeadService", "Lead capture, routing")
-    Component(user_svc, "UserService", "Auth, profile, wishlist")
-    Component(ai_svc, "AIAdvisorService", "LangChain orchestration")
-    Component(rec_svc, "RecommendationService", "Rule engine + ML model")
-    Component(admin_svc, "AdminService", "CMS operations")
+  Container_Boundary(api, "API — Render (Docker)") {
+    Container(fastapi, "FastAPI app", "Python 3.12", "29 routers, 164 endpoints")
+    Container(orm, "SQLAlchemy async + Alembic", "Python", "39 tables, 33 migrations")
+    Container(limiter, "slowapi limiter", "Python", "Per-endpoint rate limits")
+    Container(metrics, "/metrics", "prometheus_client", "Counter + Histogram, scraped by nothing yet")
   }
 
-  Container_Boundary(ai, "AI Layer — Oracle Cloud") {
-    Component(ollama, "Ollama", "LLM inference server")
-    Component(llama3, "Llama 3 8B", "Conversational AI model")
-    Component(deepseek, "DeepSeek R1 7B", "SEO content generation")
-    Component(langchain, "LangChain", "Prompt templates, RAG pipeline")
-    Component(chroma, "ChromaDB", "Vector embeddings store")
-    Component(sklearn, "scikit-learn", "ML recommendation model")
-  }
+  ContainerDb(pg, "PostgreSQL", "Supabase", "All persistent state")
+  Container_Ext(r2, "Cloudflare R2", "S3 API", "Originals + WebP derivatives")
+  Container_Ext(gemini, "Gemini Flash", "HTTPS", "Reached only through services/gemini_gateway.py")
 
-  Container_Boundary(data, "Data Layer") {
-    Component(postgres, "PostgreSQL", "Primary relational store (Supabase)")
-    Component(redis, "Redis", "Cache, sessions, rate limiting")
-    Component(opensearch, "OpenSearch", "Full-text + filtered search")
-    Component(r2, "Cloudflare R2", "Image and media storage")
-  }
-
-  Rel(pages, api, "HTTPS REST / WebSocket", "JSON")
-  Rel(api, catalog_svc, "calls")
-  Rel(api, search_svc, "calls")
-  Rel(api, compare_svc, "calls")
-  Rel(api, tco_svc, "calls")
-  Rel(api, lead_svc, "calls")
-  Rel(api, user_svc, "calls")
-  Rel(api, ai_svc, "calls")
-  Rel(api, rec_svc, "calls")
-  Rel(api, admin_svc, "calls")
-
-  Rel(ai_svc, langchain, "orchestrates")
-  Rel(langchain, ollama, "inference requests")
-  Rel(langchain, chroma, "vector similarity search")
-  Rel(rec_svc, sklearn, "model.predict()")
-
-  Rel(catalog_svc, postgres, "SQL queries")
-  Rel(search_svc, opensearch, "search queries")
-  Rel(api, redis, "cache get/set")
-  Rel(pages, r2, "image URLs via Cloudflare CDN")
+  Rel(user, ng, "HTTPS")
+  Rel(ng, fastapi, "REST + bearer token")
+  Rel(fastapi, orm, "")
+  Rel(orm, pg, "asyncpg")
+  Rel(fastapi, r2, "boto3")
+  Rel(fastapi, gemini, "httpx, retried on 429")
 ```
+
+**One rule worth repeating here** because it has been broken twice: the Angular
+`auth.interceptor` attaches the Supabase token to every request aimed at
+`environment.apiUrl`. Setting an `Authorization` header by hand shadows it.
 
 ---
 
-## 3. Data Flow Diagram
+## 3. AI Diagnosis — the answer path
+
+This is the part of the system with the most moving pieces, so it gets its own
+view. Cheapest first; the model is the last resort, not the first step.
 
 ```mermaid
-flowchart TD
-    subgraph USER["User Journey"]
-        U1([Browser]) -->|HTTPS| CF[Cloudflare CDN]
-        CF -->|Cache HIT| U1
-        CF -->|Cache MISS| VER[Vercel Edge]
-        VER -->|Server Component| NXT[Next.js App Router]
-    end
-
-    subgraph FRONTEND["Next.js Frontend"]
-        NXT --> SSG[SSG Page\nbrand/model/variant]
-        NXT --> ISR[ISR Page\ncar listing]
-        NXT --> CSR[CSR Component\ncomparison/tools]
-    end
-
-    subgraph API["FastAPI Backend — Oracle Cloud"]
-        SSG & ISR & CSR -->|REST /api/v1/*| NGINX[Nginx Proxy]
-        NGINX --> FAPI[FastAPI Router]
-        FAPI -->|Auth middleware| JWT_MW[JWT Validator]
-        JWT_MW --> SVC[Business Services]
-    end
-
-    subgraph CACHE["Cache Layer — Redis"]
-        SVC -->|Cache check| REDIS[(Redis)]
-        REDIS -->|HIT| SVC
-        REDIS -->|MISS| DB_LAYER
-    end
-
-    subgraph DB_LAYER["Data Layer"]
-        SVC --> PG[(PostgreSQL\nSupabase)]
-        SVC --> OS[(OpenSearch)]
-        SVC --> R2[(Cloudflare R2\nImages)]
-    end
-
-    subgraph AI_LAYER["AI Layer — Oracle Cloud"]
-        SVC -->|Recommendation request| RULE[Rule Engine]
-        RULE -->|Complex query| LC[LangChain]
-        LC --> OL[Ollama\nLlama 3 8B]
-        LC --> CHROMA[(ChromaDB\nVector Store)]
-        SVC -->|ML predict| SKL[scikit-learn Model]
-    end
-
-    subgraph LEADS["Lead Flow"]
-        SVC -->|Write lead| PG
-        SVC -->|Send email| SMTP[Brevo SMTP]
-        SMTP -->|Notification| DEALER([Dealer])
-    end
+flowchart LR
+  Q["Driver's description<br/>+ vehicle"] --> N[normalise]
+  N --> C{"1· response cache<br/>Redis"}
+  C -->|hit| OUT[Answer]
+  C -->|miss| A{"2· alias match<br/>diagnosis_symptom_aliases"}
+  A -->|miss| E{"3· exact lookup<br/>diagnosis_master + scope"}
+  E -->|miss| S{"4· semantic<br/>cosine ≥ 0.62, scope re-checked"}
+  S -->|miss| M["Gemini → Ollama → heuristic"]
+  A -->|hit| OUT
+  E -->|hit| OUT
+  S -->|hit| OUT
+  M --> OUT
+  R["Admin review queue<br/>ACTIVE + VERIFIED"] -.->|"only approved rows are reachable"| E
 ```
+
+Two properties the diagram encodes rather than states:
+
+- **A row is served only when `status = ACTIVE` and `verification_status =
+  VERIFIED`.** Rows marked `AI_GENERATED` are forced to `PENDING_REVIEW` on
+  import regardless of what the file says.
+- **Similarity ranks; vehicle scope decides.** The semantic rung re-applies the
+  same manufacturer / model / fuel / year / odometer predicates as the exact
+  rung. Without that it served a Tata Nexon row to a Maruti Swift.
 
 ---
 
-## 4. User Interaction Sequence — AI Advisor
+## 4. Data stores
 
-```mermaid
-sequenceDiagram
-    participant U as User Browser
-    participant NXT as Next.js
-    participant API as FastAPI
-    participant RULE as Rule Engine
-    participant LC as LangChain
-    participant OL as Ollama (Llama 3)
-    participant CHROMA as ChromaDB
-    participant PG as PostgreSQL
+| Store | What it holds | Where |
+|---|---|---|
+| PostgreSQL | 39 tables — catalogue, listings, users, dealers, mechanics, loans, diagnosis KB | Supabase |
+| Cloudflare R2 | Vehicle images, WebP derivatives, brochure pages | S3-compatible |
+| Redis | OTP digests, diagnosis response cache | See §5 — **not configured in production** |
+| Qdrant | Listing vectors for semantic listing search | See §5 |
+| OpenSearch | Listing full-text index | See §5 |
 
-    U->>NXT: Fill wizard (budget, city, fuel, seating...)
-    NXT->>API: POST /api/v1/recommend
-    API->>RULE: evaluate(inputs)
-    RULE->>PG: SELECT cars WHERE price BETWEEN ... AND fuel=... AND seats>=...
-    PG-->>RULE: [car_ids: 15 candidates]
-    RULE-->>API: top 3 scored cars (< 100ms)
-
-    opt LLM Explanation Requested
-        API->>LC: explain_recommendation(cars, user_inputs)
-        LC->>CHROMA: similarity_search(user_query)
-        CHROMA-->>LC: relevant car data chunks
-        LC->>OL: generate(prompt + context)
-        OL-->>LC: stream tokens
-        LC-->>API: explanation text
-    end
-
-    API-->>NXT: {recommendations: [...], explanation: "..."}
-    NXT-->>U: Render recommendation cards (SSE stream)
-```
+**Schema lives in four places.** 33 Alembic migrations, seven hand-run
+`schema_setup_batch*.sql` files at the repo root, six `supabase/migrations/*.sql`
+that the API's chain knows nothing about, and the ORM's own view in
+`models/`. Only the Alembic chain is applied automatically, on deploy. Some
+marketplace and loan tables exist only in the batch SQL, so shipping code that
+needs them does not ship the tables. Check all four before assuming a table
+exists.
 
 ---
 
-## 5. Deployment Architecture (Text Representation)
+## 5. Configured in code, absent in production
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         INTERNET                                │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                  ┌────────▼────────┐
-                  │   Cloudflare    │  DNS + CDN + DDoS + R2
-                  │  (Free Tier)    │  Storage
-                  └────────┬────────┘
-                           │
-          ┌────────────────┼────────────────────┐
-          │                │                    │
-  ┌───────▼──────┐  ┌──────▼──────┐   ┌────────▼──────┐
-  │    Vercel    │  │   GitHub    │   │  Oracle Cloud  │
-  │  (Free Tier) │  │  (Actions)  │   │  Always Free   │
-  │              │  │  CI/CD      │   │  ARM VM        │
-  │  Next.js 14  │  └─────────────┘   │  4 OCPUs 24GB  │
-  │  App Router  │                    │                │
-  │  TypeScript  │                    │  ┌───────────┐ │
-  │  Tailwind    │                    │  │  Nginx    │ │
-  │  ShadCN UI   │◄───────────────────┤  │  Proxy    │ │
-  └──────────────┘   API calls HTTPS  │  └─────┬─────┘ │
-                                      │        │       │
-                                      │  ┌─────▼─────┐ │
-                                      │  │  FastAPI  │ │
-                                      │  │  Python   │ │
-                                      │  └─────┬─────┘ │
-                                      │        │       │
-                              ┌───────┴──┬─────┴──┬────┴──────┐
-                              │          │        │           │
-                        ┌─────▼──┐ ┌────▼───┐ ┌──▼──────┐ ┌──▼────┐
-                        │ Redis  │ │OpenSrch│ │ Ollama  │ │Prom + │
-                        │ Cache  │ │ Search │ │+LangChn │ │Grafana│
-                        └────────┘ └────────┘ │+ChromaDB│ │ Loki  │
-                                              └─────────┘ └───────┘
-                              │
-                     ┌────────▼────────┐
-                     │    Supabase     │
-                     │  (Free Tier)    │
-                     │  PostgreSQL 16  │
-                     └─────────────────┘
-```
+Every service in this table degrades silently rather than failing. That is
+deliberate, and it is also why this document previously described infrastructure
+that was not running. `render.yaml` sets none of these variables.
+
+| Service | Env var | What happens without it |
+|---|---|---|
+| Redis | `REDIS_URL` | OTP digests and the diagnosis cache fall back to a per-process dict. Correct, but not shared across workers or restarts. |
+| Ollama | `OLLAMA_BASE_URL` | Defaults to `localhost:11434`, unreachable on Render. Free-tier diagnosis therefore lands on the heuristic fallback unless the knowledge base answers. |
+| OpenSearch | `OPENSEARCH_URL` | `services/search_index.py` probes once and falls back to Postgres `LIKE` search. |
+| Qdrant | `QDRANT_URL` | Vector listing search is skipped. |
+| KYC pepper | `KYC_HASH_PEPPER` | Aadhaar and OTP digests are computed unpeppered. Config refuses to boot without it **only** when `MARKETPLACE_ENABLED` is on. |
+
+These are findings, not recommendations — whether to provision them is a product
+decision. What matters is that the previous version of this document presented
+them as running.
 
 ---
 
-*Part of Phase 1 HLD. See: [HLD.md](HLD.md) | [DeploymentDiagram.md](DeploymentDiagram.md) | [SecurityArchitecture.md](SecurityArchitecture.md)*
+## 6. Cross-cutting
+
+- **Auth.** Supabase issues the JWT; the API verifies it against Supabase's
+  JWKS (`services/llm_tier.py`, `core/dependencies.py`). Tier — free vs premium
+  — is resolved from the verified token, never from the request body.
+- **Rate limiting.** `slowapi`, per endpoint. `/diagnosis/analyse` is 5/min and
+  20/hour and needs no authentication.
+- **Metrics.** `prometheus_client` exposes `/metrics` from `main.py`. There is
+  no Prometheus, Grafana, Loki or Alertmanager in this repository — see
+  `MonitoringArchitecture.md`, which describes an intended stack.
+- **Sensitive data.** Aadhaar is validated and then discarded; only a peppered
+  SHA-256 digest and the last four digits survive. PAN is stored but never
+  returned — every response carries `ABCDE****F`. No credit score is ever
+  invented: `services/credit_bureau.py::fetch_score` raises rather than
+  returning a plausible number.

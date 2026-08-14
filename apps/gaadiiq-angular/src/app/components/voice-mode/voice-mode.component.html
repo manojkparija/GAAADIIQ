@@ -94,11 +94,22 @@
     <ng-container *ngIf="!isSetup()">
 
     <!-- Waveform / Mic indicator -->
-    <div class="vm-visual" [class.listening]="isCapturing()">
-      <div class="vm-pulse-ring" aria-hidden="true"></div>
-      <div class="vm-mic-icon" aria-hidden="true">{{ isCapturing() ? '🎙️' : '🔇' }}</div>
-      <div class="vm-status-label" role="status" aria-live="polite">{{ captureStatus() }}</div>
-    </div>
+    <!-- A button, not a div: the status label says "Tap mic to speak", and
+         until this was a button there was nothing to tap. Disabled while
+         already capturing or while the assistant is talking, so a tap can
+         never cut off the question being asked. -->
+    <button
+      type="button"
+      class="vm-visual"
+      [class.listening]="isCapturing()"
+      [disabled]="isCapturing() || voice.speakingState() === 'speaking'"
+      (click)="tapMic()"
+      [attr.aria-label]="isCapturing() ? 'Listening' : 'Tap to speak'"
+    >
+      <span class="vm-pulse-ring" aria-hidden="true"></span>
+      <span class="vm-mic-icon" aria-hidden="true">{{ isCapturing() ? '🎙️' : '🔇' }}</span>
+      <span class="vm-status-label" role="status" aria-live="polite">{{ captureStatus() }}</span>
+    </button>
 
     <!-- Server-STT recording control: MediaRecorder has no silence detection,
          so the user ends the recording explicitly. -->

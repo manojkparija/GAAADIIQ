@@ -16,9 +16,15 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * Unset by default, so normal runs and CI are untouched.
  */
+// Microphone-dependent specs need a fake capture device: headless Chromium has
+// no microphone, so getUserMedia rejects and the voice flow stops at the
+// permission error — correct app behaviour, but it means the rest of the flow
+// is unreachable without these flags.
+const FAKE_MEDIA = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'];
+
 const chromiumOverride = process.env['PLAYWRIGHT_CHROMIUM_PATH']
-  ? { launchOptions: { executablePath: process.env['PLAYWRIGHT_CHROMIUM_PATH'] } }
-  : {};
+  ? { launchOptions: { executablePath: process.env['PLAYWRIGHT_CHROMIUM_PATH'], args: FAKE_MEDIA } }
+  : { launchOptions: { args: FAKE_MEDIA } };
 
 export default defineConfig({
   testDir: './e2e',
@@ -56,7 +62,7 @@ export default defineConfig({
       // Every project here declares a testMatch, so a new spec file that is
       // not named by one runs nowhere and reports nothing — which looks
       // exactly like passing. Add new desktop specs to this pattern.
-      testMatch: /(smoke|contrast)\.spec\.ts/,
+      testMatch: /(smoke|contrast|voice-diagnosis)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {

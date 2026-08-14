@@ -1,7 +1,17 @@
 # GAADIIQ.COM — Entity Relationship Diagram
 
-**Version:** 1.0  
-**Date:** 2026-06-24
+**Version:** 1.1
+**Date:** 2026-08-14
+
+> **Corrected 2026-08-14.** The entities below describe v1.0's 14-table design.
+> Four of those tables exist (`cars`, `users`, `dealers`, `reviews`); the live
+> schema has 39. `brands`, `features`, `variant_features`, `leads`, `wishlists`,
+> `recommendations`, `ownership_cost_cache` and `analytics_events` were never
+> built; `variants` is `car_variants` and `car_images` is `vehicle_media`.
+> For the current inventory see `DatabaseDesign.md` §1, which is generated from
+> the ORM. This diagram has **not** been redrawn — a 39-entity ERD is worth
+> drawing deliberately rather than mechanically, and it is listed as open work
+> in `docs/ENGINEERING_BACKLOG.md`.
 
 ---
 

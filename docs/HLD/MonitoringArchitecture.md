@@ -2,7 +2,23 @@
 
 **Version:** 1.0  
 **Date:** 2026-06-24  
-**Stack:** Prometheus · Grafana · Loki · Alertmanager
+**Stack (intended):** Prometheus · Grafana · Loki · Alertmanager
+**Status:** aspirational — none of it is deployed.
+
+> **Corrected 2026-08-14.** This document describes a monitoring stack that does
+> not exist. There is no Prometheus, Grafana, Loki or Alertmanager in this
+> repository, and no Oracle Cloud host to run them on.
+>
+> What actually exists today:
+>
+> - `prometheus_client` is a dependency, and `main.py` exposes `/metrics` with a
+>   request Counter and a latency Histogram. **Nothing scrapes it.**
+> - Structured log events the API already emits and which a collector could use
+>   immediately: `diagnosis_latency` (engine, tier, cache hit, KB match method,
+>   fallback reason) and `kb_review` (decision, reviewer, safety-critical).
+> - Render's own dashboard for process metrics and logs.
+>
+> Read the sections below as a plan, not a description.
 
 ---
 
@@ -16,7 +32,7 @@ GAADIIQ uses the **Three Pillars of Observability**:
 | **Logs** | Loki + Grafana | Application logs, access logs, error traces |
 | **Traces** | OpenTelemetry + Grafana Tempo (Phase 2) | Request tracing across services |
 
-All monitoring runs on the same Oracle Cloud VM (free) — separate Docker containers.
+*(Plan as written in v1.0: all monitoring on one self-hosted VM as separate Docker containers. No such host exists — see the note at the top.)*
 
 ---
 
@@ -24,7 +40,7 @@ All monitoring runs on the same Oracle Cloud VM (free) — separate Docker conta
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              Oracle Cloud VM — Monitoring                │
+│           Monitoring host — NOT PROVISIONED              │
 │                                                         │
 │  ┌──────────────┐     ┌──────────────┐                 │
 │  │  Prometheus  │────►│   Grafana    │◄── Founder      │
@@ -209,7 +225,13 @@ gaadiiq_recommendation_latency    # Histogram, labels: {engine_type}
 - Ollama inference latency histogram
 - Recommendation engine latency
 - Rule engine vs LLM request ratio
-- ChromaDB query latency
+- Vector search latency (Qdrant; ChromaDB was never used)
+- **Gemini call latency, failure rate and 429s.** The gateway retries three
+  times with backoff and is the only place these can be counted, so it is the
+  natural instrumentation point. Worth watching alongside the
+  `diagnosis_latency` log event's `engine` field, which distinguishes a
+  knowledge-base answer from a Gemini call from a heuristic fallback — the
+  cheapest signal that KB coverage is or is not working.
 
 ### Dashboard 4: Database & Cache
 - PostgreSQL: active connections, query time, slow query log

@@ -24,9 +24,14 @@ outage. In particular:
   ship the tables. Check both before assuming a table exists.
 - **CI runs on SQLite, production on Postgres.** Green CI says nothing about
   native enums, `NOT NULL` behaviour, or casting.
-- **Playwright is configured but never runs in CI.** Browser verification is
-  manual, and it is the only thing that catches a class of bug `ng build`
-  cannot.
+- **Playwright runs in CI for the `desktop-chrome` project only.**
+  `.github/workflows/ci-web.yml` ("Build & smoke test") installs Chromium and
+  runs `npx playwright test --project=desktop-chrome` on changes under
+  `apps/gaadiiq-angular/**`. The three mobile device projects are still manual.
+  CI starts no API, so a spec that needs a backend must skip when it is absent —
+  adding one to `desktop-chrome`'s `testMatch` without that guard turns the web
+  job red. (This line previously said Playwright never ran in CI. It does; the
+  claim was wrong and had been repeated into four other documents.)
 
 ## Conventions worth knowing
 

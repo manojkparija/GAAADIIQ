@@ -49,6 +49,11 @@ export interface MicConsentRecord {
   language: string; // language active when consent was given
 }
 
+/** How long to wait after the last final phrase before treating the answer as
+ *  complete. Long enough for the pause between "my Maruti Swift" and "2019
+ *  petrol"; short enough that the conversation does not feel stalled. */
+const FINAL_SILENCE_MS = 1100;
+
 @Injectable({ providedIn: 'root' })
 export class VoiceDiagnosisService {
   readonly supported = typeof window !== 'undefined' &&
@@ -74,7 +79,11 @@ export class VoiceDiagnosisService {
   micConsent = signal<MicConsentRecord | null>(null);
 
   private recognition: any = null;
-  private onFinal?: (text: string) => void;
+  private onFinal: ((text: string) => void) | null = null;
+
+  /** Final phrases heard since the microphone opened, not yet delivered. */
+  private finalBuffer = '';
+  private deliverTimer: ReturnType<typeof setTimeout> | null = null;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private pendingSpeakText = '';
 
@@ -225,6 +234,26 @@ export class VoiceDiagnosisService {
     this._startRecognition();
   }
 
+  /** Hand the accumulated transcript to the caller exactly once.
+   *
+   * The callback advances the conversation, so calling it twice skips a step —
+   * and with `continuous = true` a late result from a recogniser that has
+   * already been stopped could do exactly that. Clearing `onFinal` here is what
+   * makes the delivery single-shot.
+   */
+  private _deliverFinal() {
+    if (this.deliverTimer) {
+      clearTimeout(this.deliverTimer);
+      this.deliverTimer = null;
+    }
+    const text = this.finalBuffer.trim();
+    this.finalBuffer = '';
+    const cb = this.onFinal;
+    if (!text || !cb) return;
+    this.onFinal = null;
+    this.zone.run(() => cb(text));
+  }
+
   private _startRecognition() {
     const SpeechRecognitionImpl =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -264,8 +293,18 @@ export class VoiceDiagnosisService {
         this.interimText.set(interim);
         if (maxConfidence > 0) this.lastConfidence.set(Math.round(maxConfidence * 100));
 
-        if (finalChunk.trim() && this.onFinal) {
-          this.onFinal(finalChunk);
+        // Accumulate, then deliver once the speaker actually stops.
+        //
+        // `continuous = true` makes the engine emit a final result per phrase,
+        // so "my Maruti Swift 2019 petrol manual" arrives as three or four
+        // separate finals. Delivering the first one immediately — which is what
+        // this did — called back with "my Maruti Swift", stopped the mic, and
+        // threw the year, fuel and transmission away. That is the whole of
+        // "it isn't capturing the car details properly".
+        if (finalChunk.trim()) {
+          this.finalBuffer += finalChunk;
+          if (this.deliverTimer) clearTimeout(this.deliverTimer);
+          this.deliverTimer = setTimeout(() => this._deliverFinal(), FINAL_SILENCE_MS);
         }
       });
     };
@@ -280,7 +319,23 @@ export class VoiceDiagnosisService {
             // Auto-retry up to 2 times for noisy environments
             this.noSpeechRetries.set(retries + 1);
             this.errorMessage.set(`No speech detected (attempt ${retries + 1}/3). Please speak clearly…`);
-            setTimeout(() => this._startRecognition(), 800);
+            // Abort the old instance first. Constructing a second recogniser
+            // and calling start() while the first is alive throws
+            // InvalidStateError out of the timer, uncaught, and the microphone
+            // never reopens — the retry that was meant to help is what kills
+            // the session.
+            try { this.recognition?.abort(); } catch { /* already gone */ }
+            this.recognition = null;
+            setTimeout(() => {
+              try {
+                this._startRecognition();
+              } catch (err) {
+                this.zone.run(() => {
+                  this.errorMessage.set('Could not restart the microphone. Tap the mic to try again.');
+                  this.state.set('error');
+                });
+              }
+            }, 800);
             return;
           }
           this.errorMessage.set('No speech detected after 3 attempts. Please speak closer to the mic or reduce background noise.');
@@ -310,14 +365,40 @@ export class VoiceDiagnosisService {
         if (this.state() === 'listening') this.state.set('idle');
         this.interimText.set('');
       });
+      // The engine stopped while a phrase was still buffered — deliver it
+      // rather than discard it. Losing the user's last sentence because the
+      // recogniser timed out is indistinguishable, to them, from not listening.
+      if (this.finalBuffer.trim()) this._deliverFinal();
     };
 
-    this.recognition.start();
+    try {
+      this.recognition.start();
+    } catch (err) {
+      // Chrome throws InvalidStateError if a recogniser is already running.
+      // Unhandled, this leaves the UI showing "Listening…" with a microphone
+      // that is not open.
+      this.zone.run(() => {
+        this.errorMessage.set('Microphone is busy. Tap the mic to try again.');
+        this.state.set('error');
+      });
+      this.recognition = null;
+    }
   }
 
   stop() {
+    if (this.deliverTimer) {
+      clearTimeout(this.deliverTimer);
+      this.deliverTimer = null;
+    }
+    // Deliver anything already heard before tearing the recogniser down.
+    if (this.finalBuffer.trim()) this._deliverFinal();
+    this.finalBuffer = '';
+    // Clearing the callback is the other half of single-shot delivery: a late
+    // onresult from the instance being stopped must not advance the
+    // conversation a second time.
+    this.onFinal = null;
     if (this.recognition) {
-      this.recognition.stop();
+      try { this.recognition.stop(); } catch { /* already stopped */ }
       this.recognition = null;
     }
     this.zone.run(() => this.state.set('idle'));

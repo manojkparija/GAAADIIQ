@@ -90,6 +90,38 @@ services:
       - key: RAZORPAY_KEY_SECRET
         sync: false
 
+      # ── Optional subsystems ────────────────────────────────────────────────
+      #
+      # Declared here even though they are unset, because their absence is
+      # invisible at runtime: each one degrades quietly instead of failing, and
+      # that is exactly how the architecture documents came to describe
+      # OpenSearch as deployed while every query went to Postgres.
+      #
+      # Leaving a key undeclared makes "we chose not to run this" and "nobody
+      # noticed this was never provisioned" look identical. Declared and empty,
+      # they are a visible list of decisions. `GET /health/dependencies` reports
+      # which backend is actually answering.
+      #
+      # OpenSearch — full-text listing search. Without it services/search_index.py
+      # probes once and falls back to a Postgres LIKE query.
+      - key: OPENSEARCH_URL
+        sync: false
+      # Redis — OTP digests and the diagnosis response cache. Without it both
+      # use a per-process dict: correct, but not shared across workers or
+      # restarts, so the cache hit rate collapses and OTPs break across replicas.
+      - key: REDIS_URL
+        sync: false
+      # Ollama — the free-tier diagnosis engine, vision, valuation and sentiment.
+      # Defaults to localhost:11434, which is unreachable here, so all four lose
+      # their model.
+      - key: OLLAMA_BASE_URL
+        sync: false
+      # Aadhaar and OTP digest pepper. Only fatal at startup when
+      # MARKETPLACE_ENABLED is on — see core/config.py — but the digests are
+      # weaker without it either way.
+      - key: KYC_HASH_PEPPER
+        sync: false
+
   # ── Angular frontend ───────────────────────────────────────────────────────
   - type: web
     name: gaadiiq-web

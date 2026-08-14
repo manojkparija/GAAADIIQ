@@ -369,7 +369,19 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
    * so the server path is user-terminated — the UI shows a Stop control while
    * `serverStt.recording()` is true.
    */
+  /** The handler for the utterance we are currently waiting on.
+   *
+   * Kept so `tapMic()` can re-arm the same step of the conversation. Without
+   * it, a driver whose capture ended early had no way back in: the status label
+   * said "Tap mic to speak" and the mic was a decorative div. */
+  private _lastOnResult: ((text: string) => void) | null = null;
+
   private _listen(onResult: (text: string) => void) {
+    this._lastOnResult = onResult;
+    // Never listen over ourselves. If any speech is still playing, the mic
+    // hears it through the speaker — loudest on a phone with the speaker on,
+    // which is exactly how this feature is used from a roadside.
+    if (this.voice.speakingState() !== 'idle') this.voice.stopSpeaking();
     if (!this.useServerStt) {
       this.voice.start(onResult);
       return;
@@ -380,6 +392,21 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
         this.zone.run(() => this._sttCallback = null);
       }
     });
+  }
+
+  /**
+   * Start listening again, from the mic the status label tells people to tap.
+   *
+   * The label read "Tap mic to speak" long before anything was tappable — the
+   * mic was an aria-hidden div with no handler, so a session that stopped
+   * capturing was a dead end with instructions. This re-arms the step the
+   * conversation is already on rather than restarting it, so nothing the driver
+   * has already said is thrown away.
+   */
+  tapMic() {
+    if (this.isCapturing() || this.voice.speakingState() === 'speaking') return;
+    const again = this._lastOnResult;
+    if (again) this._listen(again);
   }
 
   /** Stop the server-STT recording, transcribe it, and resume the conversation. */
@@ -581,8 +608,27 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
           done();
         }
       }, 300);
-      // Hard fallback: 12s max
-      setTimeout(() => { clearInterval(check); done(); }, 12000);
+
+      // Hard fallback, and the reason it is 4s rather than 12s.
+      //
+      // Chrome's speechSynthesis does not reliably fire `onend` — it stalls on
+      // longer utterances, and on Android it can go silent after a tab regains
+      // focus. When that happened, speakingState stayed 'speaking' and the
+      // microphone stayed shut for the full twelve seconds while the user
+      // stared at a mic that never opened. That is the "mic never goes into
+      // listening mode" report.
+      //
+      // 4s is longer than any prompt this component speaks and short enough
+      // that a stall is a hesitation rather than a hang. `stopSpeaking()`
+      // before `done()` matters just as much: opening the microphone while the
+      // assistant is still audible means the recogniser transcribes the app's
+      // own question as the user's answer, which is the other half of "it
+      // isn't capturing the car details properly".
+      setTimeout(() => {
+        clearInterval(check);
+        this.voice.stopSpeaking();
+        done();
+      }, 4000);
     }, 600);
   }
 

@@ -125,9 +125,22 @@ class DiagnoseResponse(BaseModel):
     # BR-ML-04 — true when a non-English response was requested but the text
     # is still English, so the client can say so instead of silently misleading.
     translation_failed: bool = False
-    # Which engine produced this: gemini (paid/admin) | ollama | heuristic.
+    # Which engine produced this: knowledge_base | gemini (paid/admin) | ollama
+    # | heuristic. A ":cached" suffix means it was served from the response
+    # cache, so the client can tell a fresh answer from a stored one.
     engine: str = "heuristic"
     model_tier: str = "free"
+    # ── Knowledge-base answers only ─────────────────────────────────────────
+    # Present when engine == "knowledge_base". The diagnosis code is what an
+    # admin needs to find the row a driver was shown; the match method is what
+    # tells you whether an editor's alias or a similarity score chose it, which
+    # is the difference between a deliberate mapping and a guess.
+    kb_diagnosis_code: str | None = None
+    kb_match_method: str | None = None
+    kb_match_confidence: float | None = None
+    # Ordered repairs, cheapest and most reversible first. Empty on model
+    # answers, which produce prose steps rather than costed solutions.
+    solutions: list[dict] = []
 
 
 class DiagnosisHistoryItem(BaseModel):
@@ -178,6 +191,9 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         maintenance_history=body.maintenance_history,
         response_language=body.detected_language or "en-IN",
         model_tier=tier.value,
+        # Passing the session is what enables the cache and the knowledge base.
+        # Without it the call behaves exactly as it did before either existed.
+        db=db,
     )
 
     # Parse causes safely
@@ -248,6 +264,10 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         translation_failed=ai_result.get("translation_failed", False),
         engine=ai_result.get("engine", "heuristic"),
         model_tier=ai_result.get("model_tier", "free"),
+        kb_diagnosis_code=ai_result.get("kb_diagnosis_code"),
+        kb_match_method=ai_result.get("kb_match_method"),
+        kb_match_confidence=ai_result.get("kb_match_confidence"),
+        solutions=ai_result.get("solutions", []),
     )
 
 
@@ -503,9 +523,18 @@ async def get_diagnosis(
     if not record:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Diagnosis report not found")
 
-    # Enforce ownership — prevent IDOR
-    if record.user_id and str(record.user_id) != str(current_user.id):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Access denied")
+    # Enforce ownership — prevent IDOR.
+    #
+    # A NULL owner means "nobody", not "anybody". /diagnosis/analyse needs no
+    # authentication, so an anonymous report is stored with user_id = NULL; the
+    # previous guard short-circuited on that and let any signed-in caller read
+    # it. The endpoint was documented as owner-only and was not.
+    #
+    # 404 rather than 403, matching delete_diagnosis_report below: "not found"
+    # and "not yours" are deliberately indistinguishable, so this cannot be used
+    # to probe for other people's report IDs.
+    if not record.user_id or str(record.user_id) != str(current_user.id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Diagnosis report not found")
 
     return DiagnoseResponse(
         id=str(record.id),

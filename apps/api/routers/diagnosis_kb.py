@@ -15,10 +15,11 @@ parameters and every request 422s. Same reason as routers/otp.py.
 """
 
 import logging
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,10 +32,14 @@ from models.diagnosis_kb import (
     DiagnosisSolution,
     DiagnosisSymptomAlias,
     RecordStatus,
+    ReviewDecision,
+    SourceType,
     VerificationStatus,
 )
 from models.user import User
+from services import diagnosis_cache, diagnosis_kb_lookup, diagnosis_kb_review
 from services.diagnosis_kb_import import ImportError_, parse_and_import
+from services.diagnosis_kb_review import ReviewError
 
 logger = logging.getLogger("gaadiiq.kb_admin")
 
@@ -143,6 +148,14 @@ async def import_workbook(
         # back with a 200 and a report.
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
+    if commit:
+        # An import can change what a verified row says. A cached copy of the
+        # old text would outlive the correction by up to the cache TTL, and the
+        # in-process lookup indexes would keep serving the old aliases, so both
+        # are dropped here rather than left to expire.
+        await diagnosis_cache.invalidate_all()
+        diagnosis_kb_lookup.reset_caches()
+
     payload = result.as_dict()
     payload["committed"] = bool(commit)
     payload["message"] = (
@@ -204,3 +217,327 @@ async def import_history(db: DB, admin: Admin, limit: int = Query(50, ge=1, le=2
         )
         for r in runs
     ]
+
+
+# ── Review queue ────────────────────────────────────────────────────────────
+#
+# The importer cannot publish. Everything it writes is DRAFT / PENDING_REVIEW,
+# so without these endpoints a knowledge base of any size still answers nobody.
+# This is the only path from "in the database" to "served to a driver".
+
+
+class QueueItem(BaseModel):
+    id: str
+    diagnosis_code: str
+    canonical_symptom: str
+    symptom: str
+    manufacturer: str
+    model: str
+    fuel_type: str
+    model_year_from: int
+    model_year_to: int
+    severity: str
+    safety_critical: bool
+    can_drive: str
+    source_type: str
+    source_name: str
+    confidence_score: float
+    status: str
+    verification_status: str
+    solution_count: int
+    created_at: str
+
+
+class ReviewRequest(BaseModel):
+    decision: ReviewDecision
+    # Free text, but not optional in practice — see the AI_GENERATED rule in
+    # services/diagnosis_kb_review.py, which refuses a silent approval.
+    notes: str | None = Field(None, max_length=4000)
+    include_solutions: bool = True
+
+
+@router.get("/review-queue/summary")
+async def review_queue_summary(db: DB, admin: Admin) -> dict:
+    """How much is waiting, and how much of it needs the most care."""
+    counts = await diagnosis_kb_review.queue_counts(db)
+    counts["cache"] = diagnosis_cache.stats()
+    return counts
+
+
+@router.get("/review-queue", response_model=list[QueueItem])
+async def review_queue(
+    db: DB,
+    admin: Admin,
+    verification_status: VerificationStatus = Query(VerificationStatus.pending_review),
+    source_type: SourceType | None = Query(None),
+    safety_only: bool = Query(False, description="Only safety-critical findings."),
+    search: str | None = Query(None, max_length=120),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    """Rows waiting on a decision, safety-critical first and oldest first."""
+    rows = await diagnosis_kb_review.list_queue(
+        db,
+        status=verification_status,
+        source_type=source_type,
+        safety_only=safety_only,
+        search=search,
+        limit=limit,
+        offset=offset,
+    )
+    if not rows:
+        return []
+
+    counts = dict(
+        (
+            await db.execute(
+                select(DiagnosisSolution.diagnosis_id, func.count())
+                .where(DiagnosisSolution.diagnosis_id.in_([r.id for r in rows]))
+                .group_by(DiagnosisSolution.diagnosis_id)
+            )
+        ).all()
+    )
+
+    return [
+        QueueItem(
+            id=str(r.id),
+            diagnosis_code=r.diagnosis_code,
+            canonical_symptom=r.canonical_symptom,
+            symptom=r.symptom,
+            manufacturer=r.manufacturer,
+            model=r.model,
+            fuel_type=r.fuel_type,
+            model_year_from=r.model_year_from,
+            model_year_to=r.model_year_to,
+            severity=r.severity.value,
+            safety_critical=r.safety_critical,
+            can_drive=r.can_drive.value,
+            source_type=r.source_type.value,
+            source_name=r.source_name,
+            confidence_score=r.confidence_score,
+            status=r.status.value,
+            verification_status=r.verification_status.value,
+            solution_count=counts.get(r.id, 0),
+            created_at=r.created_at.isoformat(),
+        )
+        for r in rows
+    ]
+
+
+@router.get("/review-queue/{diagnosis_id}")
+async def review_detail(diagnosis_id: uuid.UUID, db: DB, admin: Admin) -> dict:
+    """Everything a reviewer needs on one screen: the finding and its repairs.
+
+    Returned in full rather than summarised, because the decision being asked
+    for is whether this text is safe to show a driver, and a summary is not
+    something you can make that decision about.
+    """
+    try:
+        master, solutions = await diagnosis_kb_review.get_for_review(db, diagnosis_id)
+    except ReviewError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    events = await diagnosis_kb_review.history(db, diagnosis_id=diagnosis_id, limit=25)
+
+    return {
+        "diagnosis": {
+            "id": str(master.id),
+            "diagnosis_code": master.diagnosis_code,
+            "manufacturer": master.manufacturer,
+            "model": master.model,
+            "variant": master.variant,
+            "engine_code": master.engine_code,
+            "model_year_from": master.model_year_from,
+            "model_year_to": master.model_year_to,
+            "fuel_type": master.fuel_type,
+            "odometer_from_km": master.odometer_from_km,
+            "odometer_to_km": master.odometer_to_km,
+            "system": master.system,
+            "subsystem": master.subsystem,
+            "error_code": master.error_code,
+            "canonical_symptom": master.canonical_symptom,
+            "symptom": master.symptom,
+            "user_keywords": master.user_keywords,
+            "possible_cause": master.possible_cause,
+            "diagnostic_steps": master.diagnostic_steps,
+            "confirms_when": master.confirms_when,
+            "rule_out": master.rule_out,
+            "severity": master.severity.value,
+            "safety_critical": master.safety_critical,
+            "can_drive": master.can_drive.value,
+            "recommended_action": master.recommended_action,
+            "requires_professional": master.requires_professional,
+            "estimated_cost_min": master.estimated_cost_min,
+            "estimated_cost_max": master.estimated_cost_max,
+            "source_type": master.source_type.value,
+            "source_name": master.source_name,
+            "source_url": master.source_url,
+            "confidence_score": master.confidence_score,
+            "status": master.status.value,
+            "verification_status": master.verification_status.value,
+            "reviewed_by": master.reviewed_by,
+            "reviewed_at": master.reviewed_at.isoformat() if master.reviewed_at else None,
+            "notes": master.notes,
+            "is_servable": master.is_servable,
+        },
+        "solutions": [
+            {
+                "id": str(s.id),
+                "solution_code": s.solution_code,
+                "sequence": s.sequence,
+                "solution_title": s.solution_title,
+                "solution_type": s.solution_type.value,
+                "difficulty": s.difficulty.value,
+                "is_temporary_fix": s.is_temporary_fix,
+                "resolves_root_cause": s.resolves_root_cause,
+                "steps": s.steps,
+                "expected_outcome": s.expected_outcome,
+                "safety_warning": s.safety_warning,
+                "do_not_attempt_if": s.do_not_attempt_if,
+                "prerequisites": s.prerequisites,
+                "cost_parts_min": s.cost_parts_min,
+                "cost_parts_max": s.cost_parts_max,
+                "cost_labour_min": s.cost_labour_min,
+                "cost_labour_max": s.cost_labour_max,
+                "success_rate_pct": s.success_rate_pct,
+                "source_type": s.source_type.value,
+                "source_name": s.source_name,
+                "status": s.status.value,
+                "verification_status": s.verification_status.value,
+                "is_servable": s.is_servable,
+            }
+            for s in solutions
+        ],
+        "review_history": [
+            {
+                "decision": e.decision.value,
+                "reviewer": e.reviewer,
+                "notes": e.notes,
+                "previous_status": e.previous_status,
+                "previous_verification": e.previous_verification,
+                "at": e.created_at.isoformat(),
+            }
+            for e in events
+        ],
+    }
+
+
+@router.post("/review/{diagnosis_id}")
+@limiter.limit("120/hour")
+async def review_one(
+    request: Request,
+    diagnosis_id: uuid.UUID,
+    body: ReviewRequest,
+    db: DB,
+    admin: Admin,
+) -> dict:
+    """Approve, reject, or return a diagnosis — and by default its repairs too.
+
+    Approval is the moment a row becomes visible to real drivers, so it is a
+    single explicit call per row. There is no bulk-approve endpoint, and that
+    omission is the point: the queue exists to be read.
+    """
+    try:
+        outcome = await diagnosis_kb_review.review_diagnosis(
+            db,
+            diagnosis_id=diagnosis_id,
+            decision=body.decision,
+            reviewer=admin.email,
+            notes=body.notes,
+            include_solutions=body.include_solutions,
+        )
+    except ReviewError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    # What was just published, or withdrawn, changes what the lookup should
+    # return. Both in-process indexes and any cached answer are now wrong.
+    await diagnosis_cache.invalidate_all()
+    diagnosis_kb_lookup.reset_caches()
+
+    return {
+        "diagnosis_code": outcome.diagnosis_code,
+        "decision": outcome.decision,
+        "status": outcome.status,
+        "verification_status": outcome.verification_status,
+        "solutions_affected": outcome.solutions_affected,
+        "reviewer": outcome.reviewer,
+        "message": (
+            f"{outcome.diagnosis_code} is now servable to drivers."
+            if outcome.status == RecordStatus.active.value
+            and outcome.verification_status == VerificationStatus.verified.value
+            else f"{outcome.diagnosis_code} is {outcome.verification_status} and is not served."
+        ),
+    }
+
+
+@router.post("/review/solution/{solution_id}")
+@limiter.limit("240/hour")
+async def review_solution_endpoint(
+    request: Request,
+    solution_id: uuid.UUID,
+    body: ReviewRequest,
+    db: DB,
+    admin: Admin,
+) -> dict:
+    """Decide on a single repair, under a diagnosis that is already approved."""
+    try:
+        outcome = await diagnosis_kb_review.review_solution(
+            db,
+            solution_id=solution_id,
+            decision=body.decision,
+            reviewer=admin.email,
+            notes=body.notes,
+        )
+    except ReviewError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    await diagnosis_cache.invalidate_all()
+    diagnosis_kb_lookup.reset_caches()
+    return {
+        "solution_code": outcome.diagnosis_code,
+        "decision": outcome.decision,
+        "status": outcome.status,
+        "verification_status": outcome.verification_status,
+    }
+
+
+@router.get("/review-history")
+async def review_history(
+    db: DB, admin: Admin, limit: int = Query(100, ge=1, le=500)
+) -> list[dict]:
+    """Every decision ever made, newest first. Append-only."""
+    events = await diagnosis_kb_review.history(db, limit=limit)
+    return [
+        {
+            "decision": e.decision.value,
+            "reviewer": e.reviewer,
+            "notes": e.notes,
+            "diagnosis_id": str(e.diagnosis_id) if e.diagnosis_id else None,
+            "solution_id": str(e.solution_id) if e.solution_id else None,
+            "previous_status": e.previous_status,
+            "previous_verification": e.previous_verification,
+            "at": e.created_at.isoformat(),
+        }
+        for e in events
+    ]
+
+
+# ── Cache administration ────────────────────────────────────────────────────
+
+
+@router.get("/cache/stats")
+async def cache_stats(db: DB, admin: Admin) -> dict:
+    """Hit rate and which backend is live.
+
+    `backend: "memory"` in production means REDIS_URL is not reachable and each
+    worker is caching separately — answers stay correct, the hit rate does not.
+    """
+    return diagnosis_cache.stats()
+
+
+@router.post("/cache/invalidate")
+async def cache_invalidate(db: DB, admin: Admin) -> dict:
+    """Drop every cached answer. Safe at any time; the next request recomputes."""
+    dropped = await diagnosis_cache.invalidate_all()
+    diagnosis_kb_lookup.reset_caches()
+    return {"dropped_in_process": dropped, "message": "Cache cleared."}

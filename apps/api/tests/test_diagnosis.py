@@ -642,7 +642,11 @@ class TestHistoryDetailSuite:
 
         intruder = await self._token(client, "hist-intruder@test.com")
         r = await client.get(f"/diagnosis/{did}", headers={"Authorization": f"Bearer {intruder}"})
-        assert r.status_code == 403
+        # 404 not 403 — a distinct status would confirm the ID exists, which is
+        # the same reasoning the DELETE case already used (see
+        # test_voice_store.py). GET was the odd one out until the ownership
+        # guard was fixed to treat a NULL owner as nobody rather than everybody.
+        assert r.status_code == 404
 
     @pytest.mark.asyncio
     async def test_history_is_scoped_to_the_caller(self, client):

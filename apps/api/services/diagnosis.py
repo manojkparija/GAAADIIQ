@@ -1,6 +1,17 @@
 """
 Vehicle Preliminary Diagnosis & Repair Advisor
-RAG pipeline: keyword retrieval from knowledge base → Ollama LLM analysis.
+
+Answer path, cheapest first:
+
+    cache  →  knowledge base  →  Gemini (premium)  →  Ollama  →  heuristic
+
+The first two are new and are the point of the knowledge base: a curated,
+human-verified row costs no tokens and carries a named source, so the model is
+what happens when nothing curated matches — not what happens on every request.
+
+Both new steps are optional. Without a database session, without any verified
+rows, or with Redis down, this module behaves exactly as it did before: the
+RAG-plus-LLM pipeline described in `_build_prompt` and `run_diagnosis`.
 """
 from __future__ import annotations
 
@@ -13,7 +24,9 @@ import time
 from pathlib import Path
 
 import httpx
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from services import diagnosis_cache
 from services.vision import analyse_image_url, fetch_image_bytes
 from services.warning_lights import identify_warning_light
 
@@ -625,13 +638,20 @@ async def run_diagnosis(
     maintenance_history: list[dict] | None = None,
     response_language: str = "en-IN",
     model_tier: str = "free",
+    db: AsyncSession | None = None,
+    error_codes: list[str] | None = None,
 ) -> dict:
     """
-    Run RAG retrieval + LLM diagnosis. Returns a structured result dict.
+    Answer a diagnosis request. Returns a structured result dict.
 
-    model_tier selects the engine: "premium" (paid users and admins) tries
-    Gemini Flash first, "free" goes straight to Ollama. Degradation is always
-    downward and never fatal — Gemini → Ollama → heuristic.
+    `db` is optional and enables the two cheap steps — the response cache and
+    the knowledge base. Passing None reproduces the previous behaviour exactly,
+    which is what every existing test and the voice pipeline rely on.
+
+    model_tier selects the engine when it does reach a model: "premium" (paid
+    users and admins) tries Gemini Flash first, "free" goes straight to Ollama.
+    Degradation is always downward and never fatal — Gemini → Ollama →
+    heuristic.
     """
 
     # Vision runs FIRST. It used to run after the diagnosis was already
@@ -662,6 +682,93 @@ async def run_diagnosis(
             if isinstance(light, str) and light.strip() and light.lower() not in seen:
                 warning_lights = [*warning_lights, light.strip()]
                 seen.add(light.lower())
+
+    # ── The two cheap steps ─────────────────────────────────────────────────
+    #
+    # Both run after vision, deliberately: a telltale read out of a photo has
+    # already been folded into `warning_lights` above, and it changes both the
+    # cache key and what the knowledge base is asked. Running them first would
+    # look up the wrong question for any request carrying a picture.
+    #
+    # The cache is checked before the knowledge base rather than after it, which
+    # is the one place this differs from the design sketch. Embedding the query
+    # for the semantic rung is the expensive part of the ladder, and paying it
+    # to discover we already had the answer is precisely the cost the cache
+    # exists to avoid.
+    cheap_start = time.perf_counter()
+    cache_key: str | None = None
+    if db is not None:
+        from services.diagnosis_kb_import import normalise_phrase
+        from services.diagnosis_kb_lookup import lookup as kb_lookup
+        from services.diagnosis_kb_lookup import to_result
+
+        normalised = normalise_phrase(
+            " ".join([problem_description or "", " ".join(warning_lights or [])])
+        )
+
+        if not image_urls and normalised:
+            cache_key = diagnosis_cache.build_key(
+                normalised_question=normalised,
+                manufacturer=manufacturer,
+                model=model,
+                model_year=model_year,
+                fuel_type=fuel_type,
+                language=response_language,
+            )
+            cached = await diagnosis_cache.get(cache_key)
+            if cached is not None:
+                cached["engine"] = f"{cached.get('engine', 'unknown')}:cached"
+                cached["latency_ms"] = round((time.perf_counter() - cheap_start) * 1000, 1)
+                logger.info(
+                    "diagnosis_latency",
+                    extra={
+                        "event": "diagnosis_latency",
+                        "elapsed_ms": cached["latency_ms"],
+                        "engine": cached["engine"],
+                        "model_tier": model_tier,
+                        "cache_hit": True,
+                    },
+                )
+                return cached
+
+        kb_answer = await kb_lookup(
+            db,
+            problem_description=problem_description,
+            warning_lights=warning_lights,
+            manufacturer=manufacturer,
+            model=model,
+            fuel_type=fuel_type,
+            model_year=model_year,
+            odometer_km=odometer_km,
+            error_codes=error_codes,
+        )
+        if kb_answer is not None:
+            result = to_result(kb_answer, disclaimer=_DISCLAIMER)
+            result["latency_ms"] = round((time.perf_counter() - cheap_start) * 1000, 1)
+            result["model_tier"] = model_tier
+            result["vision_analysis"] = vision_analysis
+            result["warning_light_match"] = light_match
+            if response_language and response_language != "en-IN":
+                result = await _translate_diagnosis(result, response_language)
+            logger.info(
+                "diagnosis_latency",
+                extra={
+                    "event": "diagnosis_latency",
+                    "elapsed_ms": result["latency_ms"],
+                    "engine": "knowledge_base",
+                    "model_tier": model_tier,
+                    "kb_match_method": kb_answer.match_method,
+                    "kb_diagnosis_code": kb_answer.master.diagnosis_code,
+                    "safety_critical": kb_answer.safety_critical,
+                    "cache_hit": False,
+                },
+            )
+            # A safety-critical row is never cached — see services/diagnosis_cache.
+            if cache_key and not kb_answer.safety_critical and diagnosis_cache.is_cacheable(
+                result, has_images=bool(image_urls)
+            ):
+                await diagnosis_cache.put(cache_key, result)
+            return result
 
     retrieved, retrieval_method = _retrieve_cases(
         problem_description, warning_lights, when_occurs, fuel_type
@@ -758,6 +865,13 @@ async def run_diagnosis(
             current_risk = (result.get("risk_level") or "").lower()
             if current_risk not in ("high", "critical"):
                 result["risk_level"] = "High" if vision_severity == "severe" else "Critical"
+
+    # Cache the model's answer, but only once every field is final — the risk
+    # floor above can still raise the severity, and caching before it would pin
+    # the lower one. `is_cacheable` refuses heuristic fallbacks and anything
+    # marked critical or requiring immediate service.
+    if cache_key and diagnosis_cache.is_cacheable(result, has_images=bool(image_urls)):
+        await diagnosis_cache.put(cache_key, result)
 
     return result
 
