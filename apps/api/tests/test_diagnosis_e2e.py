@@ -821,3 +821,79 @@ async def test_DX_E2E_0704_anonymous_report_is_not_readable_by_a_stranger(
         assert r.status_code in (403, 404)
     finally:
         app.dependency_overrides.pop(get_current_user, None)
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# DX-E2E-08xx — configuration guards
+#
+# Not diagnosis behaviour, but the diagnosis path depends on all of it: the
+# signing key that authenticates the admin who approves a row, and the
+# subsystems that silently fall back when unset.
+# ══════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_DX_E2E_0801_production_refuses_to_boot_without_jwt_keys(monkeypatch):
+    """RS256 signing keys are mandatory in production, and this pins it.
+
+    The fallback in `core/security.py::_get_rsa_keys` generates an ephemeral
+    RSA keypair per process, which would invalidate every session on every
+    restart and break token validation across replicas. It is a development
+    convenience, and the only thing keeping it out of production is this check.
+    """
+    import sys
+
+    from core.config import Settings
+
+    s = Settings(environment="production", jwt_private_key="", jwt_public_key="")
+    with pytest.raises(SystemExit) as exc:
+        s.validate_production_config()
+    assert exc.value.code == 1
+    assert sys is not None
+
+
+async def test_DX_E2E_0802_this_backend_signs_rs256(monkeypatch):
+    """The token this service issues is RS256, not HS256.
+
+    HS256 exists in the codebase only to verify tokens Supabase issued, which
+    is Supabase's algorithm, not ours.
+    """
+    from jose import jwt as jose_jwt
+
+    from core.security import create_access_token
+
+    token = create_access_token(uuid.uuid4(), "qa@gaadiiq.com")
+    assert jose_jwt.get_unverified_header(token)["alg"] == "RS256"
+
+
+async def test_DX_E2E_0803_dependency_status_reports_what_is_actually_serving(
+    client, seeded
+):
+    """Silent degradation is the failure mode this endpoint exists to end.
+
+    Five subsystems fall back rather than fail when unconfigured. That is right
+    for resilience and it is also how a design document described OpenSearch as
+    deployed while every query went to Postgres.
+    """
+    r = await client.get("/health/dependencies")
+    assert r.status_code == 200
+    deps = r.json()["dependencies"]
+
+    for name in (
+        "database", "search", "diagnosis_cache",
+        "vector_search", "local_llm", "gemini", "marketplace",
+    ):
+        assert name in deps, f"{name} missing from the dependency report"
+        assert "configured" in deps[name] and "serving" in deps[name]
+
+    # In the test environment OPENSEARCH_URL is unset, so search must report
+    # the fallback rather than claiming a primary it does not have.
+    assert deps["search"]["configured"] is False
+    assert deps["search"]["serving"] == "postgres-like"
+
+
+async def test_DX_E2E_0804_dependency_status_leaks_no_secrets(client, seeded):
+    """It names backends, never hosts, URLs or keys."""
+    body = (await client.get("/health/dependencies")).text.lower()
+    for leak in ("http://", "https://", "password", "secret", "api_key", "@"):
+        assert leak not in body, f"dependency report leaked {leak!r}"

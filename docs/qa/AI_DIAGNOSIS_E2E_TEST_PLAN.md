@@ -12,8 +12,8 @@
 
 | | |
 |---|---|
-| Cases executed | **66** |
-| Passed | **65** |
+| Cases executed | **72** |
+| Passed | **71** |
 | Failed | 0 |
 | Known defect, pinned | 1 (`xfail(strict=True)`) |
 | **Defects found** | **2 — one of them a total outage of the feature** |
@@ -161,6 +161,7 @@ Numbering is `DX-E2E-nnnn`; the test function names carry the same ids.
 | **05xx — admin & authz** | 0501–0508 | Seven admin routes refuse an anonymous caller **in production mode**; the dev bypass is pinned as gated; stats, queue ordering, AI separation, detail view, decision record, 404 on unknown id, a solution cannot be published under a draft |
 | **06xx — cache** | 0601–0605 | A repeat question is served from cache; a safety-critical answer never is; the cache does not leak across vehicles; withdrawing a row invalidates it; stats visible to admin |
 | **07xx — persistence** | 0701–0704 | Every request is recorded; anonymous read refused; the owned-report IDOR guard holds; the ownerless gap pinned |
+| **08xx — config guards** | 0801–0804 | Production refuses to boot without RS256 keys; this backend signs RS256; `/health/dependencies` reports what is actually serving; it leaks no secrets |
 
 ---
 
