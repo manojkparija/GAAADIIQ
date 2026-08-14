@@ -126,7 +126,9 @@ RAZORPAY_KEY_ID  RAZORPAY_KEY_SECRET
 ENVIRONMENT=production
 ```
 
-**Declared nowhere, and therefore unset in production:**
+**`core/config.py` declares 91 settings; `render.yaml` sets 17.** The full gap
+is tabulated in `HLD/SystemOverview.md` §3.3. The ones that change behaviour
+most:
 
 | Variable | Consequence |
 |---|---|
@@ -135,10 +137,27 @@ ENVIRONMENT=production
 | `OPENSEARCH_URL` | Search falls back to Postgres. |
 | `QDRANT_URL` | Vector listing search is skipped. |
 | `KYC_HASH_PEPPER` | Digests are computed unpeppered. Startup refuses to boot without it **only** when `MARKETPLACE_ENABLED` is on. |
+| `MARKETPLACE_ENABLED` | Defaults to `False` — the roadside repair marketplace is built, tested, and switched off. |
+| `STT_PROVIDER` / `TTS_PROVIDER` | Default `"none"` — voice diagnosis has no speech engine. |
+| `SMTP_HOST`, `WHATSAPP_API_TOKEN`, `UPI_PAYEE_VPA` | Email, WhatsApp receipts and scan-to-pay are inert. |
+| `ENABLE_EMBEDDINGS` / `ENABLE_OCR` / `ENABLE_SAFETY_DETECTION` | Default `False` — the WAVE 3 media ML pipeline is off. |
 
 Each of these degrades quietly by design. That is why the previous version of
 this document could describe them as deployed for months without anything
 visibly breaking.
+
+---
+
+## 5b. Compute that is not on Render
+
+**Supabase Edge Function `ai-valuation`** (`supabase/functions/ai-valuation/`)
+runs on Supabase's Deno runtime and is invoked straight from the browser by the
+`list-car` page. It holds its own `ANTHROPIC_API_KEY`. It is not built,
+deployed or monitored by anything in this repository's CI, and no other document
+mentions it.
+
+**`carlytics/`** is a separate static site in this repository with no build or
+deploy configuration attached to it.
 
 ---
 

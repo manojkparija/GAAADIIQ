@@ -33,6 +33,12 @@ normalise
   → heuristic fallback     rules over the 12-row repair_knowledge.json
 ```
 
+**Three providers exist, and only one answers a diagnosis today:** Gemini
+(working), Anthropic (via a Supabase Edge Function invoked from the browser,
+outside the API entirely — see `HLD/SystemOverview.md` §3.2), and Ollama
+(`OLLAMA_BASE_URL` unset, so vision, valuation, sentiment and the free diagnosis
+tier all lose their model).
+
 **Modules:** `services/diagnosis_kb_lookup.py`, `services/diagnosis_cache.py`,
 `services/diagnosis_kb_review.py`, `services/diagnosis.py`,
 `services/gemini_gateway.py`, `services/llm_tier.py`.

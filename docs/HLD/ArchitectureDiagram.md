@@ -49,6 +49,12 @@ C4Context
   Rel(gaadiiq, brevo, "Notifications")
 ```
 
+**One arrow is missing from the picture above, and it is missing on purpose so
+it gets stated in words:** the Angular `list-car` page calls a **Supabase Edge
+Function** directly (`functions.invoke('ai-valuation')`), and that function
+calls **Anthropic**. It bypasses the API, the Gemini gateway, and every control
+that lives there. See `HLD/SystemOverview.md` §3.2.
+
 **Not in the picture, deliberately:** Oracle Cloud and Railway. Neither hosts
 anything. The Oracle deploy job was removed from `.github/workflows/ci-api.yml`
 after it was found to have never run — it was gated on a `main` branch that does
@@ -136,10 +142,13 @@ Two properties the diagram encodes rather than states:
 | Qdrant | Listing vectors for semantic listing search | See §5 |
 | OpenSearch | Listing full-text index | See §5 |
 
-**Schema lives in two places.** 33 Alembic migrations *and* seven hand-run
-`schema_setup_batch*.sql` files at the repo root. Some marketplace and loan
-tables exist only in the SQL files, so shipping code that needs them does not
-ship the tables. Check both.
+**Schema lives in four places.** 33 Alembic migrations, seven hand-run
+`schema_setup_batch*.sql` files at the repo root, six `supabase/migrations/*.sql`
+that the API's chain knows nothing about, and the ORM's own view in
+`models/`. Only the Alembic chain is applied automatically, on deploy. Some
+marketplace and loan tables exist only in the batch SQL, so shipping code that
+needs them does not ship the tables. Check all four before assuming a table
+exists.
 
 ---
 

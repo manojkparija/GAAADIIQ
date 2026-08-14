@@ -7,6 +7,11 @@
 
 ---
 
+> **Read `HLD/SystemOverview.md` first.** It is the as-built description of the
+> whole system, written from the code, and it carries the findings this document
+> is too narrow to hold — four schema sources, a second AI path that bypasses
+> the API, and 74 of 91 settings unset in production.
+>
 > **Corrected 2026-08-14.** v1.0 described the backend, Redis, OpenSearch,
 > Ollama and the whole observability stack as running on an Oracle Cloud ARM VM,
 > and the frontend as Next.js. Neither is true: the web app is Angular 17 on
