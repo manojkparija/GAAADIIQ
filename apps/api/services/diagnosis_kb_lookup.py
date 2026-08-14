@@ -613,7 +613,12 @@ def to_result(answer: KbAnswer, *, disclaimer: str) -> dict:
         "possible_causes": [
             {
                 "cause": m.possible_cause,
-                "likelihood": "High" if m.confidence_score >= 0.7 else "Medium",
+                # `confidence`, not `likelihood`. routers.diagnosis.PossibleCause
+                # requires a float here, and emitting the wrong key made every
+                # knowledge-base answer fail response validation with a 500 —
+                # the endpoint's own success path, broken at the last step.
+                # Unit tests asserted on this dict directly and never saw it.
+                "confidence": round(float(m.confidence_score or 0.0), 3),
                 "explanation": m.diagnostic_steps or "",
             }
         ],

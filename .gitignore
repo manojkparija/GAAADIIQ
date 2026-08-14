@@ -52,3 +52,7 @@ coverage/
 # Local media storage — written by LocalStorage in dev and tests
 apps/api/media_store/
 media_store/
+
+# Redis snapshot — written into whatever directory redis-server is started from.
+# It is a local dev artifact and was committed once by accident.
+dump.rdb
