@@ -13,6 +13,10 @@
 > response cache, then symptom aliases, then an exact scoped lookup, then
 > semantic search, and reaches a model only on a full miss. See
 > `LLD/AIArchitecture.md` §0 and `HLD/ArchitectureDiagram.md` §3.
+>
+> Where a flow shows a local LLM, the model that actually answers is **Google
+> Gemini**, reached only through `services/gemini_gateway.py` and only for the
+> premium tier. Ollama is unreachable in production.
 
 ---
 

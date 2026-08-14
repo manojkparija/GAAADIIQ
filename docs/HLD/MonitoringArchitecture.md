@@ -226,6 +226,12 @@ gaadiiq_recommendation_latency    # Histogram, labels: {engine_type}
 - Recommendation engine latency
 - Rule engine vs LLM request ratio
 - Vector search latency (Qdrant; ChromaDB was never used)
+- **Gemini call latency, failure rate and 429s.** The gateway retries three
+  times with backoff and is the only place these can be counted, so it is the
+  natural instrumentation point. Worth watching alongside the
+  `diagnosis_latency` log event's `engine` field, which distinguishes a
+  knowledge-base answer from a Gemini call from a heuristic fallback — the
+  cheapest signal that KB coverage is or is not working.
 
 ### Dashboard 4: Database & Cache
 - PostgreSQL: active connections, query time, slow query log

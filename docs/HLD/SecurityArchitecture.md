@@ -22,6 +22,13 @@
 > - **No credit score is ever invented.** `services/credit_bureau.py::fetch_score`
 >   raises rather than returning a plausible number, because a generated score
 >   is indistinguishable from a real one at the call site.
+> - **The Gemini API key never appears in a URL.** Every call goes through
+>   `services/gemini_gateway.py`, which sends it as an `x-goog-api-key` header.
+>   Five call sites previously put it in the query string, where request URLs
+>   reach httpx exception messages, stack traces and every proxy log between the
+>   service and Google — nothing had to go wrong for the key to be written down
+>   somewhere it should not be. A key rotation is therefore also warranted if
+>   any of those older logs are still retained.
 > - **OTP codes are peppered SHA-256 in Redis** with a TTL and a 5-attempt cap,
 >   counted before comparison. `secrets.randbelow`, not `random.choices`.
 >

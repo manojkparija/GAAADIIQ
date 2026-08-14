@@ -88,12 +88,46 @@ All within the FastAPI monolith at MVP (modular, ready to extract to microservic
 | AnalyticsService | Event ingestion, aggregation |
 
 ### Layer 5 — AI layer
-- **Ollama** — Local LLM inference server
-- **Llama 3 8B** — Primary conversational model (Smart Advisor)
-- ~~**DeepSeek R1 7B** — SEO content generation~~ — never built; no reference in the codebase
-- **LangChain** — Prompt orchestration, RAG pipeline, conversation memory
-- **fastembed** (`BAAI/bge-small-en-v1.5`, 384-dim) + **Qdrant** for listing vectors — not ChromaDB, which was never used. `QDRANT_URL` is unset in production.
-- **scikit-learn** — ML recommendation model (content-based filtering)
+
+**Google Gemini is the only LLM that answers a real request today.** v1.0 of
+this document did not mention it at all, because the design predated it.
+
+- **Google Gemini** (`gemini-3.5-flash-lite`, overridable via `GEMINI_MODEL`) —
+  the production model. Serves premium-tier diagnosis, brochure ingestion,
+  variant research and resale forecasting. `GEMINI_API_KEY` is set in
+  `render.yaml`, so this is the one inference path that actually works in
+  production.
+- **`services/gemini_gateway.py`** — the single door. Every Gemini call goes
+  through `generate_text`; five call sites across four services used to build
+  their own request and put the API key in the URL, where it reached logs,
+  tracebacks and every proxy in between. The gateway sends it as an
+  `x-goog-api-key` header, and is also the only place a timeout, a model choice
+  and a 429 retry (three attempts, backing off) can be enforced. An
+  `httpx.post` against `generativelanguage.googleapis.com` anywhere else is the
+  bug this module exists to prevent.
+- **`services/llm_tier.py`** — decides *whether* Gemini is used. Free vs premium
+  is resolved from the caller's Supabase JWT, verified against the JWKS, and
+  never from the request body: reading it from the body would let a free user
+  send a paid user's UUID and be upgraded.
+- **Knowledge base first.** For diagnosis, Gemini is the last resort rather than
+  the first step — cache, then symptom aliases, then a scoped exact lookup, then
+  semantic search, and only then the model. A curated, human-verified answer
+  costs no tokens. See `LLD/AIArchitecture.md` §0.
+- **Ollama** / **Llama 3 8B** — the intended free-tier engine. Still coded as a
+  fallback rung, but `OLLAMA_BASE_URL` is **unset in production** and defaults
+  to `localhost:11434`, so it is unreachable on Render and free-tier requests
+  fall through to the heuristic.
+- **fastembed** (`BAAI/bge-small-en-v1.5`, 384-dim) + **Qdrant** — embeddings
+  and listing vectors. Not ChromaDB, which was never used. `QDRANT_URL` is unset
+  in production; the diagnosis KB keeps its vectors in process instead.
+- **LangChain** — real, but far narrower than "prompt orchestration, RAG
+  pipeline, conversation memory". It is imported in exactly one file,
+  `services/sentiment.py`, and only for `Ollama`, `PromptTemplate` and
+  `StrOutputParser`.
+- ~~**DeepSeek R1 7B** — SEO content generation~~ — never built; no reference
+  anywhere in the codebase.
+- ~~**scikit-learn** — ML recommendation model~~ — the package is installed as a
+  transitive dependency, but nothing under `services/` or `routers/` imports it.
 
 ### Layer 6 — Data Layer
 - **PostgreSQL 16** (Supabase free tier) — Primary relational store
@@ -153,6 +187,7 @@ Browser → FastAPI /api/search?q=...&filters=...
 |---|---|---|
 | Supabase | PostgreSQL hosting | Free (500MB) |
 | Vercel | Angular static hosting + CDN | Free |
+| Google Gemini | LLM for premium diagnosis, brochure ingestion, variant research, resale forecast | Per-token |
 | Render | FastAPI service (Docker), deployed from master | Paid tier |
 | Cloudflare | CDN, R2 object storage, DNS, DDoS | Free |
 | GitHub Actions | CI/CD pipelines | Free (2,000 min/month) |
