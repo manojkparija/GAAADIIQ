@@ -425,6 +425,36 @@ test.describe('Voice Diagnosis — browser', () => {
       }
     });
 
+  test('VD-E2E-0409 a year spoken as words is captured, not asked for again',
+    async ({ page, context }) => {
+      // The reported bug. A speech recogniser returns what it hears as words:
+      // "twenty nineteen", never "2019". The extractor matched a four-digit
+      // numeral only, so the year never landed, and the assistant asked for it
+      // again — and again — while every other field went in on the first try.
+      //
+      // The chip is the assertion. Asserting on the question text would pass
+      // on the broken build too, because after two failed tries the flow gives
+      // up on the field and moves on to the next question either way.
+      await context.grantPermissions(['microphone']);
+      await installSpeechRecognition(page);
+      await page.goto(DIAGNOSIS);
+      await startListening(page);
+
+      await page.evaluate(() => {
+        (window as any).__lastRecognition?.__emit(
+          'I have a Maruti Swift twenty nineteen petrol manual',
+        );
+      });
+
+      await expect(page.locator('.vm-chip', { hasText: '2019' }))
+        .toBeVisible({ timeout: 15_000 });
+
+      // And the year question is not re-asked: the flow has moved past it.
+      const asked = await page.locator('.vm-msg--ai').allInnerTexts();
+      const yearQuestions = asked.filter(t => /year/i.test(t)).length;
+      expect(yearQuestions, 'the year was asked for after it was answered').toBeLessThan(2);
+    });
+
   test('VD-E2E-0408 the microphone is not open while the assistant is speaking',
     async ({ page, context }) => {
       // Opening the mic over our own audio makes the recogniser transcribe the

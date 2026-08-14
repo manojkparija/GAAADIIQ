@@ -128,13 +128,135 @@ function normalise(text: string): string {
   return text.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-function extractYear(text: string): number | undefined {
-  const m = text.match(/\b(19[9]\d|20[012]\d)\b/);
-  if (m) {
-    const yr = parseInt(m[1], 10);
-    const current = new Date().getFullYear();
-    if (yr >= 1990 && yr <= current + 1) return yr;
+// ── Year ─────────────────────────────────────────────────────────────────────
+//
+// A speech engine almost never returns "2019" for a spoken year. Chrome's
+// recogniser transcribes what it hears as words — "twenty nineteen", "two
+// thousand and nineteen", "nineteen ninety eight" — or splits the digits
+// ("20 19"). The original parser matched a bare four-digit numeral only, so
+// every one of those forms produced no year at all and the assistant asked
+// again, which is the loop users were hitting.
+
+const UNITS: Record<string, number> = {
+  zero: 0, oh: 0, o: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+  seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13,
+  fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18,
+  nineteen: 19,
+};
+
+const TENS: Record<string, number> = {
+  twenty: 20, thirty: 30, forty: 40, fourty: 40, fifty: 50, sixty: 60,
+  seventy: 70, eighty: 80, ninety: 90,
+};
+
+/** "ninety eight" → 98, "nineteen" → 19, "eight" → 8. Returns undefined otherwise. */
+function wordsToUnder100(words: string[]): number | undefined {
+  if (words.length === 0 || words.length > 2) return undefined;
+  const [a, b] = words;
+  if (words.length === 1) {
+    if (a in UNITS) return UNITS[a];
+    if (a in TENS) return TENS[a];
+    if (/^\d{1,2}$/.test(a)) return parseInt(a, 10);
+    return undefined;
   }
+  const tens = a in TENS ? TENS[a] : undefined;
+  const unit = b in UNITS && UNITS[b] < 10 ? UNITS[b] : /^\d$/.test(b) ? parseInt(b, 10) : undefined;
+  if (tens === undefined || unit === undefined) return undefined;
+  return tens + unit;
+}
+
+/** Units that mark a spoken number as a distance rather than a year. */
+const DISTANCE_WORDS = new Set(['km', 'kms', 'kilometer', 'kilometers', 'kilometre', 'kilometres']);
+
+function plausible(yr: number): number | undefined {
+  const current = new Date().getFullYear();
+  return yr >= 1990 && yr <= current + 1 ? yr : undefined;
+}
+
+/**
+ * Parse a model year out of a transcript. Handles, in order of confidence:
+ * a plain numeral, digits split by the recogniser, "two thousand (and) N",
+ * century-word forms ("twenty nineteen", "nineteen ninety eight"), and a bare
+ * two-digit year when the sentence makes clear it is one ("2019 model", "'19").
+ */
+function extractYear(text: string): number | undefined {
+  const t = normalise(text);
+
+  // 1. A plain four-digit year.
+  const plain = t.match(/\b(19\d{2}|20\d{2})\b/);
+  if (plain) {
+    const yr = plausible(parseInt(plain[1], 10));
+    if (yr) return yr;
+  }
+
+  // 2. Digits the recogniser split — "20 19", "19 98".
+  const split = t.match(/\b(19|20)\s+(\d{2})\b/);
+  if (split) {
+    const yr = plausible(parseInt(split[1] + split[2], 10));
+    if (yr) return yr;
+  }
+
+  const words = t.split(' ');
+
+  // 3. "two thousand", "two thousand nineteen", "two thousand and nineteen".
+  for (let i = 0; i < words.length - 1; i++) {
+    if (words[i] !== 'two' || words[i + 1] !== 'thousand') continue;
+    let rest = words.slice(i + 2);
+    if (rest[0] === 'and') rest = rest.slice(1);
+    // "two thousand kilometres" is an odometer reading, not the year 2000.
+    if (DISTANCE_WORDS.has(rest[0])) continue;
+    // Try the longest tail first: "twenty three" before "twenty".
+    // A bare "two thousand" only means 2000 when no number follows it —
+    // otherwise "two thousand and fifty" would silently degrade to 2000
+    // instead of being rejected as implausible.
+    const tail = wordsToUnder100(rest.slice(0, 2)) ?? wordsToUnder100(rest.slice(0, 1));
+    const yr = plausible(2000 + (tail ?? 0));
+    if (yr) return yr;
+    if (tail !== undefined) return undefined;  // a year was spoken, and it is not plausible
+  }
+
+  // 4. Century-word forms — "twenty nineteen", "twenty twenty three",
+  //    "nineteen ninety eight". The first word names the century.
+  for (let i = 0; i < words.length; i++) {
+    const century = words[i] === 'twenty' ? 2000 : words[i] === 'nineteen' ? 1900 : undefined;
+    if (century === undefined) continue;
+    for (const take of [2, 1]) {
+      const n = wordsToUnder100(words.slice(i + 1, i + 1 + take));
+      if (n === undefined) continue;
+      const yr = plausible(century + n);
+      if (yr) return yr;
+    }
+    // "twenty twenty" → 2020: the tail repeats the century word.
+    if (century === 2000 && words[i + 1] === 'twenty') {
+      const yr = plausible(2020);
+      if (yr) return yr;
+    }
+  }
+
+  // 5. A two-digit year, but only where the sentence says it is one —
+  //    "19 model", "model 19", "year 19". Without that anchor a stray "19"
+  //    is far more likely to be part of a model name (i20, XUV700) or a
+  //    quantity than a year.
+  const anchored = t.match(/\b(?:year|model|make|mfg|manufactured|registration|reg)\s+(\d{2})\b/)
+    ?? t.match(/\b(\d{2})\s+(?:model|make|reg|registration)\b/);
+  if (anchored) {
+    const two = parseInt(anchored[1], 10);
+    const yr = plausible(two >= 90 ? 1900 + two : 2000 + two);
+    if (yr) return yr;
+  }
+
+  // 6. The same anchored form spoken as words — "model twenty nineteen" is
+  //    already covered by 4; this catches "model ninety eight".
+  const wordAnchor = words.indexOf('model');
+  if (wordAnchor !== -1) {
+    for (const take of [2, 1]) {
+      const n = wordsToUnder100(words.slice(wordAnchor + 1, wordAnchor + 1 + take));
+      if (n === undefined || n < 10) continue;
+      const yr = plausible(n >= 90 ? 1900 + n : 2000 + n);
+      if (yr) return yr;
+    }
+  }
+
   return undefined;
 }
 

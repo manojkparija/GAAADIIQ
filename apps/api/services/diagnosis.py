@@ -21,6 +21,7 @@ import math
 import os
 import re
 import time
+from datetime import date
 from pathlib import Path
 
 import httpx
@@ -594,11 +595,25 @@ async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
 
 
 async def extract_vehicle_info_from_transcript(transcript: str) -> dict:
-    """Use Ollama to parse a natural-language vehicle description into structured fields."""
+    """
+    Parse a natural-language vehicle description into structured fields.
+
+    This is the fallback the voice flow reaches for when its client-side
+    dictionary pass leaves a field empty. It used to go only to Ollama, whose
+    host is unset in production — so in production the fallback returned `{}`
+    every time and the client's regexes were the whole extractor. Gemini is
+    tried first, through the gateway, for the same reason valuation moved
+    there: one provider, one timeout, one 429 policy, one record of the call.
+    Ollama remains as a local/self-hosted path.
+    """
     sanitised = _sanitise(transcript, 500)
     prompt = (
         "Extract vehicle information from this spoken description and return a JSON object. "
-        "Only include fields that are clearly mentioned. "
+        "The description is a speech-to-text transcript from an Indian user, so numbers may "
+        'be spelled out: "twenty nineteen" and "two thousand and nineteen" both mean 2019. '
+        "model_year must be a four-digit integer, odometer_km an integer in kilometres "
+        '("1.5 lakh" is 150000). Only include fields that are clearly mentioned; omit the '
+        "rest rather than guessing. "
         "Valid fuel_type values: Petrol, Diesel, CNG, Electric, Hybrid, LPG. "
         "Valid transmission values: Manual, Automatic, CVT, DCT, AMT. "
         "Return ONLY valid JSON.\n\n"
@@ -608,6 +623,14 @@ async def extract_vehicle_info_from_transcript(transcript: str) -> dict:
         '"fuel_type": "", "transmission": "", "odometer_km": null}'
     )
 
+    from services import gemini_gateway
+
+    try:
+        raw = await gemini_gateway.generate_text(prompt, caller="voice_extract")
+        return _clean_extracted(json.loads(raw))
+    except Exception as exc:
+        logger.warning("Gemini vehicle extraction failed, trying Ollama: %s", exc)
+
     try:
         async with httpx.AsyncClient(timeout=OLLAMA_EXTRACT_TIMEOUT) as client:
             resp = await client.post(
@@ -615,11 +638,46 @@ async def extract_vehicle_info_from_transcript(transcript: str) -> dict:
                 json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "format": "json"},
             )
             resp.raise_for_status()
-            extracted: dict = json.loads(resp.json().get("response", "{}"))
-        return {k: v for k, v in extracted.items() if v not in (None, "", 0)}
+            return _clean_extracted(json.loads(resp.json().get("response", "{}")))
     except Exception as exc:
         logger.warning("Vehicle info extraction failed: %s", exc)
         return {}
+
+
+def _clean_extracted(extracted: object) -> dict:
+    """
+    Keep only fields a model actually filled in, and only where the value is
+    the right shape. A model asked for JSON will happily return the year as
+    "twenty nineteen" or the string "null"; the client merges whatever comes
+    back straight into its form, so a bad shape here becomes a bad shape on
+    screen.
+    """
+    if not isinstance(extracted, dict):
+        return {}
+
+    cleaned: dict = {}
+    for key, value in extracted.items():
+        if value in (None, "", 0) or isinstance(value, (dict, list)):
+            continue
+        if key == "model_year":
+            try:
+                year = int(value)
+            except (TypeError, ValueError):
+                continue
+            if 1990 <= year <= date.today().year + 1:
+                cleaned[key] = year
+        elif key == "odometer_km":
+            try:
+                km = int(value)
+            except (TypeError, ValueError):
+                continue
+            if 0 < km <= 2_000_000:
+                cleaned[key] = km
+        elif isinstance(value, str):
+            text = value.strip()
+            if text and text.lower() not in ("null", "none", "unknown", "n/a"):
+                cleaned[key] = text
+    return cleaned
 
 
 async def run_diagnosis(

@@ -125,3 +125,55 @@ describe('detectLanguageFromText', () => {
     expect(detectLanguageFromText('my गाड़ी में बहुत आवाज आ रही है')).toBe('hi-IN');
   });
 });
+
+// The year is the field voice users could not get past: a speech recogniser
+// returns spoken words, not "2019", and the old parser matched digits only.
+describe('spoken model years', () => {
+  const year = (t: string) => extractVehicleInfo(t).model_year;
+
+  it('reads century-word forms', () => {
+    expect(year('twenty nineteen')).toBe(2019);
+    expect(year('it is a twenty twenty three model')).toBe(2023);
+    expect(year('twenty twenty')).toBe(2020);
+    expect(year('nineteen ninety eight')).toBe(1998);
+  });
+
+  it('reads "two thousand" forms with and without the conjunction', () => {
+    expect(year('two thousand nineteen')).toBe(2019);
+    expect(year('two thousand and eighteen')).toBe(2018);
+    expect(year('two thousand twenty two')).toBe(2022);
+  });
+
+  it('rejoins digits the recogniser split', () => {
+    expect(year('my car is a 20 19 Swift')).toBe(2019);
+  });
+
+  it('reads a two-digit year only when the sentence anchors it', () => {
+    expect(year('19 model')).toBe(2019);
+    expect(year('model 98')).toBe(1998);
+    expect(year('year 21')).toBe(2021);
+  });
+
+  it('does not invent a year from an unanchored number', () => {
+    expect(year('Hyundai i20')).toBeUndefined();
+    expect(year('Mahindra XUV700')).toBeUndefined();
+    expect(year('I have driven it for 19 days')).toBeUndefined();
+  });
+
+  it('does not read an odometer reading as a year', () => {
+    expect(year('it has done two thousand kilometres')).toBeUndefined();
+    expect(year('run 85000 km')).toBeUndefined();
+  });
+
+  it('still rejects years outside the plausible range', () => {
+    expect(year('a 1985 model')).toBeUndefined();
+    expect(year('two thousand and fifty')).toBeUndefined();
+  });
+
+  it('reads the year alongside the rest of the vehicle', () => {
+    const r = extractVehicleInfo('I drive a Maruti Swift twenty nineteen petrol manual');
+    expect(r.model_year).toBe(2019);
+    expect(r.manufacturer).toBe('Maruti Suzuki');
+    expect(r.missing).toEqual([]);
+  });
+});
