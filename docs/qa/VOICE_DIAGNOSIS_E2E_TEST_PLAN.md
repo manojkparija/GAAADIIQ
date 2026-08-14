@@ -12,9 +12,9 @@
 
 | | |
 |---|---|
-| Cases executed | **16** |
-| Passed, full stack (API + Postgres + seeded KB) | **16** |
-| Passed in CI (no API) | **12**, with 4 skipped |
+| Cases executed | **18** |
+| Passed, full stack (API + Postgres + seeded KB) | **18** |
+| Passed in CI (no API) | **14**, with 4 skipped |
 | Failed | 0 |
 | Runtime | 3m 07s full stack · 2m 36s CI-equivalent |
 
@@ -110,6 +110,8 @@ reaches a model prompt.
 | **VD-E2E-0404** | A recognition error is surfaced, not swallowed |
 | **VD-E2E-0405** | Closing voice mode stops the microphone |
 | **VD-E2E-0406** | The mic is a real button and re-arms the current step (F-01) |
+| **VD-E2E-0407** | A sentence spoken in phrases arrives as **one** answer, whole (F-04) |
+| **VD-E2E-0408** | The microphone is not open while the assistant is speaking (F-05) |
 | **VD-E2E-0501** | `/diagnosis/stt` returns 503 when no provider is configured |
 | **VD-E2E-0502** | `/diagnosis/tts` returns 503 when no provider is configured |
 | **VD-E2E-0601** | The DPDP erasure control is not offered to a signed-out user |
@@ -144,6 +146,64 @@ the step the conversation is already on rather than restarting it — nothing th
 driver has already said is discarded. Disabled while capturing or while the
 assistant is speaking, so a tap can never cut off the question being asked.
 Pinned by `VD-E2E-0406`.
+
+### F-04 — a spoken sentence was captured only up to its first pause · **High** · **fixed**
+
+**The reported symptom: "not capturing the car information properly."**
+
+`recognition.continuous = true`, so a real engine emits one *final* result per
+phrase. "my Maruti Swift 2019 petrol manual" arrives as three or four separate
+finals. `onresult` called `this.onFinal(finalChunk)` on the first one, which
+stopped the microphone and advanced the conversation — and the remaining
+phrases then advanced it again, landing the year and fuel in the answers to
+later questions.
+
+Measured on the pre-fix build, the captured answer was literally:
+
+```
+"my maruti swift"
+```
+
+**Fixed** by buffering finals and delivering once the speaker actually stops
+(1.1s of silence), delivering exactly once per capture (`onFinal` is cleared on
+delivery, so a late result cannot advance the conversation twice), and flushing
+the buffer on `onend` and on `stop()` rather than discarding it.
+
+Pinned by `VD-E2E-0407`, which counts **user turns** rather than looking for the
+words on screen. That distinction is the test: an assertion that the words
+appear passes on the broken build too, because the broken build showed them —
+split across three answers to three different questions. I wrote that weaker
+assertion first, checked it against the old code, and found it passed. It is
+recorded here because a test that cannot fail is worse than no test.
+
+### F-05 — the microphone opened while the assistant was still talking · **High** · **fixed**
+
+**The other half of the same report.** `_aiSay` waited for TTS to finish before
+listening, with a **12-second** hard fallback. Chrome's `speechSynthesis` does
+not reliably fire `onend` — it stalls on longer utterances and can go silent
+after a tab regains focus — so `speakingState` stayed `'speaking'` and the mic
+stayed shut for the full twelve seconds. **That is "the mic never goes into
+listening mode."**
+
+When the fallback did fire it opened the microphone *without stopping the
+speech*, so the recogniser transcribed the app's own question as the user's
+answer. On a phone with the speaker on — which is how this is used from a
+roadside — that is the normal case, not an edge one.
+
+**Fixed:** the fallback is 4s (longer than any prompt this component speaks),
+`stopSpeaking()` is called before the microphone opens, and `_listen()` silences
+any speech still playing on every path. Pinned by `VD-E2E-0408`.
+
+### F-06 — the no-speech retry could kill the session · **Medium** · **fixed**
+
+On `no-speech`, the service constructed a **second** `SpeechRecognition` and
+called `start()` without stopping the first. Chrome throws `InvalidStateError`
+when one is already running, and the throw was inside a `setTimeout` callback —
+uncaught, so the microphone simply never reopened. The retry meant to help was
+what ended the session.
+
+**Fixed:** abort the existing recogniser first, and wrap `start()` so a failure
+surfaces as "Microphone is busy. Tap the mic to try again." rather than silence.
 
 ### F-02 — the API required TLS to Postgres and the local instance had none
 

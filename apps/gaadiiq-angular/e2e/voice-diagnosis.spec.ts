@@ -104,7 +104,11 @@ async function installSpeechRecognition(page: Page) {
       addEventListener() { /* the service uses the on* properties */ }
       removeEventListener() { /* ditto */ }
 
-      /** Deliver a transcript, as the real API would on a final result. */
+      /** Deliver a transcript, as the real API would on a final result.
+       *
+       * A real engine with `continuous = true` emits one final per phrase, so
+       * a spoken sentence arrives in pieces. `__emit` sends one piece; call it
+       * repeatedly to reproduce that. */
       __emit(transcript: string, isFinal = true) {
         const results: any = [[{ transcript, confidence: 0.94 }]];
         results[0].isFinal = isFinal;
@@ -385,6 +389,68 @@ test.describe('Voice Diagnosis — browser', () => {
       })
       .toBeGreaterThan(before);
   });
+
+  test('VD-E2E-0407 a sentence spoken in phrases arrives as ONE answer',
+    async ({ page, context }) => {
+      // The reported bug. `continuous = true` makes a real engine emit one
+      // final result per phrase, so "my Maruti Swift 2019 petrol manual"
+      // arrives in pieces. The old code delivered the first piece immediately:
+      // it captured "my Maruti Swift", advanced the conversation, and let the
+      // remaining pieces advance it again — three user turns from one sentence,
+      // with the year, fuel and gearbox landing in the wrong questions.
+      //
+      // Counting the user bubbles is what distinguishes fixed from broken.
+      // Asserting only that the words appear on screen passes either way,
+      // because the broken version also showed them — just split across three
+      // answers to three different questions.
+      await context.grantPermissions(['microphone']);
+      await installSpeechRecognition(page);
+      await page.goto(DIAGNOSIS);
+      await startListening(page);
+
+      await page.evaluate(() => {
+        const r = (window as any).__lastRecognition;
+        r?.__emit('my Maruti Swift ');
+        setTimeout(() => r?.__emit('2019 petrol '), 120);
+        setTimeout(() => r?.__emit('manual transmission'), 260);
+      });
+
+      const userMessages = page.locator('.vm-msg--user');
+      await expect(userMessages).toHaveCount(1, { timeout: 15_000 });
+
+      // …and that one answer holds the whole sentence.
+      const said = (await userMessages.first().innerText()).toLowerCase();
+      for (const part of ['maruti swift', '2019', 'petrol', 'manual']) {
+        expect(said, `"${part}" was dropped from the captured answer`).toContain(part);
+      }
+    });
+
+  test('VD-E2E-0408 the microphone is not open while the assistant is speaking',
+    async ({ page, context }) => {
+      // Opening the mic over our own audio makes the recogniser transcribe the
+      // question as the answer. On a phone with the speaker on — which is how
+      // this is used from a roadside — that is the normal case, not an edge one.
+      await context.grantPermissions(['microphone']);
+      await installSpeechRecognition(page);
+      await page.goto(DIAGNOSIS);
+
+      await page.getByRole('button', { name: /Use Voice/i }).click();
+      await page.locator('.vm-consent-actions button').first().click();
+      await expect(page.locator('.vm-lang-picker')).toBeVisible();
+      await page.locator('.vm-lang-option').filter({ hasText: /English/i }).first().click();
+
+      // Once listening has started, speech must have stopped.
+      await expect
+        .poll(async () => page.evaluate(() => (window as any).__srStarted ?? 0), {
+          timeout: 15_000,
+        })
+        .toBeGreaterThan(0);
+
+      const speaking = await page.evaluate(
+        () => (window as any).speechSynthesis?.speaking === true,
+      );
+      expect(speaking).toBe(false);
+    });
 
   // ── VD-E2E-05xx — server-side STT fallback ───────────────────────────────
 

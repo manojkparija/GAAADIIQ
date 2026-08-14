@@ -378,6 +378,10 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
   private _listen(onResult: (text: string) => void) {
     this._lastOnResult = onResult;
+    // Never listen over ourselves. If any speech is still playing, the mic
+    // hears it through the speaker — loudest on a phone with the speaker on,
+    // which is exactly how this feature is used from a roadside.
+    if (this.voice.speakingState() !== 'idle') this.voice.stopSpeaking();
     if (!this.useServerStt) {
       this.voice.start(onResult);
       return;
@@ -604,8 +608,27 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
           done();
         }
       }, 300);
-      // Hard fallback: 12s max
-      setTimeout(() => { clearInterval(check); done(); }, 12000);
+
+      // Hard fallback, and the reason it is 4s rather than 12s.
+      //
+      // Chrome's speechSynthesis does not reliably fire `onend` — it stalls on
+      // longer utterances, and on Android it can go silent after a tab regains
+      // focus. When that happened, speakingState stayed 'speaking' and the
+      // microphone stayed shut for the full twelve seconds while the user
+      // stared at a mic that never opened. That is the "mic never goes into
+      // listening mode" report.
+      //
+      // 4s is longer than any prompt this component speaks and short enough
+      // that a stall is a hesitation rather than a hang. `stopSpeaking()`
+      // before `done()` matters just as much: opening the microphone while the
+      // assistant is still audible means the recogniser transcribes the app's
+      // own question as the user's answer, which is the other half of "it
+      // isn't capturing the car details properly".
+      setTimeout(() => {
+        clearInterval(check);
+        this.voice.stopSpeaking();
+        done();
+      }, 4000);
     }, 600);
   }
 
