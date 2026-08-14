@@ -515,6 +515,66 @@ class TestExtractVehicleInfoSuite:
             assert await extract_vehicle_info_from_transcript("some car") == {}
 
 
+# ── Voice extraction: provider order and value shapes ────────────────────────
+#
+# In production OLLAMA_BASE_URL is unset, so this fallback used to return {}
+# on every call and the client's regexes were the entire extractor. Gemini is
+# tried first now; these tests pin that order and pin what a model is allowed
+# to put in each field.
+
+def _gemini_returning(payload):
+    return patch(
+        "services.gemini_gateway.generate_text",
+        new=AsyncMock(return_value=json.dumps(payload)),
+    )
+
+
+class TestVoiceExtractProviderOrderSuite:
+    @pytest.mark.asyncio
+    async def test_gemini_is_tried_first_and_ollama_is_not_called(self):
+        with _gemini_returning({"manufacturer": "Hyundai", "model_year": 2019}) as gem:
+            with patch("httpx.AsyncClient", side_effect=AssertionError("Ollama must not be called")):
+                r = await extract_vehicle_info_from_transcript("Hyundai twenty nineteen")
+        assert r == {"manufacturer": "Hyundai", "model_year": 2019}
+        assert gem.await_args.kwargs["caller"] == "voice_extract"
+
+    @pytest.mark.asyncio
+    async def test_falls_back_to_ollama_when_gemini_fails(self):
+        with patch("services.gemini_gateway.generate_text", new=AsyncMock(side_effect=Exception("429"))):
+            with patch("httpx.AsyncClient", return_value=_mock_ollama({"manufacturer": "Tata"})):
+                r = await extract_vehicle_info_from_transcript("Tata")
+        assert r == {"manufacturer": "Tata"}
+
+    @pytest.mark.asyncio
+    async def test_rejects_a_year_the_model_did_not_convert_to_a_number(self):
+        # The client merges this straight into the form, so "twenty nineteen"
+        # arriving as a year would put a string in a numeric field.
+        with _gemini_returning({"manufacturer": "Kia", "model_year": "twenty nineteen"}):
+            r = await extract_vehicle_info_from_transcript("Kia twenty nineteen")
+        assert r == {"manufacturer": "Kia"}
+
+    @pytest.mark.asyncio
+    async def test_accepts_a_year_the_model_returned_as_a_numeric_string(self):
+        with _gemini_returning({"model_year": "2019"}):
+            assert await extract_vehicle_info_from_transcript("twenty nineteen") == {"model_year": 2019}
+
+    @pytest.mark.asyncio
+    async def test_rejects_an_implausible_year(self):
+        with _gemini_returning({"model_year": 1885}):
+            assert await extract_vehicle_info_from_transcript("eighteen eighty five") == {}
+
+    @pytest.mark.asyncio
+    async def test_drops_placeholder_strings(self):
+        with _gemini_returning({"manufacturer": "Honda", "variant": "unknown", "fuel_type": "null"}):
+            assert await extract_vehicle_info_from_transcript("Honda") == {"manufacturer": "Honda"}
+
+    @pytest.mark.asyncio
+    async def test_survives_a_model_returning_something_other_than_an_object(self):
+        with _gemini_returning(["Maruti", "Swift"]):
+            with patch("httpx.AsyncClient", side_effect=Exception("ollama down")):
+                assert await extract_vehicle_info_from_transcript("Maruti Swift") == {}
+
+
 # ── POST /diagnosis/analyse ──────────────────────────────────────────────────
 
 class TestAnalyseEndpointSuite:
