@@ -80,7 +80,7 @@ third lineage that the API's own migration chain knows nothing about.
 
 `cars.id` is a **UUID** in the ORM and `bigint` in batch 1. The ORM wins.
 
-### 3.2 A second AI path bypasses the API entirely
+### 3.2 A second AI path bypassed the API entirely — **fixed**
 
 `apps/gaadiiq-angular/src/app/pages/list-car/list-car.component.ts:250` calls
 `supabase.client.functions.invoke('ai-valuation')` directly from the browser.
@@ -99,8 +99,16 @@ the model choice and any record that a call happened. It has an 8-second
 timeout and falls back to a shared client-side heuristic
 (`utils/valuation-engine.ts`), so a failure is invisible.
 
-This is worth a decision rather than a note: it contradicts the intended
-"UI → API → gateway → model" rule, and it is a second API key in a second place.
+**Fixed.** `POST /valuation/estimate` (`routers/valuation.py`) does the same job
+through `services/gemini_gateway.py`, and `list-car` now calls it. One provider,
+one gateway, one place where a timeout, a 429 retry and a record of the call
+live. When the model is unavailable it returns 503 and the client falls back to
+its own deterministic heuristic — it never returns a price the service did not
+compute.
+
+The Edge Function and its `ANTHROPIC_API_KEY` are no longer called by the app.
+Deleting the function and revoking that key is a Supabase-side action and is
+still outstanding.
 
 ### 3.3 74 of 91 settings are unset in production
 

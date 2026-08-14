@@ -356,6 +356,36 @@ test.describe('Voice Diagnosis — browser', () => {
       .toBe(true);
   });
 
+  test('VD-E2E-0406 the mic is tappable, and re-arms the same step', async ({ page, context }) => {
+    // F-01, fixed. The status label read "Tap mic to speak" while the mic was
+    // an aria-hidden div with no handler — an instruction with nothing behind
+    // it. It is a <button> now.
+    await context.grantPermissions(['microphone']);
+    await installSpeechRecognition(page);
+    await page.goto(DIAGNOSIS);
+    await startListening(page);
+
+    const mic = page.locator('button.vm-visual');
+    await expect(mic).toBeVisible();
+
+    // While capturing it is disabled, so a tap cannot cut off the question
+    // being asked.
+    await expect(mic).toBeDisabled();
+
+    // End the utterance without a result, which is where a driver used to get
+    // stranded, then tap.
+    const before = await page.evaluate(() => (window as any).__srStarted ?? 0);
+    await page.evaluate(() => (window as any).__lastRecognition?.stop());
+    await expect(mic).toBeEnabled({ timeout: 10_000 });
+
+    await mic.click();
+    await expect
+      .poll(async () => page.evaluate(() => (window as any).__srStarted ?? 0), {
+        timeout: 10_000,
+      })
+      .toBeGreaterThan(before);
+  });
+
   // ── VD-E2E-05xx — server-side STT fallback ───────────────────────────────
 
   test('VD-E2E-0501 the STT endpoint reports 503 when no provider is configured',

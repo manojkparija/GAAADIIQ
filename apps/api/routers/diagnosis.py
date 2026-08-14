@@ -523,9 +523,18 @@ async def get_diagnosis(
     if not record:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Diagnosis report not found")
 
-    # Enforce ownership — prevent IDOR
-    if record.user_id and str(record.user_id) != str(current_user.id):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Access denied")
+    # Enforce ownership — prevent IDOR.
+    #
+    # A NULL owner means "nobody", not "anybody". /diagnosis/analyse needs no
+    # authentication, so an anonymous report is stored with user_id = NULL; the
+    # previous guard short-circuited on that and let any signed-in caller read
+    # it. The endpoint was documented as owner-only and was not.
+    #
+    # 404 rather than 403, matching delete_diagnosis_report below: "not found"
+    # and "not yours" are deliberately indistinguishable, so this cannot be used
+    # to probe for other people's report IDs.
+    if not record.user_id or str(record.user_id) != str(current_user.id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Diagnosis report not found")
 
     return DiagnoseResponse(
         id=str(record.id),

@@ -88,7 +88,7 @@ the cache — was unreachable through the API. Not degraded: a 500.
 **Fixed** by emitting `confidence` as a float derived from the row's
 `confidence_score`. 20 cases moved from fail to pass on that one line.
 
-### DEFECT-02 — an ownerless report is readable by any signed-in user · **Low** · open
+### DEFECT-02 — an ownerless report is readable by any signed-in user · **Low** · **fixed**
 
 `routers/diagnosis.py::get_diagnosis` guards with:
 
@@ -105,13 +105,11 @@ MOB-007)"; for an ownerless record it is closer to "anyone-only".
 Exploitability is limited: the id is a v4 UUID and is returned only to the
 creator. The contract is still not what it claims.
 
-Pinned as `test_DX_E2E_0704` with `xfail(strict=True)` — if someone fixes the
-guard, the suite tells them to remove the marker. The real IDOR case (an
-**owned** report read by a stranger) is asserted normally in `0703` and passes.
-
-**Suggested fix:** treat a NULL owner as "nobody", not "anyone" — refuse unless
-`record.user_id` matches. Anonymous callers cannot read their own report either
-way, because the endpoint requires auth.
+**Fixed.** The guard now refuses unless `record.user_id` matches — a NULL owner
+is nobody, not everybody — and answers **404** rather than 403, matching
+`delete_diagnosis_report`, so "not found" and "not yours" stay
+indistinguishable and the endpoint cannot be used to probe for report IDs.
+`test_DX_E2E_0704` is no longer `xfail`; it passes.
 
 ### Two test-harness faults found and fixed along the way
 

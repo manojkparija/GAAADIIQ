@@ -12,9 +12,9 @@
 
 | | |
 |---|---|
-| Cases executed | **15** |
-| Passed, full stack (API + Postgres + seeded KB) | **15** |
-| Passed in CI (no API) | **11**, with 4 skipped |
+| Cases executed | **16** |
+| Passed, full stack (API + Postgres + seeded KB) | **16** |
+| Passed in CI (no API) | **12**, with 4 skipped |
 | Failed | 0 |
 | Runtime | 3m 07s full stack · 2m 36s CI-equivalent |
 
@@ -109,6 +109,7 @@ reaches a model prompt.
 | **VD-E2E-0403** | A spoken transcript reaches the page and drives the conversation |
 | **VD-E2E-0404** | A recognition error is surfaced, not swallowed |
 | **VD-E2E-0405** | Closing voice mode stops the microphone |
+| **VD-E2E-0406** | The mic is a real button and re-arms the current step (F-01) |
 | **VD-E2E-0501** | `/diagnosis/stt` returns 503 when no provider is configured |
 | **VD-E2E-0502** | `/diagnosis/tts` returns 503 when no provider is configured |
 | **VD-E2E-0601** | The DPDP erasure control is not offered to a signed-out user |
@@ -121,7 +122,7 @@ the assistant asks the one thing still missing: *"And the transmission type?"*
 
 ## 5. Findings
 
-### F-01 — "Tap mic to speak" instructs an action the UI does not implement · **Low** · open
+### F-01 — "Tap mic to speak" instructs an action the UI does not implement · **Low** · **fixed**
 
 `voice-mode.component.ts:218` computes a status label whose idle value is
 **"Tap mic to speak"**. The mic it refers to is
@@ -135,9 +136,14 @@ fire, the driver is left looking at an instruction they cannot follow.
 
 **Evidence and its limits.** I reproduced the stuck state, but only with a
 speech-synthesis stub that fired `onend` without `onstart`. With real Chromium
-synthesis I could not reach it. So: the missing handler is certain; how often a
-real user lands there is not established. Either make the mic tappable, or
-change the copy to describe what actually happens.
+synthesis I could not reach it. The missing handler was certain; how often a
+real user landed there was not.
+
+**Fixed** by making the mic a `<button>` that calls `tapMic()`, which re-arms
+the step the conversation is already on rather than restarting it — nothing the
+driver has already said is discarded. Disabled while capturing or while the
+assistant is speaking, so a tap can never cut off the question being asked.
+Pinned by `VD-E2E-0406`.
 
 ### F-02 — the API required TLS to Postgres and the local instance had none
 

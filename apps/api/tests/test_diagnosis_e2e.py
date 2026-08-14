@@ -783,30 +783,19 @@ async def test_DX_E2E_0703_another_user_cannot_read_an_owned_report(
     app.dependency_overrides[get_current_user] = lambda: stranger
     try:
         r = await client.get(f"/diagnosis/{created['id']}")
-        assert r.status_code == 403, (
+        assert r.status_code == 404, (
             f"a stranger read another user's report: {r.status_code}"
         )
     finally:
         app.dependency_overrides.pop(get_current_user, None)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DEFECT-02. routers/diagnosis.py::get_diagnosis guards with "
-        "`if record.user_id and str(record.user_id) != current_user.id`. An "
-        "anonymous diagnosis has user_id = NULL, so the guard short-circuits "
-        "and ANY authenticated user can read it given the id. The docstring "
-        "says 'owner-only'; an ownerless record is readable by everyone. "
-        "Exploitability is limited — the id is a v4 UUID and is returned only "
-        "to the creator — but the contract is not what it claims. Remove this "
-        "xfail when the guard treats a NULL owner as 'nobody' rather than "
-        "'anyone'."
-    ),
-)
 async def test_DX_E2E_0704_anonymous_report_is_not_readable_by_a_stranger(
     client, seeded
 ):
+    """DEFECT-02, fixed. An anonymous report has no owner, and a report with no
+    owner belongs to nobody — not to everybody. The guard used to short-circuit
+    on `record.user_id` being NULL, so any signed-in caller could read it."""
     from core.dependencies import get_current_user
 
     created = (await client.post(ANALYSE, json=seed.request())).json()

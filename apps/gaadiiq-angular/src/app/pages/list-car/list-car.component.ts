@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { Component, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -247,17 +248,28 @@ export class ListCarComponent {
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('timeout')), 8000)
       );
-      const invoke = this.sb.client.functions.invoke('ai-valuation', {
-        body: {
-          make: this.form.make, model: this.form.model, variant: this.form.variant,
-          year: this.form.year, km: this.form.km,
-          fuel: this.form.fuel, transmission: this.form.transmission,
-          owners: this.form.owners, condition: this.form.condition,
-        },
-      });
-      const { data, error } = await Promise.race([invoke, timeout]) as any;
-      if (!error && data && !data.error) {
-        this.valuation.set({ ...(data as ValuationResult), method: data.method ?? 'claude' });
+      // Through the API, not straight to a model provider from the browser.
+      //
+      // This used to call a Supabase Edge Function
+      // (`functions.invoke('ai-valuation')`) which held its own Anthropic key.
+      // That bypassed the API's Gemini gateway and with it the single place a
+      // timeout, a 429 retry and a record of the call can live — and it was a
+      // second provider and a second key that no architecture document
+      // mentioned. Same job, same response shape, one path.
+      const call = fetch(`${environment.apiUrl}/valuation/estimate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          make: this.form.make, model: this.form.model, variant: this.form.variant || null,
+          year: Number(this.form.year), km: Number(this.form.km) || 0,
+          fuel: this.form.fuel, transmission: this.form.transmission || null,
+          owners: Number(this.form.owners) || 1, condition: this.form.condition,
+        }),
+      }).then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))));
+
+      const data = await Promise.race([call, timeout]) as any;
+      if (data && !data.error) {
+        this.valuation.set({ ...(data as ValuationResult), method: data.method ?? 'gemini' });
         if (data.mid && !this.form.price) {
           this.form.price = String(Math.round(data.mid / 1000) * 1000);
         }

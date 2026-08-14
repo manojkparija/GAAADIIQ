@@ -369,7 +369,15 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
    * so the server path is user-terminated — the UI shows a Stop control while
    * `serverStt.recording()` is true.
    */
+  /** The handler for the utterance we are currently waiting on.
+   *
+   * Kept so `tapMic()` can re-arm the same step of the conversation. Without
+   * it, a driver whose capture ended early had no way back in: the status label
+   * said "Tap mic to speak" and the mic was a decorative div. */
+  private _lastOnResult: ((text: string) => void) | null = null;
+
   private _listen(onResult: (text: string) => void) {
+    this._lastOnResult = onResult;
     if (!this.useServerStt) {
       this.voice.start(onResult);
       return;
@@ -380,6 +388,21 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
         this.zone.run(() => this._sttCallback = null);
       }
     });
+  }
+
+  /**
+   * Start listening again, from the mic the status label tells people to tap.
+   *
+   * The label read "Tap mic to speak" long before anything was tappable — the
+   * mic was an aria-hidden div with no handler, so a session that stopped
+   * capturing was a dead end with instructions. This re-arms the step the
+   * conversation is already on rather than restarting it, so nothing the driver
+   * has already said is thrown away.
+   */
+  tapMic() {
+    if (this.isCapturing() || this.voice.speakingState() === 'speaking') return;
+    const again = this._lastOnResult;
+    if (again) this._listen(again);
   }
 
   /** Stop the server-STT recording, transcribe it, and resume the conversation. */
