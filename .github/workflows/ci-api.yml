@@ -136,23 +136,6 @@ jobs:
             --ignore=tests/test_dealer_bookings.py \
             --ignore=tests/test_loans.py
 
-  deploy:
-    name: Deploy to Oracle Cloud
-    needs: [ci, postgres]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy via SSH to Oracle Cloud
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.ORACLE_HOST }}
-          username: ${{ secrets.ORACLE_USER }}
-          key: ${{ secrets.ORACLE_SSH_KEY }}
-          script: |
-            cd /opt/gaadiiq/api
-            git pull origin main
-            source .venv/bin/activate
-            pip install -r requirements.txt
-            sudo systemctl restart gaadiiq-api
+# There is no deploy job here on purpose. Render deploys the API from `master`
+# on its own, and Vercel does the same for the web app. A second deploy path
+# would be a second thing to keep in step with the first.
