@@ -743,3 +743,84 @@ async def test_needing_a_mechanic_is_not_an_emergency(db_session):
     assert result["immediate_service_required"] is False
     assert result["safe_to_drive"] is True
     assert diagnosis_cache.is_cacheable(result, has_images=False) is True
+
+
+async def test_semantic_will_not_answer_for_the_wrong_car(db_session, fake_embeddings):
+    """Similarity ranks; scope decides.
+
+    This is a regression test for a real defect. The semantic rung applied no
+    vehicle scope at all, so the exact rung would correctly refuse a Tata row
+    for a Maruti — and similarity would then serve the very same row. It was
+    invisible locally because the embedding model could not be downloaded, and
+    only appeared in CI, where it is installed.
+    """
+    await make_master(
+        db_session,
+        diagnosis_code="TATA-ONLY",
+        manufacturer="Tata",
+        model="Nexon",
+        symptom="brake grind",
+        user_keywords="brake grind",
+        possible_cause="brake pads",
+    )
+    assert await lookup(
+        db_session,
+        problem_description="brake grind",
+        manufacturer="Maruti",
+        model="Swift",
+        fuel_type="Petrol",
+        model_year=2020,
+    ) is None
+
+
+async def test_semantic_respects_the_year_range(db_session, fake_embeddings):
+    await make_master(
+        db_session,
+        diagnosis_code="OLD-CARS-ONLY",
+        model_year_from=2015,
+        model_year_to=2018,
+        symptom="brake grind",
+        user_keywords="brake grind",
+        possible_cause="brake pads",
+    )
+    assert await lookup(
+        db_session,
+        problem_description="brake grind",
+        manufacturer="Tata",
+        model="Nexon",
+        fuel_type="Petrol",
+        model_year=2023,
+    ) is None
+
+
+async def test_semantic_walks_past_an_out_of_scope_row(db_session, fake_embeddings):
+    """The closest row may be for another car; the next one may be right."""
+    await make_master(
+        db_session,
+        diagnosis_code="CLOSER-BUT-WRONG-CAR",
+        manufacturer="Maruti",
+        model="Swift",
+        symptom="brake grind misfire",
+        user_keywords="brake grind misfire",
+        possible_cause="pads",
+    )
+    await make_master(
+        db_session,
+        diagnosis_code="RIGHT-CAR",
+        manufacturer="Tata",
+        model="Nexon",
+        symptom="brake grind",
+        user_keywords="brake grind",
+        possible_cause="pads",
+    )
+
+    answer = await lookup(
+        db_session,
+        problem_description="brake grind misfire",
+        manufacturer="Tata",
+        model="Nexon",
+        fuel_type="Petrol",
+        model_year=2020,
+    )
+    assert answer is not None
+    assert answer.master.diagnosis_code == "RIGHT-CAR"

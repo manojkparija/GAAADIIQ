@@ -214,6 +214,45 @@ def _specificity(row: DiagnosisMaster) -> tuple:
     )
 
 
+def _vehicle_scope_clauses(
+    *,
+    manufacturer: str | None,
+    model: str | None,
+    fuel_type: str | None,
+    model_year: int | None,
+    odometer_km: int | None,
+) -> list:
+    """Every predicate that decides whether a row applies to *this* car.
+
+    Shared by the exact and semantic rungs, and shared deliberately. When the
+    semantic rung had its own (absent) scoping, it answered a Maruti Swift with
+    a Tata Nexon row and a 2023 car with a 2015-2018 row: the exact rung refused
+    correctly, and then similarity served the same row anyway. A plausible
+    answer for the wrong engine is the exact failure this module exists to
+    prevent, so there is now one definition of scope rather than two.
+    """
+    clauses = [
+        _scope_clause(DiagnosisMaster.manufacturer, manufacturer),
+        _scope_clause(DiagnosisMaster.model, model),
+        _scope_clause(DiagnosisMaster.fuel_type, fuel_type),
+    ]
+    # Year and odometer are ranges, not sentinels: a row that claims 2015-2020
+    # must not answer for a 2023 car.
+    if model_year:
+        clauses += [
+            DiagnosisMaster.model_year_from <= model_year,
+            DiagnosisMaster.model_year_to >= model_year,
+        ]
+    if odometer_km is not None:
+        clauses += [
+            or_(DiagnosisMaster.odometer_from_km.is_(None),
+                DiagnosisMaster.odometer_from_km <= odometer_km),
+            or_(DiagnosisMaster.odometer_to_km.is_(None),
+                DiagnosisMaster.odometer_to_km >= odometer_km),
+        ]
+    return clauses
+
+
 async def _exact_lookup(
     db: AsyncSession,
     *,
@@ -239,25 +278,14 @@ async def _exact_lookup(
         stmt = stmt.where(DiagnosisMaster.canonical_symptom.in_(canonical_symptoms))
 
     stmt = stmt.where(
-        _scope_clause(DiagnosisMaster.manufacturer, manufacturer),
-        _scope_clause(DiagnosisMaster.model, model),
-        _scope_clause(DiagnosisMaster.fuel_type, fuel_type),
+        *_vehicle_scope_clauses(
+            manufacturer=manufacturer,
+            model=model,
+            fuel_type=fuel_type,
+            model_year=model_year,
+            odometer_km=odometer_km,
+        )
     )
-
-    # Year and odometer are ranges, not sentinels: a row that claims 2015-2020
-    # must not answer for a 2023 car.
-    if model_year:
-        stmt = stmt.where(
-            DiagnosisMaster.model_year_from <= model_year,
-            DiagnosisMaster.model_year_to >= model_year,
-        )
-    if odometer_km is not None:
-        stmt = stmt.where(
-            or_(DiagnosisMaster.odometer_from_km.is_(None),
-                DiagnosisMaster.odometer_from_km <= odometer_km),
-            or_(DiagnosisMaster.odometer_to_km.is_(None),
-                DiagnosisMaster.odometer_to_km >= odometer_km),
-        )
 
     rows = (await db.execute(stmt.limit(25))).scalars().all()
     if not rows:
@@ -333,9 +361,23 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / (na * nb)
 
 
+# How many similar rows to consider before giving up. The most similar row may
+# be scoped to a different car, and the second may be the right one — but a
+# query that has to walk far down the ranking is not really a match at all.
+_SEMANTIC_CANDIDATES = 10
+
+
 async def _semantic_lookup(
-    db: AsyncSession, query: str
+    db: AsyncSession,
+    query: str,
+    *,
+    manufacturer: str | None = None,
+    model: str | None = None,
+    fuel_type: str | None = None,
+    model_year: int | None = None,
+    odometer_km: int | None = None,
 ) -> tuple[DiagnosisMaster | None, float]:
+    """Similarity, then scope. Both, in that order, and never only the first."""
     index = await _load_vector_index(db)
     if not index:
         return None, 0.0
@@ -350,19 +392,44 @@ async def _semantic_lookup(
     if not qv:
         return None, 0.0
 
-    best_score, best_id = 0.0, None
-    for vec, row_id in zip(vectors, ids):
-        score = _cosine(qv, vec)
-        if score > best_score:
-            best_score, best_id = score, row_id
+    scored = sorted(
+        ((float(_cosine(qv, vec)), row_id) for vec, row_id in zip(vectors, ids)),
+        key=lambda pair: pair[0],
+        reverse=True,
+    )
+    candidates = [
+        (score, row_id) for score, row_id in scored if score >= MIN_SEMANTIC_SIMILARITY
+    ][:_SEMANTIC_CANDIDATES]
+    if not candidates:
+        return None, scored[0][0] if scored else 0.0
 
-    if best_id is None or best_score < MIN_SEMANTIC_SIMILARITY:
-        return None, best_score
+    # Similarity ranks; scope decides. A row that reads like the right answer
+    # for a car it was never written about is worse than no answer, because it
+    # is served with no hedging and the driver has no way to tell.
+    in_scope = {
+        row.id: row
+        for row in (
+            await db.execute(
+                select(DiagnosisMaster).where(
+                    DiagnosisMaster.id.in_([row_id for _, row_id in candidates]),
+                    _servable(DiagnosisMaster),
+                    *_vehicle_scope_clauses(
+                        manufacturer=manufacturer,
+                        model=model,
+                        fuel_type=fuel_type,
+                        model_year=model_year,
+                        odometer_km=odometer_km,
+                    ),
+                )
+            )
+        ).scalars().all()
+    }
 
-    row = (
-        await db.execute(select(DiagnosisMaster).where(DiagnosisMaster.id == best_id))
-    ).scalar_one_or_none()
-    return row, best_score
+    for score, row_id in candidates:
+        if row_id in in_scope:
+            return in_scope[row_id], score
+
+    return None, candidates[0][0]
 
 
 # ── the ladder ──────────────────────────────────────────────────────────────
@@ -423,7 +490,15 @@ async def lookup(
                 method = "alias" if alias_conf >= 1.0 else "exact"
                 return await _with_solutions(db, row, method, alias_conf, matched_phrase)
 
-        row, score = await _semantic_lookup(db, normalised)
+        row, score = await _semantic_lookup(
+            db,
+            normalised,
+            manufacturer=manufacturer,
+            model=model,
+            fuel_type=fuel_type,
+            model_year=model_year,
+            odometer_km=odometer_km,
+        )
         if row is not None:
             return await _with_solutions(db, row, "semantic", round(score, 3), normalised)
 
