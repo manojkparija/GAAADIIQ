@@ -1,5 +1,355 @@
 # GAADIIQ.COM — API Contracts
 
+**Version:** 2.0
+**Date:** 2026-08-14
+**Base URL (production):** `https://gaadiiq-api.onrender.com`
+
+> **Corrected 2026-08-14.** v1.0 documented 42 endpoints. Ten of them still
+> exist. The service now exposes **164 endpoints across 29 routers**, so 154
+> were undocumented and 32 documented paths (`/brands`, `/variants/{id}`,
+> `/leads/*`, `/users/me/wishlists`, `/ownership-cost/*`, `/compare`,
+> `/admin/analytics/*` …) do not exist.
+>
+> Section 1 is generated from the router decorators and is therefore accurate by
+> construction. Section 2 keeps v1.0's request and response shapes as a
+> historical appendix — treat any individual shape there as unverified, and read
+> the live OpenAPI schema at `/docs` for the current one.
+
+---
+
+## 0. Conventions
+
+- **Auth.** Supabase issues the JWT. The Angular `auth.interceptor` attaches it
+  to every request aimed at `environment.apiUrl` — never set the header by hand.
+  The API verifies it against Supabase's JWKS.
+- **Tier.** Free vs premium is resolved from the verified token, never from the
+  request body.
+- **Rate limits.** `slowapi`, declared per endpoint. `/diagnosis/analyse` is
+  5/minute and 20/hour and requires no authentication at all.
+- **Errors.** FastAPI's default `{"detail": ...}`.
+- **Source of truth.** `/docs` (Swagger) and `/openapi.json` on the running
+  service. This file is a map, not a contract.
+
+---
+
+## 1. Endpoint inventory (generated from `routers/`)
+
+
+**`/admin`** — `routers/admin.py` · 5 endpoints
+
+```
+GET    /admin/listings
+GET    /admin/stats
+GET    /admin/users
+PATCH  /admin/listings/{listing_id}/deactivate
+PATCH  /admin/users/{user_id}
+```
+
+**`/admin/diagnosis-kb`** — `routers/diagnosis_kb.py` · 11 endpoints
+
+```
+GET    /admin/diagnosis-kb/cache/stats
+GET    /admin/diagnosis-kb/import-history
+GET    /admin/diagnosis-kb/review-history
+GET    /admin/diagnosis-kb/review-queue
+GET    /admin/diagnosis-kb/review-queue/summary
+GET    /admin/diagnosis-kb/review-queue/{diagnosis_id}
+GET    /admin/diagnosis-kb/stats
+POST   /admin/diagnosis-kb/cache/invalidate
+POST   /admin/diagnosis-kb/import
+POST   /admin/diagnosis-kb/review/solution/{solution_id}
+POST   /admin/diagnosis-kb/review/{diagnosis_id}
+```
+
+**`/auth`** — `routers/auth.py` · 8 endpoints
+
+```
+DELETE /auth/me
+GET    /auth/me
+POST   /auth/forgot-password
+POST   /auth/login
+POST   /auth/logout
+POST   /auth/refresh
+POST   /auth/register
+POST   /auth/reset-password
+```
+
+**`/auth/otp`** — `routers/otp.py` · 2 endpoints
+
+```
+POST   /auth/otp/send
+POST   /auth/otp/verify
+```
+
+**`/bookings`** — `routers/bookings.py` · 4 endpoints
+
+```
+GET    /bookings
+GET    /bookings/received
+PATCH  /bookings/{booking_id}/status
+POST   /bookings
+```
+
+**`/brochures`** — `routers/brochures.py` · 7 endpoints
+
+```
+DELETE /brochures/jobs/{job_id}
+GET    /brochures/images
+GET    /brochures/jobs
+GET    /brochures/jobs/{job_id}
+POST   /brochures/backfill
+POST   /brochures/tag-images
+POST   /brochures/upload
+```
+
+**`/cars`** — `routers/cars.py` · 11 endpoints
+
+```
+DELETE /cars/{car_id}/variants/{variant_id}
+GET    /cars
+GET    /cars/catalogue/options
+GET    /cars/{car_id}
+GET    /cars/{car_id}/variants
+PATCH  /cars/{car_id}
+PATCH  /cars/{car_id}/variants/{variant_id}
+POST   /cars
+POST   /cars/{car_id}/research-details
+POST   /cars/{car_id}/variants
+POST   /cars/{car_id}/variants/research
+```
+
+**`/dealers`** — `routers/dealers.py` · 6 endpoints
+
+```
+GET    /dealers/directory
+GET    /dealers/me
+GET    /dealers/me/analytics
+GET    /dealers/my-listings-summary
+PATCH  /dealers/me
+POST   /dealers/register
+```
+
+**`/diagnosis`** — `routers/diagnosis.py` · 9 endpoints
+
+```
+DELETE /diagnosis/voice/data
+DELETE /diagnosis/{diagnosis_id}
+GET    /diagnosis/history
+GET    /diagnosis/{diagnosis_id}
+POST   /diagnosis/analyse
+POST   /diagnosis/stt
+POST   /diagnosis/tts
+POST   /diagnosis/voice/consent
+POST   /diagnosis/voice/extract
+```
+
+**`/health`** — `routers/health.py` · 1 endpoints
+
+```
+GET    /health
+```
+
+**`/insurance`** — `routers/insurance.py` · 2 endpoints
+
+```
+POST   /insurance/enquiry
+POST   /insurance/quotes
+```
+
+**`/listings`** — `routers/listings.py` · 9 endpoints
+
+```
+DELETE /listings/{listing_id}
+GET    /listings
+GET    /listings/me
+GET    /listings/{listing_id}
+GET    /listings/{listing_id}/similar
+PATCH  /listings/{listing_id}
+POST   /listings
+POST   /listings/{listing_id}/images
+POST   /listings/{listing_id}/valuate
+```
+
+**`/loans`** — `routers/loan_applications.py` · 9 endpoints
+
+```
+GET    /loans/admin/applications
+GET    /loans/applications
+GET    /loans/applications/{application_id}
+GET    /loans/applications/{application_id}/offers
+GET    /loans/partners
+POST   /loans/applications
+POST   /loans/applications/{application_id}/credit-check
+POST   /loans/applications/{application_id}/select
+POST   /loans/applications/{application_id}/withdraw
+```
+
+**`/loans`** — `routers/loans.py` · 6 endpoints
+
+```
+GET    /loans/bank-rates
+GET    /loans/emi-calculator
+GET    /loans/inquiries
+GET    /loans/inquiries/received
+GET    /loans/inquiries/{inquiry_id}
+POST   /loans/inquiries
+```
+
+**`/mechanics`** — `routers/mechanics.py` · 7 endpoints
+
+```
+GET    /mechanics
+GET    /mechanics/me
+GET    /mechanics/nearby
+GET    /mechanics/{mechanic_id}
+PATCH  /mechanics/{mechanic_id}/availability
+PATCH  /mechanics/{mechanic_id}/verify
+POST   /mechanics
+```
+
+**`/media-admin`** — `routers/media_admin.py` · 13 endpoints
+
+```
+DELETE /media-admin/{media_id}
+GET    /media-admin/dealer-images
+GET    /media-admin/search
+GET    /media-admin/vehicle-images
+GET    /media-admin/{media_id}/audit
+GET    /media-admin/{media_id}/ocr
+GET    /media-admin/{media_id}/safety
+GET    /media-admin/{media_id}/versions
+PATCH  /media-admin/{media_id}
+POST   /media-admin/inspect
+POST   /media-admin/upload
+POST   /media-admin/{media_id}/restore
+POST   /media-admin/{media_id}/versions/{version_id}/rollback
+```
+
+**`/news`** — `routers/news.py` · 1 endpoints
+
+```
+GET    /news
+```
+
+**`/notifications`** — `routers/notifications.py` · 4 endpoints
+
+```
+GET    /notifications
+GET    /notifications/unread-count
+PATCH  /notifications/{notification_id}/read
+POST   /notifications/mark-all-read
+```
+
+**`/payments`** — `routers/payments.py` · 5 endpoints
+
+```
+GET    /payments/my
+POST   /payments/feature-listing
+POST   /payments/verify
+POST   /payments/webhook
+POST   /payments/{payment_id}/refund
+```
+
+**`/price-alerts`** — `routers/price_alerts.py` · 4 endpoints
+
+```
+DELETE /price-alerts/{alert_id}
+GET    /price-alerts
+GET    /price-alerts/listing/{listing_id}/subscribed
+POST   /price-alerts
+```
+
+**`/recommend`** — `routers/recommend.py` · 3 endpoints
+
+```
+POST   /recommend
+POST   /recommend/ai
+POST   /recommend/ai-chat
+```
+
+**`/resale`** — `routers/resale.py` · 1 endpoints
+
+```
+POST   /resale/forecast
+```
+
+**`/reviews`** — `routers/reviews.py` · 6 endpoints
+
+```
+DELETE /reviews/{review_id}
+GET    /reviews/listing/{listing_id}
+GET    /reviews/my
+GET    /reviews/seller/{seller_id}
+GET    /reviews/seller/{seller_id}/summary
+POST   /reviews
+```
+
+**`/search`** — `routers/search.py` · 2 endpoints
+
+```
+GET    /search
+GET    /search/autocomplete
+```
+
+**`/sentiment`** — `routers/sentiment.py` · 6 endpoints
+
+```
+GET    /sentiment/leads
+GET    /sentiment/leads/{user_id}
+GET    /sentiment/summary
+POST   /sentiment/analyse/{user_id}
+POST   /sentiment/track
+POST   /sentiment/track-public
+```
+
+**`/service-requests`** — `routers/service_requests.py` · 18 endpoints
+
+```
+GET    /service-requests
+GET    /service-requests/assigned-to-me
+GET    /service-requests/offers/available
+GET    /service-requests/{request_id}
+GET    /service-requests/{request_id}/mechanics
+GET    /service-requests/{request_id}/start-otp
+POST   /service-requests
+POST   /service-requests/{request_id}/accept
+POST   /service-requests/{request_id}/assign
+POST   /service-requests/{request_id}/cancel
+POST   /service-requests/{request_id}/complete
+POST   /service-requests/{request_id}/decline
+POST   /service-requests/{request_id}/dispatch
+POST   /service-requests/{request_id}/pay
+POST   /service-requests/{request_id}/pay/verify
+POST   /service-requests/{request_id}/quote
+POST   /service-requests/{request_id}/start
+POST   /service-requests/{request_id}/verify-start-otp
+```
+
+**`/upload`** — `routers/upload.py` · 4 endpoints
+
+```
+POST   /upload
+POST   /upload/audio
+POST   /upload/image
+POST   /upload/video
+```
+
+<!-- total 164 -->
+
+
+---
+
+## 2. Appendix — v1.0 request/response shapes (historical, unverified)
+
+Everything below is the previous version of this document, kept because the
+payload shapes for the endpoints that survived are still a useful starting
+point. Ten of the paths it describes exist; the rest do not.
+
+<details>
+<summary>Expand v1.0</summary>
+
+# GAADIIQ.COM — API Contracts
+
 **Version:** 1.0  
 **Date:** 2026-06-24  
 **Base URL:** `https://api.gaadiiq.com/api/v1`  
@@ -589,3 +939,6 @@ All require `👮` admin role.
 ---
 
 *Part of Phase 2 LLD. See: [SequenceDiagrams.md](SequenceDiagrams.md)*
+
+
+</details>

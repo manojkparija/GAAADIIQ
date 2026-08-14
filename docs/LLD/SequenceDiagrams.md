@@ -1,7 +1,18 @@
 # GAADIIQ.COM — Sequence Diagrams
 
-**Version:** 1.0  
-**Date:** 2026-06-24
+**Version:** 1.1
+**Date:** 2026-08-14
+
+> **Corrected 2026-08-14.** The flows below name a Next.js frontend and a Redis
+> and OpenSearch tier on a self-hosted host. The client is Angular 17, and both
+> Redis and OpenSearch are unset in production — the sequences that show a cache
+> or index hop describe an intended path, and today those calls fall back to
+> Postgres or to an in-process dict.
+>
+> The diagnosis sequence in particular is out of date: the request now tries the
+> response cache, then symptom aliases, then an exact scoped lookup, then
+> semantic search, and reaches a model only on a full miss. See
+> `LLD/AIArchitecture.md` §0 and `HLD/ArchitectureDiagram.md` §3.
 
 ---
 
@@ -10,7 +21,7 @@
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant FE as Next.js
+    participant FE as Angular SPA
     participant API as FastAPI
     participant DB as PostgreSQL
     participant SMTP as Brevo SMTP
@@ -46,7 +57,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant FE as Next.js
+    participant FE as Angular SPA
     participant API as FastAPI
     participant REDIS as Redis
     participant OS as OpenSearch
@@ -84,7 +95,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant FE as Next.js
+    participant FE as Angular SPA
     participant API as FastAPI
     participant REDIS as Redis
     participant DB as PostgreSQL
@@ -120,7 +131,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant FE as Next.js
+    participant FE as Angular SPA
     participant API as FastAPI
     participant RULE as Rule Engine
     participant DB as PostgreSQL
@@ -169,7 +180,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant FE as Next.js
+    participant FE as Angular SPA
     participant API as FastAPI
     participant DB as PostgreSQL
     participant SMTP as Brevo SMTP
@@ -238,7 +249,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant FE as Next.js
+    participant FE as Angular SPA
     participant API as FastAPI
     participant REDIS as Redis
     participant DB as PostgreSQL

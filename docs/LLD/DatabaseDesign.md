@@ -1,5 +1,131 @@
 # GAADIIQ.COM — Database Design
 
+**Version:** 2.0
+**Date:** 2026-08-14
+**Engine:** PostgreSQL (Supabase) in production; SQLite in the test suite.
+
+> **Corrected 2026-08-14.** v1.0 defined 14 tables. Four of them exist —
+> `cars`, `users`, `dealers`, `reviews`. The other ten (`brands`, `variants`,
+> `features`, `variant_features`, `car_images`, `leads`, `wishlists`,
+> `recommendations`, `ownership_cost_cache`, `analytics_events`) were never
+> built or were built under different names: variants are `car_variants`, images
+> are `vehicle_media`. The live schema has **39 tables**. Section 1 is generated
+> from the ORM; section 3 keeps v1.0's DDL as a historical appendix.
+
+---
+
+## 0. Two things to know before trusting any schema document here
+
+**Schema lives in two places.** 33 Alembic migrations under
+`apps/api/alembic/versions/`, *and* seven hand-run `schema_setup_batch*.sql`
+files at the repository root. Some marketplace and loan tables exist only in the
+SQL files, so shipping code that needs one of those tables does not ship the
+table. Check both before assuming a table exists.
+
+**CI runs on SQLite, production on Postgres.** A green test run says nothing
+about native enum labels, `NOT NULL` behaviour, or casting. Two concrete
+failures caught this way:
+
+- SQLAlchemy persists an enum member's *name*, not its value, unless
+  `values_callable` is supplied. `Severity.high = "HIGH"` was written as `high`
+  into a type whose labels are `HIGH`. Invisible on SQLite; the first real
+  Postgres insert failed.
+- `op.create_table` emits its own `CREATE TYPE` for an Enum column. Combined
+  with an explicit `.create()` that is two `CREATE TYPE` statements and the
+  second raises `DuplicateObjectError`. SQLite has no `CREATE TYPE` at all.
+
+The `Test on Postgres` CI job exists for this, and it also asserts that the
+migrated schema matches the models (`tests/test_migrations_match_models.py`).
+
+**`cars.id` is a UUID** in the ORM. Batch 1 SQL says `bigint`. The ORM wins.
+
+---
+
+## 1. Tables (generated from `apps/api/models/`)
+
+| Table | Model | File | Cols | Purpose |
+|---|---|---|---|---|
+| `car_variants` | `CarVariant` | `car_variant.py` | 13 |  |
+| `cars` | `Car` | `car.py` | 14 |  |
+| `credit_checks` | `CreditCheck` | `loan_application.py` | 11 | A record of one attempt to establish an applicant's credit standing. |
+| `customer_activities` | `CustomerActivity` | `customer_intent.py` | 6 | Raw event log — one row per customer interaction. |
+| `customer_intent_scores` | `CustomerIntentScore` | `customer_intent.py` | 20 | AI-generated purchase intent score per customer per dealer. |
+| `dealers` | `Dealer` | `dealer.py` | 9 |  |
+| `diagnosis_audit_events` | `DiagnosisAuditEvent` | `voice_diagnosis.py` | 8 | Consent and data-lifecycle audit trail (BR-DB-04). |
+| `diagnosis_conversations` | `DiagnosisConversation` | `voice_diagnosis.py` | 9 | One voice-mode session, from consent through to the diagnosis. |
+| `diagnosis_import_runs` | `DiagnosisImportRun` | `diagnosis_kb.py` | 15 | One import attempt, kept whether it succeeded or not. |
+| `diagnosis_master` | `DiagnosisMaster` | `diagnosis_kb.py` | 40 | One finding, scoped to the vehicles it actually applies to. |
+| `diagnosis_review_events` | `DiagnosisReviewEvent` | `diagnosis_kb.py` | 7 | Who decided what about which row, and why. |
+| `diagnosis_solutions` | `DiagnosisSolution` | `diagnosis_kb.py` | 36 | One way to fix one diagnosis. Many per diagnosis is the normal case. |
+| `diagnosis_symptom_aliases` | `DiagnosisSymptomAlias` | `diagnosis_kb.py` | 6 | What a user actually types, mapped to the canonical symptom key. |
+| `extracted_vehicles` | `ExtractedVehicle` | `vehicle_media.py` | 17 | A vehicle the AI believes the brochure describes. |
+| `lender_rate_slabs` | `LenderRateSlab` | `lending_partner.py` | 6 | One cell of a lender's rate card. |
+| `lending_partners` | `LendingPartner` | `lending_partner.py` | 21 | A bank or NBFC a buyer can be matched to. |
+| `listing_media` | `ListingMedia` | `vehicle_media.py` | 4 | Links a listing to an image in vehicle_media. |
+| `listings` | `Listing` | `listing.py` | 28 |  |
+| `loan_applications` | `LoanApplication` | `loan_application.py` | 38 |  |
+| `loan_inquiries` | `LoanInquiry` | `loan_inquiry.py` | 10 |  |
+| `loan_offers` | `LoanOffer` | `loan_application.py` | 15 | One lender's quote for one application, frozen at the moment it was made. |
+| `mechanics` | `Mechanic` | `mechanic.py` | 30 |  |
+| `notifications` | `Notification` | `notification.py` | 7 |  |
+| `payments` | `Payment` | `payment.py` | 14 |  |
+| `pdf_ingestion_jobs` | `PdfIngestionJob` | `vehicle_media.py` | 15 | One uploaded brochure PDF and the outcome of processing it. |
+| `price_alerts` | `PriceAlert` | `price_alert.py` | 4 |  |
+| `refresh_tokens` | `RefreshToken` | `refresh_token.py` | 4 |  |
+| `reviews` | `Review` | `review.py` | 10 |  |
+| `service_request_offers` | `ServiceRequestOffer` | `service_request.py` | 8 | One mechanic's copy of a broadcast job. |
+| `service_requests` | `ServiceRequest` | `service_request.py` | 36 |  |
+| `subscriptions` | `Subscription` | `subscription.py` | 4 |  |
+| `test_drive_bookings` | `TestDriveBooking` | `test_drive_booking.py` | 8 |  |
+| `users` | `User` | `user.py` | 19 |  |
+| `vehicle_diagnoses` | `VehicleDiagnosis` | `vehicle_diagnosis.py` | 31 |  |
+| `vehicle_media` | `VehicleMedia` | `vehicle_media.py` | 49 | One image pulled out of a brochure. |
+| `vehicle_media_audit` | `VehicleMediaAudit` | `media_audit.py` | 9 | Immutable audit log of media operations for compliance. |
+| `vehicle_media_versions` | `VehicleMediaVersion` | `media_version.py` | 8 | Immutable audit log of changes to vehicle media. |
+| `voice_transcripts` | `VoiceTranscript` | `voice_diagnosis.py` | 9 | A single spoken turn. Text only — the audio is discarded after STT. |
+| `whatsapp_messages` | `WhatsAppMessage` | `whatsapp_message.py` | 14 |  |
+
+<!-- 39 tables -->
+
+
+---
+
+## 2. The diagnosis knowledge base
+
+Four of the tables above form one subsystem and are worth reading together.
+
+| Table | Holds |
+|---|---|
+| `diagnosis_master` | The finding: symptom, cause, severity, drivability, vehicle scope |
+| `diagnosis_solutions` | Ordered repairs under a finding, cheapest first |
+| `diagnosis_symptom_aliases` | A phrase a driver types → the canonical symptom |
+| `diagnosis_review_events` | Append-only: who approved or refused what, and why |
+| `diagnosis_import_runs` | Every import attempt, including the refused ones |
+
+Constraints that carry meaning rather than just integrity:
+
+- **Serving requires two independent flags**, `status = ACTIVE` *and*
+  `verification_status = VERIFIED`. They answer different questions — "is this
+  current?" and "has anyone checked it?" — and collapsing them would let an
+  un-archived row become live without review.
+- **`ck_ds_temp_not_root`** refuses a solution flagged as both a temporary
+  bypass and a root-cause repair. A coolant top-up recorded as having fixed the
+  leak is how somebody breaks down twice.
+- **`ck_dre_target_present`** — a review event is about a diagnosis or a
+  solution; a row claiming neither is meaningless.
+- **`ANY` is a sentinel, not NULL**, for unscoped `manufacturer` / `model` /
+  `fuel_type`. NULL in a WHERE clause is a three-valued trap and every lookup
+  would need a COALESCE.
+
+---
+
+## 3. Appendix — v1.0 DDL (historical, mostly superseded)
+
+<details>
+<summary>Expand v1.0</summary>
+
+# GAADIIQ.COM — Database Design
+
 **Version:** 1.0  
 **Date:** 2026-06-24  
 **Database:** PostgreSQL 16 (Supabase)
@@ -576,3 +702,6 @@ CREATE POLICY leads_dealer_access ON leads
 ---
 
 *See also: [ERDiagram.md](ERDiagram.md)*
+
+
+</details>

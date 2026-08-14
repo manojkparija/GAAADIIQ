@@ -1,199 +1,150 @@
 # GAADIIQ.COM — Deployment Diagram
 
-**Version:** 1.0  
-**Date:** 2026-06-24
+**Version:** 2.0
+**Date:** 2026-08-14
+**Status:** As-built, verified against `render.yaml`, `vercel.json`, the Angular
+project config and `.github/workflows/` on the date above.
+
+> **What changed from v1.0.** The previous version deployed the API to an Oracle
+> Cloud ARM VM running Docker Compose with Nginx, Redis, OpenSearch, Ollama,
+> ChromaDB, Prometheus, Grafana and Loki, fronted by Cloudflare WAF at
+> `api.gaadiiq.com`. None of that is running. The API is a Docker service on
+> Render; the web app is a static Angular bundle on Vercel. There is also no
+> `main` branch — everything deploys from `master`.
 
 ---
 
-## 1. Environment Overview
+## 1. Environments
 
 | Environment | Purpose | Infrastructure |
 |---|---|---|
-| `local` | Developer machine | Docker Compose (all services) |
-| `staging` | Pre-prod validation | Oracle Cloud (same VM, different port) |
-| `production` | Live platform | Vercel + Oracle Cloud + Supabase + Cloudflare |
+| `local` | Developer machine | `ng serve` + `uvicorn` + local Postgres. SQLite is the default for tests. |
+| `production` | Live | Vercel (web) + Render (API) + Supabase (Postgres) + Cloudflare R2 (media) |
+
+There is no separate staging environment on its own infrastructure. Vercel
+builds a preview deployment per pull request; the API has no equivalent, so an
+API change is verified by CI and then by production. See `docs/STAGING.md`.
 
 ---
 
-## 2. Production Deployment Diagram
+## 2. Production topology
 
 ```mermaid
 graph TB
-    subgraph DNS["DNS — Cloudflare"]
-        CF_DNS[gaadiiq.com\napi.gaadiiq.com\ncdn.gaadiiq.com]
+    subgraph DNS["DNS"]
+        D["gaadiiq.com"]
     end
 
-    subgraph VERCEL["Vercel — Frontend"]
-        V_EDGE[Vercel Edge Network\n50+ global PoPs]
-        V_FUNC[Next.js Server Functions\nAPI Routes]
-        V_STATIC[Static Asset Cache\nSSG / ISR Pages]
+    subgraph VERCEL["Vercel"]
+        VB["Angular 17 static bundle<br/>ng build → dist/<br/>root: apps/gaadiiq-angular"]
+        VE["Vercel Edge Network"]
     end
 
-    subgraph CF["Cloudflare — CDN + Storage"]
-        CF_CDN[CDN Cache\nEdge Caching]
-        CF_R2[R2 Object Storage\nCar Images / Media\n10GB Free]
-        CF_WAF[WAF + DDoS Protection]
+    subgraph RENDER["Render"]
+        API["FastAPI (Docker)<br/>uvicorn<br/>gaadiiq-api.onrender.com"]
+        MIG["alembic upgrade head<br/>runs on deploy"]
     end
 
-    subgraph ORACLE["Oracle Cloud Always-Free ARM VM\n4 OCPUs · 24GB RAM · Ubuntu 22.04"]
-        NGINX_PROD[Nginx\nSSL Termination\nRate Limiting\n:443]
-
-        subgraph DOCKER["Docker Compose — Production"]
-            FAPI_PROD[FastAPI\nuvicorn workers × 4\n:8000]
-            REDIS_PROD[Redis 7\nPersistence: AOF\n:6379]
-            OS_PROD[OpenSearch\n2GB heap\n:9200]
-            OLLAMA_PROD[Ollama\nLlama 3 8B\n:11434]
-            CHROMA_PROD[ChromaDB\n:8001]
-            PROM[Prometheus\n:9090]
-            GRAFANA[Grafana\n:3001]
-            LOKI[Loki\n:3100]
-        end
+    subgraph SUPABASE["Supabase"]
+        PG[("PostgreSQL<br/>39 tables")]
+        AUTH["Auth — JWT issuer + JWKS"]
     end
 
-    subgraph SUPABASE["Supabase — Managed PostgreSQL"]
-        PG_PROD[PostgreSQL 16\nConnection Pooler: PgBouncer\nBackups: Daily]
+    subgraph CF["Cloudflare"]
+        R2["R2 object storage<br/>MEDIA_BACKEND=s3<br/>originals + WebP"]
     end
 
-    subgraph GITHUB["GitHub"]
-        GH_REPO[Source Repository\nmain branch]
-        GH_ACTIONS[GitHub Actions\nCI/CD Pipelines]
+    subgraph EXT["Third parties"]
+        GEM["Google Gemini"]
+        RZP["Razorpay"]
+        BREVO["Brevo SMTP"]
     end
 
-    CF_DNS -->|gaadiiq.com| VERCEL
-    CF_DNS -->|api.gaadiiq.com| CF_WAF
-    CF_DNS -->|cdn.gaadiiq.com| CF_CDN
+    subgraph GH["GitHub"]
+        REPO["master"]
+        CI["Actions — Lint &amp; Test, Test on Postgres"]
+    end
 
-    CF_WAF --> NGINX_PROD
-    CF_CDN --> CF_R2
-    VERCEL --> CF_CDN
+    D --> VE --> VB
+    VB -->|"REST + bearer"| API
+    API --> PG
+    API --> R2
+    API --> GEM
+    API --> RZP
+    API --> BREVO
+    VB -->|"sign-in"| AUTH
+    API -->|"verifies JWT via JWKS"| AUTH
+    MIG --> PG
 
-    NGINX_PROD --> FAPI_PROD
-    FAPI_PROD --> REDIS_PROD
-    FAPI_PROD --> OS_PROD
-    FAPI_PROD --> OLLAMA_PROD
-    FAPI_PROD --> CHROMA_PROD
-    FAPI_PROD --> PG_PROD
-
-    PROM --> FAPI_PROD
-    PROM --> NGINX_PROD
-    GRAFANA --> PROM
-    GRAFANA --> LOKI
-
-    GH_REPO --> GH_ACTIONS
-    GH_ACTIONS -->|Deploy frontend| VERCEL
-    GH_ACTIONS -->|Deploy backend| ORACLE
+    REPO --> CI
+    REPO -->|"auto-deploy"| VERCEL
+    REPO -->|"auto-deploy"| RENDER
 ```
 
 ---
 
-## 3. Local Development Deployment
+## 3. Deploy triggers
 
-```mermaid
-graph TB
-    subgraph LOCAL["Developer Machine — Docker Compose"]
-        NXT_DEV[Next.js Dev Server\n:3000\nHot Reload]
-        FAPI_DEV[FastAPI Dev Server\n:8000\nuvicorn --reload]
-        REDIS_DEV[Redis\n:6379]
-        OS_DEV[OpenSearch\n:9200]
-        OLLAMA_DEV[Ollama\n:11434]
-        CHROMA_DEV[ChromaDB\n:8001]
-        PG_DEV[PostgreSQL\n:5432\nLocal Docker]
-        ADMINER[Adminer DB UI\n:8080]
-    end
-
-    Browser -->|localhost:3000| NXT_DEV
-    NXT_DEV -->|localhost:8000| FAPI_DEV
-    FAPI_DEV --> REDIS_DEV
-    FAPI_DEV --> OS_DEV
-    FAPI_DEV --> OLLAMA_DEV
-    FAPI_DEV --> CHROMA_DEV
-    FAPI_DEV --> PG_DEV
-    Browser -->|localhost:8080| ADMINER
-```
-
----
-
-## 4. CI/CD Pipeline
-
-```mermaid
-flowchart LR
-    A[Developer / AI\npushes to GitHub] --> B{Branch?}
-
-    B -->|feature/*| C[CI: Lint + Type Check\n+ Unit Tests]
-    C -->|pass| D[PR Created]
-    D -->|merged to main| E[CI: Full Test Suite\nUnit + Integration + API]
-
-    B -->|main| E
-    E -->|pass| F[Build Docker Image\n+ Next.js Build]
-    F -->|pass| G{Deploy Target}
-
-    G -->|Frontend| H[Vercel Deploy\nAuto via GitHub integration]
-    G -->|Backend| I[SSH to Oracle Cloud\ndocker compose pull\ndocker compose up -d]
-
-    H & I --> J[Smoke Tests\nHealth check /api/health]
-    J -->|pass| K[✅ Production Live]
-    J -->|fail| L[🔴 Rollback\ndocker compose up -d prev_image]
-```
-
----
-
-## 5. Docker Container Map
-
-| Container | Image | CPU Limit | Memory Limit | Persistent Volume |
-|---|---|---|---|---|
-| `gaadiiq-api` | `python:3.12-slim` + app | 2 CPU | 4GB | `./logs` |
-| `gaadiiq-redis` | `redis:7-alpine` | 0.5 CPU | 512MB | `redis-data` |
-| `gaadiiq-opensearch` | `opensearchproject/opensearch:2` | 1 CPU | 2GB | `os-data` |
-| `gaadiiq-ollama` | `ollama/ollama` | 2 CPU | 8GB | `ollama-models` |
-| `gaadiiq-chromadb` | `chromadb/chroma` | 0.5 CPU | 1GB | `chroma-data` |
-| `gaadiiq-prometheus` | `prom/prometheus` | 0.25 CPU | 256MB | `prom-data` |
-| `gaadiiq-grafana` | `grafana/grafana` | 0.25 CPU | 256MB | `grafana-data` |
-| `gaadiiq-loki` | `grafana/loki` | 0.25 CPU | 256MB | `loki-data` |
-| `gaadiiq-nginx` | `nginx:alpine` | 0.25 CPU | 128MB | — |
-
-**Total:** ~7 CPU, ~16.5GB RAM — within Oracle Free Tier (4 OCPUs, 24GB).  
-Note: Ollama and API share CPU; Ollama only active during AI inference requests.
-
----
-
-## 6. Network Architecture
-
-```
-Public Internet
-    │
-    ▼
-Cloudflare WAF (DDoS, bot protection)
-    │
-    ▼
-Oracle Cloud VM — Public IP
-    │
-Nginx (:443) — SSL termination
-    │  └── Certbot / Let's Encrypt (free SSL)
-    │
-    ├──► FastAPI (:8000) — internal Docker network only
-    │
-    └── Firewall Rules (OCI Security List):
-          Inbound:  80 (redirect), 443 (HTTPS), 22 (SSH — key-only)
-          Outbound: All
-          Internal: All containers communicate on gaadiiq-network bridge
-```
-
----
-
-## 7. Secrets & Configuration
-
-| Secret | Storage | Access Method |
+| Target | Trigger | What runs |
 |---|---|---|
-| DATABASE_URL (Supabase) | GitHub Actions Secret | Injected as env var at deploy time |
-| JWT_SECRET_KEY | GitHub Actions Secret | Docker env |
-| REDIS_PASSWORD | GitHub Actions Secret | Docker env |
-| Google OAuth Client ID/Secret | GitHub Actions Secret | Docker env |
-| Cloudflare R2 Access Key | GitHub Actions Secret | Docker env |
-| SMTP API Key (Brevo) | GitHub Actions Secret | Docker env |
-| Oracle SSH Private Key | GitHub Actions Secret | Used for deployment only |
+| Vercel | push to `master`; preview per PR | `ng build`, static upload |
+| Render | push to `master` | Docker build, then `alembic upgrade head`, then uvicorn |
+| GitHub Actions | push / PR touching `apps/api/**` | `ruff check .`, pytest on SQLite, pytest + migrations on Postgres 16 |
 
-All secrets encrypted at rest in GitHub Actions. No secrets in source code or Docker images.
+**There is no deploy job in GitHub Actions.** Render and Vercel each watch
+`master` themselves. A `Deploy to Oracle Cloud` job existed until 2026-08-14; it
+had never run, because it was gated on `github.ref == 'refs/heads/main'` and
+this repository has no `main` branch.
 
 ---
 
-*Part of Phase 1 HLD. See: [HLD.md](HLD.md) | [ArchitectureDiagram.md](ArchitectureDiagram.md) | [SecurityArchitecture.md](SecurityArchitecture.md)*
+## 4. Migrations at deploy time
+
+Render runs `alembic upgrade head` on every deploy. Two things follow from that:
+
+- **A broken migration is a failed deploy, not a failed test run.** CI's
+  `Test on Postgres` job applies the whole chain to an empty Postgres 16 for
+  exactly this reason, and compares the migrated schema against the models.
+- **Migrations are not the whole schema.** Seven `schema_setup_batch*.sql` files
+  at the repo root were run by hand and are not in the Alembic chain. Some
+  marketplace and loan tables exist only there. Shipping code that needs one of
+  those tables does not ship the table.
+
+---
+
+## 5. Configuration
+
+`render.yaml` declares these, all as `sync: false` (set in the Render dashboard,
+not in the repo):
+
+```
+ALLOWED_ORIGINS  DATABASE_URL  SUPABASE_JWT_SECRET  SUPABASE_URL
+ADMIN_EMAILS  SECRET_KEY  GEMINI_API_KEY
+MEDIA_BACKEND=s3  R2_ENDPOINT_URL  R2_ACCESS_KEY_ID  R2_SECRET_ACCESS_KEY
+R2_BUCKET_NAME  R2_PUBLIC_URL
+RAZORPAY_KEY_ID  RAZORPAY_KEY_SECRET
+ENVIRONMENT=production
+```
+
+**Declared nowhere, and therefore unset in production:**
+
+| Variable | Consequence |
+|---|---|
+| `REDIS_URL` | OTP digests and the diagnosis response cache use a per-process dict. Not shared across workers or restarts. |
+| `OLLAMA_BASE_URL` | Defaults to `localhost:11434`, unreachable on Render. Free-tier diagnosis falls back to the heuristic path. |
+| `OPENSEARCH_URL` | Search falls back to Postgres. |
+| `QDRANT_URL` | Vector listing search is skipped. |
+| `KYC_HASH_PEPPER` | Digests are computed unpeppered. Startup refuses to boot without it **only** when `MARKETPLACE_ENABLED` is on. |
+
+Each of these degrades quietly by design. That is why the previous version of
+this document could describe them as deployed for months without anything
+visibly breaking.
+
+---
+
+## 6. Not used
+
+**Oracle Cloud**, **Railway**, **Nginx**, **Docker Compose in production**,
+**ChromaDB**, **Prometheus/Grafana/Loki as deployed services**. All appeared in
+v1.0. None of them host or run anything today. `prometheus_client` is a library
+dependency and does expose `/metrics` from the API — nothing scrapes it.

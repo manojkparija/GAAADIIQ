@@ -3,6 +3,32 @@
 **Version:** 1.0  
 **Date:** 2026-06-24  
 **Compliance Target:** OWASP Top 10 · DPDP Act 2023 (India)
+**Reviewed:** 2026-08-14 — largely accurate; corrections and additions below.
+
+> **Reviewed 2026-08-14.** This is the least-drifted document of the set: the
+> auth model it describes (Supabase-issued JWT, JWKS verification, admin by
+> email list) is what runs. Four things to add or correct.
+>
+> **Correct as written:** Supabase auth, JWKS verification, `slowapi` rate
+> limiting, security headers set in `render.yaml` (`X-Frame-Options: DENY`,
+> `X-Content-Type-Options: nosniff`, `Referrer-Policy`).
+>
+> **Additions since v1.0:**
+> - **Aadhaar is never stored.** Validated (Verhoeff), then only a peppered
+>   SHA-256 digest and the last four digits survive. Aadhaar Act s.29(4) makes
+>   storing the number an offence for a private entity.
+> - **PAN is stored** — a lender cannot act on a hash — **but never returned.**
+>   Every response carries `ABCDE****F`.
+> - **No credit score is ever invented.** `services/credit_bureau.py::fetch_score`
+>   raises rather than returning a plausible number, because a generated score
+>   is indistinguishable from a real one at the call site.
+> - **OTP codes are peppered SHA-256 in Redis** with a TTL and a 5-attempt cap,
+>   counted before comparison. `secrets.randbelow`, not `random.choices`.
+>
+> **The gap that matters:** `KYC_HASH_PEPPER` is **not set in `render.yaml`**,
+> so those digests are computed unpeppered in production. Config refuses to boot
+> without it only when `MARKETPLACE_ENABLED` is on. Neither is `REDIS_URL`, so
+> the OTP store runs on its per-process fallback.
 
 ---
 
@@ -40,7 +66,7 @@
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant FE as Next.js
+    participant FE as Angular SPA
     participant AUTH as NextAuth
     participant API as FastAPI
     participant PG as PostgreSQL
@@ -100,7 +126,7 @@ Cloudflare (Layer 7 WAF)
   Rate limit: 100 req/10s per IP to API routes
   │
   ▼
-Oracle Cloud Security List (Firewall)
+Host firewall / security list — N/A: the API runs on Render, which terminates TLS and exposes only the service port
   Inbound:  TCP 443 (HTTPS), TCP 80 (redirect to 443), TCP 22 (SSH — key-only, from admin IP)
   Outbound: Unrestricted (for updates, SMTP, Supabase)
   │
@@ -193,7 +219,14 @@ add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self)" alw
 
 ## 7. Infrastructure Security
 
-### 7.1 Oracle Cloud VM Hardening
+### 7.1 VM hardening — **not applicable**
+
+> There is no VM. The API is a managed Docker service on Render: no SSH, no
+> Nginx, no host firewall to configure, and no OS patching in our control. The
+> hardening checklist below applied to the Oracle Cloud host in the original
+> design and is retained only for reference should self-hosting return.
+
+#### Original checklist (v1.0)
 
 - SSH: key-based only; password auth disabled; non-standard port (optional)
 - Automatic security updates: `unattended-upgrades` enabled

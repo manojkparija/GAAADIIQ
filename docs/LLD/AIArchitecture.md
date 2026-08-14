@@ -1,8 +1,59 @@
 # GAADIIQ.COM — AI Architecture
 
-**Version:** 1.0  
-**Date:** 2026-06-24  
-**Stack:** Ollama · Llama 3 8B · DeepSeek R1 7B · LangChain · ChromaDB · scikit-learn
+**Version:** 2.0
+**Date:** 2026-08-14
+**Stack as built:** knowledge base (PostgreSQL) → Gemini Flash → Ollama → heuristic ·
+fastembed (BAAI/bge-small-en-v1.5, 384-dim) · Qdrant · LangChain (sentiment only)
+
+> **Corrected 2026-08-14.** Three components named in v1.0 do not exist in the
+> codebase: **ChromaDB** (embeddings are fastembed + Qdrant), **DeepSeek R1 7B**
+> (no reference anywhere), and the Oracle ARM inference host (never
+> provisioned — `OLLAMA_BASE_URL` is unset in production, so the Ollama rung is
+> unreachable and free-tier requests fall through to the heuristic). LangChain
+> *is* a real dependency but is used in exactly one place,
+> `services/sentiment.py`. Section 0 below describes the answer path that
+> actually runs; the later sections are kept for the parts still accurate and
+> are marked where they are not.
+
+---
+
+## 0. Diagnosis answer path (as built)
+
+The most-used AI surface. Ordered cheapest first — a model is the last resort,
+not the first step.
+
+```
+normalise
+  → 1· response cache      Redis, keyed on question + vehicle + language
+  → 2· alias match         diagnosis_symptom_aliases, an editor's mapping
+  → 3· exact lookup        diagnosis_master, filtered by vehicle scope
+  → 4· semantic            fastembed cosine ≥ 0.62, scope re-applied
+  → Gemini Flash           premium tier, via services/gemini_gateway.py
+  → Ollama                 unreachable in production today
+  → heuristic fallback     rules over the 12-row repair_knowledge.json
+```
+
+**Modules:** `services/diagnosis_kb_lookup.py`, `services/diagnosis_cache.py`,
+`services/diagnosis_kb_review.py`, `services/diagnosis.py`,
+`services/gemini_gateway.py`, `services/llm_tier.py`.
+
+Four properties that are enforced in code rather than left to convention:
+
+1. **A row reaches a driver only when `status = ACTIVE` and
+   `verification_status = VERIFIED`.** Two independent gates, both set by a
+   person through the review queue.
+2. **`AI_GENERATED` rows are forced to `PENDING_REVIEW` on import**, whatever
+   the source file claims. A model cannot promote its own output.
+3. **Similarity ranks; vehicle scope decides.** The semantic rung re-applies the
+   manufacturer / model / fuel / year / odometer predicates. Without it, it
+   served a Tata Nexon row to a Maruti Swift.
+4. **Safety-critical answers are never cached**, and `can_drive = UNKNOWN` maps
+   to `safe_to_drive: false` — the response field is a boolean, and "we don't
+   know" must not render as "safe".
+
+**Tier resolution** (`services/llm_tier.py`) reads the caller's Supabase JWT and
+verifies it against the JWKS. It is never read from the request body: doing so
+would let a free user send a paid user's UUID and be upgraded.
 
 ---
 
@@ -191,7 +242,16 @@ def build_prompt(user_message: str, context_cars: list, conversation_history: li
     return f"{SYSTEM_PROMPT}\n\nAvailable cars:\n{context}\n\nConversation:\n{format_history(conversation_history)}\nUser: {user_message}\nAssistant:"
 ```
 
-### Embedding Strategy (ChromaDB)
+### Embedding Strategy
+
+> **Corrected.** ChromaDB is not used. Embeddings come from **fastembed**
+> (`BAAI/bge-small-en-v1.5`, 384 dimensions, `services/embeddings.py`) and
+> listing vectors are stored in **Qdrant** (`services/vector_store.py`).
+> `QDRANT_URL` is unset in production, so vector listing search is skipped
+> there. The diagnosis KB keeps its vectors in process, rebuilt on a 5-minute
+> TTL — the corpus is small enough that a round trip would cost more than it
+> saves. The subsection below is the original ChromaDB plan and is retained
+> only for the chunking rationale.
 
 Each car variant is embedded as a structured text document:
 
@@ -220,7 +280,10 @@ Re-embedded on: each car add/update (triggered by admin action).
 
 ---
 
-## 5. SEO Content Generator (DeepSeek R1 7B)
+## 5. SEO Content Generator (DeepSeek R1 7B) — **not built**
+
+> **Corrected.** There is no DeepSeek model and no SEO content generator in the
+> codebase. This section describes an intention.
 
 Used offline (admin-triggered or nightly batch) to generate:
 - Car page meta descriptions
@@ -269,7 +332,12 @@ context_length: 4096
 | Idle > 30 min | Model offloaded from RAM (Ollama auto-manages) |
 | Next request | Model reloaded (~10s warm-up) |
 
-### Performance Characteristics (Oracle ARM, no GPU)
+### Performance Characteristics (Oracle ARM, no GPU) — **hardware never provisioned**
+
+> **Corrected.** The numbers below were estimates for a host that does not
+> exist. The one latency figure that has been measured on the current stack:
+> a knowledge-base answer against Postgres returns in single-digit
+> milliseconds, because it is two indexed queries and no model call.
 
 | Task | Tokens/sec | Latency |
 |---|---|---|
