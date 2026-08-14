@@ -13,9 +13,15 @@
 | | |
 |---|---|
 | Cases executed | **15** |
-| Passed | **15** |
+| Passed, full stack (API + Postgres + seeded KB) | **15** |
+| Passed in CI (no API) | **11**, with 4 skipped |
 | Failed | 0 |
-| Runtime | 3m 07s |
+| Runtime | 3m 07s full stack · 2m 36s CI-equivalent |
+
+Two runs, because the suite has two honest verdicts. With a backend, all fifteen
+pass. Without one — which is CI's web job — eleven pass and the four that need
+an API **skip**. Skipping says "not exercised", which is true; failing would say
+"broken", which is not.
 
 **This one is end to end in the literal sense.** A real browser drives the real
 Angular build; the app calls the real API; the API reads real Postgres over TLS;
@@ -141,6 +147,25 @@ it again: a local Postgres without TLS makes every database call fail with
 `rejected SSL upgrade`. Fixed by enabling TLS on the test instance rather than
 weakening the app.
 
+### F-03 — I broke CI, and the claim that let me do it was wrong
+
+I added the spec to `desktop-chrome`'s `testMatch` believing Playwright never
+ran in CI. It does: `.github/workflows/ci-web.yml`, job **"Build & smoke test"**,
+installs Chromium and runs `npx playwright test --project=desktop-chrome` on
+every change under `apps/gaadiiq-angular/**`. The web job went red — 33 passed,
+3 failed — because CI starts no API.
+
+The claim came from `CLAUDE.md` and I repeated it into four documents without
+checking it. All five are now corrected.
+
+Worse than the red build: **VD-E2E-0402 passed in CI for the wrong reason.** It
+asserted `/not safe to drive|do not drive/i` against the page body, and the
+standing disclaimer already reads *"do NOT drive the vehicle until it has been
+professionally inspected"* — so it passed with no API and no diagnosis at all. A
+test that passes when the feature is absent is worse than no test. It now
+asserts `safe_to_drive`, `risk_level` and `immediate_service_required` on the
+API response.
+
 ### Two harness faults of my own
 
 - **A fake that was close but not faithful.** My `speechSynthesis` stub fired
@@ -193,5 +218,6 @@ passing.
 - **iOS Safari.** The `mobile-390` project uses WebKit, but this spec is
   registered only for `desktop-chrome`. Safari's speech behaviour differs and is
   the platform the server-side fallback most exists for.
-- **Playwright does not run in CI.** This suite is manual, like every other
-  browser test in the repository. Nothing stops it regressing between runs.
+- **Only `desktop-chrome` runs in CI**, and with no API behind it. Eleven of
+  the fifteen cases run there; the four needing a backend skip. Nothing checks
+  those four except a manual run.

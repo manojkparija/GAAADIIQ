@@ -187,8 +187,9 @@ Redis is optional. Without it the cache falls back to a per-process dict and the
 
 Stated plainly, because a passing suite invites the assumption that it does.
 
-- **No browser.** Playwright never runs in CI, so the Angular diagnosis page —
-  the thing a driver actually touches — is verified by hand or not at all.
+- **No browser here.** This suite is HTTP-only. The Angular diagnosis page is
+  covered by `apps/gaadiiq-angular/e2e/voice-diagnosis.spec.ts`, which does run
+  in CI's web job for the `desktop-chrome` project.
 - **No real model.** The Gemini and Ollama rungs are asserted only as
   fall-through shape. Prompt quality, refusals and truncation are untested here.
 - **No load.** No concurrency, and no p95 for the KB path. A single

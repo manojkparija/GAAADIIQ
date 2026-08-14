@@ -130,9 +130,11 @@ described in `CLAUDE.md` is weaker in production than in design.
 
 ### 3.4 CI is narrower than it looks
 
-- **Playwright never runs in CI.** Three specs exist (`smoke`, `contrast`,
-  `mobile-layout`); browser verification is entirely manual, and it is the only
-  thing that catches a class of bug `ng build` cannot.
+- **Playwright runs in CI for `desktop-chrome` only.**
+  `.github/workflows/ci-web.yml` installs Chromium and runs the project on any
+  change under `apps/gaadiiq-angular/**`. `mobile-layout.spec.ts` and its three
+  device projects are still manual. CI starts no API, so backend-dependent
+  specs must skip.
 - Every Playwright project declares a `testMatch`. A new spec matching no
   pattern runs nowhere and reports nothing — indistinguishable from passing.
 - **12 test files are excluded from the Postgres job.** They fail there because

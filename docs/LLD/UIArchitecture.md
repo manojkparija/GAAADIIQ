@@ -135,7 +135,9 @@ and fails under WCAG AA.
 
 Two facts about it that are easy to get wrong:
 
-- **Playwright never runs in CI.** Browser verification is manual, and it is the
-  only thing that catches a class of bug `ng build` cannot.
+- **Playwright runs in CI**, for the `desktop-chrome` project only —
+  `.github/workflows/ci-web.yml`, job "Build & smoke test". The three mobile
+  projects remain manual. No API is started there, so a spec needing a backend
+  must skip rather than fail.
 - **Every project declares a `testMatch`.** A new spec whose filename matches no
   pattern runs nowhere and reports nothing — which looks exactly like passing.
