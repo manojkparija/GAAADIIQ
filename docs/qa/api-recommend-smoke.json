@@ -1,0 +1,57 @@
+[
+  {
+    "id": "API-SC-01",
+    "status": "PASS",
+    "detail": "status=200, n=1, scores=[100], reasons_n=[4]",
+    "payload": {
+      "budget": "5l_10l",
+      "fuel": "petrol",
+      "body": "hatchback",
+      "usage": "city"
+    }
+  },
+  {
+    "id": "API-SC-02",
+    "status": "PASS",
+    "detail": "status=200, n=1, scores=[100], reasons_n=[4]",
+    "payload": {
+      "budget": "10l_20l",
+      "fuel": "diesel",
+      "body": "suv",
+      "usage": "highway"
+    }
+  },
+  {
+    "id": "API-SC-03",
+    "status": "PASS",
+    "detail": "status=200, n=1, scores=[80], reasons_n=[3]",
+    "payload": {
+      "budget": "10l_20l",
+      "fuel": "electric",
+      "body": "any",
+      "usage": "city"
+    }
+  },
+  {
+    "id": "API-SC-04",
+    "status": "PASS",
+    "detail": "status=200, n=1, scores=[80], reasons_n=[3]",
+    "payload": {
+      "budget": "20l_50l",
+      "fuel": "any",
+      "body": "muv",
+      "usage": "family"
+    }
+  },
+  {
+    "id": "API-SC-05",
+    "status": "PASS",
+    "detail": "status=200, n=0, scores=[], reasons_n=[] (empty OK)",
+    "payload": {
+      "budget": "under_5l",
+      "fuel": "petrol",
+      "body": "suv",
+      "usage": "first"
+    }
+  }
+]

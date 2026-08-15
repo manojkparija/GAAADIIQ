@@ -1,0 +1,496 @@
+{
+  "generated_at": "2026-07-18T11:36:07.129594Z",
+  "surface_primary": "Angular /ai-advisor (screenshot)",
+  "surface_secondary": "Next /recommend + API POST /recommend",
+  "seed_cars": 92,
+  "brand_new_filter": 63,
+  "certified_used_filter": 29,
+  "counts": {
+    "PASS": 30,
+    "FAIL": 29,
+    "PARTIAL": 1
+  },
+  "total": 60,
+  "results": [
+    {
+      "suite": "Inventory",
+      "id": "INV-01",
+      "name": "Seed catalog size",
+      "status": "PASS",
+      "detail": "92 cars in seed-cars.sql",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Inventory",
+      "id": "INV-02",
+      "name": "Brand New filter yields cars (year>=cy-1 & km<15k)",
+      "status": "PASS",
+      "detail": "63 cars; cy=2026. Note: 2025@0km qualify as Brand New in 2026.",
+      "severity": "P1"
+    },
+    {
+      "suite": "Inventory",
+      "id": "INV-03",
+      "name": "Certified Used filter yields cars",
+      "status": "PASS",
+      "detail": "29 cars",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Inventory",
+      "id": "INV-04",
+      "name": "Fuel diversity (Petrol/Diesel/EV/Hybrid/CNG)",
+      "status": "PASS",
+      "detail": "{'Petrol': 55, 'CNG': 4, 'Hybrid': 5, 'Diesel': 19, 'Electric': 9}",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Inventory",
+      "id": "INV-05",
+      "name": "Body diversity (Hatch/Sedan/SUV/MUV)",
+      "status": "PASS",
+      "detail": "{'Hatchback': 12, 'SUV': 62, 'MUV': 7, 'Sedan': 11}",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Inventory",
+      "id": "INV-06",
+      "name": "Analyzing copy claims 58 vehicles",
+      "status": "FAIL",
+      "detail": "ANALYZE_MSGS says 'Evaluating 58 vehicles' but seed has 92",
+      "severity": "P2"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-01",
+      "name": "Route /ai-advisor component exists",
+      "status": "PASS",
+      "detail": "ai-advisor.component.ts/html/scss",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-02",
+      "name": "11 base steps defined in ALL_STEPS",
+      "status": "PASS",
+      "detail": "ALL_STEPS keys: ['condition', 'budget', 'dailyKm', 'drivingMix', 'familySize', 'usageType', 'fuel', 'ev', 'lifestyle', 'bodyType', 'features', 'priorities']",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-03",
+      "name": "EV step conditional on Electric fuel",
+      "status": "PASS",
+      "detail": "visibleSteps filters ev unless Electric selected",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-04",
+      "name": "Progress = (stepIdx+1)/totalSteps",
+      "status": "PASS",
+      "detail": "progress computed",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-05",
+      "name": "Multi-select steps (usage/fuel/lifestyle/body/features/priorities)",
+      "status": "PASS",
+      "detail": "multi:true count=6",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-06",
+      "name": "Back disabled on step 0; Next requires selection",
+      "status": "PASS",
+      "detail": "canProceed + back disabled",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-07",
+      "name": "SEO says 10 questions vs UI 11",
+      "status": "FAIL",
+      "detail": "seo.setPage(... 'Answer 10 smart questions...') while totalSteps is 11 (or 12 w/ EV)",
+      "severity": "P2"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-08",
+      "name": "Hero gradient-text on Advisor (intentional purple tint)",
+      "status": "PASS",
+      "detail": "HTML: AI Car <span class=\"gradient-text\">Advisor</span> \u2014 design choice, not a bug",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-09",
+      "name": "drivingMix answer used in scoring",
+      "status": "FAIL",
+      "detail": "Step collects drivingMix but computeResults never reads it",
+      "severity": "P1"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-10",
+      "name": "Analytics body_type uses wrong key p[body]",
+      "status": "FAIL",
+      "detail": "track ai_query uses p['body'] but step key is bodyType \u2192 always undefined",
+      "severity": "P1"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-11",
+      "name": "Restart clears quiz state",
+      "status": "PASS",
+      "detail": "restart() resets phase/profile",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-12",
+      "name": "No progress persist on nav away",
+      "status": "FAIL",
+      "detail": "profile is in-memory signal only; leaving /ai-advisor discards answers (no localStorage/session)",
+      "severity": "P1"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-01",
+      "name": "Brand New + \u20b95\u201310L + Petrol + Hatchback",
+      "status": "PASS",
+      "detail": "candidates=63, results=5, top=Maruti Suzuki Swift (63%, \u20b98L, Petrol), Maruti Suzuki Swift (63%, \u20b96L, Petrol), Maruti Suzuki Baleno (63%, \u20b99L, Petrol)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-02",
+      "name": "Certified Used + \u20b910\u201315L + Diesel + SUV",
+      "status": "PASS",
+      "detail": "candidates=29, results=3, top=Hyundai Creta (65%, \u20b912L, Diesel), Tata Harrier (65%, \u20b914L, Diesel), Mahindra Thar (65%, \u20b912L, Diesel)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-03",
+      "name": "Any + Above \u20b930L + Electric (EV step path)",
+      "status": "PASS",
+      "detail": "candidates=92, results=5, top=Kia EV6 (67%, \u20b960L, Electric), Mahindra XEV 9e (66%, \u20b936L, Electric), Hyundai Creta Electric (60%, \u20b923L, Electric)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-04",
+      "name": "No fuel pref + No body pref + Under \u20b95L",
+      "status": "FAIL",
+      "detail": "candidates=92, results=5, top=Maruti Suzuki Swift (31%, \u20b95L, Petrol), Maruti Suzuki Swift (30%, \u20b98L, Petrol), Maruti Suzuki Swift (30%, \u20b96L, Petrol) | BUDGET LEAK",
+      "severity": "P0"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-05",
+      "name": "6+ family + MUV + Petrol/Diesel",
+      "status": "PASS",
+      "detail": "candidates=92, results=5, top=Kia Carens (63%, \u20b918L, Petrol), Toyota Innova Crysta (63%, \u20b916L, Diesel), Kia Carens (62%, \u20b915L, Diesel)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-06",
+      "name": "Off-road + SUV + Diesel",
+      "status": "PASS",
+      "detail": "candidates=92, results=5, top=Mahindra Thar Roxx (68%, \u20b916L, Diesel), Mahindra Scorpio N (63%, \u20b919L, Diesel), Tata Safari (63%, \u20b918L, Diesel)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-07",
+      "name": "Fuel hard-filter: CNG only in budget",
+      "status": "PASS",
+      "detail": "candidates=92, results=3, top=Maruti Suzuki Swift (56%, \u20b98L, CNG), Tata Punch (56%, \u20b99L, CNG), Maruti Suzuki Ertiga (48%, \u20b97L, CNG)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-08",
+      "name": "Compact SUV preference under \u20b913L heuristic",
+      "status": "PASS",
+      "detail": "candidates=63, results=5, top=Maruti Suzuki Fronx (63%, \u20b911L, Petrol), Nissan Magnite (62%, \u20b910L, Petrol), Hyundai Exter (56%, \u20b99L, Petrol)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-09",
+      "name": "Impossible combo returns empty gracefully",
+      "status": "PASS",
+      "detail": "candidates=63, results=0 \u2014 UI must show empty state",
+      "severity": "P1"
+    },
+    {
+      "suite": "Results UX",
+      "id": "RS-01",
+      "name": "Empty results UI",
+      "status": "FAIL",
+      "detail": "results-page always renders; no dedicated empty-state when results=[]",
+      "severity": "P0"
+    },
+    {
+      "suite": "Results UX",
+      "id": "RS-02",
+      "name": "Compare Top 3 requires >=2 results",
+      "status": "PASS",
+      "detail": "comparison gated",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Results UX",
+      "id": "RS-03",
+      "name": "Match score + reasons + TCO + EMI shown",
+      "status": "PASS",
+      "detail": "finance-grid + why-section present",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Results UX",
+      "id": "RS-04",
+      "name": "View Details \u2192 /cars/:id",
+      "status": "PASS",
+      "detail": "routerLink to car detail",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Results UX",
+      "id": "RS-05",
+      "name": "Images use placehold.co CDN fallback",
+      "status": "FAIL",
+      "detail": "placehold.co used instead of assets/cars/placeholder.svg",
+      "severity": "P1"
+    },
+    {
+      "suite": "Results UX",
+      "id": "RS-06",
+      "name": "Category badges (Best Match / Mileage / Value / TCO)",
+      "status": "PASS",
+      "detail": "badges assigned in computeResults",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Results UX",
+      "id": "RS-07",
+      "name": "Best Family badge familySize type bug",
+      "status": "FAIL",
+      "detail": "needSeating(p['familySize'] as string) but familySize is string[] \u2192 always needS=7 \u2192 spurious Best Family",
+      "severity": "P1"
+    },
+    {
+      "suite": "Results UX",
+      "id": "RS-08",
+      "name": "Fake analyzing animation (no real AI)",
+      "status": "FAIL",
+      "detail": "ANALYZE_MSGS + setTimeout theater; computeResults is client rule-engine marketed as AI",
+      "severity": "P0"
+    },
+    {
+      "suite": "Results UX",
+      "id": "RS-09",
+      "name": "Compare button with 0\u20131 results",
+      "status": "PARTIAL",
+      "detail": "Button always shown; table hidden when <2 \u2014 OK but no disabled state",
+      "severity": "P2"
+    },
+    {
+      "suite": "Product Logic",
+      "id": "PL-01",
+      "name": "Brand New = year>=cy-1 & km<15k (not listing_type/new)",
+      "status": "FAIL",
+      "detail": "In 2026, year>=2025 & km<15k \u2192 63 cars. Differs from marketplace listing_type / isUsedCar.",
+      "severity": "P0"
+    },
+    {
+      "suite": "Product Logic",
+      "id": "PL-02",
+      "name": "Certified Used \u2260 marketplace certified flag",
+      "status": "FAIL",
+      "detail": "Filter is year/km heuristic only; ignores badge=Certified / verified / owners",
+      "severity": "P1"
+    },
+    {
+      "suite": "Product Logic",
+      "id": "PL-03",
+      "name": "No LLM / Ollama / chat in Angular advisor",
+      "status": "FAIL",
+      "detail": "Vision/PRD promise conversational LLM; Angular has zero API calls",
+      "severity": "P0"
+    },
+    {
+      "suite": "Product Logic",
+      "id": "PL-04",
+      "name": "Angular advisor not wired to POST /recommend",
+      "status": "FAIL",
+      "detail": "API has rule-engine POST /recommend; Angular scores CarsDataService locally",
+      "severity": "P0"
+    },
+    {
+      "suite": "Product Logic",
+      "id": "PL-05",
+      "name": "City (Kolkata navbar) unused in advisor",
+      "status": "FAIL",
+      "detail": "Recommendations ignore CityService / user city",
+      "severity": "P2"
+    },
+    {
+      "suite": "Next /recommend",
+      "id": "NX-01",
+      "name": "Page exists with 4-step wizard",
+      "status": "PASS",
+      "detail": "budget\u2192fuel\u2192body\u2192usage\u2192results",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Next /recommend",
+      "id": "NX-02",
+      "name": "Calls POST /recommend API",
+      "status": "FAIL",
+      "detail": "fetchRecommendations uses GET /listings filters \u2014 ignores API match_score/reasons",
+      "severity": "P0"
+    },
+    {
+      "suite": "Next /recommend",
+      "id": "NX-03",
+      "name": "Usage answer affects results",
+      "status": "FAIL",
+      "detail": "usage collected then dropped \u2014 not sent to API/listings",
+      "severity": "P0"
+    },
+    {
+      "suite": "Next /recommend",
+      "id": "NX-04",
+      "name": "No match scores / reasons in UI",
+      "status": "FAIL",
+      "detail": "Results render listing cards only; API RecommendResponse unused",
+      "severity": "P0"
+    },
+    {
+      "suite": "Next /recommend",
+      "id": "NX-05",
+      "name": "No TCO / EMI / cost analysis on Next advisor",
+      "status": "FAIL",
+      "detail": "Angular has finance-grid; Next has none \u2014 feature parity gap",
+      "severity": "P1"
+    },
+    {
+      "suite": "Next /recommend",
+      "id": "NX-06",
+      "name": "Navbar AI Advisor \u2192 /recommend",
+      "status": "PASS",
+      "detail": "Next nav points to /recommend",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Next /recommend",
+      "id": "NX-07",
+      "name": "E2E covers interactive budget\u2192fuel",
+      "status": "PASS",
+      "detail": "public-pages.spec.ts has heading + Under \u20b95 L \u2192 fuel step",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Next /recommend",
+      "id": "NX-08",
+      "name": "CNG option missing on Next (Angular has CNG)",
+      "status": "FAIL",
+      "detail": "FUEL_OPTIONS lacks CNG; API supports cng",
+      "severity": "P2"
+    },
+    {
+      "suite": "Next /recommend",
+      "id": "NX-09",
+      "name": "MPV value mpv vs API/DB muv",
+      "status": "FAIL",
+      "detail": "BODY_OPTIONS value \"mpv\"; Car.body_type enum is muv \u2014 POST /recommend body=mpv returns 0",
+      "severity": "P1"
+    },
+    {
+      "suite": "Platform",
+      "id": "PF-03",
+      "name": "Home AI Price Valuation routes to /ai-advisor",
+      "status": "FAIL",
+      "detail": "Wrong feature linked to advisor quiz",
+      "severity": "P2"
+    },
+    {
+      "suite": "Scoring",
+      "id": "SC-04b",
+      "name": "Budget leak root cause: noFuelPref skips hard budget cap",
+      "status": "FAIL",
+      "detail": "computeResults noFuelPref path uses scored.slice(0,5) with no budMax*1.10 exclusion",
+      "severity": "P0"
+    },
+    {
+      "suite": "API",
+      "id": "API-01",
+      "name": "POST /recommend router exists",
+      "status": "PASS",
+      "detail": "apps/api/routers/recommend.py registered in main.py",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "API",
+      "id": "API-02",
+      "name": "POST /recommend/ai-chat missing (LLD)",
+      "status": "FAIL",
+      "detail": "LLD SequenceDiagrams + APIContracts define ai-chat SSE; not implemented",
+      "severity": "P0"
+    },
+    {
+      "suite": "API",
+      "id": "API-03",
+      "name": "recommendations table unused by endpoint",
+      "status": "FAIL",
+      "detail": "DB schema docs have recommendations table; endpoint does not persist sessions",
+      "severity": "P1"
+    },
+    {
+      "suite": "API",
+      "id": "API-04",
+      "name": "Rule-engine documents no LLM",
+      "status": "PASS",
+      "detail": "recommend.py docstring: No LLM is used here",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Platform",
+      "id": "PF-01",
+      "name": "Two divergent AI Advisors (Angular 11-step vs Next 4-step)",
+      "status": "FAIL",
+      "detail": "Screenshot/product = Angular /ai-advisor; Next /recommend is thinner filter UI \u2014 no shared engine",
+      "severity": "P0"
+    },
+    {
+      "suite": "Platform",
+      "id": "PF-02",
+      "name": "No Playwright e2e for Angular /ai-advisor",
+      "status": "FAIL",
+      "detail": "Only Next /recommend e2e exists",
+      "severity": "P1"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-13",
+      "name": "EV readiness answer used in scoring",
+      "status": "FAIL",
+      "detail": "ev step collected when Electric selected but computeResults never reads p['ev']",
+      "severity": "P1"
+    },
+    {
+      "suite": "Quiz UX",
+      "id": "QZ-14",
+      "name": "Lifestyle First-time buyer / Comfort / Tech unused",
+      "status": "FAIL",
+      "detail": "Only Eco-conscious, Safety first, Luxury, Value seeker affect score; others ignored",
+      "severity": "P2"
+    }
+  ]
+}
