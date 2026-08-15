@@ -856,8 +856,25 @@
           <a class="sc-btn sc-btn-map" [href]="directionsUrl(c)" target="_blank" rel="noopener"><app-icon name="map" [size]="16"></app-icon> Get Directions</a>
         </div>
       </div>
+      <!--
+        An empty list is the honest answer when our reference table has nothing
+        within reach. It previously padded the list out to three with whatever
+        was nearest in the country, so a driver in Kolkata was handed a
+        Hyderabad number. Say we don't have one, and point at the tab that can
+        actually take the job.
+      -->
       <div class="sc-empty" *ngIf="!nearbyServiceCenters().length">
-        <p>No service centres listed for your city. Visit the manufacturer's website to find the nearest one.</p>
+        <p>
+          We don't have an authorised {{ form.manufacturer || 'service' }} centre listed
+          near you yet. There may well be one — our reference list is not complete.
+        </p>
+        <p>
+          Check the manufacturer's website for the nearest one, or
+          <button type="button" class="sc-link-btn" (click)="helpTab.set('mechanics')">
+            request a GAADIIQ mechanic
+          </button>
+          who can come to you.
+        </p>
       </div>
     </div>
     <p class="sc-disclaimer" *ngIf="helpTab() === 'authorised'">

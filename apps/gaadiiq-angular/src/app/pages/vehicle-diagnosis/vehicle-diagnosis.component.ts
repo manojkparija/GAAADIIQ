@@ -110,9 +110,28 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/**
+ * How far an "authorised centre near you" may actually be.
+ *
+ * A driver whose car will not start needs somewhere they can reach today, so
+ * a centre outside their own metro is not a weaker answer — it is the wrong
+ * answer. Without this cap the list was simply the nearest three rows in the
+ * table wherever they were: a driver in New Town, Kolkata was shown Salt Lake
+ * (4.9 km), then Hyderabad at 1,193 km and Delhi at 1,325 km, each carrying a
+ * phone number that answers in a different state.
+ *
+ * 60 km covers a metro and its outskirts — Salt Lake to Howrah, or across the
+ * Mumbai belt — without reaching the next city.
+ */
+const SERVICE_AREA_KM = 60;
+
 function getServiceCenters(manufacturer: string, city: string): ServiceCenter[] {
   const byMake = SERVICE_CENTERS[manufacturer] ?? SERVICE_CENTERS['Maruti Suzuki'];
-  return byMake[city] ?? byMake[Object.keys(byMake)[0]] ?? [];
+  // No cross-city fallback. This used to return the first city in the table —
+  // Mumbai — for anywhere unlisted, which is where the Mumbai numbers shown to
+  // a Kolkata driver came from. An empty list says "we don't know", which is
+  // true; a Mumbai list says "here is your centre", which is not.
+  return byMake[city] ?? [];
 }
 
 function getAllServiceCenters(manufacturer: string): ServiceCenter[] {
@@ -684,18 +703,23 @@ export class VehicleDiagnosisComponent implements OnDestroy {
           const all = getAllServiceCenters(make);
           const withDist = all
             .map(c => ({ ...c, distance: Math.round(haversineKm(latitude, longitude, c.lat, c.lng) * 10) / 10 }))
+            // Reachable first, then nearest. Taking the nearest three
+            // unconditionally is what put Hyderabad and Delhi in front of a
+            // driver in Kolkata — the sort was right, the list just had
+            // nothing else in it.
+            .filter(c => (c.distance ?? Infinity) <= SERVICE_AREA_KM)
             .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999))
             .slice(0, 3);
           this.nearbyServiceCenters.set(withDist);
         },
         () => {
           // Geolocation denied — fall back to selected/default city
-          const centers = getServiceCenters(make, this.city.selectedCity() || 'Mumbai');
+          const centers = getServiceCenters(make, this.city.selectedCity());
           this.nearbyServiceCenters.set(centers);
         },
       );
     } else {
-      const centers = getServiceCenters(make, this.city.selectedCity() || 'Mumbai');
+      const centers = getServiceCenters(make, this.city.selectedCity());
       this.nearbyServiceCenters.set(centers);
     }
   }
