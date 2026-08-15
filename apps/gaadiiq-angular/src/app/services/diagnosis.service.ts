@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom, Observable } from 'rxjs';
 import { timeout } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -365,19 +365,58 @@ export class DiagnosisService {
         return result;
       }
       throw new Error('empty response');
-    } catch {
+    } catch (err) {
       // Reached only when the API is unreachable, erroring or too slow.
+      //
+      // WHY THE STATUS IS IN THE MESSAGE
+      //
+      // "Could not reach the service" is true of a blocked origin, an expired
+      // rate limit window and a crashed backend alike, and those three need
+      // completely different fixes. Naming the status turns a screenshot into
+      // a diagnosis instead of a guess.
+      const status = (err as HttpErrorResponse)?.status;
       const offline = { ...clientFallback(request), offline_fallback: true };
       this.report.set(offline);
-      this.error.set(
-        'Could not reach the diagnosis service, so this is an offline estimate ' +
-        'from a small built-in table. It is in English only and is far less ' +
-        'specific than a real diagnosis — please try again.',
-      );
+      this.error.set(this._failureMessage(status));
       return offline;
     } finally {
       this.loading.set(false);
     }
+  }
+
+
+  /**
+   * Say what actually went wrong, in words that point at the fix.
+   *
+   * A rate limit is deliberately NOT given the offline estimate's framing:
+   * nothing is broken, the answer is simply "wait", and dressing that up as a
+   * diagnosis would be the same mistake this whole change is undoing.
+   */
+  private _failureMessage(status: number | undefined): string {
+    const offlineNote =
+      ' This is an offline estimate from a small built-in table — English only, ' +
+      'and far less specific than a real diagnosis.';
+
+    if (status === 429) {
+      return (
+        'Too many diagnosis requests in a short time (the limit is 5 a minute, ' +
+        '20 an hour). Wait a minute and try again.' + offlineNote
+      );
+    }
+    if (status === 0 || status === undefined) {
+      // Angular reports a blocked or failed request as status 0, with no body,
+      // because the browser refuses to expose the response. A CORS rejection
+      // and a dead connection look identical from here.
+      return (
+        'Your browser could not reach the diagnosis service. That is usually ' +
+        'the connection, or this site\'s address not being allowed by the API ' +
+        '(CORS).' + offlineNote
+      );
+    }
+    if (status >= 500) {
+      return `The diagnosis service returned an error (HTTP ${status}).` + offlineNote;
+    }
+    return `The diagnosis service rejected the request (HTTP ${status}).` + offlineNote;
   }
 
   riskColor(level: string): string {

@@ -101,7 +101,7 @@ describe('DiagnosisService.analyse', () => {
     expect(report!.preliminary_diagnosis).toBeTruthy();
     // But it is labelled, so the page can say which one is on screen.
     expect(report!.offline_fallback).toBe(true);
-    expect(service.error()).toContain('offline estimate');
+    expect(service.error()).toContain('HTTP 500');
     expect(service.loading()).toBe(false);
   });
 
@@ -137,6 +137,23 @@ describe('DiagnosisService.analyse', () => {
     http.expectOne(url).flush(SERVER_ANSWER);
     tick();
   }));
+
+  it('names a rate limit as a rate limit, not an outage', async () => {
+    // 5/minute, 20/hour on the endpoint. Nothing is broken and the fix is to
+    // wait — telling someone the service is unreachable sends them to look for
+    // a problem that does not exist.
+    const pending = service.analyse(REQUEST);
+    http.expectOne(url).flush('slow down', { status: 429, statusText: 'Too Many Requests' });
+    await pending;
+    expect(service.error()).toContain('Too many diagnosis requests');
+  });
+
+  it('names a blocked request as blocked', async () => {
+    const pending = service.analyse(REQUEST);
+    http.expectOne(url).error(new ProgressEvent('network error'), { status: 0 });
+    await pending;
+    expect(service.error()).toContain('CORS');
+  });
 
   it('does not mark a real API answer as an offline estimate', async () => {
     // `offline_fallback` is set by this client only. A server that happened to
