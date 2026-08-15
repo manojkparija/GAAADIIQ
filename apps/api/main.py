@@ -229,6 +229,30 @@ async def lifespan(app: FastAPI):
 
     start_scheduler()
 
+    # Two subsystems that degrade silently by design. That is right for
+    # resilience and it is exactly why nobody noticed: nothing breaks visibly
+    # when a cache falls back to a dict or a model is simply absent. Say it
+    # once at boot so the state is in the log rather than only inferable from
+    # a hit rate nobody is watching.
+    if settings.is_production:
+        if not settings.redis_url:
+            _log.warning(
+                "REDIS_URL is not set — OTP digests and the diagnosis response "
+                "cache are using a per-process dict. Correct, but not shared "
+                "across workers and lost on restart."
+            )
+        if not (
+            settings.openai_api_key
+            or settings.gemini_api_key
+            or "localhost" not in settings.ollama_base_url
+        ):
+            _log.warning(
+                "No diagnosis model is reachable (no OPENAI_API_KEY, no "
+                "GEMINI_API_KEY, no OLLAMA_BASE_URL). A symptom that misses "
+                "the knowledge base will be answered by the heuristic "
+                "fallback, which is keyword overlap rather than a diagnosis."
+            )
+
     # Semantic search is opt-in. When it is off there is no cluster to reach,
     # and calling this only produced a connection-refused warning on every boot
     # — the kind of permanent warning people learn to scroll past.

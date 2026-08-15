@@ -12,6 +12,14 @@ line-length = 150
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
+[tool.ruff.lint.per-file-ignores]
+# Importing a pytest fixture is how you share one between test modules, and
+# every test that then takes it as a parameter looks to ruff like a
+# redefinition of the imported name. It is not — pytest resolves fixtures by
+# name, which is exactly why the import has to be there. Scoped to the one
+# file that shares fixtures rather than switched off across the suite.
+"tests/test_kb_coverage.py" = ["F811"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = false

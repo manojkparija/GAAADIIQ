@@ -80,9 +80,33 @@ async def dependency_status():
                 "localhost" not in settings.ollama_base_url,
                 "unreachable",
             ),
+            "openai": {
+                "configured": bool(settings.openai_api_key),
+                "serving": settings.openai_model if settings.openai_api_key else "none",
+            },
             "gemini": {
                 "configured": bool(settings.gemini_api_key),
                 "serving": settings.gemini_model if settings.gemini_api_key else "none",
+            },
+            # The question this endpoint is really answering for diagnosis:
+            # is there ANY model below the knowledge base? With none of these
+            # three configured, a symptom that misses the KB gets the
+            # heuristic, which is a floor rather than a finding.
+            "diagnosis_model": {
+                "configured": bool(
+                    settings.openai_api_key
+                    or settings.gemini_api_key
+                    or "localhost" not in settings.ollama_base_url
+                ),
+                "serving": (
+                    settings.openai_model
+                    if settings.openai_api_key
+                    else settings.gemini_model
+                    if settings.gemini_api_key
+                    else "ollama"
+                    if "localhost" not in settings.ollama_base_url
+                    else "heuristic-only"
+                ),
             },
             "marketplace": {
                 "configured": settings.marketplace_enabled,

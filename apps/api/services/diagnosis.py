@@ -3,7 +3,9 @@ Vehicle Preliminary Diagnosis & Repair Advisor
 
 Answer path, cheapest first:
 
-    cache  →  knowledge base  →  Gemini (premium)  →  Ollama  →  heuristic
+    cache  →  knowledge base  →  GPT-4o*  →  Gemini  →  Ollama  →  heuristic
+
+                                   * premium tier only; see run_diagnosis
 
 The first two are new and are the point of the knowledge base: a curated,
 human-verified row costs no tokens and carries a named source, so the model is
@@ -170,7 +172,7 @@ def _retrieve_relevant_cases(
 
 
 class _SkipOllama(Exception):
-    """Internal sentinel: Gemini already produced a result."""
+    """Internal sentinel: a hosted model (GPT-4o or Gemini) already answered."""
 
 
 # ── Semantic retrieval (BR-AI-02) ────────────────────────────────────────────
@@ -501,12 +503,32 @@ def _normalise_follow_ups(result: dict) -> dict:
     return result
 
 
+async def _call_openai(prompt: str) -> dict:
+    """
+    Run the diagnosis prompt through GPT-4o — the first model on the ladder.
+
+    Raises on any failure so the caller can fall back to Gemini. Two providers
+    in series is not redundancy for its own sake: they fail independently, so
+    an outage or an exhausted quota on one no longer ends with a driver being
+    told less than we know.
+    """
+    from services import openai_gateway
+
+    text = await openai_gateway.generate_text(
+        prompt,
+        caller="diagnosis",
+        # Low temperature: this is safety guidance, not creative writing.
+        temperature=0.2,
+    )
+    return json.loads(text)
+
+
 async def _call_gemini(prompt: str) -> dict:
     """
-    Run the diagnosis prompt through Gemini Flash (paid tier).
+    Run the diagnosis prompt through Gemini Flash — the second model.
 
-    Raises on any failure so the caller can fall back to Ollama — a paid user
-    should get a slightly worse answer, never no answer.
+    Raises on any failure so the caller can fall back to Ollama and then the
+    heuristic. Every rung below this one is worse; none of them is nothing.
     """
     from services import gemini_gateway
 
@@ -845,18 +867,41 @@ async def run_diagnosis(
     fallback_reason: str | None = None
     engine = "heuristic"
 
-    # Premium tier: try Gemini first. Any failure falls through to Ollama
-    # below, so a paid user never ends up worse off than a free one.
-    if model_tier == "premium":
+    # Both tiers now reach a hosted model. This used to be premium-only: the
+    # free tier went straight to Ollama, whose host is not set in any deployed
+    # environment, so a free-tier user who missed the knowledge base fell all
+    # the way through to the heuristic — a floor, not a finding.
+    #
+    # The tiers still differ, because deleting the difference would be a
+    # pricing decision disguised as a bug fix:
+    #
+    #   premium   GPT-4o  →  Gemini  →  Ollama  →  heuristic
+    #   free                 Gemini  →  Ollama  →  heuristic
+    #
+    # GPT-4o is the better and costlier model, so it stays the paid tier's
+    # advantage. Gemini Flash-Lite is cheap enough to serve everyone, which is
+    # what closes the hole. Within a tier the providers fail independently, so
+    # an outage or an exhausted quota on one is not an outage of the rung.
+    #
+    # Each failure is appended to `fallback_reason` rather than replacing it,
+    # so the log says which providers gave way and why — not merely that the
+    # answer came from further down.
+    engines = (("openai", _call_openai), ("gemini", _call_gemini))
+    if model_tier != "premium":
+        engines = engines[1:]
+
+    for name, call in engines:
         try:
-            result = await _call_gemini(prompt)
-            engine = "gemini"
+            result = await call(prompt)
+            engine = name
+            break
         except Exception as exc:
-            fallback_reason = f"gemini:{type(exc).__name__}"
-            logger.warning("Gemini diagnosis failed, falling back to Ollama: %s", exc)
+            reason = f"{name}:{type(exc).__name__}"
+            fallback_reason = f"{fallback_reason},{reason}" if fallback_reason else reason
+            logger.warning("%s diagnosis failed, trying the next engine: %s", name, exc)
 
     try:
-        if engine == "gemini":
+        if engine in ("openai", "gemini"):
             raise _SkipOllama
         async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
             resp = await client.post(
@@ -869,15 +914,19 @@ async def run_diagnosis(
             ollama_used = True
             engine = "ollama"
     except _SkipOllama:
-        pass  # Gemini already produced a result
+        pass  # a hosted model already produced a result
     except httpx.TimeoutException:
-        fallback_reason = "timeout"
+        # Appended, not assigned: overwriting would erase why the two hosted
+        # providers gave way, which is the part worth knowing when an answer
+        # arrives from the heuristic.
+        fallback_reason = f"{fallback_reason},ollama:timeout" if fallback_reason else "timeout"
         logger.warning(
             "Ollama diagnosis timed out after %.1fs, using heuristic fallback", OLLAMA_TIMEOUT
         )
         result = _heuristic_fallback(retrieved, severity, fuel_type)
     except Exception as exc:
-        fallback_reason = fallback_reason or type(exc).__name__
+        reason = f"ollama:{type(exc).__name__}"
+        fallback_reason = f"{fallback_reason},{reason}" if fallback_reason else reason
         logger.warning("Ollama diagnosis failed, using heuristic fallback: %s", exc)
         result = _heuristic_fallback(retrieved, severity, fuel_type)
 

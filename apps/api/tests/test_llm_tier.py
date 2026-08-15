@@ -1,13 +1,16 @@
 """
 Model tier selection tests.
 
-Free users are served by Ollama; paid subscribers and admins get Gemini Flash.
-The two properties that matter:
+Paid subscribers and admins get GPT-4o; everyone else gets Gemini Flash-Lite.
+The three properties that matter:
 
   1. The tier cannot be self-selected — it is resolved from the caller's role
      and subscription, never from the request body.
-  2. Every failure degrades downward. Gemini → Ollama → heuristic. A paid user
-     may get a worse answer; they must never get no answer.
+  2. Every failure degrades downward. GPT-4o → Gemini → Ollama → heuristic. A
+     paid user may get a worse answer; they must never get no answer.
+  3. The free tier reaches a real model. It used to go straight to Ollama,
+     whose host is unset in every deployed environment, which meant a free
+     user who missed the knowledge base got the heuristic fallback.
 """
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -212,26 +215,53 @@ class TestTieredDiagnosisSuite:
     )
 
     @pytest.mark.asyncio
-    async def test_free_tier_uses_ollama(self, gemini_on):
-        with patch("services.diagnosis._call_gemini") as gem:
-            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+    async def test_free_tier_gets_gemini_not_gpt4o(self, gemini_on):
+        """The free tier reaches a hosted model, but not the expensive one.
+
+        This used to assert the free tier went straight to Ollama. That was the
+        bug: OLLAMA_BASE_URL is unset in every deployed environment, so a free
+        user who missed the knowledge base fell through to the heuristic — an
+        answer assembled from keyword overlap. Gemini Flash-Lite is cheap
+        enough to serve everyone, so it does; GPT-4o stays the paid advantage.
+        """
+        with patch("services.diagnosis._call_openai") as gpt:
+            with patch("httpx.AsyncClient", return_value=_gemini_response(OLLAMA_DIAGNOSIS)):
                 r = await run_diagnosis(**self._ARGS, model_tier="free")
-        gem.assert_not_called()
-        assert r["engine"] == "ollama"
+        gpt.assert_not_called()
+        assert r["engine"] == "gemini"
         assert r["model_tier"] == "free"
 
     @pytest.mark.asyncio
-    async def test_premium_tier_uses_gemini(self, gemini_on):
+    async def test_free_tier_still_reaches_ollama_when_gemini_fails(self, gemini_on):
+        with patch("services.diagnosis._call_gemini", side_effect=Exception("gemini 500")):
+            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+                r = await run_diagnosis(**self._ARGS, model_tier="free")
+        assert r["engine"] == "ollama"
+
+    @pytest.mark.asyncio
+    async def test_premium_tier_uses_gpt4o_first(self, gemini_on):
+        premium = dict(OLLAMA_DIAGNOSIS, preliminary_diagnosis="GPT-4o analysis")
+        with patch("services.diagnosis._call_openai", return_value=premium):
+            with patch("services.diagnosis._call_gemini") as gem:
+                r = await run_diagnosis(**self._ARGS, model_tier="premium")
+        gem.assert_not_called()
+        assert r["engine"] == "openai"
+        assert r["preliminary_diagnosis"] == "GPT-4o analysis"
+
+    @pytest.mark.asyncio
+    async def test_premium_falls_back_to_gemini_when_gpt4o_fails(self, gemini_on):
         premium = dict(OLLAMA_DIAGNOSIS, preliminary_diagnosis="Gemini analysis")
-        with patch("httpx.AsyncClient", return_value=_gemini_response(premium)):
-            r = await run_diagnosis(**self._ARGS, model_tier="premium")
+        with patch("services.diagnosis._call_openai", side_effect=Exception("openai 503")):
+            with patch("httpx.AsyncClient", return_value=_gemini_response(premium)):
+                r = await run_diagnosis(**self._ARGS, model_tier="premium")
         assert r["engine"] == "gemini"
         assert r["preliminary_diagnosis"] == "Gemini analysis"
 
     @pytest.mark.asyncio
     async def test_gemini_failure_falls_back_to_ollama(self, gemini_on):
         # The paid user gets a slightly worse answer, never no answer.
-        with patch("services.diagnosis._call_gemini", side_effect=Exception("gemini 500")):
+        with patch("services.diagnosis._call_openai", side_effect=Exception("openai 503")), \
+             patch("services.diagnosis._call_gemini", side_effect=Exception("gemini 500")):
             with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
                 r = await run_diagnosis(**self._ARGS, model_tier="premium")
         assert r["engine"] == "ollama"
@@ -257,10 +287,13 @@ class TestTieredDiagnosisSuite:
 
     @pytest.mark.asyncio
     async def test_default_tier_is_free(self, gemini_on):
-        with patch("services.diagnosis._call_gemini") as gem:
-            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
-                await run_diagnosis(**self._ARGS)
-        gem.assert_not_called()
+        # Free means "no GPT-4o", not "no model" — the default must not
+        # quietly hand an unauthenticated caller the paid engine.
+        with patch("services.diagnosis._call_openai") as gpt:
+            with patch("httpx.AsyncClient", return_value=_gemini_response(OLLAMA_DIAGNOSIS)):
+                r = await run_diagnosis(**self._ARGS)
+        gpt.assert_not_called()
+        assert r["model_tier"] == "free"
 
 
 class TestCallerVerificationSuite:
@@ -348,36 +381,36 @@ class TestAdminAllowlistSuite:
 class TestTierCannotBeSelfSelectedSuite:
     @pytest.mark.asyncio
     async def test_anonymous_request_is_served_free(self, client, gemini_on):
-        with patch("services.diagnosis._call_gemini") as gem:
-            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+        with patch("services.diagnosis._call_openai") as gpt:
+            with patch("httpx.AsyncClient", return_value=_gemini_response(OLLAMA_DIAGNOSIS)):
                 r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
         assert r.status_code == 201
         assert r.json()["model_tier"] == "free"
-        gem.assert_not_called()
+        gpt.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_request_body_cannot_request_premium(self, client, gemini_on):
-        payload = {**VALID_PAYLOAD, "model_tier": "premium", "engine": "gemini"}
-        with patch("services.diagnosis._call_gemini") as gem:
-            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+        payload = {**VALID_PAYLOAD, "model_tier": "premium", "engine": "openai"}
+        with patch("services.diagnosis._call_openai") as gpt:
+            with patch("httpx.AsyncClient", return_value=_gemini_response(OLLAMA_DIAGNOSIS)):
                 r = await client.post("/diagnosis/analyse", json=payload)
         assert r.status_code == 201
         assert r.json()["model_tier"] == "free"
-        gem.assert_not_called()
+        gpt.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_body_user_id_does_not_grant_premium(self, client, db, gemini_on):
         # The security property: knowing a paid user's UUID must not upgrade
         # an unauthenticated caller. body.user_id is for record ownership only.
         uid = await _make_user(db, tier=SubscriptionTier.pro)
-        with patch("services.diagnosis._call_gemini") as gem:
-            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+        with patch("services.diagnosis._call_openai") as gpt:
+            with patch("httpx.AsyncClient", return_value=_gemini_response(OLLAMA_DIAGNOSIS)):
                 r = await client.post(
                     "/diagnosis/analyse", json={**VALID_PAYLOAD, "user_id": str(uid)}
                 )
         assert r.status_code == 201
         assert r.json()["model_tier"] == "free"
-        gem.assert_not_called()
+        gpt.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_authenticated_paid_user_gets_premium(self, client, db, gemini_on):
@@ -425,11 +458,11 @@ class TestTierCannotBeSelfSelectedSuite:
         forged = jose_jwt.encode(
             {"email": "admin@gaadiiq.com"}, "attacker-secret", algorithm="HS256"
         )
-        with patch("services.diagnosis._call_gemini") as gem:
-            with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+        with patch("services.diagnosis._call_openai") as gpt:
+            with patch("httpx.AsyncClient", return_value=_gemini_response(OLLAMA_DIAGNOSIS)):
                 r = await client.post(
                     "/diagnosis/analyse", json=VALID_PAYLOAD,
                     headers={"Authorization": f"Bearer {forged}"},
                 )
         assert r.json()["model_tier"] == "free"
-        gem.assert_not_called()
+        gpt.assert_not_called()

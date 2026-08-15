@@ -125,7 +125,7 @@ class DiagnoseResponse(BaseModel):
     # BR-ML-04 — true when a non-English response was requested but the text
     # is still English, so the client can say so instead of silently misleading.
     translation_failed: bool = False
-    # Which engine produced this: knowledge_base | gemini (paid/admin) | ollama
+    # Which engine produced this: knowledge_base | openai | gemini | ollama
     # | heuristic. A ":cached" suffix means it was served from the response
     # cache, so the client can tell a fresh answer from a stored one.
     engine: str = "heuristic"
@@ -160,6 +160,23 @@ class DiagnosisHistoryItem(BaseModel):
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+
+def _as_text(value: object) -> str | None:
+    """A string, or nothing. Anything else is not a value we can store."""
+    return value if isinstance(value, str) and value else None
+
+
+def _engine_name(value: object) -> str | None:
+    """
+    The engine name without its cache suffix.
+
+    A cached answer is reported as `openai:cached` so the client can tell a
+    fresh answer from a stored one, but the coverage report groups by engine
+    and the suffix would split every provider into two categories.
+    """
+    text = _as_text(value)
+    return text.split(":")[0] if text else None
+
 
 @router.post("/analyse", response_model=DiagnoseResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute;20/hour")
@@ -233,6 +250,14 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         retrieved_sources=ai_result.get("retrieved_sources", []),
         ollama_used=ai_result.get("ollama_used", False),
         analysis_confidence=ai_result.get("analysis_confidence"),
+        # Stored, not just logged. A log line answers "what happened just now";
+        # this column answers "which vehicles does the knowledge base not
+        # cover", which is the question that decides what to curate next.
+        # The ":cached" suffix is stripped — a cached answer was produced by
+        # the engine named before the colon, and keeping the suffix would split
+        # every engine into two categories in the coverage report.
+        engine=_engine_name(ai_result.get("engine")),
+        kb_diagnosis_code=_as_text(ai_result.get("kb_diagnosis_code")),
     )
     db.add(record)
     await db.commit()

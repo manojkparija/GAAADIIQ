@@ -16,6 +16,7 @@ parameters and every request 422s. Same reason as routers/otp.py.
 
 import logging
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
@@ -37,6 +38,7 @@ from models.diagnosis_kb import (
     VerificationStatus,
 )
 from models.user import User
+from models.vehicle_diagnosis import VehicleDiagnosis
 from services import diagnosis_cache, diagnosis_kb_lookup, diagnosis_kb_review
 from services.diagnosis_kb_import import ImportError_, parse_and_import
 from services.diagnosis_kb_review import ReviewError
@@ -102,6 +104,138 @@ async def kb_stats(db: DB, admin: Admin) -> KbStats:
             .where(DiagnosisMaster.safety_critical.is_(True))
         ),
         servable_share=round(master_servable / master_total, 3) if master_total else 0.0,
+    )
+
+
+class CoverageRow(BaseModel):
+    manufacturer: str
+    model: str
+    # Servable rows for this vehicle — the supply side.
+    verified_rows: int
+    # Rows written but not yet through review. A large number here means the
+    # gap is a review backlog, not a curation one, and those are fixed by
+    # different people.
+    pending_rows: int
+    # The demand side, from real requests.
+    requests: int
+    kb_answers: int
+    model_answers: int
+    heuristic_answers: int
+    # requests that did NOT get a curated answer, as a share. This is the
+    # number to sort by.
+    fallthrough_rate: float
+
+
+class CoverageReport(BaseModel):
+    window_days: int
+    total_requests: int
+    kb_answers: int
+    overall_fallthrough_rate: float
+    # Vehicles with the most unanswered demand first.
+    rows: list[CoverageRow]
+
+
+@router.get("/coverage", response_model=CoverageReport)
+async def kb_coverage(
+    db: DB,
+    admin: Admin,
+    window_days: int = Query(30, ge=1, le=365),
+    limit: int = Query(50, ge=1, le=500),
+) -> CoverageReport:
+    """
+    Where the knowledge base is thin, measured against real demand.
+
+    `/stats` counts rows, which answers "how big is the corpus". It cannot
+    answer the question that decides what to curate next: *which vehicles are
+    falling through to a model?* A corpus can grow steadily and still miss
+    every car people actually ask about.
+
+    So this joins two things: how many servable rows exist per make and model,
+    and how many real requests for that make and model were answered by
+    something other than the knowledge base. Sorted by the second — a vehicle
+    with no rows and no requests needs nothing; a vehicle with no rows and two
+    hundred requests is the next thing to write.
+
+    Requests are counted from `vehicle_diagnoses.engine`, which exists from
+    migration 0034. Rows written before that have `engine IS NULL` and are
+    excluded rather than guessed at, so a freshly deployed instance reports a
+    small window honestly instead of a large one wrongly.
+    """
+    since = datetime.now(timezone.utc) - timedelta(days=window_days)
+
+    servable = (
+        (DiagnosisMaster.status == RecordStatus.active)
+        & (DiagnosisMaster.verification_status == VerificationStatus.verified)
+    )
+
+    # Supply: rows per vehicle, split by whether they are servable yet.
+    supply_q = await db.execute(
+        select(
+            DiagnosisMaster.manufacturer,
+            DiagnosisMaster.model,
+            func.count().filter(servable).label("verified"),
+            func.count().filter(~servable).label("pending"),
+        ).group_by(DiagnosisMaster.manufacturer, DiagnosisMaster.model)
+    )
+    supply: dict[tuple[str, str], tuple[int, int]] = {
+        (m.lower(), mo.lower()): (int(v or 0), int(p or 0))
+        for m, mo, v, p in supply_q.all()
+    }
+
+    # Demand: answered requests per vehicle, split by which rung served them.
+    demand_q = await db.execute(
+        select(
+            VehicleDiagnosis.manufacturer,
+            VehicleDiagnosis.model,
+            func.count().label("requests"),
+            func.count().filter(VehicleDiagnosis.engine == "knowledge_base").label("kb"),
+            func.count().filter(VehicleDiagnosis.engine == "heuristic").label("heuristic"),
+        )
+        .where(
+            VehicleDiagnosis.created_at >= since,
+            VehicleDiagnosis.engine.is_not(None),
+        )
+        .group_by(VehicleDiagnosis.manufacturer, VehicleDiagnosis.model)
+    )
+
+    rows: list[CoverageRow] = []
+    total_requests = 0
+    total_kb = 0
+
+    for manufacturer, model, requests, kb, heuristic in demand_q.all():
+        requests, kb, heuristic = int(requests or 0), int(kb or 0), int(heuristic or 0)
+        verified, pending = supply.get((manufacturer.lower(), model.lower()), (0, 0))
+        total_requests += requests
+        total_kb += kb
+        rows.append(
+            CoverageRow(
+                manufacturer=manufacturer,
+                model=model,
+                verified_rows=verified,
+                pending_rows=pending,
+                requests=requests,
+                kb_answers=kb,
+                # Whatever was not the KB and not the heuristic came from a
+                # model — derived rather than counted separately so a new
+                # provider is included without touching this query.
+                model_answers=requests - kb - heuristic,
+                heuristic_answers=heuristic,
+                fallthrough_rate=round((requests - kb) / requests, 3) if requests else 0.0,
+            )
+        )
+
+    # Most unanswered demand first: rate alone would put a vehicle with one
+    # request at the top of the list ahead of one with four hundred.
+    rows.sort(key=lambda r: (r.requests - r.kb_answers, r.requests), reverse=True)
+
+    return CoverageReport(
+        window_days=window_days,
+        total_requests=total_requests,
+        kb_answers=total_kb,
+        overall_fallthrough_rate=(
+            round((total_requests - total_kb) / total_requests, 3) if total_requests else 0.0
+        ),
+        rows=rows[:limit],
     )
 
 
