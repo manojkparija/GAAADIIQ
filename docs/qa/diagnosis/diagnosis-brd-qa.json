@@ -1,0 +1,1036 @@
+{
+  "generated_at": "2026-07-25T13:56:48.504294+00:00",
+  "brd_readiness_score": 63,
+  "code_tip": "claude/gaadiiq-app-dev-abj5fo",
+  "requirement_counts": {
+    "PASS": 31,
+    "FAIL": 14,
+    "PARTIAL": 19
+  },
+  "test_counts": {
+    "PASS": 23,
+    "FAIL": 18,
+    "PARTIAL": 6
+  },
+  "recommendation": "NO-GO for full BRD; CONDITIONAL for manual+image MVP",
+  "requirements": [
+    {
+      "id": "BR-VI-01",
+      "area": "Vehicle Info",
+      "priority": "Must Have",
+      "requirement": "Manual vehicle information entry",
+      "status": "PASS",
+      "evidence": "Angular Step 1 form (make/model/year/fuel/transmission)",
+      "gap": "\u2014",
+      "justification": "Baseline path for users who prefer typing"
+    },
+    {
+      "id": "BR-VI-02",
+      "area": "Vehicle Info",
+      "priority": "Must Have",
+      "requirement": "Voice-based vehicle information entry",
+      "status": "PASS",
+      "evidence": "voice-mode overlay + Web Speech STT",
+      "gap": "\u2014",
+      "justification": "Hands-free capture for drivers / literacy barriers"
+    },
+    {
+      "id": "BR-VI-03",
+      "area": "Vehicle Info",
+      "priority": "Must Have",
+      "requirement": "Auto-extract vehicle details from speech",
+      "status": "PASS",
+      "evidence": "vehicle-info-extractor + POST /diagnosis/voice/extract",
+      "gap": "\u2014",
+      "justification": "Reduce form friction after speech"
+    },
+    {
+      "id": "BR-VI-04",
+      "area": "Vehicle Info",
+      "priority": "Must Have",
+      "requirement": "Auto-fill of vehicle information",
+      "status": "PASS",
+      "evidence": "onVoiceCompleted merges into form signals",
+      "gap": "\u2014",
+      "justification": "Keep single source of truth for review step"
+    },
+    {
+      "id": "BR-VI-05",
+      "area": "Vehicle Info",
+      "priority": "Must Have",
+      "requirement": "Intelligent validation",
+      "status": "PASS",
+      "evidence": "step1Valid + Pydantic DiagnoseRequest",
+      "gap": "\u2014",
+      "justification": "Prevent invalid analyse payloads"
+    },
+    {
+      "id": "BR-VI-06",
+      "area": "Vehicle Info",
+      "priority": "Must Have",
+      "requirement": "Missing information prompts",
+      "status": "PASS",
+      "evidence": "voice-mode _askMissingFields TTS loop",
+      "gap": "\u2014",
+      "justification": "Complete mandatory vehicle fields before analyse"
+    },
+    {
+      "id": "BR-IR-01",
+      "area": "Issue Reporting",
+      "priority": "Must Have",
+      "requirement": "Report issue using text",
+      "status": "PASS",
+      "evidence": "Step 2 textarea problem_description",
+      "gap": "\u2014",
+      "justification": "Primary symptom capture"
+    },
+    {
+      "id": "BR-IR-02",
+      "area": "Issue Reporting",
+      "priority": "Must Have",
+      "requirement": "Report issue using voice",
+      "status": "PASS",
+      "evidence": "Step 2 mic toolbar + overlay problem phase",
+      "gap": "\u2014",
+      "justification": "Speak symptoms in native language"
+    },
+    {
+      "id": "BR-IR-03",
+      "area": "Issue Reporting",
+      "priority": "Must Have",
+      "requirement": "Upload vehicle images",
+      "status": "PASS",
+      "evidence": "POST /upload/image \u2192 image_urls",
+      "gap": "\u2014",
+      "justification": "Visual context for vision + mechanic handoff"
+    },
+    {
+      "id": "BR-IR-04",
+      "area": "Issue Reporting",
+      "priority": "Must Have",
+      "requirement": "Upload audio recordings",
+      "status": "FAIL",
+      "evidence": "DB/schema audio_url exists; unused",
+      "gap": "No POST /upload/audio or Step 2 UI",
+      "justification": "Engine noise / rattles improve diagnosis"
+    },
+    {
+      "id": "BR-IR-05",
+      "area": "Issue Reporting",
+      "priority": "Must Have",
+      "requirement": "Upload videos",
+      "status": "FAIL",
+      "evidence": "DB/schema video_url exists; unused",
+      "gap": "No video upload API/UI",
+      "justification": "Capture intermittent symptoms"
+    },
+    {
+      "id": "BR-IR-06",
+      "area": "Issue Reporting",
+      "priority": "Must Have",
+      "requirement": "Select dashboard warning lights",
+      "status": "PASS",
+      "evidence": "WARNING_LIGHTS chips in Step 2",
+      "gap": "\u2014",
+      "justification": "Structured symptom signals"
+    },
+    {
+      "id": "BR-IR-07",
+      "area": "Issue Reporting",
+      "priority": "Should Have",
+      "requirement": "Add maintenance history",
+      "status": "FAIL",
+      "evidence": "Not in form/API/model",
+      "gap": "Add maintenance_history JSON field",
+      "justification": "Prior service context"
+    },
+    {
+      "id": "BR-ML-01",
+      "area": "Multilingual",
+      "priority": "Must Have",
+      "requirement": "Automatic language detection",
+      "status": "PARTIAL",
+      "evidence": "detectLanguageFromText exists client-side",
+      "gap": "Wire Auto-detect toggle into voice session",
+      "justification": "Users may not know BCP-47 codes"
+    },
+    {
+      "id": "BR-ML-02",
+      "area": "Multilingual",
+      "priority": "Must Have",
+      "requirement": "Support major Indian languages",
+      "status": "PASS",
+      "evidence": "11 VOICE_LANGUAGES in picker",
+      "gap": "PROMPTS fully localized for 6 only",
+      "justification": "India language coverage"
+    },
+    {
+      "id": "BR-ML-03",
+      "area": "Multilingual",
+      "priority": "Must Have",
+      "requirement": "Preserve user language in conversation",
+      "status": "PASS",
+      "evidence": "gq_voice_lang + detected_language",
+      "gap": "\u2014",
+      "justification": "Consistent journey language"
+    },
+    {
+      "id": "BR-ML-04",
+      "area": "Multilingual",
+      "priority": "Must Have",
+      "requirement": "AI responses match user language",
+      "status": "PARTIAL",
+      "evidence": "_translate_diagnosis via Ollama",
+      "gap": "Golden-set QA; English fallback banner",
+      "justification": "Trust for non-English users"
+    },
+    {
+      "id": "BR-VA-01",
+      "area": "Voice AI",
+      "priority": "Must Have",
+      "requirement": "Speech-to-Text",
+      "status": "PARTIAL",
+      "evidence": "Browser Web Speech API only",
+      "gap": "Server STT + MediaRecorder for WebView",
+      "justification": "Production Android/iOS reliability"
+    },
+    {
+      "id": "BR-VA-02",
+      "area": "Voice AI",
+      "priority": "Must Have",
+      "requirement": "Text-to-Speech",
+      "status": "PARTIAL",
+      "evidence": "speechSynthesis only",
+      "gap": "Optional server TTS; keep client fallback",
+      "justification": "Playback on devices with weak voices"
+    },
+    {
+      "id": "BR-VA-03",
+      "area": "Voice AI",
+      "priority": "Must Have",
+      "requirement": "Live transcription",
+      "status": "PASS",
+      "evidence": "interimText in voice overlay",
+      "gap": "\u2014",
+      "justification": "User confidence while speaking"
+    },
+    {
+      "id": "BR-VA-04",
+      "area": "Voice AI",
+      "priority": "Should Have",
+      "requirement": "Voice playback",
+      "status": "PASS",
+      "evidence": "Auto-speak report + TTS bar",
+      "gap": "\u2014",
+      "justification": "Listen to diagnosis"
+    },
+    {
+      "id": "BR-VA-05",
+      "area": "Voice AI",
+      "priority": "Should Have",
+      "requirement": "Replay",
+      "status": "PASS",
+      "evidence": "replaySpeaking()",
+      "gap": "\u2014",
+      "justification": "Re-hear instructions"
+    },
+    {
+      "id": "BR-VA-06",
+      "area": "Voice AI",
+      "priority": "Should Have",
+      "requirement": "Pause",
+      "status": "PASS",
+      "evidence": "pauseSpeaking()",
+      "gap": "\u2014",
+      "justification": "Interruptible playback"
+    },
+    {
+      "id": "BR-VA-07",
+      "area": "Voice AI",
+      "priority": "Should Have",
+      "requirement": "Stop",
+      "status": "PASS",
+      "evidence": "stop STT/TTS controls",
+      "gap": "\u2014",
+      "justification": "Immediate silence"
+    },
+    {
+      "id": "BR-VA-08",
+      "area": "Voice AI",
+      "priority": "Should Have",
+      "requirement": "Hands-free mode",
+      "status": "PARTIAL",
+      "evidence": "Auto-listen after TTS",
+      "gap": "Always-on driving mode",
+      "justification": "Parked/driving safety"
+    },
+    {
+      "id": "BR-VA-09",
+      "area": "Voice AI",
+      "priority": "Should Have",
+      "requirement": "Driver-friendly interaction",
+      "status": "PARTIAL",
+      "evidence": "Large overlay UI",
+      "gap": "Driving mode + RECORD_AUDIO",
+      "justification": "Large targets, reduced glances"
+    },
+    {
+      "id": "BR-AI-01",
+      "area": "AI Diagnosis",
+      "priority": "Must Have",
+      "requirement": "Ollama LLM integration",
+      "status": "PASS",
+      "evidence": "services/diagnosis.py run_diagnosis",
+      "gap": "\u2014",
+      "justification": "Primary LLM path"
+    },
+    {
+      "id": "BR-AI-02",
+      "area": "AI Diagnosis",
+      "priority": "Must Have",
+      "requirement": "RAG knowledge base",
+      "status": "PARTIAL",
+      "evidence": "Keyword match on repair_knowledge.json (12 cases)",
+      "gap": "Vector RAG over KB (Qdrant/BGE unused)",
+      "justification": "Grounded repair advice"
+    },
+    {
+      "id": "BR-AI-03",
+      "area": "AI Diagnosis",
+      "priority": "Must Have",
+      "requirement": "Root cause prediction",
+      "status": "PASS",
+      "evidence": "possible_causes[]",
+      "gap": "\u2014",
+      "justification": "Core diagnosis value"
+    },
+    {
+      "id": "BR-AI-04",
+      "area": "AI Diagnosis",
+      "priority": "Must Have",
+      "requirement": "Severity prediction",
+      "status": "PASS",
+      "evidence": "risk_level",
+      "gap": "\u2014",
+      "justification": "Urgency signalling"
+    },
+    {
+      "id": "BR-AI-05",
+      "area": "AI Diagnosis",
+      "priority": "Must Have",
+      "requirement": "Safe-to-drive recommendation",
+      "status": "PASS",
+      "evidence": "safe_to_drive + UI warning",
+      "gap": "\u2014",
+      "justification": "Safety-critical output"
+    },
+    {
+      "id": "BR-AI-06",
+      "area": "AI Diagnosis",
+      "priority": "Must Have",
+      "requirement": "Estimated repair cost",
+      "status": "PASS",
+      "evidence": "cost_min_inr / cost_max_inr",
+      "gap": "\u2014",
+      "justification": "Budget transparency"
+    },
+    {
+      "id": "BR-AI-07",
+      "area": "AI Diagnosis",
+      "priority": "Must Have",
+      "requirement": "Estimated repair duration",
+      "status": "PASS",
+      "evidence": "repair_time_estimate",
+      "gap": "\u2014",
+      "justification": "Time planning"
+    },
+    {
+      "id": "BR-AI-08",
+      "area": "AI Diagnosis",
+      "priority": "Must Have",
+      "requirement": "Recommended next steps",
+      "status": "PASS",
+      "evidence": "recommended_steps + How to Fix",
+      "gap": "\u2014",
+      "justification": "Actionable guidance"
+    },
+    {
+      "id": "BR-AI-09",
+      "area": "AI Diagnosis",
+      "priority": "Should Have",
+      "requirement": "Preventive maintenance suggestions",
+      "status": "PASS",
+      "evidence": "preventive_maintenance",
+      "gap": "\u2014",
+      "justification": "Upsell prevention"
+    },
+    {
+      "id": "BR-AI-10",
+      "area": "AI Diagnosis",
+      "priority": "Should Have",
+      "requirement": "Follow-up questions when required",
+      "status": "PARTIAL",
+      "evidence": "Missing-field asks only",
+      "gap": "Post-diagnosis follow_up_questions[]",
+      "justification": "Improve low-confidence cases"
+    },
+    {
+      "id": "BR-UX-01",
+      "area": "UX",
+      "priority": "Must Have",
+      "requirement": "Mobile-first design",
+      "status": "PARTIAL",
+      "evidence": "Responsive SCSS + layout e2e",
+      "gap": "Dedicated mobile shell polish",
+      "justification": "Primary usage is phone"
+    },
+    {
+      "id": "BR-UX-02",
+      "area": "UX",
+      "priority": "Must Have",
+      "requirement": "Progress indicators",
+      "status": "PASS",
+      "evidence": "Steps 1\u20133 wizard progress",
+      "gap": "\u2014",
+      "justification": "Orient user in flow"
+    },
+    {
+      "id": "BR-UX-03",
+      "area": "UX",
+      "priority": "Must Have",
+      "requirement": "Conversation history",
+      "status": "PARTIAL",
+      "evidence": "Past Diagnoses panel + GET /history",
+      "gap": "No multi-turn conversation DB/UI; open-by-id weak",
+      "justification": "Revisit prior advice"
+    },
+    {
+      "id": "BR-UX-04",
+      "area": "UX",
+      "priority": "Must Have",
+      "requirement": "Voice/Text switching",
+      "status": "PASS",
+      "evidence": "Mode selector Step 1",
+      "gap": "\u2014",
+      "justification": "User preference"
+    },
+    {
+      "id": "BR-UX-05",
+      "area": "UX",
+      "priority": "Must Have",
+      "requirement": "Error handling",
+      "status": "PASS",
+      "evidence": "STT + diagnosis error cards",
+      "gap": "\u2014",
+      "justification": "Recoverable failures"
+    },
+    {
+      "id": "BR-UX-06",
+      "area": "UX",
+      "priority": "Should Have",
+      "requirement": "Offline handling",
+      "status": "PARTIAL",
+      "evidence": "clientFallback when API down",
+      "gap": "Offline banner; STT needs network",
+      "justification": "Low-connectivity India"
+    },
+    {
+      "id": "BR-SEC-01",
+      "area": "Security",
+      "priority": "Must Have",
+      "requirement": "Microphone permissions",
+      "status": "PARTIAL",
+      "evidence": "Browser not-allowed string only",
+      "gap": "Android RECORD_AUDIO + Capacitor helper",
+      "justification": "OS-level mic access"
+    },
+    {
+      "id": "BR-SEC-02",
+      "area": "Security",
+      "priority": "Must Have",
+      "requirement": "Voice data encryption",
+      "status": "PARTIAL",
+      "evidence": "TLS in transit assumed",
+      "gap": "At-rest encryption design for recordings",
+      "justification": "Protect voice PII"
+    },
+    {
+      "id": "BR-SEC-03",
+      "area": "Security",
+      "priority": "Must Have",
+      "requirement": "Secure storage",
+      "status": "PARTIAL",
+      "evidence": "Postgres + R2 for images",
+      "gap": "Transcripts not stored securely",
+      "justification": "Controlled retention"
+    },
+    {
+      "id": "BR-SEC-04",
+      "area": "Security",
+      "priority": "Must Have",
+      "requirement": "User consent for voice processing",
+      "status": "FAIL",
+      "evidence": "Generic privacy pages only",
+      "gap": "Pre-STT consent modal (purpose/retention)",
+      "justification": "DPDP / lawful processing"
+    },
+    {
+      "id": "BR-SEC-05",
+      "area": "Security",
+      "priority": "Must Have",
+      "requirement": "Delete recordings",
+      "status": "FAIL",
+      "evidence": "Nothing voice-persisted yet",
+      "gap": "Retention + DELETE voice APIs",
+      "justification": "User control of biometric-adjacent data"
+    },
+    {
+      "id": "BR-SEC-06",
+      "area": "Security",
+      "priority": "Must Have",
+      "requirement": "Privacy compliance (DPDP)",
+      "status": "PARTIAL",
+      "evidence": "Disclaimer copy",
+      "gap": "Diagnosis/voice delete UX",
+      "justification": "India DPDP Act readiness"
+    },
+    {
+      "id": "BR-PERF-01",
+      "area": "Performance",
+      "priority": "Must Have",
+      "requirement": "Fast response time",
+      "status": "PARTIAL",
+      "evidence": "Heuristic fallback fast",
+      "gap": "Ollama timeout \u22648s \u2192 fallback",
+      "justification": "Perceived performance"
+    },
+    {
+      "id": "BR-PERF-02",
+      "area": "Performance",
+      "priority": "Should Have",
+      "requirement": "High STT accuracy",
+      "status": "PARTIAL",
+      "evidence": "Browser STT + noisy retry",
+      "gap": "WER benchmarks per language",
+      "justification": "Voice trust"
+    },
+    {
+      "id": "BR-PERF-03",
+      "area": "Performance",
+      "priority": "Must Have",
+      "requirement": "High AI response accuracy",
+      "status": "PARTIAL",
+      "evidence": "KB+Ollama",
+      "gap": "Golden-set fixtures in CI",
+      "justification": "Safety + usefulness"
+    },
+    {
+      "id": "BR-API-01",
+      "area": "API",
+      "priority": "Must Have",
+      "requirement": "STT API",
+      "status": "FAIL",
+      "evidence": "Browser-only",
+      "gap": "POST /diagnosis/stt (multipart)",
+      "justification": "WebView production path"
+    },
+    {
+      "id": "BR-API-02",
+      "area": "API",
+      "priority": "Must Have",
+      "requirement": "TTS API",
+      "status": "FAIL",
+      "evidence": "Browser-only",
+      "gap": "POST /diagnosis/tts optional",
+      "justification": "Consistent voice quality"
+    },
+    {
+      "id": "BR-API-03",
+      "area": "API",
+      "priority": "Should Have",
+      "requirement": "Language detection API",
+      "status": "FAIL",
+      "evidence": "Client-only heuristic",
+      "gap": "POST /diagnosis/detect-language",
+      "justification": "Server-side lang detect"
+    },
+    {
+      "id": "BR-API-04",
+      "area": "API",
+      "priority": "Should Have",
+      "requirement": "Translation API",
+      "status": "PARTIAL",
+      "evidence": "Internal _translate_diagnosis",
+      "gap": "Not standalone endpoint",
+      "justification": "Reuse across modules"
+    },
+    {
+      "id": "BR-API-05",
+      "area": "API",
+      "priority": "Must Have",
+      "requirement": "AI Diagnosis API",
+      "status": "PASS",
+      "evidence": "POST /diagnosis/analyse",
+      "gap": "\u2014",
+      "justification": "Core backend"
+    },
+    {
+      "id": "BR-API-06",
+      "area": "API",
+      "priority": "Must Have",
+      "requirement": "Image upload API",
+      "status": "PASS",
+      "evidence": "POST /upload/image",
+      "gap": "\u2014",
+      "justification": "Media pipeline"
+    },
+    {
+      "id": "BR-API-07",
+      "area": "API",
+      "priority": "Must Have",
+      "requirement": "Audio upload API",
+      "status": "FAIL",
+      "evidence": "Missing",
+      "gap": "POST /upload/audio",
+      "justification": "Persist engine audio"
+    },
+    {
+      "id": "BR-DB-01",
+      "area": "Database",
+      "priority": "Must Have",
+      "requirement": "Voice transcript storage",
+      "status": "FAIL",
+      "evidence": "Missing",
+      "gap": "voice_transcripts (consent-gated)",
+      "justification": "Audit + improve STT"
+    },
+    {
+      "id": "BR-DB-02",
+      "area": "Database",
+      "priority": "Must Have",
+      "requirement": "Conversation history storage",
+      "status": "FAIL",
+      "evidence": "In-session memory only",
+      "gap": "diagnosis_conversations",
+      "justification": "Multi-turn persistence"
+    },
+    {
+      "id": "BR-DB-03",
+      "area": "Database",
+      "priority": "Must Have",
+      "requirement": "AI diagnosis history",
+      "status": "PASS",
+      "evidence": "vehicle_diagnoses + Past Diagnoses UI",
+      "gap": "\u2014",
+      "justification": "User revisit"
+    },
+    {
+      "id": "BR-DB-04",
+      "area": "Database",
+      "priority": "Should Have",
+      "requirement": "Audit logs",
+      "status": "FAIL",
+      "evidence": "Missing",
+      "gap": "diagnosis_audit_events",
+      "justification": "Compliance + debug"
+    },
+    {
+      "id": "BR-TEST-01",
+      "area": "Quality",
+      "priority": "Must Have",
+      "requirement": "Automated diagnosis tests",
+      "status": "FAIL",
+      "evidence": "No test_diagnosis.py / extractor specs",
+      "gap": "Add pytest + unit tests",
+      "justification": "Prevent regressions"
+    },
+    {
+      "id": "BR-AND-01",
+      "area": "Mobile",
+      "priority": "Must Have",
+      "requirement": "Android RECORD_AUDIO permission",
+      "status": "FAIL",
+      "evidence": "Manifest has CAMERA/location only",
+      "gap": "Add RECORD_AUDIO + runtime request",
+      "justification": "APK mic required"
+    }
+  ],
+  "tests": [
+    {
+      "suite": "Functional",
+      "id": "TC-F-01",
+      "name": "Manual Step1\u21924 diagnose path",
+      "status": "PASS",
+      "detail": "Wizard + analyse API",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-02",
+      "name": "Voice language picker \u2192 capture vehicle",
+      "status": "PASS",
+      "detail": "voice-mode flow",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-03",
+      "name": "Extract Hindi/Bengali/Tamil brands",
+      "status": "PASS",
+      "detail": "multilingual extractor",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-04",
+      "name": "Missing field voice re-ask",
+      "status": "PASS",
+      "detail": "_askMissingFields",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-05",
+      "name": "Warning lights + severity",
+      "status": "PASS",
+      "detail": "Step 2 chips",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-06",
+      "name": "Image upload then analyse",
+      "status": "PASS",
+      "detail": "upload + image_urls",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-07",
+      "name": "Report cost/safe-drive/steps/disclaimer",
+      "status": "PASS",
+      "detail": "Report UI",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-08",
+      "name": "TTS play/pause/stop/replay",
+      "status": "PASS",
+      "detail": "voice-diagnosis.service",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-09",
+      "name": "Client KB fallback when API down",
+      "status": "PASS",
+      "detail": "clientFallback",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-10",
+      "name": "Auth history endpoint",
+      "status": "PASS",
+      "detail": "GET /diagnosis/history",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-11",
+      "name": "IDOR blocked on GET diagnosis",
+      "status": "PASS",
+      "detail": "MOB-007 owner check",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-12",
+      "name": "Upload audio recording",
+      "status": "FAIL",
+      "detail": "No UI/API",
+      "severity": "P0"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-13",
+      "name": "Upload video",
+      "status": "FAIL",
+      "detail": "No UI/API",
+      "severity": "P0"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-14",
+      "name": "Maintenance history entry",
+      "status": "FAIL",
+      "detail": "Not implemented",
+      "severity": "P1"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-15",
+      "name": "Auto language detect without picker",
+      "status": "FAIL",
+      "detail": "autoDetect unwired",
+      "severity": "P1"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-16",
+      "name": "Full prompt localization kn/ml/gu/pa/or",
+      "status": "FAIL",
+      "detail": "PROMPTS only 6 langs",
+      "severity": "P1"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-17",
+      "name": "Angular Past Diagnoses history UI",
+      "status": "PASS",
+      "detail": "history-panel on Claude tip",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-18",
+      "name": "Server STT for WebView/Safari",
+      "status": "FAIL",
+      "detail": "Browser STT only",
+      "severity": "P0"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-19",
+      "name": "Mic consent before STT",
+      "status": "FAIL",
+      "detail": "Missing",
+      "severity": "P0"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-20",
+      "name": "Android RECORD_AUDIO declared",
+      "status": "FAIL",
+      "detail": "Manifest gap",
+      "severity": "P0"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-21",
+      "name": "Persist conversation transcripts",
+      "status": "FAIL",
+      "detail": "No DB",
+      "severity": "P1"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-22",
+      "name": "Delete voice data (DPDP)",
+      "status": "FAIL",
+      "detail": "Missing",
+      "severity": "P1"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-23",
+      "name": "Post-diagnosis follow-up questions",
+      "status": "FAIL",
+      "detail": "Not in analyse",
+      "severity": "P2"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-24",
+      "name": "Vector RAG for diagnosis KB",
+      "status": "FAIL",
+      "detail": "Keyword only",
+      "severity": "P2"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-25",
+      "name": "Open past diagnosis by id from history",
+      "status": "PARTIAL",
+      "detail": "List only; no detail navigation",
+      "severity": "P2"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-26",
+      "name": "Guest can analyse without login",
+      "status": "PASS",
+      "detail": "Public analyse + rate limit",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-F-27",
+      "name": "detected_language sent on analyse",
+      "status": "PASS",
+      "detail": "Claude Angular + DiagnoseRequest",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Security",
+      "id": "TC-S-01",
+      "name": "Unauth GET diagnosis denied",
+      "status": "PASS",
+      "detail": "owner auth",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Security",
+      "id": "TC-S-02",
+      "name": "Prompt injection fencing",
+      "status": "PARTIAL",
+      "detail": "User text in prompts",
+      "severity": "P0"
+    },
+    {
+      "suite": "Security",
+      "id": "TC-S-03",
+      "name": "Rate limit analyse",
+      "status": "PASS",
+      "detail": "documented limits",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Security",
+      "id": "TC-S-04",
+      "name": "Audio upload validation",
+      "status": "FAIL",
+      "detail": "No audio upload",
+      "severity": "P1"
+    },
+    {
+      "suite": "Security",
+      "id": "TC-S-05",
+      "name": "Mic consent logged before STT",
+      "status": "FAIL",
+      "detail": "No consent event",
+      "severity": "P0"
+    },
+    {
+      "suite": "Performance",
+      "id": "TC-P-01",
+      "name": "Analyse p95 with fallback",
+      "status": "PARTIAL",
+      "detail": "Ollama unbounded",
+      "severity": "P1"
+    },
+    {
+      "suite": "Performance",
+      "id": "TC-P-02",
+      "name": "STT works offline",
+      "status": "FAIL",
+      "detail": "Web Speech needs net",
+      "severity": "P1"
+    },
+    {
+      "suite": "Performance",
+      "id": "TC-P-03",
+      "name": "Image upload \u226410MB reject",
+      "status": "PASS",
+      "detail": "upload validation path",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "A11y",
+      "id": "TC-A-01",
+      "name": "Voice overlay SR labels",
+      "status": "PARTIAL",
+      "detail": "Audit incomplete",
+      "severity": "P2"
+    },
+    {
+      "suite": "A11y",
+      "id": "TC-A-02",
+      "name": "aria-live for interim transcript",
+      "status": "FAIL",
+      "detail": "Missing",
+      "severity": "P2"
+    },
+    {
+      "suite": "Mobile",
+      "id": "TC-M-01",
+      "name": "No horizontal overflow on route",
+      "status": "PASS",
+      "detail": "mobile-layout e2e",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Mobile",
+      "id": "TC-M-02",
+      "name": "Voice overlay one-handed",
+      "status": "PARTIAL",
+      "detail": "No driving mode",
+      "severity": "P2"
+    },
+    {
+      "suite": "Regression",
+      "id": "TC-R-01",
+      "name": "API pytest diagnosis suite",
+      "status": "FAIL",
+      "detail": "No test_diagnosis.py",
+      "severity": "P0"
+    },
+    {
+      "suite": "Regression",
+      "id": "TC-R-02",
+      "name": "Voice extractor unit tests",
+      "status": "FAIL",
+      "detail": "No *.spec.ts",
+      "severity": "P0"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-I-01",
+      "name": "Ollama down \u2192 heuristic report",
+      "status": "PASS",
+      "detail": "fallback path",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-I-02",
+      "name": "Vision on image_url",
+      "status": "PARTIAL",
+      "detail": "vision.py untested quality",
+      "severity": "P2"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-I-03",
+      "name": "voice/extract then autofill",
+      "status": "PASS",
+      "detail": "Claude tip path",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Usability",
+      "id": "TC-U-01",
+      "name": "Manual vs Voice mode clear",
+      "status": "PASS",
+      "detail": "Step 1 selector",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Usability",
+      "id": "TC-U-02",
+      "name": "Disclaimer before submit",
+      "status": "PASS",
+      "detail": "Step 3",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Usability",
+      "id": "TC-U-03",
+      "name": "safe_to_drive=false banner prominence",
+      "status": "PASS",
+      "detail": "Report warning UI",
+      "severity": "\u2014"
+    }
+  ]
+}
