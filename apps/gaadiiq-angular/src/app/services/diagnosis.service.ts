@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom, Observable } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface PossibleCause {
@@ -40,6 +41,11 @@ export interface DiagnosisReport {
   needs_more_info?: boolean;
   /** BR-ML-04 — a non-English response was asked for but could not be produced. */
   translation_failed?: boolean;
+  /**
+   * True when this came from the built-in table rather than the API, because
+   * the API could not be reached. Never set by the server.
+   */
+  offline_fallback?: boolean;
   /** Dashboard telltale identified from an uploaded photo, when one was sent. */
   warning_light_match?: WarningLightMatch;
 }
@@ -82,6 +88,16 @@ export interface DiagnoseRequest {
   user_id?: string;
   detected_language?: string;
 }
+
+/**
+ * How long to wait for the API before showing the offline table.
+ *
+ * Generous on purpose. The diagnosis path can legitimately take many seconds —
+ * a knowledge-base miss goes on to a model — and a driver would rather wait
+ * than read a canned answer. Short enough that a dead backend does not leave
+ * somebody staring at a spinner at the roadside.
+ */
+const API_TIMEOUT_MS = 30_000;
 
 const DISCLAIMER =
   '⚠️ IMPORTANT DISCLAIMER: This is a preliminary AI-assisted assessment only. ' +
@@ -309,24 +325,98 @@ export class DiagnosisService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Ask the API for a diagnosis, falling back to the local table only if it
+   * cannot be reached — and saying so when that happens.
+   *
+   * This used to display `clientFallback()` IMMEDIATELY, clear the loading
+   * flag, and fire the API call off in the background with `.catch(() => {})`.
+   * Three things followed from that, and all three were reported as bugs:
+   *
+   *   1. The first thing every user saw was a canned answer from a table of
+   *      about a dozen English strings. If the API was slow, that is what they
+   *      read; if it failed, that is what they kept.
+   *   2. The failure was silent. An empty catch meant a backend outage looked
+   *      exactly like a working diagnosis.
+   *   3. The table is English-only, so a Hindi speaker got English no matter
+   *      what the API would have replied — which is what "it looks hardcoded"
+   *      meant. It was hardcoded.
+   *
+   * The local table is still worth keeping: a driver at the roadside with a
+   * bad connection is the case this product exists for, and something
+   * conservative beats a spinner. But it is a fallback, not the answer, and
+   * `offline_fallback` marks it so the page can say which one is on screen.
+   * The same rule as `translation_failed`: a degraded answer that is
+   * indistinguishable from a real one is the failure, not the degradation.
+   */
   async analyse(request: DiagnoseRequest): Promise<DiagnosisReport | null> {
     this.loading.set(true);
     this.error.set(null);
     this.report.set(null);
 
-    // Show client-side result immediately (no API latency / no backend required)
-    const immediate = clientFallback(request);
-    this.report.set(immediate);
-    this.loading.set(false);
+    try {
+      const result = await firstValueFrom(
+        this.http
+          .post<DiagnosisReport>(`${this.api}/analyse`, request)
+          .pipe(timeout(API_TIMEOUT_MS)),
+      );
+      if (result) {
+        this.report.set(result);
+        return result;
+      }
+      throw new Error('empty response');
+    } catch (err) {
+      // Reached only when the API is unreachable, erroring or too slow.
+      //
+      // WHY THE STATUS IS IN THE MESSAGE
+      //
+      // "Could not reach the service" is true of a blocked origin, an expired
+      // rate limit window and a crashed backend alike, and those three need
+      // completely different fixes. Naming the status turns a screenshot into
+      // a diagnosis instead of a guess.
+      const status = (err as HttpErrorResponse)?.status;
+      const offline = { ...clientFallback(request), offline_fallback: true };
+      this.report.set(offline);
+      this.error.set(this._failureMessage(status));
+      return offline;
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
-    // Fire-and-forget: upgrade to real AI result if the backend is available
-    this.http
-      .post<DiagnosisReport>(`${this.api}/analyse`, request)
-      .toPromise()
-      .then(result => { if (result) this.report.set(result); })
-      .catch(() => { /* keep the already-displayed client result */ });
 
-    return immediate;
+  /**
+   * Say what actually went wrong, in words that point at the fix.
+   *
+   * A rate limit is deliberately NOT given the offline estimate's framing:
+   * nothing is broken, the answer is simply "wait", and dressing that up as a
+   * diagnosis would be the same mistake this whole change is undoing.
+   */
+  private _failureMessage(status: number | undefined): string {
+    const offlineNote =
+      ' This is an offline estimate from a small built-in table — English only, ' +
+      'and far less specific than a real diagnosis.';
+
+    if (status === 429) {
+      return (
+        'Too many diagnosis requests in a short time (the limit is 5 a minute, ' +
+        '20 an hour). Wait a minute and try again.' + offlineNote
+      );
+    }
+    if (status === 0 || status === undefined) {
+      // Angular reports a blocked or failed request as status 0, with no body,
+      // because the browser refuses to expose the response. A CORS rejection
+      // and a dead connection look identical from here.
+      return (
+        'Your browser could not reach the diagnosis service. That is usually ' +
+        'the connection, or this site\'s address not being allowed by the API ' +
+        '(CORS).' + offlineNote
+      );
+    }
+    if (status >= 500) {
+      return `The diagnosis service returned an error (HTTP ${status}).` + offlineNote;
+    }
+    return `The diagnosis service rejected the request (HTTP ${status}).` + offlineNote;
   }
 
   riskColor(level: string): string {

@@ -177,3 +177,124 @@ describe('spoken model years', () => {
     expect(r.missing).toEqual([]);
   });
 });
+
+// The reported bug: a year given early vanished when a later utterance was
+// processed, and the assistant asked for it again.
+//
+// Cause: `result.model_year` was assigned unconditionally, so a transcript
+// with no year still carried the KEY `model_year` with the value `undefined`.
+// The caller merged with `{ ...before, ...info }`, and a present-but-undefined
+// key overwrites. Only the year and the odometer were affected — every other
+// field is assigned inside an `if (matched)` and is simply absent.
+describe('absent fields are absent, not undefined', () => {
+  it('omits model_year entirely when the transcript has no year', () => {
+    const r = extractVehicleInfo('it runs on petrol with a manual gearbox');
+    expect('model_year' in r).toBe(false);
+    expect(r.model_year).toBeUndefined();
+  });
+
+  it('omits odometer_km entirely when the transcript has no reading', () => {
+    const r = extractVehicleInfo('Maruti Swift petrol');
+    expect('odometer_km' in r).toBe(false);
+  });
+
+  it('still reports both when they are present', () => {
+    const r = extractVehicleInfo('a 2010 Swift that has done 50,000 km');
+    expect('model_year' in r).toBe(true);
+    expect(r.model_year).toBe(2010);
+    expect(r.odometer_km).toBe(50000);
+  });
+
+  it('spreading a later result over an earlier one keeps the year', () => {
+    // The exact operation the component performs. This is the assertion that
+    // would have caught the bug: it fails on the old extractor.
+    const first = extractVehicleInfo('my car is a 2010 Maruti Swift');
+    const second = extractVehicleInfo('petrol, manual');
+    const merged = { ...first, ...second } as any;
+    expect(merged.model_year).toBe(2010);
+    expect(merged.fuel_type).toBe('Petrol');
+    expect(merged.transmission).toBe('Manual');
+  });
+});
+
+// Voice diagnosis worked in English and nowhere else. `normalise` used
+// `[^\w\s]`, and in JavaScript `\w` is `[A-Za-z0-9_]` — so every Devanagari,
+// Bengali, Tamil, Telugu, Kannada, Malayalam, Gujarati, Gurmukhi and Odia
+// character was replaced by a space. Every step built on the normalised text
+// was reading blank input.
+describe('non-English transcripts', () => {
+  it('keeps the script instead of erasing it', () => {
+    // The regression in one assertion: if this returns nothing, nothing below
+    // can work.
+    const r = extractVehicleInfo('मेरी मारुति स्विफ्ट 2010 पेट्रोल मैनुअल है');
+    expect(r.manufacturer).toBe('Maruti Suzuki');
+    expect(r.model).toBe('Swift');
+    expect(r.model_year).toBe(2010);
+    expect(r.fuel_type).toBe('Petrol');
+    expect(r.transmission).toBe('Manual');
+    expect(r.missing).toEqual([]);
+  });
+
+  it('reads Indic digits as years', () => {
+    expect(extractVehicleInfo('मेरी कार २०१० मॉडल').model_year).toBe(2010);      // Devanagari
+    expect(extractVehicleInfo('আমার গাড়ি ২০১৫').model_year).toBe(2015);          // Bengali
+    expect(extractVehicleInfo('ਮੇਰੀ ਗੱਡੀ ੨੦੧੮ ਮਾਡਲ').model_year).toBe(2018);      // Gurmukhi
+    expect(extractVehicleInfo('எனது கார் ௨௦௧௨').model_year).toBe(2012);          // Tamil
+    expect(extractVehicleInfo('નમારી કાર ૨૦૨૦').model_year).toBe(2020);          // Gujarati
+  });
+
+  it('reads a year spoken as words', () => {
+    expect(extractVehicleInfo('मेरी गाड़ी दो हजार दस मॉडल है').model_year).toBe(2010);
+    expect(extractVehicleInfo('दो हज़ार पंद्रह').model_year).toBe(2015);
+    expect(extractVehicleInfo('আমার গাড়ি দুই হাজার বিশ').model_year).toBe(2020);
+    expect(extractVehicleInfo('என் கார் இரண்டு ஆயிரம் பத்து').model_year).toBe(2010);
+  });
+
+  it('does not read a spoken odometer as a year', () => {
+    // "twenty thousand kilometres" — only "two thousand ..." forms a year.
+    expect(extractVehicleInfo('बीस हजार किलोमीटर').model_year).toBeUndefined();
+  });
+
+  it('recognises fuel and gearbox in every language the picker offers', () => {
+    const cases: Array<[string, string, string]> = [
+      ['हिन्दी',    'पेट्रोल मैनुअल',        'Petrol'],
+      ['বাংলা',     'ডিজেল অটোমেটিক',      'Diesel'],
+      ['தமிழ்',     'பெட்ரோல் மேனுவல்',     'Petrol'],
+      ['తెలుగు',    'డీజిల్ ఆటోమేటిక్',      'Diesel'],
+      ['ಕನ್ನಡ',     'ಪೆಟ್ರೋಲ್ ಮ್ಯಾನ್ಯುಯಲ್',  'Petrol'],
+      ['മലയാളം',   'ഡീസൽ ഓട്ടോമാറ്റിക്',   'Diesel'],
+      ['ગુજરાતી',   'પેટ્રોલ મેન્યુઅલ',       'Petrol'],
+      ['ਪੰਜਾਬੀ',    'ਡੀਜ਼ਲ ਆਟੋਮੈਟਿਕ',       'Diesel'],
+      ['ଓଡ଼ିଆ',     'ପେଟ୍ରୋଲ ମାନୁଆଲ',       'Petrol'],
+    ];
+    for (const [language, transcript, fuel] of cases) {
+      const r = extractVehicleInfo(transcript);
+      expect(r.fuel_type).withContext(`fuel in ${language}`).toBe(fuel);
+      expect(r.transmission).withContext(`gearbox in ${language}`).toBeTruthy();
+    }
+  });
+
+  it('recognises the common makes in every script', () => {
+    const makes: Array<[string, string]> = [
+      ['मारुति', 'Maruti Suzuki'],
+      ['মারুতি', 'Maruti Suzuki'],
+      ['மாருதி', 'Maruti Suzuki'],
+      ['మారుతి', 'Maruti Suzuki'],
+      ['ಮಾರುತಿ', 'Maruti Suzuki'],
+      ['മാരുതി', 'Maruti Suzuki'],
+      ['મારુતિ', 'Maruti Suzuki'],
+      ['ਮਾਰੂਤੀ', 'Maruti Suzuki'],
+      ['ମାରୁତି', 'Maruti Suzuki'],
+    ];
+    for (const [word, expected] of makes) {
+      expect(extractVehicleInfo(word).manufacturer).withContext(word).toBe(expected);
+    }
+  });
+
+  it('still reports what is genuinely missing rather than guessing', () => {
+    const r = extractVehicleInfo('मेरी मारुति स्विफ्ट है');
+    expect(r.manufacturer).toBe('Maruti Suzuki');
+    expect(r.missing).toContain('model_year');
+    expect(r.missing).toContain('fuel_type');
+  });
+});

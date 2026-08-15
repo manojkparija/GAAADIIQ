@@ -57,6 +57,21 @@ const MAKES: Record<string, string> = {
   // Telugu
   'మారుతి': 'Maruti Suzuki', 'హ్యుండాయ్': 'Hyundai', 'హోండా': 'Honda',
   'టాటా': 'Tata', 'మహీంద్రా': 'Mahindra', 'టొయోటా': 'Toyota',
+  // Kannada
+  'ಮಾರುತಿ': 'Maruti Suzuki', 'ಹುಂಡೈ': 'Hyundai', 'ಹೋಂಡಾ': 'Honda',
+  'ಟಾಟಾ': 'Tata', 'ಮಹೀಂದ್ರಾ': 'Mahindra', 'ಟೊಯೋಟಾ': 'Toyota', 'ಕಿಯಾ': 'Kia',
+  // Malayalam
+  'മാരുതി': 'Maruti Suzuki', 'ഹ്യുണ്ടായ്': 'Hyundai', 'ഹോണ്ട': 'Honda',
+  'ടാറ്റ': 'Tata', 'മഹീന്ദ്ര': 'Mahindra', 'ടൊയോട്ട': 'Toyota', 'കിയ': 'Kia',
+  // Gujarati
+  'મારુતિ': 'Maruti Suzuki', 'હ્યુન્ડાઇ': 'Hyundai', 'હોન્ડા': 'Honda',
+  'ટાટા': 'Tata', 'મહિન્દ્રા': 'Mahindra', 'ટોયોટા': 'Toyota', 'કિયા': 'Kia',
+  // Punjabi
+  'ਮਾਰੂਤੀ': 'Maruti Suzuki', 'ਹੁੰਡਈ': 'Hyundai', 'ਹੌਂਡਾ': 'Honda',
+  'ਟਾਟਾ': 'Tata', 'ਮਹਿੰਦਰਾ': 'Mahindra', 'ਟੋਯੋਟਾ': 'Toyota', 'ਕੀਆ': 'Kia',
+  // Odia
+  'ମାରୁତି': 'Maruti Suzuki', 'ହୁଣ୍ଡାଇ': 'Hyundai', 'ହୋଣ୍ଡା': 'Honda',
+  'ଟାଟା': 'Tata', 'ମହୀନ୍ଦ୍ରା': 'Mahindra', 'ଟୋୟୋଟା': 'Toyota', 'କିଆ': 'Kia',
 };
 
 const MODELS: Record<string, string> = {
@@ -107,9 +122,23 @@ const FUEL_MAP: Record<string, string> = {
   'पेट्रोल': 'Petrol', 'डीजल': 'Diesel', 'सीएनजी': 'CNG',
   'इलेक्ट्रिक': 'Electric', 'हाइब्रिड': 'Hybrid',
   // Bengali
-  'পেট্রোল': 'Petrol', 'ডিজেল': 'Diesel',
+  'পেট্রোল': 'Petrol', 'ডিজেল': 'Diesel', 'সিএনজি': 'CNG', 'ইলেকট্রিক': 'Electric',
   // Tamil
-  'பெட்ரோல்': 'Petrol', 'டீசல்': 'Diesel',
+  'பெட்ரோல்': 'Petrol', 'டீசல்': 'Diesel', 'சிஎன்ஜி': 'CNG', 'மின்சார': 'Electric',
+  // Telugu
+  'పెట్రోల్': 'Petrol', 'డీజిల్': 'Diesel', 'సిఎన్‌జి': 'CNG', 'ఎలక్ట్రిక్': 'Electric',
+  // Kannada
+  'ಪೆಟ್ರೋಲ್': 'Petrol', 'ಡೀಸೆಲ್': 'Diesel', 'ಸಿಎನ್‌ಜಿ': 'CNG', 'ಎಲೆಕ್ಟ್ರಿಕ್': 'Electric',
+  // Malayalam
+  'പെട്രോൾ': 'Petrol', 'ഡീസൽ': 'Diesel', 'സിഎൻജി': 'CNG', 'ഇലക്ട്രിക്': 'Electric',
+  // Marathi (Devanagari, but spelled differently enough to list)
+  'पेट्रोलवर': 'Petrol', 'डिझेल': 'Diesel',
+  // Gujarati
+  'પેટ્રોલ': 'Petrol', 'ડીઝલ': 'Diesel', 'સીએનજી': 'CNG', 'ઇલેક્ટ્રિક': 'Electric',
+  // Punjabi
+  'ਪੈਟਰੋਲ': 'Petrol', 'ਡੀਜ਼ਲ': 'Diesel', 'ਸੀਐਨਜੀ': 'CNG', 'ਇਲੈਕਟ੍ਰਿਕ': 'Electric',
+  // Odia
+  'ପେଟ୍ରୋଲ': 'Petrol', 'ଡିଜେଲ': 'Diesel', 'ସିଏନଜି': 'CNG', 'ଇଲେକ୍ଟ୍ରିକ': 'Electric',
 };
 
 const TRANSMISSION_MAP: Record<string, string> = {
@@ -118,14 +147,82 @@ const TRANSMISSION_MAP: Record<string, string> = {
   cvt: 'CVT',
   dct: 'DCT', 'dual clutch': 'DCT',
   amt: 'AMT', 'auto gear': 'AMT', 'ags': 'AMT',
-  // Hindi
-  'मैनुअल': 'Manual', 'ऑटोमैटिक': 'Automatic', 'ऑटोमेटिक': 'Automatic',
+  // Hindi / Marathi (Devanagari)
+  'मैनुअल': 'Manual', 'मॅन्युअल': 'Manual',
+  'ऑटोमैटिक': 'Automatic', 'ऑटोमेटिक': 'Automatic', 'ऑटोमॅटिक': 'Automatic',
   // Bengali
   'ম্যানুয়াল': 'Manual', 'অটোমেটিক': 'Automatic',
+  // Tamil
+  'மேனுவல்': 'Manual', 'ஆட்டோமேட்டிக்': 'Automatic',
+  // Telugu
+  'మాన్యువల్': 'Manual', 'ఆటోమేటిక్': 'Automatic',
+  // Kannada
+  'ಮ್ಯಾನ್ಯುಯಲ್': 'Manual', 'ಆಟೋಮ್ಯಾಟಿಕ್': 'Automatic',
+  // Malayalam
+  'മാനുവൽ': 'Manual', 'ഓട്ടോമാറ്റിക്': 'Automatic',
+  // Gujarati
+  'મેન્યુઅલ': 'Manual', 'ઓટોમેટિક': 'Automatic',
+  // Punjabi
+  'ਮੈਨੂਅਲ': 'Manual', 'ਆਟੋਮੈਟਿਕ': 'Automatic',
+  // Odia
+  'ମାନୁଆଲ': 'Manual', 'ଅଟୋମେଟିକ': 'Automatic',
 };
 
+/**
+ * Indic digits → ASCII. `२०१०`, `২০১০` and `௨௦௧௦` all mean 2010, and every
+ * parser below counts digits.
+ *
+ * Each Indic script lays its digits out contiguously from a base codepoint in
+ * the order 0-9, so one arithmetic rule covers all nine scripts the language
+ * picker offers rather than nine lookup tables.
+ */
+const DIGIT_BASES = [
+  0x0966, // Devanagari — Hindi, Marathi
+  0x09e6, // Bengali
+  0x0a66, // Gurmukhi — Punjabi
+  0x0ae6, // Gujarati
+  0x0b66, // Odia
+  0x0be6, // Tamil
+  0x0c66, // Telugu
+  0x0ce6, // Kannada
+  0x0d66, // Malayalam
+];
+
+export function foldIndicDigits(text: string): string {
+  let out = '';
+  for (const ch of text) {
+    const code = ch.codePointAt(0)!;
+    const base = DIGIT_BASES.find(b => code >= b && code <= b + 9);
+    out += base === undefined ? ch : String(code - base);
+  }
+  return out;
+}
+
+/**
+ * Lowercase, fold Indic digits, and strip punctuation.
+ *
+ * The character class matters more than it looks. This was `[^\w\s]`, and in
+ * JavaScript `\w` is `[A-Za-z0-9_]` — it does not mean "word character" in any
+ * script beyond Latin. So every Devanagari, Bengali, Tamil, Telugu, Kannada,
+ * Malayalam, Gujarati, Gurmukhi and Odia character was replaced by a space,
+ * and `normalise('मेरी गाड़ी दो हजार दस मॉडल है')` returned an empty string.
+ *
+ * That is why voice diagnosis worked in English and nowhere else: every step
+ * built on `norm` — the year, the odometer, the whole keyword path — was
+ * reading blank text. Make and model survived only because `matchesAny` falls
+ * back to the untouched original for non-ASCII keys.
+ *
+ * `\p{L}\p{M}\p{N}` with the `u` flag means letters, the combining marks that
+ * complete them, and numbers, in ANY script. `\p{M}` is not optional: Devanagari
+ * vowel signs are combining marks rather than letters, so without it `मेरी`
+ * normalises to `म र` — every Indic word silently loses its vowels.
+ */
 function normalise(text: string): string {
-  return text.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  return foldIndicDigits(text)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // ── Year ─────────────────────────────────────────────────────────────────────
@@ -163,6 +260,87 @@ function wordsToUnder100(words: string[]): number | undefined {
   const unit = b in UNITS && UNITS[b] < 10 ? UNITS[b] : /^\d$/.test(b) ? parseInt(b, 10) : undefined;
   if (tens === undefined || unit === undefined) return undefined;
   return tens + unit;
+}
+
+/**
+ * Spoken years in Indian languages.
+ *
+ * A recogniser set to hi-IN returns "दो हज़ार दस", not "2010" — the same
+ * words-not-digits problem English had, in nine more scripts. Rather than a
+ * full numeral grammar per language, this covers the one construction years
+ * are actually spoken in: <thousands> <hundreds-or-tens> — "two thousand ten",
+ * "two thousand fifteen".
+ *
+ * Only the words needed for 1990-2030 are listed. A year is the only number
+ * this function is allowed to produce, so a partial vocabulary cannot make it
+ * confidently wrong — it simply returns nothing and the assistant asks.
+ */
+const INDIC_THOUSAND = [
+  'हजार', 'हज़ार',        // Hindi, Marathi
+  'হাজার',                 // Bengali
+  'ஆயிரம்',                // Tamil
+  'వెయ్యి', 'వేల',          // Telugu
+  'ಸಾವಿರ',                 // Kannada
+  'ആയിരം',                 // Malayalam
+  'હજાર',                  // Gujarati
+  'ਹਜ਼ਾਰ', 'ਹਜਾਰ',        // Punjabi
+  'ହଜାର',                  // Odia
+];
+
+/** Number words 0-30 in the scripts the picker offers, mapped to a value. */
+const INDIC_NUMBERS: Record<string, number> = {
+  // Hindi / Marathi
+  'शून्य': 0, 'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 'पाँच': 5,
+  'छह': 6, 'छः': 6, 'सात': 7, 'आठ': 8, 'नौ': 9, 'दस': 10, 'ग्यारह': 11,
+  'बारह': 12, 'तेरह': 13, 'चौदह': 14, 'पंद्रह': 15, 'सोलह': 16, 'सत्रह': 17,
+  'अठारह': 18, 'उन्नीस': 19, 'बीस': 20, 'इक्कीस': 21, 'बाईस': 22, 'तेईस': 23,
+  'चौबीस': 24, 'पच्चीस': 25, 'छब्बीस': 26, 'सत्ताईस': 27, 'अट्ठाईस': 28,
+  'उनतीस': 29, 'तीस': 30,
+  // Bengali
+  'এক': 1, 'দুই': 2, 'তিন': 3, 'চার': 4, 'পাঁচ': 5, 'ছয়': 6, 'সাত': 7,
+  'আট': 8, 'নয়': 9, 'দশ': 10, 'পনেরো': 15, 'বিশ': 20, 'পঁচিশ': 25,
+  // Tamil
+  'ஒன்று': 1, 'இரண்டு': 2, 'மூன்று': 3, 'நான்கு': 4, 'ஐந்து': 5, 'ஆறு': 6,
+  'ஏழு': 7, 'எட்டு': 8, 'ஒன்பது': 9, 'பத்து': 10, 'பதினைந்து': 15, 'இருபது': 20,
+  // Telugu
+  'ఒకటి': 1, 'రెండు': 2, 'మూడు': 3, 'నాలుగు': 4, 'ఐదు': 5, 'ఆరు': 6,
+  'ఏడు': 7, 'ఎనిమిది': 8, 'తొమ్మిది': 9, 'పది': 10, 'పదిహేను': 15, 'ఇరవై': 20,
+  // Kannada
+  'ಒಂದು': 1, 'ಎರಡು': 2, 'ಮೂರು': 3, 'ನಾಲ್ಕು': 4, 'ಐದು': 5, 'ಆರು': 6,
+  'ಏಳು': 7, 'ಎಂಟು': 8, 'ಒಂಬತ್ತು': 9, 'ಹತ್ತು': 10, 'ಹದಿನೈದು': 15, 'ಇಪ್ಪತ್ತು': 20,
+  // Malayalam
+  'ഒന്ന്': 1, 'രണ്ട്': 2, 'മൂന്ന്': 3, 'നാല്': 4, 'അഞ്ച്': 5, 'ആറ്': 6,
+  'ഏഴ്': 7, 'എട്ട്': 8, 'ഒൻപത്': 9, 'പത്ത്': 10, 'പതിനഞ്ച്': 15, 'ഇരുപത്': 20,
+  // Gujarati
+  'એક': 1, 'બે': 2, 'ત્રણ': 3, 'ચાર': 4, 'પાંચ': 5, 'છ': 6, 'સાત': 7,
+  'આઠ': 8, 'નવ': 9, 'દસ': 10, 'પંદર': 15, 'વીસ': 20,
+  // Punjabi
+  'ਇੱਕ': 1, 'ਦੋ': 2, 'ਤਿੰਨ': 3, 'ਚਾਰ': 4, 'ਪੰਜ': 5, 'ਛੇ': 6, 'ਸੱਤ': 7,
+  'ਅੱਠ': 8, 'ਨੌਂ': 9, 'ਦਸ': 10, 'ਪੰਦਰਾਂ': 15, 'ਵੀਹ': 20,
+  // Odia
+  'ଏକ': 1, 'ଦୁଇ': 2, 'ତିନି': 3, 'ଚାରି': 4, 'ପାଞ୍ଚ': 5, 'ଛଅ': 6, 'ସାତ': 7,
+  'ଆଠ': 8, 'ନଅ': 9, 'ଦଶ': 10, 'ପନ୍ଦର': 15, 'କୋଡ଼ିଏ': 20,
+};
+
+/**
+ * "दो हज़ार दस" → 2010. Returns undefined when the sentence is not a year
+ * spoken in this shape.
+ */
+function indicSpokenYear(words: string[]): number | undefined {
+  const at = words.findIndex(w => INDIC_THOUSAND.includes(w));
+  if (at === -1) return undefined;
+
+  const before = words[at - 1];
+  const thousands = before !== undefined ? INDIC_NUMBERS[before] : undefined;
+  // Only "two thousand ..." makes a year in range; "one thousand" would be
+  // 1000-something and "twenty thousand" is an odometer reading.
+  if (thousands !== 2) return undefined;
+
+  // The remainder may be one word ("दस" = 10) or absent ("दो हज़ार" = 2000).
+  const rest = words.slice(at + 1);
+  const tail = rest.length ? INDIC_NUMBERS[rest[0]] : 0;
+  if (tail === undefined) return undefined;
+  return 2000 + tail;
 }
 
 /** Units that mark a spoken number as a distance rather than a year. */
@@ -231,6 +409,13 @@ function extractYear(text: string): number | undefined {
       const yr = plausible(2020);
       if (yr) return yr;
     }
+  }
+
+  // 4b. Spoken as words in an Indian language — "दो हज़ार दस".
+  const indic = indicSpokenYear(words);
+  if (indic !== undefined) {
+    const yr = plausible(indic);
+    if (yr) return yr;
   }
 
   // 5. A two-digit year, but only where the sentence says it is one —
@@ -314,8 +499,12 @@ export function extractVehicleInfo(transcript: string): ExtractedVehicleInfo {
     if (matchesAny(key, norm, orig)) { result.model = MODELS[key]; break; }
   }
 
-  // Year
-  result.model_year = extractYear(norm);
+  // Year. Assigned only when found: a present-but-undefined key is
+  // indistinguishable from a real value to a spread merge, and that is how a
+  // later utterance about fuel type used to erase a year the driver had
+  // already given.
+  const year = extractYear(norm);
+  if (year !== undefined) result.model_year = year;
 
   // Fuel
   for (const [key, value] of Object.entries(FUEL_MAP)) {
@@ -328,7 +517,9 @@ export function extractVehicleInfo(transcript: string): ExtractedVehicleInfo {
   }
 
   // Odometer — parsed from the original text, which still has the separators.
-  result.odometer_km = extractOdometer(orig);
+  // Same rule as the year: set it or leave it absent, never present-and-empty.
+  const odometer = extractOdometer(orig);
+  if (odometer !== undefined) result.odometer_km = odometer;
 
   // Required fields check
   const required: Array<keyof ExtractedVehicleInfo> = ['manufacturer', 'model', 'model_year', 'fuel_type', 'transmission'];

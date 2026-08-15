@@ -541,9 +541,39 @@ async def _call_gemini(prompt: str) -> dict:
     return json.loads(text)
 
 
+async def _translate_call(prompt: str) -> dict:
+    """
+    Run a translation prompt through the first provider that answers.
+
+    Gemini first, then Ollama. This used to be Ollama only, and
+    `OLLAMA_BASE_URL` is unset in every deployed environment — so every
+    non-English diagnosis came back in English with `translation_failed: true`.
+    The flag was honest, which is why nothing looked broken in the logs, but a
+    Hindi speaker was still reading English.
+
+    Gemini rather than GPT-4o: translation is not the tiered feature, and
+    Flash-Lite is cheap enough to run on every non-English request.
+    """
+    from services import gemini_gateway
+
+    try:
+        return json.loads(await gemini_gateway.generate_text(prompt, caller="diagnosis_translate"))
+    except Exception as exc:
+        logger.warning("Gemini translation failed, trying Ollama: %s", exc)
+
+    async with httpx.AsyncClient(timeout=OLLAMA_TRANSLATE_TIMEOUT) as client:
+        resp = await client.post(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "format": "json"},
+        )
+        resp.raise_for_status()
+        return json.loads(resp.json().get("response", "{}"))
+
+
 async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
     """
-    Translate key diagnosis text fields to target_lang using Ollama.
+    Translate key diagnosis text fields to target_lang. See _translate_call
+    for which providers are tried.
 
     Sets result["translation_failed"] when the target language was requested
     but the text is still English (BR-ML-04). Silently serving English to a
@@ -576,13 +606,7 @@ async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
     )
 
     try:
-        async with httpx.AsyncClient(timeout=OLLAMA_TRANSLATE_TIMEOUT) as client:
-            resp = await client.post(
-                f"{OLLAMA_BASE_URL}/api/generate",
-                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "format": "json"},
-            )
-            resp.raise_for_status()
-            translated: dict = json.loads(resp.json().get("response", "{}"))
+        translated: dict = await _translate_call(prompt)
 
         # An empty or unusable response is a failure even though no exception
         # was raised — the user would otherwise get English with no indication.

@@ -455,6 +455,49 @@ test.describe('Voice Diagnosis — browser', () => {
       expect(yearQuestions, 'the year was asked for after it was answered').toBeLessThan(2);
     });
 
+  test('VD-E2E-0410 a captured year survives the answers that follow it',
+    async ({ page, context }) => {
+      // The reported bug, in the order the user hit it: give the year, then
+      // answer the next question, and watch the year disappear and be asked
+      // for again.
+      //
+      // `extractVehicleInfo` assigned `model_year` unconditionally, so an
+      // utterance with no year still carried the KEY with value `undefined`,
+      // and the component merged with `{ ...before, ...info }` — where a
+      // present-but-undefined key overwrites. Only the year and odometer were
+      // affected; every other field is absent rather than undefined when it
+      // does not match, which is why nothing else vanished.
+      //
+      // The chip is the assertion. A slot-filling conversation only ever
+      // accumulates: nothing said later may erase an earlier answer.
+      await context.grantPermissions(['microphone']);
+      await installSpeechRecognition(page);
+      await page.goto(DIAGNOSIS);
+      await startListening(page);
+
+      // Turn 1: make, model and year together.
+      await page.evaluate(() => {
+        (window as any).__lastRecognition?.__emit('my car is a Maruti Swift 2010');
+      });
+      await expect(page.locator('.vm-chip', { hasText: '2010' }))
+        .toBeVisible({ timeout: 15_000 });
+
+      // Turn 2: fuel and gearbox, no year mentioned. This is the utterance
+      // that used to wipe it.
+      await expect
+        .poll(async () => page.evaluate(() => (window as any).__srStarted ?? 0), { timeout: 15_000 })
+        .toBeGreaterThan(1);
+      await page.evaluate(() => {
+        (window as any).__lastRecognition?.__emit('petrol and manual transmission');
+      });
+
+      await expect(page.locator('.vm-chip', { hasText: 'Petrol' }))
+        .toBeVisible({ timeout: 15_000 });
+
+      // The year is still there.
+      await expect(page.locator('.vm-chip', { hasText: '2010' })).toBeVisible();
+    });
+
   test('VD-E2E-0408 the microphone is not open while the assistant is speaking',
     async ({ page, context }) => {
       // Opening the mic over our own audio makes the recogniser transcribe the

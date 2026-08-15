@@ -148,6 +148,34 @@ async def _fix_schema():
                 "ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS revoked BOOLEAN NOT NULL DEFAULT FALSE;"
             )
             _log.info("Schema: refresh_tokens.revoked column ensured")
+
+            # vehicle_diagnoses.listing_id is NOT NULL in production and
+            # appears in no model or migration — drift that predates both.
+            # Nothing sets it, so every INSERT raised NotNullViolationError and
+            # every POST /diagnosis/analyse returned 500. Migration 0035 is the
+            # real fix; this repeats it at boot because the endpoint is on the
+            # request path and a migration that did not run leaves the whole
+            # feature dead.
+            #
+            # Idempotent: DROP NOT NULL on an already-nullable column is a
+            # no-op, and the guard skips a database that has no such column.
+            await conn.execute(
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'vehicle_diagnoses'
+                          AND column_name = 'listing_id'
+                          AND is_nullable = 'NO'
+                    ) THEN
+                        ALTER TABLE vehicle_diagnoses
+                            ALTER COLUMN listing_id DROP NOT NULL;
+                    END IF;
+                END $$;
+                """
+            )
+            _log.info("Schema: vehicle_diagnoses.listing_id nullability ensured")
         finally:
             await conn.close()
     except Exception as e:
