@@ -35,8 +35,24 @@ describe('VoiceModeComponent echo stripping', () => {
     return component._stripSpokenPrompt(heard);
   };
 
-  it('removes the Hindi confirmation the recogniser echoed back', () => {
-    // The exact shape seen in production.
+  it('removes the echo when the recogniser transliterates the brand names', () => {
+    // The real case, copied from a production screenshot, and the one a
+    // prefix match cannot handle.
+    //
+    // The confirmation interpolates canonical values, so TTS SPEAKS "Maruti
+    // Suzuki, Swift, 2010, Petrol, Manual" in English while a hi-IN recogniser
+    // writes back "मारुति स्विफ्ट 2010 पेट्रोल मैन्युअल". Word three onwards
+    // never matches. Note also "अब" coming back as "का" — a plain mis-hearing,
+    // which is why the tail match uses a shrinking window rather than
+    // demanding the whole sentence.
+    const prompt = 'ठीक है — Maruti Suzuki, Swift, 2010, Petrol, Manual। अब कृपया अपनी गाड़ी की समस्या बताइए।';
+    const heard =
+      'ठीक है मारुति स्विफ्ट 2010 पेट्रोल मैन्युअल का कृपया अपनी गाड़ी की समस्या बताइए ' +
+      'गाड़ी में ठीक से ठंडी नहीं हो रही है';
+    expect(strip(prompt, heard)).toBe('गाड़ी में ठीक से ठंडी नहीं हो रही है');
+  });
+
+  it('removes a fully echoed Hindi confirmation', () => {
     const prompt = 'ठीक है मारुति स्विफ्ट 2010 पेट्रोल मैन्युअल अब कृपया अपनी गाड़ी की समस्या बताइए';
     const heard = `${prompt} गाड़ी की इंजन काफी हिट हो रही है`;
     expect(strip(prompt, heard)).toBe('गाड़ी की इंजन काफी हिट हो रही है');

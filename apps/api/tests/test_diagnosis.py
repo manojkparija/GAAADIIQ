@@ -566,6 +566,90 @@ class TestDiagnosisSurvivesAStorageFailureSuite:
         assert body["recommended_steps"] == OLLAMA_DIAGNOSIS["recommended_steps"]
 
 
+# ── Answering in the driver's language ───────────────────────────────────────
+#
+# Translation was a SECOND model call carrying the whole finished report —
+# more output tokens than the diagnosis itself, in the same 15s budget, right
+# after the diagnosis call. It truncated, the JSON failed to parse, and every
+# non-English report arrived in English under "we couldn't translate this".
+# Asking for the language up front removes the round-trip and the failure.
+
+class TestAnswersInTheRequestedLanguageSuite:
+    def test_the_prompt_asks_for_the_language(self):
+        from services.diagnosis import _build_prompt
+
+        prompt = _build_prompt(
+            "Maruti Suzuki", "Swift", None, 2010, "Petrol", "Manual", 45000,
+            "engine overheating", [], [], "high", [], response_language="hi-IN",
+        )
+        assert "Hindi" in prompt
+        # The keys are a wire contract; only the values a driver reads change.
+        assert "Keep the JSON KEYS in English" in prompt
+
+    def test_english_adds_no_language_instruction(self):
+        from services.diagnosis import _build_prompt
+
+        prompt = _build_prompt(
+            "Tata", "Nexon", None, 2021, "Diesel", "Manual", 10000,
+            "grinding noise", [], [], "low", [],
+        )
+        assert "IMPORTANT — LANGUAGE" not in prompt
+
+    @pytest.mark.asyncio
+    async def test_a_hindi_answer_is_not_sent_back_for_translation(self):
+        hindi = dict(OLLAMA_DIAGNOSIS, preliminary_diagnosis="इंजन ज़्यादा गरम हो रहा है")
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(hindi)):
+            with patch(
+                "services.diagnosis._translate_diagnosis",
+                new=AsyncMock(side_effect=AssertionError("must not translate")),
+            ):
+                r = await run_diagnosis(
+                    manufacturer="Maruti Suzuki", model="Swift", variant=None,
+                    model_year=2010, fuel_type="Petrol", transmission="Manual",
+                    odometer_km=45000, problem_description="engine overheating",
+                    warning_lights=[], when_occurs=[], severity="high",
+                    response_language="hi-IN",
+                )
+        assert r["translation_failed"] is False
+        assert r["preliminary_diagnosis"] == "इंजन ज़्यादा गरम हो रहा है"
+
+    @pytest.mark.asyncio
+    async def test_an_english_answer_still_goes_for_translation(self):
+        # The knowledge base and the heuristic are English data; they cannot
+        # answer in Hindi, so the translation path must still exist for them.
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+            with patch("services.diagnosis._translate_diagnosis", new=AsyncMock()) as tr:
+                await run_diagnosis(
+                    manufacturer="Maruti Suzuki", model="Swift", variant=None,
+                    model_year=2010, fuel_type="Petrol", transmission="Manual",
+                    odometer_km=45000, problem_description="engine overheating",
+                    warning_lights=[], when_occurs=[], severity="high",
+                    response_language="hi-IN",
+                )
+        tr.assert_awaited_once()
+
+    def test_the_script_check_covers_every_offered_language(self):
+        from services.diagnosis import _already_in_language
+
+        samples = {
+            "hi-IN": "इंजन गरम", "mr-IN": "इंजिन गरम", "bn-IN": "ইঞ্জিন গরম",
+            "pa-IN": "ਇੰਜਣ ਗਰਮ", "gu-IN": "એન્જિન ગરમ", "or-IN": "ଇଞ୍ଜିନ ଗରମ",
+            "ta-IN": "என்ஜின் சூடு", "te-IN": "ఇంజిన్ వేడి",
+            "kn-IN": "ಎಂಜಿನ್ ಬಿಸಿ", "ml-IN": "എഞ്ചിൻ ചൂട്",
+        }
+        for lang, text in samples.items():
+            assert _already_in_language({"preliminary_diagnosis": text}, lang), lang
+            assert not _already_in_language({"preliminary_diagnosis": "Engine is hot"}, lang), lang
+
+    def test_an_unknown_language_routes_to_translation(self):
+        from services.diagnosis import _already_in_language
+
+        # False means "translate", which costs a redundant call at worst.
+        # True would mean showing English while claiming it was translated.
+        assert not _already_in_language({"preliminary_diagnosis": "Engine is hot"}, "fr-FR")
+        assert not _already_in_language({"preliminary_diagnosis": ""}, "hi-IN")
+
+
 # ── Translation provider order ───────────────────────────────────────────────
 #
 # Translation went only to Ollama, whose host is unset in every deployed
