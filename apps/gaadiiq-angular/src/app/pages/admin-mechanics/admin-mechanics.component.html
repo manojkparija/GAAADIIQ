@@ -1,0 +1,133 @@
+<div class="am-page">
+  <header class="am-header">
+    <div>
+      <h1>Mechanic verification</h1>
+      <p class="am-sub">
+        A mechanic stays unmatchable until approved here. Check the KYC details
+        against the person before approving — approval is what lets them be
+        dispatched to a customer's car.
+      </p>
+    </div>
+    <a routerLink="/" class="am-back">
+      <app-icon name="arrow-left" [size]="16"></app-icon> Back to site
+    </a>
+  </header>
+
+  <nav class="am-tabs" role="tablist">
+    <button *ngFor="let t of TABS"
+            role="tab"
+            type="button"
+            class="am-tab"
+            [class.am-tab--on]="tab() === t.key"
+            [attr.aria-selected]="tab() === t.key"
+            (click)="selectTab(t.key)">
+      {{ t.label }}
+      <span class="am-count" *ngIf="tab() === t.key && !loading()">{{ visible().length }}</span>
+    </button>
+  </nav>
+
+  <div class="am-search">
+    <app-icon name="search" [size]="16"></app-icon>
+    <input type="search"
+           [ngModel]="search()"
+           (ngModelChange)="search.set($event)"
+           placeholder="Search name, shop, phone or pincode"
+           aria-label="Search mechanics" />
+  </div>
+
+  <p class="am-error" *ngIf="error()" role="alert">{{ error() }}</p>
+
+  <p class="am-loading" *ngIf="loading()">Loading…</p>
+
+  <p class="am-empty" *ngIf="!loading() && !error() && !visible().length">
+    <ng-container *ngIf="search(); else noneAtAll">
+      No mechanic matches “{{ search() }}”.
+    </ng-container>
+    <ng-template #noneAtAll>
+      <ng-container [ngSwitch]="tab()">
+        <span *ngSwitchCase="'pending_verification'">Nothing is waiting for verification.</span>
+        <span *ngSwitchCase="'active'">No mechanic has been approved yet.</span>
+        <span *ngSwitchDefault>No mechanic has been rejected.</span>
+      </ng-container>
+    </ng-template>
+  </p>
+
+  <ul class="am-list">
+    <li class="am-card" *ngFor="let m of visible()">
+      <div class="am-card-head">
+        <div>
+          <h2 class="am-name">{{ m.full_name }}</h2>
+          <p class="am-shop" *ngIf="m.shop_name">{{ m.shop_name }}</p>
+        </div>
+        <span class="am-status" [class]="'am-status--' + m.status">
+          {{ statusLabel(m.status) }}
+        </span>
+      </div>
+
+      <dl class="am-facts">
+        <div><dt>Phone</dt><dd><a [href]="'tel:' + m.phone">{{ m.phone }}</a></dd></div>
+        <div *ngIf="m.whatsapp_phone"><dt>WhatsApp</dt><dd>{{ m.whatsapp_phone }}</dd></div>
+        <div *ngIf="m.email"><dt>Email</dt><dd>{{ m.email }}</dd></div>
+        <div>
+          <dt>Address</dt>
+          <dd>
+            {{ m.address_line1 }}<ng-container *ngIf="m.address_line2">, {{ m.address_line2 }}</ng-container>,
+            {{ m.city }}, {{ m.state }} – {{ m.area_pincode }}
+          </dd>
+        </div>
+        <div><dt>Service radius</dt><dd>{{ m.service_radius_km }} km</dd></div>
+        <div *ngIf="m.specialisations?.length">
+          <dt>Specialisations</dt><dd>{{ m.specialisations?.join(', ') }}</dd>
+        </div>
+        <div><dt>Registered</dt><dd>{{ registeredOn(m.created_at) }}</dd></div>
+      </dl>
+
+      <!--
+        KYC is shown because approving is an assertion that someone checked it.
+        Aadhaar is the masked fragment only — the number itself is never stored
+        and never leaves the API.
+      -->
+      <div class="am-kyc">
+        <span class="am-kyc-label">KYC</span>
+        <span>PAN <strong>{{ m.pan_number }}</strong></span>
+        <span>Aadhaar <strong>{{ m.aadhaar_masked }}</strong></span>
+        <span *ngIf="m.upi_vpa">UPI <strong>{{ m.upi_vpa }}</strong></span>
+      </div>
+
+      <div class="am-actions" *ngIf="m.status === 'pending_verification' && rejectingId() !== m.id">
+        <button type="button" class="am-btn am-btn--approve"
+                [disabled]="busyId() === m.id"
+                (click)="approve(m)">
+          <app-icon name="check" [size]="16"></app-icon>
+          {{ busyId() === m.id ? 'Saving…' : 'Approve' }}
+        </button>
+        <button type="button" class="am-btn am-btn--reject"
+                [disabled]="busyId() === m.id"
+                (click)="startReject(m)">
+          Reject
+        </button>
+      </div>
+
+      <!-- Rejection takes a reason: the mechanic is told why, and a bare
+           "rejected" is not something anyone can act on. -->
+      <div class="am-reject" *ngIf="rejectingId() === m.id">
+        <label [attr.for]="'reason-' + m.id">Why is this registration rejected?</label>
+        <textarea [id]="'reason-' + m.id"
+                  [(ngModel)]="rejectReason"
+                  rows="2"
+                  maxlength="500"
+                  placeholder="e.g. PAN does not match the name given"></textarea>
+        <div class="am-actions">
+          <button type="button" class="am-btn am-btn--reject"
+                  [disabled]="!rejectReason.trim() || busyId() === m.id"
+                  (click)="confirmReject(m)">
+            {{ busyId() === m.id ? 'Saving…' : 'Confirm rejection' }}
+          </button>
+          <button type="button" class="am-btn am-btn--ghost" (click)="cancelReject()">Cancel</button>
+        </div>
+      </div>
+    </li>
+  </ul>
+
+  <div class="am-toast" *ngIf="toastMsg()" role="status">{{ toastMsg() }}</div>
+</div>

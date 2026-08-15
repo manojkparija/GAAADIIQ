@@ -1,0 +1,205 @@
+// Clears the fixed navbar (LAY-007). Both existing admin screens shipped
+// without this and rendered their titles under the nav, unnoticed because they
+// sit behind adminGuard and nobody had opened them in a browser.
+.am-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: max(7rem, var(--nav-offset)) 1rem 4rem;
+}
+
+.am-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  h1 { font-size: 1.75rem; margin: 0 0 .35rem; }
+}
+
+.am-sub {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--text-muted);
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+.am-back {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-size: .875rem;
+  white-space: nowrap;
+
+  &:hover { text-decoration: underline; }
+}
+
+.am-tabs {
+  display: flex;
+  gap: .25rem;
+  margin: 1.5rem 0 1rem;
+  border-bottom: 1px solid var(--divider);
+  overflow-x: auto;
+}
+
+.am-tab {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: .6rem .9rem;
+  font: inherit;
+  font-size: .9rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &--on {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+  }
+}
+
+.am-count {
+  margin-left: .4rem;
+  padding: .05rem .4rem;
+  border-radius: 999px;
+  background: var(--fill-dim);
+  font-size: .78rem;
+}
+
+.am-search {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  color: var(--text-muted);
+
+  input {
+    flex: 1;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    outline: none;
+  }
+}
+
+.am-error, .am-loading, .am-empty {
+  padding: 1rem 0;
+  color: var(--text-muted);
+  font-size: .9rem;
+}
+.am-error { color: var(--danger-ink, #B42318); }
+
+.am-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+
+.am-card {
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+}
+
+.am-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: .75rem;
+}
+
+.am-name { font-size: 1.05rem; margin: 0; }
+.am-shop { margin: .15rem 0 0; color: var(--text-muted); font-size: .875rem; }
+
+// Text on a tint uses the -ink tokens, not the brand colour: the same hue at
+// this size measures below AA over --navy.
+.am-status {
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--pending_verification { background: var(--fill-dim); color: var(--warning-ink); }
+  &--active { background: var(--fill-dim); color: var(--success-ink); }
+  &--rejected, &--suspended { background: var(--fill-dim); color: var(--text-muted); }
+}
+
+.am-facts {
+  margin: .9rem 0 0;
+  display: grid;
+  gap: .4rem;
+  font-size: .875rem;
+
+  > div { display: flex; gap: .5rem; }
+  dt { min-width: 8.5rem; color: var(--text-muted); margin: 0; }
+  dd { margin: 0; }
+  a { color: var(--primary); }
+}
+
+.am-kyc {
+  margin-top: .9rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--divider);
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem 1.25rem;
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+.am-kyc-label { font-weight: 600; color: var(--info-ink); }
+
+.am-actions { display: flex; gap: .5rem; margin-top: 1rem; flex-wrap: wrap; }
+
+.am-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .5rem .9rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: .875rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled { opacity: .6; cursor: not-allowed; }
+
+  &--approve { background: var(--teal); color: #fff; }
+  &--reject { background: none; border-color: var(--divider); color: var(--text-muted); }
+  &--ghost { background: none; border-color: transparent; color: var(--text-muted); }
+}
+
+.am-reject {
+  margin-top: 1rem;
+
+  label { display: block; font-size: .85rem; margin-bottom: .35rem; }
+
+  textarea {
+    width: 100%;
+    padding: .5rem .65rem;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    font: inherit;
+    font-size: .875rem;
+    resize: vertical;
+  }
+}
+
+.am-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  background: var(--navy, #0B1A33);
+  color: #fff;
+  padding: .65rem 1rem;
+  border-radius: 8px;
+  font-size: .875rem;
+  z-index: 60;
+}
