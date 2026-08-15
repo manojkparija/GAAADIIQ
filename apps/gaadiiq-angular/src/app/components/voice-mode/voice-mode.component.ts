@@ -697,15 +697,49 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
     const heardWords = transcript.split(/\s+/).filter(Boolean);
     if (!promptWords.length || !heardWords.length) return transcript;
 
+    const heardNorm = heardWords.map(norm);
+
+    // Match the END of the prompt, not the beginning.
+    //
+    // Matching from the front looked obvious and does not survive contact with
+    // a real recogniser. The confirmation interpolates canonical values —
+    // "Maruti Suzuki", "Petrol", "Manual" — which TTS speaks in English while
+    // a hi-IN recogniser writes back "मारुति", "पेट्रोल", "मैन्युअल". The
+    // prefix therefore diverges at the third word, every time, and nothing is
+    // stripped. That is exactly what the production transcript showed.
+    //
+    // The tail of every prompt is our own literal sentence with nothing
+    // interpolated into it, in the same language the user is speaking, so it
+    // comes back close to verbatim. Cutting up to the end of that match also
+    // removes the interpolated middle, whatever the recogniser made of it.
+    //
+    // Windows shrink from 8 words to 4: long enough that a match is the
+    // prompt rather than a coincidence, short enough to survive the odd
+    // mis-heard word — production turned "अब" into "का", and a rigid
+    // whole-tail match would have failed on that alone.
+    for (let w = Math.min(8, promptWords.length); w >= 4; w--) {
+      const tail = promptWords.slice(promptWords.length - w);
+      for (let i = 0; i + w <= heardNorm.length; i++) {
+        let hit = true;
+        for (let k = 0; k < w; k++) {
+          if (heardNorm[i + k] !== tail[k]) { hit = false; break; }
+        }
+        if (!hit) continue;
+        const remainder = heardWords.slice(i + w).join(' ').trim();
+        // Never strip everything: an empty answer is worse than a noisy one,
+        // because the flow would ask again with nothing to show for it.
+        if (remainder) return remainder;
+      }
+    }
+
+    // Fall back to the prefix match, which still catches a short prompt with
+    // nothing interpolated ("And the year?").
     let i = 0;
     while (i < heardWords.length && i < promptWords.length && norm(heardWords[i]) === promptWords[i]) {
       i++;
     }
     if (i < 3) return transcript;
-
     const remainder = heardWords.slice(i).join(' ').trim();
-    // Never strip everything: an empty answer is worse than a noisy one,
-    // because the flow would ask again with nothing to show for it.
     return remainder || transcript;
   }
 
