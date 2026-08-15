@@ -614,6 +614,19 @@
           <button class="tb-retry" (click)="retryDiagnosis()">Try again</button>
         </div>
 
+        <!-- Offline estimate notice. The built-in table is a dozen English
+             strings; presenting it the same way as a real diagnosis is how it
+             came to read as "hardcoded". Same rule as the banner above: a
+             degraded answer must never be indistinguishable from a real one. -->
+        <div class="translate-banner" *ngIf="report.offline_fallback" role="status" aria-live="polite">
+          <span class="tb-icon" aria-hidden="true"><app-icon name="alert-triangle" [size]="16"></app-icon></span>
+          <div>
+            <strong>Offline estimate — not a diagnosis</strong>
+            <p>We couldn't reach the diagnosis service, so this is a generic estimate from a small built-in table. It is in English only and is far less specific than a real diagnosis.</p>
+          </div>
+          <button class="tb-retry" (click)="retryDiagnosis()">Try again</button>
+        </div>
+
         <!-- Diagnosis summary -->
         <div class="report-card">
           <h3><app-icon name="search" [size]="16"></app-icon> Preliminary Diagnosis</h3>
