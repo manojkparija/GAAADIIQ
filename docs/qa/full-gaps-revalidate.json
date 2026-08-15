@@ -1,0 +1,412 @@
+{
+  "generated_at": "2026-07-20T16:48:50.535381+00:00",
+  "branch_tip": "claude/gaadiiq-app-dev-abj5fo @ 1bfa91d",
+  "focus": "Full gap revalidation after Used Cars P0/P1 + Diagnosis/Valuation Next pages",
+  "counts": {
+    "PASS": 36,
+    "FAIL": 14
+  },
+  "total": 50,
+  "results": [
+    {
+      "suite": "Used Inventory",
+      "id": "UC-INV-01",
+      "name": "Seed has used cars",
+      "status": "PASS",
+      "detail": "29 used of 92 total",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Inventory",
+      "id": "UC-INV-02",
+      "name": "No 2005 model-year cars in seed",
+      "status": "PASS",
+      "detail": "2005 count=0",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Cars P0",
+      "id": "UC-SS-01",
+      "name": "New Town snaps to Kolkata (alias) with inventory",
+      "status": "PASS",
+      "detail": "snap(New Town)=Kolkata; Kolkata used=2; alias_in_code=True",
+      "severity": "P0"
+    },
+    {
+      "suite": "Used Cars P0",
+      "id": "UC-SS-01b",
+      "name": "City=New Town (snapped) returns used cars",
+      "status": "PASS",
+      "detail": "results=2 after New Town\u2192Kolkata",
+      "severity": "P0"
+    },
+    {
+      "suite": "Used Cars P0",
+      "id": "UC-SS-02",
+      "name": "yearTo default is currentYear and present in yearOptions",
+      "status": "PASS",
+      "detail": "yearTo=signal(getFullYear)=True; yearOptions ends ~2027; selected binding=True",
+      "severity": "P0"
+    },
+    {
+      "suite": "Used Cars P0",
+      "id": "UC-SS-03",
+      "name": "Default year 2005\u2192currentYear returns used inventory",
+      "status": "PASS",
+      "detail": "results=29 / used=29",
+      "severity": "P0"
+    },
+    {
+      "suite": "Used Cars P0",
+      "id": "UC-SS-04",
+      "name": "Active filter strip shows city + year chips",
+      "status": "PASS",
+      "detail": "city_chip=True; year_chips=True",
+      "severity": "P0"
+    },
+    {
+      "suite": "Used Cars P0",
+      "id": "UC-CT-02",
+      "name": "clearAllFilters clears CityService (navbar city)",
+      "status": "PASS",
+      "detail": "clearCity in component+service=True",
+      "severity": "P0"
+    },
+    {
+      "suite": "Used Cars P0",
+      "id": "UC-CT-01",
+      "name": "Empty city auto-overrides to All India (effectiveCity='')",
+      "status": "PASS",
+      "detail": "override_logic=True; Rourkela used=0; override results=29",
+      "severity": "P0"
+    },
+    {
+      "suite": "Used Cars P0",
+      "id": "UC-SS-05",
+      "name": "Empty state has city-specific CTA + Clear All",
+      "status": "PASS",
+      "detail": "empty-state Show All India + Clear All Filters",
+      "severity": "P0"
+    },
+    {
+      "suite": "Used Cars P1",
+      "id": "UC-INV-04",
+      "name": "Bengaluru aliases to Bangalore seed city",
+      "status": "PASS",
+      "detail": "snap=Bangalore; results=4; cityOptions Bangaluru\u2192Bangalore=True",
+      "severity": "P1"
+    },
+    {
+      "suite": "Used Cars P1",
+      "id": "UC-CT-04",
+      "name": "cityOptions uses Bangalore (matches seed)",
+      "status": "PASS",
+      "detail": "cityOptions aligned with seed city names",
+      "severity": "P1"
+    },
+    {
+      "suite": "Used Cars P1",
+      "id": "UC-VR-01",
+      "name": "Card verdict labels are Fair Deal / Overpriced / Good Price",
+      "status": "PASS",
+      "detail": "verdictLabel ok; stats banner still AI-Verified=True",
+      "severity": "P1"
+    },
+    {
+      "suite": "Used Cars Remaining",
+      "id": "UC-REM-01",
+      "name": "All-India soft banner visible after auto-override",
+      "status": "FAIL",
+      "detail": "showAllIndiaBanner requires !allIndiaOverride \u2014 banner hidden exactly when override activates (auto empty-city path)",
+      "severity": "P2"
+    },
+    {
+      "suite": "Used Cars Remaining",
+      "id": "UC-REM-02",
+      "name": "Empty state links to AI Advisor",
+      "status": "FAIL",
+      "detail": "No Advisor CTA in used-cars empty state",
+      "severity": "P2"
+    },
+    {
+      "suite": "Used Cars Remaining",
+      "id": "UC-REM-03",
+      "name": "Filter state written back to URL",
+      "status": "FAIL",
+      "detail": "Reads queryParams on init; no navigate write-back of filters",
+      "severity": "P2"
+    },
+    {
+      "suite": "Used Filter Scenarios",
+      "id": "UC-SC-01",
+      "name": "All India default",
+      "status": "PASS",
+      "detail": "results=29 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Filter Scenarios",
+      "id": "UC-SC-02",
+      "name": "City Kolkata",
+      "status": "PASS",
+      "detail": "results=2 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Filter Scenarios",
+      "id": "UC-SC-03",
+      "name": "Make Maruti Suzuki",
+      "status": "PASS",
+      "detail": "results=7 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Filter Scenarios",
+      "id": "UC-SC-04",
+      "name": "Budget under 10L",
+      "status": "PASS",
+      "detail": "results=10 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Filter Scenarios",
+      "id": "UC-SC-05",
+      "name": "Year 2020\u20132024",
+      "status": "PASS",
+      "detail": "results=29 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Filter Scenarios",
+      "id": "UC-SC-06",
+      "name": "Fuel Diesel",
+      "status": "PASS",
+      "detail": "results=9 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Filter Scenarios",
+      "id": "UC-SC-07",
+      "name": "Body SUV",
+      "status": "PASS",
+      "detail": "results=19 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Filter Scenarios",
+      "id": "UC-SC-08",
+      "name": "Year 2005\u20132005 empty",
+      "status": "PASS",
+      "detail": "results=0 expect_some=False",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Used Cars Remaining",
+      "id": "UC-REM-04",
+      "name": "Playwright e2e covers /used-cars",
+      "status": "FAIL",
+      "detail": "e2e specs=3; used-cars mentioned=False",
+      "severity": "P2"
+    },
+    {
+      "suite": "Diagnosis Existence",
+      "id": "DX-01",
+      "name": "Angular /vehicle-diagnosis route",
+      "status": "PASS",
+      "detail": "app.routes.ts",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Existence",
+      "id": "DX-02",
+      "name": "Navbar AI Diagnosis link",
+      "status": "PASS",
+      "detail": "navbar",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Existence",
+      "id": "DX-03",
+      "name": "API POST /diagnosis/analyse",
+      "status": "PASS",
+      "detail": "routers/diagnosis.py",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-01",
+      "name": "Image upload UI in Angular wizard",
+      "status": "PASS",
+      "detail": "upload UI=True; sends image_urls=True; real blob upload=False",
+      "severity": "P1"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-01b",
+      "name": "Photos uploaded to storage (not filenames only)",
+      "status": "FAIL",
+      "detail": "image_urls currently map(f => f.name) \u2014 filenames only, not hosted URLs",
+      "severity": "P1"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-03",
+      "name": "History UI on Angular",
+      "status": "FAIL",
+      "detail": "API history endpoint exists=True; Angular history UI=False",
+      "severity": "P2"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-04",
+      "name": "Next.js /diagnosis page exists",
+      "status": "PASS",
+      "detail": "apps/web/app/diagnosis/page.tsx",
+      "severity": "P1"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-05",
+      "name": "user_id attached from auth session when available",
+      "status": "PASS",
+      "detail": "Anonymous sessions still omit user_id (expected); logged-in users attach id",
+      "severity": "P2"
+    },
+    {
+      "suite": "Valuation Gaps",
+      "id": "VR-01",
+      "name": "ApiService uses listings/{id}/valuate (not dead /ai/valuation)",
+      "status": "PASS",
+      "detail": "valuateListing=True; dead getAIValuation still present=False",
+      "severity": "P1"
+    },
+    {
+      "suite": "Valuation Gaps",
+      "id": "VR-02",
+      "name": "Next.js standalone /valuation page",
+      "status": "PASS",
+      "detail": "apps/web/app/valuation/page.tsx",
+      "severity": "P1"
+    },
+    {
+      "suite": "Valuation Gaps",
+      "id": "VR-03",
+      "name": "Shared valuation-engine.ts present",
+      "status": "PASS",
+      "detail": "valuation-engine.ts",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Gaps",
+      "id": "VR-04",
+      "name": "Angular valuation fallback banner",
+      "status": "PASS",
+      "detail": "ai-valuation.component.html honesty/fallback copy",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Valuation Gaps",
+      "id": "VR-05",
+      "name": "Playwright e2e for diagnosis/valuation",
+      "status": "FAIL",
+      "detail": "No dedicated e2e for diagnosis/valuation routes",
+      "severity": "P2"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-06",
+      "name": "Next diagnosis page has photo upload",
+      "status": "PASS",
+      "detail": "apps/web/app/diagnosis/page.tsx",
+      "severity": "P1"
+    },
+    {
+      "suite": "Diagnosis Gaps",
+      "id": "DG-07",
+      "name": "Nearest service centre modal present",
+      "status": "PASS",
+      "detail": "bookService / service centre flow",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "New Cars Gaps",
+      "id": "NC-01",
+      "name": "Above \u20b930L uses open max (null) not 1 Cr cap",
+      "status": "FAIL",
+      "detail": "budgetRanges Above \u20b930L max=100000000 \u2014 fix lives on cursor/fix-new-cars-module-85e1, NOT on Claude tip",
+      "severity": "P0"
+    },
+    {
+      "suite": "New Cars Gaps",
+      "id": "NC-02",
+      "name": "Budget chips filter on-page (fix-branch behavior)",
+      "status": "FAIL",
+      "detail": "applyBudget=False; navigateToBudget=True; budgetFilterLabel=False",
+      "severity": "P0"
+    },
+    {
+      "suite": "New Cars Gaps",
+      "id": "NC-03",
+      "name": "Electric / Luxury special-case mapping present",
+      "status": "PASS",
+      "detail": "Electric/Luxury handling strings in component",
+      "severity": "P1"
+    },
+    {
+      "suite": "New Cars Gaps",
+      "id": "NC-04",
+      "name": "No aeplcdn hotlinks in new-cars component",
+      "status": "PASS",
+      "detail": "placeholder.svg used",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "New Cars Gaps",
+      "id": "NC-05",
+      "name": "New Cars fix commit merged into Claude tip",
+      "status": "FAIL",
+      "detail": "cursor/fix-new-cars-module-85e1 (dbf9026) is NOT an ancestor of claude/gaadiiq-app-dev-abj5fo",
+      "severity": "P0"
+    },
+    {
+      "suite": "Advisor Spot",
+      "id": "AD-01",
+      "name": "Angular advisor wired to POST /recommend",
+      "status": "FAIL",
+      "detail": "Still client-side rule scoring; not calling API /recommend",
+      "severity": "P1"
+    },
+    {
+      "suite": "Advisor Spot",
+      "id": "AD-02",
+      "name": "LLM / ai-chat in Angular advisor",
+      "status": "FAIL",
+      "detail": "No LLM chat path in ai-advisor.component.ts",
+      "severity": "P2"
+    },
+    {
+      "suite": "Advisor Spot",
+      "id": "AD-03",
+      "name": "Client-side scoring engine present (working path)",
+      "status": "PASS",
+      "detail": "Local scoring still the active recommendation path",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Advisor Spot",
+      "id": "AD-04",
+      "name": "Playwright e2e for /ai-advisor",
+      "status": "FAIL",
+      "detail": "No dedicated Angular advisor e2e",
+      "severity": "P2"
+    },
+    {
+      "suite": "Advisor Spot",
+      "id": "AD-05",
+      "name": "Single unified advisor experience (Angular + Next)",
+      "status": "FAIL",
+      "detail": "Angular multi-step quiz vs Next recommend flow remain divergent (no unification commit on tip)",
+      "severity": "P1"
+    }
+  ]
+}
