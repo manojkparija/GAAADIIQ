@@ -254,6 +254,34 @@ export class VoiceDiagnosisService {
     this.zone.run(() => cb(text));
   }
 
+  /**
+   * Fold a freshly-read set of finals into what we already hold.
+   *
+   * Engines disagree about what `event.results` contains, and guessing wrong
+   * either duplicates words or loses them:
+   *
+   *  - The spec says `results` holds every result received so far, and desktop
+   *    Chrome obeys it. Each event therefore re-states the earlier phrases,
+   *    and appending would repeat them.
+   *  - Android's WebView re-delivers ONE final whose transcript grows, with
+   *    `resultIndex` stuck at 0 — the same shape, and again a superset.
+   *  - Some engines (and our own e2e double) hand over only the new phrase.
+   *    Replacing there would throw away everything said before it, which is
+   *    how "my Maruti Swift 2019 petrol manual" became "manual transmission".
+   *
+   * Containment tells the two apart without having to know which engine is
+   * running: if the incoming text already carries what we hold, it supersedes
+   * it; otherwise it is new speech and belongs on the end.
+   */
+  private _mergeFinals(held: string, incoming: string): string {
+    const a = held.trim();
+    const b = incoming.trim();
+    if (!a) return incoming;
+    if (b.includes(a)) return incoming;   // a superset — supersedes
+    if (a.includes(b)) return held;       // a stale repeat — already held
+    return `${a} ${b} `;                  // genuinely new speech
+  }
+
   private _startRecognition() {
     const SpeechRecognitionImpl =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -277,7 +305,26 @@ export class VoiceDiagnosisService {
         let finalChunk = '';
         let maxConfidence = 0;
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        // Rebuild the finals from the WHOLE results list, every time, rather
+        // than appending what arrived since `resultIndex`.
+        //
+        // Chrome on desktop hands you each final once and moves resultIndex
+        // along, so appending works. Android's WebView engine does not: it
+        // re-delivers a GROWING final result with resultIndex stuck at 0, so
+        // "Tata Safari 2024 petrol automatic" arrives as seven successive
+        // finals, each one a longer prefix of the last. Appending them
+        // produced the staircase seen in production:
+        //
+        //   "got got it got it Tata got it Tata Safari got it Tata Safari
+        //    2024 got it Tata Safari 2024 petrol got it …"
+        //
+        // — which then went to the model as the driver's symptoms, and the
+        // model correctly replied that it contained no symptoms at all.
+        //
+        // Rebuilding is idempotent: `event.results` holds every result for the
+        // session, so on a well-behaved engine this produces exactly what
+        // appending did, and on a re-delivering one the repeats collapse.
+        for (let i = 0; i < event.results.length; i++) {
           const result = event.results[i];
           const transcript = result[0].transcript;
           const confidence = result[0].confidence ?? 0;
@@ -285,7 +332,8 @@ export class VoiceDiagnosisService {
 
           if (result.isFinal) {
             finalChunk += transcript + ' ';
-          } else {
+          } else if (i >= event.resultIndex) {
+            // Interim text is display-only, so only the newest matters.
             interim += transcript;
           }
         }
@@ -302,7 +350,7 @@ export class VoiceDiagnosisService {
         // threw the year, fuel and transmission away. That is the whole of
         // "it isn't capturing the car details properly".
         if (finalChunk.trim()) {
-          this.finalBuffer += finalChunk;
+          this.finalBuffer = this._mergeFinals(this.finalBuffer, finalChunk);
           if (this.deliverTimer) clearTimeout(this.deliverTimer);
           this.deliverTimer = setTimeout(() => this._deliverFinal(), FINAL_SILENCE_MS);
         }
