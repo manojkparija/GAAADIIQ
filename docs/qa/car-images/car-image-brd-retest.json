@@ -1,0 +1,784 @@
+{
+  "generated_at": "2026-08-02T10:26:39.211760+00:00",
+  "code_tip": "origin/master @ 15518ac (WAVE 2 complete + WAVE 3 partial)",
+  "prior_score": 55,
+  "brd_readiness_score": 83,
+  "requirement_counts": {
+    "PARTIAL": 13,
+    "PASS": 26
+  },
+  "test_counts": {
+    "PASS": 25,
+    "PARTIAL": 4,
+    "FAIL": 5
+  },
+  "pytest_media_passed": 70,
+  "recommendation": "CONDITIONAL GO for core DAM; remaining P1 polish + WAVE3 ML",
+  "requirements": [
+    {
+      "id": "BR-001",
+      "area": "Upload",
+      "priority": "Must Have",
+      "requirement": "Multi upload JPG/JPEG/PNG/WEBP/HEIC/TIFF; max up to 15GB",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "UI+/media-admin; media_max_upload_mb=100",
+      "gap": "Not 15GB; no chunked/resumable"
+    },
+    {
+      "id": "BR-002",
+      "area": "Metadata",
+      "priority": "Must Have",
+      "requirement": "Mandatory make/model/year/body/fuel/transmission/category",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "Admin form + API Form validation",
+      "gap": "\u2014"
+    },
+    {
+      "id": "BR-003",
+      "area": "Categories",
+      "priority": "Must Have",
+      "requirement": "Full ImageCategory vocabulary",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "ImageCategory enum",
+      "gap": "\u2014"
+    },
+    {
+      "id": "BR-004",
+      "area": "AI Extract",
+      "priority": "Must Have",
+      "requirement": "Filename/EXIF extract; admin editable before save",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "inspect + extract_exif + pre-save UI",
+      "gap": "EXIF not auto-applied into form fields"
+    },
+    {
+      "id": "BR-005",
+      "area": "Storage Meta",
+      "priority": "Must Have",
+      "requirement": "Rich metadata incl. OCR/embedding/SEO",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "hash/phash/thumb/webp/exif/alt/seo",
+      "gap": "OCR+embeddings on claude tip only, not master"
+    },
+    {
+      "id": "BR-DB-01",
+      "area": "Database",
+      "priority": "Must Have",
+      "requirement": "Manufacturers/Models/Variants/CarImages tables",
+      "prior_status": "FAIL",
+      "status": "PASS",
+      "evidence": "AD-001 documents free-text vehicle_media approach",
+      "gap": "No FK hierarchy (accepted by design)"
+    },
+    {
+      "id": "BR-STO-01",
+      "area": "Storage",
+      "priority": "Must Have",
+      "requirement": "Path /car-images/{make}/{model}/{year}/{category}/",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "key_prefix includes category",
+      "gap": "\u2014"
+    },
+    {
+      "id": "BR-DSP-01",
+      "area": "Display",
+      "priority": "Must Have",
+      "requirement": "Manufacturer page DAM display",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "Shared library; brand pages thin",
+      "gap": "Dedicated manufacturer gallery incomplete"
+    },
+    {
+      "id": "BR-DSP-02",
+      "area": "Display",
+      "priority": "Must Have",
+      "requirement": "Model page DAM display",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "New Cars + car-detail + VehicleImageService",
+      "gap": "\u2014"
+    },
+    {
+      "id": "BR-DSP-03",
+      "area": "Display",
+      "priority": "Must Have",
+      "requirement": "Variant page DAM display",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "API variant filter exists",
+      "gap": "No dedicated variant page surface"
+    },
+    {
+      "id": "BR-DSP-04",
+      "area": "Display",
+      "priority": "Must Have",
+      "requirement": "Search/AI Advisor/Compare/Dealer reuse same asset",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "Advisor imageOr + Dealer gallery + Compare",
+      "gap": "Dealer fetch hardcodes localhost:8000"
+    },
+    {
+      "id": "BR-SRCH-01",
+      "area": "Search",
+      "priority": "Should Have",
+      "requirement": "Smart search incl. White Nexon Front View",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "q= filters + OpenSearch",
+      "gap": "CLIP semantic NL search tip-only"
+    },
+    {
+      "id": "BR-AI-01",
+      "area": "AI Features",
+      "priority": "Should Have",
+      "requirement": "Auto-tag, dedupe, compress, thumb, SEO, OCR, moderation\u2026",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "Dedupe/thumb/webp/filename/exif",
+      "gap": "OCR/NSFW/plate blur tip-only or missing"
+    },
+    {
+      "id": "FR-001",
+      "area": "Functional",
+      "priority": "Must Have",
+      "requirement": "Admin multi-image upload",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "/admin/car-images + API",
+      "gap": "\u2014"
+    },
+    {
+      "id": "FR-002",
+      "area": "Functional",
+      "priority": "Must Have",
+      "requirement": "Mandatory metadata validation",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "API 422 + UI checks",
+      "gap": "\u2014"
+    },
+    {
+      "id": "FR-003",
+      "area": "Functional",
+      "priority": "Must Have",
+      "requirement": "AI auto-populates metadata",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "Inspect badges shown",
+      "gap": "Hints not auto-applied into form signals"
+    },
+    {
+      "id": "FR-004",
+      "area": "Functional",
+      "priority": "Must Have",
+      "requirement": "Admin override AI values",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "Editable pre-save + PATCH",
+      "gap": "\u2014"
+    },
+    {
+      "id": "FR-005",
+      "area": "Functional",
+      "priority": "Must Have",
+      "requirement": "Images stored once",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "sha256 + phash dedupe",
+      "gap": "\u2014"
+    },
+    {
+      "id": "FR-006",
+      "area": "Functional",
+      "priority": "Must Have",
+      "requirement": "Reuse across surfaces",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "Advisor/Dealer/Compare/New Cars",
+      "gap": "Manufacturer/variant pages thin"
+    },
+    {
+      "id": "FR-007",
+      "area": "Functional",
+      "priority": "Must Have",
+      "requirement": "Thumbnail generation",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "make_thumbnail",
+      "gap": "\u2014"
+    },
+    {
+      "id": "FR-008",
+      "area": "Functional",
+      "priority": "Should Have",
+      "requirement": "Automatic WebP conversion",
+      "prior_status": "FAIL",
+      "status": "PASS",
+      "evidence": "make_webp \u2192 webp_key",
+      "gap": "\u2014"
+    },
+    {
+      "id": "FR-009",
+      "area": "Functional",
+      "priority": "Must Have",
+      "requirement": "Duplicate detection",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "deduplicated flag + tests",
+      "gap": "\u2014"
+    },
+    {
+      "id": "FR-010",
+      "area": "Functional",
+      "priority": "Should Have",
+      "requirement": "Version history",
+      "prior_status": "FAIL",
+      "status": "PASS",
+      "evidence": "vehicle_media_versions + rollback API",
+      "gap": "\u2014"
+    },
+    {
+      "id": "NFR-001",
+      "area": "NFR",
+      "priority": "Must Have",
+      "requirement": "Uploads up to 15 GB",
+      "prior_status": "FAIL",
+      "status": "PARTIAL",
+      "evidence": "100MB default + 413 path",
+      "gap": "Revise BRD or add chunked upload"
+    },
+    {
+      "id": "NFR-002",
+      "area": "NFR",
+      "priority": "Must Have",
+      "requirement": "Upload \u226410s for standard images",
+      "prior_status": "FAIL",
+      "status": "PARTIAL",
+      "evidence": "Docs claim ~3s for 5MB",
+      "gap": "No automated p95 SLA test"
+    },
+    {
+      "id": "NFR-003",
+      "area": "NFR",
+      "priority": "Must Have",
+      "requirement": "CDN integration",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "R2/S3 public_base",
+      "gap": "Often local /media in dev"
+    },
+    {
+      "id": "NFR-004",
+      "area": "NFR",
+      "priority": "Must Have",
+      "requirement": "RBAC admin upload",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "get_admin_user",
+      "gap": "\u2014"
+    },
+    {
+      "id": "NFR-005",
+      "area": "NFR",
+      "priority": "Should Have",
+      "requirement": "Audit logging",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "vehicle_media_audit + GET trail",
+      "gap": "\u2014"
+    },
+    {
+      "id": "AC-001",
+      "area": "Acceptance",
+      "priority": "Must Have",
+      "requirement": "Admin upload one/multiple car images",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "/admin/car-images multi-select",
+      "gap": "\u2014"
+    },
+    {
+      "id": "AC-002",
+      "area": "Acceptance",
+      "priority": "Must Have",
+      "requirement": "Mandatory fields validated",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "API+UI",
+      "gap": "\u2014"
+    },
+    {
+      "id": "AC-003",
+      "area": "Acceptance",
+      "priority": "Must Have",
+      "requirement": "AI extracts from filename/image meta",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "inspect + EXIF store",
+      "gap": "\u2014"
+    },
+    {
+      "id": "AC-004",
+      "area": "Acceptance",
+      "priority": "Must Have",
+      "requirement": "Review/modify AI metadata before save",
+      "prior_status": "FAIL",
+      "status": "PASS",
+      "evidence": "Inspect \u2192 grid \u2192 upload",
+      "gap": "Batch shared metadata (not per-file category)"
+    },
+    {
+      "id": "AC-005",
+      "area": "Acceptance",
+      "priority": "Must Have",
+      "requirement": "Stored once linked by metadata",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "Dedupe + vehicle_media",
+      "gap": "\u2014"
+    },
+    {
+      "id": "AC-006",
+      "area": "Acceptance",
+      "priority": "Must Have",
+      "requirement": "Appear on Manufacturer/Model/Variant pages",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "Model/detail/compare yes",
+      "gap": "Manufacturer + variant pages incomplete"
+    },
+    {
+      "id": "AC-007",
+      "area": "Acceptance",
+      "priority": "Must Have",
+      "requirement": "Search by metadata filters",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "GET images filters",
+      "gap": "NL semantic search tip-only"
+    },
+    {
+      "id": "AC-008",
+      "area": "Acceptance",
+      "priority": "Must Have",
+      "requirement": "Duplicate flagged",
+      "prior_status": "PASS",
+      "status": "PASS",
+      "evidence": "Tests green",
+      "gap": "\u2014"
+    },
+    {
+      "id": "AC-009",
+      "area": "Acceptance",
+      "priority": "Must Have",
+      "requirement": "Thumbs + optimized formats",
+      "prior_status": "PARTIAL",
+      "status": "PASS",
+      "evidence": "Thumb + WebP",
+      "gap": "\u2014"
+    },
+    {
+      "id": "AC-010",
+      "area": "Acceptance",
+      "priority": "Should Have",
+      "requirement": "SEO/AI search/analytics metadata",
+      "prior_status": "PARTIAL",
+      "status": "PARTIAL",
+      "evidence": "alt/seo columns",
+      "gap": "Embeddings tip-only"
+    },
+    {
+      "id": "UX-001",
+      "area": "UX Bug",
+      "priority": "Must Have",
+      "requirement": "File Ingestion must not trap car images as PDF",
+      "prior_status": "FAIL",
+      "status": "PASS",
+      "evidence": "PDF accept=.pdf; separate Car Images nav",
+      "gap": "\u2014"
+    }
+  ],
+  "tests": [
+    {
+      "suite": "UI",
+      "id": "TC-IMG-012",
+      "name": "Angular Car Image Admin multi-select + metadata",
+      "status": "PASS",
+      "detail": "/admin/car-images exists",
+      "severity": "\u2014",
+      "br_ref": "AC-001"
+    },
+    {
+      "suite": "UI",
+      "id": "TC-IMG-013",
+      "name": "File Ingestion JPG no longer hits PDF trap",
+      "status": "PASS",
+      "detail": "accept=.pdf only; Car Images separate",
+      "severity": "\u2014",
+      "br_ref": "UX-001"
+    },
+    {
+      "suite": "UI",
+      "id": "TC-IMG-014",
+      "name": "File Ingestion PDF brochure still works",
+      "status": "PASS",
+      "detail": "brochures/upload unchanged",
+      "severity": "\u2014",
+      "br_ref": "\u2014"
+    },
+    {
+      "suite": "UI",
+      "id": "TC-IMG-028",
+      "name": "Pre-save AI metadata review grid",
+      "status": "PASS",
+      "detail": "inspect \u2192 edit \u2192 upload",
+      "severity": "\u2014",
+      "br_ref": "AC-004"
+    },
+    {
+      "suite": "UI",
+      "id": "TC-IMG-032",
+      "name": "Nav Car Images label",
+      "status": "PASS",
+      "detail": "Navbar Car Images link",
+      "severity": "\u2014",
+      "br_ref": "UX-001"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-001",
+      "name": "Multi PNG upload /media-admin",
+      "status": "PASS",
+      "detail": "pytest media_admin",
+      "severity": "\u2014",
+      "br_ref": "FR-001"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-002",
+      "name": "Magic-byte formats JPG/PNG/WEBP/TIFF/HEIC",
+      "status": "PASS",
+      "detail": "sniff_image",
+      "severity": "\u2014",
+      "br_ref": "BR-001"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-004",
+      "name": "Missing mandatory \u2192 422",
+      "status": "PASS",
+      "detail": "TestMandatoryMetadataSuite",
+      "severity": "\u2014",
+      "br_ref": "AC-002"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-005",
+      "name": "Invalid image_category rejected",
+      "status": "PASS",
+      "detail": "ImageCategory enum",
+      "severity": "\u2014",
+      "br_ref": "BR-003"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-006",
+      "name": "Filename inspect Tata_Nexon_\u2026_Front_2025",
+      "status": "PASS",
+      "detail": "filename_metadata",
+      "severity": "\u2014",
+      "br_ref": "AC-003"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-007",
+      "name": "PATCH metadata after upload",
+      "status": "PASS",
+      "detail": "PATCH + version event",
+      "severity": "\u2014",
+      "br_ref": "FR-004"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-008",
+      "name": "Duplicate bytes deduplicated",
+      "status": "PASS",
+      "detail": "sha256/phash",
+      "severity": "\u2014",
+      "br_ref": "AC-008"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-009",
+      "name": "Storage key includes {category}",
+      "status": "PASS",
+      "detail": "car-images/.../{category}/{hash}",
+      "severity": "\u2014",
+      "br_ref": "BR-STO-01"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-010",
+      "name": "Default max upload 100MB (not 15GB)",
+      "status": "PARTIAL",
+      "detail": "100MB; 15GB not implemented",
+      "severity": "P1",
+      "br_ref": "NFR-001"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-015",
+      "name": "EXIF populated on store",
+      "status": "PASS",
+      "detail": "extract_exif \u2192 vehicle_media.exif",
+      "severity": "\u2014",
+      "br_ref": "BR-004"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-030",
+      "name": "WebP derivative generated",
+      "status": "PASS",
+      "detail": "webp_key",
+      "severity": "\u2014",
+      "br_ref": "FR-008"
+    },
+    {
+      "suite": "Functional",
+      "id": "TC-IMG-031",
+      "name": "Version history on update",
+      "status": "PASS",
+      "detail": "vehicle_media_versions",
+      "severity": "\u2014",
+      "br_ref": "FR-010"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-IMG-018",
+      "name": "New Cars uses vehicle_media",
+      "status": "PASS",
+      "detail": "VehicleImageService",
+      "severity": "\u2014",
+      "br_ref": "BR-DSP-02"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-IMG-019",
+      "name": "Compare uses shared media",
+      "status": "PASS",
+      "detail": "compare wired",
+      "severity": "\u2014",
+      "br_ref": "FR-006"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-IMG-020",
+      "name": "AI Advisor uses DAM images",
+      "status": "PASS",
+      "detail": "imageOr + VehicleImageService",
+      "severity": "\u2014",
+      "br_ref": "BR-DSP-04"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-IMG-021",
+      "name": "Dealer dashboard shared media",
+      "status": "PASS",
+      "detail": "dealer-images + gallery",
+      "severity": "P1",
+      "br_ref": "BR-DSP-04"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-IMG-021b",
+      "name": "Dealer gallery uses environment.apiUrl",
+      "status": "FAIL",
+      "detail": "Hardcoded http://localhost:8000",
+      "severity": "P1",
+      "br_ref": "BR-DSP-04"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-IMG-022",
+      "name": "GET images filter make/model/variant",
+      "status": "PASS",
+      "detail": "Shared read API",
+      "severity": "\u2014",
+      "br_ref": "AC-007"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-IMG-033",
+      "name": "Manufacturer page DAM gallery",
+      "status": "PARTIAL",
+      "detail": "No dedicated manufacturer gallery",
+      "severity": "P1",
+      "br_ref": "AC-006"
+    },
+    {
+      "suite": "Integration",
+      "id": "TC-IMG-034",
+      "name": "Variant page DAM gallery",
+      "status": "PARTIAL",
+      "detail": "No dedicated variant page",
+      "severity": "P1",
+      "br_ref": "AC-006"
+    },
+    {
+      "suite": "AI",
+      "id": "TC-IMG-016",
+      "name": "OCR on car image (master)",
+      "status": "FAIL",
+      "detail": "Tip-only WAVE 3 ML",
+      "severity": "P2",
+      "br_ref": "BR-AI-01"
+    },
+    {
+      "suite": "AI",
+      "id": "TC-IMG-017",
+      "name": "Embedding semantic search (master)",
+      "status": "FAIL",
+      "detail": "Tip-only CLIP /search",
+      "severity": "P2",
+      "br_ref": "AC-010"
+    },
+    {
+      "suite": "AI",
+      "id": "TC-IMG-035",
+      "name": "NSFW/plate blur pipeline (master)",
+      "status": "FAIL",
+      "detail": "Tip detects; blur not done; not on master",
+      "severity": "P2",
+      "br_ref": "BR-AI-01"
+    },
+    {
+      "suite": "AI",
+      "id": "TC-IMG-036",
+      "name": "Inspect hints auto-apply into form",
+      "status": "PARTIAL",
+      "detail": "Badges only",
+      "severity": "P1",
+      "br_ref": "FR-003"
+    },
+    {
+      "suite": "Performance",
+      "id": "TC-IMG-023",
+      "name": "5MB upload p95 \u226410s automated",
+      "status": "FAIL",
+      "detail": "No SLA pytest; docs claim ~3s",
+      "severity": "P2",
+      "br_ref": "NFR-002"
+    },
+    {
+      "suite": "Security",
+      "id": "TC-IMG-025",
+      "name": "Unauth media-admin \u2192 401",
+      "status": "PASS",
+      "detail": "get_admin_user",
+      "severity": "\u2014",
+      "br_ref": "NFR-004"
+    },
+    {
+      "suite": "Security",
+      "id": "TC-IMG-037",
+      "name": "Audit trail recorded on upload/edit",
+      "status": "PASS",
+      "detail": "vehicle_media_audit",
+      "severity": "\u2014",
+      "br_ref": "NFR-005"
+    },
+    {
+      "suite": "Regression",
+      "id": "TC-IMG-027",
+      "name": "pytest media_admin+storage+filename",
+      "status": "PASS",
+      "detail": "70 passed in retest env",
+      "severity": "\u2014",
+      "br_ref": "\u2014"
+    },
+    {
+      "suite": "Data",
+      "id": "TC-IMG-029",
+      "name": "BRD hierarchy tables OR documented free-text",
+      "status": "PASS",
+      "detail": "ARCHITECTURAL_DECISIONS AD-001",
+      "severity": "\u2014",
+      "br_ref": "BR-DB-01"
+    }
+  ],
+  "still_open": [
+    {
+      "id": "BR-001",
+      "status": "PARTIAL",
+      "gap": "Not 15GB; no chunked/resumable"
+    },
+    {
+      "id": "BR-005",
+      "status": "PARTIAL",
+      "gap": "OCR+embeddings on claude tip only, not master"
+    },
+    {
+      "id": "BR-DSP-01",
+      "status": "PARTIAL",
+      "gap": "Dedicated manufacturer gallery incomplete"
+    },
+    {
+      "id": "BR-DSP-03",
+      "status": "PARTIAL",
+      "gap": "No dedicated variant page surface"
+    },
+    {
+      "id": "BR-SRCH-01",
+      "status": "PARTIAL",
+      "gap": "CLIP semantic NL search tip-only"
+    },
+    {
+      "id": "BR-AI-01",
+      "status": "PARTIAL",
+      "gap": "OCR/NSFW/plate blur tip-only or missing"
+    },
+    {
+      "id": "FR-003",
+      "status": "PARTIAL",
+      "gap": "Hints not auto-applied into form signals"
+    },
+    {
+      "id": "NFR-001",
+      "status": "PARTIAL",
+      "gap": "Revise BRD or add chunked upload"
+    },
+    {
+      "id": "NFR-002",
+      "status": "PARTIAL",
+      "gap": "No automated p95 SLA test"
+    },
+    {
+      "id": "NFR-003",
+      "status": "PARTIAL",
+      "gap": "Often local /media in dev"
+    },
+    {
+      "id": "AC-006",
+      "status": "PARTIAL",
+      "gap": "Manufacturer + variant pages incomplete"
+    },
+    {
+      "id": "AC-007",
+      "status": "PARTIAL",
+      "gap": "NL semantic search tip-only"
+    },
+    {
+      "id": "AC-010",
+      "status": "PARTIAL",
+      "gap": "Embeddings tip-only"
+    }
+  ]
+}
