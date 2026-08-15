@@ -1,0 +1,444 @@
+{
+  "generated_at": "2026-07-20T15:12:14.135204+00:00",
+  "scope_note": "No mechanical AI Diagnosis module. Tested AI Valuation (price diagnosis) as the implemented diagnosis-like feature.",
+  "counts": {
+    "FAIL": 22,
+    "PASS": 31,
+    "PARTIAL": 1
+  },
+  "total": 54,
+  "results": [
+    {
+      "suite": "Scope",
+      "id": "SC-00",
+      "name": "Mechanical/OBD AI Diagnosis module exists",
+      "status": "FAIL",
+      "detail": "No /ai-diagnosis route, no DTC/symptom wizard, no OBD API \u2014 feature not implemented",
+      "severity": "P0"
+    },
+    {
+      "suite": "Scope",
+      "id": "SC-01",
+      "name": "Closest feature: AI Valuation (price diagnosis)",
+      "status": "PASS",
+      "detail": "Angular /ai-valuation, List-car valuation, Next ValuationButton, API POST /listings/{id}/valuate, Edge ai-valuation",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-01",
+      "name": "Route /ai-valuation exists",
+      "status": "PASS",
+      "detail": "app.routes.ts loadComponent AiValuationComponent",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-02",
+      "name": "Hero claims no sign-up but authGuard required",
+      "status": "FAIL",
+      "detail": "HTML: \"Free\u2026 no sign-up needed\" vs routes canActivate:[authGuard] \u2192 login redirect",
+      "severity": "P0"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-03",
+      "name": "Form requires make/model/year/km/fuel/owners/condition",
+      "status": "PASS",
+      "detail": "variant + transmission optional",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-04",
+      "name": "Make\u2192Model\u2192Variant cascading catalogue",
+      "status": "PASS",
+      "detail": "CATALOGUE drives dropdowns; Other \u2192 free-text model",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-05",
+      "name": "Trust row claims 50,000+ valuations / actual sale prices",
+      "status": "FAIL",
+      "detail": "Hardcoded marketing; no analytics counter; fallback is formula not sale prices",
+      "severity": "P1"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-06",
+      "name": "Results show low/mid/high + confidence + tips + CTAs",
+      "status": "PASS",
+      "detail": "result-section present",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-07",
+      "name": "Silent fallback when Edge/Claude fails",
+      "status": "FAIL",
+      "detail": "catch uses fallbackValuation() with no user banner that AI failed / heuristic used",
+      "severity": "P0"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-08",
+      "name": "Confidence uses Math.random()",
+      "status": "FAIL",
+      "detail": "fallback confidence = 91+random or 78+random \u2014 non-deterministic, not real confidence",
+      "severity": "P1"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-09",
+      "name": "Subscription canUseFeature(ai_valuation) not enforced on page",
+      "status": "FAIL",
+      "detail": "subscription.service gates ai_valuation to buyer_pro/dealer_pro but page never checks",
+      "severity": "P1"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-10",
+      "name": "ApiService.getAIValuation hits non-existent /ai/valuation/{id}",
+      "status": "FAIL",
+      "detail": "Real API is POST /listings/{id}/valuate \u2014 dead client helper",
+      "severity": "P1"
+    },
+    {
+      "suite": "Angular UX",
+      "id": "ANG-11",
+      "name": "SeoService not called in constructor (title/meta)",
+      "status": "FAIL",
+      "detail": "Component injects only SupabaseService; no setPage for SEO",
+      "severity": "P2"
+    },
+    {
+      "suite": "Fallback Scoring",
+      "id": "FB-01",
+      "name": "Swift ZXi+ 2022 \u00b7 35k km \u00b7 Petrol \u00b7 1st \u00b7 Excellent",
+      "status": "PASS",
+      "detail": "low=480000, mid=533000, high=586000, dep%=46",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Fallback Scoring",
+      "id": "FB-02",
+      "name": "Creta segment \u00b7 5yr \u00b7 80k km \u00b7 Diesel \u00b7 2nd \u00b7 Fair",
+      "status": "PASS",
+      "detail": "low=365000, mid=406000, high=447000, dep%=66",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Fallback Scoring",
+      "id": "FB-03",
+      "name": "Electric premium vs Petrol same base",
+      "status": "PASS",
+      "detail": "petrol mid=620000, EV mid=670000",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Fallback Scoring",
+      "id": "FB-04",
+      "name": "Needs Work < Excellent same inputs",
+      "status": "PASS",
+      "detail": "Excellent=586000, NeedsWork=458000",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Fallback Scoring",
+      "id": "FB-05",
+      "name": "4th+ Owner penalty lowers mid",
+      "status": "PASS",
+      "detail": "1st=297000, 4th+=170000",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Fallback Scoring",
+      "id": "FB-06",
+      "name": "Brand-new year age=0 minimal dep",
+      "status": "PASS",
+      "detail": "low=850000, mid=944000, high=1038000, dep%=0",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Fallback Scoring",
+      "id": "FB-07",
+      "name": "Other make uses 900k segment fallback",
+      "status": "PASS",
+      "detail": "low=292000, mid=324000, high=356000, dep%=64",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Fallback Scoring",
+      "id": "FB-08",
+      "name": "Range band ~\u00b110%",
+      "status": "PASS",
+      "detail": "low=554000, mid=616000, high=678000, dep%=56",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Fallback Scoring",
+      "id": "FB-09",
+      "name": "Transmission affects fallback valuation",
+      "status": "FAIL",
+      "detail": "form.transmission collected but fallbackValuation never uses it",
+      "severity": "P1"
+    },
+    {
+      "suite": "Edge Function",
+      "id": "EF-01",
+      "name": "supabase/functions/ai-valuation exists",
+      "status": "PASS",
+      "detail": "Claude/Anthropic edge function",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Edge Function",
+      "id": "EF-02",
+      "name": "Requires ANTHROPIC_API_KEY",
+      "status": "PASS",
+      "detail": "Returns 500 if missing \u2014 Angular then silent-falls back",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Edge Function",
+      "id": "EF-03",
+      "name": "Model pin claude-opus-4-8",
+      "status": "PASS",
+      "detail": "Hardcoded model; may break if alias renamed",
+      "severity": "P2"
+    },
+    {
+      "suite": "Edge Function",
+      "id": "EF-04",
+      "name": "JSON.parse without fence stripping",
+      "status": "FAIL",
+      "detail": "If Claude wraps JSON in ``` fences, parse throws \u2192 500 \u2192 Angular fallback",
+      "severity": "P1"
+    },
+    {
+      "suite": "Edge Function",
+      "id": "EF-05",
+      "name": "CORS Allow-Origin *",
+      "status": "PARTIAL",
+      "detail": "Open CORS on edge function \u2014 OK for public tool but review for prod",
+      "severity": "P2"
+    },
+    {
+      "suite": "Edge Function",
+      "id": "EF-06",
+      "name": "No rate limit / abuse protection in function",
+      "status": "FAIL",
+      "detail": "Unauthenticated invoke possible from client if anon key allows functions; costly Claude calls",
+      "severity": "P0"
+    },
+    {
+      "suite": "List Your Car",
+      "id": "LC-01",
+      "name": "Wizard invokes same ai-valuation edge function",
+      "status": "PASS",
+      "detail": "fetchValuation in list-car.component.ts",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "List Your Car",
+      "id": "LC-02",
+      "name": "8s timeout then ruleBasedValuation",
+      "status": "PASS",
+      "detail": "Seller always gets a number",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "List Your Car",
+      "id": "LC-03",
+      "name": "Two different fallback engines (page vs list-car)",
+      "status": "FAIL",
+      "detail": "ai-valuation.fallbackValuation vs list-car.ruleBasedValuation \u2014 same car can get different mid",
+      "severity": "P0"
+    },
+    {
+      "suite": "List Your Car",
+      "id": "LC-04",
+      "name": "Persists to ai_valuation table on submit",
+      "status": "PASS",
+      "detail": "insert after publish (verify path in component)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "API",
+      "id": "API-01",
+      "name": "POST /listings/{id}/valuate exists",
+      "status": "PASS",
+      "detail": "Persists ai_valuation + ai_valuation_at",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "API",
+      "id": "API-02",
+      "name": "Ollama primary + heuristic fallback + circuit breaker",
+      "status": "PASS",
+      "detail": "services/valuation.py",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "API",
+      "id": "API-03",
+      "name": "Heuristic uses asking price as base (circular)",
+      "status": "FAIL",
+      "detail": "fair_value = listing.price * (1-dep\u2026) \u2014 valuates from ask price, not independent market base",
+      "severity": "P0"
+    },
+    {
+      "suite": "API",
+      "id": "API-04",
+      "name": "Heuristic ignores listing.condition",
+      "status": "FAIL",
+      "detail": "_heuristic_valuation never reads listing.condition",
+      "severity": "P1"
+    },
+    {
+      "suite": "API",
+      "id": "API-05",
+      "name": "Response does not expose method/confidence/reasoning to UI",
+      "status": "FAIL",
+      "detail": "estimate_valuation returns 4-tuple but ListingOut only stores ai_valuation float",
+      "severity": "P0"
+    },
+    {
+      "suite": "API",
+      "id": "API-06",
+      "name": "Dual AI stacks: Angular Claude vs API Ollama",
+      "status": "FAIL",
+      "detail": "Same product name, two providers, two schemas (low/mid/high vs single float)",
+      "severity": "P0"
+    },
+    {
+      "suite": "API Heuristic",
+      "id": "AH-01",
+      "name": "New (age0) used listing ~3% owner pen",
+      "status": "PASS",
+      "detail": "value=970000, expected [950000,1000000]",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "API Heuristic",
+      "id": "AH-02",
+      "name": "1yr ~15% dep",
+      "status": "PASS",
+      "detail": "value=820000, expected [800000,870000]",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "API Heuristic",
+      "id": "AH-03",
+      "name": "High mileage < normal",
+      "status": "PASS",
+      "detail": "normal=620000, high_km=560000",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "API Heuristic",
+      "id": "AH-04",
+      "name": "EV > petrol",
+      "status": "PASS",
+      "detail": "petrol=720000, electric=756000",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "API Heuristic",
+      "id": "AH-05",
+      "name": "Floor \u226525% ask",
+      "status": "PASS",
+      "detail": "value=125000, expected [125000,500000]",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Next UI",
+      "id": "NX-01",
+      "name": "ValuationButton on listing detail",
+      "status": "PASS",
+      "detail": "apps/web/components/valuation-button.tsx",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Next UI",
+      "id": "NX-02",
+      "name": "Requires auth (sign in to valuate)",
+      "status": "PASS",
+      "detail": "Redirects to /login when no session",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Next UI",
+      "id": "NX-03",
+      "name": "Shows only single float \u2014 no range/tips/method",
+      "status": "FAIL",
+      "detail": "UI displays ai_valuation number only; no low/mid/high, confidence, or heuristic badge",
+      "severity": "P1"
+    },
+    {
+      "suite": "Next UI",
+      "id": "NX-04",
+      "name": "No dedicated /valuate or /ai-valuation page on Next",
+      "status": "FAIL",
+      "detail": "Home markets AI Price Valuation but no standalone Next tool page (only listing button)",
+      "severity": "P1"
+    },
+    {
+      "suite": "Next UI",
+      "id": "NX-05",
+      "name": "Compare page shows AI Valuation column",
+      "status": "PASS",
+      "detail": "Uses listing.ai_valuation",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Car Detail",
+      "id": "CD-01",
+      "name": "Angular car-detail shows aiValuation card",
+      "status": "PASS",
+      "detail": "fairPrice / marketMin / marketMax / verdict from Supabase ai_valuation table",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Car Detail",
+      "id": "CD-02",
+      "name": "Car-detail valuation not live-recomputed",
+      "status": "FAIL",
+      "detail": "Displays stored row only; no Get Valuation CTA wired to Edge/API",
+      "severity": "P1"
+    },
+    {
+      "suite": "Platform",
+      "id": "PF-01",
+      "name": "Home AI Price Valuation card routes to /ai-advisor",
+      "status": "FAIL",
+      "detail": "Wrong destination \u2014 should be /ai-valuation",
+      "severity": "P0"
+    },
+    {
+      "suite": "Platform",
+      "id": "PF-02",
+      "name": "FAB / footer link to /ai-valuation",
+      "status": "PASS",
+      "detail": "home FAB + footer AI Valuation link exist",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Platform",
+      "id": "PF-03",
+      "name": "No Playwright e2e for /ai-valuation",
+      "status": "FAIL",
+      "detail": "No Angular valuation e2e; API has test_valuation.py only",
+      "severity": "P1"
+    },
+    {
+      "suite": "Platform",
+      "id": "PF-04",
+      "name": "Three schemas for one feature",
+      "status": "FAIL",
+      "detail": "Edge:{low,mid,high,confidence,tips} | API:float | Supabase table:{fair_price,market_min,max,verdict}",
+      "severity": "P0"
+    }
+  ]
+}
