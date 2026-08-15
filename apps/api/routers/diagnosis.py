@@ -230,6 +230,37 @@ async def _known_user_id(db: AsyncSession, raw: str | None) -> uuid.UUID | None:
     return candidate
 
 
+def _bounded(value, limit: int) -> str | None:
+    """A model-supplied string, cut to what the column can actually hold.
+
+    `repair_complexity` is VARCHAR(30), `risk_level` VARCHAR(20),
+    `repair_time_estimate` VARCHAR(100) — and every one of them is filled
+    verbatim from whatever the model returned. Nothing constrains a model to
+    our column widths: "Moderate - requires specialist tools" is 36 characters,
+    and an answer in Hindi or Tamil spends characters faster still.
+
+    This is invisible in CI. SQLite ignores VARCHAR lengths entirely, so an
+    over-long value round-trips there and the suite stays green; Postgres
+    raises StringDataRightTruncation and the whole INSERT is lost. The
+    diagnosis survives — storing it is not allowed to fail the request — but
+    the history row does not.
+
+    Truncating is the right trade for these three: they are short labels shown
+    beside a fuller free-text answer, so a clipped one still reads correctly,
+    whereas losing the row loses the driver's history entirely.
+    """
+    text = _as_text(value)
+    if text is None:
+        return None
+    if len(text) <= limit:
+        return text
+    logger.info(
+        "Trimming a %d-character value to the %d the column holds: %r",
+        len(text), limit, text[:60],
+    )
+    return text[:limit]
+
+
 def _fix_solutions(result: dict) -> list[dict]:
     """
     The repair options in the shape the report screen renders.
@@ -339,12 +370,12 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         video_url=body.video_url,
         preliminary_diagnosis=ai_result.get("preliminary_diagnosis"),
         possible_causes=raw_causes,
-        repair_complexity=ai_result.get("repair_complexity"),
+        repair_complexity=_bounded(ai_result.get("repair_complexity"), 30),
         cost_min_inr=ai_result.get("cost_min_inr"),
         cost_max_inr=ai_result.get("cost_max_inr"),
-        repair_time_estimate=ai_result.get("repair_time_estimate"),
+        repair_time_estimate=_bounded(ai_result.get("repair_time_estimate"), 100),
         safe_to_drive=ai_result.get("safe_to_drive"),
-        risk_level=ai_result.get("risk_level"),
+        risk_level=_bounded(ai_result.get("risk_level"), 20),
         recommended_steps=ai_result.get("recommended_steps", []),
         diy_fixes=ai_result.get("diy_fixes", []),
         immediate_service_required=ai_result.get("immediate_service_required"),

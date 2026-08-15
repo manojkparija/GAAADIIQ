@@ -1295,3 +1295,64 @@ class TestImageReachesDiagnosisSuite:
                 )
         assert r["risk_level"] in ("High", "Critical")
         assert r["vision_analysis"]["warning_lights_visible"] == ["Battery / charging system"]
+
+
+# ── Model output that does not fit the column ────────────────────────────────
+#
+# `repair_complexity` is VARCHAR(30), `risk_level` VARCHAR(20) and
+# `repair_time_estimate` VARCHAR(100), each filled verbatim from the model.
+# Nothing binds a model to our widths: "Moderate - requires specialist tools"
+# is 36 characters, and an answer in Hindi spends them faster.
+#
+# This class of bug is invisible to the rest of this suite, because SQLite
+# ignores VARCHAR lengths — an over-long value round-trips happily here while
+# Postgres raises StringDataRightTruncation and loses the whole INSERT. So
+# these assert the values are bounded BEFORE they reach the database, which is
+# a check SQLite cannot make for us.
+
+_LONG_ANSWER = {
+    **OLLAMA_DIAGNOSIS,
+    "repair_complexity": "Moderate - requires specialist diagnostic tools and a lift",
+    "risk_level": "High — do not drive until inspected",
+    "repair_time_estimate": (
+        "Between two and four hours of workshop time, plus up to a further "
+        "working day if the cylinder head has to come off for inspection"
+    ),
+}
+
+
+class TestDiagnosisColumnWidthSuite:
+    @pytest.mark.asyncio
+    async def test_over_long_model_values_are_stored_not_dropped(self, client, db_engine):
+        from sqlalchemy import select as sa_select
+
+        from models.vehicle_diagnosis import VehicleDiagnosis
+
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(_LONG_ANSWER)):
+            r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
+
+        assert r.status_code == 201
+        async with AsyncSession(db_engine) as session:
+            row = (await session.execute(
+                sa_select(VehicleDiagnosis).where(
+                    VehicleDiagnosis.id == uuid.UUID(r.json()["id"])
+                )
+            )).scalar_one_or_none()
+
+        # The row exists at all: a truncation error would have rolled it back
+        # and the endpoint would have served the diagnosis unstored.
+        assert row is not None, "the history row was lost"
+        assert len(row.repair_complexity) <= 30
+        assert len(row.risk_level) <= 20
+        assert len(row.repair_time_estimate) <= 100
+        # Trimmed, not blanked — the label still reads correctly.
+        assert row.repair_complexity.startswith("Moderate")
+
+    def test_bounded_leaves_a_fitting_value_alone(self):
+        from routers.diagnosis import _bounded
+
+        assert _bounded("Moderate", 30) == "Moderate"
+        assert _bounded(None, 30) is None
+        assert _bounded("", 30) is None
+        assert _bounded(123, 30) is None
+        assert _bounded("x" * 40, 30) == "x" * 30
