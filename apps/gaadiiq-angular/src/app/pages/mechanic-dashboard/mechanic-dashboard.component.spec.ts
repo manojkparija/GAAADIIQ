@@ -109,6 +109,30 @@ describe('MechanicDashboardComponent availability switch', () => {
     expect((el.querySelector('.md-toggle') as HTMLElement).getAttribute('aria-checked')).toBe('true');
   });
 
+  it('does not ask for offers while the account is pending', async () => {
+    // /service-requests/offers/available 403s for anyone but an active
+    // mechanic. The poll asked anyway and failed silently, so production
+    // logged an unbroken run of 403s — one a minute, for as long as the
+    // dashboard stayed open.
+    let asked = 0;
+    const market = TestBed.inject(MarketplaceService) as any;
+    market.myOffers = () => { asked++; return Promise.resolve([]); };
+
+    component.profile.set({ ...PROFILE, status: 'pending_verification' });
+    await (component as any).pollOffers();
+    expect(asked).withContext('polled an endpoint that cannot succeed').toBe(0);
+  });
+
+  it('asks for offers once the account is active', async () => {
+    let asked = 0;
+    const market = TestBed.inject(MarketplaceService) as any;
+    market.myOffers = () => { asked++; return Promise.resolve([]); };
+
+    component.profile.set({ ...PROFILE, status: 'active' });
+    await (component as any).pollOffers();
+    expect(asked).toBe(1);
+  });
+
   it('is usable before approval, and says when it takes effect', () => {
     // Availability is the mechanic's own preference; verification is ours.
     // Disabling it while pending would leave them nothing to do but wait, and
