@@ -240,6 +240,19 @@ describe('VoiceDiagnosisService transcript assembly', () => {
     expect(buffer).toBe('got it Tata Safari 2024 petrol automatic');
   });
 
+  it('keeps every phrase when the engine sends only the newest final', () => {
+    const rec = armed();
+    // Not every engine restates the session in `results`; some hand over just
+    // the new phrase, and so does our e2e double. Replacing wholesale there
+    // reduced "my Maruti Swift 2019 petrol manual" to "manual transmission" —
+    // caught by VD-E2E-0407, which is why this case is now pinned here too.
+    let buffer = '';
+    for (const phrase of ['my Maruti Swift', '2019 petrol', 'manual transmission']) {
+      buffer = feed(rec, [finalResult(phrase)], 0);
+    }
+    expect(buffer).toBe('my Maruti Swift 2019 petrol manual transmission');
+  });
+
   it('still assembles a well-behaved engine\'s separate finals', () => {
     const rec = armed();
     // Desktop Chrome: distinct phrases accumulate in `results`, resultIndex
