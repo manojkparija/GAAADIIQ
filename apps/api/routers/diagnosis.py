@@ -190,6 +190,46 @@ def _engine_name(value: object) -> str | None:
     return text.split(":")[0] if text else None
 
 
+async def _known_user_id(db: AsyncSession, raw: str | None) -> uuid.UUID | None:
+    """
+    `body.user_id`, but only if that user actually exists here.
+
+    Sign-in is Supabase's; `users` is ours, and the two are not guaranteed to
+    agree. A caller who signed in through Supabase but has no local row sent an
+    id that satisfies the UUID cast and then failed the foreign key:
+
+        ForeignKeyViolationError: insert or update on table "vehicle_diagnoses"
+        violates foreign key constraint "vehicle_diagnoses_user_id_fkey"
+        Key (user_id)=(…) is not present in table "users"
+
+    The diagnosis survived that, because storing it is no longer allowed to
+    fail the request — but the history row was lost every time, silently, for
+    exactly the users who are signed in and would expect to see it.
+
+    Storing NULL keeps the row. An anonymous diagnosis is a smaller loss than
+    no diagnosis, and `GET /{id}` already treats a NULL owner as nobody rather
+    than anybody, so this cannot widen who can read it.
+
+    This is not an authorisation check — the tier still comes from the verified
+    token, never from the body. It only decides whether the row can be linked.
+    """
+    if not raw:
+        return None
+    try:
+        candidate = uuid.UUID(raw)
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+    exists = await db.execute(select(User.id).where(User.id == candidate))
+    if exists.scalar_one_or_none() is None:
+        logger.info(
+            "Diagnosis user_id %s is not a known user; storing the report unowned",
+            candidate,
+        )
+        return None
+    return candidate
+
+
 def _fix_solutions(result: dict) -> list[dict]:
     """
     The repair options in the shape the report screen renders.
@@ -281,7 +321,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         raw_causes = []
 
     record = VehicleDiagnosis(
-        user_id=uuid.UUID(body.user_id) if body.user_id else None,
+        user_id=await _known_user_id(db, body.user_id),
         manufacturer=body.manufacturer,
         model=body.model,
         variant=body.variant,

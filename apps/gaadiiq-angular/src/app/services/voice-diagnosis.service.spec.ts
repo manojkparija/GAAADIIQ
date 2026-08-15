@@ -160,3 +160,95 @@ describe('VoiceDiagnosisService', () => {
     });
   });
 });
+
+// ── Android's re-delivered finals (production, Aug 15) ──────────────────────
+//
+// Chrome on desktop hands you each final once and advances resultIndex.
+// Android's WebView engine re-delivers a GROWING final with resultIndex stuck
+// at 0, so one sentence arrives as N finals, each a longer prefix of the last.
+// Appending them produced this, verbatim, in the Render logs:
+//
+//   "got got it got it Tata got it Tata Safari got it Tata Safari 2024 …"
+//
+// which went to the model as the driver's symptoms. The model replied that the
+// report contained no symptoms at all, which was correct.
+describe('VoiceDiagnosisService transcript assembly', () => {
+  let svc: VoiceDiagnosisService;
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({});
+    svc = TestBed.inject(VoiceDiagnosisService);
+  });
+
+  afterEach(() => localStorage.clear());
+
+  /**
+   * Arm the real recogniser.
+   *
+   * `_startRecognition()` constructs `window.SpeechRecognition` and installs
+   * its handlers on the instance, so substituting the constructor is the only
+   * seam that exercises the shipped `onresult` rather than a copy of it. If the
+   * fake is never constructed the returned object has no `onresult` and the
+   * expectations below fail loudly — this must not degrade into a skip.
+   */
+  function armed(): any {
+    let instance: any = null;
+    class FakeRecognition {
+      lang = ''; continuous = false; interimResults = false; maxAlternatives = 1;
+      onstart: any = null; onresult: any = null; onerror: any = null; onend: any = null;
+      constructor() { instance = this; }
+      start() { /* no audio in a unit test */ }
+      stop() { /* ignore */ }
+      abort() { /* ignore */ }
+    }
+    (window as any).SpeechRecognition = FakeRecognition;
+    (svc as any).supported = true;
+    svc.recordConsent(true);
+    svc.start(() => { /* delivery is a separate concern */ });
+    return instance;
+  }
+
+  /** One final result, as the engine exposes it. */
+  const finalResult = (transcript: string) => {
+    const r: any = [{ transcript, confidence: 0.9 }];
+    r.isFinal = true;
+    return r;
+  };
+
+  /** Drive the service's own onresult handler and read the buffer back. */
+  const feed = (recognition: any, results: any, resultIndex: number) => {
+    recognition.onresult({ resultIndex, results });
+    return (svc as any).finalBuffer.trim();
+  };
+
+  afterEach(() => delete (window as any).SpeechRecognition);
+
+  it('collapses Android re-delivered finals instead of stacking them', () => {
+    const rec = armed();
+    // Android's WebView re-delivers ONE final whose transcript grows, with
+    // resultIndex stuck at 0. Appending each arrival built the staircase.
+    const growing = [
+      'got', 'got it', 'got it Tata', 'got it Tata Safari',
+      'got it Tata Safari 2024', 'got it Tata Safari 2024 petrol',
+      'got it Tata Safari 2024 petrol automatic',
+    ];
+    let buffer = '';
+    for (const transcript of growing) {
+      buffer = feed(rec, [finalResult(transcript)], 0);
+    }
+    expect(buffer).toBe('got it Tata Safari 2024 petrol automatic');
+  });
+
+  it('still assembles a well-behaved engine\'s separate finals', () => {
+    const rec = armed();
+    // Desktop Chrome: distinct phrases accumulate in `results`, resultIndex
+    // advancing. Rebuilding must reproduce exactly what appending produced.
+    const phrases = ['my Maruti Swift', '2019 petrol', 'manual transmission'];
+    let buffer = '';
+    for (let n = 1; n <= phrases.length; n++) {
+      buffer = feed(rec, phrases.slice(0, n).map(finalResult), n - 1);
+    }
+    expect(buffer).toBe('my Maruti Swift 2019 petrol manual transmission');
+  });
+});

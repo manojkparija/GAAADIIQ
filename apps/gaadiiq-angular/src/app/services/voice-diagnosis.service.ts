@@ -277,7 +277,26 @@ export class VoiceDiagnosisService {
         let finalChunk = '';
         let maxConfidence = 0;
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        // Rebuild the finals from the WHOLE results list, every time, rather
+        // than appending what arrived since `resultIndex`.
+        //
+        // Chrome on desktop hands you each final once and moves resultIndex
+        // along, so appending works. Android's WebView engine does not: it
+        // re-delivers a GROWING final result with resultIndex stuck at 0, so
+        // "Tata Safari 2024 petrol automatic" arrives as seven successive
+        // finals, each one a longer prefix of the last. Appending them
+        // produced the staircase seen in production:
+        //
+        //   "got got it got it Tata got it Tata Safari got it Tata Safari
+        //    2024 got it Tata Safari 2024 petrol got it …"
+        //
+        // — which then went to the model as the driver's symptoms, and the
+        // model correctly replied that it contained no symptoms at all.
+        //
+        // Rebuilding is idempotent: `event.results` holds every result for the
+        // session, so on a well-behaved engine this produces exactly what
+        // appending did, and on a re-delivering one the repeats collapse.
+        for (let i = 0; i < event.results.length; i++) {
           const result = event.results[i];
           const transcript = result[0].transcript;
           const confidence = result[0].confidence ?? 0;
@@ -285,7 +304,8 @@ export class VoiceDiagnosisService {
 
           if (result.isFinal) {
             finalChunk += transcript + ' ';
-          } else {
+          } else if (i >= event.resultIndex) {
+            // Interim text is display-only, so only the newest matters.
             interim += transcript;
           }
         }
@@ -302,7 +322,9 @@ export class VoiceDiagnosisService {
         // threw the year, fuel and transmission away. That is the whole of
         // "it isn't capturing the car details properly".
         if (finalChunk.trim()) {
-          this.finalBuffer += finalChunk;
+          // Replace, because finalChunk is now the complete set of finals for
+          // this session rather than the delta since the last event.
+          this.finalBuffer = finalChunk;
           if (this.deliverTimer) clearTimeout(this.deliverTimer);
           this.deliverTimer = setTimeout(() => this._deliverFinal(), FINAL_SILENCE_MS);
         }

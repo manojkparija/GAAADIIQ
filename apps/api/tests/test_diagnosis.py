@@ -6,6 +6,7 @@ voice transcript extraction, prompt-injection sanitisation and access control.
 Ollama is mocked throughout — these tests must not require a running LLM.
 """
 import json
+import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -564,6 +565,69 @@ class TestDiagnosisSurvivesAStorageFailureSuite:
         assert body["immediate_service_required"] is True
         assert body["disclaimer"]
         assert body["recommended_steps"] == OLLAMA_DIAGNOSIS["recommended_steps"]
+
+
+# ── Linking a report to a user that exists ───────────────────────────────────
+#
+# Sign-in is Supabase's, `users` is ours, and they do not always agree. A
+# caller signed in through Supabase with no local row sent an id that cast
+# cleanly to a UUID and then failed the foreign key, so the history row was
+# lost every time — silently, and for exactly the users who expect to see it.
+
+class TestDiagnosisOwnershipSuite:
+    @pytest.mark.asyncio
+    async def test_an_unknown_user_id_is_stored_as_unowned(self, client, db_engine):
+        from sqlalchemy import select as sa_select
+
+        from models.vehicle_diagnosis import VehicleDiagnosis
+
+        stranger = str(uuid.uuid4())
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+            r = await client.post(
+                "/diagnosis/analyse", json={**VALID_PAYLOAD, "user_id": stranger}
+            )
+
+        assert r.status_code == 201
+        async with AsyncSession(db_engine) as session:
+            row = (await session.execute(
+                sa_select(VehicleDiagnosis).where(VehicleDiagnosis.id == uuid.UUID(r.json()["id"]))
+            )).scalar_one()
+        # Stored, and unowned rather than not stored at all.
+        assert row.user_id is None
+
+    @pytest.mark.asyncio
+    async def test_a_known_user_id_is_kept(self, client, db_engine):
+        from sqlalchemy import select as sa_select
+
+        from models.user import User as UserModel
+        from models.vehicle_diagnosis import VehicleDiagnosis
+
+        uid = uuid.uuid4()
+        async with AsyncSession(db_engine) as session:
+            session.add(UserModel(
+                id=uid, email=f"{uid}@example.com", full_name="Real",
+                hashed_password="x", is_active=True,
+            ))
+            await session.commit()
+
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+            r = await client.post(
+                "/diagnosis/analyse", json={**VALID_PAYLOAD, "user_id": str(uid)}
+            )
+
+        async with AsyncSession(db_engine) as session:
+            row = (await session.execute(
+                sa_select(VehicleDiagnosis).where(VehicleDiagnosis.id == uuid.UUID(r.json()["id"]))
+            )).scalar_one()
+        assert row.user_id == uid
+
+    @pytest.mark.asyncio
+    async def test_a_malformed_user_id_does_not_500(self, client):
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+            r = await client.post(
+                "/diagnosis/analyse", json={**VALID_PAYLOAD, "user_id": "not-a-uuid"}
+            )
+        assert r.status_code == 201
 
 
 # ── The repair options the report screen renders ─────────────────────────────
