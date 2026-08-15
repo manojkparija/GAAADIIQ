@@ -314,8 +314,12 @@ export function extractVehicleInfo(transcript: string): ExtractedVehicleInfo {
     if (matchesAny(key, norm, orig)) { result.model = MODELS[key]; break; }
   }
 
-  // Year
-  result.model_year = extractYear(norm);
+  // Year. Assigned only when found: a present-but-undefined key is
+  // indistinguishable from a real value to a spread merge, and that is how a
+  // later utterance about fuel type used to erase a year the driver had
+  // already given.
+  const year = extractYear(norm);
+  if (year !== undefined) result.model_year = year;
 
   // Fuel
   for (const [key, value] of Object.entries(FUEL_MAP)) {
@@ -328,7 +332,9 @@ export function extractVehicleInfo(transcript: string): ExtractedVehicleInfo {
   }
 
   // Odometer — parsed from the original text, which still has the separators.
-  result.odometer_km = extractOdometer(orig);
+  // Same rule as the year: set it or leave it absent, never present-and-empty.
+  const odometer = extractOdometer(orig);
+  if (odometer !== undefined) result.odometer_km = odometer;
 
   // Required fields check
   const required: Array<keyof ExtractedVehicleInfo> = ['manufacturer', 'model', 'model_year', 'fuel_type', 'transmission'];

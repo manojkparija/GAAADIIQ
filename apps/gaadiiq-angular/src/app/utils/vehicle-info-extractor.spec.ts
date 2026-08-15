@@ -177,3 +177,42 @@ describe('spoken model years', () => {
     expect(r.missing).toEqual([]);
   });
 });
+
+// The reported bug: a year given early vanished when a later utterance was
+// processed, and the assistant asked for it again.
+//
+// Cause: `result.model_year` was assigned unconditionally, so a transcript
+// with no year still carried the KEY `model_year` with the value `undefined`.
+// The caller merged with `{ ...before, ...info }`, and a present-but-undefined
+// key overwrites. Only the year and the odometer were affected — every other
+// field is assigned inside an `if (matched)` and is simply absent.
+describe('absent fields are absent, not undefined', () => {
+  it('omits model_year entirely when the transcript has no year', () => {
+    const r = extractVehicleInfo('it runs on petrol with a manual gearbox');
+    expect('model_year' in r).toBe(false);
+    expect(r.model_year).toBeUndefined();
+  });
+
+  it('omits odometer_km entirely when the transcript has no reading', () => {
+    const r = extractVehicleInfo('Maruti Swift petrol');
+    expect('odometer_km' in r).toBe(false);
+  });
+
+  it('still reports both when they are present', () => {
+    const r = extractVehicleInfo('a 2010 Swift that has done 50,000 km');
+    expect('model_year' in r).toBe(true);
+    expect(r.model_year).toBe(2010);
+    expect(r.odometer_km).toBe(50000);
+  });
+
+  it('spreading a later result over an earlier one keeps the year', () => {
+    // The exact operation the component performs. This is the assertion that
+    // would have caught the bug: it fails on the old extractor.
+    const first = extractVehicleInfo('my car is a 2010 Maruti Swift');
+    const second = extractVehicleInfo('petrol, manual');
+    const merged = { ...first, ...second } as any;
+    expect(merged.model_year).toBe(2010);
+    expect(merged.fuel_type).toBe('Petrol');
+    expect(merged.transmission).toBe('Manual');
+  });
+});

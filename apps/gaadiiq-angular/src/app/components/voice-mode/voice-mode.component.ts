@@ -477,9 +477,34 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Merge newly extracted fields over what we already know.
+   *
+   * Spreading would be wrong. `{ ...before, ...info }` lets a key that is
+   * PRESENT and `undefined` overwrite a value we already captured — and that is
+   * exactly what happened to the model year. `extractVehicleInfo` assigns
+   * `result.model_year` unconditionally, so a later utterance about fuel type
+   * carries `model_year: undefined` and wiped the year the driver had already
+   * given, which made the assistant ask for it a second time.
+   *
+   * That is also why only the year and the odometer were affected: every other
+   * field is assigned inside an `if (matched)` and is simply absent when it
+   * does not match, so spreading never clobbered it.
+   *
+   * A slot-filling conversation only ever accumulates. Nothing a later
+   * utterance says should erase an earlier answer.
+   */
+  private _mergeKnown(before: any, info: any): any {
+    const merged = { ...before };
+    for (const [key, value] of Object.entries(info ?? {})) {
+      if (value !== undefined && value !== null && value !== '') merged[key] = value;
+    }
+    return merged;
+  }
+
   private _applyExtracted(info: any) {
     const before = this.vehicleInfo() as any;
-    const merged = { ...before, ...info };
+    const merged = this._mergeKnown(before, info);
     delete merged.missing;
 
     // What this utterance actually added — used to acknowledge it out loud so
