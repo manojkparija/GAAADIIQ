@@ -190,10 +190,15 @@ async def _fix_schema():
                 DO $$
                 BEGIN
                     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_type') THEN
-                        EXECUTE 'CREATE TYPE notification_type AS ENUM ('
-                              || '''booking_received'',''booking_confirmed'',''booking_cancelled'','
-                              || '''loan_inquiry_received'',''price_drop'',''listing_viewed'','
-                              || '''job_offer'',''system'')';
+                        -- Direct DDL, not EXECUTE: quoting a label list inside
+                        -- EXECUTE needs every quote doubled, and getting that
+                        -- wrong is a syntax error at boot rather than a caught
+                        -- failure. plpgsql runs DDL directly.
+                        CREATE TYPE notification_type AS ENUM (
+                            'booking_received', 'booking_confirmed', 'booking_cancelled',
+                            'loan_inquiry_received', 'price_drop', 'listing_viewed',
+                            'job_offer', 'system'
+                        );
                     END IF;
                 END $$;
                 """

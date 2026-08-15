@@ -58,13 +58,16 @@ def upgrade() -> None:
         return
 
     labels = ", ".join(f"'{v}'" for v in _LABELS)
+    # DDL runs directly in plpgsql; wrapping it in EXECUTE would mean doubling
+    # every quote in the label list, which is what the first version of this
+    # got wrong — "syntax error at or near ', '" from the Postgres CI job.
     op.execute(
         sa.text(
             f"""
             DO $$
             BEGIN
                 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_type') THEN
-                    EXECUTE 'CREATE TYPE notification_type AS ENUM ({labels})';
+                    CREATE TYPE notification_type AS ENUM ({labels});
                 END IF;
             END
             $$;
