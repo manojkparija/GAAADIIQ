@@ -52,9 +52,26 @@
             <span class="md-status" [class.pending]="p.status !== 'active'">
               {{ p.status === 'active' ? 'Active' : 'Pending verification' }}
             </span>
-            <button type="button" class="md-toggle" [class.on]="p.is_available"
-                    [disabled]="busyId() === p.id" (click)="toggleAvailability()">
-              {{ p.is_available ? 'Accepting jobs' : 'Not accepting' }}
+            <!--
+              A switch, not a pill. This was a bare rounded button reading
+              "Not accepting" sitting beside the "Pending verification" chip,
+              in the same grey — so it read as a second status badge and the
+              only control on the dashboard looked like a label. It was
+              reported as a missing feature, which is the right conclusion to
+              draw from a control with no affordance.
+            -->
+            <button type="button"
+                    class="md-toggle"
+                    role="switch"
+                    [class.on]="p.is_available"
+                    [attr.aria-checked]="p.is_available"
+                    [attr.aria-label]="'Accepting jobs'"
+                    [disabled]="busyId() === p.id"
+                    (click)="toggleAvailability()">
+              <span class="md-toggle-track" aria-hidden="true"><span class="md-toggle-knob"></span></span>
+              <span class="md-toggle-text">
+                {{ busyId() === p.id ? 'Saving…' : (p.is_available ? 'Accepting jobs' : 'Not accepting jobs') }}
+              </span>
             </button>
           </div>
         </div>
@@ -63,7 +80,8 @@
              rather than leaving them wondering why no work arrives. -->
         <div class="md-note" *ngIf="p.status !== 'active'">
           Your account is awaiting admin verification. You won't appear in driver searches until
-          it's approved.
+          it's approved. You can set yourself to accepting now — it takes effect the moment
+          your account is approved.
         </div>
 
         <!-- Broadcast offers: jobs sent to every available mechanic nearby.
