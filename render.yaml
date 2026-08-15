@@ -55,7 +55,28 @@ services:
         sync: false
       - key: SECRET_KEY
         sync: false            # JWT signing key for this backend
+      # The two models below the diagnosis knowledge base, tried in this order.
+      # OPENAI_API_KEY also powers server-side speech-to-text below, so one key
+      # covers both.
+      #
+      # With NEITHER set, a symptom that misses the knowledge base reaches the
+      # heuristic fallback — an answer assembled from keyword overlap, not a
+      # diagnosis. `GET /health/dependencies` reports `diagnosis_model:
+      # heuristic-only` when that is the state, so it is visible rather than
+      # inferred from a quiet log.
+      - key: OPENAI_API_KEY
+        sync: false
       - key: GEMINI_API_KEY
+        sync: false
+      # Server-side speech-to-text. The browser's Web Speech API is the primary
+      # engine; this is the fallback for Android WebView, Safari and Firefox,
+      # which have no usable one. Left as "none" the endpoint returns 503 and
+      # those clients have no voice input at all.
+      #
+      # "openai" here means Whisper via the same key as above.
+      - key: STT_PROVIDER
+        value: openai
+      - key: STT_API_KEY
         sync: false
       # Brochure images MUST go to object storage here. The default backend is
       # "local", which writes into the container — and this service has no
@@ -108,9 +129,19 @@ services:
         sync: false
       # Redis — OTP digests and the diagnosis response cache. Without it both
       # use a per-process dict: correct, but not shared across workers or
-      # restarts, so the cache hit rate collapses and OTPs break across replicas.
+      # restarts, so the cache hit rate collapses and OTPs break across
+      # replicas.
+      #
+      # This was `sync: false` and was never filled in, which is exactly the
+      # failure mode a blueprint should prevent: a secret nobody has to set is
+      # a secret nobody forgets. It is wired to the key-value service declared
+      # at the bottom of this file instead, so applying the blueprint
+      # provisions the instance and injects its connection string.
       - key: REDIS_URL
-        sync: false
+        fromService:
+          type: keyvalue
+          name: gaadiiq-cache
+          property: connectionString
       # Ollama — the free-tier diagnosis engine, vision, valuation and sentiment.
       # Defaults to localhost:11434, which is unreachable here, so all four lose
       # their model.
@@ -121,6 +152,27 @@ services:
       # weaker without it either way.
       - key: KYC_HASH_PEPPER
         sync: false
+
+  # ── Cache ──────────────────────────────────────────────────────────────────
+  #
+  # Backs the diagnosis response cache and the OTP digest store. Declared here
+  # rather than left to a dashboard entry because the dashboard entry was never
+  # made: the API ran for months on the per-process fallback, which is correct
+  # but survives neither a restart nor a second worker.
+  #
+  # Same region as the API — a cache reached across regions costs more in
+  # latency than the lookup it replaces.
+  - type: keyvalue
+    name: gaadiiq-cache
+    plan: starter
+    region: singapore
+    # Reachable only from services in this Render account. The cache holds
+    # OTP digests; it must not be open to the internet.
+    ipAllowList: []
+    # allkeys-lru, because everything stored here is derived data with a TTL.
+    # Evicting a diagnosis answer costs one recomputation; refusing a write
+    # under memory pressure would fail the request that needed it.
+    maxmemoryPolicy: allkeys-lru
 
   # ── Angular frontend ───────────────────────────────────────────────────────
   - type: web

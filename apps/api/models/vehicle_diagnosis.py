@@ -56,5 +56,15 @@ class VehicleDiagnosis(UUIDMixin, TimestampMixin, Base):
     ollama_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     analysis_confidence: Mapped[float | None] = mapped_column(Float)
 
+    # Which rung of the ladder served this answer, and — when the knowledge
+    # base did — which row. `ollama_used` above is not a substitute: it is a
+    # single bool from when there was one model, and it cannot distinguish a
+    # curated answer from a generated one or GPT-4o from Gemini.
+    #
+    # This is what makes coverage measurable. Rows grouped by make and model
+    # and split by engine say which vehicles the knowledge base does not cover.
+    engine: Mapped[str | None] = mapped_column(String(32))
+    kb_diagnosis_code: Mapped[str | None] = mapped_column(String(64))
+
     def __repr__(self) -> str:
         return f"<VehicleDiagnosis id={self.id} {self.manufacturer} {self.model} {self.model_year}>"

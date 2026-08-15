@@ -551,6 +551,7 @@ async def test_DX_E2E_0405_rejection_withdraws_the_row_but_keeps_it(
     "method,path",
     [
         ("get", f"{KB}/stats"),
+        ("get", f"{KB}/coverage"),
         ("get", f"{KB}/review-queue"),
         ("get", f"{KB}/review-queue/summary"),
         ("get", f"{KB}/import-history"),

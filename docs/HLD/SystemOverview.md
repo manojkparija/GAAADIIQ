@@ -200,7 +200,8 @@ cache → alias → exact lookup → semantic → Gemini → Ollama → heuristi
 A row reaches a driver only when `status = ACTIVE` **and**
 `verification_status = VERIFIED`, both set by a human through the review queue.
 `AI_GENERATED` rows are forced to `PENDING_REVIEW` on import — a model cannot
-promote its own output. Full detail: `LLD/AIArchitecture.md` §0.
+promote its own output. Full detail: `LLD/AIDiagnosisModule.md`, and
+`LLD/AIArchitecture.md` §0 for the ladder in the context of all AI use.
 
 ---
 
@@ -230,6 +231,7 @@ promote its own output. Full detail: `LLD/AIArchitecture.md` §0.
 | Every table | `LLD/DatabaseDesign.md` §1 (generated) |
 | The web app | `LLD/UIArchitecture.md` |
 | The AI ladder | `LLD/AIArchitecture.md` §0 |
+| The diagnosis module, end to end | `LLD/AIDiagnosisModule.md` |
 | Known sharp edges with evidence | `docs/ENGINEERING_BACKLOG.md` |
 
 Both generated sections are produced from the router decorators and the ORM, so

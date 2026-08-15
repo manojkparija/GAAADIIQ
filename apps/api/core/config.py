@@ -131,8 +131,19 @@ class Settings(BaseSettings):
     def admin_email_set(self) -> set[str]:
         return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}
 
-    # Gemini — higher-quality diagnosis for paid users and admins. Ollama is
-    # the free tier. Leave the key blank and everyone falls back to Ollama.
+    # OpenAI — the first model asked for a diagnosis when nothing in the
+    # knowledge base matches, for every tier. It sits ahead of Gemini rather
+    # than beside it: Ollama used to hold this slot and its host is not set in
+    # any deployed environment, which left free-tier users falling through to
+    # the heuristic — a floor, not a finding. Leave the key blank and the
+    # ladder skips straight to Gemini.
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o"
+    openai_api_url: str = "https://api.openai.com/v1"
+    openai_timeout_seconds: float = 20.0
+
+    # Gemini — the second model, and the last one before Ollama and the
+    # heuristic. Leave the key blank and the ladder skips it.
     gemini_api_key: str = ""
     # gemini-2.0-flash was shut down on 2026-06-01, so the previous default
     # named a model the API no longer serves. Flash-Lite is the cost-efficient

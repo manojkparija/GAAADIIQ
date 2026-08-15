@@ -65,7 +65,22 @@ logger = logging.getLogger("gaadiiq.kb_lookup")
 # Below this cosine similarity a semantic "match" is noise. Set higher than the
 # 0.25 used for the 12-row JSON KB: that file is tiny and a loose match there
 # only nudged a prompt, whereas a match here is served to a driver as fact.
-MIN_SEMANTIC_SIMILARITY = 0.62
+#
+# MEASURED, not chosen. This was 0.62 — a number picked because it felt
+# conservative — until `tests/test_semantic_threshold.py` swept it against a
+# labelled set. At 0.62 precision was 0.842: three of nineteen served matches
+# were wrong, and all three were the same row (engine overheat, DX-ENG-002)
+# matched to symptoms it does not explain, scoring 0.66, 0.675 and 0.69.
+#
+# That row is the corpus's strongest attractor because its text mentions a
+# gauge, a smell and cooling — vocabulary that a fuel-gauge complaint, a
+# burning-plastic smell and a weak air conditioner all share without having
+# anything to do with overheating. A threshold below 0.70 serves all three a
+# curated overheating diagnosis, with a source and a cost range attached.
+#
+# Re-measure with `python scripts/tune_semantic_threshold.py` after changing
+# the embedding model or the corpus.
+MIN_SEMANTIC_SIMILARITY = 0.70
 
 # How long the alias table and the embedding index stay cached in-process.
 # Aliases change only on import, so a short TTL costs nothing and means an
