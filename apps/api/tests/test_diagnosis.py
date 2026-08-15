@@ -515,6 +515,69 @@ class TestExtractVehicleInfoSuite:
             assert await extract_vehicle_info_from_transcript("some car") == {}
 
 
+# ── Translation provider order ───────────────────────────────────────────────
+#
+# Translation went only to Ollama, whose host is unset in every deployed
+# environment, so EVERY non-English diagnosis came back in English with
+# `translation_failed: true`. The flag was honest — which is exactly why
+# nothing looked broken — but a Hindi speaker was still reading English.
+
+_HINDI = {
+    "preliminary_diagnosis": "ब्रेक पैड घिस गए हैं",
+    "recommended_steps": ["मैकेनिक से जांच कराएं"],
+    "diy_fixes": [],
+    "preventive_maintenance": [],
+    "follow_up_questions": [],
+    "possible_causes": [{"cause": "घिसे हुए ब्रेक पैड", "explanation": "सामान्य कारण"}],
+}
+
+_ENGLISH_RESULT = {
+    "preliminary_diagnosis": "Worn brake pads",
+    "recommended_steps": ["Have a mechanic inspect the pads"],
+    "diy_fixes": [],
+    "preventive_maintenance": [],
+    "follow_up_questions": [],
+    "possible_causes": [{"cause": "Worn brake pads", "explanation": "Common cause"}],
+}
+
+
+class TestTranslationProviderOrderSuite:
+    @pytest.mark.asyncio
+    async def test_gemini_translates_without_touching_ollama(self):
+        with patch(
+            "services.gemini_gateway.generate_text",
+            new=AsyncMock(return_value=json.dumps(_HINDI)),
+        ) as gem:
+            with patch("httpx.AsyncClient", side_effect=AssertionError("Ollama must not be called")):
+                r = await _translate_diagnosis(dict(_ENGLISH_RESULT), "hi-IN")
+        assert r["preliminary_diagnosis"] == "ब्रेक पैड घिस गए हैं"
+        assert r["translation_failed"] is False
+        assert gem.await_args.kwargs["caller"] == "diagnosis_translate"
+
+    @pytest.mark.asyncio
+    async def test_falls_back_to_ollama_when_gemini_fails(self):
+        with patch("services.gemini_gateway.generate_text", new=AsyncMock(side_effect=Exception("429"))):
+            with patch("httpx.AsyncClient", return_value=_mock_ollama(_HINDI)):
+                r = await _translate_diagnosis(dict(_ENGLISH_RESULT), "hi-IN")
+        assert r["preliminary_diagnosis"] == "ब्रेक पैड घिस गए हैं"
+
+    @pytest.mark.asyncio
+    async def test_says_so_when_every_provider_fails(self):
+        # Serving English to a Hindi speaker without saying so looks like a
+        # working translation of a wrong answer.
+        with patch("services.gemini_gateway.generate_text", new=AsyncMock(side_effect=Exception("down"))):
+            with patch("httpx.AsyncClient", side_effect=Exception("no ollama")):
+                r = await _translate_diagnosis(dict(_ENGLISH_RESULT), "hi-IN")
+        assert r["translation_failed"] is True
+        assert r["preliminary_diagnosis"] == "Worn brake pads"
+
+    @pytest.mark.asyncio
+    async def test_english_is_not_sent_to_a_model_at_all(self):
+        with patch("services.gemini_gateway.generate_text", new=AsyncMock(side_effect=AssertionError("no call"))):
+            r = await _translate_diagnosis(dict(_ENGLISH_RESULT), "en-IN")
+        assert r["preliminary_diagnosis"] == "Worn brake pads"
+
+
 # ── Voice extraction: provider order and value shapes ────────────────────────
 #
 # In production OLLAMA_BASE_URL is unset, so this fallback used to return {}
