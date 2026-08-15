@@ -210,6 +210,12 @@ export class VehicleDiagnosisComponent implements OnDestroy {
 
   // Step 2 — Symptoms
   problemDescription = '';
+  /**
+   * Follow-up questions to show as prompts beside the description box.
+   * Deliberately separate from `problemDescription`: what the driver said and
+   * what we asked are different things, and only the first should be diagnosed.
+   */
+  followUpPrompts = signal<string[]>([]);
   selectedWarningLights = signal<string[]>([]);
   selectedWhenOccurs = signal<string[]>([]);
   severity = 'medium';
@@ -650,6 +656,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     this.step.set(1);
     this.form = { manufacturer: '', model: '', variant: '', model_year: String(new Date().getFullYear() - 2), fuel_type: '', transmission: '', odometer_km: null };
     this.problemDescription = '';
+    this.followUpPrompts.set([]);
     this.selectedWarningLights.set([]);
     this.selectedWhenOccurs.set([]);
     this.severity = 'medium';
@@ -767,7 +774,13 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     } else {
       this.voice.dismissError();
       this.voice.start((finalText: string) => {
-        this.problemDescription = (this.problemDescription + finalText).slice(0, 2000);
+        // Joined with a space. Plain concatenation ran the last word of one
+        // utterance into the first of the next — "…not working properlymy
+        // car…" — which is then what the model reads.
+        const existing = this.problemDescription.trim();
+        const addition = finalText.trim();
+        if (!addition) return;
+        this.problemDescription = (existing ? `${existing} ${addition}` : addition).slice(0, 2000);
       });
     }
   }
@@ -796,10 +809,17 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   answerFollowUps() {
     const report = this.diagSvc.report() as any;
     const questions: string[] = report?.follow_up_questions ?? [];
-    if (questions.length) {
-      const block = questions.map(q => `\n- ${q} `).join('');
-      this.problemDescription = `${this.problemDescription.trim()}\n\nAdditional details:${block}`;
-    }
+    // Shown beside the box, NOT written into it.
+    //
+    // This used to append the questions to `problemDescription`, so the text
+    // sent for diagnosis became the driver's symptoms plus our own questions.
+    // Anyone who then pressed submit — or added a sentence by voice — had the
+    // assistant's questions diagnosed as if they were symptoms, and the
+    // pollution persisted for every later attempt.
+    //
+    // The description must stay what the driver said. Prompts belong in the
+    // interface.
+    this.followUpPrompts.set(questions);
     this.voice.stopSpeaking();
     this.diagSvc.report.set(null);
     this.step.set(2);

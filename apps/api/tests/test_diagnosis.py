@@ -515,6 +515,57 @@ class TestExtractVehicleInfoSuite:
             assert await extract_vehicle_info_from_transcript("some car") == {}
 
 
+# ── Persistence must not be able to destroy the answer ───────────────────────
+#
+# This block was a bare add/commit/refresh, so any storage failure turned a
+# diagnosis that had already been computed into a 500. Migration 0034 added two
+# columns to vehicle_diagnoses; where that migration had not run, every
+# POST /analyse failed even though the model had answered.
+
+class TestDiagnosisSurvivesAStorageFailureSuite:
+    @pytest.mark.asyncio
+    async def test_a_failed_write_still_returns_the_diagnosis(self, client):
+        from sqlalchemy.exc import ProgrammingError
+
+        # Fails once, as a real bad INSERT would; the fixture's own teardown
+        # commit must still succeed or the test would be measuring the fixture.
+        boom = ProgrammingError("INSERT", {}, Exception("column engine does not exist"))
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+            with patch(
+                "sqlalchemy.ext.asyncio.AsyncSession.commit",
+                new=AsyncMock(side_effect=[boom, None, None]),
+            ):
+                r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
+
+        assert r.status_code == 201
+        body = r.json()
+        # The answer the model produced, not a placeholder.
+        assert body["preliminary_diagnosis"] == OLLAMA_DIAGNOSIS["preliminary_diagnosis"]
+        assert body["risk_level"] == OLLAMA_DIAGNOSIS["risk_level"]
+        assert body["safe_to_drive"] is False
+        # And an id, so the client has something to key on.
+        assert body["id"]
+
+    @pytest.mark.asyncio
+    async def test_the_safety_fields_survive_the_fallback_path(self, client):
+        # The fields a driver acts on must not be lost in the branch that
+        # skips the database — that would be a quiet downgrade of a warning.
+        from sqlalchemy.exc import ProgrammingError
+
+        boom = ProgrammingError("INSERT", {}, Exception("nope"))
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
+            with patch(
+                "sqlalchemy.ext.asyncio.AsyncSession.commit",
+                new=AsyncMock(side_effect=[boom, None, None]),
+            ):
+                r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
+
+        body = r.json()
+        assert body["immediate_service_required"] is True
+        assert body["disclaimer"]
+        assert body["recommended_steps"] == OLLAMA_DIAGNOSIS["recommended_steps"]
+
+
 # ── Translation provider order ───────────────────────────────────────────────
 #
 # Translation went only to Ollama, whose host is unset in every deployed

@@ -786,3 +786,19 @@
 }
 
 app-service-request { padding: 0 1.25rem 1rem; display: block; }
+
+/* Follow-up prompts beside the description box. Deliberately quiet: they are
+   guidance, not a warning, and they must not compete with the symptom text
+   the driver is trying to write. */
+.followup-prompts {
+  margin: 0 0 .75rem;
+  padding: .75rem 1rem;
+  border-left: 3px solid var(--primary);
+  background: var(--fill-dim);
+  border-radius: 0 8px 8px 0;
+  font-size: .875rem;
+
+  strong { display: block; margin-bottom: .35rem; color: var(--text-muted); font-weight: 600; }
+  ul { margin: 0; padding-left: 1.1rem; }
+  li { margin: .2rem 0; }
+}

@@ -341,6 +341,16 @@
           <span class="interim-label">Hearing:</span> {{ voice.interimText() }}
         </div>
 
+        <!-- Follow-up prompts. Rendered here rather than written into the
+             description, because the description is what gets diagnosed and
+             our own questions are not symptoms. -->
+        <div class="followup-prompts" *ngIf="followUpPrompts().length" role="note">
+          <strong>To narrow this down, please also mention:</strong>
+          <ul>
+            <li *ngFor="let q of followUpPrompts()">{{ q }}</li>
+          </ul>
+        </div>
+
         <textarea [(ngModel)]="problemDescription" rows="5"
           [placeholder]="voice.supported ? 'Tap the microphone above to describe by voice, or type here…' : 'e.g. When I start the car in the morning, there\'s a grinding noise from the front left…'"></textarea>
         <span class="char-count">{{ problemDescription.length }}/2000 characters (min 10)</span>

@@ -10,8 +10,9 @@ GET  /diagnosis/history   — list the current user's past diagnoses (auth requi
 # leaves FastAPI unable to resolve them — it then treats the Pydantic body and
 # the DB dependency as query parameters, so every request 422s.
 
+import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
@@ -43,6 +44,8 @@ from services.voice_store import (
     delete_voice_data,
     record_audit_event,
 )
+
+logger = logging.getLogger("gaadiiq.diagnosis")
 
 router = APIRouter(prefix="/diagnosis", tags=["diagnosis"])
 
@@ -259,9 +262,67 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         engine=_engine_name(ai_result.get("engine")),
         kb_diagnosis_code=_as_text(ai_result.get("kb_diagnosis_code")),
     )
-    db.add(record)
-    await db.commit()
-    await db.refresh(record)
+    # Persisting the answer must not be able to destroy it.
+    #
+    # This block used to be bare `add / commit / refresh`, so any storage
+    # failure — a missing column after a migration that did not run, a
+    # connection blip — turned a diagnosis that had already been computed into
+    # a 500. The model call, the knowledge-base lookup and the translation had
+    # all succeeded; the driver got nothing because we could not write a
+    # history row.
+    #
+    # Same principle as the knowledge-base lookup: a fault in a supporting
+    # concern falls back, it does not fail the request. The history row is
+    # lost and said so loudly in the log, which is the right trade against a
+    # driver at the roadside getting no answer at all.
+    stored = True
+    try:
+        db.add(record)
+        await db.commit()
+        await db.refresh(record)
+    except Exception as exc:  # noqa: BLE001 — see above
+        stored = False
+        await db.rollback()
+        logger.error(
+            "Diagnosis computed but not stored (%s): %s", type(exc).__name__, exc,
+            extra={"event": "diagnosis_store_failed"},
+        )
+
+    if not stored:
+        # Serve what was computed. The id is generated here rather than by the
+        # database, so it will not appear in history — which is honest: there
+        # is no history row to fetch.
+        return DiagnoseResponse(
+            id=str(uuid.uuid4()),
+            preliminary_diagnosis=ai_result.get("preliminary_diagnosis") or "",
+            possible_causes=[PossibleCause(**c) for c in raw_causes],
+            repair_complexity=ai_result.get("repair_complexity") or "Unknown",
+            cost_min_inr=ai_result.get("cost_min_inr") or 0,
+            cost_max_inr=ai_result.get("cost_max_inr") or 0,
+            repair_time_estimate=ai_result.get("repair_time_estimate") or "Unknown",
+            safe_to_drive=bool(ai_result.get("safe_to_drive")),
+            risk_level=ai_result.get("risk_level") or "Unknown",
+            recommended_steps=ai_result.get("recommended_steps", []),
+            diy_fixes=ai_result.get("diy_fixes", []),
+            immediate_service_required=bool(ai_result.get("immediate_service_required")),
+            preventive_maintenance=ai_result.get("preventive_maintenance", []),
+            retrieved_sources=ai_result.get("retrieved_sources", []),
+            ollama_used=bool(ai_result.get("ollama_used")),
+            analysis_confidence=ai_result.get("analysis_confidence") or 0,
+            disclaimer=ai_result.get("disclaimer", ""),
+            created_at=datetime.now(timezone.utc),
+            vision_analysis=ai_result.get("vision_analysis"),
+            warning_light_match=ai_result.get("warning_light_match"),
+            follow_up_questions=ai_result.get("follow_up_questions", []),
+            needs_more_info=bool(ai_result.get("needs_more_info")),
+            translation_failed=bool(ai_result.get("translation_failed")),
+            engine=_engine_name(ai_result.get("engine")) or "heuristic",
+            model_tier=ai_result.get("model_tier", "free"),
+            kb_diagnosis_code=_as_text(ai_result.get("kb_diagnosis_code")),
+            kb_match_method=_as_text(ai_result.get("kb_match_method")),
+            kb_match_confidence=ai_result.get("kb_match_confidence"),
+            solutions=ai_result.get("solutions", []),
+        )
 
     return DiagnoseResponse(
         id=str(record.id),

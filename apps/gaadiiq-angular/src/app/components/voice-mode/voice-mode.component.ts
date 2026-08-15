@@ -587,8 +587,12 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
     this.step.set('capture-problem');
     this._listen((text) => {
       this._stopListening();
-      this._addMessage('user', text);
-      this.problemDescription.set(text.trim());
+      // Strip any echo of the prompt we just spoke before it becomes the
+      // symptom text. This is the field the model diagnoses from, so our own
+      // question ending up inside it is not cosmetic.
+      const said = this._stripSpokenPrompt(text).trim();
+      this._addMessage('user', said);
+      this.problemDescription.set(said);
       this._finish();
     });
   }
@@ -606,7 +610,11 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
+  /** The last prompt spoken aloud, so an echo of it can be stripped. */
+  private _lastSpoken = '';
+
   private _aiSay(text: string, then?: () => void) {
+    this._lastSpoken = text;
     this._addMessage('ai', text);
     this.voice.speak(text);
     if (!then) return;
@@ -643,18 +651,62 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
       // stared at a mic that never opened. That is the "mic never goes into
       // listening mode" report.
       //
-      // 4s is longer than any prompt this component speaks and short enough
-      // that a stall is a hesitation rather than a hang. `stopSpeaking()`
-      // before `done()` matters just as much: opening the microphone while the
-      // assistant is still audible means the recogniser transcribes the app's
-      // own question as the user's answer, which is the other half of "it
-      // isn't capturing the car details properly".
+      // The budget scales with the sentence, and that matters more than it
+      // looks. It was a flat 4s, which is fine for "What is the year?" and far
+      // too short for the Hindi confirmation — a sentence naming make, model,
+      // year, fuel and gearbox takes well over four seconds to speak. The
+      // fallback fired mid-sentence, the microphone opened over the tail, and
+      // the recogniser transcribed our own question as the driver's answer.
+      // Production logs show exactly that: a problem_description beginning
+      // "ठीक है मारुति स्विफ्ट 2010 पेट्रोल मैन्युअल अब कृपया…" — the prompt,
+      // followed by the actual symptom.
+      //
+      // ~90ms per character is a generous speaking rate; the cap keeps a
+      // stalled utterance a hesitation rather than a hang, which is the
+      // "microphone never opens" report this fallback exists for.
+      const budget = Math.min(Math.max(4000, text.length * 90), 15000);
       setTimeout(() => {
         clearInterval(check);
         this.voice.stopSpeaking();
         done();
-      }, 4000);
+      }, budget);
     }, 600);
+  }
+
+  /**
+   * Remove our own prompt from the front of a transcript.
+   *
+   * Belt and braces for the timing fix above. However carefully the
+   * microphone is held shut while the assistant speaks, a phone with the
+   * speaker on — which is how this is used from a roadside — can still feed
+   * the tail of the prompt back into the recogniser.
+   *
+   * Word-by-word rather than string prefix, so it works in every script, and
+   * it only strips while the words genuinely match in sequence. Three words is
+   * the floor: below that a coincidence ("my car…") is likelier than an echo,
+   * and stripping a real answer is worse than leaving an echo in.
+   */
+  private _stripSpokenPrompt(transcript: string): string {
+    const spoken = this._lastSpoken;
+    if (!spoken) return transcript;
+
+    const norm = (t: string) =>
+      t.toLowerCase().replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+
+    const promptWords = norm(spoken).split(' ').filter(Boolean);
+    const heardWords = transcript.split(/\s+/).filter(Boolean);
+    if (!promptWords.length || !heardWords.length) return transcript;
+
+    let i = 0;
+    while (i < heardWords.length && i < promptWords.length && norm(heardWords[i]) === promptWords[i]) {
+      i++;
+    }
+    if (i < 3) return transcript;
+
+    const remainder = heardWords.slice(i).join(' ').trim();
+    // Never strip everything: an empty answer is worse than a noisy one,
+    // because the flow would ask again with nothing to show for it.
+    return remainder || transcript;
   }
 
   private _addMessage(role: 'ai' | 'user', text: string) {
