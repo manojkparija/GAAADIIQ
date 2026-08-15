@@ -1,0 +1,391 @@
+{
+  "generated_at": "2026-07-20T16:08:10.925323+00:00",
+  "surface": "Angular /used-cars",
+  "screenshot": "0 used cars found; Year UI 2005\u20132005; Clear All (1); City New Town",
+  "root_cause": "Primary: heroCity prefilled from CityService (New Town) with 0 matching used listings. Secondary UX: yearTo default currentYear+1 not in yearOptions \u2192 select displays 2005.",
+  "seed_used": 29,
+  "seed_total": 92,
+  "counts": {
+    "PASS": 30,
+    "FAIL": 17
+  },
+  "total": 47,
+  "results": [
+    {
+      "suite": "Inventory",
+      "id": "INV-01",
+      "name": "Seed has used cars",
+      "status": "PASS",
+      "detail": "29 used of 92 total",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Inventory",
+      "id": "INV-02",
+      "name": "No 2005 model-year cars in seed",
+      "status": "PASS",
+      "detail": "2005 count=0",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Inventory",
+      "id": "INV-03",
+      "name": "New Town city has used inventory",
+      "status": "FAIL",
+      "detail": "New Town used=0; cities={'Mumbai': 4, 'Delhi': 5, 'Pune': 3, 'Bangalore': 4, 'Ahmedabad': 2, 'Jaipur': 2, 'Chennai': 4, 'Hyderabad': 2, 'Kolkata': 2, 'Nagpur': 1}",
+      "severity": "P0"
+    },
+    {
+      "suite": "Inventory",
+      "id": "INV-04",
+      "name": "Bangalore vs Bengaluru naming",
+      "status": "FAIL",
+      "detail": "cityOptions has Bengaluru; seed uses Bangalore",
+      "severity": "P1"
+    },
+    {
+      "suite": "Screenshot",
+      "id": "SS-01",
+      "name": "City=New Town \u2192 0 used cars (navbar city prefill)",
+      "status": "FAIL",
+      "detail": "ngOnInit prefills heroCity from CityService; New Town \u2192 0 results. Matches Clear All (1) + empty state.",
+      "severity": "P0"
+    },
+    {
+      "suite": "Screenshot",
+      "id": "SS-02",
+      "name": "yearTo default (currentYear+1) missing from yearOptions",
+      "status": "FAIL",
+      "detail": "yearTo=2027, yearOptions ends at 2026 \u2192 select [value] mismatch \u2192 UI shows first option 2005",
+      "severity": "P0"
+    },
+    {
+      "suite": "Screenshot",
+      "id": "SS-03",
+      "name": "Year 2005\u20132005 yields 0 cars",
+      "status": "FAIL",
+      "detail": "results=0 \u2014 if signals actually became 2005, empty list is correct but UX is broken",
+      "severity": "P0"
+    },
+    {
+      "suite": "Screenshot",
+      "id": "SS-04",
+      "name": "activeFiltersCount counts city but strip may hide city chip",
+      "status": "FAIL",
+      "detail": "Clear All (1) from heroCity; active-filters-strip has no chip for heroCity/yearFrom/yearTo \u2014 user can't see which filter is active",
+      "severity": "P0"
+    },
+    {
+      "suite": "Screenshot",
+      "id": "SS-05",
+      "name": "Empty state UX present",
+      "status": "PASS",
+      "detail": "empty-state glass-card",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Defaults",
+      "id": "DF-01",
+      "name": "Default filters return used inventory",
+      "status": "PASS",
+      "detail": "default results=29 (no city)",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Defaults",
+      "id": "DF-02",
+      "name": "yearFrom default 2010",
+      "status": "PASS",
+      "detail": "signal init",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Defaults",
+      "id": "DF-03",
+      "name": "clearAllFilters resets year + city + budget",
+      "status": "PASS",
+      "detail": "clearAllFilters()",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Defaults",
+      "id": "DF-04",
+      "name": "usedCarCount is unfiltered badge",
+      "status": "PASS",
+      "detail": "hero badge not tied to filtered totalCount",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Defaults",
+      "id": "DF-05",
+      "name": "model autocomplete=off",
+      "status": "PASS",
+      "detail": "prevents RITZ sticky autocomplete",
+      "severity": "P1"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-01",
+      "name": "All India default",
+      "status": "PASS",
+      "detail": "results=29 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-02",
+      "name": "City Kolkata",
+      "status": "PASS",
+      "detail": "results=2 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-03",
+      "name": "City New Town (screenshot)",
+      "status": "FAIL",
+      "detail": "results=0 \u2014 sticky/custom city with no inventory",
+      "severity": "P0"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-04",
+      "name": "City Bengaluru vs Bangalore seed",
+      "status": "FAIL",
+      "detail": "results=0 \u2014 seed city is Bangalore; options use Bengaluru",
+      "severity": "P1"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-05",
+      "name": "Make Maruti used",
+      "status": "PASS",
+      "detail": "results=7 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-06",
+      "name": "Model Swift substring",
+      "status": "PASS",
+      "detail": "results=2 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-07",
+      "name": "Budget under 10L",
+      "status": "PASS",
+      "detail": "results=10 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-08",
+      "name": "Year 2020\u20132024",
+      "status": "PASS",
+      "detail": "results=29 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-09",
+      "name": "Year 2005\u20132005",
+      "status": "PASS",
+      "detail": "results=0 expect_some=False",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-10",
+      "name": "Fuel Diesel",
+      "status": "PASS",
+      "detail": "results=9 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-11",
+      "name": "KM Under 20k",
+      "status": "PASS",
+      "detail": "results=6 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-12",
+      "name": "Body SUV",
+      "status": "PASS",
+      "detail": "results=19 expect_some=True",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Filter Scenarios",
+      "id": "SC-13",
+      "name": "Impossible: New Town + Diesel + 2005",
+      "status": "PASS",
+      "detail": "results=0 expect_some=False",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "City UX",
+      "id": "CT-01",
+      "name": "Prefills heroCity from CityService on init",
+      "status": "FAIL",
+      "detail": "Forces city filter even when user wanted All India browse \u2014 causes empty when city has 0 used listings",
+      "severity": "P0"
+    },
+    {
+      "suite": "City UX",
+      "id": "CT-02",
+      "name": "clearAllFilters clears heroCity but not navbar CityService",
+      "status": "FAIL",
+      "detail": "Clear All resets heroCity='' but navbar still shows New Town; revisit page re-applies city \u2192 empty again",
+      "severity": "P0"
+    },
+    {
+      "suite": "City UX",
+      "id": "CT-03",
+      "name": "City input allows free text (New Town)",
+      "status": "PASS",
+      "detail": "Free-text city can be anything not in inventory",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "City UX",
+      "id": "CT-04",
+      "name": "New Town not in POPULAR_CITIES / cityOptions",
+      "status": "FAIL",
+      "detail": "Navbar shows New Town (custom/geo?) but used-cars cityOptions lacks it; inventory has 0",
+      "severity": "P1"
+    },
+    {
+      "suite": "City UX",
+      "id": "CT-05",
+      "name": "Geolocation sets nearest popular city",
+      "status": "PASS",
+      "detail": "city-selector may set unexpected city names",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Year UX",
+      "id": "YR-01",
+      "name": "yearOptions includes yearTo default",
+      "status": "FAIL",
+      "detail": "yearOptions length = currentYear-2004 \u2192 ends 2026; yearTo default = 2026+1 \u2014 mismatch",
+      "severity": "P0"
+    },
+    {
+      "suite": "Year UX",
+      "id": "YR-02",
+      "name": "Select uses [value] without selected attribute compare",
+      "status": "FAIL",
+      "detail": "Angular [value] on <select> with numeric mismatch shows first option (2005) \u2014 confusing UI",
+      "severity": "P0"
+    },
+    {
+      "suite": "Year UX",
+      "id": "YR-03",
+      "name": "activeFiltersCount ignores yearFrom=2005 default floor",
+      "status": "PASS",
+      "detail": "yearFrom=2005 would NOT increment badge (only >2010); yearTo=2005 WOULD",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-01",
+      "name": "Route /used-cars exists",
+      "status": "PASS",
+      "detail": "used-cars.component",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-02",
+      "name": "isUsedCar definition",
+      "status": "PASS",
+      "detail": "km>0 || year<2025 || seller",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-03",
+      "name": "Wishlist localStorage",
+      "status": "PASS",
+      "detail": "toggleWishlist",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-04",
+      "name": "Recently viewed",
+      "status": "PASS",
+      "detail": "trackView",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-05",
+      "name": "Query params make/model/city/fuel/body/maxBudget",
+      "status": "PASS",
+      "detail": "ngOnInit subscribe",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-06",
+      "name": "URL sync on filter change",
+      "status": "FAIL",
+      "detail": "Reads query params but does not write URL on search \u2014 not shareable after filter change",
+      "severity": "P2"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-07",
+      "name": "AI-Verified pricing wired to real valuation",
+      "status": "FAIL",
+      "detail": "Marketing 'AI-Verified' / priceVerdict is avg-price heuristic, not ai_valuation",
+      "severity": "P1"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-08",
+      "name": "Hardcoded 50,000+ removed",
+      "status": "PASS",
+      "detail": "stats use usedCarCount()",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-09",
+      "name": "Empty state suggests AI Advisor",
+      "status": "FAIL",
+      "detail": "Empty state only Clear Filters \u2014 no Advisor/Diagnosis CTA when city has no stock",
+      "severity": "P2"
+    },
+    {
+      "suite": "Product",
+      "id": "PR-10",
+      "name": "Playwright e2e for /used-cars",
+      "status": "FAIL",
+      "detail": "No dedicated used-cars e2e covering New Town empty + clear + year select",
+      "severity": "P1"
+    },
+    {
+      "suite": "Budget UX",
+      "id": "BD-01",
+      "name": "Default budget \u20b91L\u2013\u20b92Cr",
+      "status": "PASS",
+      "detail": "Matches screenshot range display",
+      "severity": "\u2014"
+    },
+    {
+      "suite": "Budget UX",
+      "id": "BD-02",
+      "name": "Any Budget = heroBudgetMax 0 (no cap)",
+      "status": "PASS",
+      "detail": "0 = Any Budget",
+      "severity": "\u2014"
+    }
+  ]
+}
