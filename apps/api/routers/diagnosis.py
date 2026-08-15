@@ -141,9 +141,18 @@ class DiagnoseResponse(BaseModel):
     kb_diagnosis_code: str | None = None
     kb_match_method: str | None = None
     kb_match_confidence: float | None = None
-    # Ordered repairs, cheapest and most reversible first. Empty on model
-    # answers, which produce prose steps rather than costed solutions.
+    # Ordered repairs, cheapest and most reversible first. Knowledge-base
+    # answers carry costed solutions with provenance; model answers carry the
+    # model's own.
     solutions: list[dict] = []
+    # The same repairs in the shape the report screen renders — title,
+    # difficulty, steps. Every engine populates this.
+    #
+    # Until now only the browser's built-in table ever filled it, so the
+    # "How to Fix or Bypass the Issue" card appeared exclusively on the canned
+    # offline answer and vanished the moment a real diagnosis arrived. The
+    # section had never once been populated by the API.
+    fix_solutions: list[dict] = []
 
 
 class DiagnosisHistoryItem(BaseModel):
@@ -179,6 +188,56 @@ def _engine_name(value: object) -> str | None:
     """
     text = _as_text(value)
     return text.split(":")[0] if text else None
+
+
+def _fix_solutions(result: dict) -> list[dict]:
+    """
+    The repair options in the shape the report screen renders.
+
+    Two sources produce repairs and they do not agree on a shape. A
+    knowledge-base answer carries `solutions` — costed, sequenced, with
+    provenance — while a model answer carries `fix_solutions` because that is
+    what the prompt asks for. The screen needs one list, so the KB shape is
+    mapped onto it rather than teaching the template about both.
+
+    `difficulty` is constrained to the three values the badge understands.
+    Anything else renders as an unstyled label, so an unrecognised value
+    becomes "Mechanic" — the middle option, and the safe way to be wrong.
+    """
+    allowed = {"DIY", "Mechanic", "Specialist"}
+
+    def entry(title: object, difficulty: object, steps: object) -> dict | None:
+        name = _as_text(title)
+        if not name:
+            return None
+        listed = [t for t in (_as_text(x) for x in (steps or [])) if t]
+        return {
+            "title": name,
+            "difficulty": difficulty if difficulty in allowed else "Mechanic",
+            "steps": listed,
+        }
+
+    # A model answer already has the right shape; validate rather than trust.
+    direct = result.get("fix_solutions")
+    if isinstance(direct, list) and direct:
+        built = [
+            entry(s.get("title"), s.get("difficulty"), s.get("steps"))
+            for s in direct if isinstance(s, dict)
+        ]
+        return [b for b in built if b]
+
+    # A knowledge-base answer: map its richer rows onto the same three fields.
+    kb = result.get("solutions")
+    if isinstance(kb, list) and kb:
+        built = []
+        for sol in kb:
+            if not isinstance(sol, dict):
+                continue
+            difficulty = str(sol.get("difficulty") or "").title()
+            built.append(entry(sol.get("title"), difficulty, sol.get("steps")))
+        return [b for b in built if b]
+
+    return []
 
 
 @router.post("/analyse", response_model=DiagnoseResponse, status_code=status.HTTP_201_CREATED)
@@ -322,6 +381,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
             kb_match_method=_as_text(ai_result.get("kb_match_method")),
             kb_match_confidence=ai_result.get("kb_match_confidence"),
             solutions=ai_result.get("solutions", []),
+            fix_solutions=_fix_solutions(ai_result),
         )
 
     return DiagnoseResponse(
@@ -354,6 +414,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         kb_match_method=ai_result.get("kb_match_method"),
         kb_match_confidence=ai_result.get("kb_match_confidence"),
         solutions=ai_result.get("solutions", []),
+        fix_solutions=_fix_solutions(ai_result),
     )
 
 

@@ -566,6 +566,124 @@ class TestDiagnosisSurvivesAStorageFailureSuite:
         assert body["recommended_steps"] == OLLAMA_DIAGNOSIS["recommended_steps"]
 
 
+# ── The repair options the report screen renders ─────────────────────────────
+#
+# "How to Fix or Bypass the Issue" reads `fix_solutions`, and until now only
+# the browser's built-in offline table ever filled it. The card therefore
+# appeared exclusively on the canned answer and vanished the moment a real
+# diagnosis arrived — the API had never populated it once.
+
+class TestFixSolutionsSuite:
+    def test_a_model_answer_is_passed_through(self):
+        from routers.diagnosis import _fix_solutions
+
+        out = _fix_solutions({"fix_solutions": [
+            {"title": "Top up coolant", "difficulty": "DIY", "steps": ["Open the cap", "Fill"]},
+        ]})
+        assert out == [{"title": "Top up coolant", "difficulty": "DIY",
+                        "steps": ["Open the cap", "Fill"]}]
+
+    def test_knowledge_base_solutions_are_mapped_onto_the_same_shape(self):
+        from routers.diagnosis import _fix_solutions
+
+        out = _fix_solutions({"solutions": [
+            {"title": "Replace thermostat", "difficulty": "mechanic",
+             "steps": ["Drain coolant", "Swap unit"], "cost_parts_min": 800},
+        ]})
+        assert out == [{"title": "Replace thermostat", "difficulty": "Mechanic",
+                        "steps": ["Drain coolant", "Swap unit"]}]
+
+    def test_an_unknown_difficulty_becomes_mechanic(self):
+        # The badge styles exactly three values; anything else renders
+        # unstyled. "Mechanic" is the middle option and the safe way to be
+        # wrong — calling a specialist job DIY is the dangerous direction.
+        from routers.diagnosis import _fix_solutions
+
+        out = _fix_solutions({"fix_solutions": [
+            {"title": "Rebuild the head", "difficulty": "Expert", "steps": ["…"]},
+        ]})
+        assert out[0]["difficulty"] == "Mechanic"
+
+    def test_a_model_answer_takes_precedence_over_kb_solutions(self):
+        from routers.diagnosis import _fix_solutions
+
+        out = _fix_solutions({
+            "fix_solutions": [{"title": "From the model", "difficulty": "DIY", "steps": []}],
+            "solutions": [{"title": "From the KB", "difficulty": "Mechanic", "steps": []}],
+        })
+        assert out[0]["title"] == "From the model"
+
+    def test_junk_is_dropped_rather_than_rendered(self):
+        from routers.diagnosis import _fix_solutions
+
+        out = _fix_solutions({"fix_solutions": [
+            {"difficulty": "DIY", "steps": ["no title"]},
+            "not a dict",
+            {"title": "Keep me", "difficulty": "DIY", "steps": ["ok", None, 42]},
+        ]})
+        assert out == [{"title": "Keep me", "difficulty": "DIY", "steps": ["ok"]}]
+
+    def test_nothing_available_yields_an_empty_list(self):
+        from routers.diagnosis import _fix_solutions
+
+        assert _fix_solutions({}) == []
+        assert _fix_solutions({"fix_solutions": [], "solutions": []}) == []
+
+    @pytest.mark.asyncio
+    async def test_the_endpoint_returns_them(self, client):
+        answer = dict(OLLAMA_DIAGNOSIS, fix_solutions=[
+            {"title": "Check coolant level", "difficulty": "DIY", "steps": ["Look in the reservoir"]},
+        ])
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(answer)):
+            r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
+
+        assert r.status_code == 201
+        assert r.json()["fix_solutions"][0]["title"] == "Check coolant level"
+
+    def test_every_engine_populates_the_card(self):
+        """The invariant, checked once rather than per bug report.
+
+        A section that appears on some answers and not others reads as broken
+        even when each answer is individually fine. `fix_solutions` reached
+        the screen only from the browser's offline table, so the card showed
+        up on the canned answer and vanished on every real one. Whatever
+        answers — model, knowledge base or heuristic — must fill it.
+        """
+        from routers.diagnosis import _fix_solutions
+        from services.diagnosis import _heuristic_fallback, _retrieve_relevant_cases
+
+        engines = {
+            "model": dict(OLLAMA_DIAGNOSIS, fix_solutions=[
+                {"title": "Top up coolant", "difficulty": "DIY", "steps": ["Fill to max"]},
+            ]),
+            "knowledge_base": {"solutions": [
+                {"title": "Replace thermostat", "difficulty": "mechanic", "steps": ["Swap unit"]},
+            ]},
+            "heuristic (no cases)": _heuristic_fallback([], "high", "Petrol"),
+            "heuristic (with cases)": _heuristic_fallback(
+                _retrieve_relevant_cases("brake squeal noise", [], [], "Petrol"), "high", "Petrol",
+            ),
+        }
+        for engine, result in engines.items():
+            out = _fix_solutions(result)
+            assert out, f"{engine} produced no repair options"
+            for item in out:
+                assert item["title"], engine
+                assert item["difficulty"] in {"DIY", "Mechanic", "Specialist"}, engine
+                assert item["steps"], f"{engine}: '{item['title']}' has no steps"
+
+    def test_the_prompt_asks_for_them(self):
+        from services.diagnosis import _build_prompt
+
+        prompt = _build_prompt(
+            "Maruti Suzuki", "Swift", None, 2010, "Petrol", "Manual", 45000,
+            "engine overheating", [], [], "high", [],
+        )
+        assert "fix_solutions" in prompt
+        # A DIY entry must be genuinely safe, or not exist.
+        assert "do not invent one" in prompt
+
+
 # ── Answering in the driver's language ───────────────────────────────────────
 #
 # Translation was a SECOND model call carrying the whole finished report —

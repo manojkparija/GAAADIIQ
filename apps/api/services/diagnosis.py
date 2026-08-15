@@ -445,7 +445,12 @@ Based on the vehicle details and retrieved cases above, provide a JSON response 
   "immediate_service_required": true,
   "preventive_maintenance": ["Tip 1", "Tip 2"],
   "analysis_confidence": 72,
-  "follow_up_questions": ["A specific question that would raise your confidence"]
+  "follow_up_questions": ["A specific question that would raise your confidence"],
+  "fix_solutions": [
+    {{"title": "Short name for the approach", "difficulty": "DIY", "steps": ["Step 1", "Step 2"]}},
+    {{"title": "A workshop-level repair", "difficulty": "Mechanic", "steps": ["Step 1", "Step 2"]}},
+    {{"title": "A specialist repair", "difficulty": "Specialist", "steps": ["Step 1", "Step 2"]}}
+  ]
 }}
 
 Rules:
@@ -459,6 +464,11 @@ Rules:
   specific questions whose answers would most narrow the diagnosis (e.g. "Does
   the noise change when you turn the steering?"). Ask only what the user can
   observe without tools. Return an empty list when confidence is 70 or above.
+- fix_solutions: 2-3 ways to address this, ordered cheapest and most
+  reversible first. difficulty is exactly "DIY", "Mechanic" or "Specialist".
+  A "DIY" entry must be genuinely safe for someone with no tools and no
+  training — if nothing qualifies, do not invent one, start at "Mechanic".
+  Each entry needs 2-5 concrete steps, not advice to "consult a professional".
 - Respond with valid JSON only, no additional text"""
 
     # Ask for the answer in the driver's language rather than translating it
@@ -1093,6 +1103,42 @@ async def run_diagnosis(
     return result
 
 
+def _heuristic_fix_solutions(diy: list[str] | None) -> list[dict]:
+    """
+    Repair options for the heuristic answer.
+
+    Every other engine fills `fix_solutions`, so this one must too. When it
+    did not, the "How to Fix or Bypass the Issue" card simply vanished
+    whenever no model was reachable — a whole section of the report appearing
+    and disappearing depending on which rung answered, which is precisely the
+    inconsistency that made the feature feel broken.
+
+    The heuristic knows less than a model, and these entries say so rather
+    than inventing specifics: checks anyone can do, then the scan that
+    actually identifies the fault. Any DIY checks the matched case carried are
+    used verbatim, because those came from the knowledge file rather than from
+    here.
+    """
+    safe_checks = [t for t in (diy or []) if isinstance(t, str) and t.strip()]
+    solutions: list[dict] = []
+    if safe_checks:
+        solutions.append({
+            "title": "Checks you can make yourself",
+            "difficulty": "DIY",
+            "steps": safe_checks[:5],
+        })
+    solutions.append({
+        "title": "Get a diagnostic scan",
+        "difficulty": "Mechanic",
+        "steps": [
+            "Ask a workshop for an OBD-II scan and note every fault code",
+            "Have the codes explained before authorising any work",
+            "Ask for a written estimate covering parts and labour",
+        ],
+    })
+    return solutions
+
+
 def _heuristic_fallback(retrieved: list[dict], severity: str, fuel_type: str) -> dict:
     """Rule-based fallback when Ollama is unavailable."""
     if not retrieved:
@@ -1126,6 +1172,9 @@ def _heuristic_fallback(retrieved: list[dict], severity: str, fuel_type: str) ->
                 "Check tyre pressure monthly",
             ],
             "analysis_confidence": 20,
+            "fix_solutions": _heuristic_fix_solutions(
+                ["Check all fluid levels", "Inspect for visible leaks"]
+            ),
         }
 
     best = retrieved[0]
@@ -1158,4 +1207,5 @@ def _heuristic_fallback(retrieved: list[dict], severity: str, fuel_type: str) ->
         "immediate_service_required": not best.get("safe_to_drive", True),
         "preventive_maintenance": ["Follow manufacturer service schedule", "Use manufacturer-recommended fluids and parts"],
         "analysis_confidence": 45,
+        "fix_solutions": _heuristic_fix_solutions(best.get("diy", [])),
     }
