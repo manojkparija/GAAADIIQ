@@ -122,13 +122,13 @@ most trustworthy first:
 | 1 | **DTC** | An error code was supplied — it identifies the fault directly, so it outranks anything inferred from prose | 1 indexed query | `knowledge_base` |
 | 2 | **Alias** | A phrase the driver used maps to a canonical symptom | 1 indexed query | `knowledge_base` |
 | 3 | **Exact** | Canonical symptom + vehicle scope match a row | 1 indexed query | `knowledge_base` |
-| 4 | **Semantic** | Cosine similarity ≥ **0.62** over BGE embeddings | in-process vectors | `knowledge_base` |
+| 4 | **Semantic** | Cosine similarity ≥ **0.70** over BGE embeddings (measured, §7.2) | in-process vectors | `knowledge_base` |
 | 5 | **GPT-4o** | Premium tier, nothing curated matched | 1 API call | `openai` |
 | 6 | **Gemini** | Free tier, or GPT-4o failed | 1 API call | `gemini` |
 | 6b | **Ollama** | Both hosted models failed | 1 HTTP call | `ollama` |
 | 7 | **Heuristic** | Everything above failed | local | `heuristic` |
 
-Constants: `MIN_SEMANTIC_SIMILARITY = 0.62`, `_SEMANTIC_CANDIDATES = 10`
+Constants: `MIN_SEMANTIC_SIMILARITY = 0.70`, `_SEMANTIC_CANDIDATES = 10`
 (`diagnosis_kb_lookup.py:68,367`); `TTL_SECONDS = 6 * 60 * 60`
 (`diagnosis_cache.py:50`); embeddings are `BAAI/bge-small-en-v1.5`, 384-dim, CPU
 (`services/embeddings.py:10`).
@@ -415,6 +415,19 @@ happened.
 falls through to a model. It was `0.62` because 0.62 felt conservative, which
 is a judgement about a number that deserves a measurement.
 
+**The measurement moved it to 0.70.** At 0.62, precision was **0.842** — three
+of nineteen served matches were wrong, and all three were the *same row*:
+engine overheat (`DX-ENG-002`), scoring 0.66, 0.675 and 0.69 against a
+fuel-gauge complaint, a burning-plastic smell from the dashboard, and a weak
+air conditioner. That row is the corpus's strongest attractor because its text
+mentions a gauge, a smell and cooling — vocabulary all three share without
+having anything to do with overheating. Below 0.70, each of those drivers would
+have been handed a curated overheating diagnosis with a source and a cost range
+attached.
+
+That is the failure this whole exercise exists to catch, and 0.62 shipped for
+weeks without anyone seeing it.
+
 `tests/data/semantic_threshold_labels.py` holds 24 labelled queries over 8
 rows, and `scripts/tune_semantic_threshold.py` sweeps thresholds against them.
 Two decisions in that harness are worth reading:
@@ -518,7 +531,7 @@ remains is what code cannot close.
 | 2. Free tier has no model | **Closed.** Free reaches Gemini Flash-Lite; GPT-4o stays the paid tier's advantage, so closing the hole did not also give away the paid differentiator. |
 | 3. No speech model we control | **Closed in config.** `STT_PROVIDER = openai` (Whisper) is set in the blueprint; it needs `STT_API_KEY` in the dashboard to serve. |
 | 4. Coverage not reported | **Closed.** `GET /coverage` (§7.1) ranks vehicles by unanswered demand. |
-| 5. `0.62` was a judgement | **Closed.** `scripts/tune_semantic_threshold.py` sweeps a labelled set; `tests/test_semantic_threshold.py` guards the constant in CI. |
+| 5. `0.62` was a judgement | **Closed, and it was wrong.** The sweep moved it to `0.70`; at 0.62 one row was being served for three symptoms it does not explain. |
 
 Still open, and not fixable by code:
 

@@ -60,12 +60,37 @@ def _evaluate(threshold, scored):
     return evaluate(threshold, scored)
 
 
+def _table(scored) -> str:
+    """The whole sweep, for the failure message.
+
+    A bare "precision 0.842 < 0.9" tells you the constant is wrong but not what
+    to change it to, which costs a CI round-trip per guess. Printing the sweep
+    means one red run carries the answer with it.
+    """
+    from scripts.tune_semantic_threshold import sweep_scored
+
+    lines = ["", f"{'thresh':>7} {'prec':>6} {'recall':>7} {'F0.5':>7} "
+                 f"{'TP':>3} {'FP':>3} {'FN':>3} {'TN':>3}"]
+    for r in sweep_scored(scored, 0.50, 0.90, 0.02):
+        lines.append(
+            f"{r['threshold']:>7.2f} {r['precision']:>6.3f} {r['recall']:>7.3f} "
+            f"{r['f_half']:>7.4f} {r['tp']:>3} {r['fp']:>3} {r['fn']:>3} {r['tn']:>3}"
+        )
+    worst = sorted(scored, key=lambda t: -t[2])[:6]
+    lines.append("")
+    lines.append("highest-scoring queries (expected, matched, score):")
+    for expected, best, score in worst:
+        lines.append(f"  {expected!s:>12}  {best:>12}  {float(score):.3f}")
+    return "\n".join(lines)
+
+
 class TestSemanticThresholdSuite:
     def test_configured_threshold_meets_the_precision_floor(self, scored):
         result = _evaluate(MIN_SEMANTIC_SIMILARITY, scored)
         assert result["precision"] >= MIN_PRECISION, (
             f"precision {result['precision']} at threshold {MIN_SEMANTIC_SIMILARITY} "
             f"— {result['fp']} of {result['tp'] + result['fp']} served matches were wrong"
+            + _table(scored)
         )
 
     def test_configured_threshold_still_answers_most_real_symptoms(self, scored):
@@ -74,6 +99,7 @@ class TestSemanticThresholdSuite:
         assert result["recall"] >= MIN_RECALL, (
             f"recall {result['recall']} at threshold {MIN_SEMANTIC_SIMILARITY} "
             f"— {result['fn']} symptoms the corpus covers fell through to a model"
+            + _table(scored)
         )
 
     def test_no_near_miss_is_served(self, scored):
@@ -84,7 +110,10 @@ class TestSemanticThresholdSuite:
             for expected, best, score in scored
             if expected is None and score >= MIN_SEMANTIC_SIMILARITY
         ]
-        assert not served, f"queries with no correct answer were matched anyway: {served}"
+        assert not served, (
+            f"queries with no correct answer were matched anyway: {served}"
+            + _table(scored)
+        )
 
     def test_the_constant_is_not_far_from_the_measured_optimum(self, scored):
         # Not equality — that is a ratchet, not a test. But a constant sitting
