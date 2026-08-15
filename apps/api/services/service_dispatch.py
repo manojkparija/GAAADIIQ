@@ -240,21 +240,33 @@ async def notify_offer(
     address or coordinates. Same rule as the offer API. This message goes to
     every mechanic in the radius and none of them has committed to anything.
     """
-    try:
-        if mechanic.user_id is not None:
-            db.add(
-                Notification(
-                    user_id=mechanic.user_id,
-                    type=NotificationType.job_offer,
-                    title=f"New job {offer.distance_km:g} km away",
-                    body=(
-                        f"{sr.problem_summary[:160]} — open your dashboard to accept. "
-                        f"Reference {sr.reference}."
-                    ),
+    # The try below used to wrap `db.add()` alone, which cannot fail: add()
+    # only puts the object in the session, and the INSERT runs at flush — after
+    # this function has returned, outside any guard here. So the comment above
+    # promised something the code could not deliver, and production proved it:
+    #
+    #   asyncpg UndefinedObjectError: type "notification_type" does not exist
+    #   POST /service-requests/{id}/dispatch 500
+    #
+    # The offer rows died with it. A savepoint is what makes the promise true —
+    # the flush happens here, and a failure rolls back only the notification.
+    if mechanic.user_id is not None:
+        try:
+            async with db.begin_nested():
+                db.add(
+                    Notification(
+                        user_id=mechanic.user_id,
+                        type=NotificationType.job_offer,
+                        title=f"New job {offer.distance_km:g} km away",
+                        body=(
+                            f"{sr.problem_summary[:160]} — open your dashboard to accept. "
+                            f"Reference {sr.reference}."
+                        ),
+                    )
                 )
-            )
-    except Exception:  # pragma: no cover - defensive
-        logger.exception("in-app offer notification failed for mechanic=%s", mechanic.id)
+                await db.flush()
+        except Exception:
+            logger.exception("in-app offer notification failed for mechanic=%s", mechanic.id)
 
     try:
         phone = mechanic.whatsapp_phone or mechanic.phone
