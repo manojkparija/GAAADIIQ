@@ -176,6 +176,37 @@ async def _fix_schema():
                 """
             )
             _log.info("Schema: vehicle_diagnoses.listing_id nullability ensured")
+
+            # `notification_type` is absent from this database and short a
+            # label wherever it is present, so dispatching a job 500'd on the
+            # notification insert and took the offer rows with it. Migration
+            # 0036 is the real fix; this repeats it at boot for the same reason
+            # the listing_id repair is here — dispatch is on the request path,
+            # and a migration that did not run leaves the feature dead.
+            #
+            # Idempotent: CREATE is guarded and ADD VALUE uses IF NOT EXISTS.
+            await conn.execute(
+                """
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_type') THEN
+                        EXECUTE 'CREATE TYPE notification_type AS ENUM ('
+                              || '''booking_received'',''booking_confirmed'',''booking_cancelled'','
+                              || '''loan_inquiry_received'',''price_drop'',''listing_viewed'','
+                              || '''job_offer'',''system'')';
+                    END IF;
+                END $$;
+                """
+            )
+            for _label in (
+                "booking_received", "booking_confirmed", "booking_cancelled",
+                "loan_inquiry_received", "price_drop", "listing_viewed",
+                "job_offer", "system",
+            ):
+                await conn.execute(
+                    f"ALTER TYPE notification_type ADD VALUE IF NOT EXISTS '{_label}'"
+                )
+            _log.info("Schema: notification_type labels ensured")
         finally:
             await conn.close()
     except Exception as e:
