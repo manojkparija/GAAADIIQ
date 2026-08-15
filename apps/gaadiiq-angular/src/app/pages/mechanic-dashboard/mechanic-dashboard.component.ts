@@ -115,7 +115,9 @@ export class MechanicDashboardComponent {
       // No profile means "not a mechanic", so there is nothing to list and the
       // template offers registration instead.
       this.jobs.set(profile ? await this.market.assignedToMe() : []);
-      this.offers.set(profile ? await this.market.myOffers() : []);
+      // Only an active mechanic can be offered a job; asking as anyone else is
+      // a guaranteed 403. See canReceiveOffers().
+      this.offers.set(this.canReceiveOffers() ? await this.market.myOffers() : []);
     } catch (e) {
       this.error.set(this.readableError(e));
     } finally {
@@ -223,7 +225,7 @@ export class MechanicDashboardComponent {
    * finger that is pressing it.
    */
   private async pollOffers(): Promise<void> {
-    if (!this.profile() || this.busyId() || this.otpJobId()) return;
+    if (!this.canReceiveOffers() || this.busyId() || this.otpJobId()) return;
     try {
       this.offers.set(await this.market.myOffers());
     } catch {
@@ -231,9 +233,29 @@ export class MechanicDashboardComponent {
     }
   }
 
+  /**
+   * Whether asking for offers can succeed at all.
+   *
+   * `/service-requests/offers/available` requires an `active` mechanic and
+   * 403s for a `pending_verification` one — not a transient failure but a
+   * structural one, and no amount of retrying changes it. The poll ran anyway,
+   * so an unverified mechanic with the dashboard open produced a 403 every
+   * tick, forever: the production log showed an unbroken run of them, one a
+   * minute, for as long as the tab was left open.
+   *
+   * Silent failure made it invisible here while filling the log there. So the
+   * question is asked before the request, not after.
+   */
+  private canReceiveOffers(): boolean {
+    return this.profile()?.status === 'active';
+  }
+
   private async refreshLists(): Promise<void> {
     this.jobs.set(await this.market.assignedToMe());
-    this.offers.set(await this.market.myOffers());
+    // Assigned jobs still load: a mechanic suspended after being dispatched a
+    // job can no longer be offered new ones but must still be able to finish
+    // the work in hand.
+    this.offers.set(this.canReceiveOffers() ? await this.market.myOffers() : []);
   }
 
   async start(job: ServiceRequest): Promise<void> {
