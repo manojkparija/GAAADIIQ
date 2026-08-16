@@ -171,6 +171,22 @@
               [ngModel]="monthlyExpenses()" (ngModelChange)="monthlyExpenses.set(+$event)">
             <div class="range-ends"><span>₹5K</span><span>₹2L</span></div>
           </div>
+
+          <!-- Running costs. A car costs money to keep as well as to buy, and
+               leaving fuel, servicing and insurance out overstates what a
+               buyer can afford by roughly a third of the EMI. -->
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>Running costs <span class="slider-hint">fuel, service, insurance</span></span>
+              <strong>{{ fmt(runningCosts()) }}</strong>
+            </div>
+            <input type="range" min="0" max="80" step="5"
+              [ngModel]="runningCostPercent()" (ngModelChange)="runningCostPercent.set(+$event)">
+            <div class="range-ends">
+              <span>0% of EMI</span>
+              <span>{{ runningCostPercent() }}% — 40% is typical</span>
+            </div>
+          </div>
         </div>
 
         <!-- Score Panel -->
@@ -215,6 +231,15 @@
               </div>
               <div class="am-label">Total EMIs (Existing + Car)</div>
             </div>
+            <!-- The number this page was missing: the loan plus the cost of
+                 keeping the car on the road. -->
+            <div class="am-item">
+              <div class="am-icon">⛽</div>
+              <div class="am-val" [class.bad]="carCostRatio() > 10" [class.good]="carCostRatio() <= 10">
+                {{ fmt(totalCarCost()) }}
+              </div>
+              <div class="am-label">True cost of this car / month</div>
+            </div>
             <div class="am-item">
               <div class="am-icon"><app-icon name="indian-rupee" [size]="22"></app-icon></div>
               <div class="am-val" [class.bad]="monthlySurplus() < 0" [class.good]="monthlySurplus() > 0">
@@ -229,6 +254,36 @@
               </div>
               <div class="am-label">Emergency Buffer</div>
             </div>
+          </div>
+
+          <!--
+            The 20/4/10 rule, stated rather than assumed. Each line shows what
+            this loan does against it, so a buyer can see which test they fail
+            instead of only a score. The third test is the one that needs
+            running costs, and the reason they were added.
+          -->
+          <div class="rule-card">
+            <div class="rule-head">The 20/4/10 rule</div>
+            <ul class="rule-list">
+              <li [class.rule-ok]="downPaymentPercent() >= 20" [class.rule-off]="downPaymentPercent() < 20">
+                <span class="rule-mark">{{ downPaymentPercent() >= 20 ? '✓' : '•' }}</span>
+                At least <strong>20%</strong> down — yours is {{ downPaymentPercent() }}%
+              </li>
+              <li [class.rule-ok]="termYears() <= 4" [class.rule-off]="termYears() > 4">
+                <span class="rule-mark">{{ termYears() <= 4 ? '✓' : '•' }}</span>
+                Term of <strong>4 years</strong> or less — yours is {{ termYears() }} years
+              </li>
+              <li [class.rule-ok]="carCostRatio() <= 10" [class.rule-off]="carCostRatio() > 10">
+                <span class="rule-mark">{{ carCostRatio() <= 10 ? '✓' : '•' }}</span>
+                All car costs within <strong>10%</strong> of income — yours is {{ carCostRatio() }}%
+                <span class="rule-note">(EMI {{ fmt(emi()) }} + running {{ fmt(runningCosts()) }})</span>
+              </li>
+            </ul>
+            <p class="rule-foot">
+              A guideline, not a lending criterion — a bank will look at your DTI above.
+              Running costs are estimated at {{ runningCostPercent() }}% of the EMI; adjust the
+              slider if you know your own fuel and service bills.
+            </p>
           </div>
         </div>
       </div>

@@ -128,7 +128,10 @@
   border: 1px solid var(--divider); border-radius: 12px;
   .am-icon { font-size: 1.25rem; margin-bottom: 0.4rem; }
   .am-val { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem;
-    &.good { color: var(--success-ink); } &.bad { color: var(--danger); }
+    // Both use the -ink tokens. `.good` already did; `.bad` used raw --danger,
+    // which measures 3.14:1 on this tile's tint — below AA, and caught by
+    // e2e/contrast.spec.ts the moment a tile started using it by default.
+    &.good { color: var(--success-ink); } &.bad { color: var(--danger-ink); }
   }
   .am-label { font-size: 0.72rem; color: var(--muted); }
 }
@@ -141,4 +144,54 @@
   th { padding: 0.75rem 1rem; text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--divider); }
   td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
   tr:hover td { background: rgba(255,255,255,0.02); }
+}
+
+// ── Running costs + the 20/4/10 rule ────────────────────────────────────────
+
+.slider-hint {
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.rule-card {
+  margin-top: 1rem;
+  padding: 0.9rem 1.05rem;
+  border-radius: 12px;
+  background: var(--fill-dim);
+  border: 1px solid var(--divider);
+}
+
+.rule-head {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.rule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.86rem;
+  line-height: 1.45;
+
+  li { display: flex; gap: 0.5rem; align-items: baseline; }
+}
+
+// -ink tokens: this text sits on a tint, where the bright brand colours drop
+// below AA at this size.
+.rule-ok  .rule-mark { color: var(--success-ink); font-weight: 700; }
+.rule-off .rule-mark { color: var(--warning-ink); font-weight: 700; }
+.rule-off { color: var(--text); }
+
+.rule-note { color: var(--text-muted); }
+
+.rule-foot {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-muted);
 }

@@ -113,15 +113,73 @@ export class EmiCalculatorComponent implements OnInit {
     return Math.round(((this.existingEmis() + this.emi()) / income) * 100);
   });
 
+  /**
+   * Running costs as a share of the EMI — fuel, servicing, insurance, tyres.
+   *
+   * A car costs money to own as well as to buy, and this analysis counted only
+   * the loan: a ₹20,000 EMI was treated as ₹20,000 a month when the true
+   * outgoing is closer to ₹28,000. Someone shown "Excellent" could still be
+   * short every month.
+   *
+   * Expressed as a percentage of the EMI rather than a rupee figure so it
+   * tracks the loan as the sliders move, and left adjustable because 40% is a
+   * rule of thumb, not a fact about anyone's car. A 10-year-old diesel driven
+   * 2,000 km a month and a new hatchback driven to the station are not the
+   * same number.
+   */
+  runningCostPercent = signal(40);
+
+  runningCosts = computed(() => Math.round(this.emi() * this.runningCostPercent() / 100));
+
+  /** Everything the car costs each month: the loan plus keeping it on the road. */
+  totalCarCost = computed(() => this.emi() + this.runningCosts());
+
+  /**
+   * The 10 in the 20/4/10 rule: total transport cost as a share of income.
+   *
+   * The rule is 20% down, a term of 4 years or less, and all car costs — not
+   * just the EMI — within 10% of gross monthly income. The third test is the
+   * one this page was missing, and it is the one that catches an affordable
+   * loan on an unaffordable car.
+   */
+  carCostRatio = computed(() => {
+    const income = this.monthlyIncome();
+    if (!income) return 0;
+    return Math.round((this.totalCarCost() / income) * 100);
+  });
+
+  /** Down payment as a share of the car's price — the 20 in 20/4/10. */
+  downPaymentPercent = computed(() => {
+    const price = this.loanAmount();
+    if (!price) return 0;
+    return Math.round((this.downPayment() / price) * 100);
+  });
+
+  /** Term in years, for the 4 in 20/4/10. */
+  termYears = computed(() => Math.round((this.tenureMonths() / 12) * 10) / 10);
+
   affordabilityScore = computed(() => {
     const income = this.monthlyIncome();
     const dti = this.dtiAfter();
-    const surplus = income - this.existingEmis() - this.emi() - this.monthlyExpenses();
+    // Running costs belong in the surplus: they leave the account every month
+    // whether or not anyone budgeted for them.
+    const surplus = income - this.existingEmis() - this.totalCarCost() - this.monthlyExpenses();
     const buffer = income * 0.15; // 15% emergency buffer
     let score = 100;
     if (dti > 50) score -= 40;
     else if (dti > 40) score -= 25;
     else if (dti > 30) score -= 10;
+    // The 20/4/10 test, weighted below DTI: exceeding it is a warning about
+    // the car being too much car, not a sign the lender will refuse.
+    // Weighted below DTI — a lender cares about DTI, this is guidance about
+    // whether the car is too much car. But the penalty has to be big enough to
+    // move the verdict: at 36% of income the first draft still read
+    // "Excellent", which is not a description anyone should act on.
+    const carRatio = this.carCostRatio();
+    if (carRatio > 30) score -= 40;
+    else if (carRatio > 20) score -= 30;
+    else if (carRatio > 15) score -= 12;
+    else if (carRatio > 10) score -= 6;
     if (surplus < buffer) score -= 20;
     if (surplus < 0) score -= 30;
     return Math.max(0, Math.min(100, score));
@@ -141,7 +199,7 @@ export class EmiCalculatorComponent implements OnInit {
   });
 
   monthlySurplus = computed(() =>
-    this.monthlyIncome() - this.existingEmis() - this.emi() - this.monthlyExpenses()
+    this.monthlyIncome() - this.existingEmis() - this.totalCarCost() - this.monthlyExpenses()
   );
 
   emergencyBufferOk = computed(() =>
