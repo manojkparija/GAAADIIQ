@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { IconComponent } from '../../components/icon/icon.component';
+import { LenderMarkComponent } from '../../components/lender-mark/lender-mark.component';
 
 interface AmortizationRow {
   month: number;
@@ -16,7 +17,7 @@ interface AmortizationRow {
 @Component({
   selector: 'app-emi-calculator',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent],
+  imports: [CommonModule, FormsModule, IconComponent, LenderMarkComponent],
   templateUrl: './emi-calculator.component.html',
   styleUrl: './emi-calculator.component.scss'
 })
@@ -29,12 +30,12 @@ export class EmiCalculatorComponent implements OnInit {
   downPayment = signal(0);
 
   // Loaded from GET /loans/emi-calculator; stubs are shown until API responds (MOB-031)
-  banks = [
-    { name: 'SBI', rate: 8.45, logo: '🏦' },
-    { name: 'HDFC Bank', rate: 8.75, logo: '🏛' },
-    { name: 'ICICI Bank', rate: 8.85, logo: '💳' },
-    { name: 'Axis Bank', rate: 9.0, logo: '🔵' },
-    { name: 'Kotak Mahindra', rate: 8.65, logo: '🟠' },
+  banks: { name: string; rate: number }[] = [
+    { name: 'SBI', rate: 8.45 },
+    { name: 'HDFC Bank', rate: 8.75 },
+    { name: 'ICICI Bank', rate: 8.85 },
+    { name: 'Axis Bank', rate: 9.0 },
+    { name: 'Kotak Mahindra', rate: 8.65 },
   ];
 
   selectedBank = signal('SBI');
@@ -58,7 +59,7 @@ export class EmiCalculatorComponent implements OnInit {
   existingEmis = signal(0);
   monthlyExpenses = signal(25000);
 
-  selectBank(bank: { name: string; rate: number; logo: string }) {
+  selectBank(bank: { name: string; rate: number }) {
     this.selectedBank.set(bank.name);
     this.interestRate.set(bank.rate);
   }

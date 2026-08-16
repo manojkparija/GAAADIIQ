@@ -1,0 +1,37 @@
+:host {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.lm-mark,
+.lm-logo {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+}
+
+.lm-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  // The tint and ink come from the component, paired so the text stays above
+  // AA on its own hue.
+  border: 1px solid var(--divider);
+}
+
+// ICICI is five characters. Shrinking the type is what keeps it on one line
+// rather than letting the box grow and knock the rows out of alignment.
+.lm-mark.lm-long {
+  font-size: 0.62rem;
+  letter-spacing: 0;
+}
+
+.lm-logo {
+  object-fit: contain;
+  background: #fff;
+  padding: 3px;
+  border: 1px solid var(--divider);
+}

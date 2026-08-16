@@ -110,7 +110,7 @@
                 (click)="selectBank(bank)"
                 style="cursor:pointer">
                 <div class="bank-info">
-                  <span class="bank-logo">{{ bank.logo }}</span>
+                  <app-lender-mark [name]="bank.name" />
                   <div>
                     <div class="bank-name">{{ bank.name }}</div>
                     <div class="bank-rate">{{ bank.rate }}% p.a.</div>
