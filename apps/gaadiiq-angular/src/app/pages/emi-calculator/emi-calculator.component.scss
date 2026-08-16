@@ -128,7 +128,10 @@
   border: 1px solid var(--divider); border-radius: 12px;
   .am-icon { font-size: 1.25rem; margin-bottom: 0.4rem; }
   .am-val { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem;
-    &.good { color: var(--success-ink); } &.bad { color: var(--danger); }
+    // Both use the -ink tokens. `.good` already did; `.bad` used raw --danger,
+    // which measures 3.14:1 on this tile's tint — below AA, and caught by
+    // e2e/contrast.spec.ts the moment a tile started using it by default.
+    &.good { color: var(--success-ink); } &.bad { color: var(--danger-ink); }
   }
   .am-label { font-size: 0.72rem; color: var(--muted); }
 }
