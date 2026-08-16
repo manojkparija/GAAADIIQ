@@ -36,6 +36,8 @@ export class RegisterComponent {
   budget = signal('');
   notifications = signal(true);
   loading = signal(false);
+  /** Account made, waiting on the emailed confirmation link. */
+  awaitingConfirmation = signal(false);
   error = signal('');
 
   // Customers get 3 steps, Admin/Seller get 2 (skip preferences)
@@ -89,7 +91,19 @@ export class RegisterComponent {
     this.error.set('');
     this.loading.set(true);
     try {
-      await this.auth.register(this.name(), this.email(), this.password(), this.accountType());
+      const usable = await this.auth.register(
+        this.name(), this.email(), this.password(), this.accountType(),
+      );
+
+      // Supabase is holding the account until the emailed link is clicked, so
+      // there is no session to navigate with. Sending them onward anyway put
+      // them on a guarded page that bounced, and the sign-in they tried next
+      // reported "incorrect password" for a password that was correct.
+      if (!usable) {
+        this.awaitingConfirmation.set(true);
+        return;
+      }
+
       // A mechanic account is only half of registering: the KYC details and
       // service area live on the mechanic record, so hand straight over to
       // that form rather than dropping them on the home page to find it.

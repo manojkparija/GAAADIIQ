@@ -193,3 +193,35 @@
   h2 { margin-bottom: 0.75rem; }
   p { color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6; }
 }
+
+// The email-not-confirmed state.
+//
+// Deliberately not styled as an error: nothing the user did is wrong, and the
+// action is in their inbox rather than in this form.
+.confirm-msg {
+  margin: 0.75rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: var(--fill-dim);
+  border: 1px solid var(--divider);
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  p { margin: 0 0 0.4rem; }
+  p:last-child { margin-bottom: 0; }
+  // -ink token, not the brand colour: this text sits on a tint.
+  strong { color: var(--info-ink); }
+}
+
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.confirm-sent { color: var(--success-ink); font-weight: 600; }
+.confirm-err  { color: var(--danger-ink, #B42318); }

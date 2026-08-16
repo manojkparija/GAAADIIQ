@@ -197,3 +197,12 @@
   font-size: 0.875rem;
   margin-bottom: 0.75rem;
 }
+
+.confirm-copy {
+  margin: 0 0 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+
+  strong { color: var(--text); }
+}

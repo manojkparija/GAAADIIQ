@@ -50,8 +50,28 @@
       </div>
     </div>
 
+    <!--
+      Account created, waiting on the emailed link. Shown instead of the form
+      because there is nothing left to fill in and nowhere to navigate: without
+      a confirmed address, every sign-in is refused.
+    -->
+    @if (awaitingConfirmation()) {
+      <div class="step-content">
+        <h2>Check your email</h2>
+        <p class="confirm-copy">
+          We sent a confirmation link to <strong>{{ email() }}</strong>.
+          Click it, then sign in — your account is ready on the other side.
+        </p>
+        <p class="confirm-copy" *ngIf="accountType() === 'mechanic'">
+          After signing in you'll be asked for your workshop details and KYC.
+          An admin approves the account before jobs start arriving.
+        </p>
+        <a routerLink="/login" class="btn-gradient" style="display:block;text-align:center">Go to sign in</a>
+      </div>
+    }
+
     <!-- Step 1: Personal Info + Account Type -->
-    @if (step() === 1) {
+    @if (step() === 1 && !awaitingConfirmation()) {
       <div class="step-content">
         <h2>Tell us about yourself</h2>
         <div class="form-group">
@@ -160,7 +180,7 @@
     }
 
     <!-- Step 2: Password -->
-    @if (step() === 2) {
+    @if (step() === 2 && !awaitingConfirmation()) {
       <div class="step-content">
         <h2>Set your password</h2>
         <div class="form-group">
@@ -187,7 +207,7 @@
     }
 
     <!-- Step 3: Car Preferences (Customers only) -->
-    @if (step() === 3 && isCustomer()) {
+    @if (step() === 3 && isCustomer() && !awaitingConfirmation()) {
       <div class="step-content">
         <h2>Your car preferences</h2>
         <p class="hint">Select all that interest you</p>
