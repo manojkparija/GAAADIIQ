@@ -1,6 +1,7 @@
 import { Component, signal, effect, inject } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { LogoComponent } from '../../components/logo/logo.component';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UnconfirmedEmailError } from '../../services/auth.service';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -8,7 +9,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
+  imports: [LogoComponent, RouterLink, CommonModule, FormsModule, IconComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })

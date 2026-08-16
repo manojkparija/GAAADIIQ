@@ -1,6 +1,7 @@
 import { Component, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { LogoComponent } from '../../components/logo/logo.component';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -19,7 +20,7 @@ export type AccountType = 'customer' | 'seller' | 'mechanic';
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
+  imports: [LogoComponent, RouterLink, CommonModule, FormsModule, IconComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })
