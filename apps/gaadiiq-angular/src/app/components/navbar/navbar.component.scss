@@ -171,20 +171,23 @@
   // 100dvh, not 100vh: on mobile Safari the latter is the *largest* viewport,
   // so the last item sits under the browser chrome until the user scrolls.
   height: 100dvh;
-  // LAY-001: account for home indicator at bottom
-  padding-bottom: var(--safe-bottom);
-  padding-top: 4.5rem;
+  // LAY-001: home indicator, plus room for the floating chat button that
+  // otherwise sits on top of Sign In — the last thing a signed-out visitor
+  // needs and the one the FAB covered.
+  padding: 4.5rem 1.25rem calc(var(--safe-bottom) + 5.5rem);
   background: var(--navy);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  // Left-aligned in a fixed column, not centred: centred text of varying
+  // length has no common edge, which is most of why this read as untidy.
+  align-items: stretch;
   // Was `center`, which is only correct while the menu is shorter than the
   // screen. Once it is not, centring pushes the first items off the top edge
   // where they cannot be scrolled back to. Top-aligned and scrollable instead.
   justify-content: flex-start;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  gap: 1.1rem;
+  gap: 1.5rem;
   z-index: 999;
   opacity: 0;
   pointer-events: none;
@@ -198,11 +201,17 @@
   }
 
   a {
-    font-size: 1.4rem;
-    font-weight: 700;
+    // 1.4rem for thirteen links made every one shout and pushed the account
+    // buttons off-screen. This still clears the 44px touch target.
+    font-size: 1.05rem;
+    font-weight: 600;
     color: var(--text);
     font-family: 'Outfit', sans-serif;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
+    padding: 0.55rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     transition: color 0.2s;
     &:hover { color: var(--primary); }
   }
@@ -210,10 +219,45 @@
   .mobile-btns {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    width: 260px;
-    margin-top: 1rem;
+    gap: 0.6rem;
+    width: 100%;
+    margin-top: 0.25rem;
   }
+}
+
+// One group of links under a quiet heading.
+.mm-group {
+  display: flex;
+  flex-direction: column;
+
+  + .mm-group { border-top: 1px solid rgba(255, 255, 255, 0.09); padding-top: 1rem; }
+}
+
+.mm-head {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mm-urgent { font-weight: 700; }
+
+.mm-item { font-size: 1rem !important; font-weight: 500 !important; }
+
+.mm-cta {
+  width: 100%;
+  display: block;
+  text-align: center;
+}
+
+.mm-prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
 }
 
 .city-btn-nav {
@@ -251,7 +295,11 @@
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
   border-radius: 7px;
-  padding: 0.6rem 1.5rem;
+  padding: 0.6rem 1rem;
+  // Full width so it shares the column edge with everything else, rather
+  // than floating centred at its own content width.
+  width: 100%;
+  justify-content: flex-start;
   font-size: 1rem;
   font-weight: 600;
   color: var(--primary);
@@ -286,11 +334,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--divider);
-  margin-bottom: 0.5rem;
-  width: 260px;
+  padding: 0;
+  // Was a fixed 260px with its own bottom rule, so it neither lined up with
+  // the links nor with the buttons. The group above owns the divider now.
+  width: 100%;
 
+  span { font-size: 0.9rem; color: var(--muted); }
   .theme-toggle { width: 34px; height: 34px; }
 }
 
