@@ -1046,14 +1046,10 @@ a:focus-visible,
   border-radius: 4px;
 }
 
-// Auth page logo SVG classes (inline SVG, not encapsulated)
-.auth-logo-svg {
-  display: block;
-  .al-main { fill: var(--text); }
-  .al-ii-a  { fill: #2B6BFF; }
-  .al-ii-b  { fill: #00D4A8; opacity: 0.7; }
-  .al-iq    { fill: #00D4A8; }
-}
+// The auth pages used to carry their own inline copy of the wordmark — the
+// Arial Black one with the double-I set as two rounded bars — and kept
+// rendering it long after the navbar and footer moved to <app-logo>. They now
+// use the component too, so there is nothing left for these rules to style.
 
 // Reduced motion — respect OS preference
 @media (prefers-reduced-motion: reduce) {
