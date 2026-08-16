@@ -128,6 +128,26 @@
               <span class="role-desc">List &amp; sell cars</span>
             </button>
 
+            <!-- Mechanic. Registration continues on /mechanic-signup, which
+                 collects the KYC and service area an account alone cannot. -->
+            <button type="button" class="role-chip" [class.selected]="accountType() === 'mechanic'" (click)="accountType.set('mechanic')">
+              <svg class="role-svg" viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Workshop floor -->
+                <rect x="8" y="42" width="64" height="10" rx="2" fill="#F1F5F9"/>
+                <!-- Car on a lift -->
+                <rect x="20" y="24" width="40" height="10" rx="4" fill="#6366F1"/>
+                <rect x="27" y="18" width="24" height="8" rx="3" fill="#818CF8"/>
+                <circle cx="28" cy="35" r="4" fill="#1E293B"/>
+                <circle cx="52" cy="35" r="4" fill="#1E293B"/>
+                <!-- Lift post -->
+                <rect x="38" y="34" width="4" height="10" fill="#CBD5E1"/>
+                <!-- Spanner -->
+                <path d="M60 44a5 5 0 0 1-6.6 4.7l-9.6 9.6-3.5-3.5 9.6-9.6A5 5 0 0 1 56 39l-2.8 2.8 2.2 2.2L58 41.2A5 5 0 0 1 60 44z" fill="#0EA5E9"/>
+              </svg>
+              <span class="role-label">Mechanic</span>
+              <span class="role-desc">Take repair jobs</span>
+            </button>
+
 
           </div>
         </div>

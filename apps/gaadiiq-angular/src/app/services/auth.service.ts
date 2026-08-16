@@ -173,7 +173,11 @@ export class AuthService {
     name: string,
     email: string,
     password: string,
-    accountType: 'customer' | 'seller' = 'customer',
+    // 'mechanic' is why they signed up, not a role they hold: a mechanic's
+    // account is an ordinary user account, and the mechanic record created on
+    // /mechanic-signup is what makes them one. Roles that grant anything —
+    // seller, admin — are not self-selected here.
+    accountType: 'customer' | 'seller' | 'mechanic' = 'customer',
   ): Promise<void> {
     if (!name || !email || password.length < 8) {
       throw new Error('All fields are required (password min 8 characters).');
@@ -188,7 +192,7 @@ export class AuthService {
       throw new Error(error.message);
     }
 
-    const role: UserRole = accountType === 'customer' ? 'user' : 'seller';
+    const role: UserRole = accountType === 'seller' ? 'seller' : 'user';
 
     // Upsert profile row
     await this.sb.client
