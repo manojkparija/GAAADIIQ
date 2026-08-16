@@ -2,7 +2,7 @@ import { Component, signal, effect, inject } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, UnconfirmedEmailError } from '../../services/auth.service';
 import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
@@ -83,16 +83,41 @@ export class LoginComponent {
     }
   }
 
+  /** True when the password was right and only the email is unconfirmed. */
+  needsConfirmation = signal(false);
+  resendSent = signal(false);
+  resendError = signal('');
+
   async onSubmit() {
     this.error.set('');
+    this.needsConfirmation.set(false);
+    this.resendSent.set(false);
     this.loading.set(true);
     try {
       await this.auth.login(this.email(), this.password());
       this.router.navigateByUrl(this.returnUrl);
     } catch (e: any) {
-      this.error.set(e.message || 'Sign in failed. Please try again.');
+      // An unconfirmed address is not a wrong password, and telling someone to
+      // check their credentials when the fix is in their inbox leaves them
+      // retyping a password that was right the first time.
+      if (e instanceof UnconfirmedEmailError) {
+        this.needsConfirmation.set(true);
+        this.error.set('');
+      } else {
+        this.error.set(e.message || 'Sign in failed. Please try again.');
+      }
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async resendConfirmation() {
+    this.resendError.set('');
+    try {
+      await this.auth.resendConfirmation(this.email());
+      this.resendSent.set(true);
+    } catch (e: any) {
+      this.resendError.set(e.message || 'Could not resend. Try again in a moment.');
     }
   }
 }

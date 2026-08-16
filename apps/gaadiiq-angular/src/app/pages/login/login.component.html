@@ -59,6 +59,26 @@
         <a href="#" class="forgot" (click)="openResetForm($event)">Forgot password?</a>
       </div>
       <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
+
+      <!--
+        A separate state, not another red error. The password was accepted;
+        Supabase is waiting for the link in their inbox to be clicked. Telling
+        them their credentials are wrong sends them to reset a password that
+        was never the problem — which is exactly what happened.
+      -->
+      <div class="confirm-msg" *ngIf="needsConfirmation()">
+        <p><strong>Almost there — confirm your email first.</strong></p>
+        <p>
+          We sent a link to <strong>{{ email() }}</strong>. Click it, then sign in.
+          Your password is fine.
+        </p>
+        <p *ngIf="!resendSent()">
+          Nothing in your inbox? Check spam, or
+          <button type="button" class="link-btn" (click)="resendConfirmation()">send it again</button>.
+        </p>
+        <p *ngIf="resendSent()" class="confirm-sent">Sent — check your inbox.</p>
+        <p *ngIf="resendError()" class="confirm-err">{{ resendError() }}</p>
+      </div>
       <button type="submit" class="btn-gradient btn-full" [disabled]="loading()">
         {{ loading() ? 'Signing in…' : 'Sign In' }}
       </button>

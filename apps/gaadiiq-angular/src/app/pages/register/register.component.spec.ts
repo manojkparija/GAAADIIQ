@@ -24,9 +24,11 @@ describe('RegisterComponent account types', () => {
   let fixture: any;
   let component: any;
   let navigatedTo: string | null;
+  let confirmedImmediately: boolean;
 
   beforeEach(() => {
     navigatedTo = null;
+    confirmedImmediately = true;
     TestBed.configureTestingModule({
       imports: [RegisterComponent],
       providers: [
@@ -35,7 +37,12 @@ describe('RegisterComponent account types', () => {
         provideHttpClientTesting(),
         {
           provide: AuthService,
-          useValue: { register: () => Promise.resolve(), currentUser: () => null },
+          useValue: {
+            // Resolves true when the account is usable straight away; false
+            // when Supabase is holding it for email confirmation.
+            register: () => Promise.resolve(confirmedImmediately),
+            currentUser: () => null,
+          },
         },
       ],
     });
@@ -87,6 +94,37 @@ describe('RegisterComponent account types', () => {
     component.accountType.set('customer');
     await component.onSubmit();
     expect(navigatedTo).toBe('/');
+  });
+
+  it('does not navigate when the account is waiting on email confirmation', async () => {
+    // There is no session yet, so every guarded page bounces — and the
+    // sign-in they try next is refused, which reads as a wrong password.
+    confirmedImmediately = false;
+    component.accountType.set('mechanic');
+    component.name.set('Rakesh');
+    component.email.set('rakesh@example.com');
+    component.password.set('a-long-enough-password');
+    component.confirmPassword.set('a-long-enough-password');
+
+    await component.onSubmit();
+
+    expect(navigatedTo).withContext('navigated with no session').toBeNull();
+    expect(component.awaitingConfirmation()).toBe(true);
+  });
+
+  it('tells them to check their email instead of showing the form again', async () => {
+    confirmedImmediately = false;
+    component.accountType.set('customer');
+    component.name.set('A');
+    component.email.set('a@example.com');
+    component.password.set('a-long-enough-password');
+    component.confirmPassword.set('a-long-enough-password');
+    await component.onSubmit();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Check your email');
+    expect(text).toContain('a@example.com');
   });
 
   it('skips the car-preferences step for a mechanic', () => {

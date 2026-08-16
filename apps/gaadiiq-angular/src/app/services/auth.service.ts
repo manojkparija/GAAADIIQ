@@ -23,6 +23,19 @@ export interface AuthUser {
   localOnly?: boolean;
 }
 
+/**
+ * The account exists and the password was right — Supabase is waiting for the
+ * confirmation link to be clicked. A distinct type because the fix is
+ * completely different from a wrong password, and the UI has to offer a resend
+ * rather than a retry.
+ */
+export class UnconfirmedEmailError extends Error {
+  constructor(readonly email: string) {
+    super('Your email address has not been confirmed yet.');
+    this.name = 'UnconfirmedEmailError';
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   /**
@@ -165,7 +178,22 @@ export class AuthService {
     }
 
     this.localOnlyReason.set(null);
-    // Supabase returns "Invalid login credentials" for wrong password or unknown email
+
+    // Say which failure it was.
+    //
+    // Every Supabase error used to become "Incorrect email or password",
+    // including "Email not confirmed" — so someone who had just signed up and
+    // not yet clicked the link in their inbox was told their password was
+    // wrong, and retyping it could never work. The comment in the dev-admin
+    // branch above already says these two need completely different fixes;
+    // this is the same reasoning applied to the path real users take.
+    const reason = (error.message || '').toLowerCase();
+    if (reason.includes('not confirmed') || reason.includes('confirm your email')) {
+      throw new UnconfirmedEmailError(email);
+    }
+    // "Invalid login credentials" stays deliberately vague: distinguishing a
+    // wrong password from an unknown address turns the form into a way to test
+    // whether someone has an account here.
     throw new Error('Incorrect email or password. Please try again.');
   }
 
@@ -178,7 +206,9 @@ export class AuthService {
     // /mechanic-signup is what makes them one. Roles that grant anything —
     // seller, admin — are not self-selected here.
     accountType: 'customer' | 'seller' | 'mechanic' = 'customer',
-  ): Promise<void> {
+    // Returns true when the account is usable immediately, false when Supabase
+    // is waiting on email confirmation.
+  ): Promise<boolean> {
     if (!name || !email || password.length < 8) {
       throw new Error('All fields are required (password min 8 characters).');
     }
@@ -227,7 +257,25 @@ export class AuthService {
     // If Supabase returns a session immediately (email confirm disabled), hydrate now
     if (data.session?.user) {
       await this.hydrateUser(email);
+      return true;
     }
+    // No session means Supabase is waiting for the confirmation link. The
+    // caller must not navigate into a signed-in area: every guarded page will
+    // bounce them, and the next sign-in attempt fails until the link is
+    // clicked — which is how a new mechanic ended up being told their password
+    // was wrong.
+    return false;
+  }
+
+  /**
+   * Ask Supabase to send the confirmation email again.
+   *
+   * The first one expires, and lands in spam often enough that "check your
+   * inbox" with no way to retry is a dead end.
+   */
+  async resendConfirmation(email: string): Promise<void> {
+    const { error } = await this.sb.client.auth.resend({ type: 'signup', email });
+    if (error) throw new Error(error.message);
   }
 
   async logout(): Promise<void> {
