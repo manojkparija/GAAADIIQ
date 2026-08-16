@@ -447,7 +447,7 @@ input[type="number"], table, tbody, th, td,
 
   h1 {
     font-family: 'Outfit', sans-serif;
-    font-size: clamp(2.4rem, 5vw, 3.75rem);
+    font-size: clamp(1.9rem, 3.6vw, 2.75rem);
     font-weight: 800;
     letter-spacing: -0.03em;
     line-height: 1.08;
@@ -493,7 +493,7 @@ input[type="number"], table, tbody, th, td,
 
   h2 {
     font-family: 'Outfit', sans-serif;
-    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-size: clamp(1.9rem, 3.6vw, 2.75rem);
     font-weight: 800;
     letter-spacing: -0.025em;
     line-height: 1.15;
@@ -744,7 +744,7 @@ input[type="number"], table, tbody, th, td,
   font-family: 'Manrope', sans-serif;
 }
 
-.section-title { font-family: 'Outfit', sans-serif; font-size: clamp(1.75rem, 4vw, 2.75rem); font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.025em; }
+.section-title { font-family: 'Outfit', sans-serif; font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.025em; }
 .section-sub { color: var(--muted); font-size: 1rem; max-width: 520px; line-height: 1.75; }
 
 // ── Scrollbar ─────────────────────────────────────────────────────────────────
@@ -848,7 +848,13 @@ input, select, textarea {
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;
-  accent-color: #2563EB;
+  // Teal, not the browser's default blue. accent-color is what colours the
+  // highlighted row in a native <select> popup and the tick in a checkbox, and
+  // those are the last places still showing Chrome's blue on a brand page.
+  //
+  // The popup itself is drawn by the OS, so this is as far as CSS reaches —
+  // and it cannot be verified in a screenshot for the same reason.
+  accent-color: var(--teal);
   &:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(47,107,255,0.12);
@@ -878,10 +884,14 @@ input[type="checkbox"], input[type="radio"] {
   .container { padding: 0 1rem; }
   .hide-mobile { display: none !important; }
 
-  // Global mobile typography scale-down
-  .page-hero h1 { font-size: clamp(1.75rem, 7vw, 2.4rem); }
-  .section-title { font-size: clamp(1.4rem, 6vw, 1.9rem); }
-  .section-head h2 { font-size: clamp(1.35rem, 5.5vw, 1.75rem); }
+  // Global mobile typography scale-down.
+  //
+  // These must stay BELOW the desktop scale above, not equal to it — a phone
+  // has a third of the width and the same headline, so a size that reads as
+  // confident on a laptop reads as shouting on a handset.
+  .page-hero h1 { font-size: clamp(1.55rem, 6vw, 2rem); }
+  .section-title { font-size: clamp(1.3rem, 5vw, 1.6rem); }
+  .section-head h2 { font-size: clamp(1.2rem, 4.5vw, 1.45rem); }
 
   // Prevent hero buttons from overflowing
   .hero-actions { flex-direction: column; align-items: stretch; }
