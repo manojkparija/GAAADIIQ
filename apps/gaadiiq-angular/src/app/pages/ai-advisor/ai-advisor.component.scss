@@ -46,17 +46,27 @@
 
 // ── Quiz Phase ────────────────────────────────────────────────────────────────
 
+// No horizontal padding on the page itself.
+//
+// The hero lives inside this element, so 1rem of page padding inset it from
+// both edges — a gap no other page has, because everywhere else the hero sits
+// outside the padded container. `.quiz-container` carries its own 1rem, so the
+// padding here was duplicated as well as wrong.
 .advisor-page {
   min-height: 100vh;
-  padding: 2rem 1rem 4rem;
+  padding: 0 0 4rem;
 }
 
 .advisor-hero {
   text-align: center;
-  padding: 5rem 1rem 3rem;
+  // Clears the fixed navbar the same way .page-hero does (LAY-007), rather
+  // than relying on a page-level top padding that also inset the sides.
+  padding: max(7rem, var(--nav-offset)) 1rem 3rem;
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
 
-  .hero-icon { font-size: 3rem; margin-bottom: 1rem; }
+  // The icon draws in currentColor, which inherits body text — so it came out
+  // near-black on a saturated gradient. Everything else in this hero is white.
+  .hero-icon { font-size: 3rem; margin-bottom: 1rem; color: #fff; }
 
   h1 { font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 900; margin-bottom: 0.75rem; color: #fff; }
 
@@ -74,7 +84,7 @@
 .quiz-container {
   max-width: 700px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 2rem 1rem 0;
 }
 
 // Progress bar
@@ -346,15 +356,17 @@
 
 // ── Results Phase ─────────────────────────────────────────────────────────────
 
+// Same as .advisor-page: the results hero is a child, so page padding would
+// inset it from both edges.
 .results-page {
   min-height: 100vh;
-  padding: 2rem 1rem 4rem;
+  padding: 0 0 4rem;
 }
 
 .results-hero {
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
   text-align: center;
-  padding: 5rem 1rem 3rem;
+  padding: max(7rem, var(--nav-offset)) 1rem 3rem;
 
   .results-hero-icon { font-size: 3rem; margin-bottom: 1rem; }
 
@@ -395,7 +407,8 @@
 .results-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 0 0.5rem;
+  // Page padding moved here when it was taken off .results-page.
+  padding: 2rem 1rem 0;
 }
 
 // ── Comparison table ──────────────────────────────────────────────────────────
