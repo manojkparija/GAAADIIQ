@@ -1,7 +1,7 @@
 .alerts-page { min-height:100vh; padding:6rem 0 4rem; position:relative; overflow:hidden; }
 .orb-1 { position:absolute; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,#00C9FF22,transparent); top:-100px; right:-100px; pointer-events:none; }
 .page-header { text-align:center; margin-bottom:3rem; }
-.page-header h1 { font-size:clamp(2rem,4vw,3rem); font-weight:900; margin:.5rem 0; }
+.page-header h1 { font-size:clamp(1.9rem, 3.6vw, 2.75rem); font-weight:900; margin:.5rem 0; }
 .page-header p { color:var(--muted); font-size:1rem; }
 .ai-badge { display:inline-block; background:rgba(0,201,255,.15); border:1px solid rgba(0,201,255,.3); color:#00C9FF; border-radius:2rem; padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
 .content-grid { display:grid; grid-template-columns:1fr 1.2fr; gap:2rem; align-items:start; }

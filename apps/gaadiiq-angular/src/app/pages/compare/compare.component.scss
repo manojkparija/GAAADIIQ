@@ -13,7 +13,7 @@
   border-bottom: 1px solid var(--divider);
   padding: 5rem 0 2.5rem;
   text-align: center;
-  h1 { font-family: 'Outfit', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; }
+  h1 { font-family: 'Outfit', sans-serif; font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 800; color: #fff; }
   p { color: rgba(255,255,255,0.75); margin-top: 0.5rem; }
   .gradient-text { background: linear-gradient(135deg, #ffffff, #C4B5FD); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 }
@@ -175,7 +175,23 @@
 .drop-price { color:var(--muted); font-size:0.8rem; }
 .drop-empty { padding:0.75rem 1rem; color:var(--muted); font-size:0.875rem; }
 .popular-picks { display:flex; flex-wrap:wrap; gap:0.5rem; }
-.pick-chip { background: var(--fill-dim); border: 1px solid var(--border-soft); border-radius:50px; padding:0.3rem 0.75rem; font-size:0.78rem; cursor:pointer; transition:all 0.15s; &:hover{background:rgba(30,64,175,0.2);border-color:#1e40af;} }
+// The quick-pick chips carry the brand gradient rather than a grey fill:
+// they are the one thing to press on an otherwise empty page, and a grey pill
+// beside a grey search box does not read as a suggestion to tap.
+.pick-chip {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--teal) 100%);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: 50px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.12s;
+
+  &:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+}
 .comparison-table { padding:0; overflow:hidden;
   .comp-header { display:grid; gap:0; border-bottom:2px solid rgba(30,64,175,0.3); }
   .comp-label-col { padding:1.25rem; font-weight:700; font-size:0.85rem; color:var(--muted); background:rgba(0,0,0,0.2); }

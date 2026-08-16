@@ -4,7 +4,7 @@
 
 .about-hero { text-align:center; padding-bottom:3rem; }
 .ai-badge { display:inline-block; background:rgba(47,107,255,.15); border:1px solid rgba(47,107,255,.3); color: var(--teal-ink); border-radius:2rem; padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
-.about-hero h1 { font-size:clamp(2rem,4vw,3rem); font-weight:900; margin:.5rem 0 1rem; }
+.about-hero h1 { font-size:clamp(1.9rem, 3.6vw, 2.75rem); font-weight:900; margin:.5rem 0 1rem; }
 .hero-sub { color:var(--muted); font-size:1.05rem; max-width:640px; margin:0 auto; line-height:1.7; }
 
 .stats-section { padding-bottom:3rem; }
@@ -20,7 +20,7 @@
 .mission-card h2 { font-size:1.5rem; font-weight:800; margin-bottom:1.25rem; }
 .mission-card p { color:var(--muted); font-size:1rem; line-height:1.7; margin-bottom:.75rem; &:last-child { margin-bottom:0; } }
 
-.section-title { text-align:center; font-size:clamp(1.5rem,3vw,2.2rem); font-weight:900; margin-bottom:2rem; }
+.section-title { text-align:center; font-size:clamp(1.5rem, 2.8vw, 2rem); font-weight:900; margin-bottom:2rem; }
 
 .values-section { padding-bottom:3rem; }
 .values-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1.25rem; }
@@ -44,7 +44,7 @@
 
 .about-cta { padding-bottom:4rem; }
 .cta-card { text-align:center; padding:3rem 2rem; }
-.cta-card h2 { font-size:clamp(1.4rem,3vw,2rem); font-weight:900; margin-bottom:.75rem; }
+.cta-card h2 { font-size:clamp(1.5rem, 2.8vw, 2rem); font-weight:900; margin-bottom:.75rem; }
 .cta-card p { color:var(--muted); margin-bottom:2rem; }
 .cta-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;
   a { padding:.85rem 2rem; font-size:1rem; border-radius:.75rem; text-decoration:none; font-weight:700; }
