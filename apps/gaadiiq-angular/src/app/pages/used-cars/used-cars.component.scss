@@ -112,7 +112,18 @@
 
   &::placeholder { color: rgba(255,255,255,0.6); }
 
-  option { background: #1e3a8a; color: #fff; }
+  // The popup was blue-900 with Chrome's blue on the selected row, sitting
+  // under a hero that runs blue to teal. Deep teal keeps it on the same ramp;
+  // white text measures 12.4:1 on this and 4.76:1 on the highlight.
+  option { background: #062E2B; color: #fff; }
+  option:checked { background: var(--dropdown-hi); color: #fff; }
+
+  // The focus ring was --primary. Inside a teal-side search bar it read as the
+  // browser's default rather than ours.
+  &:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(20,184,166,0.25);
+  }
 }
 
 .search-btn {
