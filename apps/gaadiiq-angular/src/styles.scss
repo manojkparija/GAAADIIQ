@@ -91,6 +91,7 @@
   --input-color:    #0F172A;
   --dropdown-bg:    #FFFFFF;
   --dropdown-text:  #0F172A;
+  --dropdown-hi:    #0F766E;
   --footer-bg:      #EDF1FB;
 }
 
@@ -137,6 +138,7 @@
     --input-color:    #F1F5F9;
     --dropdown-bg:    #131D2E;
     --dropdown-text:  #F1F5F9;
+    --dropdown-hi:    #0F766E;
     --footer-bg:      rgba(5,7,14,0.97);
   }
 }
@@ -178,6 +180,7 @@
   --input-color:    #F1F5F9;
   --dropdown-bg:    #131D2E;
   --dropdown-text:  #F1F5F9;
+  --dropdown-hi:    #0F766E;
   --footer-bg:      rgba(5,7,14,0.97);
 }
 
@@ -221,6 +224,7 @@
   --input-color:    #0F172A;
   --dropdown-bg:    #FFFFFF;
   --dropdown-text:  #0F172A;
+  --dropdown-hi:    #0F766E;
   --footer-bg:      #EDF1FB;
 }
 
@@ -860,6 +864,22 @@ input, select, textarea {
     box-shadow: 0 0 0 3px rgba(47,107,255,0.12);
   }
   &::placeholder { color: var(--text-tertiary); }
+}
+
+// The highlighted row in a native <select> popup.
+//
+// accent-color above is not enough on its own: once a page paints its own
+// `option { background }` — several do, to keep the popup dark over a dark
+// hero — Chrome stops using the accent for the selected row and falls back to
+// its own blue, which is what shows on Used Cars. Painting `option:checked`
+// explicitly is the part that actually reaches it.
+//
+// --dropdown-hi is #0F766E rather than --teal because white text sits on it:
+// #14B8A6 gives 2.3:1, this gives 4.76:1. It does not lighten in dark mode for
+// the same reason — the popup is its own surface, not page chrome.
+option:checked {
+  background: var(--dropdown-hi);
+  color: #fff;
 }
 
 // Tick boxes are not text boxes.

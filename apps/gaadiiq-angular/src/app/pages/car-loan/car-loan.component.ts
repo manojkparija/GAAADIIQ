@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IconComponent } from '../../components/icon/icon.component';
+import { LenderMarkComponent } from '../../components/lender-mark/lender-mark.component';
 import {
   CarLoanService,
   LendingPartner,
@@ -14,7 +15,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-car-loan',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, LenderMarkComponent],
   templateUrl: './car-loan.component.html',
   styleUrl: './car-loan.component.scss',
 })

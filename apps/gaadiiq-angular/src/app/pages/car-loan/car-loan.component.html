@@ -293,7 +293,12 @@
               </thead>
               <tbody>
                 <tr *ngFor="let p of partners()">
-                  <td>{{ p.name }}</td>
+                  <td>
+                    <span class="lender-cell">
+                      <app-lender-mark [name]="p.name" [logoUrl]="p.logo_url" />
+                      <span class="lender-name">{{ p.name }}</span>
+                    </span>
+                  </td>
                   <td class="rate-cell">
                     <ng-container *ngIf="p.rate_from_pct !== null; else noRate">
                       {{ p.rate_from_pct }}% p.a. onwards

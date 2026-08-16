@@ -199,7 +199,12 @@
   }
   td { padding: 0.55rem 0.4rem; border-bottom: 1px solid var(--divider); }
   tr:last-child td { border-bottom: none; }
-  .rate-cell { font-weight: 700; color: var(--primary); white-space: nowrap; }
+  .rate-cell { font-weight: 700; color: var(--primary-ink); white-space: nowrap; }
+
+  // The mark and the name travel together, so the name still wraps as a block
+  // rather than flowing back under the mark.
+  .lender-cell { display: flex; align-items: center; gap: 0.6rem; }
+  .lender-name { line-height: 1.25; }
 }
 
 .rate-note, .how-note {

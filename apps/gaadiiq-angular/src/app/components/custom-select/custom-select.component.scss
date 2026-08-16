@@ -3,8 +3,8 @@
   width: 100%;
 
   &.disabled .cs-trigger { opacity: 0.5; cursor: not-allowed; }
-  &.open .cs-trigger { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
-  &.open .cs-arrow { transform: rotate(180deg); color: #2563EB; }
+  &.open .cs-trigger { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(20,184,166,0.18); }
+  &.open .cs-arrow { transform: rotate(180deg); color: var(--teal-ink); }
 }
 
 .cs-trigger {
@@ -16,7 +16,7 @@
   transition: border-color 0.2s, box-shadow 0.2s;
   font-family: inherit;
 
-  &:hover:not(:disabled) { border-color: rgba(37,99,235,0.4); }
+  &:hover:not(:disabled) { border-color: rgba(20,184,166,0.5); }
 }
 
 .cs-value { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -30,9 +30,9 @@
 
 .cs-dropdown {
   position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 200;
-  background: var(--bg, #fff); border: 1.5px solid #2563EB;
+  background: var(--bg, #fff); border: 1.5px solid var(--teal);
   border-radius: 10px; overflow: hidden;
-  box-shadow: 0 8px 28px rgba(37,99,235,0.18), 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 28px rgba(20,184,166,0.18), 0 2px 8px rgba(0,0,0,0.08);
   max-height: 260px; overflow-y: auto;
 }
 
@@ -43,12 +43,12 @@
   &.placeholder-opt { color: var(--text-muted); }
 
   &:hover {
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: linear-gradient(90deg, #0F766E 0%, #0E6B63 100%);
     color: #fff;
   }
 
   &.selected {
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: linear-gradient(90deg, #0F766E 0%, #0E6B63 100%);
     color: #fff; font-weight: 600;
   }
 }
@@ -56,11 +56,11 @@
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .cs-trigger { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
-  .cs-dropdown { background: #1e293b; border-color: #2563EB; }
+  .cs-dropdown { background: #1e293b; border-color: var(--teal); }
   .cs-option { color: #e2e8f0; }
 }
 :root[data-theme="dark"] {
   .cs-trigger { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
-  .cs-dropdown { background: #1e293b; border-color: #2563EB; }
+  .cs-dropdown { background: #1e293b; border-color: var(--teal); }
   .cs-option { color: #e2e8f0; }
 }
