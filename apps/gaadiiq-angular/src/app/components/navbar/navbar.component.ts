@@ -26,6 +26,7 @@ export class NavbarComponent {
   userMenuOpen = signal(false);
   cityModalOpen = signal(false);
 
+
   constructor(
     public auth: AuthService,
     public theme: ThemeService,

@@ -73,9 +73,11 @@
 .nav-links {
   display: flex;
   list-style: none;
-  // Tightened from 0.85rem. Eleven gaps at the old value cost 150px of a row
-  // that had none to spare.
-  gap: 0.55rem;
+  // Tightened twice now, from 0.85rem and then from 0.55rem. Twelve gaps at
+  // the original value cost 150px of a row that had none to spare, and the
+  // alternative to tightening was hiding half the links behind a "Tools"
+  // menu — which fitted beautifully and meant nobody found the calculators.
+  gap: 0.5rem;
 
   // The row of labels is the part that gives way when the bar runs out of
   // width, not the actions beside it. Before this the list refused to shrink,
@@ -86,23 +88,26 @@
   // Sign-in being unreachable is a worse failure than a nav item needing a
   // scroll, so the links scroll and the actions stay put.
   min-width: 0;
-  overflow-x: auto;
-  // Thin rather than hidden. Hiding it is what turned "three items are off the
-  // end" into "three items do not exist" — there was nothing on screen to say
-  // the row continued.
-  scrollbar-width: thin;
-  &::-webkit-scrollbar { height: 3px; }
-  &::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border-radius: 3px;
-  }
-  // Room for the focus underline, which sits at bottom: -4px and would be
-  // clipped by the scroll container otherwise.
+  // No scroll container any more. It was added when this row carried thirteen
+  // links and overflowed at every laptop width, and it did the right thing at
+  // the time — sign-in being pushed off the edge is worse than a row that
+  // scrolls. Grouping the tools took it to eight items, which fits with room
+  // to spare at 1280px, so the scrolling is no longer earned.
+  //
+  // It also has to go: `overflow-x: auto` makes the other axis clip too, so
+  // the Tools menu hanging below this row was cut off at the bar's edge. It
+  // was in the DOM, it reported itself visible, and none of it was on screen.
+  //
+  // Room for the focus underline, which sits at bottom: -4px.
   padding-bottom: 4px;
   a {
     color: var(--text);
     font-weight: 700;
-    font-size: 0.8rem;
+    // Bigger than it has ever been here: 0.8rem originally, 0.76rem when the
+    // row was overcrowded, 0.86rem now. Measured as the largest step that
+    // still fits all thirteen labels at 1366px, which is where a lot of
+    // laptops sit.
+    font-size: 0.86rem;
     // Labels are single-line by design. Without this a two-word item breaks
     // across lines once the row runs short of space, and because every item
     // then grows taller the whole bar looks misaligned rather than merely
@@ -428,4 +433,26 @@
 // Matches the rest of the menu, same as its desktop counterpart.
 .mobile-urgent {
   font-weight: 700;
+}
+
+// The desktop row hands over to the hamburger at 1350px, not 768px.
+//
+// All thirteen links fit down to 1366px at the current type size — measured,
+// no overflow — and stop fitting just below it: 64px over at 1300px. With the
+// scroll container gone there is nothing to say the row continued, so the
+// handover has to happen where the row actually runs out rather than where
+// phones begin.
+//
+// The number moved up from 1250 when the labels grew. That is the trade: type
+// a reader can take in at a glance, at the cost of the hamburger appearing on
+// a narrower laptop. Readability won, because a row nobody can read is not
+// navigation.
+//
+// The mobile menu already carries every link, grouped under headings, so
+// below this width it is simply the better navigation. Overrides the global
+// .hide-mobile / .hide-desktop pair for these two elements only; the rest of
+// the site keeps the 768px breakpoint.
+@media (max-width: 1350px) {
+  .nav-links.hide-mobile { display: none !important; }
+  .hamburger.hide-desktop { display: flex !important; }
 }

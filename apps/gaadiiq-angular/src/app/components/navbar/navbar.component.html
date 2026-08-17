@@ -8,22 +8,19 @@
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a></li>
       <li><a routerLink="/new-cars" routerLinkActive="active">New Cars</a></li>
       <li><a routerLink="/used-cars" routerLinkActive="active">Used Cars</a></li>
+      <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
       <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>
       <li><a routerLink="/vehicle-diagnosis" routerLinkActive="active">AI Diagnosis</a></li>
-      <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
-      <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI Calc</a></li>
-      <li><a routerLink="/car-loan" routerLinkActive="active">Car Loan</a></li>
-      <li><a routerLink="/tco" routerLinkActive="active">TCO Calc</a></li>
-      <!-- The seller-side pricing tool. It existed only in the footer and on
-           the home page, so anyone who arrived on any other page had no way to
-           reach it. -->
       <li><a routerLink="/ai-valuation" routerLinkActive="active">Car Value</a></li>
+      <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI</a></li>
+      <li><a routerLink="/car-loan" routerLinkActive="active">Car Loan</a></li>
+      <li><a routerLink="/tco" routerLinkActive="active">TCO</a></li>
+      <li><a routerLink="/reviews-news" routerLinkActive="active">News</a></li>
+      <li><a routerLink="/buyer-journey" routerLinkActive="active">Journey</a></li>
       <!-- Given its own emphasis: every other item here is something you browse
            at leisure, this one is what you need when the car has already
            stopped. -->
       <li><a routerLink="/find-mechanic" routerLinkActive="active" class="nav-urgent">Find Mechanic</a></li>
-      <li><a routerLink="/reviews-news" routerLinkActive="active">Reviews &amp; News</a></li>
-      <li><a routerLink="/buyer-journey" routerLinkActive="active">My Journey</a></li>
     </ul>
 
     <button class="city-btn-nav hide-mobile" (click)="openCityModal()" title="Select City">

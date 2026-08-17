@@ -6,13 +6,14 @@ import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { SupabaseService } from '../../services/supabase.service';
 import { PricingStrategyComponent } from '../../components/pricing-strategy/pricing-strategy.component';
+import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 import { DemandService, DaysTurn } from '../../services/demand.service';
 import { CATALOGUE, Variant, ValuationResult, computeHeuristicValuation } from '../../utils/valuation-engine';
 
 @Component({
   selector: 'app-ai-valuation',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent, PricingStrategyComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, PricingStrategyComponent, CustomSelectComponent],
   templateUrl: './ai-valuation.component.html',
   styleUrl: './ai-valuation.component.scss',
 })
@@ -53,6 +54,25 @@ export class AiValuationComponent {
   onModelChange() { this.form.variant = ''; }
 
   loading = signal(false);
+  /**
+   * Years as strings. The custom dropdown stores text, and `form.year` is read
+   * back with `+` throughout, so nothing downstream notices.
+   */
+  yearOptions(): string[] {
+    return this.years.map(String);
+  }
+
+  /**
+   * Variants keep their price in the label and their bare name as the value —
+   * the valuation engine matches on the name.
+   */
+  variantOptions(): SelectOption[] {
+    return this.availableVariants.map(v => ({
+      value: v.name,
+      label: `${v.name} · ${this.fmt(v.basePrice)}`,
+    }));
+  }
+
   result = signal<ValuationResult | null>(null);
 
   /**

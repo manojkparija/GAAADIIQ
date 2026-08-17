@@ -190,6 +190,99 @@ class TestPromptFencingSuite:
         assert "[REDACTED]" in prompt
 
 
+class TestAlreadyInLanguageSuite:
+    """
+    The gate that decides whether the translation fallback runs at all.
+
+    Getting this wrong in the permissive direction is the expensive one: it
+    reports a report as translated, skips the fallback, and the untranslated
+    parts reach the driver with nothing to flag them.
+    """
+
+    def test_english_routes_to_translation(self):
+        from services.diagnosis import _already_in_language
+        assert _already_in_language(
+            {"preliminary_diagnosis": "Likely pre-ignition knock."}, "hi-IN"
+        ) is False
+
+    def test_a_fully_translated_report_needs_no_second_call(self):
+        from services.diagnosis import _already_in_language
+        assert _already_in_language({
+            "preliminary_diagnosis": "संभावित पूर्व-प्रज्वलन नॉक।",
+            "fix_solutions": [{"title": "उच्च ऑक्टेन ईंधन", "difficulty": "DIY",
+                               "steps": ["९५ ऑक्टेन भरें"]}],
+        }, "hi-IN") is True
+
+    def test_a_half_translated_report_does_not_pass(self):
+        # The bug: the diagnosis came back in Hindi and the repair instructions
+        # in English. Checking the first field alone called that translated, so
+        # the fallback never ran and the driver read English at the point of
+        # doing something about the car.
+        from services.diagnosis import _already_in_language
+        assert _already_in_language({
+            "preliminary_diagnosis": "संभावित पूर्व-प्रज्वलन नॉक।",
+            "fix_solutions": [{"title": "Switch to higher octane fuel",
+                               "difficulty": "DIY", "steps": ["Fill 95 octane"]}],
+        }, "hi-IN") is False
+
+    def test_a_report_without_repair_instructions_is_judged_on_what_it_has(self):
+        # The heuristic fallback and some KB answers carry no fix_solutions.
+        # Demanding them there would force a pointless second call every time.
+        from services.diagnosis import _already_in_language
+        assert _already_in_language(
+            {"preliminary_diagnosis": "संभावित पूर्व-प्रज्वलन नॉक।"}, "hi-IN"
+        ) is True
+
+    def test_an_unknown_language_routes_to_translation(self):
+        from services.diagnosis import _already_in_language
+        assert _already_in_language(
+            {"preliminary_diagnosis": "anything"}, "xx-XX"
+        ) is False
+
+
+class TestLanguageInstructionSuite:
+    """
+    The prompt is the primary path: the model is asked to answer in the
+    driver's language directly, and `_translate_diagnosis` only runs when it
+    comes back in English anyway. So the instruction has to name every field a
+    driver reads — a field left off it stays English on most reports, and the
+    translation fallback never even runs to catch it.
+    """
+
+    def _hindi_prompt(self) -> str:
+        from services.diagnosis import _build_prompt
+        return _build_prompt(
+            "Maruti Suzuki", "Swift", None, 2022, "Petrol", "Manual", 45000,
+            "Knocking sound on acceleration", [], [], "high", [],
+            response_language="hi-IN",
+        )
+
+    def test_it_asks_for_the_repair_instructions_in_the_target_language(self):
+        # "How to Fix or Bypass the Issue" — three approaches with steps, and
+        # the part of the report a driver acts on. It was missing from this
+        # instruction, so it came back in English under a Hindi diagnosis.
+        prompt = self._hindi_prompt()
+        assert "fix_solutions" in prompt.split("IMPORTANT — LANGUAGE")[1]
+
+    def test_it_asks_for_the_repair_time_in_the_target_language(self):
+        prompt = self._hindi_prompt()
+        assert "repair_time_estimate" in prompt.split("IMPORTANT — LANGUAGE")[1]
+
+    def test_it_keeps_the_machine_read_values_in_english(self):
+        # risk_level and difficulty drive CSS classes and icons in the client.
+        instruction = self._hindi_prompt().split("IMPORTANT — LANGUAGE")[1]
+        assert "risk_level" in instruction
+        assert "difficulty" in instruction
+
+    def test_english_gets_no_language_instruction_at_all(self):
+        from services.diagnosis import _build_prompt
+        prompt = _build_prompt(
+            "Maruti Suzuki", "Swift", None, 2022, "Petrol", "Manual", 45000,
+            "Knocking sound", [], [], "high", [], response_language="en-IN",
+        )
+        assert "IMPORTANT — LANGUAGE" not in prompt
+
+
 # ── Retrieval ────────────────────────────────────────────────────────────────
 
 class TestRetrievalSuite:
@@ -322,6 +415,80 @@ class TestTranslateDiagnosisSuite:
         # Numeric fields must survive translation untouched.
         assert r["cost_min_inr"] == OLLAMA_DIAGNOSIS["cost_min_inr"]
         assert r["possible_causes"][0]["confidence"] == 70
+
+    @pytest.mark.asyncio
+    async def test_translates_the_section_that_tells_a_driver_what_to_do(self):
+        """
+        "How to Fix or Bypass the Issue" is three approaches with steps, and it
+        is the part of the report a driver actually acts on. It was left out of
+        both the prompt's language instruction and this function's field list,
+        so a Hindi speaker read their diagnosis in Hindi and then hit a wall of
+        English at the point of doing something about it.
+        """
+        source = dict(OLLAMA_DIAGNOSIS)
+        source["fix_solutions"] = [
+            {"title": "Switch to higher octane", "difficulty": "DIY",
+             "steps": ["Fill with 95 octane", "Drive 50 km"]},
+        ]
+        payload = {
+            "preliminary_diagnosis": "अनुवादित निदान",
+            "fix_solutions": [
+                {"title": "उच्च ऑक्टेन ईंधन", "steps": ["९५ ऑक्टेन भरें", "५० किमी चलाएँ"]},
+            ],
+        }
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(payload)):
+            r = await _translate_diagnosis(source, "hi-IN")
+
+        assert r["fix_solutions"][0]["title"] == "उच्च ऑक्टेन ईंधन"
+        assert r["fix_solutions"][0]["steps"][0] == "९५ ऑक्टेन भरें"
+
+    @pytest.mark.asyncio
+    async def test_difficulty_stays_english_so_the_badge_survives(self):
+        # The frontend switches a CSS class and an icon on the exact strings
+        # "DIY", "Mechanic" and "Specialist". Translate it and the card loses
+        # its badge.
+        source = dict(OLLAMA_DIAGNOSIS)
+        source["fix_solutions"] = [
+            {"title": "Workshop repair", "difficulty": "Mechanic", "steps": ["Book a scan"]},
+        ]
+        payload = {
+            "preliminary_diagnosis": "अनुवादित",
+            "fix_solutions": [{"title": "कार्यशाला मरम्मत", "difficulty": "मैकेनिक",
+                               "steps": ["स्कैन बुक करें"]}],
+        }
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(payload)):
+            r = await _translate_diagnosis(source, "hi-IN")
+
+        assert r["fix_solutions"][0]["difficulty"] == "Mechanic"
+
+    @pytest.mark.asyncio
+    async def test_a_dropped_repair_step_is_refused(self):
+        # A shorter list means the model summarised rather than translated.
+        # Losing a step from a repair procedure is worse than leaving the
+        # procedure in English.
+        source = dict(OLLAMA_DIAGNOSIS)
+        source["fix_solutions"] = [
+            {"title": "Repair", "difficulty": "DIY",
+             "steps": ["Step one", "Step two", "Step three"]},
+        ]
+        payload = {
+            "preliminary_diagnosis": "अनुवादित",
+            "fix_solutions": [{"title": "मरम्मत", "steps": ["पहला कदम"]}],
+        }
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(payload)):
+            r = await _translate_diagnosis(source, "hi-IN")
+
+        assert r["fix_solutions"][0]["steps"] == ["Step one", "Step two", "Step three"]
+        # The title still translated — only the steps were untrustworthy.
+        assert r["fix_solutions"][0]["title"] == "मरम्मत"
+
+    @pytest.mark.asyncio
+    async def test_translates_the_repair_time(self):
+        # "2-4 hours", shown twice on the report and previously always English.
+        payload = {"preliminary_diagnosis": "अनुवादित", "repair_time_estimate": "२-४ घंटे"}
+        with patch("httpx.AsyncClient", return_value=_mock_ollama(payload)):
+            r = await _translate_diagnosis(dict(OLLAMA_DIAGNOSIS), "hi-IN")
+        assert r["repair_time_estimate"] == "२-४ घंटे"
 
     @pytest.mark.asyncio
     async def test_keeps_english_when_translation_fails(self):
