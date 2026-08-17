@@ -1,0 +1,49 @@
+<div class="vs-card" [class]="gradeClass()">
+  <div class="vs-head">
+    <h3 class="vs-title">Condition score</h3>
+    <span class="vs-grade">{{ score.grade }}</span>
+  </div>
+
+  <div class="vs-body">
+    <div class="vs-ring-wrap">
+      <svg class="vs-ring" viewBox="0 0 120 120" role="img"
+           [attr.aria-label]="score.score + ' out of 100, ' + score.grade">
+        <circle class="vs-ring-track" cx="60" cy="60" r="52" />
+        <circle class="vs-ring-fill" cx="60" cy="60" r="52"
+                [attr.stroke-dasharray]="ringLength"
+                [attr.stroke-dashoffset]="ringOffset()" />
+      </svg>
+      <div class="vs-ring-label" aria-hidden="true">
+        <span class="vs-score">{{ score.score }}</span>
+        <span class="vs-outof">/ 100</span>
+      </div>
+    </div>
+
+    <ul class="vs-factors">
+      @for (f of score.factors; track f.label) {
+        <li class="vs-factor">
+          <div class="vs-factor-top">
+            <span class="vs-factor-label">{{ f.label }}</span>
+            <span class="vs-factor-score">{{ f.score }}</span>
+          </div>
+          <div class="vs-bar" aria-hidden="true">
+            <span class="vs-bar-fill" [class]="barClass(f.score)" [style.width.%]="f.score"></span>
+          </div>
+          <!-- The reading, not just the bar. "78" means nothing; "2 previous
+               owners" is the fact the buyer can act on. -->
+          <span class="vs-factor-detail">{{ f.detail }}</span>
+        </li>
+      }
+    </ul>
+  </div>
+
+  <!-- On the card, not in a tooltip. Without it, 88/100 reads as though a
+       history report was checked, and the buyer would be right to think so —
+       every score of this kind they have seen elsewhere did check one. -->
+  <p class="vs-missing">
+    <strong>Not included:</strong>
+    {{ score.missingFactors.join(', ') }}. We hold no history report for this
+    car, so this score covers only what the listing states. Have any used car
+    inspected before you pay.
+  </p>
+</div>

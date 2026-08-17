@@ -1,0 +1,38 @@
+<div class="mp-card" [class]="statusClass()">
+  <div class="mp-head">
+    <h3 class="mp-title">Is this a fair price?</h3>
+    <span class="mp-verdict">{{ position.label }}</span>
+  </div>
+
+  <!-- The dial. aria-hidden because the same reading is in the text below it,
+       and a screen reader announcing a gradient bar helps nobody. -->
+  <div class="mp-dial" aria-hidden="true">
+    <div class="mp-track">
+      <span class="mp-zone mp-zone-below"></span>
+      <span class="mp-zone mp-zone-at"></span>
+      <span class="mp-zone mp-zone-above"></span>
+    </div>
+    <div class="mp-needle" [style.left.%]="position.gaugePct">
+      <span class="mp-needle-dot"></span>
+      <span class="mp-needle-price">{{ rupees(askingPrice) }}</span>
+    </div>
+  </div>
+
+  <div class="mp-scale">
+    <span>{{ rupees(position.band.low) }}</span>
+    <span class="mp-scale-mid">Our estimate {{ rupees(position.band.mid) }}</span>
+    <span>{{ rupees(position.band.high) }}</span>
+  </div>
+
+  <p class="mp-detail">{{ position.detail }}</p>
+
+  <!-- What the number is, stated plainly. The estimate comes from a model of
+       age, distance and condition — not from comparable listings nearby, of
+       which there are almost none yet. Implying otherwise would be the more
+       impressive and less true claim. -->
+  <p class="mp-basis">
+    Estimated from age, distance driven, ownership and condition for this make
+    and model — not from other listings nearby.
+    <span class="mp-confidence">Confidence {{ position.band.confidence }}%</span>
+  </p>
+</div>

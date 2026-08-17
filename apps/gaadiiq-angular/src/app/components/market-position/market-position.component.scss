@@ -1,0 +1,122 @@
+.mp-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.mp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.mp-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.mp-verdict {
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  // Opaque, and each pair measured on its own background rather than tinted
+  // over whatever card is behind — the same thing that put the lender marks
+  // below AA on one page and above it on another.
+  .mp-below & { background: #E3F5EA; color: #047857; }
+  .mp-at &    { background: #E8EDFB; color: #1D4ED8; }
+  .mp-above & { background: #FDF0DC; color: #B45309; }
+}
+
+// ── Dial ────────────────────────────────────────────────────────────────────
+
+.mp-dial {
+  position: relative;
+  margin: 0 0 2.25rem;
+}
+
+.mp-track {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+// Green at the cheap end through to amber at the dear end. Not a red/green
+// pair: an expensive car is not a fault, it is a question to ask.
+.mp-zone { flex: 1; }
+.mp-zone-below { background: #86D3AE; }
+.mp-zone-at    { background: #9DB6EE; }
+.mp-zone-above { background: #F0C579; }
+
+.mp-needle {
+  position: absolute;
+  top: -5px;
+  // The needle is positioned by its own centre, so it still points at the
+  // right place at 0% and 100% instead of hanging off the end of the track.
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mp-needle-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 3px solid var(--card-bg, #fff);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.mp-needle-price {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.mp-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.mp-scale-mid {
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+
+.mp-detail {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.mp-basis {
+  margin: 0.75rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.mp-confidence {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+@media (max-width: 480px) {
+  .mp-scale { font-size: 0.66rem; }
+  .mp-scale-mid { flex: 0 0 40%; }
+}

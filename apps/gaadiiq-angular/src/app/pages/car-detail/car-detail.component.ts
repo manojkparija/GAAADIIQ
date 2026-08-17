@@ -4,6 +4,15 @@ import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car, CarVariant } from '../../services/cars-data.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { MarketPositionComponent } from '../../components/market-position/market-position.component';
+import { VehicleScorecardComponent } from '../../components/vehicle-scorecard/vehicle-scorecard.component';
+import {
+  MarketPosition,
+  VehicleScore,
+  bandFromHeuristic,
+  marketPosition,
+  vehicleScore,
+} from '../../utils/market-position';
 
 interface NewCarVariant { name: string; minPrice: number; maxPrice: number; count?: number; }
 interface NewCarHighlight { icon: string; title: string; caption: string; }
@@ -189,7 +198,10 @@ import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 @Component({
   selector: 'app-car-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, IconComponent, ImgFallbackDirective],
+  imports: [
+    CommonModule, RouterLink, FormsModule, IconComponent, ImgFallbackDirective,
+    MarketPositionComponent, VehicleScorecardComponent,
+  ],
   templateUrl: './car-detail.component.html',
   styleUrl: './car-detail.component.scss'
 })
@@ -557,6 +569,17 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   }
 
   constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, private resaleSvc: ResaleForecastService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService) {
+    // allowSignalWrites, because resolveCar() sets loadFailed and selectedColour
+    // — and without it this effect throws NG0600 and the page never renders at
+    // all, leaving "Loading car details…" on screen for good.
+    //
+    // It is a race, not a constant failure, which is why it was not obvious:
+    // when the catalogue is already in memory, ngOnInit resolves the car first
+    // and this effect returns at the guard above without writing anything. It
+    // only writes when the page is opened *while* the catalogue is still
+    // loading — a slow connection, a cold start, or a direct link to a car —
+    // and then the whole page dies. The deliberate "We could not load this car"
+    // state below could never appear, because throwing got there first.
     effect(() => {
       if (this.carLoaded || this.carsData.loading()) return;
       // Ids are opaque strings — coercing to Number turned non-numeric ids
@@ -564,7 +587,7 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       // silently fell back to the first car in the catalogue.
       const id = this.route.snapshot.paramMap.get('id') ?? '';
       this.resolveCar(id);
-    });
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit() {
@@ -946,6 +969,99 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     const key = `${this.car.make} ${this.car.model}`;
     return NEW_CAR_META[key] ?? null;
   }
+  // ── Buyer checks: is the price fair, and is the car sound ─────────────────
+  //
+  // Cached by car id, and methods rather than computed(): `car` is a plain
+  // field reassigned in ngOnInit and again when the full record arrives, so a
+  // computed() would neither see the update nor recompute. The cache is what
+  // keeps them off the change-detection hot path — without it the valuation
+  // engine runs on every cycle.
+  private _mpCache: { id: string; value: MarketPosition | null } | null = null;
+  private _vsCache: { id: string; value: VehicleScore | null } | null = null;
+
+  /**
+   * The price gauge is finished and tested, and deliberately off.
+   *
+   * Measured against the five used cars the platform itself lists, the shared
+   * valuation engine values every one of them far below its asking price:
+   *
+   *     2020 Swift VXi      listed ₹5.50L   engine ₹2.85L   +93%
+   *     2021 Creta SX       listed ₹11.50L  engine ₹7.87L   +46%
+   *     2022 Nexon XZ+      listed ₹10.80L  engine ₹6.32L   +71%
+   *     2021 Seltos HTX     listed ₹12.90L  engine ₹6.75L   +91%
+   *     2022 XUV700 AX5     listed ₹18.75L  engine ₹10.99L  +71%
+   *
+   * Turning the gauge on would therefore label essentially every used car on
+   * GAADIIQ "71% above market" — to the buyer, in a box headed "Is this a fair
+   * price?". One of the two numbers is wrong and I cannot tell which from here,
+   * which is exactly why this cannot be shown to a buyer yet.
+   *
+   * The likely culprit is the depreciation ladder in valuation-engine.ts —
+   * 15% in year one then 10% a year takes 62% off a six-year-old car, where
+   * popular Indian models hold value better than that. But that ladder also
+   * drives /ai-valuation and the listing flow, so recalibrating it re-prices
+   * every seller's car and is not a change to make as a side effect of adding
+   * a buyer's gauge.
+   *
+   * One line to turn on, once the engine is calibrated against real sale data.
+   */
+  private readonly SHOW_PRICE_GAUGE = false;
+
+  marketPosition(): MarketPosition | null {
+    if (!this.SHOW_PRICE_GAUGE) return null;
+    if (!this.car || this.isNewCar) return null;
+    if (this._mpCache?.id === this.car.id) return this._mpCache.value;
+
+    // The server's own valuation wins when the listing carries one: it saw the
+    // real car, this engine only sees make, model and mileage.
+    const priced = this.car.aiValuation;
+    const band = priced && priced.fairPrice > 0
+      ? {
+          low: priced.marketMin,
+          mid: priced.fairPrice,
+          high: priced.marketMax,
+          confidence: priced.confidence,
+          source: 'listing' as const,
+        }
+      : bandFromHeuristic({
+          make: this.car.make,
+          model: this.car.model,
+          variant: this.car.variant,
+          year: this.car.year,
+          km: this.car.km,
+          fuel: this.car.fuel,
+          transmission: this.car.transmission,
+          owners: this.car.owners ?? '1st Owner',
+          condition: 'Good',
+        });
+
+    // A band the engine could not place is not shown at all. A gauge drawn
+    // around a zero estimate would report every car as wildly overpriced.
+    const value = band.mid > 0 && this.car.price > 0
+      ? marketPosition(this.car.price, band)
+      : null;
+    this._mpCache = { id: this.car.id, value };
+    return value;
+  }
+
+  conditionScore(): VehicleScore | null {
+    if (!this.car || this.isNewCar) return null;
+    if (this._vsCache?.id === this.car.id) return this._vsCache.value;
+
+    const value = vehicleScore({
+      year: this.car.year,
+      km: this.car.km,
+      owners: this.car.owners,
+      // Genuinely absent on a catalogue model, and present on a real listing.
+      // Left undefined rather than defaulted, so the card can say "not stated"
+      // instead of quietly scoring an unstated field as if the seller had
+      // answered.
+      condition: this.car.condition,
+    });
+    this._vsCache = { id: this.car.id, value };
+    return value;
+  }
+
   formatLakh(p: number) { return `₹${(p / 100000).toFixed(2)} Lakh`; }
   formatLakhRange(min: number, max: number) {
     if (min === max) return `₹${(min / 100000).toFixed(2)} Lakh`;
