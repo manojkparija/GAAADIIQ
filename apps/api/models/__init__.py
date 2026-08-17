@@ -25,6 +25,7 @@ from .lending_partner import (
     PartnerType,
 )
 from .listing import Listing
+from .listing_view import ListingView
 from .loan_application import (
     CreditCheck,
     CreditSource,
@@ -42,6 +43,7 @@ from .payment import Payment
 from .price_alert import PriceAlert
 from .refresh_token import RefreshToken
 from .review import Review
+from .search_event import SearchEvent
 from .service_request import (
     ServiceOfferStatus,
     ServiceRequest,
@@ -67,6 +69,7 @@ from .whatsapp_message import WhatsAppMessage, WhatsAppStatus, WhatsAppTemplate
 __all__ = [
     "User", "Dealer", "Car", "CarVariant", "VariantStatus", "VariantSource", "Listing", "TestDriveBooking", "LoanInquiry",
     "Notification", "PriceAlert", "Review", "Payment", "Subscription", "RefreshToken",
+    "ListingView", "SearchEvent",
     "CustomerActivity", "CustomerIntentScore",
     "VehicleDiagnosis", "DiagnosisConversation", "VoiceTranscript", "DiagnosisAuditEvent",
     "PdfIngestionJob", "VehicleMedia", "ExtractedVehicle", "ListingMedia",

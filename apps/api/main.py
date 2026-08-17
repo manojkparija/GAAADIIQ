@@ -40,6 +40,7 @@ from routers import (  # noqa: E402
     brochures,
     cars,
     dealers,
+    demand,
     diagnosis,
     diagnosis_kb,
     health,
@@ -468,6 +469,7 @@ app.include_router(admin.router)
 app.include_router(cars.router)
 app.include_router(listings.router)
 app.include_router(dealers.router)
+app.include_router(demand.router)
 app.include_router(bookings.router)
 app.include_router(search.router)
 app.include_router(loans.router)
