@@ -6,6 +6,8 @@ import { CarsDataService, Car, CarVariant } from '../../services/cars-data.servi
 import { IconComponent } from '../../components/icon/icon.component';
 import { MarketPositionComponent } from '../../components/market-position/market-position.component';
 import { VehicleScorecardComponent } from '../../components/vehicle-scorecard/vehicle-scorecard.component';
+import { ListingActivityComponent } from '../../components/listing-activity/listing-activity.component';
+import { DemandService, ListingActivity } from '../../services/demand.service';
 import {
   MarketPosition,
   VehicleScore,
@@ -200,7 +202,7 @@ import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
   standalone: true,
   imports: [
     CommonModule, RouterLink, FormsModule, IconComponent, ImgFallbackDirective,
-    MarketPositionComponent, VehicleScorecardComponent,
+    MarketPositionComponent, VehicleScorecardComponent, ListingActivityComponent,
   ],
   templateUrl: './car-detail.component.html',
   styleUrl: './car-detail.component.scss'
@@ -568,7 +570,7 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     this.sentimentSvc.trackPublic(seller.email, buyerId, 'enquiry', BUYER_TRACKING_CONSENT);
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, private resaleSvc: ResaleForecastService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService) {
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, private resaleSvc: ResaleForecastService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService, private demandSvc: DemandService) {
     // allowSignalWrites, because resolveCar() sets loadFailed and selectedColour
     // — and without it this effect throws NG0600 and the page never renders at
     // all, leaving "Loading car details…" on screen for good.
@@ -641,6 +643,14 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       // gallery would otherwise show a sample of this car rather than all of
       // it. Asked for after the car renders: it only ever adds pictures, and
       // waiting for it would hold up the whole page.
+      // Traffic on this listing. Only for real listings — a catalogue model has
+      // no listing row and would 404. Fired and forgotten: the car page must
+      // not wait on analytics, and a failure leaves the card unrendered rather
+      // than showing a quiet car.
+      if (this.car.isSellerListing) {
+        void this.demandSvc.activity(this.car.id).then(a => this.activity.set(a));
+      }
+
       if (!this.car.isSellerListing) {
         void this.loadVariants(this.car.id);
         this.carsData.fullCar(this.car.id).then(fresh => {
@@ -1006,6 +1016,16 @@ export class CarDetailComponent implements OnInit, OnDestroy {
    * One line to turn on, once the engine is calibrated against real sale data.
    */
   private readonly SHOW_PRICE_GAUGE = false;
+
+  /**
+   * Traffic on this listing, once the API answers. A signal because it arrives
+   * after the page renders — the car must not wait on analytics.
+   *
+   * Null covers two different things deliberately kept apart: the API being
+   * unreachable, and this being a catalogue model with no listing behind it.
+   * Neither should render a card claiming a quiet car.
+   */
+  readonly activity = signal<ListingActivity | null>(null);
 
   marketPosition(): MarketPosition | null {
     if (!this.SHOW_PRICE_GAUGE) return null;

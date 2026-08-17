@@ -1,0 +1,29 @@
+<div class="la-card">
+  <h3 class="la-title">Interest in this car</h3>
+
+  @if (activity.has_enough_data) {
+    <div class="la-stats">
+      <div class="la-stat">
+        <span class="la-num">{{ activity.views_24h }}</span>
+        <span class="la-lab">views in 24 hours</span>
+      </div>
+      <div class="la-stat">
+        <span class="la-num">{{ activity.unique_viewers_7d }}</span>
+        <!-- People, not page loads. One buyer opening a car eight times is
+             one interested buyer, and counting it as eight is how an urgency
+             figure becomes fiction. -->
+        <span class="la-lab">people this week</span>
+      </div>
+    </div>
+  } @else {
+    <!-- No number at all rather than a zero. A zero here reads as "nobody
+         wants this car", when what it actually means is "this site is new". -->
+    <p class="la-quiet">{{ activity.note }}</p>
+  }
+
+  <p class="la-days">{{ daysLabel() }}</p>
+
+  @if (negotiationHint()) {
+    <p class="la-hint">{{ negotiationHint() }}</p>
+  }
+</div>

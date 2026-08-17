@@ -756,3 +756,7 @@
   gap: 1rem;
   margin-top: 1.25rem;
 }
+
+// The activity card sits above the two buyer checks, full width — it is one
+// line of numbers, not a panel that needs a column.
+.la-slot { display: block; margin-top: 1.25rem; }

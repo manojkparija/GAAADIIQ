@@ -1,0 +1,58 @@
+.la-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.la-title {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.la-stats {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.la-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.la-num {
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--primary-ink);
+}
+
+.la-lab {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.la-quiet {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.la-days {
+  margin: 1rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--divider);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.la-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}

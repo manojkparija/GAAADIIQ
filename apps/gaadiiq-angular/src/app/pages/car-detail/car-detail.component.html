@@ -169,6 +169,13 @@
             <!-- Used cars only. Both answers are about a specific car that has
                  been driven: a catalogue model has no asking price to judge and
                  no owner or distance to score. -->
+            <!-- How much interest the car is getting. Absent entirely when the
+                 API has not answered, rather than reported as zero. -->
+            <app-listing-activity
+              *ngIf="activity() as a"
+              [activity]="a"
+              class="la-slot" />
+
             <div class="buyer-checks" *ngIf="!isNewCar">
               <app-market-position
                 *ngIf="marketPosition() as mp"
