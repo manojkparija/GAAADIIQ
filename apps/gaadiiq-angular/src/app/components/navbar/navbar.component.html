@@ -10,35 +10,16 @@
       <li><a routerLink="/used-cars" routerLinkActive="active">Used Cars</a></li>
       <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
       <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>
-
-      <!-- Six calculators and tools behind one label.
-           They were thirteen top-level links, which overflowed the row at any
-           laptop width and left every label cramped against the next — the row
-           scrolled, so nothing was unreachable, but it was unreadable, which
-           is its own kind of broken. Grouping the things you go to on purpose
-           leaves the things you browse. -->
-      <li class="nav-dd" (mouseenter)="toolsOpen.set(true)" (mouseleave)="toolsOpen.set(false)">
-        <button type="button" class="nav-dd-btn"
-                [class.open]="toolsOpen()"
-                [attr.aria-expanded]="toolsOpen()"
-                (click)="toggleTools()">
-          Tools
-          <app-icon name="chevron-down" [size]="13"></app-icon>
-        </button>
-        <div class="nav-dd-menu" *ngIf="toolsOpen()" role="menu">
-          <a routerLink="/vehicle-diagnosis" routerLinkActive="active" (click)="toolsOpen.set(false)">AI Diagnosis</a>
-          <a routerLink="/ai-valuation" routerLinkActive="active" (click)="toolsOpen.set(false)">What is my car worth?</a>
-          <a routerLink="/emi-calculator" routerLinkActive="active" (click)="toolsOpen.set(false)">EMI Calculator</a>
-          <a routerLink="/car-loan" routerLinkActive="active" (click)="toolsOpen.set(false)">Apply for a Car Loan</a>
-          <a routerLink="/tco" routerLinkActive="active" (click)="toolsOpen.set(false)">Cost of Ownership</a>
-          <a routerLink="/buyer-journey" routerLinkActive="active" (click)="toolsOpen.set(false)">My Journey</a>
-        </div>
-      </li>
-
-      <li><a routerLink="/reviews-news" routerLinkActive="active">Reviews &amp; News</a></li>
-      <!-- Given its own emphasis, and kept top-level for the same reason: every
-           other item here is something you browse at leisure, this one is what
-           you need when the car has already stopped. -->
+      <li><a routerLink="/vehicle-diagnosis" routerLinkActive="active">Diagnosis</a></li>
+      <li><a routerLink="/ai-valuation" routerLinkActive="active">Car Value</a></li>
+      <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI</a></li>
+      <li><a routerLink="/car-loan" routerLinkActive="active">Car Loan</a></li>
+      <li><a routerLink="/tco" routerLinkActive="active">TCO</a></li>
+      <li><a routerLink="/reviews-news" routerLinkActive="active">News</a></li>
+      <li><a routerLink="/buyer-journey" routerLinkActive="active">Journey</a></li>
+      <!-- Given its own emphasis: every other item here is something you browse
+           at leisure, this one is what you need when the car has already
+           stopped. -->
       <li><a routerLink="/find-mechanic" routerLinkActive="active" class="nav-urgent">Find Mechanic</a></li>
     </ul>
 

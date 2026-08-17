@@ -73,9 +73,11 @@
 .nav-links {
   display: flex;
   list-style: none;
-  // Tightened from 0.85rem. Eleven gaps at the old value cost 150px of a row
-  // that had none to spare.
-  gap: 0.55rem;
+  // Tightened twice now, from 0.85rem and then from 0.55rem. Twelve gaps at
+  // the original value cost 150px of a row that had none to spare, and the
+  // alternative to tightening was hiding half the links behind a "Tools"
+  // menu — which fitted beautifully and meant nobody found the calculators.
+  gap: 0.42rem;
 
   // The row of labels is the part that gives way when the bar runs out of
   // width, not the actions beside it. Before this the list refused to shrink,
@@ -101,7 +103,9 @@
   a {
     color: var(--text);
     font-weight: 700;
-    font-size: 0.8rem;
+    // 0.8rem at thirteen links overflowed 1440px. This is the smallest step
+    // that fits without the labels starting to look like fine print.
+    font-size: 0.76rem;
     // Labels are single-line by design. Without this a two-word item breaks
     // across lines once the row runs short of space, and because every item
     // then grows taller the whole bar looks misaligned rather than merely
@@ -429,83 +433,18 @@
   font-weight: 700;
 }
 
-// ── Tools group ─────────────────────────────────────────────────────────────
+// The desktop row hands over to the hamburger at 1250px, not 768px.
 //
-// Thirteen top-level links overflowed the row at every laptop width. Nothing
-// was unreachable — the row scrolls — but the labels were pressed against each
-// other and the whole bar became hard to read, which is the complaint that
-// prompted this. Six calculators now sit behind one word.
-
-.nav-dd {
-  position: relative;
-  // The gap between the button and the menu below it would otherwise end the
-  // hover and close the menu on the way to it.
-  padding-bottom: 4px;
-}
-
-.nav-dd-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--text);
-  font-weight: 700;
-  font-size: 0.8rem;
-  font-family: 'Manrope', sans-serif;
-  white-space: nowrap;
-  transition: color 0.2s;
-
-  &:hover, &.open { color: var(--primary-ink); }
-
-  app-icon { transition: transform 0.2s; }
-  &.open app-icon { transform: rotate(180deg); }
-}
-
-.nav-dd-menu {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 300;
-  min-width: 220px;
-  margin-top: 0.5rem;
-  padding: 0.4rem;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--divider);
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
-  display: flex;
-  flex-direction: column;
-
-  a {
-    display: block;
-    padding: 0.55rem 0.7rem;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text);
-    white-space: nowrap;
-    text-decoration: none;
-
-    &:hover { background: var(--fill-dim); }
-    // The underline the top-level links use would be lost on a stacked menu.
-    &.active { color: var(--primary-ink); background: var(--fill-dim); }
-    &::after { display: none; }
-  }
-}
-
-// The desktop row hands over to the hamburger at 1100px, not 768px.
+// All thirteen links fit down to 1280px — measured, no overflow — and stop
+// fitting just below it: 47px over at 1200px. With the scroll container gone
+// there is nothing to say the row continued, so the handover has to happen
+// where the row actually runs out rather than where phones begin.
 //
-// Between those two widths the eight links no longer fit — measured at 1024px,
-// 81px of them run past the edge — and with the scroll container gone there
-// would be nothing to say the row continued. The mobile menu already carries
-// every link, grouped and legible, so below 1100px it is simply the better
-// navigation. This overrides the global .hide-mobile / .hide-desktop pair for
-// these two elements only; the rest of the site keeps the 768px breakpoint.
-@media (max-width: 1100px) {
+// The mobile menu already carries every link, grouped under headings, so
+// below this width it is simply the better navigation. Overrides the global
+// .hide-mobile / .hide-desktop pair for these two elements only; the rest of
+// the site keeps the 768px breakpoint.
+@media (max-width: 1250px) {
   .nav-links.hide-mobile { display: none !important; }
   .hamburger.hide-desktop { display: flex !important; }
 }
