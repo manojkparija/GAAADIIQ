@@ -77,7 +77,7 @@
   // the original value cost 150px of a row that had none to spare, and the
   // alternative to tightening was hiding half the links behind a "Tools"
   // menu — which fitted beautifully and meant nobody found the calculators.
-  gap: 0.42rem;
+  gap: 0.5rem;
 
   // The row of labels is the part that gives way when the bar runs out of
   // width, not the actions beside it. Before this the list refused to shrink,
@@ -103,9 +103,11 @@
   a {
     color: var(--text);
     font-weight: 700;
-    // 0.8rem at thirteen links overflowed 1440px. This is the smallest step
-    // that fits without the labels starting to look like fine print.
-    font-size: 0.76rem;
+    // Bigger than it has ever been here: 0.8rem originally, 0.76rem when the
+    // row was overcrowded, 0.86rem now. Measured as the largest step that
+    // still fits all thirteen labels at 1366px, which is where a lot of
+    // laptops sit.
+    font-size: 0.86rem;
     // Labels are single-line by design. Without this a two-word item breaks
     // across lines once the row runs short of space, and because every item
     // then grows taller the whole bar looks misaligned rather than merely
@@ -433,18 +435,24 @@
   font-weight: 700;
 }
 
-// The desktop row hands over to the hamburger at 1250px, not 768px.
+// The desktop row hands over to the hamburger at 1350px, not 768px.
 //
-// All thirteen links fit down to 1280px — measured, no overflow — and stop
-// fitting just below it: 47px over at 1200px. With the scroll container gone
-// there is nothing to say the row continued, so the handover has to happen
-// where the row actually runs out rather than where phones begin.
+// All thirteen links fit down to 1366px at the current type size — measured,
+// no overflow — and stop fitting just below it: 64px over at 1300px. With the
+// scroll container gone there is nothing to say the row continued, so the
+// handover has to happen where the row actually runs out rather than where
+// phones begin.
+//
+// The number moved up from 1250 when the labels grew. That is the trade: type
+// a reader can take in at a glance, at the cost of the hamburger appearing on
+// a narrower laptop. Readability won, because a row nobody can read is not
+// navigation.
 //
 // The mobile menu already carries every link, grouped under headings, so
 // below this width it is simply the better navigation. Overrides the global
 // .hide-mobile / .hide-desktop pair for these two elements only; the rest of
 // the site keeps the 768px breakpoint.
-@media (max-width: 1250px) {
+@media (max-width: 1350px) {
   .nav-links.hide-mobile { display: none !important; }
   .hamburger.hide-desktop { display: flex !important; }
 }
