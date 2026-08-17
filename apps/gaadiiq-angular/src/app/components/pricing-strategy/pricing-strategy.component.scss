@@ -1,0 +1,84 @@
+.ps-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.ps-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.ps-title { margin: 0; font-size: 1.05rem; font-weight: 700; }
+
+.ps-spread {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.ps-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.ps-option {
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  padding: 0.9rem;
+  // Neither option is the "right" one — that depends on whether the seller has
+  // a deadline, which the page cannot know. So neither is styled as the
+  // recommendation.
+  background: var(--fill-soft, transparent);
+}
+
+.ps-option-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ps-option-title { font-size: 0.85rem; font-weight: 700; }
+
+.ps-timing {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #E8EDFB;
+  color: #1D4ED8;
+
+  .ps-fast & { background: #E3F5EA; color: #047857; }
+  .ps-profit & { background: #FDF0DC; color: #B45309; }
+}
+
+.ps-price {
+  margin: 0.45rem 0 0.35rem;
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ps-detail {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.ps-basis {
+  margin: 1rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--divider);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}

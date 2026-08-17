@@ -49,6 +49,82 @@
           <a routerLink="/list-car">Create your first listing →</a>
         </div>
       } @else {
+        <!-- ── Market demand ──────────────────────────────────────────────
+             Read off what buyers actually searched for. Every panel here can
+             say it has no answer yet, and that is the correct answer on a new
+             marketplace: a heatmap drawn from eleven searches is decoration,
+             and somebody will buy stock against it. -->
+        <h2>Market demand</h2>
+        <div class="demand-grid">
+          <div class="demand-card">
+            <h3>Typical time to sell</h3>
+            @if (daysTurn(); as t) {
+              @if (t.has_enough_data) {
+                <p class="demand-figure">{{ t.median_days }} <span>days</span></p>
+                <p class="demand-note">{{ t.basis }}</p>
+              } @else {
+                <p class="demand-empty">{{ t.note }}</p>
+              }
+            } @else {
+              <p class="demand-empty">Not available right now.</p>
+            }
+          </div>
+
+          <div class="demand-card">
+            <h3>Where buyers are searching</h3>
+            @if (demandMap(); as m) {
+              @if (m.has_enough_data) {
+                <ul class="demand-list">
+                  @for (c of m.cells; track c.city) {
+                    <li>
+                      <span class="dl-name">{{ c.city }}</span>
+                      <span class="dl-val">{{ c.searches }} searches</span>
+                      <!-- The half that tells a dealer what to buy: demand
+                           with nothing on the platform to meet it. -->
+                      @if (c.empty_searches > 0) {
+                        <span class="dl-gap">{{ c.empty_searches }} found nothing</span>
+                      }
+                    </li>
+                  }
+                </ul>
+                <p class="demand-note">Last {{ m.window_days }} days.</p>
+              } @else {
+                <p class="demand-empty">{{ m.note }}</p>
+              }
+            } @else {
+              <p class="demand-empty">Not available right now.</p>
+            }
+          </div>
+
+          <div class="demand-card">
+            <h3>What buyers could not find</h3>
+            @if (gaps(); as g) {
+              @if (g.has_enough_data) {
+                <ul class="demand-list">
+                  <!-- Tracked by identity: a `??` expression here compiles to a
+                       trackBy that references an undefined temporary and throws
+                       at render time. -->
+                  @for (gap of g.gaps; track gap) {
+                    <li>
+                      <span class="dl-name">{{ gap.make }} {{ gap.model }}</span>
+                      <span class="dl-val">{{ gap.empty_searches }} unmet</span>
+                      <span class="dl-gap">{{ gap.listings_available }} listed here</span>
+                    </li>
+                  }
+                </ul>
+                <p class="demand-note">
+                  Ranked by searches that returned nothing, over the last
+                  {{ g.window_days }} days.
+                </p>
+              } @else {
+                <p class="demand-empty">{{ g.note }}</p>
+              }
+            } @else {
+              <p class="demand-empty">Not available right now.</p>
+            }
+          </div>
+        </div>
+
         <h2>Per-Listing Breakdown</h2>
         <div class="table-wrap">
           <table>
@@ -89,6 +165,20 @@
                     <span class="pill" [class.active]="l.is_active">
                       {{ l.is_active ? 'Active' : 'Inactive' }}
                     </span>
+                  </td>
+                </tr>
+                <!-- The interpretation, under the row it belongs to. Four bare
+                     numbers leave a seller to work out for themselves whether
+                     "38 views, 0 bookings" is bad and what to do about it —
+                     which is the whole job of an analytics page. -->
+                <tr class="insight-row">
+                  <td [attr.colspan]="7">
+                    @for (i of insightsFor(l); track i.message) {
+                      <div class="insight" [class]="'insight-' + i.kind">
+                        <span class="insight-msg">{{ i.message }}</span>
+                        <span class="insight-evidence">{{ i.evidence }}</span>
+                      </div>
+                    }
                   </td>
                 </tr>
               }

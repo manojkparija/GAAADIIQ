@@ -1,0 +1,34 @@
+<div class="ps-card">
+  <div class="ps-head">
+    <h3 class="ps-title">Money or time</h3>
+    <span class="ps-spread">{{ rupees(spread()) }} between them</span>
+  </div>
+
+  <div class="ps-options">
+    @for (s of strategies(); track s.key) {
+      <div class="ps-option" [class]="'ps-' + s.key">
+        <div class="ps-option-head">
+          <span class="ps-option-title">{{ s.title }}</span>
+          <span class="ps-timing">{{ s.timing }}</span>
+        </div>
+        <div class="ps-price">{{ rupees(s.price) }}</div>
+        <p class="ps-detail">{{ s.detail }}</p>
+      </div>
+    }
+  </div>
+
+  <!-- A seller has to be able to tell a measured median from a figure of
+       speech. The two deserve different amounts of trust, and only one of them
+       is a number this platform has earned the right to quote. -->
+  @if (hasObservedTimings()) {
+    <p class="ps-basis">
+      Timings from {{ sampleSize() }} completed listings on GAADIIQ.
+    </p>
+  } @else {
+    <p class="ps-basis">
+      No time estimate yet — too few cars have sold here to know how long either
+      choice takes. The prices stand; the waiting time is the part we cannot
+      promise, so we do not.
+    </p>
+  }
+</div>
