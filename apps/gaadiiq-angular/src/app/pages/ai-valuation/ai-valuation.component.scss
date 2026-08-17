@@ -87,3 +87,12 @@
 
 // Sits inside the price card, under the bar.
 .ps-slot { display: block; margin-top: 1.25rem; }
+
+// Explains why the three figures differ — the difference is who is buying, and
+// a seller comparing ours against a forecourt price needs that said.
+.range-explainer {
+  margin: 1rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+}

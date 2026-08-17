@@ -36,13 +36,27 @@ logger = logging.getLogger("gaadiiq.wholesale")
 #: Horizons a dealer actually plans around.
 HORIZONS_DAYS = (30, 60, 90)
 
-#: What the trade pays against retail, before condition and demand.
+#: What the trade pays against DEALER retail, before condition and demand.
 #:
-#: The gap covers reconditioning, the cost of holding the car, and the trade
-#: buyer's own margin. 15% is the conservative end of the range usually quoted
-#: for the Indian market; it is a convention, not a measurement, and the API
-#: says so wherever the number is shown.
-TRADE_DISCOUNT = 0.15
+#: Raised from 15% once the valuation curve was calibrated against real dealer
+#: asking prices, which made the reference explicit. 15% was defensible against
+#: a vague "retail"; against a reconditioned, warrantied forecourt price it is
+#: far too shallow — the gap has to cover reconditioning, the cost of holding
+#: the car, and the trade buyer's own margin, and 25–30% is the range usually
+#: quoted for the Indian market.
+#:
+#: This also keeps one consistent ladder across the product:
+#:
+#:     trade-in  ~72%  →  private sale  85%  →  dealer retail  100%
+#:
+#: where the middle figure is PRIVATE_SALE_FRACTION in the frontend valuation
+#: engine. Three numbers on three different references is how a dealer ends up
+#: comparing a trade-in offer against a forecourt price and concluding the site
+#: is wrong.
+#:
+#: Still a convention, not a measurement — this platform has no wholesale
+#: transactions — and the API says so wherever the number appears.
+TRADE_DISCOUNT = 0.28
 
 #: Annual depreciation applied at short horizons.
 #:

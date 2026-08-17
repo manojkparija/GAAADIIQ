@@ -33,10 +33,20 @@ describe('PricingStrategyComponent', () => {
 
   beforeEach(() => TestBed.configureTestingModule({ imports: [PricingStrategyComponent] }));
 
-  it('offers a quick price below the middle and a patient one above it', () => {
+  it('uses the same two prices the page already shows', () => {
+    // Two sets of figures for one car on one screen is how a seller stops
+    // believing either. The cards quote the quick-sale and private-sale tiers
+    // rather than interpolating fresh numbers between them.
     const [fast, profit] = make().componentInstance.strategies();
-    expect(fast.price).toBeLessThan(band.mid);
-    expect(profit.price).toBeGreaterThan(band.mid);
+    expect(fast.price).toBe(band.low);
+    expect(profit.price).toBe(band.mid);
+  });
+
+  it('never suggests a private seller can ask the dealer forecourt price', () => {
+    // That price buys a warranty, reconditioning and a showroom the seller
+    // does not have.
+    const [, profit] = make().componentInstance.strategies();
+    expect(profit.price).toBeLessThan(band.high);
   });
 
   it('quotes no number of days until cars have actually sold here', () => {

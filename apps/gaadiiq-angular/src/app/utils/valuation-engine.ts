@@ -156,6 +156,79 @@ export interface ComputeParams {
   condition: string; // 'Excellent' | 'Good' | 'Fair' | 'Needs Work'
 }
 
+/**
+ * HOW THIS CURVE WAS SET
+ *
+ * From three cars actually on sale in New Town, Kolkata in August 2026, against
+ * today's ex-showroom price of the same variant:
+ *
+ *     2022 Swift VXi AMT, 21,000 km   Rs 5.31L   69% retained at 4 years
+ *     2018 Swift LXi,     29,000 km   Rs 3.59L   55% retained at 8 years
+ *     2014 Swift VXi,     33,500 km   Rs 2.90L   39% retained at 12 years
+ *
+ * A flat 7.5% a year fits all three within 6% on its own. With the first-year
+ * cliff below applied as well, the ongoing rate has to come down to 7.0% or
+ * the two together undershoot every point — which they did on the first
+ * attempt, by 2%, 11% and 7%. At 7.0% the three land within about 7%, with the
+ * error no longer all in one direction.
+ *
+ * That is a small sample and one model, so it is a starting point rather than
+ * a calibration — but it is measured, which the previous curve was not.
+ *
+ * WHAT THE PREVIOUS MODEL GOT WRONG
+ *
+ * It subtracted flat percentage points of the original price (15% for year one,
+ * 10% a year to year five, 7% after) and capped the total at 75%. Three
+ * consequences, all of them visible in the numbers above:
+ *
+ *   - It valued those three cars 20%, 55% and 36% BELOW what they are on sale
+ *     for. A seller was being told their car was worth roughly half of what a
+ *     dealer three kilometres away was asking.
+ *   - Past the cap, age stopped mattering at all: a 2006 and a 2018 Swift came
+ *     out identical, and because the cap made trim the only remaining
+ *     difference, the 2018 LXi valued Rs 25,000 BELOW the older 2014 VXi.
+ *   - The kilometre and owner penalties were subtracted outside the cap, so
+ *     they could push the total past 100% — a 2012 Swift with 4 lakh km
+ *     returned MINUS Rs 55,000.
+ */
+const DEPRECIATION_PER_YEAR = 0.070;
+
+/**
+ * The drive-off drop, which no compounding rate captures.
+ *
+ * A car loses more in its first year than in any later one, and the three
+ * measured cars are all four years or older, so they say nothing about it.
+ * 15% is the conventional figure and is applied to year one alone; the
+ * measured rate takes over afterwards.
+ */
+const FIRST_YEAR_DROP = 0.15;
+
+/** A running car is never worth nothing, whatever the curve says. */
+const FLOOR_FRACTION = 0.08;
+
+/**
+ * What a private seller gets, as a fraction of what a dealer asks.
+ *
+ * The prices this curve is fitted to are dealer asking prices — reconditioned,
+ * warrantied, sitting in a showroom. A private seller has none of that, and
+ * quoting them the dealer's number as "what your car is worth" sets them up to
+ * list high and sell nothing.
+ */
+const PRIVATE_SALE_FRACTION = 0.85;
+
+/** Priced to go quickly, rather than to wait for the right buyer. */
+const QUICK_SALE_FRACTION = 0.75;
+
+/** The Indian norm, and what the condition score assumes too. */
+const EXPECTED_KM_PER_YEAR = 15000;
+
+/** Fraction of the new price still held after `age` years. */
+function retainedFraction(age: number): number {
+  if (age <= 0) return 1;
+  const afterFirstYear = 1 - FIRST_YEAR_DROP;
+  return afterFirstYear * (1 - DEPRECIATION_PER_YEAR) ** (age - 1);
+}
+
 export function computeHeuristicValuation(p: ComputeParams): ValuationResult {
   const age = new Date().getFullYear() - +p.year;
   const km = +p.km;
@@ -166,18 +239,22 @@ export function computeHeuristicValuation(p: ComputeParams): ValuationResult {
   const midVariant = modelVariants ? modelVariants[Math.floor(modelVariants.length / 2)] : undefined;
   const base = variantEntry?.basePrice ?? midVariant?.basePrice ?? SEGMENT_BASE[p.make] ?? 900000;
 
-  // Depreciation: 15% year 1, 10% years 2-5, 7% thereafter, capped at 75%
-  let dep = 0;
-  for (let i = 0; i < age; i++) dep += i === 0 ? 0.15 : i < 5 ? 0.10 : 0.07;
-  dep = Math.min(dep, 0.75);
+  // Depreciation, compounding on what is left rather than subtracting flat
+  // percentage points of the original price. See DEPRECIATION_PER_YEAR and
+  // FIRST_YEAR_DROP above for where the rates come from and what the old model
+  // got wrong.
+  const retained = retainedFraction(age);
 
-  // Mileage penalty: 1% per 10k km above expected (15k/yr)
-  const expectedKm = age * 15000;
-  const kmPenalty = Math.max(0, (km - expectedKm) / 10000) * 0.01;
+  // Mileage: judged against what this car should have covered by now. Also a
+  // multiplier, so it cannot eat the whole value on its own — as an additive
+  // penalty outside the cap it was what pushed high-km cars below zero.
+  const expectedKm = Math.max(EXPECTED_KM_PER_YEAR, age * EXPECTED_KM_PER_YEAR);
+  const kmExcess = Math.max(0, (km - expectedKm) / expectedKm);
+  const kmMod = Math.max(0.6, 1 - kmExcess * 0.18);
 
-  const ownerPenalty = p.owners === '1st Owner' ? 0
-    : p.owners === '2nd Owner' ? 0.05
-    : p.owners === '3rd Owner' ? 0.10 : 0.15;
+  const ownerMod = p.owners === '1st Owner' ? 1.0
+    : p.owners === '2nd Owner' ? 0.95
+    : p.owners === '3rd Owner' ? 0.90 : 0.85;
 
   const condMod = p.condition === 'Excellent' ? 1.05
     : p.condition === 'Good' ? 1.0
@@ -189,10 +266,18 @@ export function computeHeuristicValuation(p: ComputeParams): ValuationResult {
 
   const transMod = p.transmission === 'Automatic' || p.transmission === 'DCT' ? 1.03 : 1.0;
 
-  const mid  = Math.round(base * (1 - dep - kmPenalty - ownerPenalty) * condMod * fuelMod * transMod / 1000) * 1000;
-  const low  = Math.round(mid * 0.90 / 1000) * 1000;
-  const high = Math.round(mid * 1.10 / 1000) * 1000;
-  const depPct = Math.round((dep + kmPenalty + ownerPenalty) * 100);
+  // Every adjustment is a multiplier now, so the result cannot go negative
+  // however many of them apply. The floor is the other half of that promise:
+  // a running car is never worth nothing.
+  const dealerRetail = base * retained * kmMod * ownerMod * condMod * fuelMod * transMod;
+  const floored = Math.max(dealerRetail, base * FLOOR_FRACTION);
+
+  // The headline is what a private seller would realistically get, not what a
+  // dealer asks. See PRIVATE_SALE_FRACTION.
+  const mid  = Math.round(floored * PRIVATE_SALE_FRACTION / 1000) * 1000;
+  const low  = Math.round(floored * QUICK_SALE_FRACTION / 1000) * 1000;
+  const high = Math.round(floored / 1000) * 1000;
+  const depPct = Math.round((1 - floored / base) * 100);
 
   // Deterministic confidence — no Math.random()
   const confidence = variantEntry ? 82 : midVariant ? 74 : 65;

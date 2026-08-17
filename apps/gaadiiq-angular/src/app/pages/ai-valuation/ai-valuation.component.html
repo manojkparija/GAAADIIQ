@@ -131,18 +131,26 @@
       <div class="price-range-card glass-card">
         <div class="confidence-badge">🎯 {{ r.confidence }}% confidence</div>
         <div class="range-row">
+          <!-- Three prices for three different sales, said plainly. The old
+               labels — Distress Sale, Fair Market, Premium Ask — did not say
+               WHO is buying, and the difference between them is almost
+               entirely who: a dealer with a warranty behind them gets more for
+               the same car than you will, and a seller who does not know that
+               lists at the forecourt price and waits forever. -->
           <div class="range-item low">
-            <div class="range-label">Distress Sale</div>
+            <div class="range-label">Quick Sale</div>
             <div class="range-val">{{ fmt(r.low) }}</div>
+            <div class="range-sub">Priced to go in a fortnight</div>
           </div>
           <div class="range-item mid highlight">
-            <div class="range-label">Fair Market</div>
+            <div class="range-label">Selling Privately</div>
             <div class="range-val gradient-text">{{ fmt(r.mid) }}</div>
-            <div class="range-sub">Best price to list</div>
+            <div class="range-sub">What you should realistically get</div>
           </div>
           <div class="range-item high">
-            <div class="range-label">Premium Ask</div>
+            <div class="range-label">Dealer Forecourt</div>
             <div class="range-val">{{ fmt(r.high) }}</div>
+            <div class="range-sub">What a dealer asks, reconditioned</div>
           </div>
         </div>
         <div class="price-bar">
@@ -154,6 +162,16 @@
              the seller is actually choosing between, which is money against
              time — and it adds no new claim about the value, only structure
              around the band the page already shows. -->
+        <!-- The number a seller will see on Spinny or Cars24 three kilometres
+             away is the right-hand one. Without this line, ours looks like a
+             lowball rather than a different kind of sale. -->
+        <p class="range-explainer">
+          A dealer gets more for the same car because they recondition it, back
+          it with a warranty and sell it from a showroom. Selling privately you
+          skip all three — and the difference, about
+          {{ fmt(r.high - r.mid) }}, is what that costs.
+        </p>
+
         <app-pricing-strategy
           class="ps-slot"
           [band]="{ low: r.low, mid: r.mid, high: r.high }"
