@@ -488,11 +488,13 @@ Rules:
         prompt += (
             f"\n\nIMPORTANT — LANGUAGE: Write every human-readable VALUE in "
             f"{lang_name}: preliminary_diagnosis, each cause and explanation, "
-            f"recommended_steps, diy_fixes, preventive_maintenance and "
-            f"follow_up_questions. Keep the JSON KEYS in English exactly as "
-            f"shown, and keep the fixed values (repair_complexity, risk_level) "
-            f"in English. Technical terms with no common {lang_name} "
-            f"equivalent (OBD-II, ABS, EGR) stay in English."
+            f"recommended_steps, diy_fixes, preventive_maintenance, "
+            f"follow_up_questions, repair_time_estimate, and the title and "
+            f"steps of every fix_solutions entry. Keep the JSON KEYS in "
+            f"English exactly as shown, and keep the fixed values "
+            f"(repair_complexity, risk_level, and the difficulty of each "
+            f"fix_solutions entry) in English. Technical terms with no common "
+            f"{lang_name} equivalent (OBD-II, ABS, EGR) stay in English."
         )
 
     return prompt
@@ -596,14 +598,28 @@ _SCRIPT_RANGES: dict[str, tuple[int, int]] = {
 }
 
 
+def _in_target_script(text: str, span: tuple[int, int]) -> bool:
+    """A handful of characters in the right script. A genuinely English string
+    contains none at all, so there is no threshold to tune."""
+    lo, hi = span
+    return sum(1 for ch in str(text or "") if lo <= ord(ch) <= hi) >= 3
+
+
 def _already_in_language(result: dict, target_lang: str) -> bool:
     """
     Did the answer come back in the language we asked for?
 
-    Checked on `preliminary_diagnosis` alone: it is the field a driver reads
-    first and the one every engine populates. A handful of characters in the
-    right script is enough — a genuinely English answer contains none at all,
-    so there is no threshold to tune.
+    Checked on `preliminary_diagnosis` AND on the repair instructions, because
+    checking the first field alone let a partly-translated report through. The
+    model would answer the diagnosis in Hindi and leave "How to Fix or Bypass
+    the Issue" in English; this function saw Devanagari in the first field,
+    reported the whole report as translated, and the fallback that would have
+    fixed the rest never ran. A driver got their diagnosis in Hindi and the
+    part telling them what to do about it in English.
+
+    fix_solutions is only consulted when it exists. It is absent from the
+    heuristic fallback and from some KB answers, and demanding it there would
+    force a pointless second call on every one of them.
 
     Unknown language: False, which routes to translation. Being wrong that way
     costs a redundant call; being wrong the other way shows English under a
@@ -612,11 +628,21 @@ def _already_in_language(result: dict, target_lang: str) -> bool:
     span = _SCRIPT_RANGES.get(target_lang)
     if span is None:
         return False
-    text = str(result.get("preliminary_diagnosis") or "")
-    if not text:
+
+    if not _in_target_script(result.get("preliminary_diagnosis"), span):
         return False
-    lo, hi = span
-    return sum(1 for ch in text if lo <= ord(ch) <= hi) >= 3
+
+    fixes = result.get("fix_solutions") or []
+    for fix in fixes:
+        if not isinstance(fix, dict):
+            continue
+        # The title alone: a step list can legitimately be mostly part names
+        # and codes, and demanding script coverage there would send every
+        # correctly-translated report round again.
+        if not _in_target_script(fix.get("title"), span):
+            return False
+
+    return True
 
 
 async def _translate_call(prompt: str) -> dict:
@@ -686,6 +712,17 @@ async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
             {"cause": c.get("cause", ""), "explanation": c.get("explanation", "")}
             for c in result.get("possible_causes", [])
         ],
+        # "How to Fix or Bypass the Issue" — the section a driver actually acts
+        # on, and the one that was left in English on every non-English report.
+        # `difficulty` is deliberately absent: the frontend switches a CSS class
+        # and an icon on the exact strings "DIY", "Mechanic" and "Specialist",
+        # so translating it would strip the badge off the card.
+        "fix_solutions": [
+            {"title": f.get("title", ""), "steps": f.get("steps", [])}
+            for f in result.get("fix_solutions", [])
+        ],
+        # Free text like "2-4 hours", shown twice on the report.
+        "repair_time_estimate": result.get("repair_time_estimate", ""),
     }
 
     prompt = (
@@ -723,6 +760,21 @@ async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
                 if i < len(result.get("possible_causes", [])):
                     result["possible_causes"][i]["cause"] = tc.get("cause", result["possible_causes"][i].get("cause", ""))
                     result["possible_causes"][i]["explanation"] = tc.get("explanation", result["possible_causes"][i].get("explanation", ""))
+        if translated.get("fix_solutions"):
+            for i, tf in enumerate(translated["fix_solutions"]):
+                if i >= len(result.get("fix_solutions", [])):
+                    break
+                original = result["fix_solutions"][i]
+                if tf.get("title"):
+                    original["title"] = tf["title"]
+                # Only when the step count survived. A shorter list means the
+                # model summarised instead of translating, and dropping a step
+                # from a repair procedure is worse than leaving it in English.
+                steps = tf.get("steps")
+                if isinstance(steps, list) and len(steps) == len(original.get("steps", [])):
+                    original["steps"] = steps
+        if translated.get("repair_time_estimate"):
+            result["repair_time_estimate"] = translated["repair_time_estimate"]
     except Exception as exc:
         result["translation_failed"] = True
         logger.warning("Translation to %s failed, keeping English: %s", lang_name, exc)
