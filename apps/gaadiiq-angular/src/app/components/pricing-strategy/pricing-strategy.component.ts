@@ -59,27 +59,32 @@ export class PricingStrategyComponent {
     return [
       {
         key: 'fast',
-        // Priced between the floor and the middle: undercutting the market
-        // enough to be the obvious choice without giving the car away.
+        // The quick-sale figure the page already shows above, not a fresh
+        // interpolation. Two sets of prices for the same car on one screen is
+        // how a seller stops believing either — and that is exactly what this
+        // did before the tiers were given explicit meanings.
         title: 'Sell quickly',
-        price: this.round(this.band.low + (this.band.mid - this.band.low) * 0.5),
+        price: this.round(this.band.low),
         timing: median
           ? `Typically under ${Math.max(1, Math.round(median * 0.6))} days`
           : 'Fastest of the two',
         detail:
-          'Below the going rate, so yours is the cheapest comparable car a buyer sees. '
-          + 'The usual choice when a deposit is due or the car has to go.',
+          'Under the going rate, so yours is the cheapest comparable car a buyer '
+          + 'sees. The usual choice when a deposit is due or the car has to go.',
       },
       {
         key: 'profit',
+        // The realistic private-sale figure — deliberately NOT the dealer
+        // forecourt price above it. A private seller cannot reach that one: it
+        // buys a warranty, reconditioning and a showroom they do not have.
         title: 'Get the most for it',
-        price: this.round(this.band.mid + (this.band.high - this.band.mid) * 0.6),
+        price: this.round(this.band.mid),
         timing: median
           ? `Often ${Math.round(median * 1.5)} days or more`
           : 'Expect a longer wait',
         detail:
-          'Above the going rate, which means waiting for the buyer who wants '
-          + 'exactly this car. Worth it when there is no deadline.',
+          'The full private-sale price, which means waiting for the buyer who '
+          + 'wants exactly this car. Worth it when there is no deadline.',
       },
     ];
   }

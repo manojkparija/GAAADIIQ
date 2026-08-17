@@ -990,32 +990,20 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   private _vsCache: { id: string; value: VehicleScore | null } | null = null;
 
   /**
-   * The price gauge is finished and tested, and deliberately off.
+   * The price gauge, now that the engine behind it has been calibrated.
    *
-   * Measured against the five used cars the platform itself lists, the shared
-   * valuation engine values every one of them far below its asking price:
+   * It shipped switched off, because the valuation engine priced every used
+   * car on the platform 46–93% below its asking price and the gauge would have
+   * labelled essentially all of them "above market" under the heading "Is this
+   * a fair price?".
    *
-   *     2020 Swift VXi      listed ₹5.50L   engine ₹2.85L   +93%
-   *     2021 Creta SX       listed ₹11.50L  engine ₹7.87L   +46%
-   *     2022 Nexon XZ+      listed ₹10.80L  engine ₹6.32L   +71%
-   *     2021 Seltos HTX     listed ₹12.90L  engine ₹6.75L   +91%
-   *     2022 XUV700 AX5     listed ₹18.75L  engine ₹10.99L  +71%
-   *
-   * Turning the gauge on would therefore label essentially every used car on
-   * GAADIIQ "71% above market" — to the buyer, in a box headed "Is this a fair
-   * price?". One of the two numbers is wrong and I cannot tell which from here,
-   * which is exactly why this cannot be shown to a buyer yet.
-   *
-   * The likely culprit is the depreciation ladder in valuation-engine.ts —
-   * 15% in year one then 10% a year takes 62% off a six-year-old car, where
-   * popular Indian models hold value better than that. But that ladder also
-   * drives /ai-valuation and the listing flow, so recalibrating it re-prices
-   * every seller's car and is not a change to make as a side effect of adding
-   * a buyer's gauge.
-   *
-   * One line to turn on, once the engine is calibrated against real sale data.
+   * That engine has since been rebuilt against three cars actually on sale in
+   * New Town — see valuation-engine.ts — and now lands within 8% of dealer
+   * asking prices. The asking price of a private listing is compared against
+   * the private-sale figure, which is the like-for-like comparison: both are
+   * one person selling one car without a warranty behind it.
    */
-  private readonly SHOW_PRICE_GAUGE = false;
+  private readonly SHOW_PRICE_GAUGE = true;
 
   /**
    * Traffic on this listing, once the API answers. A signal because it arrives
