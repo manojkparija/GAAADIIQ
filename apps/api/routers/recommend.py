@@ -17,10 +17,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from core.dependencies import get_optional_user
 from core.limiter import limiter
 from db.session import get_db
 from models.listing import Listing
+from models.user import User
 from schemas.listing import ListingOut
+from services.behaviour_profile import behaviour_boost, build_profile
 
 
 def _recommend_counter():
@@ -145,9 +148,11 @@ async def recommend(
     request: Request,
     payload: RecommendRequest,
     db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
     """
-    Rule-engine recommendation. Returns listings scored against user answers.
+    Rule-engine recommendation. Returns listings scored against user answers,
+    nudged by what the buyer has actually been looking at.
     No AI / LLM — results grounded entirely in DB listing data.
     """
     _recommend_counter().inc()
@@ -183,10 +188,20 @@ async def recommend(
     result = await db.execute(q)
     listings = result.scalars().all()
 
-    scored = [
-        (listing, *_score_listing(listing, payload))
-        for listing in listings
-    ]
+    # What this buyer actually browses, if they are signed in and have a
+    # history worth the name. Empty otherwise, and then the scores below are
+    # exactly what they were before — the form answers alone.
+    profile = await build_profile(db, user.id if user else None)
+
+    scored = []
+    for listing in listings:
+        score, reasons = _score_listing(listing, payload)
+        # Applied on top of the stated preferences, never in place of them: a
+        # buyer who said ten lakh is their ceiling must not be shown fifteen
+        # because they once looked at one out of curiosity.
+        boost, boost_reasons = behaviour_boost(listing, profile)
+        scored.append((listing, min(score + boost, 100), reasons + boost_reasons))
+
     scored.sort(key=lambda x: x[1], reverse=True)
 
     top = scored[: payload.page_size]
@@ -212,6 +227,7 @@ async def recommend_ai(
     request: Request,
     payload: RecommendRequest,
     db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
     """
     Semantic search via Qdrant embeddings + rule scoring fallback.
@@ -243,7 +259,7 @@ async def recommend_ai(
 
     # Fall back to the regular rule-based recommend if Qdrant is unavailable
     if not semantic_ids:
-        return await recommend(request, payload, db)
+        return await recommend(request, payload, db, user)
 
     # Load the semantically retrieved listings from DB and score them
     q = select(Listing).options(
@@ -255,10 +271,20 @@ async def recommend_ai(
     result = await db.execute(q)
     listings = result.scalars().all()
 
-    scored = [
-        (listing, *_score_listing(listing, payload))
-        for listing in listings
-    ]
+    # What this buyer actually browses, if they are signed in and have a
+    # history worth the name. Empty otherwise, and then the scores below are
+    # exactly what they were before — the form answers alone.
+    profile = await build_profile(db, user.id if user else None)
+
+    scored = []
+    for listing in listings:
+        score, reasons = _score_listing(listing, payload)
+        # Applied on top of the stated preferences, never in place of them: a
+        # buyer who said ten lakh is their ceiling must not be shown fifteen
+        # because they once looked at one out of curiosity.
+        boost, boost_reasons = behaviour_boost(listing, profile)
+        scored.append((listing, min(score + boost, 100), reasons + boost_reasons))
+
     scored.sort(key=lambda x: x[1], reverse=True)
     top = scored[:payload.page_size]
 

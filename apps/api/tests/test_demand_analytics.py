@@ -31,7 +31,7 @@ async def _seller(db) -> User:
         email=f"s-{uuid.uuid4().hex[:8]}@example.com",
         full_name="Seller",
         hashed_password="x",
-        role=UserRole.seller if hasattr(UserRole, "seller") else UserRole.user,
+        role=UserRole.seller,
     )
     db.add(u)
     await db.flush()
