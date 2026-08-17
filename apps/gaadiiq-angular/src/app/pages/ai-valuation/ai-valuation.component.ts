@@ -5,17 +5,19 @@ import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { SupabaseService } from '../../services/supabase.service';
+import { PricingStrategyComponent } from '../../components/pricing-strategy/pricing-strategy.component';
+import { DemandService, DaysTurn } from '../../services/demand.service';
 import { CATALOGUE, Variant, ValuationResult, computeHeuristicValuation } from '../../utils/valuation-engine';
 
 @Component({
   selector: 'app-ai-valuation',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, PricingStrategyComponent],
   templateUrl: './ai-valuation.component.html',
   styleUrl: './ai-valuation.component.scss',
 })
 export class AiValuationComponent {
-  constructor(private supabase: SupabaseService, private seo: SeoService) {
+  constructor(private supabase: SupabaseService, private seo: SeoService, private demandSvc: DemandService) {
     seo.setPage(
       'AI Car Valuation',
       'Get an instant AI-powered fair market valuation for your used car — free, no sign-up needed.',
@@ -52,6 +54,15 @@ export class AiValuationComponent {
 
   loading = signal(false);
   result = signal<ValuationResult | null>(null);
+
+  /**
+   * The platform's observed time-to-sell, when it has one.
+   *
+   * Null until it loads, and null forever if too few cars have sold — the
+   * pricing card renders differently in that case rather than quoting a
+   * waiting time it cannot stand behind.
+   */
+  daysTurn = signal<DaysTurn | null>(null);
   /** Why the AI call failed, when it did. Shown in the fallback banner. */
   fallbackReason = signal<string | null>(null);
   step = signal<'form' | 'result'>('form');
@@ -78,6 +89,7 @@ export class AiValuationComponent {
       // Edge returns method:'claude'; ensure field is present
       this.result.set({ ...(data as ValuationResult), method: data.method ?? 'claude' });
       this.step.set('result');
+      void this.demandSvc.daysTurn().then(t => this.daysTurn.set(t));
     } catch (err) {
       // Swallowing this made "AI engine unavailable" impossible to diagnose:
       // an undeployed function, a missing API key and a rate limit all looked
@@ -87,6 +99,7 @@ export class AiValuationComponent {
       this.fallbackReason.set(reason);
       this.result.set(computeHeuristicValuation({ ...this.form }));
       this.step.set('result');
+      void this.demandSvc.daysTurn().then(t => this.daysTurn.set(t));
     } finally {
       this.loading.set(false);
     }

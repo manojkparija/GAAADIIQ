@@ -14,6 +14,8 @@ export interface Car {
    */
   spinImages?: string[];
   city?: string; bodyType?: string; color?: string; owners?: string;
+  /** Seller-stated condition, as the listing records it ('excellent' | 'good' | …). */
+  condition?: string;
   isSellerListing?: boolean;
   /** Published trims for this model, 0 when none have been entered. */
   variantCount?: number;
@@ -46,6 +48,8 @@ interface ApiListing {
   id: string; listing_type: 'new' | 'used'; price: number; km_driven: number | null;
   city: string | null; image_urls: string[]; is_featured: boolean;
   condition: string | null; description: string | null;
+  /** The API has sent this all along; the mapper below was guessing instead. */
+  owners_count: number | null;
   ai_valuation: number | null;
   car: ApiCar; seller: { id: string; email: string; full_name: string | null } | null;
 }
@@ -202,8 +206,19 @@ function mapListing(lst: ApiListing): Car {
               : car.fuel_type === 'cng' ? 'CNG'
               : '';
 
-  const owners = lst.km_driven === 0 ? undefined
-               : lst.condition === 'excellent' ? '1st Owner' : undefined;
+  // Read from owners_count, which the listing actually carries.
+  //
+  // It used to be inferred from the condition — `condition === 'excellent'`
+  // meant "1st Owner" — and condition says nothing whatever about how many
+  // people have owned the car. A well-kept third-owner car was reported as
+  // single-owner, on the page and to the condition score, and a genuine
+  // single-owner car in merely good condition showed nothing at all.
+  const owners = lst.km_driven === 0 || !lst.owners_count
+    ? undefined
+    : lst.owners_count === 1 ? '1st Owner'
+    : lst.owners_count === 2 ? '2nd Owner'
+    : lst.owners_count === 3 ? '3rd Owner'
+    : `${lst.owners_count}th Owner`;
 
   return {
     id: lst.id,
@@ -226,6 +241,7 @@ function mapListing(lst: ApiListing): Car {
     bodyType: BODY_LABEL[car.body_type ?? ''] ?? car.body_type ?? '',
     color: undefined,
     owners,
+    condition: lst.condition ?? undefined,
     isSellerListing: lst.listing_type === 'used',
     sellerEmail: lst.seller?.email,
     ...(() => {

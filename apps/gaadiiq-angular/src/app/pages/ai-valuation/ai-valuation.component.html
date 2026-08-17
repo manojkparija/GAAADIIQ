@@ -149,6 +149,15 @@
           <div class="bar-fill"></div>
           <div class="bar-mid-marker"></div>
         </div>
+
+        <!-- The three figures above say what the car is worth. This says what
+             the seller is actually choosing between, which is money against
+             time — and it adds no new claim about the value, only structure
+             around the band the page already shows. -->
+        <app-pricing-strategy
+          class="ps-slot"
+          [band]="{ low: r.low, mid: r.mid, high: r.high }"
+          [daysTurn]="daysTurn()" />
       </div>
 
       <!-- Stats -->

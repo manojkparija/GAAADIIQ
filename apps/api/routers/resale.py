@@ -21,6 +21,7 @@ from services.resale_forecast import (
     ai_forecast,
     heuristic_forecast,
 )
+from services.wholesale_forecast import wholesale_forecast
 
 router = APIRouter(prefix="/resale", tags=["resale"])
 
@@ -96,3 +97,28 @@ async def forecast(request: Request, body: ForecastRequest) -> ForecastResponse:
     return ForecastResponse(
         forecast=[ForecastYear(**r) for r in rows], summary="", source="heuristic"
     )
+
+
+class WholesaleRequest(BaseModel):
+    """What a dealer needs: today's retail value and how old the car is."""
+
+    price: int = Field(gt=0, le=100_000_000, description="Retail value today")
+    age_years: int = Field(default=0, ge=0, le=60)
+
+
+@router.post("/wholesale")
+@limiter.limit("30/minute")
+async def wholesale(request: Request, body: WholesaleRequest) -> dict:
+    """
+    Trade value now and at 30, 60 and 90 days.
+
+    Separate from the retail curve above for two reasons: a dealer selling into
+    the trade gets less than a private buyer pays, and their horizon is the
+    next quarter rather than the next three years.
+
+    Every response carries its own basis. The trade discount is a market
+    convention, not a figure measured from sales on this platform — there are
+    none to measure — and the projection is depreciation only, with no view on
+    seasonal demand or a coming facelift.
+    """
+    return wholesale_forecast(body.price, body.age_years)

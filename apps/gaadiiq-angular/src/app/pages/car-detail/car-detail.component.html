@@ -165,6 +165,26 @@
               <div class="pill" *ngIf="car.color"><span><app-icon name="palette" [size]="16"></app-icon></span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
               <div class="pill" *ngIf="car.city"><span><app-icon name="map-pin" [size]="14"></app-icon></span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
             </div>
+
+            <!-- Used cars only. Both answers are about a specific car that has
+                 been driven: a catalogue model has no asking price to judge and
+                 no owner or distance to score. -->
+            <!-- How much interest the car is getting. Absent entirely when the
+                 API has not answered, rather than reported as zero. -->
+            <app-listing-activity
+              *ngIf="activity() as a"
+              [activity]="a"
+              class="la-slot" />
+
+            <div class="buyer-checks" *ngIf="!isNewCar">
+              <app-market-position
+                *ngIf="marketPosition() as mp"
+                [position]="mp"
+                [askingPrice]="car.price" />
+              <app-vehicle-scorecard
+                *ngIf="conditionScore() as cs"
+                [score]="cs" />
+            </div>
           </div>
 
           <!-- VARIANTS (new cars only) -->

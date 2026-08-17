@@ -1,0 +1,156 @@
+.vs-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.vs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.vs-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.vs-grade {
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: #E8EDFB;
+  color: #1D4ED8;
+
+  .vs-excellent & { background: #E3F5EA; color: #047857; }
+  .vs-good &      { background: #E8EDFB; color: #1D4ED8; }
+  .vs-fair &      { background: #FDF0DC; color: #B45309; }
+  // Not red: "needs inspection" is advice, not a verdict on the car.
+  .vs-needs-inspection & { background: #FBE6E6; color: #B02121; }
+}
+
+.vs-body {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+// ── Ring ────────────────────────────────────────────────────────────────────
+
+.vs-ring-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: 120px;
+  height: 120px;
+}
+
+.vs-ring {
+  width: 120px;
+  height: 120px;
+  // Start the arc at twelve o'clock rather than three.
+  transform: rotate(-90deg);
+}
+
+.vs-ring-track {
+  fill: none;
+  stroke: var(--fill-dim);
+  stroke-width: 10;
+}
+
+.vs-ring-fill {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke: #1D4ED8;
+  transition: stroke-dashoffset 0.6s ease;
+
+  .vs-excellent & { stroke: #047857; }
+  .vs-fair &      { stroke: #B45309; }
+  .vs-needs-inspection & { stroke: #B02121; }
+}
+
+.vs-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.vs-score { font-size: 1.9rem; font-weight: 800; }
+.vs-outof { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+// ── Factors ─────────────────────────────────────────────────────────────────
+
+.vs-factors {
+  flex: 1 1 auto;
+  min-width: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.vs-factor-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.vs-bar {
+  margin: 0.25rem 0 0.2rem;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fill-dim);
+  overflow: hidden;
+}
+
+.vs-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.vs-bar-good { background: #047857; }
+.vs-bar-mid  { background: #B45309; }
+.vs-bar-low  { background: #B02121; }
+
+.vs-factor-detail {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.vs-missing {
+  margin: 1.1rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--divider);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+
+  strong { color: var(--text); }
+}
+
+@media (max-width: 560px) {
+  // The ring above the factors rather than beside them — side by side leaves
+  // the bars about 90px wide, which is not a bar.
+  .vs-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.1rem;
+  }
+  .vs-ring-wrap { align-self: center; }
+}

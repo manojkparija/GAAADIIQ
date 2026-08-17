@@ -24,6 +24,7 @@ import {
 } from '@angular/common/http';
 import { from, Observable, switchMap } from 'rxjs';
 import { SupabaseService } from '../services/supabase.service';
+import { VisitorService } from '../services/visitor.service';
 import { environment } from '../../environments/environment';
 
 export const authInterceptor: HttpInterceptorFn = (
@@ -36,6 +37,15 @@ export const authInterceptor: HttpInterceptorFn = (
   }
 
   const supa = inject(SupabaseService);
+
+  // The anonymous browser id, so the API can tell one person refreshing from
+  // twelve people looking. Set here rather than at each call site for the same
+  // reason the token is: a header attached by hand at one of them is a header
+  // missing from the other nine.
+  const visitorKey = inject(VisitorService).key;
+  if (visitorKey) {
+    req = req.clone({ setHeaders: { 'X-Visitor-Key': visitorKey } });
+  }
 
   return from(supa.client.auth.getSession()).pipe(
     switchMap(({ data }) => {

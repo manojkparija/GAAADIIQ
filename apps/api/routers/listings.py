@@ -5,6 +5,7 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     File,
+    Header,
     HTTPException,
     Query,
     Request,
@@ -15,7 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from core.dependencies import get_current_user
+from core.dependencies import get_current_user, get_optional_user
 from core.limiter import limiter
 from db.session import get_db
 from models.car import Car
@@ -24,6 +25,7 @@ from models.price_alert import PriceAlert
 from models.user import User
 from schemas.listing import ListingCreate, ListingListOut, ListingOut, ListingUpdate
 from services import media_library, n8n, valuation, vector_store
+from services.demand_analytics import record_listing_view, record_search
 from services.notifications import notify_price_drop
 from services.search_index import search_index
 
@@ -101,9 +103,12 @@ async def list_listings(
     min_year: int | None = Query(None),
     max_year: int | None = Query(None),
     max_km: int | None = Query(None),
+    pincode: str | None = Query(None, max_length=10),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
+    x_visitor_key: str | None = Header(default=None, alias="X-Visitor-Key"),
 ):
     q = (
         select(Listing)
@@ -145,6 +150,34 @@ async def list_listings(
     result = await db.execute(q)
     listings = result.scalars().all()
 
+    # Record the search, with the number of cars it found.
+    #
+    # `total` is the reason this is recorded here and not in the frontend: a
+    # search that returned *nothing* is the single most useful row in the
+    # table — it is unmet demand, and it exists in no other record. The
+    # listings table knows what was offered and can never know what was looked
+    # for and not found.
+    #
+    # Only searches that actually asked for something. An unfiltered first page
+    # of /used-cars is a page load, not a statement of intent, and counting it
+    # would drown the real signal.
+    if page == 1 and any([make, model, body_type, fuel_type, city, min_price, max_price]):
+        await record_search(
+            db,
+            user_id=user.id if user else None,
+            visitor_key=x_visitor_key or None,
+            make=make,
+            model=model,
+            body_type=body_type,
+            fuel_type=fuel_type,
+            city=city,
+            pincode=pincode,
+            price_min=int(min_price) if min_price is not None else None,
+            price_max=int(max_price) if max_price is not None else None,
+            result_count=total,
+        )
+        await db.commit()
+
     return ListingListOut(
         items=[ListingOut.model_validate(lst) for lst in listings],
         total=total,
@@ -181,7 +214,12 @@ async def my_listings(
 
 
 @router.get("/{listing_id}", response_model=ListingOut)
-async def get_listing(listing_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_listing(
+    listing_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
+    x_visitor_key: str | None = Header(default=None, alias="X-Visitor-Key"),
+):
     result = await db.execute(
         select(Listing).options(*_LOAD).where(Listing.id == listing_id)
     )
@@ -191,6 +229,13 @@ async def get_listing(listing_id: uuid.UUID, db: AsyncSession = Depends(get_db))
 
     # Increment view count
     listing.views_count += 1
+
+    # And record *when*, which the counter above cannot say. Everything on the
+    # demand side — activity in the last 24 hours, how long a car has sat, what
+    # a returning buyer keeps coming back to — is a question about time, and
+    # none of it can be backfilled from a running total after the fact.
+    await record_listing_view(db, listing.id, user.id if user else None, x_visitor_key)
+
     await db.commit()
     await db.refresh(listing)
 

@@ -194,3 +194,117 @@ td {
     color: #4ade80;
   }
 }
+
+// ── Insights ────────────────────────────────────────────────────────────────
+//
+// A row under each listing saying what its numbers mean. Bordered top-less so
+// it reads as part of the row above rather than as a separate listing.
+.insight-row td {
+  padding-top: 0;
+  border-top: none;
+}
+
+.insight {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  margin-bottom: 0.4rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  // Opaque backgrounds with their ink measured on them, not tints picking up
+  // whatever the table is sitting on.
+  background: #E8EDFB;
+  color: #1D4ED8;
+}
+
+.insight-act  { background: #FDF0DC; color: #B45309; }
+.insight-good { background: #E3F5EA; color: #047857; }
+
+.insight-msg { flex: 1 1 320px; }
+
+.insight-evidence {
+  flex: 0 0 auto;
+  font-weight: 700;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+// ── Market demand ───────────────────────────────────────────────────────────
+
+.demand-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.demand-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  padding: 1.1rem;
+
+  h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+}
+
+.demand-figure {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--primary-ink);
+
+  span { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+}
+
+// The empty state is the common one on a new marketplace, so it is styled to
+// be read rather than to look like a broken panel.
+.demand-empty {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.demand-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.demand-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+  }
+}
+
+.dl-name { font-weight: 700; flex: 1 1 auto; }
+.dl-val { font-weight: 600; }
+
+.dl-gap {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #FDF0DC;
+  color: #B45309;
+}
