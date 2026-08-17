@@ -10,9 +10,11 @@
   @if (open()) {
     <div class="cs-dropdown">
       <div class="cs-option placeholder-opt" (click)="select('')">{{ placeholder }}</div>
-      @for (opt of options; track opt) {
-        <div class="cs-option" [class.selected]="value() === opt" (click)="select(opt)">
-          {{ opt }}
+      @for (opt of options; track valueOf(opt)) {
+        <div class="cs-option"
+             [class.selected]="value() === valueOf(opt)"
+             (click)="select(opt)">
+          {{ labelOf(opt) }}
         </div>
       }
     </div>

@@ -121,10 +121,19 @@
           </div>
         </div>
 
+        <!-- The resale figure and the depreciation row below it are two halves
+             of the same sum, and showing them apart made them look like two
+             separate costs — the same rupee amount twice, one labelled resale
+             and one labelled depreciation, with nothing saying they were
+             related. The arithmetic is now written out. -->
         <div class="resale-card">
           <div>
             <p class="summary-label">Estimated resale value after {{ yearsOwned() }} years</p>
             <p class="resale-value">{{ formatINR(resaleValue()) }}</p>
+            <p class="resale-sum">
+              {{ formatINR(purchasePrice()) }} paid − {{ formatINR(resaleValue()) }} back
+              = <strong>{{ formatINR(depreciation()) }} lost to depreciation</strong>
+            </p>
           </div>
           <span class="badge">{{ retainedPct() | number: '1.0-0' }}% retained</span>
         </div>
@@ -133,7 +142,7 @@
           <h2>Cost Breakdown</h2>
 
           @for (row of [
-            { label: 'Depreciation', value: depreciation(), cls: 'bar-depreciation' },
+            { label: 'Depreciation (value you do not get back)', value: depreciation(), cls: 'bar-depreciation' },
             { label: 'Fuel / Energy', value: fuelCost(), cls: 'bar-fuel' },
             { label: 'Insurance', value: insurance(), cls: 'bar-insurance' },
             { label: 'Maintenance', value: maintenance(), cls: 'bar-maintenance' }

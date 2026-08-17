@@ -86,18 +86,17 @@
   // Sign-in being unreachable is a worse failure than a nav item needing a
   // scroll, so the links scroll and the actions stay put.
   min-width: 0;
-  overflow-x: auto;
-  // Thin rather than hidden. Hiding it is what turned "three items are off the
-  // end" into "three items do not exist" — there was nothing on screen to say
-  // the row continued.
-  scrollbar-width: thin;
-  &::-webkit-scrollbar { height: 3px; }
-  &::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border-radius: 3px;
-  }
-  // Room for the focus underline, which sits at bottom: -4px and would be
-  // clipped by the scroll container otherwise.
+  // No scroll container any more. It was added when this row carried thirteen
+  // links and overflowed at every laptop width, and it did the right thing at
+  // the time — sign-in being pushed off the edge is worse than a row that
+  // scrolls. Grouping the tools took it to eight items, which fits with room
+  // to spare at 1280px, so the scrolling is no longer earned.
+  //
+  // It also has to go: `overflow-x: auto` makes the other axis clip too, so
+  // the Tools menu hanging below this row was cut off at the bar's edge. It
+  // was in the DOM, it reported itself visible, and none of it was on screen.
+  //
+  // Room for the focus underline, which sits at bottom: -4px.
   padding-bottom: 4px;
   a {
     color: var(--text);
@@ -428,4 +427,85 @@
 // Matches the rest of the menu, same as its desktop counterpart.
 .mobile-urgent {
   font-weight: 700;
+}
+
+// ── Tools group ─────────────────────────────────────────────────────────────
+//
+// Thirteen top-level links overflowed the row at every laptop width. Nothing
+// was unreachable — the row scrolls — but the labels were pressed against each
+// other and the whole bar became hard to read, which is the complaint that
+// prompted this. Six calculators now sit behind one word.
+
+.nav-dd {
+  position: relative;
+  // The gap between the button and the menu below it would otherwise end the
+  // hover and close the menu on the way to it.
+  padding-bottom: 4px;
+}
+
+.nav-dd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.8rem;
+  font-family: 'Manrope', sans-serif;
+  white-space: nowrap;
+  transition: color 0.2s;
+
+  &:hover, &.open { color: var(--primary-ink); }
+
+  app-icon { transition: transform 0.2s; }
+  &.open app-icon { transform: rotate(180deg); }
+}
+
+.nav-dd-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  min-width: 220px;
+  margin-top: 0.5rem;
+  padding: 0.4rem;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+
+  a {
+    display: block;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    text-decoration: none;
+
+    &:hover { background: var(--fill-dim); }
+    // The underline the top-level links use would be lost on a stacked menu.
+    &.active { color: var(--primary-ink); background: var(--fill-dim); }
+    &::after { display: none; }
+  }
+}
+
+// The desktop row hands over to the hamburger at 1100px, not 768px.
+//
+// Between those two widths the eight links no longer fit — measured at 1024px,
+// 81px of them run past the edge — and with the scroll container gone there
+// would be nothing to say the row continued. The mobile menu already carries
+// every link, grouped and legible, so below 1100px it is simply the better
+// navigation. This overrides the global .hide-mobile / .hide-desktop pair for
+// these two elements only; the rest of the site keeps the 768px breakpoint.
+@media (max-width: 1100px) {
+  .nav-links.hide-mobile { display: none !important; }
+  .hamburger.hide-desktop { display: flex !important; }
 }

@@ -23,38 +23,36 @@
         <!-- Make -->
         <div class="form-group">
           <label>Car Make *</label>
-          <select [(ngModel)]="form.make" (ngModelChange)="onMakeChange()">
-            <option value="">Select make</option>
-            <option *ngFor="let m of makes" [value]="m">{{ m }}</option>
-          </select>
+          <!-- Not a native <select>. Its popup is drawn by the operating
+               system, so the teal that CSS applies on Linux never reaches
+               Chrome on Windows — the highlight stayed the browser's blue on
+               a page that is otherwise blue-to-teal throughout. This one is
+               ours, so it looks the same everywhere. -->
+          <app-custom-select [options]="makes" placeholder="Select make"
+                             [(ngModel)]="form.make" (ngModelChange)="onMakeChange()" />
         </div>
 
         <!-- Model — dropdown if catalogue has models, else text input -->
         <div class="form-group">
           <label>Model *</label>
-          <select *ngIf="availableModels.length > 0" [(ngModel)]="form.model" (ngModelChange)="onModelChange()">
-            <option value="">Select model</option>
-            <option *ngFor="let m of availableModels" [value]="m">{{ m }}</option>
-          </select>
+          <app-custom-select *ngIf="availableModels.length > 0"
+                             [options]="availableModels" placeholder="Select model"
+                             [(ngModel)]="form.model" (ngModelChange)="onModelChange()" />
           <input *ngIf="availableModels.length === 0" type="text" [(ngModel)]="form.model" placeholder="e.g. Swift, Creta, Nexon">
         </div>
 
         <!-- Variant — dropdown, shown only when variants exist -->
         <div class="form-group" *ngIf="availableVariants.length > 0">
           <label>Variant <span class="label-tip">— affects price accuracy</span></label>
-          <select [(ngModel)]="form.variant">
-            <option value="">Select variant (optional)</option>
-            <option *ngFor="let v of availableVariants" [value]="v.name">
-              {{ v.name }} · {{ fmt(v.basePrice) }}
-            </option>
-          </select>
+          <app-custom-select [options]="variantOptions()"
+                             placeholder="Select variant (optional)"
+                             [(ngModel)]="form.variant" />
         </div>
 
         <div class="form-group">
           <label>Year *</label>
-          <select [(ngModel)]="form.year">
-            <option *ngFor="let y of years" [value]="y">{{ y }}</option>
-          </select>
+          <app-custom-select [options]="yearOptions()" placeholder="Select year"
+                             [(ngModel)]="form.year" />
         </div>
         <div class="form-group">
           <label>Kilometres Driven *</label>
@@ -62,31 +60,23 @@
         </div>
         <div class="form-group">
           <label>Fuel Type *</label>
-          <select [(ngModel)]="form.fuel">
-            <option value="">Select fuel</option>
-            <option *ngFor="let f of fuels" [value]="f">{{ f }}</option>
-          </select>
+          <app-custom-select [options]="fuels" placeholder="Select fuel"
+                             [(ngModel)]="form.fuel" />
         </div>
         <div class="form-group">
           <label>Transmission</label>
-          <select [(ngModel)]="form.transmission">
-            <option value="">Select</option>
-            <option *ngFor="let t of transmissions" [value]="t">{{ t }}</option>
-          </select>
+          <app-custom-select [options]="transmissions" placeholder="Select"
+                             [(ngModel)]="form.transmission" />
         </div>
         <div class="form-group">
           <label>No. of Owners *</label>
-          <select [(ngModel)]="form.owners">
-            <option value="">Select</option>
-            <option *ngFor="let o of ownerOptions" [value]="o">{{ o }}</option>
-          </select>
+          <app-custom-select [options]="ownerOptions" placeholder="Select"
+                             [(ngModel)]="form.owners" />
         </div>
         <div class="form-group">
           <label>Overall Condition *</label>
-          <select [(ngModel)]="form.condition">
-            <option value="">Select condition</option>
-            <option *ngFor="let c of conditions" [value]="c">{{ c }}</option>
-          </select>
+          <app-custom-select [options]="conditions" placeholder="Select condition"
+                             [(ngModel)]="form.condition" />
         </div>
       </div>
 

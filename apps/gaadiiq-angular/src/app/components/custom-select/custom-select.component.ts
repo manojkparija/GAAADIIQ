@@ -2,6 +2,15 @@ import { Component, Input, Output, EventEmitter, signal, HostListener, ElementRe
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
+/**
+ * An option that shows one thing and stores another — a variant whose label
+ * carries its price, for instance.
+ */
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
 @Component({
   selector: 'app-custom-select',
   standalone: true,
@@ -11,7 +20,11 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => CustomSelectComponent), multi: true }],
 })
 export class CustomSelectComponent implements ControlValueAccessor {
-  @Input() options: string[] = [];
+  /**
+   * Plain strings when the label is the value, which is most of the time.
+   * `{value, label}` when they differ.
+   */
+  @Input() options: (string | SelectOption)[] = [];
   @Input() placeholder = 'Select...';
   @Input() disabled = false;
 
@@ -34,14 +47,28 @@ export class CustomSelectComponent implements ControlValueAccessor {
     this.onTouched();
   }
 
-  select(opt: string) {
-    this.value.set(opt);
-    this.onChange(opt);
+  select(opt: string | SelectOption) {
+    const v = this.valueOf(opt);
+    this.value.set(v);
+    this.onChange(v);
     this.open.set(false);
   }
 
+  valueOf(opt: string | SelectOption): string {
+    return typeof opt === 'string' ? opt : opt.value;
+  }
+
+  labelOf(opt: string | SelectOption): string {
+    return typeof opt === 'string' ? opt : opt.label;
+  }
+
   get displayValue(): string {
-    return this.value() || this.placeholder;
+    // The stored value is not always what the user picked off the list, so the
+    // trigger has to look the label back up rather than print the value.
+    const current = this.value();
+    if (!current) return this.placeholder;
+    const match = this.options.find(o => this.valueOf(o) === current);
+    return match ? this.labelOf(match) : current;
   }
 
   @HostListener('document:click', ['$event'])

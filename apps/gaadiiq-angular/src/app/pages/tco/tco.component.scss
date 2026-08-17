@@ -349,3 +349,14 @@
   border-radius: 16px;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.28);
 }
+
+// Writes out the subtraction behind the resale figure. Without it the same
+// rupee amount appeared twice under two labels and read as two costs.
+.resale-sum {
+  margin: 0.4rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+
+  strong { color: var(--text); }
+}

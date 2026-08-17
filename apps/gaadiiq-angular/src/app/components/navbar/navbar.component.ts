@@ -26,6 +26,10 @@ export class NavbarComponent {
   userMenuOpen = signal(false);
   cityModalOpen = signal(false);
 
+  /** The Tools group in the desktop bar. Opens on hover, and on click for
+      keyboards and touch, which hover never reaches. */
+  toolsOpen = signal(false);
+
   constructor(
     public auth: AuthService,
     public theme: ThemeService,
@@ -53,6 +57,7 @@ export class NavbarComponent {
 
   toggleMenu() { this.menuOpen.update(v => !v); }
   closeMenu() { this.menuOpen.set(false); }
+  toggleTools() { this.toolsOpen.update(v => !v); }
   toggleUserMenu() { this.userMenuOpen.update(v => !v); }
   openCityModal() { this.cityModalOpen.set(true); }
   closeCityModal() { this.cityModalOpen.set(false); }
