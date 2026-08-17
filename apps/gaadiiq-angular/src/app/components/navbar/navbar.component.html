@@ -14,6 +14,10 @@
       <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI Calc</a></li>
       <li><a routerLink="/car-loan" routerLinkActive="active">Car Loan</a></li>
       <li><a routerLink="/tco" routerLinkActive="active">TCO Calc</a></li>
+      <!-- The seller-side pricing tool. It existed only in the footer and on
+           the home page, so anyone who arrived on any other page had no way to
+           reach it. -->
+      <li><a routerLink="/ai-valuation" routerLinkActive="active">Car Value</a></li>
       <!-- Given its own emphasis: every other item here is something you browse
            at leisure, this one is what you need when the car has already
            stopped. -->
@@ -139,6 +143,7 @@
     <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
     <a routerLink="/car-loan" (click)="closeMenu()">Apply for a Car Loan</a>
     <a routerLink="/tco" (click)="closeMenu()">Cost of Ownership</a>
+    <a routerLink="/ai-valuation" (click)="closeMenu()">What is my car worth?</a>
     <a routerLink="/buyer-journey" (click)="closeMenu()">My Journey</a>
   </nav>
 
