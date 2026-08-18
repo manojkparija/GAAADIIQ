@@ -383,34 +383,103 @@
     <ng-container *ngIf="activeTab()==='test-drives'">
       <h2 class="section-head">Test Drive <span class="gradient-text">Requests</span></h2>
 
-      <div *ngIf="testDriveRequests().length === 0 && !currentSeller()" class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
+      <!--
+        An empty list has two causes and they need different answers. This
+        previously showed one message for both: "Seller profile not found —
+        run 005_sellers.sql". An admin has no seller profile and never needs
+        one, so that fired for the one account it did not apply to, named the
+        wrong migration, and pointed at the wrong problem entirely. The
+        underlying cause was a read policy the page cannot see.
+
+        Split by who is asking, and neither message now claims to know a cause
+        it cannot observe from here.
+      -->
+      <div *ngIf="testDriveRequests().length === 0 && !currentSeller() && !isAdmin()"
+           class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
         <div style="font-size:3rem;margin-bottom:1rem">⚠️</div>
-        <p style="margin-bottom:.5rem;font-weight:600;color:var(--text)">Seller profile not found in database</p>
-        <p>Run migration <code>005_sellers.sql</code> in Supabase SQL Editor to seed seller data, then log out and log back in.</p>
+        <p style="margin-bottom:.5rem;font-weight:600;color:var(--text)">
+          This account isn't linked to a dealer profile
+        </p>
+        <p>
+          Test drive requests are grouped by dealer, so there is nothing to show
+          until <strong>{{ authUser()?.email }}</strong> is attached to one.
+        </p>
       </div>
-      <div *ngIf="testDriveRequests().length === 0 && currentSeller()" class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
+
+      <div *ngIf="testDriveRequests().length === 0 && (currentSeller() || isAdmin())"
+           class="glass-card" style="text-align:center;padding:3rem;color:var(--muted)">
         <div style="font-size:3rem;margin-bottom:1rem">🗝️</div>
         <p>No test drive requests yet. They will appear here as soon as buyers book.</p>
+      </div>
+
+      <!-- What the outcome column is for. Measured off completed drives only:
+           a request still waiting is not a lost deal. -->
+      <div class="td-conversion" *ngIf="testDriveRequests().length > 0">
+        <ng-container *ngIf="testDriveConversion() as c; else noCompleted">
+          <strong>{{ c.pct }}%</strong>
+          <span>of completed test drives became a sale — {{ c.won }} of {{ c.completed }}.</span>
+        </ng-container>
+        <ng-template #noCompleted>
+          <span class="td-conv-none">
+            No completed test drives yet. Mark one Completed and record the deal
+            to start measuring your conversion rate.
+          </span>
+        </ng-template>
       </div>
 
       <div *ngIf="testDriveRequests().length > 0" class="td-table glass-card">
         <div class="td-header">
           <span>Buyer</span>
           <span>Car</span>
-          <span>Date & Time</span>
+          <span>Date &amp; Time</span>
           <span>Phone</span>
-          <span>Location</span>
           <span>Status</span>
+          <span>Deal</span>
           <span>Received</span>
         </div>
+        <!--
+          Status and outcome are editable here because this is the only screen
+          where anyone knows the answer. They were read-only text before, so
+          every request sat on "Pending" for as long as it existed — the
+          screenshot that prompted this had rows 38 days old still pending.
+
+          Location moved out of the row to make space; it is on the request
+          detail and rarely differs from the dealer's own address.
+        -->
         <div class="td-row" *ngFor="let r of testDriveRequests()">
-          <span class="td-name">{{ r.buyer_name }}</span>
+          <span class="td-name">
+            {{ r.buyer_name }}
+            <small class="td-sub" *ngIf="r.location">{{ r.location }}</small>
+          </span>
           <span class="td-car">{{ r.car_make }} {{ r.car_model }} {{ r.car_year }}</span>
           <span class="td-dt">{{ r.preferred_date }} · {{ r.preferred_time }}</span>
           <span class="td-phone"><a [href]="'tel:' + r.buyer_phone">{{ r.buyer_phone }}</a></span>
-          <span class="td-loc">{{ r.location || '—' }}</span>
-          <span class="td-status" [class.pending]="r.status === 'Pending'" [class.confirmed]="r.status === 'Confirmed'">{{ r.status }}</span>
-          <span class="td-time">{{ timeAgo(r.created_at!) }}</span>
+
+          <span class="td-status-cell">
+            <app-custom-select [options]="testDriveStatuses"
+                               [ngModel]="r.status || 'Pending'"
+                               (ngModelChange)="setTestDriveStatus(r, $event)"
+                               [name]="'td_status_' + r.id" />
+          </span>
+
+          <!-- Only once the drive happened. Asking whether a deal closed on an
+               appointment nobody attended invites a meaningless answer, and
+               the conversion rate is read off exactly this pair. -->
+          <span class="td-outcome-cell">
+            <app-custom-select *ngIf="r.status === 'Completed'"
+                               [options]="testDriveOutcomes"
+                               placeholder="Not recorded"
+                               [ngModel]="r.outcome || ''"
+                               (ngModelChange)="setTestDriveOutcome(r, $event)"
+                               [name]="'td_outcome_' + r.id" />
+            <span class="td-outcome-na" *ngIf="r.status !== 'Completed'">—</span>
+          </span>
+
+          <span class="td-time">
+            {{ timeAgo(r.created_at!) }}
+            <small class="td-sub td-saving" *ngIf="savingTestDrive() === r.id">Saving…</small>
+            <small class="td-sub td-failed" *ngIf="testDriveError() === r.id">Not saved</small>
+          </span>
         </div>
       </div>
     </ng-container>

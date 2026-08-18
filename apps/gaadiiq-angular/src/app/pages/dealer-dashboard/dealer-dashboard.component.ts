@@ -3,13 +3,18 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { CarsDataService } from '../../services/cars-data.service';
-import { TestDriveService, TestDriveRequest } from '../../services/test-drive.service';
+import {
+  TestDriveService, TestDriveRequest,
+  TEST_DRIVE_STATUSES, TEST_DRIVE_OUTCOMES,
+} from '../../services/test-drive.service';
 import { AuthService } from '../../services/auth.service';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { SentimentService, Lead, IntentScore, LeadGrade } from '../../services/sentiment.service';
 import { VehicleImageGalleryService } from '../../services/vehicle-image-gallery.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
+import { FormsModule } from '@angular/forms';
 
 interface CarEnquiry {
   id: string; car_id: string; buyer_name: string; buyer_phone: string;
@@ -26,7 +31,7 @@ interface LeadRow {
 @Component({
   selector: 'app-dealer-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, IconComponent],
+  imports: [CommonModule, RouterLink, IconComponent, CustomSelectComponent, FormsModule],
   templateUrl: './dealer-dashboard.component.html',
   styleUrl: './dealer-dashboard.component.scss',
 })
@@ -90,8 +95,58 @@ export class DealerDashboardComponent {
   testDriveCount = computed(() => this.testDriveRequests().length);
   pendingTestDrives = computed(() => this.testDriveRequests().filter(r => r.status === 'Pending'));
 
+  // Plain arrays, not computed(): the option lists never change.
+  readonly testDriveStatuses = [...TEST_DRIVE_STATUSES];
+  readonly testDriveOutcomes = [...TEST_DRIVE_OUTCOMES];
+
+  /** Row currently being written, and the row whose last write failed. */
+  savingTestDrive = signal<number | null>(null);
+  testDriveError = signal<number | null>(null);
+
+  /**
+   * How many completed drives turned into a sale.
+   *
+   * Over completed drives, not over all requests — a request still pending is
+   * not a lost deal, and counting it as one would make every dealer's rate
+   * look worse the more bookings they take. Null until there is something to
+   * divide by, so the card says "no completed drives yet" rather than 0%.
+   */
+  testDriveConversion = computed(() => {
+    const completed = this.testDriveRequests().filter(r => r.status === 'Completed');
+    if (!completed.length) return null;
+    const won = completed.filter(r => r.outcome === 'Won').length;
+    return { won, completed: completed.length, pct: Math.round((won / completed.length) * 100) };
+  });
+
+  async setTestDriveStatus(r: TestDriveRequest, status: string) {
+    if (!r.id || status === r.status) return;
+    await this.writeTestDrive(r, { status });
+  }
+
+  async setTestDriveOutcome(r: TestDriveRequest, outcome: string) {
+    if (!r.id || outcome === (r.outcome ?? '')) return;
+    await this.writeTestDrive(r, { outcome: outcome || null });
+  }
+
+  private async writeTestDrive(
+    r: TestDriveRequest,
+    changes: { status?: string; outcome?: string | null },
+  ) {
+    this.savingTestDrive.set(r.id!);
+    this.testDriveError.set(null);
+    const ok = await this.testDriveSvc.update(r.id!, changes);
+    this.savingTestDrive.set(null);
+    // Surfaced rather than swallowed: row-level security refuses a write by
+    // returning no rows, not by raising, so a silent failure here would look
+    // exactly like a successful save until the page was reloaded.
+    if (!ok) this.testDriveError.set(r.id!);
+  }
+
   currentSeller = signal<Seller | null>(null);
   authUser = computed(() => this.auth.currentUser());
+
+  /** For the template — `auth` itself stays private. */
+  isAdmin = computed(() => this.auth.isAdmin());
   sellerInitials = computed(() => {
     const s = this.currentSeller();
     if (!s) return '??';
