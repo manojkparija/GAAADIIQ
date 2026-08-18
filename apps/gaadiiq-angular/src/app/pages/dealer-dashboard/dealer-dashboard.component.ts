@@ -159,20 +159,18 @@ export class DealerDashboardComponent {
   myCars = computed(() => this.myListingsSvc.listings().filter(l => l.supabaseId != null));
 
   myCarOptions = computed(() => this.myCars().map(l => ({
-    value: String(l.supabaseId),
+    value: l.supabaseId!,
     label: `${l.year} ${l.make} ${l.model}${l.variant ? ' ' + l.variant : ''}`,
   })));
 
-  selectedCarId = signal<number | null>(null);
+  selectedCarId = signal<string | null>(null);
   carImages = this.dealerImages.images;
   carImagesLoading = this.dealerImages.loading;
   carImagesError = this.dealerImages.error;
 
-  /** Exposed for the template, which has to hand the dropdown a string. */
-  String = String;
-
   selectCar(id: string) {
-    const carId = id ? Number(id) : null;
+    // No Number() here: cars.id is a uuid, and coercing it gives NaN.
+    const carId = id || null;
     this.selectedCarId.set(carId);
     if (carId) void this.dealerImages.load(carId);
   }

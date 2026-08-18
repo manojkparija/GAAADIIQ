@@ -326,3 +326,16 @@ Still open:
 - `car_images` had never been declared in a migration — it was made by hand in
   the dashboard, so until `011` its columns and policies existed only in a
   browser session. Worth auditing the other tables for the same.
+
+**The listing photo gallery had never worked.** `car_images.car_id` was
+`bigint` while `cars.id` is `uuid`, so every insert from List Your Car failed
+silently — the table held **zero rows** in production, which was evidence
+rather than an empty product. `011` converts the column, but only while it is
+empty; with rows present it aborts rather than discarding them.
+
+This is the trap CLAUDE.md already names ("cars.id is a UUID in the ORM; Batch
+1 SQL says bigint; the ORM wins") and the first draft of `011` walked into it
+by trusting `MyListing.supabaseId`, declared `number` while holding a uuid
+string at runtime. That declaration is now corrected. **Check the live column
+type, not the TypeScript** — and `ai_valuation.car_id`, written by the same
+flow, has not been checked and may have the same fault.

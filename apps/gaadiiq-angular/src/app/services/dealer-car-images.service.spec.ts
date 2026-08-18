@@ -20,7 +20,7 @@ import { ImageUploadService } from './image-upload.service';
 import { SupabaseService } from './supabase.service';
 
 class FakeSupabase {
-  insertReply: { data: unknown[] | null; error: unknown } = { data: [{ id: 9, car_id: 1, url: 'u', sort_order: 0 }], error: null };
+  insertReply: { data: unknown[] | null; error: unknown } = { data: [{ id: 9, car_id: CAR, url: 'u', sort_order: 0 }], error: null };
   deleteReply: { data: unknown[] | null; error: unknown } = { data: [{ id: 5 }], error: null };
   selectReply: { data: unknown[] | null; error: unknown } = { data: [], error: null };
   lastInsert: unknown[] | null = null;
@@ -47,6 +47,11 @@ class FakeUploader {
   folder = '';
 }
 
+// cars.id is a uuid, not a number. The first version of this feature typed it
+// as a number and called Number() on it, which yields NaN.
+const CAR = '3f7c1e2a-9b40-4d51-8a6e-1c2d3e4f5a6b';
+const OTHER = '8d2b4c6e-1a30-4f52-9c7d-2e3f4a5b6c7d';
+
 const png = (name: string) => new File([new Uint8Array(8)], name, { type: 'image/png' });
 
 describe('DealerCarImagesService', () => {
@@ -68,47 +73,47 @@ describe('DealerCarImagesService', () => {
   });
 
   it('files photos under the car they belong to', async () => {
-    await svc.add(1, [png('front.png')]);
-    expect(up.folder).toBe('listings/1');
+    await svc.add(CAR, [png('front.png')]);
+    expect(up.folder).toBe(`listings/${CAR}`);
   });
 
   it('records each photo against that car', async () => {
-    await svc.add(7, [png('a.png')]);
-    expect((sb.lastInsert as any[])[0].car_id).toBe(7);
+    await svc.add(OTHER, [png('a.png')]);
+    expect((sb.lastInsert as any[])[0].car_id).toBe(OTHER);
   });
 
   it('numbers new photos after the ones already there', async () => {
     svc.images.set([
-      { id: 1, car_id: 1, url: 'x', sort_order: 0 },
-      { id: 2, car_id: 1, url: 'y', sort_order: 1 },
+      { id: 1, car_id: CAR, url: 'x', sort_order: 0 },
+      { id: 2, car_id: CAR, url: 'y', sort_order: 1 },
     ]);
-    await svc.add(1, [png('c.png')]);
+    await svc.add(CAR, [png('c.png')]);
     expect((sb.lastInsert as any[])[0].sort_order).toBe(2);
   });
 
   it('reports failure when the row insert is refused', async () => {
     // Zero rows, no error — how RLS says "not your car".
     sb.insertReply = { data: [], error: null };
-    await expectAsync(svc.add(1, [png('a.png')])).toBeResolvedTo(false);
+    await expectAsync(svc.add(CAR, [png('a.png')])).toBeResolvedTo(false);
     expect(svc.error()).toBeTruthy();
   });
 
   it('does not add a refused photo to the gallery', async () => {
     sb.insertReply = { data: [], error: null };
-    await svc.add(1, [png('a.png')]);
+    await svc.add(CAR, [png('a.png')]);
     expect(svc.images().length).toBe(0);
   });
 
   it('surfaces a storage failure rather than throwing at the caller', async () => {
     up.shouldThrow = true;
-    await expectAsync(svc.add(1, [png('a.png')])).toBeResolvedTo(false);
+    await expectAsync(svc.add(CAR, [png('a.png')])).toBeResolvedTo(false);
     expect(svc.error()).toContain('storage is full');
   });
 
   it('keeps a photo on screen when the delete is refused', async () => {
     // Otherwise it vanishes and returns on the next load, which reads as the
     // app losing the change rather than refusing it.
-    svc.images.set([{ id: 5, car_id: 1, url: 'x', sort_order: 0 }]);
+    svc.images.set([{ id: 5, car_id: CAR, url: 'x', sort_order: 0 }]);
     sb.deleteReply = { data: [], error: null };
 
     await expectAsync(svc.remove(5)).toBeResolvedTo(false);
@@ -117,13 +122,13 @@ describe('DealerCarImagesService', () => {
   });
 
   it('removes a photo the database agreed to delete', async () => {
-    svc.images.set([{ id: 5, car_id: 1, url: 'x', sort_order: 0 }]);
+    svc.images.set([{ id: 5, car_id: CAR, url: 'x', sort_order: 0 }]);
     await expectAsync(svc.remove(5)).toBeResolvedTo(true);
     expect(svc.images().length).toBe(0);
   });
 
   it('does nothing at all when handed no files', async () => {
-    await expectAsync(svc.add(1, [])).toBeResolvedTo(true);
+    await expectAsync(svc.add(CAR, [])).toBeResolvedTo(true);
     expect(sb.lastInsert).toBeNull();
   });
 });

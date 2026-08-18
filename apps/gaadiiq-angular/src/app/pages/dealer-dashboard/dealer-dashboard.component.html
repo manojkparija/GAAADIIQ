@@ -324,7 +324,7 @@
           <label class="aci-label" style="display:block;margin-bottom:.5rem;font-weight:600">Choose a car</label>
           <app-custom-select [options]="myCarOptions()"
                              placeholder="Select one of your cars"
-                             [ngModel]="selectedCarId() ? String(selectedCarId()) : ''"
+                             [ngModel]="selectedCarId() || ''"
                              (ngModelChange)="selectCar($event)"
                              name="dealer_car" />
         </div>

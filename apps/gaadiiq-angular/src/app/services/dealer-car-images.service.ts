@@ -19,7 +19,7 @@ import { ImageUploadService } from './image-upload.service';
 
 export interface DealerCarImage {
   id: number;
-  car_id: number;
+  car_id: string;
   url: string;
   sort_order: number | null;
 }
@@ -35,7 +35,7 @@ export class DealerCarImagesService {
     private uploader: ImageUploadService,
   ) {}
 
-  async load(carId: number): Promise<void> {
+  async load(carId: string): Promise<void> {
     this.loading.set(true);
     this.error.set('');
     const { data, error } = await this.sb.client
@@ -62,7 +62,7 @@ export class DealerCarImagesService {
    * by nobody, and saying so is better than reporting a success the gallery
    * will not show.
    */
-  async add(carId: number, files: File[]): Promise<boolean> {
+  async add(carId: string, files: File[]): Promise<boolean> {
     if (!files.length) return true;
     this.loading.set(true);
     this.error.set('');

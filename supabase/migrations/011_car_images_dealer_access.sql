@@ -17,16 +17,68 @@
 -- interchangeable, which is exactly why the dealer dashboard pointed at the
 -- wrong one and sent dealers to the admin portal to use it.
 
+-- Wrapped in an explicit transaction so a failure leaves nothing half-applied.
+-- The guard below aborts on a column that still holds data; without this, a
+-- client that keeps going past an error would carry on and emit a page of
+-- confusing follow-on failures around the real message.
+BEGIN;
+
+-- Repairing the existing table, and refusing to do it destructively.
+--
+-- Safe only because the column is empty. If rows ever appear under the wrong
+-- type, this stops and says so rather than discarding them: a migration that
+-- deletes a dealer's photographs to fix a column is a worse outcome than one
+-- that fails loudly.
+DO $$
+DECLARE
+  col_type text;
+  row_count bigint;
+BEGIN
+  SELECT data_type INTO col_type
+  FROM information_schema.columns
+  WHERE table_schema = 'public' AND table_name = 'car_images' AND column_name = 'car_id';
+
+  IF col_type IS NOT NULL AND col_type <> 'uuid' THEN
+    EXECUTE 'SELECT count(*) FROM public.car_images' INTO row_count;
+
+    IF row_count > 0 THEN
+      RAISE EXCEPTION
+        'car_images.car_id is % and holds % row(s). Migrate those rows to uuid by hand; this file will not discard them.',
+        col_type, row_count;
+    END IF;
+
+    ALTER TABLE public.car_images ALTER COLUMN car_id TYPE uuid USING NULL;
+    ALTER TABLE public.car_images ALTER COLUMN car_id SET NOT NULL;
+  END IF;
+END $$;
+
+-- THE TYPE MISMATCH
+--
+-- `cars.id` is a uuid. `car_images.car_id` was created as bigint, so the two
+-- could never be compared, let alone joined — and the List Your Car flow has
+-- been inserting a uuid into that bigint column since the day it shipped.
+-- Every one of those inserts failed. The table holds zero rows, which is not
+-- an empty product: it is the evidence.
+--
+-- This is the trap CLAUDE.md already names — "cars.id is a UUID in the ORM.
+-- Batch 1 SQL says bigint; the ORM wins" — and the first version of this file
+-- walked straight into it by trusting the TypeScript, where the id is declared
+-- `number` and holds a uuid string at runtime.
+--
+-- The column is corrected rather than worked around. A cast in every policy
+-- would leave the join permanently wrong and the next reader guessing.
+
 CREATE TABLE IF NOT EXISTS public.car_images (
-  id         serial PRIMARY KEY,
-  car_id     int NOT NULL REFERENCES public.cars(id) ON DELETE CASCADE,
+  id         bigserial PRIMARY KEY,
+  car_id     uuid NOT NULL,
   url        text NOT NULL,
   sort_order int DEFAULT 0,
   created_at timestamptz DEFAULT now()
 );
 
--- Deleting a listing must take its photographs with it. Stated separately
--- because the hand-made table may predate the reference.
+-- Deleting a listing must take its photographs with it. Added after the type
+-- is known to be right, since this is exactly the constraint that failed when
+-- the column was still bigint.
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -103,3 +155,5 @@ CREATE POLICY "car_images_seller_delete" ON public.car_images
         AND p.role = 'admin'
     )
   );
+
+COMMIT;
