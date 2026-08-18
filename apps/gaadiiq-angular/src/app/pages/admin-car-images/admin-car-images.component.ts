@@ -209,8 +209,43 @@ export class AdminCarImagesComponent implements OnInit {
       this.variant.set(custom ? '' : value);
     } else {
       this.customYear.set(custom);
-      this.modelYear.set(custom ? null : Number(value));
+      // The placeholder row sends '', which Number() would turn into the year
+      // 0 — a silent wrong answer rather than an empty field.
+      this.modelYear.set(custom || !value ? null : Number(value));
     }
+  }
+
+  /**
+   * The two year pickers, as {value,label} for app-custom-select.
+   *
+   * These were the last native <select> elements in the app, and the last
+   * dropdowns whose popup the operating system drew in its own colours. They
+   * were left alone because they bound [ngValue] with numbers and null while
+   * the dropdown component stores text; the conversion is done here, at the
+   * boundary, so the signals below still hold `number | null` exactly as the
+   * upload and the image query expect.
+   *
+   * '' is the empty choice in both, and maps back to null.
+   */
+  manageYearSelectOptions = computed(() => [
+    { value: '', label: 'All years' },
+    ...this.manageYearOptions().map(y => ({ value: String(y), label: String(y) })),
+  ]);
+
+  modelYearSelectOptions = computed(() => [
+    { value: '', label: 'Select year…' },
+    ...this.yearOptions().map(y => ({ value: String(y), label: String(y) })),
+    { value: this.ADD_NEW, label: '➕ Add new year…' },
+  ]);
+
+  /** Signal value as the text the dropdown holds. */
+  yearAsText(year: number | null): string {
+    return year === null ? '' : String(year);
+  }
+
+  onManageYear(value: string) {
+    this.manageYear.set(value ? Number(value) : null);
+    void this.loadExistingImages();
   }
 
   /**
