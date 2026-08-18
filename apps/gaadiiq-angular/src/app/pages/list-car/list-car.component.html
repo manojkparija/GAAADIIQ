@@ -26,6 +26,29 @@
     @if (step() === 1) {
       <div class="step-card glass-card">
         <h2>🚗 Car Details</h2>
+
+        <!--
+          Asked first, because it decides which of the questions below make
+          sense. Every listing this form created was recorded as Used, so a
+          dealer with new stock either could not list it or had to invent an
+          owner count and a mileage for a car nobody has driven.
+        -->
+        <div class="form-group full-width">
+          <label>What are you listing?</label>
+          <div class="lt-choice">
+            <button type="button" class="lt-btn" [class.active]="!isNew()"
+                    (click)="setListingType('used')">
+              <span class="lt-title">Used car</span>
+              <span class="lt-sub">A resale — we'll estimate its value</span>
+            </button>
+            <button type="button" class="lt-btn" [class.active]="isNew()"
+                    (click)="setListingType('new')">
+              <span class="lt-title">New car</span>
+              <span class="lt-sub">Unregistered showroom stock</span>
+            </button>
+          </div>
+        </div>
+
         <div class="form-grid">
           <div class="form-group">
             <label>Make (Brand)</label>
@@ -70,20 +93,35 @@
             <label>Color</label>
             <input type="text" [(ngModel)]="form.color" name="color" placeholder="e.g. Pearl White">
           </div>
-          <div class="form-group">
-            <label>Kilometres Driven</label>
-            <input type="number" [(ngModel)]="form.km" name="km" placeholder="e.g. 45000" min="0">
-          </div>
-          <div class="form-group">
-            <label>Number of Owners</label>
-            <app-custom-select [options]="ownerOptions" placeholder="Select owners"
-                               [(ngModel)]="form.owners" name="owners" />
-          </div>
-          <div class="form-group">
-            <label>Car Condition</label>
-            <app-custom-select [options]="conditionOptions" placeholder="Select condition"
-                               [(ngModel)]="form.condition" name="condition" />
-          </div>
+          <!-- Only a resale has these. A new car has no previous owner, no
+               mileage and no condition grade, and storing zeros for them would
+               look like measurements rather than absences. -->
+          @if (!isNew()) {
+            <div class="form-group">
+              <label>Kilometres Driven</label>
+              <input type="number" [(ngModel)]="form.km" name="km" placeholder="e.g. 45000" min="0">
+            </div>
+            <div class="form-group">
+              <label>Number of Owners</label>
+              <app-custom-select [options]="ownerOptions" placeholder="Select owners"
+                                 [(ngModel)]="form.owners" name="owners" />
+            </div>
+            <div class="form-group">
+              <label>Car Condition</label>
+              <app-custom-select [options]="conditionOptions" placeholder="Select condition"
+                                 [(ngModel)]="form.condition" name="condition" />
+            </div>
+          } @else {
+            <div class="form-group">
+              <label>Ex-showroom price (₹)</label>
+              <input type="number" [(ngModel)]="form.exShowroomPrice" name="exShowroomPrice"
+                     placeholder="e.g. 850000" min="0">
+              <small class="lt-hint">
+                Before road tax, insurance and registration. Buyers compare on
+                this figure.
+              </small>
+            </div>
+          }
         </div>
         <!-- AI Valuation result (shown after fetch) -->
         <div class="valuation-banner glass-card" *ngIf="valuation()">
@@ -174,10 +212,19 @@
             <label>City</label>
             <input type="text" [(ngModel)]="form.city" name="city" placeholder="e.g. Mumbai">
           </div>
-          <div class="form-group">
-            <label>Asking Price (₹)</label>
-            <input type="number" [(ngModel)]="form.price" name="price" placeholder="e.g. 750000">
-          </div>
+          @if (!isNew()) {
+            <div class="form-group">
+              <label>Asking Price (₹)</label>
+              <input type="number" [(ngModel)]="form.price" name="price" placeholder="e.g. 750000">
+            </div>
+          } @else {
+            <div class="form-group">
+              <label>Ex-showroom price (₹)</label>
+              <input type="number" [(ngModel)]="form.exShowroomPrice" name="exShowroomPrice2"
+                     placeholder="e.g. 850000">
+              <small class="lt-hint">The figure you entered earlier — change it here if it was wrong.</small>
+            </div>
+          }
         </div>
         <!-- Show AI valuation hint if available -->
         <div class="valuation-banner glass-card" *ngIf="valuation()">
@@ -195,12 +242,13 @@
           <label>Description</label>
           <textarea [(ngModel)]="form.description" name="description" rows="4" placeholder="Describe your car's condition, service history, modifications, reason for selling..."></textarea>
         </div>
-        <div class="ai-hint">
+        <div class="ai-hint" *ngIf="!isNew()">
           🤖 <strong>AI Tip:</strong> Cars with service history and single ownership sell 23% faster at better prices.
         </div>
         <div class="btn-row">
           <button class="btn-outline" (click)="prevStep()">← Back</button>
-          <button class="btn-gradient" (click)="nextStep()" [disabled]="!form.price">Continue →</button>
+          <button class="btn-gradient" (click)="nextStep()"
+                  [disabled]="isNew() ? !form.exShowroomPrice : !form.price">Continue →</button>
         </div>
       </div>
     }

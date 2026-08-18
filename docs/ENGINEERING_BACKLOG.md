@@ -368,3 +368,25 @@ a migration should make on its own. Decide first, then write the file.
 Worth checking every other table the listing flow writes to for the same
 mismatch before assuming it is only these two.
 
+## Listing a new car
+
+The List Your Car form wrote `badge: 'Used', badge_type: 'used'` on every
+submission, hardcoded, and asked Kilometres, Owners and Condition
+unconditionally. A dealer with showroom stock could not list it truthfully.
+
+The API had modelled this all along — `ListingType.new | used` on `listings`,
+and `cars-data.service.ts` already fetches `?listing_type=new`. Only the form
+could not say which. It now asks first and hides the resale fields for new
+stock.
+
+Two loose ends:
+
+- **Ex-showroom price goes into `cars.price`**, not a dedicated column. The
+  backlog above notes `ex_showroom_price` exists on the catalogue side, but this
+  file cannot see the live Supabase `cars` schema and naming a column that is
+  not there fails the whole insert — the mistake `011` already made once. If
+  the column exists, moving to it is one line plus a migration.
+- **New listings still go to Supabase `cars`, not the API's `listings` table.**
+  The two stores continue to diverge, same as test drives. `listing_type` is
+  properly modelled on the side nothing writes to.
+
