@@ -284,51 +284,92 @@
     </ng-container>
 
     <!-- INVENTORY TAB -->
+    <!--
+      Rewritten. This tab used to show the shared catalogue library
+      (vehicle_media) under the heading "Your Car Images", and its only action
+      was a link to /admin/car-images — a page behind adminGuard that no dealer
+      can open. Worse, the endpoint behind it required an admin, so a real
+      dealer got a 403 that rendered as "No images yet": the tab has never
+      worked for the people it is named after.
+
+      It now manages the dealer's own listing photographs, which is what "your
+      car images" should have meant. Nothing here writes to the shared
+      catalogue; a dealer's photo appears on their car only.
+    -->
     <ng-container *ngIf="activeTab()==='inventory'">
       <div class="inventory-header">
-        <h2 class="section-head">Your <span class="gradient-text">Car Images</span></h2>
-        <p class="inventory-sub">Manage and organize your uploaded vehicle photographs</p>
+        <h2 class="section-head">Your <span class="gradient-text">Car Photos</span></h2>
+        <p class="inventory-sub">Add photographs to the cars you have listed. Buyers see these on your listing.</p>
       </div>
 
-      <!-- Loading state -->
-      <div *ngIf="galleryLoading()" class="glass-card" style="padding: 2rem; text-align: center; color: var(--muted)">
-        <div style="font-size: 2rem; margin-bottom: 1rem">📸</div>
-        <p>Loading your images…</p>
+      <div *ngIf="listingsLoading()" class="glass-card" style="padding:2rem;text-align:center;color:var(--muted)">
+        <p>Loading your cars…</p>
       </div>
 
-      <!-- Empty state -->
-      <div *ngIf="!galleryLoading() && galleryImages().length === 0" class="glass-card" style="padding: 3rem; text-align: center;">
-        <div class="inv-icon" style="font-size: 3rem; margin-bottom: 1rem">📁</div>
-        <h3>No images yet</h3>
-        <p style="color: var(--muted); margin-bottom: 1.5rem">Upload your first car image using the admin panel</p>
-        <a routerLink="/admin/car-images" class="btn-gradient">Upload Images →</a>
+      <!-- No cars, so nothing to photograph. Sends them to list one rather
+           than to an admin screen they cannot open. -->
+      <div *ngIf="!listingsLoading() && myCars().length === 0"
+           class="glass-card" style="padding:3rem;text-align:center">
+        <div class="inv-icon" style="font-size:3rem;margin-bottom:1rem">📁</div>
+        <h3>No cars listed yet</h3>
+        <p style="color:var(--muted);margin-bottom:1.5rem">
+          Photos belong to a car, so list one first — you can add its pictures
+          during listing or come back here afterwards.
+        </p>
+        <a routerLink="/list-car" class="btn-gradient">List a Car →</a>
       </div>
 
-      <!-- Gallery -->
-      <div *ngIf="galleryImages().length > 0" class="inventory-gallery">
-        <div class="gallery-stats glass-card">
-          <div class="stat-item">
-            <span class="stat-label">Total Images</span>
-            <span class="stat-value">{{ galleryImages().length }}</span>
-          </div>
+      <div *ngIf="!listingsLoading() && myCars().length > 0" class="inventory-gallery">
+        <div class="glass-card" style="padding:1.25rem;margin-bottom:1.5rem">
+          <label class="aci-label" style="display:block;margin-bottom:.5rem;font-weight:600">Choose a car</label>
+          <app-custom-select [options]="myCarOptions()"
+                             placeholder="Select one of your cars"
+                             [ngModel]="selectedCarId() ? String(selectedCarId()) : ''"
+                             (ngModelChange)="selectCar($event)"
+                             name="dealer_car" />
         </div>
 
-        <div class="image-grid">
-          <div class="image-card" *ngFor="let img of galleryImages()">
-            <div class="img-thumb">
-              <img [src]="img.thumbnail_url || img.url" [alt]="img.filename" />
+        <ng-container *ngIf="selectedCarId()">
+          <div class="gallery-stats glass-card">
+            <div class="stat-item">
+              <span class="stat-label">Photos on this car</span>
+              <span class="stat-value">{{ carImages().length }}</span>
             </div>
-            <div class="img-info">
-              <div class="img-title">{{ img.make }} {{ img.model }}</div>
-              <div class="img-meta">
-                <span *ngIf="img.image_category" class="badge">{{ img.image_category }}</span>
-                <span *ngIf="img.model_year" class="badge">{{ img.model_year }}</span>
+            <label class="btn-gradient" style="cursor:pointer;margin-left:auto">
+              {{ carImagesLoading() ? 'Uploading…' : 'Add photos' }}
+              <input type="file" multiple accept="image/*" hidden
+                     [disabled]="carImagesLoading()"
+                     (change)="onDealerImagePick($event)" />
+            </label>
+          </div>
+
+          <p class="form-error" *ngIf="carImagesError()" style="color:var(--danger-ink,#b91c1c);font-weight:600">
+            {{ carImagesError() }}
+          </p>
+
+          <div *ngIf="!carImagesLoading() && carImages().length === 0"
+               class="glass-card" style="padding:2.5rem;text-align:center;color:var(--muted)">
+            <p>No photos on this car yet. A listing with pictures gets far more enquiries than one without.</p>
+          </div>
+
+          <div class="image-grid" *ngIf="carImages().length > 0">
+            <div class="image-card" *ngFor="let img of carImages(); let i = index">
+              <div class="img-thumb">
+                <img [src]="img.url" [alt]="'Photo ' + (i + 1)" />
               </div>
-              <div class="img-filename">{{ img.filename }}</div>
-              <div class="img-date">{{ (img.created_at | date:'short') }}</div>
+              <div class="img-info">
+                <div class="img-title">Photo {{ i + 1 }}</div>
+                <div class="img-meta">
+                  <!-- The first photo is the one buyers see in search results,
+                       so which one that is should not be a guess. -->
+                  <span class="badge" *ngIf="i === 0">Shown first</span>
+                </div>
+                <button class="btn-outline" style="margin-top:.5rem;font-size:.78rem;padding:.3rem .7rem"
+                        (click)="removeDealerImage(img.id)">Remove</button>
+              </div>
             </div>
           </div>
-        </div>
+        </ng-container>
       </div>
 
       <div class="inventory-cta glass-card" style="margin-top: 2rem">

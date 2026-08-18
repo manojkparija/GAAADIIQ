@@ -297,3 +297,32 @@ Migration 010 inserts the row to match, and the first draft of that migration
 did not — which would have emptied the admin's own Test Drives tab, since every
 request in production belongs to seller 1 or seller 7 and neither is the admin.
 Adding an admin means adding them in both places.
+
+## The dealer dashboard pointed at the wrong image store
+
+Two stores of vehicle photographs exist and they are not interchangeable:
+
+| | `vehicle_media` | `car_images` |
+|---|---|---|
+| Keyed on | make + model + year | one `cars.id` |
+| Appears on | every car of that model, site-wide | that one listing |
+| Written by | admin upload screen | List Your Car, and now the dashboard |
+
+The Inventory tab showed the **catalogue** under the heading "Your Car
+Images", and its only action linked to `/admin/car-images` — behind
+`adminGuard`, so no dealer could open it. Underneath, `/media-admin/dealer-images`
+required `get_admin_user` despite its name, so a real dealer got a 403 the page
+rendered as "No images yet". The tab had never worked for a dealer, and failed
+in the shape of an empty account.
+
+Fixed by pointing the tab at the dealer's own `car_images`. **A dealer must
+never gain write access to `vehicle_media`** — their photograph would appear on
+competitors' listings of the same model, and there is no moderation step.
+
+Still open:
+
+- `/media-admin/dealer-images` still requires an admin. Nothing calls it now,
+  so it is dead rather than broken, but the name still lies.
+- `car_images` had never been declared in a migration — it was made by hand in
+  the dashboard, so until `011` its columns and policies existed only in a
+  browser session. Worth auditing the other tables for the same.
