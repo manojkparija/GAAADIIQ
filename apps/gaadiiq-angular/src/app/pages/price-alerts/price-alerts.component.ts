@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 interface Alert {
   id: string; make: string; model: string; targetPrice: number; email: string; createdAt: string;
@@ -12,7 +13,7 @@ interface Alert {
 @Component({
   selector: 'app-price-alerts',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent],
   templateUrl: './price-alerts.component.html',
   styleUrl: './price-alerts.component.scss'
 })

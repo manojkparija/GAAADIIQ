@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { CarsDataService } from '../../services/cars-data.service';
 import { environment } from '../../../environments/environment';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 interface ApiCatalogueCar {
   id: string;
@@ -57,7 +58,7 @@ interface PriceRow {
 @Component({
   selector: 'app-admin-pricing',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CustomSelectComponent],
   templateUrl: './admin-pricing.component.html',
   styleUrl: './admin-pricing.component.scss'
 })

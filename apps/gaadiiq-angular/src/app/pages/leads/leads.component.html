@@ -38,11 +38,9 @@
                       <span class="pill" [class]="'status-' + b.status">{{ b.status }}</span>
                     </td>
                     <td>
-                      <select [ngModel]="b.status" (ngModelChange)="updateStatus(b, $event)">
-                        @for (s of bookingStatuses; track s) {
-                          <option [value]="s">{{ s }}</option>
-                        }
-                      </select>
+                      <app-custom-select [options]="bookingStatuses" placeholder="Status"
+                                         [ngModel]="b.status"
+                                         (ngModelChange)="updateStatus(b, $event)" />
                     </td>
                   </tr>
                 }

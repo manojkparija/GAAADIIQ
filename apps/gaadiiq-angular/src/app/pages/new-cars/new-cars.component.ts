@@ -49,6 +49,7 @@ interface UpcomingCar {
 }
 
 import { BodyTypeIconComponent } from '../../components/body-type-icon/body-type-icon.component';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 interface BudgetRange {
   label: string;
@@ -59,7 +60,7 @@ interface BudgetRange {
 @Component({
   selector: 'app-new-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, BodyTypeIconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, BodyTypeIconComponent, CustomSelectComponent],
   templateUrl: './new-cars.component.html',
   styleUrl: './new-cars.component.scss'
 })

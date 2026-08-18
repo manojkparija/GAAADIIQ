@@ -5,6 +5,7 @@ import { LogoComponent } from '../../components/logo/logo.component';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 /**
  * What the person signing up is here to do.
@@ -20,7 +21,7 @@ export type AccountType = 'customer' | 'seller' | 'mechanic';
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [LogoComponent, RouterLink, CommonModule, FormsModule, IconComponent],
+  imports: [LogoComponent, RouterLink, CommonModule, FormsModule, IconComponent, CustomSelectComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })

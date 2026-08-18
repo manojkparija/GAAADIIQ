@@ -66,10 +66,8 @@
           </div>
           <div class="form-group">
             <label>Time Slot *</label>
-            <select [(ngModel)]="form.time" name="time">
-              <option value="">Select time</option>
-              <option *ngFor="let t of timeSlots" [value]="t">{{ t }}</option>
-            </select>
+            <app-custom-select [options]="timeSlots" placeholder="Select time"
+                               [(ngModel)]="form.time" name="time" />
           </div>
         </div>
         <div class="form-group">

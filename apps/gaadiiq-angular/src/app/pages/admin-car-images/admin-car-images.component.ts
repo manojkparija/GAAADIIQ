@@ -9,16 +9,35 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { environment } from '../../../environments/environment';
+import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 
 @Component({
   selector: 'app-admin-car-images',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent],
   templateUrl: './admin-car-images.component.html',
   styleUrls: ['./admin-car-images.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminCarImagesComponent implements OnInit {
+
+  /** Which catalogue pages an image appears on. Values are what the API takes. */
+  readonly mediaBucketOptions: SelectOption[] = [
+    { value: 'new', label: 'New Cars only' },
+    { value: 'used', label: 'Used Cars only' },
+    { value: 'both', label: 'Both New & Used' },
+  ];
+
+  /**
+   * Image categories with their display names. The stored value stays the raw
+   * key the API expects; formatCategoryName only ever changes how it reads.
+   */
+  imageCategorySelectOptions(): SelectOption[] {
+    return this.imageCategoryOptions.map(opt => ({
+      value: opt,
+      label: this.formatCategoryName(opt),
+    }));
+  }
   auth = inject(AuthService);
   private supabase = inject(SupabaseService);
   private apiUrl = environment.apiUrl;

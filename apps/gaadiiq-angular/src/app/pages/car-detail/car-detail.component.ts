@@ -196,14 +196,14 @@ import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentiment.service';
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 @Component({
   selector: 'app-car-detail',
   standalone: true,
   imports: [
     CommonModule, RouterLink, FormsModule, IconComponent, ImgFallbackDirective,
-    MarketPositionComponent, VehicleScorecardComponent, ListingActivityComponent,
-  ],
+    MarketPositionComponent, VehicleScorecardComponent, ListingActivityComponent, CustomSelectComponent],
   templateUrl: './car-detail.component.html',
   styleUrl: './car-detail.component.scss'
 })

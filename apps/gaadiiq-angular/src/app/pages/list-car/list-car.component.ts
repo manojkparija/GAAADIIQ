@@ -10,15 +10,33 @@ import { CityService } from '../../services/city.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { ImageUploadService, UploadedImage } from '../../services/image-upload.service';
 import { ValuationResult, computeHeuristicValuation } from '../../utils/valuation-engine';
+import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 
 @Component({
   selector: 'app-list-car',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
+  imports: [RouterLink, CommonModule, FormsModule, IconComponent, CustomSelectComponent],
   templateUrl: './list-car.component.html',
   styleUrl: './list-car.component.scss'
 })
 export class ListCarComponent {
+
+  /** The dropdown stores text; `form.year` is read back with `+` downstream. */
+  yearStrings(): string[] {
+    return this.years.map(String);
+  }
+
+  /**
+   * The stored value is the bare grade the valuation engine matches on; the
+   * label is the sentence that tells a seller what the grade means.
+   */
+  readonly conditionOptions: SelectOption[] = [
+    { value: 'Excellent', label: 'Excellent — Like new, no issues' },
+    { value: 'Good', label: 'Good — Minor wear, fully functional' },
+    { value: 'Fair', label: 'Fair — Visible wear, needs minor work' },
+    { value: 'Needs Work', label: 'Needs Work — Major repairs needed' },
+  ];
+
   step = signal(1);
   totalSteps = 4;
   submitted = signal(false);

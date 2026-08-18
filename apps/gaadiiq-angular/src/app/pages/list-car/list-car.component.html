@@ -29,52 +29,42 @@
         <div class="form-grid">
           <div class="form-group">
             <label>Make (Brand)</label>
-            <select [(ngModel)]="form.make" name="make" (ngModelChange)="onMakeChange()">
-              <option value="">Select brand</option>
-              @for (m of makes; track m) { <option [value]="m">{{ m }}</option> }
-            </select>
+            <app-custom-select [options]="makes" placeholder="Select brand"
+                               [(ngModel)]="form.make" name="make"
+                               (ngModelChange)="onMakeChange()" />
           </div>
           <div class="form-group">
             <label>Model</label>
-            <select [(ngModel)]="form.model" name="model" (ngModelChange)="onModelChange()" [disabled]="!form.make || availableModels.length === 0">
-              <option value="">Select model</option>
-              @for (m of availableModels; track m) { <option [value]="m">{{ m }}</option> }
-              @if (availableModels.length === 0) { <option value="" disabled>Select a brand first</option> }
-            </select>
+            <app-custom-select [options]="availableModels" placeholder="Select model"
+                               [(ngModel)]="form.model" name="model"
+                               [disabled]="!form.make || availableModels.length === 0"
+                               (ngModelChange)="onModelChange()" />
           </div>
           <div class="form-group">
             <label>Variant <span style="color:var(--muted);font-size:0.8rem">(optional)</span></label>
-            <select [(ngModel)]="form.variant" name="variant" [disabled]="!form.model || availableVariants.length === 0">
-              <option value="">Select variant</option>
-              @for (v of availableVariants; track v) { <option [value]="v">{{ v }}</option> }
-            </select>
+            <app-custom-select [options]="availableVariants" placeholder="Select variant"
+                               [(ngModel)]="form.variant" name="variant"
+                               [disabled]="!form.model || availableVariants.length === 0" />
           </div>
           <div class="form-group">
             <label>Year</label>
-            <select [(ngModel)]="form.year" name="year">
-              @for (y of years; track y) { <option [value]="y">{{ y }}</option> }
-            </select>
+            <app-custom-select [options]="yearStrings()" placeholder="Select year"
+                               [(ngModel)]="form.year" name="year" />
           </div>
           <div class="form-group">
             <label>Body Type</label>
-            <select [(ngModel)]="form.bodyType" name="bodyType">
-              <option value="">Select type</option>
-              @for (b of bodyTypes; track b) { <option [value]="b">{{ b }}</option> }
-            </select>
+            <app-custom-select [options]="bodyTypes" placeholder="Select type"
+                               [(ngModel)]="form.bodyType" name="bodyType" />
           </div>
           <div class="form-group">
             <label>Fuel Type</label>
-            <select [(ngModel)]="form.fuel" name="fuel">
-              <option value="">Select fuel</option>
-              @for (f of fuelTypes; track f) { <option [value]="f">{{ f }}</option> }
-            </select>
+            <app-custom-select [options]="fuelTypes" placeholder="Select fuel"
+                               [(ngModel)]="form.fuel" name="fuel" />
           </div>
           <div class="form-group">
             <label>Transmission</label>
-            <select [(ngModel)]="form.transmission" name="transmission">
-              <option value="">Select transmission</option>
-              @for (t of transmissions; track t) { <option [value]="t">{{ t }}</option> }
-            </select>
+            <app-custom-select [options]="transmissions" placeholder="Select transmission"
+                               [(ngModel)]="form.transmission" name="transmission" />
           </div>
           <div class="form-group">
             <label>Color</label>
@@ -86,20 +76,13 @@
           </div>
           <div class="form-group">
             <label>Number of Owners</label>
-            <select [(ngModel)]="form.owners" name="owners">
-              <option value="">Select owners</option>
-              @for (o of ownerOptions; track o) { <option [value]="o">{{ o }}</option> }
-            </select>
+            <app-custom-select [options]="ownerOptions" placeholder="Select owners"
+                               [(ngModel)]="form.owners" name="owners" />
           </div>
           <div class="form-group">
             <label>Car Condition</label>
-            <select [(ngModel)]="form.condition" name="condition">
-              <option value="">Select condition</option>
-              <option value="Excellent">Excellent — Like new, no issues</option>
-              <option value="Good">Good — Minor wear, fully functional</option>
-              <option value="Fair">Fair — Visible wear, needs minor work</option>
-              <option value="Needs Work">Needs Work — Major repairs needed</option>
-            </select>
+            <app-custom-select [options]="conditionOptions" placeholder="Select condition"
+                               [(ngModel)]="form.condition" name="condition" />
           </div>
         </div>
         <!-- AI Valuation result (shown after fetch) -->

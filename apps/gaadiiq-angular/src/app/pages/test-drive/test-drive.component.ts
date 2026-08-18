@@ -9,11 +9,12 @@ import { SellersService } from '../../services/sellers.service';
 import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentiment.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 @Component({
   selector: 'app-test-drive',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ImgFallbackDirective],
+  imports: [CommonModule, FormsModule, RouterLink, ImgFallbackDirective, CustomSelectComponent],
   templateUrl: './test-drive.component.html',
   styleUrl: './test-drive.component.scss'
 })

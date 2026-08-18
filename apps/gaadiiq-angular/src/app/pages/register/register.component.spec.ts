@@ -134,6 +134,20 @@ describe('RegisterComponent account types', () => {
     expect(component.totalSteps()).toBe(2);
   });
 
+  it('uses the app dropdown for budget, not a native select', () => {
+    // A native <select> popup is drawn by the operating system, so it ignores
+    // the site's colours entirely on Windows. Step 3 is where the budget
+    // question lives, which is why it is not visible on first render.
+    component.accountType.set('customer');
+    component.step.set(3);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-custom-select'))
+      .withContext('budget is still a native select').not.toBeNull();
+    expect(fixture.nativeElement.querySelector('select'))
+      .withContext('a native select survived on this page').toBeNull();
+  });
+
   it('renders a Mechanic chip on the picker', () => {
     // The picker lives on step 1, beside name and email.
     component.step.set(1);

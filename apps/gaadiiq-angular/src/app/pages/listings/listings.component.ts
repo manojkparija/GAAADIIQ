@@ -6,6 +6,7 @@ import { CarCardComponent } from '../../components/car-card/car-card.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
+import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 
 interface NewCarModel {
   make: string; model: string; image: string;
@@ -18,7 +19,7 @@ interface NewCarModel {
 @Component({
   selector: 'app-listings',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CarCardComponent, IconComponent, ImgFallbackDirective],
+  imports: [CommonModule, FormsModule, RouterLink, CarCardComponent, IconComponent, ImgFallbackDirective, CustomSelectComponent],
   templateUrl: './listings.component.html',
   styleUrl: './listings.component.scss'
 })
