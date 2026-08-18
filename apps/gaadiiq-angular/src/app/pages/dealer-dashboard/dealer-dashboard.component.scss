@@ -260,6 +260,33 @@
   &.confirmed { background: #dcfce7; color: #166534; }
 }
 
+// The dropdowns sit in a tight row, so they lose the standard field padding
+// and shadow. Minimum widths stop the two columns jumping about as the chosen
+// word changes length.
+.td-status-cell  { min-width: 132px; }
+.td-outcome-cell { min-width: 124px; }
+.td-status-cell, .td-outcome-cell {
+  ::ng-deep .cs-trigger {
+    padding: 5px 9px; font-size: 0.78rem; box-shadow: none;
+  }
+}
+.td-outcome-na { color: var(--muted); }
+
+// Secondary line inside a cell: the buyer's location, and the save state.
+.td-sub {
+  display: block; font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem;
+}
+.td-saving { color: var(--primary); }
+.td-failed { color: var(--danger-ink, #b91c1c); font-weight: 600; }
+
+// Conversion summary above the table.
+.td-conversion {
+  display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;
+  margin-bottom: 1rem; font-size: 0.85rem; color: var(--muted);
+  strong { font-size: 1.35rem; color: var(--text); }
+  .td-conv-none { font-style: italic; }
+}
+
 /* ── SENTIMENT / AI LEADS ── */
 .ollama-badge {
   display: inline-block; font-size: 0.7rem; font-weight: 700;

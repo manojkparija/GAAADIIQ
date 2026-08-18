@@ -260,3 +260,31 @@ Dormant until data arrives:
 Housekeeping: delete the synthetic test mechanic
 (`DELETE FROM mechanics WHERE phone = '9800000001';` — carries a fake Aadhaar
 hash), and disconnect the Railway GitHub App from the Railway dashboard.
+
+## Test drives exist twice
+
+There are two unrelated test-drive systems, and the working code is on the
+table nobody reads.
+
+| | FastAPI | Supabase |
+|---|---|---|
+| Table | `test_drive_bookings` | `test_drive_requests` |
+| Status | `BookingStatus` enum | free text |
+| Update path | `PATCH /bookings/{id}/status`, ownership-checked | *(added 010)* |
+| Who reads it | nothing in the web app | the dealer dashboard |
+
+`TestDriveService` talks to Supabase directly. The FastAPI endpoint has been
+correct the whole time and has never been called from the dashboard, which is
+why the status looked unchangeable: the control was missing on one side and
+the RLS policy on the other.
+
+Migration `010` closed the immediate gap — `status` and a separate `outcome`
+(Won / Lost / Deciding), an UPDATE policy, and a read policy that is no longer
+`USING (true)`. **The duplication itself is untouched.** Anything written on
+the Supabase side is invisible to the API, so `test_drive_bookings` is now the
+staler of the two. Picking one is real work and needs a data migration; until
+then, do not add features to whichever half you happen to open first.
+
+Also note `sellers` has no `auth.uid()` column, so the new policies match a
+seller on **email** from the JWT. That works, but it means changing a seller's
+email silently changes what they can see.

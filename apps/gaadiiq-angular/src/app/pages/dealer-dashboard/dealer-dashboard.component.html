@@ -393,24 +393,74 @@
         <p>No test drive requests yet. They will appear here as soon as buyers book.</p>
       </div>
 
+      <!-- What the outcome column is for. Measured off completed drives only:
+           a request still waiting is not a lost deal. -->
+      <div class="td-conversion" *ngIf="testDriveRequests().length > 0">
+        <ng-container *ngIf="testDriveConversion() as c; else noCompleted">
+          <strong>{{ c.pct }}%</strong>
+          <span>of completed test drives became a sale — {{ c.won }} of {{ c.completed }}.</span>
+        </ng-container>
+        <ng-template #noCompleted>
+          <span class="td-conv-none">
+            No completed test drives yet. Mark one Completed and record the deal
+            to start measuring your conversion rate.
+          </span>
+        </ng-template>
+      </div>
+
       <div *ngIf="testDriveRequests().length > 0" class="td-table glass-card">
         <div class="td-header">
           <span>Buyer</span>
           <span>Car</span>
-          <span>Date & Time</span>
+          <span>Date &amp; Time</span>
           <span>Phone</span>
-          <span>Location</span>
           <span>Status</span>
+          <span>Deal</span>
           <span>Received</span>
         </div>
+        <!--
+          Status and outcome are editable here because this is the only screen
+          where anyone knows the answer. They were read-only text before, so
+          every request sat on "Pending" for as long as it existed — the
+          screenshot that prompted this had rows 38 days old still pending.
+
+          Location moved out of the row to make space; it is on the request
+          detail and rarely differs from the dealer's own address.
+        -->
         <div class="td-row" *ngFor="let r of testDriveRequests()">
-          <span class="td-name">{{ r.buyer_name }}</span>
+          <span class="td-name">
+            {{ r.buyer_name }}
+            <small class="td-sub" *ngIf="r.location">{{ r.location }}</small>
+          </span>
           <span class="td-car">{{ r.car_make }} {{ r.car_model }} {{ r.car_year }}</span>
           <span class="td-dt">{{ r.preferred_date }} · {{ r.preferred_time }}</span>
           <span class="td-phone"><a [href]="'tel:' + r.buyer_phone">{{ r.buyer_phone }}</a></span>
-          <span class="td-loc">{{ r.location || '—' }}</span>
-          <span class="td-status" [class.pending]="r.status === 'Pending'" [class.confirmed]="r.status === 'Confirmed'">{{ r.status }}</span>
-          <span class="td-time">{{ timeAgo(r.created_at!) }}</span>
+
+          <span class="td-status-cell">
+            <app-custom-select [options]="testDriveStatuses"
+                               [ngModel]="r.status || 'Pending'"
+                               (ngModelChange)="setTestDriveStatus(r, $event)"
+                               [name]="'td_status_' + r.id" />
+          </span>
+
+          <!-- Only once the drive happened. Asking whether a deal closed on an
+               appointment nobody attended invites a meaningless answer, and
+               the conversion rate is read off exactly this pair. -->
+          <span class="td-outcome-cell">
+            <app-custom-select *ngIf="r.status === 'Completed'"
+                               [options]="testDriveOutcomes"
+                               placeholder="Not recorded"
+                               [ngModel]="r.outcome || ''"
+                               (ngModelChange)="setTestDriveOutcome(r, $event)"
+                               [name]="'td_outcome_' + r.id" />
+            <span class="td-outcome-na" *ngIf="r.status !== 'Completed'">—</span>
+          </span>
+
+          <span class="td-time">
+            {{ timeAgo(r.created_at!) }}
+            <small class="td-sub td-saving" *ngIf="savingTestDrive() === r.id">Saving…</small>
+            <small class="td-sub td-failed" *ngIf="testDriveError() === r.id">Not saved</small>
+          </span>
         </div>
       </div>
     </ng-container>
