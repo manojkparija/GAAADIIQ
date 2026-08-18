@@ -97,3 +97,96 @@ describe('NavbarComponent mobile menu', () => {
     expect(links).toContain('/admin/mechanics');
   });
 });
+
+/**
+ * The account menu behind the avatar.
+ *
+ * Reported as "so many options are here, please analyse and rearrange": it was
+ * a flat list of fourteen rows mixing personal settings with site-wide admin
+ * tools. Rearranging it surfaced two faults worth pinning down, because both
+ * are the kind that reappear when someone adds the next menu entry.
+ */
+describe('NavbarComponent account menu', () => {
+  let fixture: any;
+  let component: any;
+  let auth: AuthService;
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      imports: [NavbarComponent],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    fixture = TestBed.createComponent(NavbarComponent);
+    component = fixture.componentInstance;
+    auth = TestBed.inject(AuthService);
+  });
+
+  afterEach(() => localStorage.clear());
+
+  const signIn = (role: string) => {
+    auth.currentUser.set({ id: 'u1', email: 'u@example.com', name: 'User', role } as any);
+    fixture.detectChanges();
+  };
+
+  /** Open the avatar dropdown and hand it back. */
+  const openAccount = (): HTMLElement => {
+    component.userMenuOpen.set(true);
+    fixture.detectChanges();
+    return fixture.nativeElement.querySelector('.user-dropdown') as HTMLElement;
+  };
+
+  const routes = (el: HTMLElement) =>
+    Array.from(el.querySelectorAll('a')).map(a => a.getAttribute('routerLink') ?? a.getAttribute('href'));
+
+  it('never lists the same page twice', () => {
+    // /list-car appeared as both "List Your Car" and "Sell My Car" — one page
+    // under two names, which reads as two different features.
+    for (const role of ['customer', 'seller', 'admin']) {
+      signIn(role);
+      const links = routes(openAccount()).filter(Boolean) as string[];
+      const seen = links.filter((r, i) => links.indexOf(r) !== i);
+      expect(seen).withContext(`${role} sees a duplicated route: ${seen.join(', ')}`).toEqual([]);
+    }
+  });
+
+  it('still gives every signed-in role a way to list a car', () => {
+    // The de-duplication must not remove the entry point along with the copy.
+    for (const role of ['customer', 'seller', 'admin']) {
+      signIn(role);
+      expect(routes(openAccount())).withContext(role).toContain('/list-car');
+    }
+  });
+
+  it('groups the seller and admin tools under headings', () => {
+    signIn('admin');
+    const headings = Array.from(openAccount().querySelectorAll('.dropdown-group'))
+      .map(h => h.textContent!.trim());
+    expect(headings).toEqual(['Selling', 'Admin']);
+  });
+
+  it('shows a plain customer no headings at all', () => {
+    // Three rows need no signposting; headings over a short list are noise.
+    signIn('customer');
+    const menu = openAccount();
+    expect(menu.querySelectorAll('.dropdown-group').length).toBe(0);
+    expect(routes(menu)).not.toContain('/analytics');
+  });
+
+  it('reaches the same pages on a phone as on the desktop', () => {
+    // The mobile menu had drifted: My Profile, Notifications, Leads and
+    // Analytics existed only in the desktop dropdown, so on a phone those four
+    // pages could not be opened at all.
+    signIn('admin');
+    const desktop = new Set(routes(openAccount()).filter(Boolean) as string[]);
+
+    component.menuOpen.set(true);
+    fixture.detectChanges();
+    const mobile = new Set(
+      routes(fixture.nativeElement.querySelector('.mobile-menu')).filter(Boolean) as string[],
+    );
+
+    const missing = [...desktop].filter(r => !mobile.has(r));
+    expect(missing).withContext(`unreachable on a phone: ${missing.join(', ')}`).toEqual([]);
+  });
+});

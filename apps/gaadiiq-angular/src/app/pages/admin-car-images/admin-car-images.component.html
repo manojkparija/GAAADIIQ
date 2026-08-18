@@ -175,19 +175,12 @@
 
           <div class="aci-form-field">
             <label class="aci-label">Year (optional)</label>
-            <!-- Still a native select. This one binds [ngValue] with null and
-                 numbers rather than strings, and the app dropdown stores text;
-                 converting it means coercing both ways in a screen no test
-                 covers and no reviewer can reach without an admin account.
-                 Left as it is rather than risked. -->
-            <select class="aci-input" [ngModel]="manageYear()"
-                    (ngModelChange)="manageYear.set($event); loadExistingImages()"
-                    [disabled]="!manageModel()">
-              <option [ngValue]="null">All years</option>
-              @for (opt of manageYearOptions(); track opt) {
-                <option [ngValue]="opt">{{ opt }}</option>
-              }
-            </select>
+            <app-custom-select [options]="manageYearSelectOptions()"
+                               placeholder="All years"
+                               [disabled]="!manageModel()"
+                               [ngModel]="yearAsText(manageYear())"
+                               (ngModelChange)="onManageYear($event)"
+                               name="manage_year" />
           </div>
         </div>
 
@@ -331,14 +324,11 @@
             <div class="aci-form-field">
               <label class="aci-label">Year *</label>
               @if (!customYear() && yearOptions().length) {
-                <select class="aci-input" [ngModel]="modelYear()"
-                        (ngModelChange)="onIdentityPick('year', $event)">
-                  <option [ngValue]="null">Select year…</option>
-                  @for (opt of yearOptions(); track opt) {
-                    <option [ngValue]="opt">{{ opt }}</option>
-                  }
-                  <option [ngValue]="ADD_NEW">➕ Add new year…</option>
-                </select>
+                <app-custom-select [options]="modelYearSelectOptions()"
+                                   placeholder="Select year…"
+                                   [ngModel]="yearAsText(modelYear())"
+                                   (ngModelChange)="onIdentityPick('year', $event)"
+                                   name="model_year" />
               } @else {
                 <input class="aci-input" type="number" [(ngModel)]="modelYear"
                        placeholder="e.g., 2026" />

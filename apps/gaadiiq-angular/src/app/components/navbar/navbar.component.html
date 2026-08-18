@@ -45,36 +45,62 @@
             <app-icon name="chevron-down" [size]="13" class="chevron"></app-icon>
           </button>
           <div class="user-dropdown" *ngIf="userMenuOpen()">
+            <!--
+              Grouped, because a flat list of fourteen makes the reader scan
+              every row to find one. The groups follow who the item is for:
+              your own account, then running a listing, then site-wide admin.
+              Headings only appear when the group below them does, so a plain
+              customer sees three rows and no headings at all.
+            -->
             <div class="dropdown-email">{{ auth.currentUser()?.email }}</div>
+
             <a routerLink="/profile" (click)="userMenuOpen.set(false)" class="dropdown-item">
               <app-icon name="user" [size]="14"></app-icon> My Profile
             </a>
             <a routerLink="/notifications" (click)="userMenuOpen.set(false)" class="dropdown-item">
               <app-icon name="bell" [size]="14"></app-icon> Notifications
             </a>
+
+            <!-- The one entry to /list-car. It used to appear twice, as
+                 "List Your Car" and again as "Sell My Car" — same page, two
+                 names, which reads as two different things. Sellers get the
+                 wording in their group below; everyone else gets it here,
+                 since selling a car is how they become a seller. -->
+            <a *ngIf="!auth.isSeller() && !auth.isAdmin()"
+               routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">
+              <app-icon name="car" [size]="14"></app-icon> Sell My Car
+            </a>
+
             <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
+              <div class="dropdown-group">Selling</div>
+              <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                <app-icon name="car" [size]="14"></app-icon> My Listings
+              </a>
+              <a routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                <app-icon name="plus" [size]="14"></app-icon> List a Car
+              </a>
               <a routerLink="/leads" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="mail" [size]="14"></app-icon> Leads
               </a>
               <a routerLink="/analytics" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="bar-chart" [size]="14"></app-icon> Analytics
               </a>
-              <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">
-                <app-icon name="car" [size]="14"></app-icon> My Listings
-              </a>
-              <a routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">
-                <app-icon name="plus" [size]="14"></app-icon> List Your Car
-              </a>
               <a routerLink="/dealer-dashboard" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="building-2" [size]="14"></app-icon> Dealer Dashboard
               </a>
             </ng-container>
+
             <ng-container *ngIf="auth.isAdmin()">
+              <div class="dropdown-group">Admin</div>
               <a routerLink="/admin/pricing" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="indian-rupee" [size]="14"></app-icon> Price Manager
               </a>
+              <!-- camera and upload, not image and file-text: those two names
+                   are not in the icon set, so both rows rendered with an empty
+                   gap where the glyph should be and sat out of line with the
+                   rest of the menu. -->
               <a routerLink="/admin/car-images" (click)="userMenuOpen.set(false)" class="dropdown-item">
-                <app-icon name="image" [size]="14"></app-icon> Car Images
+                <app-icon name="camera" [size]="14"></app-icon> Car Images
               </a>
               <a routerLink="/admin/variants" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="settings" [size]="14"></app-icon> Variants
@@ -83,15 +109,12 @@
                 <app-icon name="wrench" [size]="14"></app-icon> Mechanics
               </a>
               <a routerLink="/admin/pdf-ingestion" (click)="userMenuOpen.set(false)" class="dropdown-item">
-                <app-icon name="file-text" [size]="14"></app-icon> File Ingestion
+                <app-icon name="upload" [size]="14"></app-icon> File Ingestion
               </a>
             </ng-container>
-            <a routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">
-              <app-icon name="car" [size]="14"></app-icon> Sell My Car
-            </a>
-            <a routerLink="/compare" (click)="userMenuOpen.set(false)" class="dropdown-item">
-              <app-icon name="scale" [size]="14"></app-icon> Compare Cars
-            </a>
+
+            <!-- Compare Cars is gone: it is already in the main navbar, two
+                 inches to the left of this menu. -->
             <button class="dropdown-item logout" (click)="logout()">
               <app-icon name="log-out" [size]="14"></app-icon> Sign Out
             </button>
@@ -181,10 +204,22 @@
     </ng-container>
 
     <ng-container *ngIf="auth.isLoggedIn()">
+      <!-- Same groups and the same items as the desktop menu. This list had
+           drifted: it was missing My Profile, Notifications, Leads and
+           Analytics entirely, so those four pages could not be reached at all
+           on a phone. -->
       <p class="mm-head">{{ auth.currentUser()?.name || 'Account' }}</p>
-      <a routerLink="/list-car" (click)="closeMenu()" class="mm-item">Sell My Car</a>
+      <a routerLink="/profile" (click)="closeMenu()" class="mm-item">My Profile</a>
+      <a routerLink="/notifications" (click)="closeMenu()" class="mm-item">Notifications</a>
+      <a *ngIf="!auth.isSeller() && !auth.isAdmin()"
+         routerLink="/list-car" (click)="closeMenu()" class="mm-item">Sell My Car</a>
+
       <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
+        <p class="mm-head">Selling</p>
         <a routerLink="/my-listings" (click)="closeMenu()" class="mm-item">My Listings</a>
+        <a routerLink="/list-car" (click)="closeMenu()" class="mm-item">List a Car</a>
+        <a routerLink="/leads" (click)="closeMenu()" class="mm-item">Leads</a>
+        <a routerLink="/analytics" (click)="closeMenu()" class="mm-item">Analytics</a>
         <a routerLink="/dealer-dashboard" (click)="closeMenu()" class="mm-item">Dealer Dashboard</a>
       </ng-container>
       <ng-container *ngIf="auth.isAdmin()">
