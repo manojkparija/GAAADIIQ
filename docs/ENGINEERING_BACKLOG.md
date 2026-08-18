@@ -288,3 +288,12 @@ then, do not add features to whichever half you happen to open first.
 Also note `sellers` has no `auth.uid()` column, so the new policies match a
 seller on **email** from the JWT. That works, but it means changing a seller's
 email silently changes what they can see.
+
+**Admin is defined in two places and only one of them is enforced.**
+`environment.prod.ts` has `adminEmails: ['manojkparija@gaadiiq.com']`, which
+lives in the Angular bundle and decides which links to draw. Row-level security
+runs in Postgres and cannot see it, so it reads `user_profiles.role = 'admin'`.
+Migration 010 inserts the row to match, and the first draft of that migration
+did not — which would have emptied the admin's own Test Drives tab, since every
+request in production belongs to seller 1 or seller 7 and neither is the admin.
+Adding an admin means adding them in both places.

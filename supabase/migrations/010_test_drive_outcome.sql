@@ -62,6 +62,23 @@ END $$;
 -- authenticated user and a sellers row — `sellers` has no auth.uid() column.
 -- That is worth fixing, but not by holding this behind it.
 
+-- Admin has to exist in the database before a policy can ask about it.
+--
+-- Until now "who is an admin" lived only in the Angular bundle, in
+-- environment.prod.ts's `adminEmails`. That is fine for deciding which links
+-- to draw and useless for row-level security, which runs in Postgres and has
+-- never heard of it. Checked against the live data before writing this: every
+-- test drive request belongs to seller 1 (rajesh@rkmotors.in) or seller 7
+-- (deepa@raoauto.in), so the account that actually reads this dashboard sees
+-- those rows purely by being admin. Without the row below, switching the read
+-- policy on would empty the tab.
+--
+-- Keep this list and environment.prod.ts's `adminEmails` in step. They are two
+-- halves of one answer, and the database half is the one that is enforced.
+INSERT INTO public.user_profiles (email, name, role)
+VALUES ('manojkparija@gaadiiq.com', 'Manoj Parija', 'admin')
+ON CONFLICT (email) DO UPDATE SET role = 'admin';
+
 -- Dropped before each CREATE so the file can be applied twice. Postgres has no
 -- CREATE POLICY IF NOT EXISTS, and a re-run that dies half way through is
 -- worse than one that does nothing.
