@@ -42,25 +42,27 @@
 
   &.placeholder-opt { color: var(--text-muted); }
 
+  // The exact gradient the primary buttons and tabs use, so a highlighted row
+  // reads as the same control family rather than a near-miss of it. A darkened
+  // version was tried first and was rejected on sight: close enough to look
+  // like a mistake, not close enough to look deliberate.
+  //
+  // CONTRAST, MEASURED: white gives 5.17:1 on the #2563EB end and 2.49:1 on
+  // the #14B8A6 end; a dark ink reverses it, 3.16:1 on blue against 6.56:1 on
+  // teal. The ramp spans too much luminance for any one text colour to clear
+  // AA across it, so the right-hand end of a highlighted row is below AA. This
+  // is the same trade every primary button in the app already makes — the row
+  // now matches them rather than being the one place that diverges. Revisit by
+  // narrowing the ramp, not by re-darkening it.
+  $cs-highlight: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+
   &:hover {
-    // Blue to teal, matching the tab underline and the hero gradients.
-    //
-    // The endpoints are the deep ends of both hues, not the brand tones: white
-    // text sits on this bar, and it measures 5.9:1 on the blue end and 4.8:1
-    // on the teal. The brand teal #14B8A6 would give 2.3:1 — the reason this
-    // was a flat dark teal for a while, which lost the gradient entirely.
-    background: linear-gradient(90deg, #1D4ED8 0%, #146C7E 55%, #0F766E 100%);
+    background: $cs-highlight;
     color: #fff;
   }
 
   &.selected {
-    // Blue to teal, matching the tab underline and the hero gradients.
-    //
-    // The endpoints are the deep ends of both hues, not the brand tones: white
-    // text sits on this bar, and it measures 5.9:1 on the blue end and 4.8:1
-    // on the teal. The brand teal #14B8A6 would give 2.3:1 — the reason this
-    // was a flat dark teal for a while, which lost the gradient entirely.
-    background: linear-gradient(90deg, #1D4ED8 0%, #146C7E 55%, #0F766E 100%);
+    background: $cs-highlight;
     color: #fff; font-weight: 600;
   }
 }
