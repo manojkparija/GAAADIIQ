@@ -339,3 +339,32 @@ by trusting `MyListing.supabaseId`, declared `number` while holding a uuid
 string at runtime. That declaration is now corrected. **Check the live column
 type, not the TypeScript** — and `ai_valuation.car_id`, written by the same
 flow, has not been checked and may have the same fault.
+
+## `ai_valuation` has the same fault, and it is not empty
+
+Checked after `car_images` turned up a uuid/bigint mismatch. `ai_valuation.car_id`
+is **bigint** against a uuid `cars.id`, and the table holds **116 rows**.
+
+Both halves of that are bad, in different ways:
+
+- The 116 rows cannot have come from the current List Your Car flow, which
+  writes a uuid — that insert fails against a bigint column. They are legacy,
+  from when `cars.id` was still bigint. So they point at car ids that no longer
+  exist: **stored valuations detached from their cars**.
+- New valuations from that flow are failing silently, exactly as the images were.
+
+Confirm the first half with:
+
+```sql
+SELECT count(*) AS orphaned FROM public.ai_valuation v
+WHERE NOT EXISTS (SELECT 1 FROM public.cars c WHERE c.id::text = v.car_id::text);
+```
+
+**Deliberately not migrated.** `car_images` was safe to convert because it was
+empty. Converting this one means either discarding 116 rows or inventing a
+mapping back to cars that no longer carry those ids, and neither is a decision
+a migration should make on its own. Decide first, then write the file.
+
+Worth checking every other table the listing flow writes to for the same
+mismatch before assuming it is only these two.
+
