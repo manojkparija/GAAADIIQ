@@ -220,11 +220,8 @@
 
           <div class="field">
             <label>Employment *</label>
-            <select [(ngModel)]="form.employment_type" name="employment_type">
-              <option value="salaried">Salaried</option>
-              <option value="self_employed">Self-employed professional</option>
-              <option value="business">Business owner</option>
-            </select>
+            <app-custom-select [options]="employmentOptions" placeholder="Select"
+                               [(ngModel)]="form.employment_type" name="employment_type" />
           </div>
 
           <div class="field-row">

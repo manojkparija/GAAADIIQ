@@ -43,12 +43,24 @@
   &.placeholder-opt { color: var(--text-muted); }
 
   &:hover {
-    background: linear-gradient(90deg, #0F766E 0%, #0E6B63 100%);
+    // Blue to teal, matching the tab underline and the hero gradients.
+    //
+    // The endpoints are the deep ends of both hues, not the brand tones: white
+    // text sits on this bar, and it measures 5.9:1 on the blue end and 4.8:1
+    // on the teal. The brand teal #14B8A6 would give 2.3:1 — the reason this
+    // was a flat dark teal for a while, which lost the gradient entirely.
+    background: linear-gradient(90deg, #1D4ED8 0%, #146C7E 55%, #0F766E 100%);
     color: #fff;
   }
 
   &.selected {
-    background: linear-gradient(90deg, #0F766E 0%, #0E6B63 100%);
+    // Blue to teal, matching the tab underline and the hero gradients.
+    //
+    // The endpoints are the deep ends of both hues, not the brand tones: white
+    // text sits on this bar, and it measures 5.9:1 on the blue end and 4.8:1
+    // on the teal. The brand teal #14B8A6 would give 2.3:1 — the reason this
+    // was a flat dark teal for a while, which lost the gradient entirely.
+    background: linear-gradient(90deg, #1D4ED8 0%, #146C7E 55%, #0F766E 100%);
     color: #fff; font-weight: 600;
   }
 }

@@ -7,11 +7,12 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PdfIngestionService, IngestionJob, ExtractedVehicle, ExtractedImage } from '../../services/pdf-ingestion.service';
 import { AuthService } from '../../services/auth.service';
+import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 
 @Component({
   selector: 'app-admin-pdf-ingestion',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent],
   templateUrl: './admin-pdf-ingestion.component.html',
   styleUrls: ['./admin-pdf-ingestion.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,6 +20,14 @@ import { AuthService } from '../../services/auth.service';
 export class AdminPdfIngestionComponent implements OnInit, OnDestroy {
   svc   = inject(PdfIngestionService);
   auth  = inject(AuthService);
+
+  /** The vehicles an unmatched image can be assigned to, for the dropdown. */
+  vehicleOptions(job: any): SelectOption[] {
+    return (job?.vehicles ?? []).map((v: any) => ({
+      value: String(v.id),
+      label: [v.make, v.model, v.variant].filter(Boolean).join(' '),
+    }));
+  }
 
   // UI state
   dragOver      = signal(false);

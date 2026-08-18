@@ -612,9 +612,9 @@
           </p>
           <div class="state-select">
             <label>State:</label>
-            <select [ngModel]="selectedState()" (ngModelChange)="selectedState.set($event)" name="state">
-              <option *ngFor="let s of states" [value]="s">{{ s }}</option>
-            </select>
+            <app-custom-select [options]="states" placeholder="Select state"
+                               [ngModel]="selectedState()"
+                               (ngModelChange)="selectedState.set($event)" name="state" />
           </div>
           <div class="orp-row"><span>Ex-Showroom</span><span>{{ formatPrice(orp.base) }}</span></div>
           <!--

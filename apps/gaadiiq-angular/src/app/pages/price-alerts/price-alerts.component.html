@@ -13,10 +13,8 @@
         <div class="success-msg" *ngIf="submitted()">Alert created! We'll notify you at {{ form.email || 'your email' }}</div>
         <div class="form-group">
           <label>Car Make</label>
-          <select [(ngModel)]="form.make" name="make">
-            <option value="">Select make</option>
-            <option *ngFor="let m of makes" [value]="m">{{ m }}</option>
-          </select>
+          <app-custom-select [options]="makes" placeholder="Select make"
+                             [(ngModel)]="form.make" name="make" />
         </div>
         <div class="form-group">
           <label>Model</label>

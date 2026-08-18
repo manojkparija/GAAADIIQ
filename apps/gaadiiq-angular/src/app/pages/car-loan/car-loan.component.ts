@@ -11,11 +11,12 @@ import {
   LoanOffer,
 } from '../../services/car-loan.service';
 import { AuthService } from '../../services/auth.service';
+import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 
 @Component({
   selector: 'app-car-loan',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent, LenderMarkComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, LenderMarkComponent, CustomSelectComponent],
   templateUrl: './car-loan.component.html',
   styleUrl: './car-loan.component.scss',
 })
@@ -36,6 +37,13 @@ export class CarLoanComponent implements OnInit {
    * from it as it is typed — the derived figures below read the two fields that
    * do, and those are signals.
    */
+  /** Stored values are what the API expects; the labels are for a human. */
+  readonly employmentOptions: SelectOption[] = [
+    { value: 'salaried', label: 'Salaried' },
+    { value: 'self_employed', label: 'Self-employed professional' },
+    { value: 'business', label: 'Business owner' },
+  ];
+
   form = {
     vehicle_condition: 'new' as 'new' | 'used',
     vehicle_description: '',

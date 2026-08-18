@@ -26,12 +26,10 @@
           </div>
           <div class="search-field">
             <label class="search-field-label">Make</label>
-            <select class="search-select" [value]="heroMake()" (change)="heroMake.set($any($event.target).value); heroModel.set('')">
-              <option value="">All Makes</option>
-              @for (m of makes(); track m) {
-                @if (m !== 'All') { <option [value]="m">{{ m }}</option> }
-              }
-            </select>
+            <app-custom-select class="search-select" [options]="makeOptions()"
+                               placeholder="All Makes"
+                               [ngModel]="heroMake()"
+                               (ngModelChange)="heroMake.set($event); heroModel.set('')" />
           </div>
           <div class="search-field">
             <label class="search-field-label">Model</label>
@@ -45,15 +43,10 @@
           </div>
           <div class="search-field">
             <label class="search-field-label">Max Budget</label>
-            <select class="search-select" [value]="heroBudgetMax()"
-              (change)="heroBudgetMax.set(+$any($event.target).value)">
-              <option value="0">Any Budget</option>
-              <option value="500000">Under ₹5L</option>
-              <option value="1000000">Under ₹10L</option>
-              <option value="1500000">Under ₹15L</option>
-              <option value="2000000">Under ₹20L</option>
-              <option value="5000000">Under ₹50L</option>
-            </select>
+            <app-custom-select class="search-select" [options]="budgetOptions"
+                               placeholder="Any Budget"
+                               [ngModel]="heroBudgetMax() ? heroBudgetMax().toString() : ''"
+                               (ngModelChange)="heroBudgetMax.set(+$event || 0)" />
           </div>
           <button class="btn-gradient search-btn" (click)="applyHeroSearch()">Search</button>
           <button class="btn-outline search-btn" (click)="clearAllFilters()" style="white-space:nowrap">Clear</button>
@@ -149,17 +142,15 @@
         <div class="filter-group">
           <label class="filter-group-label">Year</label>
           <div class="year-selects">
-            <select class="year-select" [ngModel]="yearFrom()" (ngModelChange)="yearFrom.set(+$event)">
-              @for (y of yearOptions; track y) {
-                <option [value]="y">{{ y }}</option>
-              }
-            </select>
+            <app-custom-select class="year-select" [options]="yearStrings()"
+                               placeholder="From"
+                               [ngModel]="yearFrom().toString()"
+                               (ngModelChange)="yearFrom.set(+$event)" />
             <span class="year-sep">to</span>
-            <select class="year-select" [ngModel]="yearTo()" (ngModelChange)="yearTo.set(+$event)">
-              @for (y of yearOptions; track y) {
-                <option [value]="y">{{ y }}</option>
-              }
-            </select>
+            <app-custom-select class="year-select" [options]="yearStrings()"
+                               placeholder="To"
+                               [ngModel]="yearTo().toString()"
+                               (ngModelChange)="yearTo.set(+$event)" />
           </div>
         </div>
 
@@ -267,11 +258,10 @@
                 <span class="filter-badge">{{ activeFiltersCount() }}</span>
               }
             </button>
-            <select class="sort-select" [value]="selectedSort()" (change)="selectedSort.set($any($event.target).value)">
-              @for (s of sortOptions; track s) {
-                <option [value]="s">{{ s }}</option>
-              }
-            </select>
+            <app-custom-select class="sort-select" [options]="sortOptions"
+                               placeholder="Sort by"
+                               [ngModel]="selectedSort()"
+                               (ngModelChange)="selectedSort.set($event)" />
           </div>
         </div>
 

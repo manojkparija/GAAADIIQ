@@ -454,12 +454,10 @@
               <div class="unmatched-card">
                 <img [src]="img.url" class="unmatched-img" alt="Unmatched" (error)="$any($event.target).src='/assets/placeholder.jpg'" />
                 <div class="unmatched-info">Page {{ img.page_num }}</div>
-                <select class="unmatched-select" (change)="assignImage(job, $any($event.target).value, img.id)">
-                  <option value="">Assign to…</option>
-                  @for (v of job.vehicles; track v.id) {
-                    <option [value]="v.id">{{ v.make }} {{ v.model }} {{ v.variant }}</option>
-                  }
-                </select>
+                <app-custom-select class="unmatched-select"
+                                   [options]="vehicleOptions(job)" placeholder="Assign to…"
+                                   [ngModel]="''"
+                                   (ngModelChange)="assignImage(job, $event, img.id)" />
               </div>
             }
           </div>

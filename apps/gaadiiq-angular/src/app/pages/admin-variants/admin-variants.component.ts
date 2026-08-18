@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { CarVariant } from '../../services/cars-data.service';
 import { environment } from '../../../environments/environment';
+import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 
 /** A vehicle the catalogue holds, as the picker offers it. */
 interface CatalogueCar {
@@ -49,7 +50,7 @@ const EMPTY_FORM: VariantForm = {
 @Component({
   selector: 'app-admin-variants',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent],
   templateUrl: './admin-variants.component.html',
   styleUrls: ['./admin-variants.component.scss'],
 })
@@ -58,6 +59,15 @@ export class AdminVariantsComponent {
   private apiUrl = environment.apiUrl;
 
   cars = signal<CatalogueCar[]>([]);
+
+  /** Model list as {value: id, label: "Model (year)"} for the dropdown. */
+  modelSelectOptions(): SelectOption[] {
+    return this.modelsForMake().map(car => ({
+      value: String(car.id),
+      label: `${car.model} (${car.year})`,
+    }));
+  }
+
   selectedCarId = signal('');
   variants = signal<CarVariant[]>([]);
 

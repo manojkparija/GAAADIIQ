@@ -23,23 +23,15 @@
       <div class="av-grid">
         <div class="av-field">
           <label>Manufacturer</label>
-          <select [ngModel]="selectedMake()" (ngModelChange)="onMakeChange($event)">
-            <option value="">Select manufacturer…</option>
-            @for (make of makeOptions(); track make) {
-              <option [value]="make">{{ make }}</option>
-            }
-          </select>
+          <app-custom-select [options]="makeOptions()" placeholder="Select manufacturer…"
+                             [ngModel]="selectedMake()" (ngModelChange)="onMakeChange($event)" />
         </div>
 
         <div class="av-field">
           <label>Model</label>
-          <select [ngModel]="selectedCarId()" (ngModelChange)="onCarChange($event)"
-                  [disabled]="!selectedMake()">
-            <option value="">Select model…</option>
-            @for (car of modelsForMake(); track car.id) {
-              <option [value]="car.id">{{ car.model }} ({{ car.year }})</option>
-            }
-          </select>
+          <app-custom-select [options]="modelSelectOptions()" placeholder="Select model…"
+                             [ngModel]="selectedCarId()" (ngModelChange)="onCarChange($event)"
+                             [disabled]="!selectedMake()" />
         </div>
       </div>
     </section>

@@ -29,9 +29,9 @@
         </p>
       </div>
       <div class="sort-row" *ngIf="carType()!=='New'">
-        <select [(ngModel)]="sorts[0]" (change)="selectedSort.set($any($event.target).value)">
-          <option *ngFor="let s of sorts">{{ s }}</option>
-        </select>
+        <app-custom-select [options]="sorts" placeholder="Sort by"
+                           [ngModel]="selectedSort()"
+                           (ngModelChange)="selectedSort.set($event)" />
         <button class="btn-gradient hide-desktop filter-toggle" (click)="sidebarOpen.set(!sidebarOpen())">⚙️ Filters</button>
       </div>
       <button *ngIf="carType()==='New'" class="btn-gradient hide-desktop filter-toggle" (click)="sidebarOpen.set(!sidebarOpen())">⚙️ Filters</button>

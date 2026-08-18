@@ -6,6 +6,7 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService, Car } from '../../services/cars-data.service';
 import { CityService, POPULAR_CITIES } from '../../services/city.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 
 type PriceVerdict = 'fairDeal' | 'goodPrice' | 'slightlyHigh';
 
@@ -45,7 +46,7 @@ function snapToPopularCity(raw: string): string {
 @Component({
   selector: 'app-used-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent],
   templateUrl: './used-cars.component.html',
   styleUrl: './used-cars.component.scss'
 })
@@ -73,6 +74,29 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // Hero search fields
+
+  /**
+   * The dropdown stores text, so anything numeric is converted at the edge —
+   * a string in the list, a number back in the signal. Keeps the filter
+   * signals typed the way the rest of the page already reads them.
+   */
+  makeOptions(): string[] {
+    return this.makes().filter(m => m !== 'All');
+  }
+
+  yearStrings(): string[] {
+    return this.yearOptions.map(String);
+  }
+
+  /** Rupee labels over the numeric ceilings the filter actually applies. */
+  readonly budgetOptions: SelectOption[] = [
+    { value: '500000', label: 'Under ₹5L' },
+    { value: '1000000', label: 'Under ₹10L' },
+    { value: '1500000', label: 'Under ₹15L' },
+    { value: '2000000', label: 'Under ₹20L' },
+    { value: '5000000', label: 'Under ₹50L' },
+  ];
+
   heroMake = signal('');
   heroModel = signal('');
   heroBudgetMax = signal(0);
