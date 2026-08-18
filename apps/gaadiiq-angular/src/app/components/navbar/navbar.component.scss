@@ -408,6 +408,20 @@
   font-family: 'Manrope', sans-serif;
 }
 
+// Section heading. Small and quiet on purpose — it is a signpost between
+// groups, not another thing to read. The rule above it does most of the work.
+.dropdown-group {
+  padding: 0.5rem 0.75rem 0.3rem;
+  margin-top: 0.35rem;
+  border-top: 1px solid var(--divider);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: 'Manrope', sans-serif;
+}
+
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -427,7 +441,16 @@
   font-weight: 500;
 
   &:hover { background: rgba(47,107,255,0.08); color: var(--primary); }
-  &.logout { color: var(--danger); &:hover { background: rgba(239,68,68,0.08); color: var(--danger); } }
+  // Set apart, so signing out is never the row you hit reaching for the one
+  // above it.
+  &.logout {
+    margin-top: 0.35rem;
+    border-top: 1px solid var(--divider);
+    padding-top: 0.6rem;
+    border-radius: 0 0 7px 7px;
+    color: var(--danger);
+    &:hover { background: rgba(239,68,68,0.08); color: var(--danger); }
+  }
 }
 
 // Matches the rest of the menu, same as its desktop counterpart.
