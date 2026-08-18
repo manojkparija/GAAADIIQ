@@ -144,6 +144,9 @@ export class DealerDashboardComponent {
 
   currentSeller = signal<Seller | null>(null);
   authUser = computed(() => this.auth.currentUser());
+
+  /** For the template — `auth` itself stays private. */
+  isAdmin = computed(() => this.auth.isAdmin());
   sellerInitials = computed(() => {
     const s = this.currentSeller();
     if (!s) return '??';
