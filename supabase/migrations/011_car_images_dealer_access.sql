@@ -76,6 +76,34 @@ CREATE TABLE IF NOT EXISTS public.car_images (
   created_at timestamptz DEFAULT now()
 );
 
+-- RECONCILING A TABLE THAT ALREADY EXISTS
+--
+-- The statement above is a no-op when the table is already there — it does not
+-- compare columns and does not add missing ones. That is the whole failure
+-- mode this file exists to address: `car_images` was made by hand, so its
+-- columns are whatever someone typed once, and declaring the table it *should*
+-- be does nothing to an existing one.
+--
+-- Production turned out to have exactly four columns — id, car_id, url,
+-- sort_order — and no created_at. 012 then failed building its review-queue
+-- index on (status, created_at), because a column the file above appears to
+-- guarantee was never actually added.
+--
+-- So every column is stated separately. ADD COLUMN IF NOT EXISTS is a no-op
+-- where the column is already right, which keeps this re-runnable.
+ALTER TABLE public.car_images
+  ADD COLUMN IF NOT EXISTS url        text,
+  ADD COLUMN IF NOT EXISTS sort_order int DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+
+-- Rows that predate the column have no creation time, and the review queue
+-- orders by it. now() is wrong but bounded — it says "we do not know, and it
+-- was before this migration" — where NULL would sort unpredictably and hide
+-- the oldest submissions at one end of the queue.
+UPDATE public.car_images SET created_at = now() WHERE created_at IS NULL;
+
+ALTER TABLE public.car_images ALTER COLUMN created_at SET DEFAULT now();
+
 -- Deleting a listing must take its photographs with it. Added after the type
 -- is known to be right, since this is exactly the constraint that failed when
 -- the column was still bigint.
