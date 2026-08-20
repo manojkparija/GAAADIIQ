@@ -10,7 +10,10 @@ export interface MyListing {
   bodyType: string; name: string; phone: string; email: string;
   status: 'pending' | 'live' | 'sold';
   createdAt: string;
-  supabaseId?: number | null;
+  // A uuid, not a number: cars.id is uuid. This was declared `number`
+  // while holding a string at runtime, which is what led a later change
+  // to call Number() on it and get NaN.
+  supabaseId?: string | null;
   imageUrl?: string | null;
 }
 

@@ -297,3 +297,96 @@ Migration 010 inserts the row to match, and the first draft of that migration
 did not — which would have emptied the admin's own Test Drives tab, since every
 request in production belongs to seller 1 or seller 7 and neither is the admin.
 Adding an admin means adding them in both places.
+
+## The dealer dashboard pointed at the wrong image store
+
+Two stores of vehicle photographs exist and they are not interchangeable:
+
+| | `vehicle_media` | `car_images` |
+|---|---|---|
+| Keyed on | make + model + year | one `cars.id` |
+| Appears on | every car of that model, site-wide | that one listing |
+| Written by | admin upload screen | List Your Car, and now the dashboard |
+
+The Inventory tab showed the **catalogue** under the heading "Your Car
+Images", and its only action linked to `/admin/car-images` — behind
+`adminGuard`, so no dealer could open it. Underneath, `/media-admin/dealer-images`
+required `get_admin_user` despite its name, so a real dealer got a 403 the page
+rendered as "No images yet". The tab had never worked for a dealer, and failed
+in the shape of an empty account.
+
+Fixed by pointing the tab at the dealer's own `car_images`. **A dealer must
+never gain write access to `vehicle_media`** — their photograph would appear on
+competitors' listings of the same model, and there is no moderation step.
+
+Still open:
+
+- `/media-admin/dealer-images` still requires an admin. Nothing calls it now,
+  so it is dead rather than broken, but the name still lies.
+- `car_images` had never been declared in a migration — it was made by hand in
+  the dashboard, so until `011` its columns and policies existed only in a
+  browser session. Worth auditing the other tables for the same.
+
+**The listing photo gallery had never worked.** `car_images.car_id` was
+`bigint` while `cars.id` is `uuid`, so every insert from List Your Car failed
+silently — the table held **zero rows** in production, which was evidence
+rather than an empty product. `011` converts the column, but only while it is
+empty; with rows present it aborts rather than discarding them.
+
+This is the trap CLAUDE.md already names ("cars.id is a UUID in the ORM; Batch
+1 SQL says bigint; the ORM wins") and the first draft of `011` walked into it
+by trusting `MyListing.supabaseId`, declared `number` while holding a uuid
+string at runtime. That declaration is now corrected. **Check the live column
+type, not the TypeScript** — and `ai_valuation.car_id`, written by the same
+flow, has not been checked and may have the same fault.
+
+## `ai_valuation` has the same fault, and it is not empty
+
+Checked after `car_images` turned up a uuid/bigint mismatch. `ai_valuation.car_id`
+is **bigint** against a uuid `cars.id`, and the table holds **116 rows**.
+
+Both halves of that are bad, in different ways:
+
+- The 116 rows cannot have come from the current List Your Car flow, which
+  writes a uuid — that insert fails against a bigint column. They are legacy,
+  from when `cars.id` was still bigint. So they point at car ids that no longer
+  exist: **stored valuations detached from their cars**.
+- New valuations from that flow are failing silently, exactly as the images were.
+
+Confirm the first half with:
+
+```sql
+SELECT count(*) AS orphaned FROM public.ai_valuation v
+WHERE NOT EXISTS (SELECT 1 FROM public.cars c WHERE c.id::text = v.car_id::text);
+```
+
+**Deliberately not migrated.** `car_images` was safe to convert because it was
+empty. Converting this one means either discarding 116 rows or inventing a
+mapping back to cars that no longer carry those ids, and neither is a decision
+a migration should make on its own. Decide first, then write the file.
+
+Worth checking every other table the listing flow writes to for the same
+mismatch before assuming it is only these two.
+
+## Listing a new car
+
+The List Your Car form wrote `badge: 'Used', badge_type: 'used'` on every
+submission, hardcoded, and asked Kilometres, Owners and Condition
+unconditionally. A dealer with showroom stock could not list it truthfully.
+
+The API had modelled this all along — `ListingType.new | used` on `listings`,
+and `cars-data.service.ts` already fetches `?listing_type=new`. Only the form
+could not say which. It now asks first and hides the resale fields for new
+stock.
+
+Two loose ends:
+
+- **Ex-showroom price goes into `cars.price`**, not a dedicated column. The
+  backlog above notes `ex_showroom_price` exists on the catalogue side, but this
+  file cannot see the live Supabase `cars` schema and naming a column that is
+  not there fails the whole insert — the mistake `011` already made once. If
+  the column exists, moving to it is one line plus a migration.
+- **New listings still go to Supabase `cars`, not the API's `listings` table.**
+  The two stores continue to diverge, same as test drives. `listing_type` is
+  properly modelled on the side nothing writes to.
+

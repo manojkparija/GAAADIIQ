@@ -11,7 +11,8 @@ import { AuthService } from '../../services/auth.service';
 import { SellersService, Seller } from '../../services/sellers.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { SentimentService, Lead, IntentScore, LeadGrade } from '../../services/sentiment.service';
-import { VehicleImageGalleryService } from '../../services/vehicle-image-gallery.service';
+import { DealerCarImagesService } from '../../services/dealer-car-images.service';
+import { MyListingsService } from '../../services/my-listings.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { FormsModule } from '@angular/forms';
@@ -147,6 +148,50 @@ export class DealerDashboardComponent {
 
   /** For the template — `auth` itself stays private. */
   isAdmin = computed(() => this.auth.isAdmin());
+
+  // ── The dealer's own car photographs ───────────────────────────────────
+  //
+  // Their listings, and the pictures on one of them. Not the shared catalogue:
+  // vehicle_media is matched on make + model + year and shows on every car of
+  // that model, so a dealer writing there would put their photo on a
+  // competitor's listing.
+  listingsLoading = this.myListingsSvc.loading;
+  myCars = computed(() => this.myListingsSvc.listings().filter(l => l.supabaseId != null));
+
+  myCarOptions = computed(() => this.myCars().map(l => ({
+    value: l.supabaseId!,
+    label: `${l.year} ${l.make} ${l.model}${l.variant ? ' ' + l.variant : ''}`,
+  })));
+
+  selectedCarId = signal<string | null>(null);
+  carImages = this.dealerImages.images;
+  carImagesLoading = this.dealerImages.loading;
+  carImagesError = this.dealerImages.error;
+
+  selectCar(id: string) {
+    // No Number() here: cars.id is a uuid, and coercing it gives NaN.
+    const carId = id || null;
+    this.selectedCarId.set(carId);
+    if (carId) void this.dealerImages.load(carId);
+  }
+
+  async onDealerImagePick(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const carId = this.selectedCarId();
+    if (!input.files?.length || !carId) return;
+
+    // Capped at ten, matching the List Your Car form. Buyers stop scrolling
+    // long before that, and every extra file is bandwidth on a phone.
+    const files = Array.from(input.files).slice(0, 10);
+    await this.dealerImages.add(carId, files);
+
+    // Cleared so choosing the same file twice still fires a change event.
+    input.value = '';
+  }
+
+  async removeDealerImage(imageId: number) {
+    await this.dealerImages.remove(imageId);
+  }
   sellerInitials = computed(() => {
     const s = this.currentSeller();
     if (!s) return '??';
@@ -158,13 +203,12 @@ export class DealerDashboardComponent {
     return u.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   });
 
-  galleryImages = this.galleryService.images;
-  galleryLoading = this.galleryService.loading;
 
   constructor(seo: SeoService, private testDriveSvc: TestDriveService,
               private auth: AuthService, private sellersSvc: SellersService,
               private sb: SupabaseService, public sentimentSvc: SentimentService,
-              private galleryService: VehicleImageGalleryService) {
+              private dealerImages: DealerCarImagesService,
+              private myListingsSvc: MyListingsService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
     this.loadSellerInfo();
     this.sentimentSvc.loadLeads();

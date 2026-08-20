@@ -212,8 +212,37 @@ export class ListCarComponent {
     make: '', model: '', variant: '', year: 2020, km: '',
     fuel: '', transmission: '', owners: '', color: '', city: '',
     price: '', description: '', name: '', phone: '', email: '',
-    bodyType: '', condition: ''
+    bodyType: '', condition: '',
+    exShowroomPrice: '',
   };
+
+  /**
+   * New stock or a resale.
+   *
+   * Every listing this form produced was written as `badge_type: 'used'`,
+   * hardcoded, so a dealer with new stock had no way to list it — and forcing
+   * it through recorded a brand-new car as second-hand with an invented owner
+   * count. The API has modelled `listing_type: new | used` all along and the
+   * app already queries both; only this form could not say which.
+   */
+  listingType = signal<'new' | 'used'>('used');
+
+  isNew(): boolean { return this.listingType() === 'new'; }
+
+  setListingType(type: 'new' | 'used') {
+    this.listingType.set(type);
+    if (type === 'new') {
+      // A new car has none of these. Cleared rather than hidden, so a seller
+      // who fills the used form and then switches cannot leave a stale
+      // mileage or owner count behind in the submitted row.
+      this.form.km = '';
+      this.form.owners = '';
+      this.form.condition = '';
+      this.valuation.set(null);
+    } else {
+      this.form.exShowroomPrice = '';
+    }
+  }
 
   phoneError = signal('');
 
@@ -252,7 +281,11 @@ export class ListCarComponent {
   }
 
   async nextStep() {
-    if (this.step() === 1 && !this.valuation() && this.form.make && this.form.model && this.form.km && this.form.owners && this.form.condition) {
+    // Valuation prices a used car against depreciation and mileage. Asking it
+    // about a new one would return a resale figure for a car nobody has
+    // driven, which is worse than showing nothing.
+    if (this.step() === 1 && !this.isNew() && !this.valuation()
+        && this.form.make && this.form.model && this.form.km && this.form.owners && this.form.condition) {
       await this.fetchValuation();
     }
     if (this.step() < this.totalSteps) this.step.update(v => v + 1);
@@ -352,17 +385,24 @@ export class ListCarComponent {
         model: this.form.model,
         variant: this.form.variant || null,
         year: this.form.year,
-        km: +this.form.km,
+        km: this.isNew() ? 0 : +this.form.km,
         fuel: this.form.fuel,
         transmission: this.form.transmission,
-        owners: this.form.owners || null,
+        owners: this.isNew() ? null : (this.form.owners || null),
         color: this.form.color || null,
         city: this.form.city || null,
-        price: +this.form.price,
+        // For new stock the ex-showroom figure is the price, so it goes in the
+        // column that already exists. Deliberately not written to a separate
+        // `ex_showroom_price` column: this file cannot see the live schema, and
+        // naming a column that may not be there fails the whole insert. If that
+        // column does exist on `cars`, moving to it is a one-line change and a
+        // migration — see the backlog.
+        price: this.isNew() ? (+this.form.exShowroomPrice || 0) : +this.form.price,
         description: this.form.description || null,
         body_type: this.form.bodyType || null,
-        badge: 'Used',
-        badge_type: 'used',
+        // Was hardcoded to 'Used' on every listing this form ever created.
+        badge: this.isNew() ? 'New' : 'Used',
+        badge_type: this.isNew() ? 'new' : 'used',
         seller_email: this.form.email,
         seller_phone: this.form.phone || null,
         seller_id: user?.sellerId ?? null,

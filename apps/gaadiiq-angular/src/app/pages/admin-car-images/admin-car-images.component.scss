@@ -123,16 +123,22 @@
 
 .btn-upload {
   padding: 0.75rem 1.5rem;
-  background: #3b82f6;
+  // The brand ramp the primary buttons and tabs use, rather than the flat
+  // #3b82f6 this had — that blue predates the tokens and was the last thing
+  // on this screen still using it.
+  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
   color: white;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: filter 0.2s, box-shadow 0.2s;
 
   &:hover {
-    background: #2563eb;
+    // Darkened as a whole rather than swapped for a second gradient, so the
+    // hover cannot drift out of step with the base if either is edited.
+    filter: brightness(0.92);
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
   }
 }
 
