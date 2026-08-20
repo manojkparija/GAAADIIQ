@@ -59,8 +59,15 @@ export interface CarVariant {
   id: string;
   car_id: string;
   name: string;
-  /** NUMERIC over the wire, so a rupee amount does not pick up rounding. */
-  ex_showroom_price: string | null;
+  /**
+   * NUMERIC in the column, but a JSON *number* on the wire: the API types this
+   * Decimal and Pydantic serialises Decimal as a number.
+   *
+   * Declared `string` alone for a long time, which was simply untrue, and the
+   * variants editor crashed on `.trim()` the moment anyone edited a priced
+   * trim. Coerce with String() before doing anything string-shaped to it.
+   */
+  ex_showroom_price: string | number | null;
   fuel_type: string | null;
   transmission: string | null;
   engine_cc: number | null;
