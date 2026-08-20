@@ -140,3 +140,50 @@ describe('CarDetailComponent — Overview facts', () => {
     }
   });
 });
+
+describe('CarDetailComponent — features already stored badly', () => {
+  let c: CarDetailComponent;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [CarDetailComponent, RouterTestingModule],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    c = TestBed.createComponent(CarDetailComponent).componentInstance;
+  });
+
+  it('reads a stored dict repr as the phrase inside it', () => {
+    // The API fix and migration 0039 both land on deploy; buyers are reading
+    // these off the page now, and any row nobody re-researches keeps them.
+    expect(c.featureText("{'feature': 'Head-Up Display'}")).toBe('Head-Up Display');
+  });
+
+  it('handles the double-quoted form too', () => {
+    expect(c.featureText('{"name": "360-Degree Camera"}')).toBe('360-Degree Camera');
+  });
+
+  it('copes with an apostrophe inside the phrase', () => {
+    // Why this is matched rather than parsed: converting quotes and calling
+    // JSON.parse breaks on exactly this.
+    expect(c.featureText("{'feature': \"Driver's Seat Memory\"}")).toBe("Driver's Seat Memory");
+  });
+
+  it('leaves an ordinary feature completely alone', () => {
+    expect(c.featureText('Head-Up Display')).toBe('Head-Up Display');
+  });
+
+  it('shows an ambiguous object as it is rather than guessing', () => {
+    // Same restraint as the migration: an ugly value gets reported, an
+    // invented one does not.
+    const raw = "{'a': 'one', 'b': 'two'}";
+    expect(c.featureText(raw)).toBe(raw);
+  });
+
+  it('does not mangle a value that merely contains a brace', () => {
+    expect(c.featureText('Bootspace {optional}')).toBe('Bootspace {optional}');
+  });
+
+  it('joins a trim summary with the same unwrapping', () => {
+    expect(c.featureList(["{'feature': 'ABS'}", 'EBD'])).toBe('ABS · EBD');
+  });
+});

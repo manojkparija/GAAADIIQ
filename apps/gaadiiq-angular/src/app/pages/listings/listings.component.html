@@ -17,7 +17,7 @@
         <p style="color:var(--muted);font-size:0.9rem">
           <ng-container *ngIf="carType()==='New' && !selectedModel()">{{ newCarModels().length }} models available</ng-container>
           <ng-container *ngIf="carType()==='New' && selectedModel()">
-            {{ newModelVariants().length }} variants &nbsp;·&nbsp;
+            {{ newModelVariants().length }} {{ newModelVariants().length === 1 ? 'variant' : 'variants' }} &nbsp;·&nbsp;
             <a href="javascript:void(0)" (click)="clearModel()" style="color:var(--accent);font-size:0.85rem">← Back to all models</a>
           </ng-container>
           <ng-container *ngIf="carType()!=='New'">
@@ -145,7 +145,11 @@
                 <span class="nc-card-price-note">ex-showroom</span>
               </div>
               <div class="nc-card-footer">
-                <span class="nc-variant-count">{{ m.variantCount }} Variants</span>
+                <!-- Published trims only: a draft is a price nobody has vouched for,
+                     so counting it would promise a choice that is not on offer. -->
+                <span class="nc-variant-count">
+                  {{ m.variantCount }} {{ m.variantCount === 1 ? 'Variant' : 'Variants' }}
+                </span>
                 <span class="nc-rating"><app-icon name="star" [size]="11" class="star-gold"></app-icon> {{ m.rating }} ({{ m.reviews }})</span>
               </div>
               <button class="btn-gradient nc-explore-btn">Explore Variants →</button>

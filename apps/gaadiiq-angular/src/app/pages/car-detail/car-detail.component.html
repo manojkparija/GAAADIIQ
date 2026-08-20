@@ -271,7 +271,7 @@
                     <ng-container *ngIf="v.mileage"> · {{ v.mileage }}</ng-container>
                   </span>
                   <span class="variant-features" *ngIf="v.features?.length">
-                    {{ v.features!.join(' · ') }}
+                    {{ featureList(v.features!) }}
                   </span>
                 </div>
                 <span class="variant-price gradient-text">
@@ -322,7 +322,7 @@
           <div class="tab-content" *ngIf="activeTab()==='features'">
             <div class="features-list">
               <div class="feature-item" *ngFor="let f of (car.features || [])">
-                <span class="check"><app-icon name="check" [size]="13"></app-icon></span> {{ f }}
+                <span class="check"><app-icon name="check" [size]="13"></app-icon></span> {{ featureText(f) }}
               </div>
             </div>
             <p class="tab-empty" *ngIf="!(car.features || []).length">

@@ -9,7 +9,12 @@
 
 .cs-trigger {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px; border: 1.5px solid var(--border, #e5e7eb); border-radius: 10px;
+  // Pages size their own inputs, and this component did not listen: measured
+  // at 38px against inputs of 41-46px on four pages, which is the row
+  // misalignment reported from UAT. A page can now state the height its other
+  // controls are without reaching inside the component with ::ng-deep.
+  min-height: var(--cs-min-h, 0);
+  padding: var(--cs-pad, 10px 14px); border: 1.5px solid var(--border, #e5e7eb); border-radius: 10px;
   font-size: 14px; background: var(--bg, #fff); color: var(--text, #111);
   cursor: pointer; text-align: left; gap: 8px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
@@ -29,7 +34,13 @@
 }
 
 .cs-dropdown {
-  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 200;
+  // position, left, width, max-height and top/bottom are all set inline by
+  // the component, in viewport coordinates. Fixed rather than absolute so an
+  // ancestor with a clipped or scrolling overflow cannot cut the list off —
+  // see dropdownStyle in the component for what that was doing to four
+  // separate pages. The z-index clears the sticky page header (100) and the
+  // mobile filter sheet (200).
+  position: fixed; z-index: 1000;
   background: var(--bg, #fff); border: 1.5px solid var(--teal);
   border-radius: 10px; overflow: hidden;
   box-shadow: 0 8px 28px rgba(20,184,166,0.18), 0 2px 8px rgba(0,0,0,0.08);

@@ -258,10 +258,35 @@ class TestResearchCleaningSuite:
         ]})
         assert [v["name"] for v in cleaned] == ["VXi", "ZXi"]
 
-    def test_features_are_bounded_and_stringified(self):
+    def test_features_are_bounded(self):
+        from services.variant_research import _clean
+        cleaned = _clean({"variants": [
+            {"name": "VXi", "features": [f"Feature {i}" for i in range(20)]}
+        ]})
+        assert len(cleaned[0]["features"]) == 6
+
+    def test_numbers_are_not_treated_as_features(self):
+        """
+        This assertion used to be the opposite, under the name
+        "..._and_stringified": it fed list(range(20)) and expected six
+        features out, pinning a str() call on each item.
+
+        That str() is what put "{'feature': 'Head-Up Display'}" in front of
+        buyers when the model returned objects instead of strings, reported
+        from UAT. Stringifying whatever arrives is not robustness — a features
+        list reading "0, 1, 2, 3, 4, 5" is nonsense with the confidence of
+        data, so a value that is not a phrase is now dropped.
+        """
         from services.variant_research import _clean
         cleaned = _clean({"variants": [{"name": "VXi", "features": list(range(20))}]})
-        assert len(cleaned[0]["features"]) == 6
+        assert cleaned[0]["features"] == []
+
+    def test_features_returned_as_objects_are_unwrapped(self):
+        from services.variant_research import _clean
+        cleaned = _clean({"variants": [
+            {"name": "VXi", "features": [{"feature": "Head-Up Display"}]}
+        ]})
+        assert cleaned[0]["features"] == ["Head-Up Display"]
 
     def test_nonsense_shapes_produce_nothing(self):
         from services.variant_research import _clean

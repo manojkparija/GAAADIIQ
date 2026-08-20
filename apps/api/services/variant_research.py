@@ -87,10 +87,48 @@ def _clean_price(value: object) -> float | None:
     return price if 100_000 <= price <= 50_000_000 else None
 
 
-def _clean_features(value: object) -> list[str]:
+def _feature_text(item: object) -> str:
+    """
+    One feature as a short phrase, whatever shape the model returned it in.
+
+    The prompt asks for a list of strings and usually gets one. Sometimes it
+    returns a list of objects instead — [{"feature": "Head-Up Display"}] — and
+    str() on that yields the literal "{\'feature\': \'Head-Up Display\'}",
+    which is what buyers were shown on the Features tab. Reported from UAT as
+    "it looks not good", which undersells it: the page was displaying a Python
+    dict repr as a selling point.
+
+    A dict is unwrapped rather than rejected: the phrase inside it is the
+    answer, and throwing away a whole trim's features because the model chose
+    objects over strings loses real information to a formatting difference.
+    """
+    if isinstance(item, str):
+        return item.strip()
+
+    if isinstance(item, dict):
+        # The usual keys, then any single value, before giving up. Ordered so a
+        # deliberate key wins over a lucky one.
+        for key in ("feature", "name", "label", "title", "value", "text"):
+            value = item.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        values = [v for v in item.values() if isinstance(v, str) and v.strip()]
+        if len(values) == 1:
+            return values[0].strip()
+        return ""
+
+    # A number or a bool is not a feature, and its str() would read as one.
+    if isinstance(item, (int, float, bool)) or item is None:
+        return ""
+
+    return str(item).strip()
+
+
+def _clean_features(value: object, limit: int = 6) -> list[str]:
     if not isinstance(value, list):
         return []
-    return [str(f).strip() for f in value[:6] if str(f).strip()]
+    cleaned = (_feature_text(f)[:80] for f in value[:limit])
+    return [f for f in cleaned if f]
 
 
 def _clean_int(value: object, ceiling: int) -> int | None:
@@ -224,13 +262,11 @@ async def research_model_details(make: str, model: str, year: int) -> dict:
         raw = json.loads(text)
         if not isinstance(raw, dict):
             return {"specs": [], "features": []}
-        features = raw.get("features")
         return {
             "specs": _clean_specs(raw.get("specs")),
-            "features": (
-                [str(f).strip()[:80] for f in features[:MAX_FEATURES] if str(f).strip()]
-                if isinstance(features, list) else []
-            ),
+            # Same unwrapping as the per-trim path: this one had its own copy
+            # of the str() call and so its own copy of the bug.
+            "features": _clean_features(raw.get("features"), limit=MAX_FEATURES),
         }
     except Exception as exc:
         logger.warning("Model detail research failed for %s %s: %s", make, model, exc)

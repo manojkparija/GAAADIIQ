@@ -100,7 +100,33 @@
   font-weight: 600;
 }
 
-.search-select,
+// The dropdown is a component, not an <input>: styling its host as if it were
+// a control put a bordered, padded box around the bordered, padded box it
+// renders itself. Measured, that made Make and Max Budget 38px tall against
+// the plain fields' 36px and sat them 12px higher — the misalignment reported
+// from UAT. The host is now just a box in the row; the control styling goes to
+// the trigger the component actually draws.
+.search-select {
+  display: block;
+  min-width: 0;
+
+  ::ng-deep .cs-trigger {
+    padding: 0.55rem 0.75rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+    box-shadow: none;
+    // Matches .search-input exactly. Both are 0.9rem text with the same
+    // padding and border, so both come out the same height.
+    line-height: 1.5;
+  }
+
+  ::ng-deep .cs-value.placeholder { color: rgba(255,255,255,0.6); }
+  ::ng-deep .cs-arrow { color: rgba(255,255,255,0.7); }
+}
+
 .search-input {
   padding: 0.55rem 0.75rem;
   background: rgba(255,255,255,0.1);
@@ -108,6 +134,7 @@
   border-radius: 8px;
   color: #fff;
   font-size: 0.9rem;
+  line-height: 1.5;
   appearance: none;
 
   &::placeholder { color: rgba(255,255,255,0.6); }
@@ -128,7 +155,16 @@
 
 .search-btn {
   flex-shrink: 0;
-  padding: 0.6rem 1.75rem;
+  // Equal width whatever the word. "Search" and "Clear" are different lengths,
+  // so padding alone left one visibly wider than the other — reported from UAT
+  // as one button thick and one narrow.
+  min-width: 118px;
+  text-align: center;
+  padding: 0.6rem 1.25rem;
+  // The buttons have no border while the fields beside them do, so equal
+  // padding still left them 36px against the fields' 41px in the same row.
+  // Stating the height matches the row instead of approximating it.
+  height: 41px;
   font-weight: 700;
   border-radius: 8px;
   background: #fff;
@@ -1112,3 +1148,9 @@
 }
 
 .scroll-sentinel { height: 1px; }
+
+/* The dropdown is a component and sizes itself; without this it rendered
+   38px against this page's 41px inputs, which is the row misalignment
+   reported from UAT. Measured, not guessed. */
+.year-select,
+.sort-select { --cs-min-h: 41px; }

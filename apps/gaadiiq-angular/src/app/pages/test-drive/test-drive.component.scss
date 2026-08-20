@@ -41,3 +41,27 @@
 .success-card h2 { font-size:1.8rem; font-weight:900; margin-bottom:1rem; }
 .success-card p { color:var(--muted); line-height:1.6; }
 .btn-gradient { display:inline-block; text-decoration:none; }
+
+/* Row heights on this page were decided by whatever each control's content
+   happened to measure, because none of them declared a height: the text
+   inputs came out 42px, the search box 43px (a slightly larger font), and
+   input[type=date] 50px, because Chromium's date field carries its own
+   taller picker box. Stating the height once stops the browser's intrinsic
+   sizing from setting it, so the date field stops standing 8px proud of the
+   row next to it.
+
+   The dropdown is a separate component and cannot see this rule, so it is
+   told the same number through its own custom property. Measured, not
+   guessed. */
+$td-control-h: 44px;
+
+/* height, not min-height: the date field's intrinsic box is 50px, so a
+   minimum cannot bring it down — it has to be stated outright. An input
+   centres its own text vertically once a height is set, so the horizontal
+   padding above is all that still matters. textarea is left out on purpose;
+   it is meant to be taller than a single row. */
+.form-group input,
+.form-group select,
+.search-wrap input { height: $td-control-h; }
+
+app-custom-select { --cs-min-h: #{$td-control-h}; }
