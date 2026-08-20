@@ -11,8 +11,8 @@ from db.session import get_db
 from models.car import Car
 from models.car_variant import CarVariant, VariantSource, VariantStatus
 from models.user import User
-from schemas.car import CarCreate, CarListOut, CarOut, CarUpdate
-from services import media_library, variant_research, vehicle_identity
+from schemas.car import CarCreate, CarListOut, CarOut, CarUpdate, PriceCheckOut
+from services import media_library, price_reference, variant_research, vehicle_identity
 
 router = APIRouter(prefix="/cars", tags=["cars"])
 
@@ -224,6 +224,47 @@ async def update_car(
     out.image_urls = images.get(car.id, [])
     out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
     return out
+
+
+@router.get("/{car_id}/price-check", response_model=PriceCheckOut)
+async def price_check(
+    car_id: uuid.UUID,
+    price: Decimal = Query(..., ge=0, description="The price about to be published"),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """
+    Compare a price against the reference someone recorded for this model.
+
+    Asked for in UAT: flag an entered price that differs significantly from
+    the market. The reference is not fetched or estimated here — it is what a
+    person entered, with the source and the date they checked. A figure this
+    service invented would be indistinguishable from a verified one at the
+    point it is read, which is the reason credit_bureau.fetch_score raises
+    rather than returning something plausible.
+
+    A model with no reference returns has_reference=false and says so, rather
+    than an empty response the caller would read as approval.
+    """
+    result = await db.execute(select(Car).where(Car.id == car_id))
+    car = result.scalar_one_or_none()
+    if not car:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Car not found")
+
+    check = price_reference.check_price(
+        price,
+        reference=car.reference_price,
+        source=car.reference_price_source,
+        checked_on=car.reference_price_checked_on,
+    )
+    return PriceCheckOut(
+        has_reference=check.has_reference,
+        is_significant=check.is_significant,
+        difference=float(check.difference) if check.difference is not None else None,
+        reference_age_days=check.reference_age_days,
+        is_stale=check.is_stale,
+        message=check.message,
+    )
 
 
 @router.post("", response_model=CarOut, status_code=status.HTTP_201_CREATED)
