@@ -1,0 +1,73 @@
+<div class="review-page">
+  <div class="container">
+    <header class="review-head">
+      <h1>Image <span class="gradient-text">Review</span></h1>
+      <p class="review-sub">
+        Photographs submitted by dealers. Nothing here is visible to a buyer
+        until it is approved.
+      </p>
+    </header>
+
+    <div class="review-tabs">
+      <button class="rv-tab" [class.active]="filter() === 'pending'" (click)="show('pending')">Pending</button>
+      <button class="rv-tab" [class.active]="filter() === 'approved'" (click)="show('approved')">Approved</button>
+      <button class="rv-tab" [class.active]="filter() === 'rejected'" (click)="show('rejected')">Rejected</button>
+    </div>
+
+    <p class="rv-error" *ngIf="error()">{{ error() }}</p>
+
+    <div class="rv-state" *ngIf="loading()">Loading…</div>
+
+    <div class="rv-state" *ngIf="!loading() && images().length === 0">
+      <ng-container [ngSwitch]="filter()">
+        <span *ngSwitchCase="'pending'">Nothing waiting for review.</span>
+        <span *ngSwitchCase="'approved'">Nothing approved yet.</span>
+        <span *ngSwitchDefault>Nothing rejected.</span>
+      </ng-container>
+    </div>
+
+    <div class="rv-grid" *ngIf="!loading() && images().length">
+      <div class="rv-card glass-card" *ngFor="let img of images()">
+        <div class="rv-thumb">
+          <img [src]="img.url" [alt]="carLabel(img)" loading="lazy" />
+        </div>
+
+        <div class="rv-meta">
+          <div class="rv-car">{{ carLabel(img) }}</div>
+          <div class="rv-from" *ngIf="img.submitted_by">From {{ img.submitted_by }}</div>
+          <div class="rv-when">{{ img.created_at | date:'medium' }}</div>
+          <div class="rv-reason" *ngIf="img.rejection_reason">
+            Rejected: {{ img.rejection_reason }}
+          </div>
+        </div>
+
+        <!-- Typing a reason replaces the buttons, so rejecting without one is
+             not a thing the screen offers. -->
+        <div class="rv-actions" *ngIf="rejecting() !== img.id">
+          <button class="btn-approve" [disabled]="busy() === img.id"
+                  *ngIf="img.status !== 'approved'" (click)="approve(img)">
+            {{ busy() === img.id ? '…' : 'Approve' }}
+          </button>
+          <button class="btn-reject" [disabled]="busy() === img.id"
+                  *ngIf="img.status !== 'rejected'" (click)="startReject(img)">
+            Reject
+          </button>
+        </div>
+
+        <div class="rv-reject-form" *ngIf="rejecting() === img.id">
+          <label>Why is this being rejected?</label>
+          <textarea rows="2" [ngModel]="reason()" (ngModelChange)="reason.set($event)"
+                    placeholder="e.g. Number plate visible, or the photo is of a different car"></textarea>
+          <small>The dealer reads this, so say what would make it acceptable.</small>
+          <div class="rv-reject-actions">
+            <button class="btn-reject" [disabled]="!reason().trim() || busy() === img.id"
+                    (click)="confirmReject(img)">
+              {{ busy() === img.id ? '…' : 'Confirm rejection' }}
+            </button>
+            <button class="btn-cancel" (click)="cancelReject()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

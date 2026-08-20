@@ -352,6 +352,10 @@
             <p>No photos on this car yet. A listing with pictures gets far more enquiries than one without.</p>
           </div>
 
+          <p class="td-sub" *ngIf="carImages().length" style="margin-bottom:1rem">
+            New photos are checked by an admin before buyers see them.
+          </p>
+
           <div class="image-grid" *ngIf="carImages().length > 0">
             <div class="image-card" *ngFor="let img of carImages(); let i = index">
               <div class="img-thumb">
@@ -361,8 +365,16 @@
                 <div class="img-title">Photo {{ i + 1 }}</div>
                 <div class="img-meta">
                   <!-- The first photo is the one buyers see in search results,
-                       so which one that is should not be a guess. -->
-                  <span class="badge" *ngIf="i === 0">Shown first</span>
+                       so which one that is should not be a guess. Only among
+                       the approved ones — a pending photo is shown to nobody. -->
+                  <span class="badge" *ngIf="i === 0 && img.status === 'approved'">Shown first</span>
+                  <!-- A dealer has to be able to tell "waiting" from "live",
+                       otherwise a photo nobody can see looks published. -->
+                  <span class="badge badge-pending" *ngIf="img.status === 'pending'">Awaiting review</span>
+                  <span class="badge badge-rejected" *ngIf="img.status === 'rejected'">Rejected</span>
+                </div>
+                <div class="img-reject-reason" *ngIf="img.rejection_reason">
+                  {{ img.rejection_reason }}
                 </div>
                 <button class="btn-outline" style="margin-top:.5rem;font-size:.78rem;padding:.3rem .7rem"
                         (click)="removeDealerImage(img.id)">Remove</button>
