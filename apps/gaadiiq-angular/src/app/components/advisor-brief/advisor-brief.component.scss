@@ -1,0 +1,567 @@
+/* One-sentence advisor.
+   Tokens only — no hardcoded brand hexes. The dark-mode failures listed in
+   CLAUDE.md all trace back to literals like #2563EB that predate the tokens. */
+
+.brief {
+  max-width: 900px;
+  margin: 0 auto 2.5rem;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ── Ask ──────────────────────────────────────────────────────────────── */
+
+.brief-title {
+  font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 0.35rem;
+}
+
+.brief-sub {
+  text-align: center;
+  color: var(--text-muted);
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+}
+
+.brief-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+
+  @media (max-width: 640px) { flex-direction: column; }
+}
+
+.brief-input {
+  flex: 1;
+  min-width: 0;
+  /* Stated so the button beside it can match; an unstated height is what put
+     a 36px button next to a 41px field on the used-cars search bar. */
+  min-height: 64px;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--divider);
+  border-radius: 12px;
+  background: var(--bg, #fff);
+  color: var(--text, #111);
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+
+  &::placeholder { color: var(--text-muted); }
+  &:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18);
+  }
+}
+
+.brief-go {
+  flex-shrink: 0;
+  min-width: 150px;
+  min-height: 64px;
+  padding: 0 1.5rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.12s;
+
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.brief-examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.ex-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.ex-chip {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: var(--fill-dim);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover { border-color: var(--teal); color: var(--teal-ink); }
+}
+
+.brief-error {
+  margin-top: 0.85rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--danger-ink, #b91c1c);
+  font-size: 0.9rem;
+}
+
+/* ── Answer ───────────────────────────────────────────────────────────── */
+
+.result-head { margin-bottom: 1rem; }
+
+.btn-restart {
+  border: none;
+  background: none;
+  color: var(--teal-ink);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.understood {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  background: var(--fill-dim);
+  margin-bottom: 1.25rem;
+
+  h3 { margin: 0 0 0.6rem; font-size: 0.95rem; font-weight: 700; }
+}
+
+.understood-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: var(--success-ink);
+  }
+}
+
+.understood-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.brief-message {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: var(--fill-dim);
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.followup {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  margin-bottom: 1.25rem;
+
+  h3 { margin: 0 0 0.25rem; font-size: 0.95rem; font-weight: 700; }
+}
+
+.followup-sub {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.followup-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.followup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+
+  input {
+    /* Matched to .followup-go so the row does not step. */
+    min-height: 42px;
+    width: 150px;
+    padding: 0 0.75rem;
+    border: 1.5px solid var(--divider);
+    border-radius: 10px;
+    background: var(--bg, #fff);
+    color: var(--text, #111);
+    font-family: inherit;
+    font-size: 0.9rem;
+
+    &:focus { outline: none; border-color: var(--teal); }
+  }
+}
+
+.followup-go {
+  min-height: 42px;
+  padding: 0 1.25rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.narrative-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 1.25rem;
+}
+
+/* ── Picks ────────────────────────────────────────────────────────────── */
+
+.picks-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.picks-count {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.pick {
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  background: var(--bg, #fff);
+}
+
+.pick-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.pick-rank {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(90deg, #2563EB 0%, #14B8A6 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.pick-id {
+  flex: 1;
+  min-width: 0;
+
+  h4 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+}
+
+.pick-variant {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.pick-score {
+  flex-shrink: 0;
+  text-align: right;
+
+  .score-num {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--teal-ink);
+  }
+  .score-cap {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+  }
+}
+
+.variant-reason {
+  margin: 0.75rem 0 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.variant-out {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--warning-ink);
+}
+
+.pick-reasons {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.87rem;
+  }
+  .good { color: var(--success-ink); }
+  .bad { color: var(--warning-ink); }
+}
+
+.pick-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--divider);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.fig-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+.fig-value {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.partial-flag {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 5px;
+  // 0.15 measured 4.48:1 on the rendered page — under AA, by a hair. The same
+  // ink over the plain card measures 5.02, so the tint is what costs it; the
+  // alpha comes down rather than the ink going darker, which would diverge
+  // from every other --warning-ink use in the app.
+  background: rgba(245, 158, 11, 0.10);
+  color: var(--warning-ink);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
+
+.partial-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--warning-ink);
+}
+
+.pick-more {
+  margin-top: 0.85rem;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--teal-ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Breakdown ────────────────────────────────────────────────────────── */
+
+.breakdown {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--divider);
+}
+
+.cost-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--divider);
+
+  &:last-of-type { border-bottom: none; }
+  &.is-unavailable { opacity: 0.75; }
+}
+
+.cost-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.cost-amount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cost-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* An estimate must be visually distinct from a computed figure — the whole
+   reason this replaced the hardcoded brand ratios. */
+.basis-badge {
+  padding: 0.05rem 0.4rem;
+  border-radius: 5px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+
+  &.basis-estimated {
+    // Same measured reason as .partial-flag above.
+    background: rgba(245, 158, 11, 0.10);
+    color: var(--warning-ink);
+  }
+  &.basis-unavailable {
+    background: var(--fill-dim);
+    color: var(--text-muted);
+  }
+}
+
+.spec-line {
+  margin: 0.75rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.pick-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-size: 0.87rem;
+  font-weight: 600;
+  color: var(--teal-ink);
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}
+
+/* ── Comparison ───────────────────────────────────────────────────────── */
+
+.compare {
+  margin-top: 1.75rem;
+
+  h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 0.85rem; }
+}
+
+/* Wide content scrolls inside its own box; the page body must never scroll
+   sideways. */
+.compare-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
+  min-width: 520px;
+
+  th, td {
+    padding: 0.7rem 0.85rem;
+    text-align: left;
+    border-bottom: 1px solid var(--divider);
+    vertical-align: top;
+  }
+
+  thead th {
+    font-weight: 700;
+    background: var(--fill-dim);
+
+    small {
+      display: block;
+      font-weight: 500;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+  }
+
+  tbody th {
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child th,
+  tbody tr:last-child td { border-bottom: none; }
+}
+
+/* ── Assumptions ──────────────────────────────────────────────────────── */
+
+.assumptions {
+  margin-top: 1.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  background: var(--fill-dim);
+
+  h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+  }
+
+  p {
+    margin: 0 0 0.4rem;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+
+    &:last-child { margin-bottom: 0; }
+  }
+}
