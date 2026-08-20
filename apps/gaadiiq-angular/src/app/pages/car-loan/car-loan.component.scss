@@ -392,3 +392,8 @@
   max-width: 70ch;
   margin: 0 0 1.25rem;
 }
+
+/* The dropdown is a component and sizes itself; without this it rendered
+   38px against this page's 46px inputs, which is the row misalignment
+   reported from UAT. Measured, not guessed. */
+app-custom-select { --cs-min-h: 46px; }

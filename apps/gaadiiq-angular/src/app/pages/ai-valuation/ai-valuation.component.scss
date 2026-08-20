@@ -96,3 +96,8 @@
   line-height: 1.65;
   color: var(--text-muted);
 }
+
+/* The dropdown is a component and sizes itself; without this it rendered
+   38px against this page's 43px inputs, which is the row misalignment
+   reported from UAT. Measured, not guessed. */
+app-custom-select { --cs-min-h: 43px; }
