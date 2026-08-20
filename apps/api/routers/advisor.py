@@ -308,13 +308,28 @@ async def brief(
 
     # Only models that have at least one published trim: an unpriced model
     # cannot be costed, and a draft price has not been checked by anyone.
+    #
+    # EXISTS rather than JOIN + DISTINCT. The join multiplies a model by its
+    # trims, and the obvious fix — SELECT DISTINCT — is one Postgres refuses:
+    # it needs an equality operator for every selected column, and `cars.specs`
+    # and `cars.features` are `json`, which has none.
+    #
+    #   ERROR: could not identify an equality operator for type json
+    #
+    # SQLite accepts it happily, so this passed locally and on the SQLite CI
+    # job and failed only on "Test on Postgres" — the exact split CLAUDE.md
+    # warns about. EXISTS returns each model once without comparing any
+    # column, so there is nothing to dedupe.
     q = (
         select(Car)
         .options(selectinload(Car.variants))
-        .join(CarVariant, CarVariant.car_id == Car.id)
-        .where(CarVariant.status == VariantStatus.published)
-        .where(CarVariant.ex_showroom_price.is_not(None))
-        .distinct()
+        .where(
+            select(CarVariant.id)
+            .where(CarVariant.car_id == Car.id)
+            .where(CarVariant.status == VariantStatus.published)
+            .where(CarVariant.ex_showroom_price.is_not(None))
+            .exists()
+        )
         .limit(400)
     )
     cars = (await db.execute(q)).scalars().unique().all()
