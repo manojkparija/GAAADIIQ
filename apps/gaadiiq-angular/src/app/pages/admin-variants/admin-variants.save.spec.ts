@@ -94,3 +94,61 @@ describe('AdminVariantsComponent — editing a priced trim', () => {
     expect(body()['name']).toBe('Alpha');
   });
 });
+
+describe('AdminVariantsComponent — choosing a model and year', () => {
+  let c: any;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [AdminVariantsComponent, RouterTestingModule],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    c = TestBed.createComponent(AdminVariantsComponent).componentInstance;
+    c.cars.set([
+      { id: 'a', make: 'Maruti Suzuki', model: 'Fronx', year: 2026, ex_showroom_price: null },
+      { id: 'b', make: 'Maruti Suzuki', model: 'Fronx', year: 2025, ex_showroom_price: null },
+      { id: 'c', make: 'Maruti Suzuki', model: 'Fronx', year: 2024, ex_showroom_price: null },
+      { id: 'd', make: 'Maruti Suzuki', model: 'Ertiga', year: 2021, ex_showroom_price: null },
+      { id: 'e', make: 'Hyundai', model: 'Creta', year: 2025, ex_showroom_price: null },
+    ]);
+    c.selectedMake.set('Maruti Suzuki');
+  });
+
+  it('lists each model once, not once per year', () => {
+    // Reported from UAT: "Fronx (2026)", "Fronx (2025)", "Fronx (2024)" read
+    // as the same car added three times.
+    expect(c.modelNameOptions().map((o: any) => o.label)).toEqual(['Ertiga', 'Fronx']);
+  });
+
+  it('keeps models of other makes out of the list', () => {
+    expect(c.modelNameOptions().map((o: any) => o.label)).not.toContain('Creta');
+  });
+
+  it('offers the years that model exists for, newest first', () => {
+    c.selectedModel.set('Fronx');
+    expect(c.yearOptions().map((o: any) => o.label)).toEqual(['2026', '2025', '2024']);
+  });
+
+  it('carries the catalogue row id on the year, since variants hang off it', () => {
+    c.selectedModel.set('Fronx');
+    expect(c.yearOptions()[0].value).toBe('a');
+  });
+
+  it('selects the year outright when a model has only one', () => {
+    // A list of one is a click that teaches nothing.
+    c.onModelChange('Ertiga');
+    expect(c.selectedCarId()).toBe('d');
+  });
+
+  it('waits for a choice when a model has several years', () => {
+    c.onModelChange('Fronx');
+    expect(c.selectedCarId()).toBe('');
+  });
+
+  it('clears the model and year when the make changes', () => {
+    c.onModelChange('Ertiga');
+    c.onMakeChange('Hyundai');
+    expect(c.selectedModel()).toBe('');
+    expect(c.selectedCarId()).toBe('');
+  });
+});

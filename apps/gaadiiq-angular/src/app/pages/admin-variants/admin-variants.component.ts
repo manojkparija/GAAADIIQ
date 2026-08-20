@@ -70,12 +70,30 @@ export class AdminVariantsComponent {
 
   cars = signal<CatalogueCar[]>([]);
 
-  /** Model list as {value: id, label: "Model (year)"} for the dropdown. */
-  modelSelectOptions(): SelectOption[] {
-    return this.modelsForMake().map(car => ({
-      value: String(car.id),
-      label: `${car.model} (${car.year})`,
-    }));
+  /**
+   * Model names, each listed once.
+   *
+   * This used to be one dropdown of catalogue rows labelled "Fronx (2026)",
+   * "Fronx (2025)", "Fronx (2024)" — a catalogue row is make + model + year,
+   * so every model year appeared as a separate entry and the list read as
+   * though the same car had been added three times.
+   *
+   * The year is real and cannot be dropped: variants hang off one specific
+   * row, and the trims and prices of a 2024 Fronx are not those of a 2026.
+   * It gets its own picker instead of being folded into the model name.
+   */
+  modelNameOptions(): SelectOption[] {
+    return [...new Set(this.modelsForMake().map(c => c.model))]
+      .sort()
+      .map(model => ({ value: model, label: model }));
+  }
+
+  /** The years the catalogue holds for the chosen model, newest first. */
+  yearOptions(): SelectOption[] {
+    return this.modelsForMake()
+      .filter(c => c.model === this.selectedModel())
+      .sort((a, b) => b.year - a.year)
+      .map(c => ({ value: String(c.id), label: String(c.year) }));
   }
 
   selectedCarId = signal('');
@@ -141,10 +159,29 @@ export class AdminVariantsComponent {
     }
   }
 
+  selectedModel = signal('');
+
   onMakeChange(make: string) {
     this.selectedMake.set(make);
+    this.selectedModel.set('');
     this.selectedCarId.set('');
     this.variants.set([]);
+  }
+
+  /**
+   * Choosing a model picks its year too when there is only one.
+   *
+   * Most models exist for a single year in the catalogue, and making someone
+   * choose from a list of one is a click that teaches nothing.
+   */
+  async onModelChange(model: string) {
+    this.selectedModel.set(model);
+    this.selectedCarId.set('');
+    this.variants.set([]);
+    this.cancelEdit();
+
+    const years = this.yearOptions();
+    if (years.length === 1) await this.onCarChange(years[0].value);
   }
 
   async onCarChange(carId: string) {
