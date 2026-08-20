@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_validator
@@ -45,6 +45,9 @@ class CarOut(BaseModel):
     # as a number: a model shown at ₹0 misleads a buyer far more than a model
     # shown with no price at all.
     ex_showroom_price: Decimal | None = None
+    reference_price: Decimal | None = None
+    reference_price_source: str | None = None
+    reference_price_checked_on: date | None = None
 
     # Photographs from the media library that match this car's make, model and
     # year. Not a stored column: cars carry no image of their own, and an image
@@ -87,6 +90,30 @@ class CarUpdate(BaseModel):
     seating_capacity: int | None = None
     engine_cc: int | None = None
     ex_showroom_price: Decimal | None = Field(default=None, ge=0)
+
+    # A figure a person looked up, with where and when. Never derived — see
+    # services/price_reference.
+    reference_price: Decimal | None = Field(default=None, ge=0)
+    reference_price_source: str | None = Field(default=None, max_length=255)
+    reference_price_checked_on: date | None = None
+
+
+class PriceCheckOut(BaseModel):
+    """
+    What the entered price looks like against the reference.
+
+    Returned alongside the saved car so the screen can warn without a second
+    round trip. `has_reference` is separate from `is_significant` on purpose:
+    "nothing to compare against" and "compared and fine" are different facts,
+    and a publisher acts differently on each.
+    """
+
+    has_reference: bool
+    is_significant: bool
+    difference: float | None = None
+    reference_age_days: int | None = None
+    is_stale: bool = False
+    message: str | None = None
 
 
 class CarListOut(BaseModel):

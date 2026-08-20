@@ -20,7 +20,7 @@ import { ImageUploadService } from './image-upload.service';
 import { SupabaseService } from './supabase.service';
 
 class FakeSupabase {
-  insertReply: { data: unknown[] | null; error: unknown } = { data: [{ id: 9, car_id: CAR, url: 'u', sort_order: 0 }], error: null };
+  insertReply: { data: unknown[] | null; error: unknown } = { data: [{ id: 9, car_id: CAR, url: 'u', sort_order: 0, status: 'pending', rejection_reason: null }], error: null };
   deleteReply: { data: unknown[] | null; error: unknown } = { data: [{ id: 5 }], error: null };
   selectReply: { data: unknown[] | null; error: unknown } = { data: [], error: null };
   lastInsert: unknown[] | null = null;
@@ -84,8 +84,8 @@ describe('DealerCarImagesService', () => {
 
   it('numbers new photos after the ones already there', async () => {
     svc.images.set([
-      { id: 1, car_id: CAR, url: 'x', sort_order: 0 },
-      { id: 2, car_id: CAR, url: 'y', sort_order: 1 },
+      { id: 1, car_id: CAR, url: 'x', sort_order: 0, status: 'approved', rejection_reason: null },
+      { id: 2, car_id: CAR, url: 'y', sort_order: 1, status: 'approved', rejection_reason: null },
     ]);
     await svc.add(CAR, [png('c.png')]);
     expect((sb.lastInsert as any[])[0].sort_order).toBe(2);
@@ -113,7 +113,7 @@ describe('DealerCarImagesService', () => {
   it('keeps a photo on screen when the delete is refused', async () => {
     // Otherwise it vanishes and returns on the next load, which reads as the
     // app losing the change rather than refusing it.
-    svc.images.set([{ id: 5, car_id: CAR, url: 'x', sort_order: 0 }]);
+    svc.images.set([{ id: 5, car_id: CAR, url: 'x', sort_order: 0, status: 'approved', rejection_reason: null }]);
     sb.deleteReply = { data: [], error: null };
 
     await expectAsync(svc.remove(5)).toBeResolvedTo(false);
@@ -122,7 +122,7 @@ describe('DealerCarImagesService', () => {
   });
 
   it('removes a photo the database agreed to delete', async () => {
-    svc.images.set([{ id: 5, car_id: CAR, url: 'x', sort_order: 0 }]);
+    svc.images.set([{ id: 5, car_id: CAR, url: 'x', sort_order: 0, status: 'approved', rejection_reason: null }]);
     await expectAsync(svc.remove(5)).toBeResolvedTo(true);
     expect(svc.images().length).toBe(0);
   });

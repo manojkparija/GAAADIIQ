@@ -252,13 +252,23 @@ async def _ensure_catalogue_car(
         await db.flush()
         return car, True
 
-    # The admin is stating a price now, so it wins over whatever was there:
-    # a correction is the usual reason to type one against a model that
-    # already exists. Omitting the field leaves the stored price alone rather
-    # than clearing it, so uploading more photographs of a priced model does
-    # not un-price it.
-    if ex_showroom_price is not None:
-        car.ex_showroom_price = ex_showroom_price
+    # An existing row's price is never touched from here.
+    #
+    # This used to overwrite it, on the reasoning that an admin typing a price
+    # means to correct one. The reasoning ignored what the lookup above does:
+    # it matches on make, model and year and deliberately *drops the variant*,
+    # because photographs are of a model rather than a trim. So a price typed
+    # alongside a ZXi upload landed on whichever row that match returned —
+    # usually the base entry — and replaced the base variant's price with the
+    # ZXi's. Reported from UAT exactly that way: enter the base at ₹6.5L, then
+    # upload a higher trim, and the base is silently repriced.
+    #
+    # Prices are per trim and belong to /admin/variants, which edits them
+    # against a named variant. An image upload has no business writing one,
+    # and cannot do it correctly through a variant-blind match.
+    #
+    # The price is still used when *creating* a row above: there the row is
+    # new, carries no variant, and a first price is better than none.
 
     # Fill only what the catalogue is missing. An existing row may have been
     # curated, and an upload form is not the place to overwrite that.

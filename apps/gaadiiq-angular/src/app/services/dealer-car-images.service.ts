@@ -17,11 +17,16 @@ import { ImageUploadService } from './image-upload.service';
  * adminGuard.
  */
 
+export type ImageReviewStatus = 'pending' | 'approved' | 'rejected';
+
 export interface DealerCarImage {
   id: number;
   car_id: string;
   url: string;
   sort_order: number | null;
+  /** Buyers only ever see 'approved'. Enforced in the database, not here. */
+  status: ImageReviewStatus;
+  rejection_reason: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -40,7 +45,7 @@ export class DealerCarImagesService {
     this.error.set('');
     const { data, error } = await this.sb.client
       .from('car_images')
-      .select('id, car_id, url, sort_order')
+      .select('id, car_id, url, sort_order, status, rejection_reason')
       .eq('car_id', carId)
       .order('sort_order', { ascending: true });
 
@@ -73,10 +78,13 @@ export class DealerCarImagesService {
 
       const { data, error } = await this.sb.client
         .from('car_images')
+        // status is not sent: a database trigger forces 'pending' for anyone
+        // who is not an admin, so a client that asked for 'approved' would be
+        // overruled rather than trusted.
         .insert(uploaded.map((img, i) => ({
           car_id: carId, url: img.url, sort_order: startAt + i,
         })))
-        .select();
+        .select('id, car_id, url, sort_order, status, rejection_reason');
 
       if (error || !data?.length) {
         this.error.set('Those photos could not be attached to this car.');

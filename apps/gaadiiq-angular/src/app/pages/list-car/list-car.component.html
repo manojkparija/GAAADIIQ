@@ -65,9 +65,20 @@
           </div>
           <div class="form-group">
             <label>Variant <span style="color:var(--muted);font-size:0.8rem">(optional)</span></label>
-            <app-custom-select [options]="availableVariants" placeholder="Select variant"
-                               [(ngModel)]="form.variant" name="variant"
-                               [disabled]="!form.model || availableVariants.length === 0" />
+            <!-- The trim list is a hardcoded map that does not cover every
+                 model, and the field used to be disabled outright when it had
+                 nothing — leaving a dealer with real stock no way to record
+                 the trim. The list is still offered, with a way out of it. -->
+            <app-custom-select *ngIf="!customVariant()"
+                               [options]="variantOptions()" placeholder="Select variant"
+                               [ngModel]="form.variant" (ngModelChange)="onVariantPick($event)"
+                               name="variant" [disabled]="!form.model" />
+            <input *ngIf="customVariant()" type="text" [(ngModel)]="form.variant"
+                   name="variantText" placeholder="e.g. Sigma, Delta, ZXi+"
+                   [disabled]="!form.model">
+            <small *ngIf="customVariant()" class="lt-hint">
+              <a href="javascript:void(0)" (click)="customVariant.set(false)">Choose from the list instead</a>
+            </small>
           </div>
           <div class="form-group">
             <label>Year</label>
@@ -149,7 +160,7 @@
 
         <div class="btn-row">
           <a routerLink="/" class="btn-outline">Cancel</a>
-          <button class="btn-gradient" (click)="nextStep()" [disabled]="!form.make || !form.model || !form.fuel || !form.km || !form.owners || !form.condition || valuationLoading()">
+          <button class="btn-gradient" (click)="nextStep()" [disabled]="!canLeaveStepOne()">
             {{ valuationLoading() ? '⚡ Getting AI estimate…' : 'Continue →' }}
           </button>
         </div>

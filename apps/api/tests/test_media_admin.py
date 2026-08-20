@@ -386,6 +386,47 @@ class TestCatalogueEntrySuite:
         assert body["catalogue_warnings"] == []
 
     @pytest.mark.asyncio
+    async def test_a_later_upload_does_not_reprice_an_existing_model(self, client):
+        """
+        Reported from UAT: price the base variant, upload a higher trim, and
+        the base variant is silently repriced to the higher trim's figure.
+
+        The cause is the match this function does deliberately — make, model
+        and year, dropping the variant, because photographs are of a model and
+        not of a trim. A price typed alongside a ZXi upload therefore landed on
+        whichever row that variant-blind match returned, which is the base
+        entry. Prices are per trim and belong to /admin/variants; the upload
+        path must not write one onto a row it found by ignoring the trim.
+        """
+        base = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Fronx",
+                  "model_year": "2026", "category": "SUV", "media_bucket": "new",
+                  "variant": "Sigma", "ex_showroom_price": "650000"},
+            files=[("files", ("fronx-base.png", io.BytesIO(_png()), "image/png"))],
+        )
+        assert base.status_code == 201
+        car_id = base.json()["catalogue_car_id"]
+
+        higher = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Fronx",
+                  "model_year": "2026", "category": "SUV", "media_bucket": "new",
+                  "variant": "Alpha", "ex_showroom_price": "1150000"},
+            files=[("files", ("fronx-alpha.png", io.BytesIO(_png((9, 9, 9))), "image/png"))],
+        )
+        assert higher.status_code == 201
+        # Same catalogue row, by design — one model, one entry, shared photos.
+        assert higher.json()["catalogue_car_id"] == car_id
+        assert higher.json()["catalogue_car_created"] is False
+
+        resp = await client.get(f"/cars/{car_id}")
+        assert resp.status_code == 200
+        assert float(resp.json()["ex_showroom_price"]) == 650000.0, (
+            "the second upload repriced the model it did not name"
+        )
+
+    @pytest.mark.asyncio
     async def test_the_created_model_reaches_the_new_cars_catalogue(self, client):
         await client.post(
             "/media-admin/upload",

@@ -205,8 +205,66 @@ export class ListCarComponent {
     return this.modelCatalogue[this.form.make]?.[this.form.model] ?? ['Other'];
   }
 
-  onMakeChange() { this.form.model = ''; this.form.variant = ''; }
-  onModelChange() { this.form.variant = ''; }
+  onMakeChange() {
+    this.form.model = '';
+    this.form.variant = '';
+    this.customVariant.set(false);
+  }
+
+  onModelChange() {
+    this.form.variant = '';
+    this.customVariant.set(false);
+  }
+
+  /** Sentinel option meaning "the trim I want is not in this list". */
+  readonly VARIANT_OTHER = '__type_variant__';
+
+  /** Whether the variant is being typed rather than chosen. */
+  customVariant = signal(false);
+
+  /**
+   * The trims offered, plus a way out of the list.
+   *
+   * The catalogue here is a hardcoded map covering some models, so a dealer
+   * with genuine showroom stock frequently finds their trim missing — and the
+   * field was disabled outright when the map had nothing, which left no way to
+   * record it at all. Asked for in UAT: let the variant be typed.
+   */
+  variantOptions(): SelectOption[] {
+    return [
+      ...this.availableVariants.map(v => ({ value: v, label: v })),
+      { value: this.VARIANT_OTHER, label: '✏️ Type a different variant…' },
+    ];
+  }
+
+  onVariantPick(value: string) {
+    if (value === this.VARIANT_OTHER) {
+      this.customVariant.set(true);
+      this.form.variant = '';
+      return;
+    }
+    this.customVariant.set(false);
+    this.form.variant = value;
+  }
+
+  /**
+   * Whether step 1 has what it needs.
+   *
+   * A method rather than a template expression listing fields, because the
+   * fields differ by listing type and the expression got this wrong: it
+   * required km, owners and condition unconditionally, which are exactly the
+   * three a new car hides and clears. The button was therefore permanently
+   * disabled for new stock — it looked clickable and did nothing, reported
+   * from UAT as "it is not moving forward".
+   */
+  canLeaveStepOne(): boolean {
+    if (this.valuationLoading()) return false;
+    if (!this.form.make || !this.form.model || !this.form.fuel) return false;
+
+    return this.isNew()
+      ? !!this.form.exShowroomPrice
+      : !!(this.form.km && this.form.owners && this.form.condition);
+  }
 
   form = {
     make: '', model: '', variant: '', year: 2020, km: '',

@@ -55,7 +55,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of rows()" [class.editing-row]="row.editing">
+            <ng-container *ngFor="let row of rows()">
+            <tr [class.editing-row]="row.editing">
               <td class="car-cell">
                 <div class="car-name">{{ row.make }} {{ row.model }}</div>
                 <div class="car-variant">{{ row.variant }}</div>
@@ -85,12 +86,36 @@
                 </ng-container>
                 <ng-container *ngIf="row.editing">
                   <button class="btn-save" (click)="savePrice(row)" [disabled]="row.saving">
-                    {{ row.saving ? '…' : '✓ Save' }}
+                    {{ row.saving ? '…' : (row.overrideWarning ? '✓ Publish anyway' : '✓ Save') }}
                   </button>
                   <button class="btn-cancel" (click)="cancelEdit(row)">✕</button>
                 </ng-container>
               </td>
             </tr>
+
+            <!--
+              The reference check, on its own row under the one being edited.
+              It interrupts the first save and lets the second through: an
+              admin who knows the reference is stale still has to be able to
+              publish, and a warning that cannot be passed is one people learn
+              to work around.
+            -->
+            <tr class="check-row" *ngIf="row.editing && row.priceCheck as check">
+              <td colspan="5">
+                <div class="price-check price-check--warn" *ngIf="check.is_significant">
+                  <strong>Check this price before publishing</strong>
+                  <p>{{ check.message }}</p>
+                  <button class="btn-cancel" (click)="dismissPriceCheck(row)">Go back and edit</button>
+                </div>
+                <!-- Said out loud rather than left silent: "nothing to compare
+                     against" and "compared and fine" are different facts. -->
+                <div class="price-check price-check--none"
+                     *ngIf="!check.is_significant && !check.has_reference">
+                  {{ check.message }}
+                </div>
+              </td>
+            </tr>
+            </ng-container>
           </tbody>
         </table>
 

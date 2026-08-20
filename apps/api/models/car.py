@@ -1,8 +1,9 @@
 import enum
+from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Enum, Index, Numeric, SmallInteger, String
+from sqlalchemy import JSON, Date, Enum, Index, Numeric, SmallInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base, TimestampMixin, UUIDMixin
@@ -65,6 +66,20 @@ class Car(UUIDMixin, TimestampMixin, Base):
     # advert. NULL means nobody has entered a price yet — readers must show
     # that as unpriced, never as zero.
     ex_showroom_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+
+    # A price someone checked against a real source, used to sanity-check the
+    # one above. Never derived: a reference figure the system invented would be
+    # indistinguishable from a checked one at the point it is read, and would
+    # be believed — the reason credit_bureau.fetch_score raises rather than
+    # returning something plausible.
+    #
+    # The source and the date travel with it because a price alone cannot be
+    # judged. "OEM site, today" and "someone's memory, last year" are not the
+    # same evidence, and a warning is only worth showing when the reader can
+    # tell which one they are looking at.
+    reference_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    reference_price_source: Mapped[str | None] = mapped_column(String(255))
+    reference_price_checked_on: Mapped[date | None] = mapped_column(Date)
 
     # The model's specification, as label/value pairs read top to bottom, and
     # its feature list. JSON because nothing queries across them and a join

@@ -19,6 +19,16 @@ interface CatalogueCar {
 }
 
 /** A trim being edited. Everything is a string: it came from a form. */
+/**
+ * Anything to the string a form field needs.
+ *
+ * null and undefined become '' rather than "null", which would otherwise be
+ * typed straight back into the database as a trim's mileage.
+ */
+function text(value: unknown): string {
+  return value === null || value === undefined ? '' : String(value);
+}
+
 interface VariantForm {
   name: string;
   ex_showroom_price: string;
@@ -60,12 +70,30 @@ export class AdminVariantsComponent {
 
   cars = signal<CatalogueCar[]>([]);
 
-  /** Model list as {value: id, label: "Model (year)"} for the dropdown. */
-  modelSelectOptions(): SelectOption[] {
-    return this.modelsForMake().map(car => ({
-      value: String(car.id),
-      label: `${car.model} (${car.year})`,
-    }));
+  /**
+   * Model names, each listed once.
+   *
+   * This used to be one dropdown of catalogue rows labelled "Fronx (2026)",
+   * "Fronx (2025)", "Fronx (2024)" — a catalogue row is make + model + year,
+   * so every model year appeared as a separate entry and the list read as
+   * though the same car had been added three times.
+   *
+   * The year is real and cannot be dropped: variants hang off one specific
+   * row, and the trims and prices of a 2024 Fronx are not those of a 2026.
+   * It gets its own picker instead of being folded into the model name.
+   */
+  modelNameOptions(): SelectOption[] {
+    return [...new Set(this.modelsForMake().map(c => c.model))]
+      .sort()
+      .map(model => ({ value: model, label: model }));
+  }
+
+  /** The years the catalogue holds for the chosen model, newest first. */
+  yearOptions(): SelectOption[] {
+    return this.modelsForMake()
+      .filter(c => c.model === this.selectedModel())
+      .sort((a, b) => b.year - a.year)
+      .map(c => ({ value: String(c.id), label: String(c.year) }));
   }
 
   selectedCarId = signal('');
@@ -131,10 +159,29 @@ export class AdminVariantsComponent {
     }
   }
 
+  selectedModel = signal('');
+
   onMakeChange(make: string) {
     this.selectedMake.set(make);
+    this.selectedModel.set('');
     this.selectedCarId.set('');
     this.variants.set([]);
+  }
+
+  /**
+   * Choosing a model picks its year too when there is only one.
+   *
+   * Most models exist for a single year in the catalogue, and making someone
+   * choose from a list of one is a click that teaches nothing.
+   */
+  async onModelChange(model: string) {
+    this.selectedModel.set(model);
+    this.selectedCarId.set('');
+    this.variants.set([]);
+    this.cancelEdit();
+
+    const years = this.yearOptions();
+    if (years.length === 1) await this.onCarChange(years[0].value);
   }
 
   async onCarChange(carId: string) {
@@ -235,14 +282,23 @@ export class AdminVariantsComponent {
 
   startEdit(v: CarVariant) {
     this.editingId.set(v.id);
+    // Every field is forced to a string on the way in.
+    //
+    // The form is all strings and body() calls .trim() on them, but
+    // CarVariant.ex_showroom_price is declared `string | null` and is not one:
+    // the API types it Decimal, and Pydantic serialises that as a JSON number.
+    // Editing any priced trim therefore put a number in a string field and the
+    // save died on `a.trim is not a function` — reported from UAT, and it made
+    // the variants screen the one place prices are supposed to come from and
+    // the one place they could not be saved.
     this.form.set({
-      name: v.name,
-      ex_showroom_price: v.ex_showroom_price ?? '',
-      fuel_type: v.fuel_type ?? '',
-      transmission: v.transmission ?? '',
-      engine_cc: v.engine_cc?.toString() ?? '',
-      seating_capacity: v.seating_capacity?.toString() ?? '',
-      mileage: v.mileage ?? '',
+      name: text(v.name),
+      ex_showroom_price: text(v.ex_showroom_price),
+      fuel_type: text(v.fuel_type),
+      transmission: text(v.transmission),
+      engine_cc: text(v.engine_cc),
+      seating_capacity: text(v.seating_capacity),
+      mileage: text(v.mileage),
       features: (v.features ?? []).join(', '),
     });
   }
@@ -270,24 +326,27 @@ export class AdminVariantsComponent {
    */
   private body(): Record<string, unknown> {
     const f = this.form();
-    const orNull = (s: string) => (s.trim() ? s.trim() : null);
-    const numOrNull = (s: string) => (s.trim() ? Number(s) : null);
+    // Coerce rather than assume. The form is typed as strings and mostly is
+    // one, but a value that arrived from the API — or from an AI draft — can
+    // be a number, and .trim() on a number is a crash rather than a bad save.
+    const orNull = (v: unknown) => (text(v).trim() ? text(v).trim() : null);
+    const numOrNull = (v: unknown) => (text(v).trim() ? Number(text(v)) : null);
     return {
-      name: f.name.trim(),
+      name: text(f.name).trim(),
       ex_showroom_price: orNull(f.ex_showroom_price),
       fuel_type: orNull(f.fuel_type),
       transmission: orNull(f.transmission),
       engine_cc: numOrNull(f.engine_cc),
       seating_capacity: numOrNull(f.seating_capacity),
       mileage: orNull(f.mileage),
-      features: f.features.split(',').map(s => s.trim()).filter(Boolean),
+      features: text(f.features).split(',').map(x => x.trim()).filter(Boolean),
     };
   }
 
   async save() {
     const carId = this.selectedCarId();
     const editing = this.editingId();
-    if (!carId || !editing || !this.form().name.trim()) return;
+    if (!carId || !editing || !text(this.form().name).trim()) return;
 
     const isNew = editing === 'new';
     try {
@@ -368,7 +427,9 @@ export class AdminVariantsComponent {
     }
   }
 
-  formatPrice(value: string | null): string {
+  // Takes a number too: the API sends this Decimal column as a JSON number,
+  // whatever the interface used to claim.
+  formatPrice(value: string | number | null): string {
     if (!value) return 'No price';
     const n = Number(value);
     return n >= 100000 ? `₹${(n / 100000).toFixed(2)} Lakh` : `₹${n.toLocaleString('en-IN')}`;

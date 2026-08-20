@@ -877,13 +877,59 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   // review — a price a buyer budgets against does not belong in a component.
   variants = signal<CarVariant[]>([]);
 
-  /** The published price band, or null when no trim carries a price. */
+  /**
+   * Which gearbox the buyer is shopping for. '' means all of them.
+   *
+   * Asked for in UAT: "when a user selects Automatic, show only the variants
+   * that support automatic transmission, with their prices and specs".
+   */
+  gearboxFilter = signal<string>('');
+
+  /**
+   * The gearboxes this model is actually sold with.
+   *
+   * Derived from the trims rather than a fixed list of every transmission on
+   * the market. A dropdown offering CVT on a car that has no CVT is a filter
+   * whose only outcome is an empty list, and the buyer cannot tell that from
+   * a bug.
+   */
+  gearboxOptions = computed<string[]>(() =>
+    [...new Set(
+      this.variants().map(v => (v.transmission ?? '').trim()).filter(Boolean)
+    )].sort()
+  );
+
+  /** The trims on screen, after the gearbox filter. */
+  filteredVariants = computed<CarVariant[]>(() => {
+    const want = this.gearboxFilter();
+    if (!want) return this.variants();
+    return this.variants().filter(
+      v => (v.transmission ?? '').trim().toLowerCase() === want.toLowerCase()
+    );
+  });
+
+  /**
+   * The published price band, or null when no trim carries a price.
+   *
+   * Measured over the filtered set, so "starts at" answers the question the
+   * buyer is actually asking. Filtering to Automatic and still being quoted
+   * the manual's starting price would be worse than showing no band at all.
+   */
   variantPriceRange = computed<[number, number] | null>(() => {
-    const prices = this.variants()
+    const prices = this.filteredVariants()
       .map(v => Number(v.ex_showroom_price))
       .filter(p => Number.isFinite(p) && p > 0);
     return prices.length ? [Math.min(...prices), Math.max(...prices)] : null;
   });
+
+  setGearbox(value: string) {
+    this.gearboxFilter.set(value);
+    // A trim hidden by the filter must not stay selected: the on-road price
+    // panel would go on quoting a car the buyer can no longer see.
+    const stillShown = this.filteredVariants()
+      .some(v => v.id === this.selectedVariantId());
+    if (!stillShown) this.selectedVariantId.set(null);
+  }
 
   /** The trim the buyer is pricing, or null for the model's base figure. */
   selectedVariantId = signal<string | null>(null);
@@ -974,6 +1020,37 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   }
 
   get isNewCar() { return this.car?.km === 0 && this.car?.year >= 2024; }
+  /**
+   * Brochure specs worth a pill in the Overview.
+   *
+   * The Overview rendered two facts on a new car — Fuel and Gearbox — because
+   * every other pill was conditional on Owners, Colour or Location, and a
+   * catalogue model carries none of those. The specs it does carry were only
+   * shown on the Specs tab.
+   *
+   * Fuel and Gearbox are dropped here rather than repeated: they already have
+   * their own pills two lines above, and the same fact twice reads as a bug.
+   * A method, not a computed(): `car` is a plain field, so a computed() over
+   * it would answer once and then go stale.
+   */
+  overviewSpecs(): { label: string; value: string }[] {
+    const shownAlready = ['fuel', 'gearbox', 'transmission'];
+    return (this.car?.specs ?? [])
+      .filter(sp => sp.value && !shownAlready.includes(sp.label.toLowerCase()))
+      .slice(0, 4);
+  }
+
+  /** Best available icon for a spec row; `info` when nothing fits. */
+  specIcon(label: string): string {
+    const l = label.toLowerCase();
+    if (l.includes('mileage') || l.includes('range')) return 'gauge';
+    if (l.includes('power') || l.includes('torque')) return 'zap';
+    if (l.includes('engine')) return 'settings';
+    if (l.includes('seat')) return 'user';
+    if (l.includes('boot') || l.includes('tank')) return 'fuel';
+    return 'info';
+  }
+
   get newCarMeta(): NewCarMeta | null {
     if (!this.isNewCar) return null;
     const key = `${this.car.make} ${this.car.model}`;

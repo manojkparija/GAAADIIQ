@@ -29,9 +29,22 @@
 
         <div class="av-field">
           <label>Model</label>
-          <app-custom-select [options]="modelSelectOptions()" placeholder="Select model…"
-                             [ngModel]="selectedCarId()" (ngModelChange)="onCarChange($event)"
+          <app-custom-select [options]="modelNameOptions()" placeholder="Select model…"
+                             [ngModel]="selectedModel()" (ngModelChange)="onModelChange($event)"
                              [disabled]="!selectedMake()" />
+        </div>
+
+        <!-- Its own picker rather than part of the model name. A catalogue row
+             is make + model + year, so "Fronx" was appearing three times, once
+             per year, and read as the same car added three times. The year
+             cannot be dropped — the trims of a 2024 Fronx are not those of a
+             2026 — so it is shown as what it is. Hidden when the model exists
+             for one year only, which is most of them. -->
+        <div class="av-field" *ngIf="yearOptions().length > 1">
+          <label>Model year</label>
+          <app-custom-select [options]="yearOptions()" placeholder="Select year…"
+                             [ngModel]="selectedCarId()" (ngModelChange)="onCarChange($event)"
+                             [disabled]="!selectedModel()" />
         </div>
       </div>
     </section>

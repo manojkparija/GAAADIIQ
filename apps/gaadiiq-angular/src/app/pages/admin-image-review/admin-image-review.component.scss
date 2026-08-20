@@ -1,0 +1,117 @@
+.review-page {
+  min-height: 100vh;
+  // Clears the fixed navbar (LAY-007). Both admin screens shipped without this
+  // once and rendered their titles under the nav.
+  padding-top: max(7rem, var(--nav-offset));
+  padding-bottom: 4rem;
+}
+
+.review-head { margin-bottom: 1.5rem; }
+.review-sub { color: var(--text-muted); max-width: 46rem; }
+
+.review-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+
+.rv-tab {
+  padding: 0.45rem 1.1rem;
+  border: 1.5px solid var(--border, #e5e7eb);
+  border-radius: 999px;
+  background: var(--bg, #fff);
+  font-weight: 600;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+
+  &.active {
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    border-color: #2563EB;
+    color: #fff;
+  }
+}
+
+.rv-state { padding: 3rem 0; text-align: center; color: var(--text-muted); }
+.rv-error { color: var(--danger-ink, #b91c1c); font-weight: 600; }
+
+.rv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.rv-card { padding: 0.9rem; display: flex; flex-direction: column; gap: 0.6rem; }
+
+.rv-thumb {
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--fill-dim, #f1f5f9);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.rv-car  { font-weight: 700; }
+.rv-from,
+.rv-when { font-size: 0.78rem; color: var(--text-muted); }
+
+.rv-reason {
+  font-size: 0.8rem;
+  color: var(--danger-ink, #b91c1c);
+  background: #FEE2E2;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+}
+
+.rv-actions,
+.rv-reject-actions { display: flex; gap: 0.5rem; }
+
+.btn-approve,
+.btn-reject,
+.btn-cancel {
+  flex: 1;
+  padding: 0.45rem 0.8rem;
+  border-radius: 7px;
+  font-weight: 600;
+  font-size: 0.83rem;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+.btn-approve {
+  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  color: #fff;
+}
+
+// Outlined rather than filled red: rejecting is the less common choice and
+// should not be the easiest button on the card to hit by accident.
+.btn-reject {
+  background: var(--bg, #fff);
+  border-color: var(--danger-ink, #b91c1c);
+  color: var(--danger-ink, #b91c1c);
+}
+
+.btn-cancel {
+  background: var(--bg, #fff);
+  border-color: var(--border, #e5e7eb);
+  color: var(--text-muted);
+}
+
+.rv-reject-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label { font-size: 0.82rem; font-weight: 600; }
+  small { font-size: 0.74rem; color: var(--text-muted); }
+
+  textarea {
+    width: 100%;
+    padding: 0.5rem 0.7rem;
+    border: 1.5px solid var(--border, #e5e7eb);
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    resize: vertical;
+  }
+}

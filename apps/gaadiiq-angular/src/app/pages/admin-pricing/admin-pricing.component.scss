@@ -141,3 +141,30 @@
 .row-error { margin-top: 0.35rem; font-size: 0.75rem; color: #F87171; }
 
 [data-theme="dark"] .unpriced-note { color: #FBBF24; }
+
+/* Reference-price check, shown under the row being edited. */
+.check-row td { padding: 0 0 0.75rem; border-top: none; }
+
+.price-check {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+
+  p { margin: 0.3rem 0 0.6rem; }
+  strong { display: block; }
+}
+
+/* Amber, and opaque: a tint composites differently over a glass card, and the
+   text has to clear AA where it actually sits. --warning-ink is the text-only
+   counterpart to the brand warning colour. */
+.price-check--warn {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  color: var(--warning-ink, #92400E);
+}
+
+.price-check--none {
+  background: var(--fill-dim, #f1f5f9);
+  color: var(--text-muted);
+}

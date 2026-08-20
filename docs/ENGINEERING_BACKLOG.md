@@ -390,3 +390,30 @@ Two loose ends:
   The two stores continue to diverge, same as test drives. `listing_type` is
   properly modelled on the side nothing writes to.
 
+## Dealer photographs are reviewed before buyers see them
+
+Migration `012`. A dealer upload lands as `pending`; only `approved` rows pass
+the public read policy. `/admin/image-review` is the queue.
+
+Two things worth knowing before changing any of it:
+
+- **The gate is in the database, not the screen.** Deleting the Angular page
+  would not publish a single pending image. Buyers read `status = 'approved'`
+  and a trigger refuses a status change from anyone who is not an admin.
+- **The trigger exists because RLS could not do it.** `011` gives a seller
+  UPDATE on their own car's photographs so they can reorder them; with a status
+  column that same policy would let a dealer approve their own submission. A
+  policy cannot say "you may change the url but not the status" — it checks
+  rows, not columns, and WITH CHECK cannot see the old row. Column privileges
+  fail too, because Supabase signs everyone in as one `authenticated` role.
+
+Rows that predate `012` are grandfathered to `approved`: their authors were
+never told about review, and defaulting them to pending would silently withdraw
+photographs those sellers believe are live.
+
+Still open: nothing buyer-facing reads `car_images` yet — listing galleries
+come from the API's `image_urls`. The gate was added before that wiring exists,
+which is the cheap moment. **When those photos are wired to a buyer page, that
+page must filter on `approved`** rather than assume the policy covers it, in
+case it is ever read with a service key.
+
