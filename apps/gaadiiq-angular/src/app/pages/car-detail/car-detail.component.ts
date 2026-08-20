@@ -1041,6 +1041,49 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   }
 
   /** Best available icon for a spec row; `info` when nothing fits. */
+  /**
+   * A stored feature as a buyer should read it.
+   *
+   * Some rows hold a Python dict repr — "{'feature': 'Head-Up Display'}" —
+   * because the research cleaner used to call str() on whatever the model
+   * returned, and objects came back where strings were asked for. The parser
+   * is fixed and migration 0039 repairs the stored rows, but that repair only
+   * lands when the API deploys, and buyers are reading dict reprs off the page
+   * now. This renders them correctly in the meantime, and goes on doing so for
+   * any row written before the fix that nobody re-researches.
+   *
+   * Unwraps exactly what the migration is willing to unwrap and no more: one
+   * clear phrase, otherwise the value is shown as it is. Quietly inventing a
+   * feature is worse than displaying an ugly one — an ugly one gets reported.
+   */
+  featureText(value: unknown): string {
+    if (typeof value !== 'string') return String(value ?? '');
+
+    const text = value.trim();
+    if (!(text.startsWith('{') && text.endsWith('}'))) return text;
+
+    // Single quotes make this a Python repr rather than JSON, so JSON.parse
+    // would throw. Matched with a pattern instead of rewritten and parsed,
+    // which would break on an apostrophe inside the phrase itself.
+    // The backreference matters: the closing quote has to be the same
+    // character as the opening one. Without it, "Driver's Seat Memory" is
+    // truncated at the apostrophe — which a test caught, and a buyer would
+    // have read as "Driver".
+    const keyed = text.match(
+      /['"](?:feature|name|label|title|value|text)['"]\s*:\s*(['"])(.*?)\1/,
+    );
+    if (keyed) return keyed[2].trim();
+
+    // No trusted key: unwrap only when the object holds exactly one string.
+    const all = [...text.matchAll(/:\s*(['"])(.*?)\1/g)].map(m => m[2]);
+    return all.length === 1 ? all[0].trim() : text;
+  }
+
+  /** The same unwrapping, for the one-line summary under a trim. */
+  featureList(values: string[]): string {
+    return values.map(v => this.featureText(v)).filter(Boolean).join(' · ');
+  }
+
   specIcon(label: string): string {
     const l = label.toLowerCase();
     if (l.includes('mileage') || l.includes('range')) return 'gauge';
