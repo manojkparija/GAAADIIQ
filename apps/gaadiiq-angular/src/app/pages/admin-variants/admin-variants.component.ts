@@ -390,7 +390,9 @@ export class AdminVariantsComponent {
     }
   }
 
-  formatPrice(value: string | null): string {
+  // Takes a number too: the API sends this Decimal column as a JSON number,
+  // whatever the interface used to claim.
+  formatPrice(value: string | number | null): string {
     if (!value) return 'No price';
     const n = Number(value);
     return n >= 100000 ? `₹${(n / 100000).toFixed(2)} Lakh` : `₹${n.toLocaleString('en-IN')}`;
