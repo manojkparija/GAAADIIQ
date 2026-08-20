@@ -8,7 +8,7 @@
     </span>
   </button>
   @if (open()) {
-    <div class="cs-dropdown">
+    <div class="cs-dropdown" [ngStyle]="dropdownStyle()">
       <div class="cs-option placeholder-opt" (click)="select('')">{{ placeholder }}</div>
       @for (opt of options; track valueOf(opt)) {
         <div class="cs-option"
