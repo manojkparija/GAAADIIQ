@@ -77,4 +77,70 @@ export class ApiService {
     return this.http.post<any>(`${this.base}/recommend`, payload)
       .pipe(catchError(() => of(null)));
   }
+
+  /**
+   * The one-sentence advisor.
+   *
+   * Deliberately does NOT catchError into `of(null)` like its neighbours. A
+   * swallowed failure here is indistinguishable from "nothing matched your
+   * budget", and those need different words on the screen — one is our fault
+   * and worth retrying, the other is an answer.
+   */
+  getAdvisorBrief(payload: {
+    query: string; km_per_month?: number; seats?: number;
+  }): Observable<AdvisorBrief> {
+    return this.http.post<AdvisorBrief>(`${this.base}/advisor/brief`, payload);
+  }
+}
+
+/** One line of a cost breakdown, with where its number came from. */
+export interface AdvisorCostLine {
+  label: string;
+  /** null when the figure could not be worked out at all. */
+  amount: number | null;
+  /** 'calculated' | 'estimated' | 'unavailable' */
+  basis: string;
+  note: string;
+}
+
+export interface AdvisorVariant {
+  id: string;
+  name: string;
+  ex_showroom_price: number | null;
+  fuel_type: string | null;
+  transmission: string | null;
+  seating_capacity: number | null;
+  mileage: string | null;
+  reason: string;
+  priced_out: string[];
+}
+
+export interface AdvisorPick {
+  car_id: string;
+  make: string;
+  model: string;
+  year: number;
+  body_type: string | null;
+  match_score: number;
+  reasons: string[];
+  concerns: string[];
+  variant: AdvisorVariant | null;
+  monthly_emi: AdvisorCostLine;
+  five_year: AdvisorCostLine[];
+  five_year_total: number;
+  /** Components that could not be computed, so the total is known to be partial. */
+  five_year_excludes: string[];
+  cost_per_km: number | null;
+  resale_five_year: number | null;
+  resale_source: string;
+}
+
+export interface AdvisorBrief {
+  request_id: string;
+  understood: string[];
+  missing: string[];
+  items: AdvisorPick[];
+  total_considered: number;
+  assumptions: Record<string, any>;
+  message: string | null;
 }

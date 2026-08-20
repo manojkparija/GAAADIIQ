@@ -5,7 +5,17 @@
   <div class="advisor-hero">
     <div class="hero-icon"><app-icon name="brain" [size]="40"></app-icon></div>
     <h1>AI Car <span class="gradient-text">Advisor</span></h1>
-    <p class="hero-sub">Answer {{ totalSteps() }} smart questions and get data-driven recommendations with full cost analysis</p>
+    <p class="hero-sub">Describe what you need in one line — or answer {{ totalSteps() }} questions and get data-driven recommendations with full cost analysis</p>
+  </div>
+
+  <!-- The one-sentence route, for a buyer who already knows what they want.
+       The quiz below is unchanged and still the right tool for one who does
+       not. Same engine underneath; only the way requirements are collected
+       differs. -->
+  <app-advisor-brief></app-advisor-brief>
+
+  <div class="quiz-divider">
+    <span>or answer {{ totalSteps() }} quick questions</span>
   </div>
 
   <div class="quiz-container">

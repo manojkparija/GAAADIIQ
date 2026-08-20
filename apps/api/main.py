@@ -35,6 +35,7 @@ if not settings.jwt_private_key and not settings.is_production:
 
 from routers import (  # noqa: E402
     admin,
+    advisor,
     auth,
     bookings,
     brochures,
@@ -480,6 +481,7 @@ app.include_router(loan_applications.router)
 app.include_router(notifications.router)
 app.include_router(price_alerts.router)
 app.include_router(recommend.router)
+app.include_router(advisor.router)
 app.include_router(reviews.router)
 app.include_router(payments.router)
 app.include_router(payments.subs_router)

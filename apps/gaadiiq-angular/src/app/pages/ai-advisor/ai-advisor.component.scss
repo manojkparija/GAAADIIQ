@@ -852,3 +852,23 @@
   border-radius: 0.5rem; padding: 0.5rem 1rem; cursor: pointer; font-weight: 700;
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
+
+/* Separates the one-sentence advisor from the twelve-step quiz below it, so
+   the page reads as two routes to the same answer rather than one long form. */
+.quiz-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 900px;
+  margin: 0 auto 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--divider);
+  }
+}

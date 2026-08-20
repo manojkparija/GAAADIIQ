@@ -1,0 +1,250 @@
+<section class="brief">
+
+  <!-- ── Ask ─────────────────────────────────────────────────────────── -->
+  <div class="brief-ask" *ngIf="!result()">
+    <h2 class="brief-title">Tell me what you need, in one line</h2>
+    <p class="brief-sub">Budget, how many people, where you drive, how far a month.</p>
+
+    <form class="brief-form" (ngSubmit)="submit()">
+      <label class="sr-only" for="brief-q">Describe what you are looking for</label>
+      <textarea
+        id="brief-q"
+        class="brief-input"
+        rows="2"
+        [(ngModel)]="query"
+        name="query"
+        maxlength="500"
+        placeholder="I have ₹12 lakh budget, family of 5, mostly city driving, 1,000 km/month"
+        (keydown.enter)="$event.preventDefault(); submit()"></textarea>
+
+      <button type="submit" class="brief-go" [disabled]="!canSubmit()">
+        <span *ngIf="!busy()">Find my car</span>
+        <span *ngIf="busy()">Working…</span>
+      </button>
+    </form>
+
+    <div class="brief-examples">
+      <span class="ex-label">Try:</span>
+      <button type="button" class="ex-chip" *ngFor="let ex of examples" (click)="useExample(ex)">
+        {{ ex }}
+      </button>
+    </div>
+
+    <p class="brief-error" *ngIf="error()" role="alert">{{ error() }}</p>
+  </div>
+
+  <!-- ── Answer ──────────────────────────────────────────────────────── -->
+  <div class="brief-result" *ngIf="result() as res">
+
+    <div class="result-head">
+      <button type="button" class="btn-restart" (click)="reset()">← Ask something else</button>
+    </div>
+
+    <!-- What was read. Shown before the answer so a misread is caught
+         before the buyer acts on the recommendation below it. -->
+    <div class="understood" *ngIf="res.understood.length">
+      <h3>What I read</h3>
+      <ul class="understood-list">
+        <li *ngFor="let line of res.understood">
+          <app-icon name="check" [size]="14"></app-icon> {{ line }}
+        </li>
+      </ul>
+      <p class="understood-note">Not right? Reword it and ask again.</p>
+    </div>
+
+    <p class="brief-message" *ngIf="res.message">{{ res.message }}</p>
+
+    <!-- Follow-ups for the two fields we can collect without a new sentence. -->
+    <div class="followup" *ngIf="missingPrompts().length && res.items.length">
+      <h3>One more thing</h3>
+      <p class="followup-sub">These change the running costs below, so they are left blank rather than guessed.</p>
+      <div class="followup-fields">
+        <label *ngFor="let prompt of missingPrompts(); trackBy: trackByKey" class="followup-field">
+          <span>{{ prompt.caption }}</span>
+          <input
+            type="number"
+            min="1"
+            [attr.max]="prompt.key === 'seats' ? 10 : 20000"
+            [placeholder]="prompt.key === 'seats' ? 'e.g. 5' : 'e.g. 1000 km'"
+            [ngModel]="prompt.key === 'seats' ? extraSeats : extraKm"
+            (ngModelChange)="prompt.key === 'seats' ? (extraSeats = $event) : (extraKm = $event)"
+            [name]="prompt.key" />
+        </label>
+        <button type="button" class="followup-go" (click)="answerMissing()" [disabled]="busy()">
+          Update
+        </button>
+      </div>
+    </div>
+
+    <p class="narrative-hint" *ngIf="missingNarrative()">{{ missingNarrative() }}</p>
+
+    <!-- ── The shortlist ─────────────────────────────────────────────── -->
+    <div class="picks" *ngIf="res.items.length">
+      <h3 class="picks-title">
+        Top {{ res.items.length }} for you
+        <span class="picks-count">from {{ res.total_considered }} models considered</span>
+      </h3>
+
+      <article class="pick" *ngFor="let pick of res.items; let i = index; trackBy: trackByCar">
+
+        <header class="pick-head">
+          <div class="pick-rank">{{ i + 1 }}</div>
+          <div class="pick-id">
+            <h4>{{ pick.make }} {{ pick.model }}</h4>
+            <p class="pick-variant" *ngIf="pick.variant">
+              {{ pick.variant.name }}
+              <span *ngIf="pick.variant.ex_showroom_price">
+                · {{ money(pick.variant.ex_showroom_price) }} ex-showroom
+              </span>
+            </p>
+          </div>
+          <div class="pick-score" [attr.aria-label]="pick.match_score + ' percent match'">
+            <span class="score-num">{{ pick.match_score }}%</span>
+            <span class="score-cap">match</span>
+          </div>
+        </header>
+
+        <!-- Why this trim rather than the one above or below it. -->
+        <p class="variant-reason" *ngIf="pick.variant?.reason">{{ pick.variant?.reason }}</p>
+        <p class="variant-out" *ngIf="pick.variant?.priced_out?.length">
+          Out of budget on this model: {{ pick.variant?.priced_out?.join(', ') }}
+        </p>
+
+        <ul class="pick-reasons">
+          <li *ngFor="let r of pick.reasons" class="good">
+            <app-icon name="check" [size]="13"></app-icon> {{ r }}
+          </li>
+          <li *ngFor="let c of pick.concerns" class="bad">
+            <app-icon name="alert-triangle" [size]="13"></app-icon> {{ c }}
+          </li>
+        </ul>
+
+        <!-- Headline numbers -->
+        <div class="pick-figures">
+          <div class="figure">
+            <span class="fig-label">Monthly EMI</span>
+            <span class="fig-value">{{ money(pick.monthly_emi.amount) }}</span>
+          </div>
+          <div class="figure">
+            <span class="fig-label">5-year cost</span>
+            <span class="fig-value">
+              {{ money(pick.five_year_total) }}
+              <span class="partial-flag" *ngIf="isPartial(pick)">partial</span>
+            </span>
+          </div>
+          <div class="figure">
+            <span class="fig-label">Fuel per km</span>
+            <span class="fig-value">{{ pick.cost_per_km !== null ? '₹' + pick.cost_per_km : '—' }}</span>
+          </div>
+          <div class="figure">
+            <span class="fig-label">Resale at 5 yrs</span>
+            <span class="fig-value">{{ money(pick.resale_five_year) }}</span>
+          </div>
+        </div>
+
+        <!-- A partial total is lower than the truth and looks complete, so it
+             is called out beside the figure rather than in a footnote. -->
+        <p class="partial-note" *ngIf="isPartial(pick)">
+          Excludes {{ pick.five_year_excludes.join(' and ') }} — not enough information to work
+          {{ pick.five_year_excludes.length === 1 ? 'it' : 'them' }} out.
+        </p>
+
+        <button type="button" class="pick-more" (click)="toggleDetail(pick.car_id)">
+          {{ isExpanded(pick.car_id) ? 'Hide the breakdown' : 'Where these numbers come from' }}
+        </button>
+
+        <div class="breakdown" *ngIf="isExpanded(pick.car_id)">
+          <div class="cost-row" *ngFor="let line of pick.five_year"
+               [class.is-unavailable]="line.basis === 'unavailable'">
+            <div class="cost-label">
+              {{ line.label }}
+              <!-- An estimate must never be styled like a measurement. -->
+              <span class="basis-badge" [class]="'basis-' + line.basis" *ngIf="basisLabel(line.basis)">
+                {{ basisLabel(line.basis) }}
+              </span>
+            </div>
+            <div class="cost-amount">{{ money(line.amount) }}</div>
+            <p class="cost-note" *ngIf="line.note">{{ line.note }}</p>
+          </div>
+
+          <div class="cost-row cost-emi">
+            <div class="cost-label">{{ pick.monthly_emi.label }}</div>
+            <div class="cost-amount">{{ money(pick.monthly_emi.amount) }} / month</div>
+            <p class="cost-note">{{ pick.monthly_emi.note }}</p>
+          </div>
+
+          <p class="spec-line" *ngIf="pick.variant">
+            <span *ngIf="pick.variant.fuel_type">{{ pick.variant.fuel_type }}</span>
+            <span *ngIf="pick.variant.transmission"> · {{ pick.variant.transmission }}</span>
+            <span *ngIf="pick.variant.seating_capacity"> · {{ pick.variant.seating_capacity }} seats</span>
+            <span *ngIf="pick.variant.mileage"> · {{ pick.variant.mileage }}</span>
+          </p>
+
+          <a class="pick-link" [routerLink]="['/car', pick.car_id]">See the full model page →</a>
+        </div>
+      </article>
+
+      <!-- ── Comparison ──────────────────────────────────────────────── -->
+      <div class="compare" *ngIf="res.items.length > 1">
+        <h3>Side by side</h3>
+        <div class="compare-scroll">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th scope="col">&nbsp;</th>
+                <th scope="col" *ngFor="let pick of res.items">
+                  {{ pick.make }} {{ pick.model }}
+                  <small *ngIf="pick.variant">{{ pick.variant.name }}</small>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Ex-showroom</th>
+                <td *ngFor="let pick of res.items">{{ money(pick.variant?.ex_showroom_price) }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Monthly EMI</th>
+                <td *ngFor="let pick of res.items">{{ money(pick.monthly_emi.amount) }}</td>
+              </tr>
+              <tr>
+                <th scope="row">5-year cost</th>
+                <td *ngFor="let pick of res.items">
+                  {{ money(pick.five_year_total) }}
+                  <span class="partial-flag" *ngIf="isPartial(pick)">partial</span>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Fuel / km</th>
+                <td *ngFor="let pick of res.items">
+                  {{ pick.cost_per_km !== null ? '₹' + pick.cost_per_km : '—' }}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Resale at 5 yrs</th>
+                <td *ngFor="let pick of res.items">{{ money(pick.resale_five_year) }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Seats</th>
+                <td *ngFor="let pick of res.items">{{ pick.variant?.seating_capacity || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- The assumptions the figures rest on. A running cost without the
+           fuel price it assumed cannot be checked by the reader. -->
+      <footer class="assumptions">
+        <h4>What these figures assume</h4>
+        <p>{{ fuelPriceNote() }}</p>
+        <p>{{ emiTermsNote() }}</p>
+        <p>
+          Resale is projected from a general depreciation curve, not from sales data for
+          this specific model. Insurance and maintenance are rules of thumb, marked
+          <em>Estimate</em> above. Treat them as a starting point, not a quotation.
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
