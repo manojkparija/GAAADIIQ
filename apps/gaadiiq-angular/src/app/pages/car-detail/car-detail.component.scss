@@ -760,3 +760,71 @@
 // The activity card sits above the two buyer checks, full width — it is one
 // line of numbers, not a panel that needs a column.
 .la-slot { display: block; margin-top: 1.25rem; }
+
+/* A pill that goes somewhere. Only the variant count uses this today. */
+.pill-link {
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+
+  &:hover {
+    border-color: var(--teal-ink, #0f766e);
+    transform: translateY(-1px);
+  }
+}
+
+/* Gearbox filter on the variants tab. */
+.gearbox-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+}
+
+.gf-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-right: 0.2rem;
+}
+
+.gf-chip {
+  padding: 0.32rem 0.85rem;
+  border: 1.5px solid var(--border, #e5e7eb);
+  border-radius: 999px;
+  background: var(--bg, #fff);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, filter 0.15s;
+
+  &:hover { border-color: rgba(20,184,166,0.5); }
+
+  // Same ramp as the primary buttons, so a chosen chip reads as the same
+  // control family as everything else on the page.
+  &.active {
+    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    border-color: #2563EB;
+    color: #fff;
+  }
+}
+
+.variants-empty {
+  padding: 1.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.gf-clear {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 0.4rem;
+  color: var(--primary);
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: underline;
+}

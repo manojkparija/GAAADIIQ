@@ -164,6 +164,42 @@
                    gap dressed up as a fact. Catalogue models carry no colour. -->
               <div class="pill" *ngIf="car.color"><span><app-icon name="palette" [size]="16"></app-icon></span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
               <div class="pill" *ngIf="car.city"><span><app-icon name="map-pin" [size]="14"></app-icon></span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
+
+              <!--
+                Reported from UAT: the Overview showed two facts on a new car.
+                Everything below Gearbox was conditional on Owners, Colour or
+                Location, none of which a catalogue model carries — so the
+                section emptied itself for exactly the cars a buyer is
+                researching hardest.
+
+                These come from data the model already had and nothing was
+                rendering: body type, the model year, the brochure specs
+                (mileage, power, engine, seating), and how many trims exist.
+                Nothing here is computed or filled in — a fact with no value
+                still does not get a pill.
+              -->
+              <div class="pill" *ngIf="car.bodyType">
+                <span><app-icon name="car" [size]="16"></app-icon></span>
+                <div><div class="pill-label">Body</div><div class="pill-val">{{ car.bodyType }}</div></div>
+              </div>
+              <div class="pill" *ngIf="isNewCar && car.year">
+                <span><app-icon name="calendar" [size]="16"></app-icon></span>
+                <div><div class="pill-label">Model year</div><div class="pill-val">{{ car.year }}</div></div>
+              </div>
+              <div class="pill" *ngFor="let sp of overviewSpecs()">
+                <span><app-icon [name]="specIcon(sp.label)" [size]="16"></app-icon></span>
+                <div><div class="pill-label">{{ sp.label }}</div><div class="pill-val">{{ sp.value }}</div></div>
+              </div>
+              <!-- Clickable, because the next question after "how many trims?"
+                   is "which ones?" and the answer is one tab away. -->
+              <div class="pill pill-link" *ngIf="isNewCar && (car.variantCount ?? 0) > 0"
+                   (click)="activeTab.set('variants')">
+                <span><app-icon name="list" [size]="16"></app-icon></span>
+                <div>
+                  <div class="pill-label">Variants</div>
+                  <div class="pill-val">{{ car.variantCount }} available</div>
+                </div>
+              </div>
             </div>
 
             <!-- Used cars only. Both answers are about a specific car that has
@@ -202,10 +238,27 @@
                 </ng-container>
                 (ex-showroom).
               </p>
+
+              <!-- Only shown when there is a choice to make. One gearbox means
+                   the filter can only ever be a no-op. -->
+              <div class="gearbox-filter" *ngIf="gearboxOptions().length > 1">
+                <span class="gf-label">Gearbox</span>
+                <button type="button" class="gf-chip" [class.active]="!gearboxFilter()"
+                        (click)="setGearbox('')">All</button>
+                <button type="button" class="gf-chip" *ngFor="let g of gearboxOptions()"
+                        [class.active]="gearboxFilter() === g"
+                        (click)="setGearbox(g)">{{ g }}</button>
+              </div>
             </div>
+
+            <p class="variants-empty" *ngIf="!filteredVariants().length">
+              No {{ gearboxFilter() }} variants of this model.
+              <button type="button" class="gf-clear" (click)="setGearbox('')">Show all</button>
+            </p>
+
             <div class="variants-list">
               <div class="variant-row variant-row--detailed"
-                   *ngFor="let v of variants()"
+                   *ngFor="let v of filteredVariants()"
                    [class.is-selected]="selectedVariantId() === v.id"
                    (click)="selectVariant(v)"
                    [title]="v.ex_showroom_price ? 'Price the on-road cost for this trim' : ''">
