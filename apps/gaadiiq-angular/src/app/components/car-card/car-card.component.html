@@ -27,9 +27,13 @@
         <span class="reviews">({{ car.reviews }})</span>
       </div>
     </div>
+    <!-- Where the model has published trims, the card quotes what they span,
+         the same figures the model card and the detail page quote. A used car
+         has no trims and keeps its own asking price, which is the only price
+         it has. -->
     <div class="price-row">
-      <span class="price gradient-text">{{ formatPrice(car.price) }}</span>
-      <span class="emi">EMI ₹{{ Math.round(car.price * 0.02 / 1000) }}k/mo</span>
+      <span class="price gradient-text">{{ displayPrice() }}</span>
+      <span class="emi">EMI {{ emiFrom() }} ₹{{ Math.round(priceForEmi() * 0.02 / 1000) }}k/mo</span>
     </div>
     <div class="specs">
       <span class="spec-item">

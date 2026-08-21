@@ -17,7 +17,10 @@
         <p style="color:var(--muted);font-size:0.9rem">
           <ng-container *ngIf="carType()==='New' && !selectedModel()">{{ newCarModels().length }} models available</ng-container>
           <ng-container *ngIf="carType()==='New' && selectedModel()">
-            {{ newModelVariants().length }} {{ newModelVariants().length === 1 ? 'variant' : 'variants' }} &nbsp;·&nbsp;
+            <!-- Published trims, not catalogue rows. The catalogue holds one
+                 row per model-year, so counting rows called twelve trims
+                 "1 variant" — the same fault the model card had. -->
+            {{ selectedModelTrimCount() }} {{ selectedModelTrimCount() === 1 ? 'variant' : 'variants' }} &nbsp;·&nbsp;
             <a href="javascript:void(0)" (click)="clearModel()" style="color:var(--accent);font-size:0.85rem">← Back to all models</a>
           </ng-container>
           <ng-container *ngIf="carType()!=='New'">
@@ -206,7 +209,10 @@
                   </div>
                 </div>
                 <div class="nc-vc-price">
-                  <div class="nc-vc-price-val">{{ formatPriceLakh(v.price) }}</div>
+                  <!-- The trims' band where there is one; the catalogue figure
+                       otherwise. Reading v.price alone quoted the stale row price
+                       here while the card one click back quoted the trims. -->
+                  <div class="nc-vc-price-val">{{ variantCardPrice(v) }}</div>
                   <div class="nc-vc-price-note">ex-showroom</div>
                 </div>
               </div>
@@ -225,7 +231,7 @@
               </div>
 
               <div class="nc-vc-footer">
-                <span class="nc-vc-emi">EMI from ₹{{ (v.price * 0.008 / 1000).toFixed(0) }}k/mo</span>
+                <span class="nc-vc-emi">EMI from ₹{{ (variantEmiBase(v) * 0.008 / 1000).toFixed(0) }}k/mo</span>
                 <button class="btn-gradient btn-sm">View Details →</button>
               </div>
             </div>

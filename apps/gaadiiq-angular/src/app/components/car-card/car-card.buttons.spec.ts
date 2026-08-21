@@ -89,3 +89,53 @@ describe('car card — action buttons', () => {
     }
   });
 });
+
+/**
+ * The card quotes the published trims, not the catalogue row's own price.
+ *
+ * This is the third surface of one bug and the reason this suite exists: the
+ * New Cars model card was fixed in #116, and the same car went on reading
+ * "₹9.3L" here — from `car.price`, a hand-maintained figure that had drifted
+ * from the trims — while the model card one tab away read "₹6.84L – ₹11.98L".
+ * Fixing one view of a shared figure is not fixing the figure.
+ */
+describe('car card — price', () => {
+  let fixture: ComponentFixture<CarCardComponent>;
+
+  function render(over: Record<string, unknown>) {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [CarCardComponent],
+      providers: [provideRouter([])],
+    });
+    fixture = TestBed.createComponent(CarCardComponent);
+    fixture.componentInstance.car = {
+      id: 'c1', make: 'Maruti Suzuki', model: 'Fronx', year: 2026,
+      price: 930000, km: 0, fuel: 'Petrol', transmission: 'Manual',
+      badge: '', badgeType: 'fair', image: 'assets/cars/placeholder.svg',
+      rating: 0, reviews: 0, verified: true,
+      ...over,
+    } as any;
+    fixture.detectChanges();
+    return fixture.nativeElement.querySelector('.price') as HTMLElement;
+  }
+
+  afterEach(() => fixture?.destroy());
+
+  it('shows the trim band when the model has priced trims', () => {
+    const el = render({ variantPriceMin: 684000, variantPriceMax: 1198000 });
+    expect(el.textContent!.replace(/\s+/g, ' ').trim()).toBe('₹6.8L – ₹12.0L');
+    // The stale catalogue figure must not appear at all.
+    expect(el.textContent).not.toContain('9.3');
+  });
+
+  it('falls back to the asking price for a used car, which has no trims', () => {
+    const el = render({ km: 42000, price: 550000 });
+    expect(el.textContent!.trim()).toBe('₹5.5L');
+  });
+
+  it('shows one figure, not a range, when every trim costs the same', () => {
+    const el = render({ variantPriceMin: 684000, variantPriceMax: 684000 });
+    expect(el.textContent!.trim()).toBe('₹6.8L');
+  });
+});

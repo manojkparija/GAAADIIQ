@@ -7,6 +7,11 @@ interface Car {
   id: string; make: string; model: string; year: number; price: number;
   km: number; fuel: string; transmission: string; badge: string; badgeType: string;
   image: string; rating: number; reviews: number; verified: boolean;
+  /**
+   * The band this model's published trims span, when it has any. Absent on a
+   * used listing, which has one asking price and no trims.
+   */
+  variantPriceMin?: number; variantPriceMax?: number;
 }
 
 @Component({
@@ -38,6 +43,43 @@ export class CarCardComponent {
   formatPrice(p: number): string {
     if (p >= 100000) return `₹${(p/100000).toFixed(1)}L`;
     return `₹${p.toLocaleString()}`;
+  }
+
+  /**
+   * What this card quotes.
+   *
+   * `car.price` is the catalogue row's own ex-showroom figure, maintained by
+   * hand and separately from the trims — so it drifts. A Fronx read "₹9.3L"
+   * here while the New Cars card and the detail page, both of which read the
+   * published trims, said "₹6.84L – ₹11.98L". The same car, contradicting
+   * itself on two screens a buyer sees side by side.
+   *
+   * A used car has no trims, so the band is absent and its asking price
+   * stands — that is the only price such a listing has.
+   *
+   * A method rather than a computed(): `car` is a plain @Input field, not a
+   * signal, and a computed() over it would evaluate once and then report a
+   * stale answer for every card that reuses the component (CLAUDE.md).
+   */
+  displayPrice(): string {
+    const lo = this.car.variantPriceMin;
+    const hi = this.car.variantPriceMax;
+    if (lo == null || hi == null) return this.formatPrice(this.car.price);
+    return lo === hi
+      ? this.formatPrice(lo)
+      : `${this.formatPrice(lo)} – ${this.formatPrice(hi)}`;
+  }
+
+  /** The low end of whatever is quoted: an EMI is "from" the cheapest trim. */
+  priceForEmi(): number {
+    return this.car.variantPriceMin ?? this.car.price;
+  }
+
+  /** "from" only when the figure above is a band rather than one price. */
+  emiFrom(): string {
+    const lo = this.car.variantPriceMin;
+    const hi = this.car.variantPriceMax;
+    return lo != null && hi != null && lo !== hi ? 'from' : '';
   }
 
   formatKm(km: number): string {

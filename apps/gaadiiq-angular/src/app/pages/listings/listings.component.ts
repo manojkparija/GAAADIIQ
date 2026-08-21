@@ -257,6 +257,37 @@ export class ListingsComponent implements OnInit {
     return `₹${(p / 100000).toFixed(2)}L`;
   }
 
+  /**
+   * Published trims across the rows of the model being drilled into.
+   *
+   * The header counted `newModelVariants().length`, which is catalogue rows —
+   * one per model-year — so a Fronx with twelve published trims announced
+   * "1 variant". Exactly the fault the model card had one click earlier; this
+   * view was simply missed when that was fixed.
+   */
+  selectedModelTrimCount(): number {
+    const rows = this.newModelVariants();
+    return Math.max(
+      rows.reduce((sum, c) => sum + (c.variantCount ?? 0), 0),
+      rows.length,
+    );
+  }
+
+  /** The band a row's trims span, or its catalogue price when it has none. */
+  variantCardPrice(c: Car): string {
+    const lo = c.variantPriceMin;
+    const hi = c.variantPriceMax;
+    if (lo == null || hi == null) return this.formatPriceLakh(c.price);
+    return lo === hi
+      ? this.formatPriceLakh(lo)
+      : `${this.formatPriceLakh(lo)} – ${this.formatPriceLakh(hi)}`;
+  }
+
+  /** "EMI from" already says from, so quote the cheapest trim. */
+  variantEmiBase(c: Car): number {
+    return c.variantPriceMin ?? c.price;
+  }
+
   swiftGallery = [
     { src: 'assets/cars/maruti-swift/front.svg',      label: 'Front View',     pos: 'center 65%' },
     { src: 'assets/cars/swift/rear-wide.jpg',  label: 'Side & Rear',    pos: 'center 85%' },
