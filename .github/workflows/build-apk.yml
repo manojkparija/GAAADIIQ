@@ -7,6 +7,11 @@ on:
       - 'apps/gaadiiq-angular/**'
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Also build a signed release APK (needs keystore secrets)'
+        type: boolean
+        default: false
 
 jobs:
   build-apk:
@@ -55,4 +60,99 @@ jobs:
         with:
           name: gaadiiq-debug-apk
           path: apps/gaadiiq-angular/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+  # ── Signed release build ────────────────────────────────────────────────────
+  #
+  # Manual only. It needs the four keystore secrets, and a job that fails on
+  # every push because they are unset would train everyone to ignore a red X.
+  #
+  # See docs/ANDROID_RELEASE.md for creating the keystore and adding the
+  # secrets. The keystore is written to a temp file outside the workspace and
+  # deleted afterwards, so it can never be picked up by an artifact upload.
+  release-apk:
+    name: Build signed release APK
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refuse to run without signing secrets
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set. See docs/ANDROID_RELEASE.md."
+            echo "Refusing to build: an unsigned release APK cannot be uploaded to Play,"
+            echo "and producing one silently would look like success."
+            exit 1
+          fi
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: apps/gaadiiq-angular
+        run: npm install
+
+      - name: Build web assets
+        working-directory: apps/gaadiiq-angular
+        run: npx ng build --configuration production
+
+      - name: Sync Capacitor
+        working-directory: apps/gaadiiq-angular
+        run: npx cap sync android
+
+      # RUNNER_TEMP, not the workspace: anything under the workspace can be
+      # swept up by an artifact upload or left behind for a later step.
+      - name: Decode keystore
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build signed release APK
+        working-directory: apps/gaadiiq-angular/android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      # always(): a failed build must not leave the keystore on the runner.
+      - name: Shred keystore
+        if: always()
+        run: shred -u "$RUNNER_TEMP/release.jks" 2>/dev/null || rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: Confirm the APK is actually signed
+        working-directory: apps/gaadiiq-angular/android
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          ls -la "$APK"
+          # Gradle emits app-release-unsigned.apk when no signing config applied.
+          # Catching that here is the difference between "built" and "shippable".
+          if [ ! -f "$APK" ]; then
+            echo "::error::No signed APK at $APK — the signing config did not apply."
+            exit 1
+          fi
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaadiiq-release-apk
+          path: apps/gaadiiq-angular/android/app/build/outputs/apk/release/app-release.apk
           retention-days: 7
