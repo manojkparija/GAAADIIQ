@@ -497,7 +497,10 @@
 .nc-card-footer { display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem; }
 .nc-variant-count {
   font-size:.75rem;font-weight:700;
-  background:rgba(56,239,125,.12);color:#38ef7d;
+  // #38ef7d measured 1.44:1 on this tint — the brand mint is a fill colour,
+  // not a text colour. --success-ink is its text-only counterpart and reverts
+  // to the bright original in dark mode.
+  background:rgba(56,239,125,.12);color:var(--success-ink);
   padding:.2rem .65rem;border-radius:1rem;
 }
 .nc-rating { font-size:.78rem;color:var(--muted); }
@@ -553,7 +556,10 @@
 .nc-vc-features { display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem; }
 .nc-feature-chip {
   font-size:.7rem;padding:.2rem .65rem;border-radius:1rem;
-  background:rgba(56,239,125,.1);color:#38ef7d;font-weight:600;
+  // Reported as "not visible at all", and it measured 1.44:1 against its own
+  // tint — against a 4.5:1 floor, at 11px. The mint is a fill; --success-ink
+  // is the text counterpart and measures 7.27:1 here.
+  background:rgba(56,239,125,.1);color:var(--success-ink);font-weight:600;
 }
 
 .nc-vc-specs { display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:.9rem; }

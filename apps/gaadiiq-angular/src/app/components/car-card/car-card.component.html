@@ -51,7 +51,7 @@
         Fair Price
       </span>
       <div class="card-actions">
-        <a [routerLink]="['/cars', car.id]" [queryParams]="{tab:'reviews'}" class="btn-outline card-cta-sm" (click)="$event.stopPropagation()">
+        <a [routerLink]="['/cars', car.id]" [queryParams]="{tab:'reviews'}" class="btn-gradient card-cta-sm" (click)="$event.stopPropagation()">
           <app-icon name="pen-line" [size]="12"></app-icon>
           Review
         </a>
