@@ -149,16 +149,37 @@
       text-transform: uppercase;
     }
 
-    .card-actions { display: flex; gap: 0.4rem; align-items: center; }
-    .card-cta { padding: 0.4rem 0.9rem; font-size: 0.78rem; border-radius: 6px; }
+    // Grid rather than flex, with two equal columns.
+    //
+    // Under flex each button was sized by its own content and its own padding
+    // — 0.4rem/0.9rem at 0.78rem for one, 0.35rem/0.65rem at 0.75rem for the
+    // other, plus an icon on one of them — so they came out visibly different
+    // widths and heights. Two `1fr` columns in an auto-width grid both take
+    // the width of the wider content, which makes them equal by construction
+    // rather than by hand-tuned padding that drifts the next time a label
+    // changes.
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+      align-items: stretch;
+    }
+
+    // One rule for both buttons: same padding, same type, same box. They
+    // differ only in fill.
+    .card-cta,
     .card-cta-sm {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.25rem;
-      padding: 0.35rem 0.65rem;
-      font-size: 0.75rem;
+      padding: 0.4rem 0.9rem;
+      font-size: 0.78rem;
       border-radius: 6px;
       text-decoration: none;
+      // "View Details" was wrapping onto two lines inside the tight column,
+      // which made the pair look mismatched in height as well as width.
+      white-space: nowrap;
     }
   }
 }
