@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The plate behind the adaptive icon's foreground layer.
+
+  Was #FFFFFF, the Capacitor default. The brand mark is drawn for a light
+  surface and reads as a white square among coloured icons in a launcher, so
+  the app looked unfinished next to everything else on the home screen.
+
+  --navy from styles.scss, the app's own page background: the icon then shares
+  a surface with the product rather than sitting on a colour chosen only here.
+-->
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="ic_launcher_background">#F4F7FB</color>
 </resources>
