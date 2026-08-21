@@ -91,6 +91,33 @@ export class NewCarsComponent implements OnInit {
 
   get loading() { return this.carsData.loading; }
 
+  /**
+   * True when the catalogue could not be fetched, as distinct from a catalogue
+   * that answered with nothing.
+   *
+   * CarsDataService already keeps these apart — fetchAllPages returns null for
+   * a source that failed and an empty list for one that had nothing to say, and
+   * `failedSources` records which. Nothing read it. Every page turned both into
+   * the same empty grid, and the empty state then told the reader to adjust
+   * their filters.
+   *
+   * MEASURED against a stubbed API: a 500, a timeout and a genuinely empty
+   * catalogue produced byte-identical screens — "No models found. Try adjusting
+   * your filters" in all three. A buyer with no filters set was being asked to
+   * clear filters that do not exist, while the actual problem was that the
+   * server never answered.
+   */
+  outage = computed(() => this.carsData.failedSources().length > 0);
+
+  /** Re-fetch after an outage, without making the reader reload the page. */
+  retrying = signal(false);
+  async retry(): Promise<void> {
+    if (this.retrying()) return;
+    this.retrying.set(true);
+    try { await this.carsData.reload(); }
+    finally { this.retrying.set(false); }
+  }
+
   activeHeroTab = signal<'brand' | 'budget' | 'bodytype'>('brand');
   sidebarOpen = signal(false);
   compareSet = signal<Set<string>>(new Set());
