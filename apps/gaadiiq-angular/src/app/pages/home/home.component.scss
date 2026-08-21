@@ -295,8 +295,13 @@
 }
 
 /* STATS */
+// Section rhythm scaled to the viewport — see .nc-section in
+// new-cars.component.scss for the reasoning. Measured on this page: sections
+// were adding up to 176px of whitespace per boundary at 390px, identical to
+// desktop, because none of these paddings scaled. The clamp maxima are each
+// page's existing value, so wide viewports are unchanged.
 .stats-section {
-  padding: 3rem 0;
+  padding: clamp(1.75rem, 4vw, 3rem) 0;
   background: linear-gradient(180deg, transparent, rgba(37,99,235,0.04));
 }
 
@@ -315,7 +320,7 @@
 }
 
 /* BRANDS */
-.brands-section { padding: 5rem 0; }
+.brands-section { padding: clamp(2.75rem, 6vw, 5rem) 0; }
 
 .section-header {
   margin-bottom: 3rem;
@@ -484,7 +489,7 @@
 }
 
 /* CARS GRID */
-.cars-section { padding: 5rem 0; background: rgba(255,255,255,0.02); }
+.cars-section { padding: clamp(2.75rem, 6vw, 5rem) 0; background: rgba(255,255,255,0.02); }
 
 .cars-grid {
   display: grid;
@@ -493,7 +498,7 @@
 }
 
 /* FEATURES */
-.features-section { padding: 5rem 0; }
+.features-section { padding: clamp(2.75rem, 6vw, 5rem) 0; }
 
 .features-grid {
   display: grid;
@@ -546,7 +551,7 @@
 
 /* AI BANNER */
 .ai-banner {
-  padding: 6rem 0;
+  padding: clamp(3.25rem, 7vw, 6rem) 0;
   background: linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(20,184,166,0.04) 100%);
   border-top: 1px solid var(--glass-border);
   border-bottom: 1px solid var(--glass-border);
@@ -583,7 +588,7 @@
 }
 
 /* TESTIMONIALS */
-.testimonials-section { padding: 5rem 0; }
+.testimonials-section { padding: clamp(2.75rem, 6vw, 5rem) 0; }
 
 .testimonials-grid {
   display: grid;
@@ -629,7 +634,7 @@
 
 /* CTA */
 .cta-section {
-  padding: 6rem 0;
+  padding: clamp(3.25rem, 7vw, 6rem) 0;
   position: relative;
   overflow: hidden;
   text-align: center;
@@ -824,7 +829,7 @@
 
 /* SWIFT SPOTLIGHT */
 .swift-spotlight {
-  padding: 5rem 0;
+  padding: clamp(2.75rem, 6vw, 5rem) 0;
   background: linear-gradient(180deg, transparent, rgba(37,99,235,0.03), transparent);
 }
 
