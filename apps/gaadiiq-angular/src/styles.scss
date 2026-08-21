@@ -55,6 +55,11 @@
   --muted:          #334155;
 
   --gradient:       linear-gradient(135deg, #2F6BFF 0%, #14B8A6 100%);
+  // The fill every selected control shares — chips, primary buttons and the
+  // New/Used tabs. It was written out by hand in five places, which is how the
+  // tab bar ended up a shade off the chips beside it: three near-identical
+  // gradients and no one of them authoritative. One name, one definition.
+  --gradient-cta:   linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
   --gradient-gold:  linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
   --glow:           0 4px 32px rgba(47,107,255,0.18);
   --card-shadow:    0 1px 3px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06);
@@ -544,7 +549,7 @@ input[type="number"], table, tbody, th, td,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  background: var(--gradient-cta);
   color: #fff;
   border: none;
   border-radius: 11px;
@@ -598,7 +603,7 @@ input[type="number"], table, tbody, th, td,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  background: var(--gradient-cta);
   color: #fff;
   border: none;
   border-radius: 11px;
@@ -863,7 +868,7 @@ input[type="number"], table, tbody, th, td,
     color: #2563EB;
   }
   &.active {
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: var(--gradient-cta);
     border-color: transparent;
     color: #fff;
     box-shadow: 0 2px 10px rgba(37,99,235,0.28);
@@ -1002,7 +1007,7 @@ input[type="range"] {
   &::-webkit-slider-runnable-track {
     height: 6px;
     border-radius: 3px;
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: var(--gradient-cta);
     box-shadow: 0 1px 4px rgba(37,99,235,0.25);
   }
 
@@ -1010,7 +1015,7 @@ input[type="range"] {
   &::-moz-range-track {
     height: 6px;
     border-radius: 3px;
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: var(--gradient-cta);
     border: none;
     box-shadow: 0 1px 4px rgba(37,99,235,0.25);
   }

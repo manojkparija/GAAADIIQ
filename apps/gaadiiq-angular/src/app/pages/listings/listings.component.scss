@@ -16,17 +16,11 @@
   // to sit grey and unfilled, and turned green (New) or orange (Used) when
   // selected, so the same control changed hue depending on which tab you were
   // on, against a brand that is blue-teal everywhere else.
-  // Blue to teal, but with both ends dark enough to carry white text.
-  //
-  // --gradient runs #2F6BFF → #14B8A6, and white on that measures 4.50:1 at
-  // the blue end and 2.49:1 at the teal — against a 4.5:1 floor. The label
-  // would have been harder to read than the grey it replaced. These two stops
-  // are the same hues one step darker (--primary and --teal-ink) and measure
-  // 5.57:1 and 5.47:1.
-  //
-  // NOTE: the app-wide .btn-gradient has the same fault and is unchanged here
-  // — that is a brand-level decision, not one to make inside a tab bar.
-  background: linear-gradient(135deg, var(--primary) 0%, var(--teal-ink) 100%);
+  // The same fill as the body-type chips and every primary button, by token
+  // rather than by eye. A darker blue-teal was tried here first and read as a
+  // different colour beside the chips two rows below — which is the whole
+  // complaint this is fixing, so matching matters more than the shade.
+  background: var(--gradient-cta);
   border: 2px solid transparent;
   color: #fff;
   font-size: .95rem; font-weight: 700; cursor: pointer;

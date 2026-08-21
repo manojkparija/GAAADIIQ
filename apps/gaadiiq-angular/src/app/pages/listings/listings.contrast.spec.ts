@@ -181,19 +181,37 @@ describe('listings — New / Used tabs', () => {
     expect(tabs().length).toBe(3);
   });
 
-  it('carries a gradient whose every stop can hold white text', () => {
-    // getComputedStyle gives the gradient's stops as rgb() triples. Each one
-    // is checked against the white label, because the label sits over all of
-    // them: the stock --gradient measures 2.49:1 at its teal end, which is why
-    // this tab bar uses the darker pair.
-    const stops = getComputedStyle(tabs()[0]).backgroundImage.match(/rgba?\([^)]+\)/g) ?? [];
-    expect(stops.length).withContext('no gradient stops found').toBeGreaterThan(1);
+  it('uses the same fill as the chips beside it', () => {
+    // The complaint was that the tabs did not match the body-type chips, and
+    // they did not: the chips, the buttons and the tabs each spelled out a
+    // near-identical gradient by hand. Comparing the two computed values is
+    // the only assertion that would have caught it — both "look blue-teal" in
+    // the source.
+    const chip = fixture.nativeElement.querySelector('.chip.active') as HTMLElement;
+    expect(chip).withContext('no active chip to compare against').toBeTruthy();
 
-    for (const stop of stops) {
-      const r = contrast([255, 255, 255], parseColor(stop));
-      expect(r).withContext(`white on ${stop} = ${r.toFixed(2)}:1`)
-        .toBeGreaterThanOrEqual(AA_NORMAL);
-    }
+    expect(getComputedStyle(tabs()[0]).backgroundImage)
+      .toBe(getComputedStyle(chip).backgroundImage);
+  });
+
+  it('is a known contrast debt, recorded rather than silently accepted', () => {
+    // White on this gradient bottoms out at 2.43:1 — at the CYAN midpoint
+    // #06B6D4, not the teal end, which is a touch darker at 2.49:1. Measured;
+    // the teal end is the obvious suspect and it is not the worst one, which
+    // is exactly why the number comes from the browser rather than from
+    // reading the stops.
+    //
+    // Under the 4.5:1 floor, and true of every chip and primary button in the
+    // app rather than only these tabs. Darkening it is a brand decision; this
+    // pins the debt so it cannot quietly become a *different* gradient without
+    // someone reading this.
+    const stops = getComputedStyle(tabs()[0]).backgroundImage.match(/rgba?\([^)]+\)/g) ?? [];
+    const worst = Math.min(...stops.map(st => contrast([255, 255, 255], parseColor(st))));
+
+    expect(worst).withContext(
+      `worst stop is now ${worst.toFixed(2)}:1 — if this improved, raise the ` +
+      `expectation; if it worsened, something changed the brand gradient`,
+    ).toBeCloseTo(2.43, 1);
   });
 
   it('gives the selected tab the brand gradient, whichever tab it is', () => {
