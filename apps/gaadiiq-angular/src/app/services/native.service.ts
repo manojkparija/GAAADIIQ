@@ -53,6 +53,39 @@ export class NativeService {
     });
   }
 
+  /**
+   * A camera/gallery result as a File, so it can go through the same upload
+   * path as a file chosen in a browser.
+   *
+   * The plugins hand back a base64 data URL and ImageUploadService takes
+   * File[]. Converting here rather than teaching the uploader about data URLs
+   * keeps one upload path: the same size checks, the same storage keys, the
+   * same error handling. A second path would be a second set of rules to keep
+   * in step, and the one that runs only on a phone is the one that would drift
+   * without anyone noticing.
+   */
+  static photoToFile(photo: NativePhoto, name = `photo-${Date.now()}`): File | null {
+    const match = /^data:([^;]+);base64,(.*)$/.exec(photo.dataUrl ?? '');
+    if (!match) return null;
+
+    const [, mime, b64] = match;
+    let binary: string;
+    try {
+      binary = atob(b64);
+    } catch {
+      return null;                       // truncated or malformed payload
+    }
+
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+    // Extension from the MIME type the camera reported, not from the format
+    // field: `format` is 'jpeg' on Android and 'jpg' on some devices, and the
+    // storage key is built from the file name.
+    const ext = (mime.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+    return new File([bytes], `${name}.${ext}`, { type: mime });
+  }
+
   async takePhoto(): Promise<NativePhoto | null> {
     if (this.isNative) {
       const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');

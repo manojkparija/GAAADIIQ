@@ -177,14 +177,38 @@
         <input type="file" id="carPhotoInput" accept="image/jpeg,image/png,image/webp"
                multiple style="display:none" (change)="onFilesSelected($event)">
 
-        <!-- Upload zone -->
-        <label for="carPhotoInput" class="upload-zone" [class.uploading]="uploadLoading()" style="cursor:pointer;display:block">
-          <div class="upload-zone-inner">
-            <app-icon name="upload" [size]="36"></app-icon>
-            <p>{{ uploadLoading() ? 'Uploading…' : 'Click to upload photos' }}</p>
-            <span>JPG, PNG, WEBP · Max 10 MB each · Up to {{ 10 - uploadedImages().length }} more</span>
+        <!--
+          In the Android/iOS shell the camera comes first: a seller listing a
+          car is standing next to it, and the file browser sends them looking
+          for photographs they have not taken yet. On the web the file input
+          below stays exactly as it was.
+        -->
+        @if (isNativeApp) {
+          <div class="photo-source-row">
+            <button type="button" class="btn-gradient photo-source-btn"
+                    (click)="addFromDevice('camera')" [disabled]="uploadLoading()">
+              <app-icon name="camera" [size]="20"></app-icon>
+              {{ uploadLoading() ? 'Uploading…' : 'Take photo' }}
+            </button>
+            <button type="button" class="btn-outline photo-source-btn"
+                    (click)="addFromDevice('gallery')" [disabled]="uploadLoading()">
+              <app-icon name="film" [size]="20"></app-icon>
+              Choose from gallery
+            </button>
           </div>
-        </label>
+          <p class="photo-hint">
+            JPG, PNG, WEBP · Up to {{ 10 - uploadedImages().length }} more
+          </p>
+        } @else {
+          <!-- Upload zone -->
+          <label for="carPhotoInput" class="upload-zone" [class.uploading]="uploadLoading()" style="cursor:pointer;display:block">
+            <div class="upload-zone-inner">
+              <app-icon name="upload" [size]="36"></app-icon>
+              <p>{{ uploadLoading() ? 'Uploading…' : 'Click to upload photos' }}</p>
+              <span>JPG, PNG, WEBP · Max 10 MB each · Up to {{ 10 - uploadedImages().length }} more</span>
+            </div>
+          </label>
+        }
 
         <!-- Upload error -->
         <div *ngIf="uploadError()" style="color:var(--danger);font-size:0.85rem;margin-top:0.5rem">

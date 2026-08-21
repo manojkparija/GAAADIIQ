@@ -129,7 +129,7 @@ Production checklist, go-live, monitoring, rollback plan.
 | Quarter | Features |
 |---|---|
 | Q2 (Months 4–6) | Premium subscription, price alerts, used car section, OEM dashboard |
-| Q3 (Months 7–9) | Mobile app (React Native), EV charging map, community reviews |
+| Q3 (Months 7–9) | ~~Mobile app (React Native)~~ → **shipped as Capacitor, see `MOBILE_ROADMAP.md`**; EV charging map, community reviews |
 | Q4 (Months 10–12) | Collaborative filtering ML model (live user data), AI price prediction, API for dealer integrations |
 
 ---
