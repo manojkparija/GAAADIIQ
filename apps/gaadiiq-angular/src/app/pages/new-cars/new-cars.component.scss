@@ -174,8 +174,22 @@
 }
 
 /* ── SECTIONS ── */
+// Section rhythm, scaled to the viewport.
+//
+// This was a flat `4rem 0`, which put 128px between every pair of sections —
+// 64px from one's bottom plus 64px from the next one's top — and did the same
+// on a 390px phone, where it is roughly a fifth of the screen per boundary.
+// That is the "gap" reported from UAT, and it was the same on desktop and
+// mobile because nothing scaled it.
+//
+// clamp() rather than a media query, for two reasons. It scales continuously,
+// so a 900px tablet gets a sensible value instead of falling on one side of a
+// breakpoint; and the desktop value is preserved by construction — 5vw at
+// 1440px is 72px, above the 4rem maximum, so wide viewports still resolve to
+// exactly 4rem. Verified by measuring before and after, not by reading the
+// arithmetic.
 .nc-section {
-  padding: 4rem 0;
+  padding: clamp(2.25rem, 5vw, 4rem) 0;
 }
 
 .nc-section-alt {
