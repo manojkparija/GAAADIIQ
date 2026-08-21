@@ -27,7 +27,13 @@
   <section class="plans-section container" *ngIf="!loading()">
     <div class="plans-grid">
       <div class="plan-card glass-card" *ngFor="let p of plans()" [class.highlight]="p.highlight">
+        <!-- Rendered even when a plan has no badge, hidden but occupying its
+             row. Two of the four plans carry one, so with *ngIf the badge
+             pushed the name and price down on those two only, and the four
+             prices sat at two different heights across a row of cards a buyer
+             is scanning to compare exactly those numbers. -->
         <div class="plan-badge" *ngIf="p.badge" [ngClass]="'badge-' + p.badge_color">{{ p.badge }}</div>
+        <div class="plan-badge is-placeholder" *ngIf="!p.badge" aria-hidden="true">&nbsp;</div>
         <div class="plan-name">{{ p.name }}</div>
         <div class="plan-price">
           <span class="price-amt">{{ displayPrice(p) }}</span>
@@ -35,16 +41,23 @@
             {{ p.monthly_price === 0 ? 'forever' : billing() === 'yearly' ? '/month billed annually' : '/month' }}
           </span>
         </div>
-        <div class="yearly-savings" *ngIf="billing() === 'yearly' && p.monthly_price > 0">
-          Save ₹{{ savings(p).toLocaleString('en-IN') }}/yr
-        </div>
+        <!-- Same reasoning, for the yearly view: the free plan has nothing to
+             save, so without a placeholder its description and feature list
+             ride up a row against the other three. -->
+        <ng-container *ngIf="billing() === 'yearly'">
+          <div class="yearly-savings" *ngIf="p.monthly_price > 0">
+            Save ₹{{ savings(p).toLocaleString('en-IN') }}/yr
+          </div>
+          <div class="yearly-savings is-placeholder" *ngIf="p.monthly_price === 0" aria-hidden="true">&nbsp;</div>
+        </ng-container>
         <p class="plan-desc">{{ p.description }}</p>
         <ul class="feature-list">
           <li *ngFor="let f of p.features">{{ f }}</li>
         </ul>
-        <button class="plan-cta"
-           [class.btn-gradient]="p.highlight"
-           [class.btn-outline]="!p.highlight"
+        <!-- Every plan's CTA carries the blue-teal gradient. The highlighted
+             plan is still marked out by its badge, border and tinted card, so
+             it keeps its emphasis without three grey buttons beside it. -->
+        <button class="plan-cta btn-gradient"
            [disabled]="checkoutBusy()"
            (click)="trackCta(p); checkout(p)">
           {{ checkoutBusy() ? 'Processing…' : p.cta_label }}
