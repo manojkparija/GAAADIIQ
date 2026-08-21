@@ -1,7 +1,26 @@
+// The grid cell is the <app-car-card> host element, not .car-card inside it.
+// A grid stretches its items, so the host is already full height — but the div
+// within it is sized by its content, which left `margin-top: auto` below with
+// no free space to work in and the action rows still 22px apart. Measured;
+// pinning the row alone was not enough.
+:host {
+  display: block;
+  height: 100%;
+}
+
 .car-card {
+  height: 100%;
   cursor: pointer;
   overflow: hidden;
   padding: 0;
+  // A column, so the body can grow and the action row can be pinned to the
+  // bottom. Without this the buttons sit wherever the text above them ends,
+  // and a card quoting a price range — "₹6.8L – ₹12.0L" against "₹4.3L –
+  // ₹6.4L" — pushes its own buttons a line lower than its neighbour's. The
+  // ragged row that produces is the alignment fault reported against the
+  // price change that introduced the longer strings.
+  display: flex;
+  flex-direction: column;
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
 
   &:hover {
@@ -73,7 +92,14 @@
     text-transform: uppercase;
   }
 
-  .card-body { padding: 1.1rem 1.25rem 1.25rem; }
+  // Grows to fill the card, so .ai-row's `margin-top: auto` has room to push
+  // the buttons down to a common baseline across the row.
+  .card-body {
+    padding: 1.1rem 1.25rem 1.25rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
 
   .card-header {
     display: flex;
@@ -108,10 +134,18 @@
   .price-row {
     display: flex;
     align-items: baseline;
-    gap: 0.75rem;
+    // Wraps as a unit: the EMI moves below the price when a range is too wide
+    // to sit beside it, rather than the price itself breaking after the dash
+    // and leaving "₹6.8L –" stranded on its own line.
+    flex-wrap: wrap;
+    gap: 0.15rem 0.75rem;
     margin-bottom: 0.75rem;
-    .price { font-size: 1.45rem; font-weight: 900; font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
-    .emi { font-size: 0.76rem; color: var(--muted); }
+    .price {
+      font-size: 1.45rem; font-weight: 900; font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .emi { font-size: 0.76rem; color: var(--muted); white-space: nowrap; }
   }
 
   .specs {
@@ -136,6 +170,10 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    // Pinned to the bottom of the card. Cards in a row are the same height,
+    // so this puts every card's buttons on one line however much text sits
+    // above them — which a longer price string otherwise disturbs.
+    margin-top: auto;
 
     .ai-tag {
       display: flex;

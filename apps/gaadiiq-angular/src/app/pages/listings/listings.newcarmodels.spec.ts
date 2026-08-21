@@ -87,3 +87,47 @@ describe('listings — New Cars model cards', () => {
     expect(m.variantCount).toBe(1);
   });
 });
+
+/**
+ * The variants drill-down agrees with the card that opened it.
+ *
+ * The card was fixed in #116 and this view was not, so clicking "Explore
+ * Variants" on a card reading "₹6.84L – ₹11.98L · 12 Variants" landed on a
+ * page headed "1 variant" quoting "₹9.30L". One click, two contradictory
+ * answers about the same car.
+ */
+describe('listings — variants drill-down', () => {
+  function open(cars: Car[]): ListingsComponent {
+    const comp = build(cars);
+    comp.selectedModel.set('Maruti Suzuki||Fronx');
+    return comp;
+  }
+
+  it('counts published trims, not catalogue rows', () => {
+    const comp = open([
+      car({ price: 930000, variantCount: 12, variantPriceMin: 684000, variantPriceMax: 1198000 }),
+    ]);
+    expect(comp.selectedModelTrimCount()).toBe(12);
+  });
+
+  it('quotes the trim band on each row', () => {
+    const comp = open([
+      car({ price: 930000, variantCount: 12, variantPriceMin: 684000, variantPriceMax: 1198000 }),
+    ]);
+    const row = comp.newModelVariants()[0];
+
+    expect(comp.variantCardPrice(row)).toBe('₹6.84L – ₹11.98L');
+    expect(comp.variantCardPrice(row)).not.toContain('9.30');
+    // "EMI from" should be from the cheapest trim, not the catalogue figure.
+    expect(comp.variantEmiBase(row)).toBe(684000);
+  });
+
+  it('falls back to the catalogue price when a row has no priced trims', () => {
+    const comp = open([car({ price: 930000, variantCount: 0 })]);
+    const row = comp.newModelVariants()[0];
+
+    expect(comp.variantCardPrice(row)).toBe('₹9.30L');
+    expect(comp.variantEmiBase(row)).toBe(930000);
+    expect(comp.selectedModelTrimCount()).toBe(1);
+  });
+});
