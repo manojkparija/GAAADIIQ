@@ -9,6 +9,7 @@ import { SupabaseService } from '../../services/supabase.service';
 import { CityService } from '../../services/city.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { ImageUploadService, UploadedImage } from '../../services/image-upload.service';
+import { NativeService, NativePhoto } from '../../services/native.service';
 import { ValuationResult, computeHeuristicValuation } from '../../utils/valuation-engine';
 import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 
@@ -321,6 +322,7 @@ export class ListCarComponent {
     private sb: SupabaseService,
     private imageUpload: ImageUploadService,
     private cityService: CityService,
+    private native: NativeService,
   ) {
     const user = auth.currentUser();
     if (user) {
@@ -421,6 +423,59 @@ export class ListCarComponent {
       input.value = '';
     }
   }
+
+  /**
+   * Photographing the car with the phone's camera.
+   *
+   * Selling a car means standing next to it. On a phone the file input sends
+   * the seller to a file browser to look for pictures they have not taken yet;
+   * the camera is the obvious first step and Capacitor already exposes it —
+   * NativeService wrapped it and nothing called it.
+   *
+   * `source` picks camera or gallery. Both come back as a data URL, are turned
+   * into a File, and go through the same uploader as the web path, so the
+   * limits and error handling do not fork.
+   */
+  async addFromDevice(source: 'camera' | 'gallery'): Promise<void> {
+    const remaining = 10 - this.uploadedImages().length;
+    if (remaining <= 0 || this.uploadLoading()) return;
+
+    this.uploadError.set('');
+    let photo: NativePhoto | null;
+    try {
+      photo = source === 'camera'
+        ? await this.native.takePhoto()
+        : await this.native.pickPhoto();
+    } catch {
+      // Cancelling the camera rejects. That is not a failure worth a message —
+      // the seller simply changed their mind.
+      return;
+    }
+    if (!photo) return;
+
+    const file = NativeService.photoToFile(photo);
+    if (!file) {
+      this.uploadError.set('That photo could not be read. Please try again.');
+      return;
+    }
+
+    this.uploadLoading.set(true);
+    try {
+      const results = await this.imageUpload.uploadFiles([file], 'cars');
+      this.uploadedImages.update(existing => [...existing, ...results]);
+      // Confirmation the photo landed, without the seller having to look away
+      // from the car to check the screen.
+      this.native.tap('light');
+    } catch {
+      this.uploadError.set('Upload failed. Please check your internet connection and try again.');
+      this.native.buzzError();
+    } finally {
+      this.uploadLoading.set(false);
+    }
+  }
+
+  /** True in the Android/iOS shell, where the camera buttons are worth showing. */
+  get isNativeApp(): boolean { return this.native.isNative; }
 
   removeImage(index: number) {
     this.uploadedImages.update(imgs => imgs.filter((_, i) => i !== index));

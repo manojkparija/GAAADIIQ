@@ -335,12 +335,27 @@
               <span class="stat-label">Photos on this car</span>
               <span class="stat-value">{{ carImages().length }}</span>
             </div>
-            <label class="btn-gradient" style="cursor:pointer;margin-left:auto">
-              {{ carImagesLoading() ? 'Uploading…' : 'Add photos' }}
-              <input type="file" multiple accept="image/*" hidden
-                     [disabled]="carImagesLoading()"
-                     (change)="onDealerImagePick($event)" />
-            </label>
+            <!-- In the app, photograph the car in the yard. On the web, the
+                 file picker below is unchanged. -->
+            @if (isNativeApp) {
+              <div class="dealer-photo-actions" style="margin-left:auto;display:flex;gap:0.5rem">
+                <button type="button" class="btn-gradient" [disabled]="carImagesLoading()"
+                        (click)="addDealerPhoto('camera')">
+                  {{ carImagesLoading() ? 'Uploading…' : '📷 Take photo' }}
+                </button>
+                <button type="button" class="btn-outline" [disabled]="carImagesLoading()"
+                        (click)="addDealerPhoto('gallery')">
+                  Gallery
+                </button>
+              </div>
+            } @else {
+              <label class="btn-gradient" style="cursor:pointer;margin-left:auto">
+                {{ carImagesLoading() ? 'Uploading…' : 'Add photos' }}
+                <input type="file" multiple accept="image/*" hidden
+                       [disabled]="carImagesLoading()"
+                       (change)="onDealerImagePick($event)" />
+              </label>
+            }
           </div>
 
           <p class="form-error" *ngIf="carImagesError()" style="color:var(--danger-ink,#b91c1c);font-weight:600">

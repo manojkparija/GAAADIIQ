@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { NativeService } from './native.service';
 
 /** A mechanic as a customer is allowed to see them — no KYC fields. */
 export interface NearbyMechanic {
@@ -178,6 +179,7 @@ export interface StartOtp {
 @Injectable({ providedIn: 'root' })
 export class MarketplaceService {
   private readonly http = inject(HttpClient);
+  private readonly native = inject(NativeService);
   private readonly apiUrl = environment.apiUrl;
 
   readonly loading = signal(false);
@@ -194,7 +196,27 @@ export class MarketplaceService {
    * feature is dispatching to where the car actually is, and a silently wrong
    * position is worse than asking the user to enable location.
    */
-  currentPosition(): Promise<GeoFix> {
+  async currentPosition(): Promise<GeoFix> {
+    // In the Android/iOS shell, go through the Capacitor plugin.
+    //
+    // navigator.geolocation inside a WebView never triggers Android's runtime
+    // permission request. ACCESS_FINE_LOCATION is declared in the manifest, but
+    // on Android 6+ declaring is not granting, and nothing else in the app asks
+    // — so on a phone this rejected with "Location access was blocked" and the
+    // driver was told to enable a permission they had never been offered.
+    //
+    // The plugin asks, then answers. On the web this is skipped entirely and
+    // the browser path below is unchanged.
+    if (this.native.isNative) {
+      const pos = await this.native.getCurrentPosition();
+      if (!pos) throw new Error('Could not get your location. Check that location services are on.');
+      return {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy_m: pos.coords.accuracy,
+      };
+    }
+
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('This browser cannot share your location.'));

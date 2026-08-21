@@ -334,3 +334,40 @@
 .lt-title { font-weight: 700; font-size: 0.95rem; }
 .lt-sub   { font-size: 0.78rem; color: var(--text-muted); }
 .lt-hint  { display: block; margin-top: 0.35rem; font-size: 0.76rem; color: var(--text-muted); }
+
+/* ── Native photo source buttons ──────────────────────────────────────────
+   Shown only in the Android/iOS shell, where the camera is the obvious first
+   step for someone standing next to the car they are listing. Equal-width
+   columns so neither reads as the secondary choice at a glance; they stack
+   on a narrow phone rather than squeezing two labels onto one line. */
+.photo-source-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+
+  @media (max-width: 380px) { grid-template-columns: 1fr; }
+}
+
+.photo-source-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  // 48px: Android's own touch-target guidance, and these are the two controls
+  // the whole photo step depends on.
+  min-height: 48px;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.photo-hint {
+  margin-top: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+}

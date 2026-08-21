@@ -16,6 +16,7 @@ import { MyListingsService } from '../../services/my-listings.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { FormsModule } from '@angular/forms';
+import { NativeService, NativePhoto } from '../../services/native.service';
 
 interface CarEnquiry {
   id: string; car_id: string; buyer_name: string; buyer_phone: string;
@@ -189,6 +190,41 @@ export class DealerDashboardComponent {
     input.value = '';
   }
 
+  /** True in the Android/iOS shell, where the camera is worth offering. */
+  get isNativeApp(): boolean { return this.native.isNative; }
+
+  /**
+   * Photograph a car in the yard, rather than hunting for it in a file browser.
+   *
+   * Same reasoning as List Your Car: a dealer adding photos is standing next to
+   * the stock. Goes through DealerCarImagesService like the file path, so the
+   * review workflow, the pending status and the RLS ownership check all still
+   * apply — the camera changes where the bytes come from, nothing else.
+   */
+  async addDealerPhoto(source: 'camera' | 'gallery'): Promise<void> {
+    const carId = this.selectedCarId();
+    if (!carId || this.carImagesLoading()) return;
+
+    let photo: NativePhoto | null;
+    try {
+      photo = source === 'camera'
+        ? await this.native.takePhoto()
+        : await this.native.pickPhoto();
+    } catch {
+      return;                       // cancelled — not a failure
+    }
+    if (!photo) return;
+
+    const file = NativeService.photoToFile(photo, `car-${carId}`);
+    if (!file) return;
+
+    const ok = await this.dealerImages.add(carId, [file]);
+    // add() reports refusal by returning false — row-level security declines a
+    // write with no rows and no error — so the buzz follows the result, not the
+    // fact that the call returned.
+    if (ok) this.native.tap('light'); else this.native.buzzError();
+  }
+
   async removeDealerImage(imageId: number) {
     await this.dealerImages.remove(imageId);
   }
@@ -208,7 +244,8 @@ export class DealerDashboardComponent {
               private auth: AuthService, private sellersSvc: SellersService,
               private sb: SupabaseService, public sentimentSvc: SentimentService,
               private dealerImages: DealerCarImagesService,
-              private myListingsSvc: MyListingsService) {
+              private myListingsSvc: MyListingsService,
+              private native: NativeService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
     this.loadSellerInfo();
     this.sentimentSvc.loadLeads();
