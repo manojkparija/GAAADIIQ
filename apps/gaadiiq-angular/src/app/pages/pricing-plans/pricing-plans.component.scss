@@ -25,7 +25,30 @@
   padding: 2rem 1.5rem; position: relative; display: flex; flex-direction: column; gap: .75rem;
   &.highlight { border: 1px solid rgba(47,107,255,.5); background: rgba(47,107,255,.07); }
 }
-.plan-badge { display: inline-block; border-radius: 2rem; padding: .2rem .8rem; font-size: .78rem; font-weight: 700; margin-bottom: .25rem; width: fit-content; }
+// The fixed height is load-bearing, not cosmetic. The badges carry emoji
+// ("⭐ Most Popular", "🏢 Dealer"), which resolve to a fallback font whose
+// glyphs are taller than the Latin text beside them. With height left to the
+// content, the badged cards' badges came out 2px taller than the placeholder
+// on the unbadged ones, and the prices stayed measurably off each other even
+// once the placeholder held the row open. Setting line-height alone did not
+// fix it — measured, not assumed. A fixed box makes a badge's height depend
+// on nothing but its own styling, whatever characters end up inside it.
+.plan-badge {
+  display: inline-flex; align-items: center;
+  box-sizing: border-box; height: 1.6rem;
+  border-radius: 2rem; padding: 0 .8rem;
+  font-size: .78rem; line-height: 1; font-weight: 700;
+  margin-bottom: .25rem; width: fit-content;
+}
+
+// Holds the badge's row open on the plans that have no badge, so the four
+// prices line up across the row. `visibility: hidden` rather than an empty
+// element: it keeps the exact height of a real badge — padding, font-size and
+// line-height included — so the two shapes cannot drift apart when the badge
+// is restyled. `display: none` would collapse it and bring the bug straight
+// back.
+.plan-badge.is-placeholder,
+.yearly-savings.is-placeholder { visibility: hidden; }
 .badge-purple { background: rgba(47,107,255,.2); color: var(--teal-ink); border: 1px solid rgba(47,107,255,.3); }
 .badge-gold { background: rgba(255,215,0,.15); color: var(--warning-ink); border: 1px solid rgba(255,215,0,.3); }
 
@@ -36,13 +59,20 @@
 .plan-desc { font-size: .85rem; color: var(--muted); flex-grow: 0; }
 
 .yearly-savings {
-  display: inline-block;
+  display: inline-flex;   // flex, so align-items below actually centres
+  width: fit-content;
   background: rgba(67,233,123,0.15);
   color: var(--success-ink);
   border: 1px solid rgba(67,233,123,0.3);
   border-radius: 2rem;
-  padding: .2rem .65rem;
+  // Fixed for the same reason as .plan-badge: the free plan renders a hidden
+  // placeholder here, and it has to match the real chip's height exactly.
+  box-sizing: border-box;
+  height: 1.55rem;
+  align-items: center;
+  padding: 0 .65rem;
   font-size: .75rem;
+  line-height: 1;
   font-weight: 700;
 }
 
