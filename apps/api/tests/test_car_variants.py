@@ -293,3 +293,92 @@ class TestResearchCleaningSuite:
         assert _clean(None) == []
         assert _clean({"variants": "VXi, ZXi"}) == []
         assert _clean({"variants": [42, None]}) == []
+
+
+class TestVariantPriceBandSuite:
+    """
+    What a listing card is told about a model's trims.
+
+    A card renders one catalogue row and never fetches that row's trims, so the
+    only price within its reach was `cars.ex_showroom_price` — a figure kept by
+    hand, separately from the trims, which drifts. The same Fronx read
+    "₹9.30L onwards · 1 Variant" on the New Cars card and "₹6.84 - 11.98 Lakh"
+    on its own detail page, which reads the trims. The band and the count are
+    served from here so both screens answer from the same source.
+    """
+
+    @pytest.mark.asyncio
+    async def test_the_band_spans_the_published_trims(self, client, car):
+        for name, price in [("LXi", "684000"), ("VXi", "820000"), ("ZXi", "1198000")]:
+            await client.post(f"/cars/{car['id']}/variants", json={
+                "name": name, "ex_showroom_price": price,
+            })
+
+        body = (await client.get(f"/cars/{car['id']}")).json()
+
+        assert body["variant_count"] == 3
+        assert float(body["variant_price_min"]) == 684000
+        assert float(body["variant_price_max"]) == 1198000
+        # The catalogue figure is untouched and still disagrees — which is the
+        # whole point: the card must not read it while trims exist.
+        assert float(body["ex_showroom_price"]) == 530000
+
+    @pytest.mark.asyncio
+    async def test_a_draft_price_is_not_in_the_band(self, client, car):
+        """A draft is a figure nobody has checked; quoting it would price a car
+        against a number the language model invented."""
+        await client.post(f"/cars/{car['id']}/variants", json={
+            "name": "VXi", "ex_showroom_price": "820000",
+        })
+        with patch("services.variant_research.research_variants",
+                   AsyncMock(return_value={"variants": [
+                       {"name": "Cheap Draft", "ex_showroom_price": "100000"},
+                   ]})):
+            await client.post(f"/cars/{car['id']}/variants/research")
+
+        body = (await client.get(f"/cars/{car['id']}")).json()
+
+        assert body["variant_count"] == 1
+        assert float(body["variant_price_min"]) == 820000
+
+    @pytest.mark.asyncio
+    async def test_an_unpriced_trim_does_not_vote(self, client, car):
+        """
+        min()/max() ignore NULL, so a trim with no price neither drags the band
+        to zero nor discards it. A card showing "₹0.00L onwards" because one
+        trim is half-entered would be worse than showing the priced range.
+        """
+        await client.post(f"/cars/{car['id']}/variants", json={
+            "name": "VXi", "ex_showroom_price": "820000",
+        })
+        await client.post(f"/cars/{car['id']}/variants", json={"name": "Base"})
+
+        body = (await client.get(f"/cars/{car['id']}")).json()
+
+        assert body["variant_count"] == 2
+        assert float(body["variant_price_min"]) == 820000
+        assert float(body["variant_price_max"]) == 820000
+
+    @pytest.mark.asyncio
+    async def test_a_car_with_no_trims_reports_no_band(self, client, car):
+        """The caller falls back to the catalogue price, which is all such a
+        car has."""
+        body = (await client.get(f"/cars/{car['id']}")).json()
+
+        assert body["variant_count"] == 0
+        assert body["variant_price_min"] is None
+        assert body["variant_price_max"] is None
+
+    @pytest.mark.asyncio
+    async def test_the_listing_endpoint_carries_the_band_too(self, client, car):
+        """The listing page is where the wrong price was rendered, and it does
+        not call the single-car endpoint."""
+        await client.post(f"/cars/{car['id']}/variants", json={
+            "name": "LXi", "ex_showroom_price": "684000",
+        })
+
+        listed = (await client.get("/cars")).json()["items"]
+        row = next(c for c in listed if c["id"] == car["id"])
+
+        assert row["variant_count"] == 1
+        assert float(row["variant_price_min"]) == 684000

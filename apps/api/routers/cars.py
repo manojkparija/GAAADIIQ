@@ -71,36 +71,80 @@ async def list_cars(
 
     # One query for the page's images rather than one per car.
     images = await media_library.urls_for_cars(db, cars, bucket=bucket)
-    counts = await _variant_counts(db, [c.id for c in cars])
+    summaries = await _variant_summaries(db, [c.id for c in cars])
 
     items = []
     for car in cars:
         out = CarOut.model_validate(car)
         out.image_urls = images.get(car.id, [])
-        out.variant_count = counts.get(car.id, 0)
+        _apply_variant_summary(out, summaries.get(car.id))
         items.append(out)
 
     return CarListOut(items=items, total=total, page=page, page_size=page_size)
 
 
-async def _variant_counts(db: AsyncSession, car_ids: list[uuid.UUID]) -> dict:
+class _VariantSummary(BaseModel):
+    """What the published trims of one car add up to."""
+
+    count: int = 0
+    price_min: Decimal | None = None
+    price_max: Decimal | None = None
+
+
+async def _variant_summaries(
+    db: AsyncSession, car_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, _VariantSummary]:
     """
-    Published trims per car, in one query rather than one per row.
+    Published trims per car — how many, and the price band they span — in one
+    query rather than one per row.
 
     Published only: a draft is a figure nobody has read, so counting it would
     promise a buyer a choice that is not on offer.
+
+    THE BAND IS HERE BECAUSE A LISTING CARD CANNOT COMPUTE IT.
+
+    A card renders one row of the catalogue and never fetches that row's trims,
+    so the only price in reach was `cars.ex_showroom_price` — a single figure
+    maintained by hand, quite separately from the trims. The two drifted, and
+    the same Fronx read "₹9.30L onwards" on the listing card and "₹6.84 - 11.98
+    Lakh" on its own detail page, which reads the trims. A buyer comparing
+    those two screens sees the site contradict itself on the number they care
+    about most.
+
+    min() and max() ignore NULL in SQL, so an unpriced trim neither drags the
+    band to zero nor discards the band entirely — it simply does not vote.
+    A car whose trims are all unpriced yields NULLs, and the caller falls back
+    to the catalogue figure.
     """
     if not car_ids:
         return {}
     rows = await db.execute(
-        select(CarVariant.car_id, func.count())
+        select(
+            CarVariant.car_id,
+            func.count(),
+            func.min(CarVariant.ex_showroom_price),
+            func.max(CarVariant.ex_showroom_price),
+        )
         .where(
             CarVariant.car_id.in_(car_ids),
             CarVariant.status == VariantStatus.published,
         )
         .group_by(CarVariant.car_id)
     )
-    return dict(rows.all())
+    return {
+        car_id: _VariantSummary(count=count, price_min=lo, price_max=hi)
+        for car_id, count, lo, hi in rows.all()
+    }
+
+
+def _apply_variant_summary(out: CarOut, summary: _VariantSummary | None) -> CarOut:
+    """Copy a summary onto a response, leaving the defaults when there is none."""
+    if summary is None:
+        return out
+    out.variant_count = summary.count
+    out.variant_price_min = summary.price_min
+    out.variant_price_max = summary.price_max
+    return out
 
 
 class CatalogueOption(BaseModel):
@@ -180,7 +224,7 @@ async def get_car(car_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     )
     out.image_urls = images.get(car.id, [])
     out.spin_urls = await media_library.spin_urls_for_car(db, car)
-    out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
+    _apply_variant_summary(out, (await _variant_summaries(db, [car.id])).get(car.id))
     return out
 
 
@@ -222,7 +266,7 @@ async def update_car(
         db, [car], per_car=media_library.GALLERY_FULL_LIMIT
     )
     out.image_urls = images.get(car.id, [])
-    out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
+    _apply_variant_summary(out, (await _variant_summaries(db, [car.id])).get(car.id))
     return out
 
 
@@ -534,7 +578,7 @@ async def research_car_details(
 
     if car.specs and car.features:
         out = CarOut.model_validate(car)
-        out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
+        _apply_variant_summary(out, (await _variant_summaries(db, [car.id])).get(car.id))
         return out
 
     details = await variant_research.research_model_details(
@@ -548,5 +592,5 @@ async def research_car_details(
     await db.refresh(car)
 
     out = CarOut.model_validate(car)
-    out.variant_count = (await _variant_counts(db, [car.id])).get(car.id, 0)
+    _apply_variant_summary(out, (await _variant_summaries(db, [car.id])).get(car.id))
     return out

@@ -19,10 +19,31 @@ export interface Car {
   isSellerListing?: boolean;
   /** Published trims for this model, 0 when none have been entered. */
   variantCount?: number;
+  /**
+   * The price band the published trims span, in rupees, when any of them
+   * carries a price. A listing card cannot derive this — it holds one
+   * catalogue row and never fetches that row's trims — so it used `price`,
+   * which is maintained separately and drifts away from the trims.
+   */
+  variantPriceMin?: number;
+  variantPriceMax?: number;
   sellerEmail?: string;
   specs?: { label: string; value: string }[];
   features?: string[];
   aiValuation?: { fairPrice: number; marketMin: number; marketMax: number; verdict: string; confidence: number };
+}
+
+/**
+ * A NUMERIC the API serialised as a string, as a number — or undefined.
+ *
+ * Undefined rather than 0 on purpose: callers treat this band as "present or
+ * not", and a 0 would read as a car that costs nothing rather than a car whose
+ * trims carry no price.
+ */
+function rupeesOrUndefined(value: string | number | null | undefined): number | undefined {
+  if (value == null) return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
 // ── API response shapes ────────────────────────────────────────────────────────
@@ -40,6 +61,12 @@ interface ApiCar {
   spin_urls?: string[];
   /** Published trims, counted by the API. */
   variant_count?: number;
+  /**
+   * The band those published trims span. NUMERIC, so serialised as a string
+   * for the same reason ex_showroom_price is. Null when no trim is priced.
+   */
+  variant_price_min?: string | null;
+  variant_price_max?: string | null;
   specs?: { label: string; value: string }[] | null;
   features?: string[] | null;
 }
@@ -314,6 +341,8 @@ function mapCatalogueCar(car: ApiCar): Car {
     bodyType: BODY_LABEL[car.body_type ?? ''] ?? car.body_type ?? '',
     isSellerListing: false,
     variantCount: car.variant_count ?? 0,
+    variantPriceMin: rupeesOrUndefined(car.variant_price_min),
+    variantPriceMax: rupeesOrUndefined(car.variant_price_max),
     // A curated specification wins; the engine/seating pair is the fallback
     // for a model nobody has researched yet.
     specs: car.specs?.length ? car.specs : (car.engine_cc ? [
@@ -574,6 +603,8 @@ export class CarsDataService {
       specs: car.specs ?? undefined,
       features: car.features ?? undefined,
       variantCount: car.variant_count ?? 0,
+      variantPriceMin: rupeesOrUndefined(car.variant_price_min),
+      variantPriceMax: rupeesOrUndefined(car.variant_price_max),
     };
   }
 
