@@ -216,6 +216,25 @@
             <div class="spinner"></div>
             <p>Loading new cars...</p>
           </div>
+        } @else if (outage()) {
+          <!--
+            The catalogue could not be reached. Checked before the empty state
+            below, because "nothing matched" and "we never heard back" are
+            different facts and the filter advice is actively wrong for the
+            second: it asks a reader with no filters set to clear filters that
+            do not exist.
+          -->
+          <div class="empty-state glass-card">
+            <div class="empty-icon">📡</div>
+            <h3>Could not load the car catalogue</h3>
+            <p>
+              This is a problem at our end, not with your filters. The service
+              may still be starting up — trying again usually works.
+            </p>
+            <button class="btn-gradient" (click)="retry()" [disabled]="retrying()">
+              {{ retrying() ? 'Retrying…' : 'Try again' }}
+            </button>
+          </div>
         } @else if (newCarModels().length === 0) {
           <div class="empty-state glass-card">
             <div class="empty-icon">🚗</div>
