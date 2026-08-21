@@ -197,6 +197,7 @@ import { SupabaseService } from '../../services/supabase.service';
 import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentiment.service';
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
+import { NativeService } from '../../services/native.service';
 
 @Component({
   selector: 'app-car-detail',
@@ -570,7 +571,7 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     this.sentimentSvc.trackPublic(seller.email, buyerId, 'enquiry', BUYER_TRACKING_CONSENT);
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, private resaleSvc: ResaleForecastService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService, private demandSvc: DemandService) {
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, private resaleSvc: ResaleForecastService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService, private demandSvc: DemandService, private native: NativeService) {
     // allowSignalWrites, because resolveCar() sets loadFailed and selectedColour
     // — and without it this effect throws NG0600 and the page never renders at
     // all, leaving "Loading car details…" on screen for good.
@@ -793,6 +794,28 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     this.aiForecast.set(null);
     this.aiSummary.set('');
     this.forecastTried.set(false);
+  }
+
+  /** '' until a share happens; 'copied' is the only outcome worth announcing. */
+  shareState = signal<'' | 'shared' | 'copied' | 'cancelled'>('');
+
+  /**
+   * Share this listing.
+   *
+   * The OS sheet in the app, the Web Share API in a mobile browser, the
+   * clipboard otherwise. Only the clipboard path needs a message: the other two
+   * put a sheet on screen, so the user already knows it worked, and a toast on
+   * top of that is noise. Dismissing a sheet is a choice, not a failure, and
+   * says nothing.
+   */
+  async shareCar(car: { make: string; model: string; year: number }): Promise<void> {
+    const result = await this.native.share({
+      title: `${car.make} ${car.model}`,
+      text: `${car.make} ${car.model} (${car.year}) on GAADIIQ`,
+      url: window.location.href,
+    });
+    this.shareState.set(result);
+    if (result === 'copied') setTimeout(() => this.shareState.set(''), 2500);
   }
 
   // Bar width for the mini chart, as a share of today's price.

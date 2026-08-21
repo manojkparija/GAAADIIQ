@@ -627,8 +627,19 @@
             <span class="badge badge-green"><app-icon name="check-circle" [size]="12"></app-icon> Verified</span>
             <div class="rating-row"><span>★</span> {{ car.rating }} <span style="color:var(--muted)">({{ car.reviews }} reviews)</span></div>
           </div>
-          <h1>{{ car.make }} {{ car.model }}</h1>
+          <div class="cd-title-row">
+            <h1>{{ car.make }} {{ car.model }}</h1>
+            <!-- The OS share sheet in the app, the Web Share API in a mobile
+                 browser, the clipboard everywhere else. shareState() carries
+                 which happened, because "copied" needs saying and "shared"
+                 does not. -->
+            <button type="button" class="cd-share-btn" (click)="shareCar(car)"
+                    [attr.aria-label]="'Share ' + car.make + ' ' + car.model">
+              <app-icon name="share" [size]="18"></app-icon>
+            </button>
+          </div>
           <div style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">{{ car.variant }} · {{ car.year }}</div>
+          <div *ngIf="shareState() === 'copied'" class="cd-share-note">Link copied</div>
           <!-- One price, from one source. displayPrice() prefers the published
                trims — the same figures the Variants tab lists and the On-Road
                panel prices — so the three cannot disagree, and it follows the

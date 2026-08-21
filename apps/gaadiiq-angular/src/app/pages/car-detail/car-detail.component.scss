@@ -828,3 +828,39 @@
   cursor: pointer;
   text-decoration: underline;
 }
+
+/* Share control in the title row. Icon-only: the row already carries the car
+   name and price, and a labelled button competes with them for the eye. */
+.cd-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  h1 { flex: 1; min-width: 0; }
+}
+
+.cd-share-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  // 44px is the smallest comfortable touch target; this sits beside a heading
+  // and would otherwise be sized by its icon alone.
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-soft);
+  background: var(--fill-dim);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s;
+
+  &:hover { color: var(--primary); border-color: var(--primary); }
+}
+
+.cd-share-note {
+  font-size: 0.8rem;
+  color: var(--success-ink, #15803d);
+  margin-bottom: 0.5rem;
+}

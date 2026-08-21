@@ -28,7 +28,7 @@ injected in exactly one file — `app.component.ts` — which called only
 |---|---|---|
 | `takePhoto()` | ✅ | ✅ List Your Car *(done)* |
 | `pickPhoto()` | ✅ | ✅ List Your Car *(done)* |
-| `getCurrentPosition()` | ✅ | ❌ **Find a Mechanic still asks for a city** |
+| `getCurrentPosition()` | ✅ | ✅ Find a Mechanic *(done)* |
 | `getPreference()` / `setPreference()` | ✅ | ❌ |
 | `registerPush()` | ✅ | ⚠️ registers a token; nothing sends to it |
 
@@ -48,15 +48,31 @@ Native shell gets **Take photo** / **Choose from gallery**; the web keeps the
 file input unchanged. Both paths converge on `ImageUploadService.uploadFiles`
 via `NativeService.photoToFile`, so limits and error handling do not fork.
 
-### 1.2 GPS on Find a Mechanic — next
+### 1.2 GPS on Find a Mechanic ✅ done
 
-The roadside-help feature asks a stranded driver to pick their city from a
-dropdown while the device knows where they are. `getCurrentPosition()` exists
-and is unused.
+**An earlier draft of this file said the feature "asks a stranded driver to pick
+their city". That was wrong.** Find a Mechanic already took a live fix through
+`MarketplaceService.currentPosition()`, and already refused to fall back to a
+city centre — a silently wrong position is worse than no position when the point
+is dispatching to where the car actually stopped.
 
-Needs a reverse-geocode to a city, and must degrade to the manual picker when
-permission is refused — location is the one permission users decline most, and
-refusing it should not remove the feature.
+The real defect was narrower and only bites on a phone. Every call site used
+`navigator.geolocation`, which **inside a WebView never triggers Android's
+runtime permission request**. `ACCESS_FINE_LOCATION` is declared in
+`AndroidManifest.xml`, but on Android 6+ declaring is not granting, and nothing
+in the app asked. So the fix failed and the driver was told "Location access was
+blocked" — about a permission they had never been offered.
+
+`currentPosition()` now goes through the Capacitor plugin in the native shell,
+which asks first. The browser path is untouched.
+
+A second bug in the wrapper, found on the way: it requested permission only when
+the state was `'denied'`. A fresh install reports `'prompt'`, so the request was
+skipped in exactly the case that mattered.
+
+**Still using `navigator.geolocation` directly:** `city-selector` and
+`vehicle-diagnosis`. Same latent problem, lower stakes — both already degrade to
+a chosen city.
 
 ### 1.3 Dealer photo upload
 
@@ -64,10 +80,22 @@ Same camera treatment as 1.1 for the dealer dashboard's image upload. Deferred
 only because the dealer flow itself has not yet been verified end-to-end against
 real Supabase auth.
 
-### 1.4 Remember the last city
+### 1.4 Remember the last city — withdrawn
 
-`setPreference()` is unused, so city choice resets every launch. Small, and the
-kind of thing that separates an app from a bookmark.
+An earlier draft claimed city choice "resets every launch". **Not demonstrated,
+and probably false**: `CityService` persists to `localStorage`, which survives
+app restarts in a Capacitor WebView.
+
+`Preferences` is more durable — WebView storage can be cleared by Android under
+storage pressure, native preferences are not — but that is a robustness
+improvement, not the bug this item described. Left undone rather than fixed on a
+claim nobody checked.
+
+**A note on this file.** Three of its original items did not survive being
+checked: Find a Mechanic already had GPS, city already persists, and the real
+location defect was a missing Android runtime permission request rather than a
+missing feature. It was written from a fast read of the code. Verify before
+building from any remaining item here.
 
 ## Phase 2 — Feel
 

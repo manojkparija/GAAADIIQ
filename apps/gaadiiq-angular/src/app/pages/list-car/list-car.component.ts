@@ -463,8 +463,12 @@ export class ListCarComponent {
     try {
       const results = await this.imageUpload.uploadFiles([file], 'cars');
       this.uploadedImages.update(existing => [...existing, ...results]);
+      // Confirmation the photo landed, without the seller having to look away
+      // from the car to check the screen.
+      this.native.tap('light');
     } catch {
       this.uploadError.set('Upload failed. Please check your internet connection and try again.');
+      this.native.buzzError();
     } finally {
       this.uploadLoading.set(false);
     }
