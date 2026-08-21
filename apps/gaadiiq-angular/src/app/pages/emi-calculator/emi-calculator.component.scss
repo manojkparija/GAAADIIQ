@@ -77,8 +77,12 @@
 // panel it sits on, the worst reading on the site.
 .emi-val { font-size: 1rem; font-weight: 700; color: var(--primary-ink); }
 .emi-label { font-size: 0.7rem; color: var(--text-tertiary); }
-.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #1e40af, var(--teal)); color: var(--text); font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
-.selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
+// Both badges were 0.65rem — 10.4px, under the 11px floor. 0.72rem is the meta
+// size used across the app. Only .selected-badge was on screen during the
+// audit; .best-badge shares the rule shape and the same defect, so it moves
+// with it rather than being left as the one 10.4px badge on the page.
+.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #1e40af, var(--teal)); color: var(--text); font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
+.selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
 
 /* Affordability section */
 .afford-card {

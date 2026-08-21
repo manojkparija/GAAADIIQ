@@ -846,6 +846,23 @@
 .upcoming-info {
   flex: 1;
   min-width: 0;
+
+  // The card already sets `flex-wrap: wrap` below 600px so the notify button
+  // can drop onto its own line. That wrap never fired: `flex: 1` sets the
+  // basis to 0, so this column shrank away instead of making the line long
+  // enough to break.
+  //
+  // MEASURED at 360px: the card is 332px wide, the image takes 120 and the
+  // button 131, leaving this column **39px**. "Mahindra XEV 7e" needs 71px, so
+  // every upcoming car's name was cut roughly in half — and silently, because
+  // the text simply overflowed rather than erroring.
+  //
+  // A real basis makes the line genuinely too long, which triggers the wrap the
+  // author already asked for. `min-width: 0` stays: that is what lets the
+  // column shrink on the wider layouts where it does fit.
+  @media (max-width: 600px) {
+    flex-basis: 160px;
+  }
 }
 
 .upcoming-expected {

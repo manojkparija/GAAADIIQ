@@ -411,7 +411,10 @@
 
 .chat-footer {
   text-align: center;
-  font-size: 0.68rem;
+  // 0.68rem measured 10.88px. Raised to the 0.72rem the rest of the app uses
+  // for meta text: this line sits on every page, so it was the single most
+  // widely rendered piece of sub-11px type in the product.
+  font-size: 0.72rem;
   color: var(--text-secondary, #9ca3af);
   padding: 0.4rem 0.75rem 0.6rem;
   flex-shrink: 0;

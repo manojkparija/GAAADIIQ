@@ -22,8 +22,20 @@
   border: 1px solid var(--divider);
 }
 
-// ICICI is five characters. Shrinking the type is what keeps it on one line
-// rather than letting the box grow and knock the rows out of alignment.
+// Shrinking the type is what keeps a long mark on one line rather than letting
+// the box grow and knock the rows out of alignment.
+//
+// The constraint is KOTAK, not ICICI as this comment previously claimed.
+// Measured in the 36px tile: ICICI still fits at 0.72rem — I, C and I are
+// narrow — while KOTAK overflows at anything above 0.62rem, because K, O, T
+// and A are not. Character count is the wrong proxy for width, which is why
+// the old note pointed at the wrong bank and made this size look more
+// conservative than it is.
+//
+// KNOWN TRADE-OFF: 0.62rem is 9.92px, the smallest type in the product and
+// below the 11px floor the rest of this audit applied. Raising it needs a
+// wider tile, which moves the row layout — a design decision rather than a
+// defect fix, so it is left alone and recorded here.
 .lm-mark.lm-long {
   font-size: 0.62rem;
   letter-spacing: 0;

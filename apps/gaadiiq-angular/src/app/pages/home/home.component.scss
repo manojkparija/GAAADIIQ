@@ -145,7 +145,10 @@
   flex-direction: column;
   justify-content: space-between;
   height: calc(100% - 20px);
-  font-size: 0.68rem;
+  // Chart tick labels. 0.68rem measured 10.88px; 0.72rem matches the meta
+  // scale used elsewhere. Axis labels are the one place a size bump can
+  // collide, so this was re-measured at 360px as well as desktop.
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
@@ -183,7 +186,10 @@
   display: flex;
   justify-content: space-between;
   padding: 0.25rem 0 0 36px;
-  font-size: 0.68rem;
+  // Chart tick labels. 0.68rem measured 10.88px; 0.72rem matches the meta
+  // scale used elsewhere. Axis labels are the one place a size bump can
+  // collide, so this was re-measured at 360px as well as desktop.
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-tertiary);
 }
@@ -285,7 +291,7 @@
   animation: float 4s ease-in-out infinite;
   &:nth-child(2) { animation-delay: 0.7s; }
   .hsp-num  { display: block; font-size: 1.1rem; font-weight: 800; font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
-  .hsp-label { display: block; font-size: 0.65rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .hsp-label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 }
 
 /* STATS */
@@ -672,14 +678,18 @@
     flex-direction: column;
     align-items: center;
     gap: 0.25rem;
-    font-size: 0.65rem;
+    // 0.65rem measured 10.4px — the smallest text in the app outside the lender
+    // tile, on the primary navigation a phone user steers by. Raised to the
+    // 0.72rem meta scale; re-measured at 360px for row overflow, since these
+    // five items share a fixed bar.
+    font-size: 0.72rem;
     color: var(--muted);
     text-decoration: none;
     background: none;
     border: none;
     cursor: pointer;
     padding: 0;
-    span { font-size: 0.65rem; }
+    span { font-size: 0.72rem; }
     &.active { color: var(--primary); }
   }
 
