@@ -137,3 +137,77 @@ describe('listings — green pill legibility', () => {
     assertLegible('.nc-feature-chip');
   });
 });
+
+/**
+ * The New / Used tabs are legible and blue-teal in both states.
+ *
+ * They sat in --muted with a grey border, which read as disabled beside the
+ * one filled tab — and when selected, New Cars turned green and Used Cars
+ * orange, so the same control changed hue depending on which tab you were on.
+ *
+ * The contrast assertion is the point: --primary clears AA on this background
+ * (measured 5.57:1) but the brand mint would not, and the difference is not
+ * visible in the source. The active tab is white on a gradient, which
+ * getComputedStyle reports as a transparent background-color, so it is checked
+ * for the gradient instead of a ratio.
+ */
+describe('listings — New / Used tabs', () => {
+  let fixture: ComponentFixture<ListingsComponent>;
+  let comp: ListingsComponent;
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [ListingsComponent],
+      providers: [
+        provideRouter([]),
+        { provide: CarsDataService, useValue: { cars: signal([car({})]), loading: signal(false) } },
+      ],
+    });
+    fixture = TestBed.createComponent(ListingsComponent);
+    comp = fixture.componentInstance;
+    fixture.detectChanges();
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => fixture.nativeElement.remove());
+
+  function tabs(): HTMLElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('.type-btn'));
+  }
+
+  it('renders all three tabs', () => {
+    expect(tabs().length).toBe(3);
+  });
+
+  it('carries a gradient whose every stop can hold white text', () => {
+    // getComputedStyle gives the gradient's stops as rgb() triples. Each one
+    // is checked against the white label, because the label sits over all of
+    // them: the stock --gradient measures 2.49:1 at its teal end, which is why
+    // this tab bar uses the darker pair.
+    const stops = getComputedStyle(tabs()[0]).backgroundImage.match(/rgba?\([^)]+\)/g) ?? [];
+    expect(stops.length).withContext('no gradient stops found').toBeGreaterThan(1);
+
+    for (const stop of stops) {
+      const r = contrast([255, 255, 255], parseColor(stop));
+      expect(r).withContext(`white on ${stop} = ${r.toFixed(2)}:1`)
+        .toBeGreaterThanOrEqual(AA_NORMAL);
+    }
+  });
+
+  it('gives the selected tab the brand gradient, whichever tab it is', () => {
+    for (const type of ['All', 'New', 'Used'] as const) {
+      comp.setCarType(type);
+      fixture.detectChanges();
+
+      const active = tabs().find(t => t.classList.contains('active'))!;
+      const bg = getComputedStyle(active).backgroundImage;
+
+      expect(bg).withContext(`${type} tab has no gradient`).toContain('gradient');
+      // The old per-tab hues: green for New, orange/yellow for Used.
+      expect(bg).withContext(`${type} tab is still green`).not.toContain('56, 239, 125');
+      expect(bg).withContext(`${type} tab is still orange`).not.toContain('255, 210, 0');
+    }
+  });
+});
