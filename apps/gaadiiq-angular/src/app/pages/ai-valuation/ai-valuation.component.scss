@@ -35,7 +35,11 @@
 @media(max-width:480px) { .how-grid { grid-template-columns: 1fr; } }
 .how-card { padding: 1.5rem; text-align: center;
   .how-icon { font-size: 2rem; margin-bottom: .75rem; }
-  h4 { font-size: .9rem; font-weight: 700; margin-bottom: .5rem; }
+  // Was .9rem (14.4px) directly above .8rem (12.8px) body — 1.6px of
+  // separation, which is not enough to read as a heading at all. These are the
+  // card titles on "How it works", and they were the only genuine sub-15px
+  // headings the audit found that were not uppercase eyebrow labels.
+  h4 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
   p { font-size: .8rem; color: var(--muted); line-height: 1.5; }
 }
 

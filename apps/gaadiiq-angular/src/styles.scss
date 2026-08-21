@@ -323,6 +323,26 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
+// Form controls do not inherit the document font. That is a browser default,
+// not an oversight in any one stylesheet, and it is why `body { font-family }`
+// above does not reach a <button>: the UA sheet sets its own family and wins.
+//
+// MEASURED: 147 text elements across 13 pages were rendering in **Arial** —
+// every filter chip, tab, auth button and social sign-in — while the design
+// system declares only Outfit and Manrope. Their child <span>s inherited the
+// Arial too, which is why spans outnumbered buttons in the count. It is
+// invisible when reading the SCSS, because no rule anywhere asks for Arial.
+//
+// Deliberately `font-family` alone, not the `font: inherit` shorthand. The
+// shorthand also resets size, weight and line-height, which would resize every
+// control that currently relies on the UA default — a much larger visual
+// change than the defect warrants. Every button measured already carries an
+// explicit size from its component's styles (14px, 15px, 17px…); only the
+// family was wrong, so only the family is corrected.
+button, input, select, textarea, optgroup {
+  font-family: inherit;
+}
+
 body {
   font-family: 'Manrope', sans-serif;
   background: var(--navy);
@@ -487,7 +507,10 @@ input[type="number"], table, tbody, th, td,
     background: rgba(47,107,255,0.08);
     border: 1px solid rgba(47,107,255,0.14);
     color: var(--primary);
-    font-size: 0.68rem;
+    // 0.68rem measured 10.88px, below the 11px floor and off the 0.72rem
+    // meta scale the rest of the app uses. Uppercase carries small type better
+    // than lowercase, so this is a consistency correction more than a rescue.
+    font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -697,7 +720,10 @@ input[type="number"], table, tbody, th, td,
   gap: 0.3rem;
   padding: 0.22rem 0.6rem;
   border-radius: 4px;
-  font-size: 0.68rem;
+  // 0.68rem measured 10.88px, below the 11px floor and off the 0.72rem
+  // meta scale the rest of the app uses. Uppercase carries small type better
+  // than lowercase, so this is a consistency correction more than a rescue.
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -737,7 +763,10 @@ input[type="number"], table, tbody, th, td,
   display: inline-block;
   padding: 0.25rem 0.75rem;
   border-radius: 4px;
-  font-size: 0.68rem;
+  // 0.68rem measured 10.88px, below the 11px floor and off the 0.72rem
+  // meta scale the rest of the app uses. Uppercase carries small type better
+  // than lowercase, so this is a consistency correction more than a rescue.
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;

@@ -62,7 +62,10 @@ export default defineConfig({
       // Every project here declares a testMatch, so a new spec file that is
       // not named by one runs nowhere and reports nothing — which looks
       // exactly like passing. Add new desktop specs to this pattern.
-      testMatch: /(smoke|contrast|voice-diagnosis)\.spec\.ts/,
+      // typography is safe to run here: it reads rendered type only and needs
+      // no API. Verified by running the whole 26-route sweep locally with no
+      // backend started at all — every route rendered its text.
+      testMatch: /(smoke|contrast|voice-diagnosis|typography)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {
