@@ -448,15 +448,33 @@
   &:hover:not(.active) { color: var(--text); }
 }
 
+// A grid, not wrapped flex.
+//
+// As flex-wrap, each pill sized to its own text, so the column widths were
+// whatever the labels happened to measure. At 412px: "Under 5 Lakh" 111.9px,
+// "Under 10 Lakh" 119px (the extra digit), "Luxury Cars" 105.5px — three
+// widths in one control — and because each row packed independently, the
+// columns did not line up either: pill left edges landed at x = 29, 150, 157
+// and 272. That is the "box size is not same" reported from a phone.
+//
+// auto-fit + 1fr gives every pill the same width and puts them on shared
+// column lines, so the grid stays aligned however long a label is. The track
+// minimum is what decides the column count, so this still reflows from one
+// column on a narrow phone up to four on a wide card without a breakpoint.
 .find-cars-pills {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 0.6rem;
 }
 
 .find-pill {
   display: inline-flex;
   align-items: center;
+  // The grid above makes every cell the same width, so the label has to be
+  // centred in it — left-aligned text in an equal-width box reads as the
+  // ragged edge this change is removing.
+  justify-content: center;
+  text-align: center;
   padding: 0.45rem 1.2rem;
   border-radius: 8px;
   border: 1.5px solid var(--glass-border);

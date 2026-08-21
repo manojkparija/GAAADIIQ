@@ -104,7 +104,17 @@
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 2rem;
-  padding: 2rem 0;
+  // padding-block, not `padding: 2rem 0`.
+  //
+  // This element also carries .container, which supplies the horizontal
+  // padding every other block on the page is aligned to. The shorthand set
+  // left and right to 0 and threw that away, so the results ran edge to edge
+  // while the heading and sort control above them kept their 14px inset.
+  //
+  // Barely visible on desktop, where .container is capped at 1280px and
+  // centred, so there is margin either side regardless. On a phone the
+  // container is the full width and the cards touched both screen edges.
+  padding-block: 2rem;
   align-items: start;
 }
 
@@ -158,6 +168,23 @@
 
 @media (max-width: 768px) {
   .listings-body { grid-template-columns: 1fr; }
+
+  // Release the desktop sidebar layout.
+  //
+  // .cars-grid, .no-results and .new-car-showcase are each pinned to
+  // `grid-column: 2`, which is right when .listings-body has a 280px sidebar
+  // column beside them. The line above collapses that to a single column, but
+  // the pin stayed — so the browser CREATED an implicit second column to honour
+  // it, and the declared 1fr sat empty on the left.
+  //
+  // MEASURED at 412px: .listings-body resolved to `50.73px 329.27px` instead of
+  // one full-width column. Every car card started 82.7px from the left while
+  // the page heading and sort control started at 14px, and the cards ran flush
+  // to the right edge with no margin at all. That is the misalignment reported
+  // from a phone — and it is invisible on desktop, where column 2 is correct.
+  .cars-grid,
+  .no-results,
+  .new-car-showcase { grid-column: 1; }
   .sidebar {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
