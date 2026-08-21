@@ -22,8 +22,21 @@ outage. In particular:
   `schema_setup_batch*.sql` files at the repo root. The marketplace and loan
   tables exist only in the SQL files, so shipping code that needs them does not
   ship the tables. Check both before assuming a table exists.
-- **CI runs on SQLite, production on Postgres.** Green CI says nothing about
-  native enums, `NOT NULL` behaviour, or casting.
+- **CI runs the suite twice: SQLite, then Postgres.** `ci-api.yml` has a
+  "Test on Postgres" job against `postgres:16` that also applies the migration
+  chain to an empty database and diffs the result against the models. It
+  guards ~648 tests. (This line used to say CI ran on SQLite only. That was
+  true once and is not now — but the warning it carried still applies to the
+  gap below, so read the exclusions before trusting a green run.)
+- **Twelve test files are excluded from the Postgres job**, listed with their
+  reasons in `ci-api.yml` — `test_media_admin.py`, `test_loans.py`,
+  `test_reviews.py` and nine others. They fail there because the *tests* lean
+  on SQLite being lenient (fixtures that never insert the user row a foreign
+  key points at; tests that provoke an error and then reuse an aborted
+  transaction), not because the product is wrong. So for those twelve files
+  specifically, green CI still says nothing about native enums, `NOT NULL`
+  behaviour, or casting — and adding a thirteenth exclusion should be a
+  deliberate decision, not a way past a red run.
 - **Playwright runs in CI for the `desktop-chrome` project only.**
   `.github/workflows/ci-web.yml` ("Build & smoke test") installs Chromium and
   runs `npx playwright test --project=desktop-chrome` on changes under
@@ -47,8 +60,13 @@ outage. In particular:
   (`services/media_library.py`). A stray spelling silently detaches a gallery
   with no error.
 - `cars.id` is a **UUID** in the ORM. Batch 1 SQL says `bigint`; the ORM wins.
-- Run `ruff check .` over the whole tree, not per-file — CI does, and import
-  order (I001) fails on files you did not touch.
+- Run `ruff check .` from `apps/api`, not per-file — import order (I001) fails
+  on files you did not touch. That directory is what CI lints: `ci-api.yml`
+  sets `working-directory: apps/api`. (This line used to say "over the whole
+  tree — CI does". It does not, and the tree outside `apps/api` currently has
+  27 ruff errors in `apps/pdf-ingestion`, `docs/qa` and `scripts` that CI has
+  never seen — so a whole-tree run reports failures you did not cause and
+  cannot interpret.)
 - Test classes must be named `Test*Suite` or `Test*Case` (`pyproject.toml`).
   Anything else collects **zero tests** and passes silently. Prefer plain
   functions.

@@ -172,7 +172,21 @@ export class ListingsComponent implements OnInit {
       const [make, model] = key.split('||');
       const affordable = cars.filter(c => c.price >= minP && c.price <= maxP);
       if (affordable.length === 0) return null;
-      const prices = affordable.map(c => c.price);
+      // The published trims are the source of truth for both the band and the
+      // count, exactly as the detail page treats them. Reading `c.price` alone
+      // was wrong twice over: it is one hand-maintained catalogue figure per
+      // row, so a Fronx card quoted "₹9.30L onwards" while its own detail page
+      // read the trims and said "₹6.84 - 11.98 Lakh"; and counting rows called
+      // seventeen trims "1 Variant", because the catalogue holds one row per
+      // model-year, not one per trim.
+      //
+      // The catalogue figure stays as the fallback for a model whose trims are
+      // unpriced or absent — that is the only price such a car has.
+      const prices = affordable.flatMap(c => {
+        const lo = c.variantPriceMin;
+        const hi = c.variantPriceMax;
+        return lo != null && hi != null ? [lo, hi] : [c.price];
+      });
       const rep = affordable.find(c => c.image && !String(c.image).includes('aeplcdn'))
         ?? affordable.find(c => c.image) ?? affordable[0];
       const image = (rep.image && !String(rep.image).includes('aeplcdn'))
@@ -183,7 +197,12 @@ export class ListingsComponent implements OnInit {
         image,
         minPrice: Math.min(...prices),
         maxPrice: Math.max(...prices),
-        variantCount: affordable.length,
+        // Trims across every row of this model, falling back to the row count
+        // for a model with none — one row is still one thing to choose.
+        variantCount: Math.max(
+          affordable.reduce((sum, c) => sum + (c.variantCount ?? 0), 0),
+          affordable.length,
+        ),
         bodyType: rep.bodyType ?? '',
         fuel: [...new Set(affordable.map(c => c.fuel))].join(' / '),
         rating: rep.rating,

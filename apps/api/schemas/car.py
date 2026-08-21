@@ -66,6 +66,14 @@ class CarOut(BaseModel):
     # inferred from catalogue rows: a model is one row, and the card that says
     # "1 Variant" beside eight published trims is simply wrong.
     variant_count: int = 0
+    # The band those published trims span, or None when no trim carries a
+    # price. A listing card cannot work this out for itself — it holds one
+    # catalogue row and never fetches that row's trims — so without these it
+    # falls back to `ex_showroom_price`, a figure maintained by hand and quite
+    # separately from the trims. The two drift, and then the same car quotes
+    # one price on the card and a different one on its own detail page.
+    variant_price_min: Decimal | None = None
+    variant_price_max: Decimal | None = None
     specs: list | None = None
     features: list | None = None
 
