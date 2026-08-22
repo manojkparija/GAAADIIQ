@@ -11,8 +11,8 @@
   <div class="container">
     <div class="hero-content">
       <span class="hero-badge">🚗 New Cars 2025–26</span>
-      <h1 class="hero-heading">Explore <span class="gradient-text">New Cars</span></h1>
-      <p class="hero-sub">Find your perfect car from 500+ new models across all budgets</p>
+      <h1 class="hero-heading">{{ 'Explore' | t }} <span class="gradient-text">New Cars</span></h1>
+      <p class="hero-sub">{{ 'Find your perfect car from 500+ new models across all budgets' | t }}</p>
 
       <div class="hero-search-card glass-card">
         <div class="hero-tabs">
@@ -37,7 +37,7 @@
                 </button>
               }
             </div>
-            <a routerLink="/listings" [queryParams]="{carType:'New'}" class="view-all-link">View All Brands →</a>
+            <a routerLink="/listings" [queryParams]="{carType:'New'}" class="view-all-link">{{ 'View All Brands →' | t }}</a>
           </div>
         }
 
@@ -72,7 +72,7 @@
   <div class="container">
     <div class="section-header">
       <h2 class="section-title">Browse by <span class="gradient-text">Brand</span></h2>
-      <a routerLink="/listings" [queryParams]="{carType:'New'}" class="see-all-link">See All →</a>
+      <a routerLink="/listings" [queryParams]="{carType:'New'}" class="see-all-link">{{ 'See All →' | t }}</a>
     </div>
     <div class="brand-grid">
       @for (brand of brands; track brand.name) {
@@ -125,9 +125,9 @@
 <section class="nc-section nc-section-alt" #modelsSection>
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">Popular <span class="gradient-text">New Car Models</span></h2>
+      <h2 class="section-title">{{ 'Popular' | t }} <span class="gradient-text">New Car Models</span></h2>
       <div class="sort-bar">
-        <label class="sort-label">Sort by:</label>
+        <label class="sort-label">{{ 'Sort by:' | t }}</label>
         <app-custom-select class="sort-select" [options]="sortOptions" placeholder="Sort by"
                            [ngModel]="selectedSort()"
                            (ngModelChange)="selectedSort.set($event)" />
@@ -140,14 +140,14 @@
     <div class="models-layout">
       <aside class="filter-sidebar glass-card" [class.open]="sidebarOpen()">
         <div class="sidebar-header">
-          <h3 class="sidebar-title">Filters</h3>
+          <h3 class="sidebar-title">{{ 'Filters' | t }}</h3>
           @if (activeFiltersCount() > 0) {
-            <button class="clear-btn" (click)="clearAllFilters()">Clear All</button>
+            <button class="clear-btn" (click)="clearAllFilters()">{{ 'Clear All' | t }}</button>
           }
         </div>
 
         <div class="filter-group">
-          <label class="filter-group-label">Budget: <strong>{{ budgetFilterLabel() }}</strong></label>
+          <label class="filter-group-label">{{ 'Budget:' | t }} <strong>{{ budgetFilterLabel() }}</strong></label>
           <input type="range" class="budget-slider" min="200000" max="10000000" step="100000"
             [value]="maxBudget()" (input)="maxBudget.set(+$any($event.target).value); syncUrlFromSlider()" />
           <div class="slider-labels">
@@ -171,7 +171,7 @@
         </div>
 
         <div class="filter-group">
-          <label class="filter-group-label">Fuel Type</label>
+          <label class="filter-group-label">{{ 'Fuel Type' | t }}</label>
           @for (f of fuelOptions; track f) {
             <label class="checkbox-label">
               <input type="checkbox" [checked]="selectedFuels().includes(f)" (change)="toggleFuel(f)" />
@@ -181,7 +181,7 @@
         </div>
 
         <div class="filter-group">
-          <label class="filter-group-label">Transmission</label>
+          <label class="filter-group-label">{{ 'Transmission' | t }}</label>
           @for (t of transmissionOptions; track t) {
             <label class="checkbox-label">
               <input type="checkbox" [checked]="selectedTransmissions().includes(t)" (change)="toggleTransmission(t)" />
@@ -214,7 +214,7 @@
         @if (loading()) {
           <div class="loading-state">
             <div class="spinner"></div>
-            <p>Loading new cars...</p>
+            <p>{{ 'Loading new cars...' | t }}</p>
           </div>
         } @else if (outage()) {
           <!--
@@ -226,21 +226,20 @@
           -->
           <div class="empty-state glass-card">
             <div class="empty-icon">📡</div>
-            <h3>Could not load the car catalogue</h3>
+            <h3>{{ 'Could not load the car catalogue' | t }}</h3>
             <p>
-              This is a problem at our end, not with your filters. The service
-              may still be starting up — trying again usually works.
+              {{ 'This is a problem at our end, not with your filters. The service may still be starting up — trying again usually works.' | t }}
             </p>
             <button class="btn-gradient" (click)="retry()" [disabled]="retrying()">
-              {{ retrying() ? 'Retrying…' : 'Try again' }}
+              {{ retrying() ? ('Retrying…' | t) : ('Try again' | t) }}
             </button>
           </div>
         } @else if (newCarModels().length === 0) {
           <div class="empty-state glass-card">
             <div class="empty-icon">🚗</div>
-            <h3>No models found</h3>
-            <p>Try adjusting your filters — e.g. clear budget or body type</p>
-            <button class="btn-gradient" (click)="clearAllFilters()">Clear Filters</button>
+            <h3>{{ 'No models found' | t }}</h3>
+            <p>{{ 'Try adjusting your filters — e.g. clear budget or body type' | t }}</p>
+            <button class="btn-gradient" (click)="clearAllFilters()">{{ 'Clear Filters' | t }}</button>
           </div>
         } @else {
           <div class="models-count">{{ newCarModels().length }} models found</div>
@@ -278,7 +277,7 @@
                   <div class="model-actions">
                     <a [routerLink]="['/listings']"
                       [queryParams]="{make: model.make, model: model.model, carType: 'New'}"
-                      class="btn-gradient btn-sm">View Details →</a>
+                      class="btn-gradient btn-sm">{{ 'View Details →' | t }}</a>
                     <button type="button" class="btn-outline btn-sm"
                       (click)="addAndCompare(model.make + '||' + model.model, $event)">Compare</button>
                   </div>
@@ -289,7 +288,7 @@
           @if (compareSet().size > 0) {
             <div class="compare-bar">
               <span>{{ compareSet().size }} selected for compare</span>
-              <button class="btn-gradient btn-sm" (click)="goToCompare()">Compare now →</button>
+              <button class="btn-gradient btn-sm" (click)="goToCompare()">{{ 'Compare now →' | t }}</button>
             </div>
           }
         }
@@ -302,8 +301,8 @@
 <section class="nc-section">
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">🎉 New <span class="gradient-text">Launches</span></h2>
-      <span class="section-sub">Cars launched in the last 12 months</span>
+      <h2 class="section-title">🎉 New <span class="gradient-text">{{ 'Launches' | t }}</span></h2>
+      <span class="section-sub">{{ 'Cars launched in the last 12 months' | t }}</span>
     </div>
     <div class="launches-scroll">
       @for (car of newLaunches(); track car.make + car.model) {
@@ -322,7 +321,7 @@
             <div class="launch-price">{{ car.price }}</div>
             <a routerLink="/listings"
               [queryParams]="{carType: 'New', make: car.make, model: car.model}"
-              class="btn-gradient btn-sm">Explore →</a>
+              class="btn-gradient btn-sm">{{ 'Explore →' | t }}</a>
           </div>
         </div>
       }
@@ -336,8 +335,8 @@
 <section id="upcoming" class="nc-section nc-section-alt">
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">⏳ Upcoming <span class="gradient-text">Cars</span></h2>
-      <span class="section-sub">Get notified when they launch</span>
+      <h2 class="section-title">⏳ Upcoming <span class="gradient-text">{{ 'Cars' | t }}</span></h2>
+      <span class="section-sub">{{ 'Get notified when they launch' | t }}</span>
     </div>
     <div class="upcoming-list">
       @for (car of upcomingCars; track car.make + car.model) {
@@ -363,8 +362,8 @@
 <!-- ── EXPERT RECOMMENDATIONS ── -->
 <section class="nc-section">
   <div class="container">
-    <h2 class="section-title">🏆 Expert <span class="gradient-text">Recommendations</span></h2>
-    <p class="section-sub expert-note">Editorial picks — curated by our team</p>
+    <h2 class="section-title">🏆 Expert <span class="gradient-text">{{ 'Recommendations' | t }}</span></h2>
+    <p class="section-sub expert-note">{{ 'Editorial picks — curated by our team' | t }}</p>
     <div class="expert-grid">
       @for (pick of expertPicks; track pick.category) {
         <div class="expert-card glass-card">
@@ -376,7 +375,7 @@
           <p class="expert-reason">{{ pick.reason }}</p>
           <a routerLink="/listings"
             [queryParams]="{carType: 'New', make: pick.make, model: pick.model}"
-            class="btn-gradient btn-sm">View Model →</a>
+            class="btn-gradient btn-sm">{{ 'View Model →' | t }}</a>
         </div>
       }
     </div>

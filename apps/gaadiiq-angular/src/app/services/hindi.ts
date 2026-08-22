@@ -257,4 +257,126 @@ export const HINDI: Record<string, string> = {
     '6 आसान सवालों के जवाब दें। हमारा AI 50,000+ लिस्टिंग में से आपके लिए सही कार चुनेगा — साथ में',
   // ── Navbar actions ───────────────────────────────────────────────────────
   'Used Cars in': 'पुरानी कारें —',
+  // ── New Cars page ────────────────────────────────────────────────────────
+  'Find your perfect car from 500+ new models across all budgets':
+    'हर बजट में 500+ नए मॉडल में से अपनी सही कार चुनें',
+  'View All Brands →':
+    'सभी ब्रांड देखें →',
+  'See All →':
+    'सभी देखें →',
+  'Sort by:':
+    'क्रमबद्ध करें:',
+  'Filters':
+    'फ़िल्टर',
+  'Clear All':
+    'सब हटाएं',
+  'Budget:':
+    'बजट:',
+  'Fuel Type':
+    'फ्यूल टाइप',
+  'Loading new cars...':
+    'नई कारें लोड हो रही हैं...',
+  'Could not load the car catalogue':
+    'कार कैटलॉग लोड नहीं हो सका',
+  'This is a problem at our end, not with your filters. The service may still be starting up — trying again usually works.':
+    'यह हमारी तरफ की समस्या है, आपके फ़िल्टर की नहीं। सेवा अभी शुरू हो रही होगी — दोबारा कोशिश करने से आमतौर पर काम हो जाता है।',
+  'No models found':
+    'कोई मॉडल नहीं मिला',
+  'Try adjusting your filters — e.g. clear budget or body type':
+    'अपने फ़िल्टर बदलकर देखें — जैसे बजट या बॉडी टाइप हटाएं',
+  'Clear Filters':
+    'फ़िल्टर हटाएं',
+  'View Details →':
+    'विवरण देखें →',
+  'Compare now →':
+    'अभी तुलना करें →',
+  'Launches':
+    'लॉन्च',
+  'Cars launched in the last 12 months':
+    'पिछले 12 महीनों में लॉन्च हुई कारें',
+  'Explore →':
+    'देखें →',
+  'Cars':
+    'कारें',
+  'Get notified when they launch':
+    'लॉन्च होते ही सूचना पाएं',
+  'Recommendations':
+    'सिफारिशें',
+  'Editorial picks — curated by our team':
+    'संपादकीय चयन — हमारी टीम द्वारा चुने गए',
+  'View Model →':
+    'मॉडल देखें →',
+  'Popular':
+    'लोकप्रिय',
+  'Retrying…':
+    'फिर कोशिश हो रही है…',
+  'Try again':
+    'दोबारा कोशिश करें',
+  // ── Used Cars page ───────────────────────────────────────────────────────
+  'Find Your Perfect':
+    'अपनी सही कार खोजें',
+  'AI-verified pricing, certified inspections, and the best deals in your city':
+    'AI-वेरिफाइड कीमत, सर्टिफाइड जांच और आपके शहर के सबसे अच्छे सौदे',
+  'Make':
+    'मेक',
+  'Model':
+    'मॉडल',
+  'Max Budget':
+    'अधिकतम बजट',
+  'Clear':
+    'हटाएं',
+  'yet — showing All India results.':
+    'अभी नहीं — पूरे भारत के नतीजे दिखा रहे हैं।',
+  'Save up to 40%':
+    '40% तक बचाएं',
+  'vs new car price':
+    'नई कार की कीमत के मुकाबले',
+  'AI-Verified':
+    'AI-वेरिफाइड',
+  'pricing on every car':
+    'हर कार पर कीमत',
+  'listed cars':
+    'लिस्टेड कारें',
+  'Verified Sellers':
+    'वेरिफाइड सेलर',
+  'trusted listings only':
+    'सिर्फ भरोसेमंद लिस्टिंग',
+  'Budget Range':
+    'बजट रेंज',
+  'KM Driven':
+    'चली हुई KM',
+  'No. of Owners':
+    'मालिकों की संख्या',
+  'Certified Cars':
+    'सर्टिफाइड कारें',
+  'Show Certified Only':
+    'सिर्फ सर्टिफाइड दिखाएं',
+  'Color':
+    'रंग',
+  'Loading cars...':
+    'कारें लोड हो रही हैं...',
+  'Certified':
+    'सर्टिफाइड',
+  'Fetching best used cars for you...':
+    'आपके लिए सबसे अच्छी पुरानी कारें लाई जा रही हैं...',
+  "We couldn't load used car listings":
+    'पुरानी कारों की लिस्टिंग लोड नहीं हो सकी',
+  'No listings match your filters in this city':
+    'इस शहर में आपके फ़िल्टर से कोई लिस्टिंग नहीं मिली',
+  'Show All India cars':
+    'पूरे भारत की कारें दिखाएं',
+  'Clear All Filters':
+    'सभी फ़िल्टर हटाएं',
+  'No cars match your filters':
+    'आपके फ़िल्टर से कोई कार नहीं मिली',
+  'Try broadening your search criteria — or let AI find the best match for you.':
+    'अपनी खोज थोड़ी और खुली रखें — या AI को आपके लिए सबसे अच्छा विकल्प ढूंढने दें।',
+  '✓ Certified':
+    '✓ सर्टिफाइड',
+  'EMI Calc':
+    'EMI कैलक',
+  'Recently Viewed':
+    'हाल में देखी गई',
+  'No used cars in':
+    'पुरानी कारें नहीं हैं',
 };

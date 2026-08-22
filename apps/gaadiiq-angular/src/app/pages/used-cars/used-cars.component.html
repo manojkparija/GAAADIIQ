@@ -11,8 +11,8 @@
       <span class="hero-badge">
         {{ listingsFailed() ? 'Used Cars' : usedCarCount() + ' Used Cars Available' }}
       </span>
-      <h1 class="hero-heading">Find Your Perfect <span class="gradient-text">Used Car</span></h1>
-      <p class="hero-sub">AI-verified pricing, certified inspections, and the best deals in your city</p>
+      <h1 class="hero-heading">{{ 'Find Your Perfect' | t }} <span class="gradient-text">Used Car</span></h1>
+      <p class="hero-sub">{{ 'AI-verified pricing, certified inspections, and the best deals in your city' | t }}</p>
 
       <div class="hero-search-card glass-card">
         <div class="hero-search-row">
@@ -25,14 +25,14 @@
             </datalist>
           </div>
           <div class="search-field">
-            <label class="search-field-label">Make</label>
+            <label class="search-field-label">{{ 'Make' | t }}</label>
             <app-custom-select class="search-select" [options]="makeOptions()"
                                placeholder="All Makes"
                                [ngModel]="heroMake()"
                                (ngModelChange)="heroMake.set($event); heroModel.set('')" />
           </div>
           <div class="search-field">
-            <label class="search-field-label">Model</label>
+            <label class="search-field-label">{{ 'Model' | t }}</label>
             <input type="text" class="search-input" placeholder="e.g. Nexon, Swift..."
               autocomplete="off"
               [value]="heroModel()" (input)="heroModel.set($any($event.target).value)"
@@ -42,14 +42,14 @@
             </datalist>
           </div>
           <div class="search-field">
-            <label class="search-field-label">Max Budget</label>
+            <label class="search-field-label">{{ 'Max Budget' | t }}</label>
             <app-custom-select class="search-select" [options]="budgetOptions"
                                placeholder="Any Budget"
                                [ngModel]="heroBudgetMax() ? heroBudgetMax().toString() : ''"
                                (ngModelChange)="heroBudgetMax.set(+$event || 0)" />
           </div>
           <button class="btn-gradient search-btn" (click)="applyHeroSearch()">Search</button>
-          <button class="btn-outline search-btn" (click)="clearAllFilters()" style="white-space:nowrap">Clear</button>
+          <button class="btn-outline search-btn" (click)="clearAllFilters()" style="white-space:nowrap">{{ 'Clear' | t }}</button>
         </div>
       </div>
     </div>
@@ -60,7 +60,7 @@
 @if (showAllIndiaBanner()) {
   <div class="all-india-banner">
     <span class="banner-icon">📍</span>
-    <span>No used cars in <strong>{{ heroCity() }}</strong> yet — showing All India results.</span>
+    <span>{{ 'No used cars in' | t }} <strong>{{ heroCity() }}</strong> {{ 'yet — showing All India results.' | t }}</span>
     <button class="banner-link" (click)="filterToCity()">Filter to {{ heroCity() }}</button>
   </div>
 }
@@ -71,23 +71,23 @@
     <div class="stats-row">
       <div class="stat-item">
         <div class="stat-icon"><app-icon name="indian-rupee" [size]="28"></app-icon></div>
-        <div class="stat-value">Save up to 40%</div>
-        <div class="stat-label">vs new car price</div>
+        <div class="stat-value">{{ 'Save up to 40%' | t }}</div>
+        <div class="stat-label">{{ 'vs new car price' | t }}</div>
       </div>
       <div class="stat-item">
         <div class="stat-icon"><app-icon name="brain" [size]="28"></app-icon></div>
-        <div class="stat-value">AI-Verified</div>
-        <div class="stat-label">pricing on every car</div>
+        <div class="stat-value">{{ 'AI-Verified' | t }}</div>
+        <div class="stat-label">{{ 'pricing on every car' | t }}</div>
       </div>
       <div class="stat-item">
         <div class="stat-icon"><app-icon name="car" [size]="28"></app-icon></div>
         <div class="stat-value">{{ listingsFailed() ? '—' : usedCarCount() + '+' }}</div>
-        <div class="stat-label">listed cars</div>
+        <div class="stat-label">{{ 'listed cars' | t }}</div>
       </div>
       <div class="stat-item">
         <div class="stat-icon"><app-icon name="shield" [size]="28"></app-icon></div>
-        <div class="stat-value">Verified Sellers</div>
-        <div class="stat-label">trusted listings only</div>
+        <div class="stat-value">{{ 'Verified Sellers' | t }}</div>
+        <div class="stat-label">{{ 'trusted listings only' | t }}</div>
       </div>
     </div>
   </div>
@@ -114,7 +114,7 @@
 
         <!-- Budget Range -->
         <div class="filter-group">
-          <label class="filter-group-label">Budget Range</label>
+          <label class="filter-group-label">{{ 'Budget Range' | t }}</label>
           <div class="range-display">
             <span>{{ formatLakh(minBudget()) }}</span> – <span>{{ formatLakh(maxBudget()) }}</span>
           </div>
@@ -156,7 +156,7 @@
 
         <!-- KM Driven -->
         <div class="filter-group">
-          <label class="filter-group-label">KM Driven</label>
+          <label class="filter-group-label">{{ 'KM Driven' | t }}</label>
           @for (r of kmRangeOptions; track r) {
             <label class="checkbox-label">
               <input type="checkbox" [checked]="selectedKmRanges().includes(r)" (change)="toggleKmRange(r)" />
@@ -202,7 +202,7 @@
 
         <!-- No. of Owners -->
         <div class="filter-group">
-          <label class="filter-group-label">No. of Owners</label>
+          <label class="filter-group-label">{{ 'No. of Owners' | t }}</label>
           @for (o of ownerOptions; track o) {
             <label class="checkbox-label">
               <input type="checkbox" [checked]="selectedOwners().includes(o)" (change)="toggleOwner(o)" />
@@ -213,19 +213,19 @@
 
         <!-- Certified Cars -->
         <div class="filter-group">
-          <label class="filter-group-label">Certified Cars</label>
+          <label class="filter-group-label">{{ 'Certified Cars' | t }}</label>
           <label class="toggle-label">
             <input type="checkbox" class="toggle-input" [checked]="certifiedOnly()" (change)="certifiedOnly.set($any($event.target).checked)" />
             <span class="toggle-track">
               <span class="toggle-thumb"></span>
             </span>
-            <span class="toggle-text">Show Certified Only</span>
+            <span class="toggle-text">{{ 'Show Certified Only' | t }}</span>
           </label>
         </div>
 
         <!-- Color -->
         <div class="filter-group">
-          <label class="filter-group-label">Color</label>
+          <label class="filter-group-label">{{ 'Color' | t }}</label>
           <div class="color-picker">
             @for (c of colorOptions; track c.name) {
               <button class="color-dot" [style.background]="c.hex" [class.selected]="selectedColors().includes(c.name)"
@@ -242,7 +242,7 @@
         <div class="sort-count-bar">
           <div class="car-count">
             @if (loading()) {
-              <span>Loading cars...</span>
+              <span>{{ 'Loading cars...' | t }}</span>
             } @else {
               @if (listingsFailed()) {
                 Used cars
@@ -302,7 +302,7 @@
               <span class="filter-chip">{{ c }} <button (click)="toggleColor(c)">×</button></span>
             }
             @if (certifiedOnly()) {
-              <span class="filter-chip">Certified <button (click)="certifiedOnly.set(false)">×</button></span>
+              <span class="filter-chip">{{ 'Certified' | t }} <button (click)="certifiedOnly.set(false)">×</button></span>
             }
             @if (minBudget() > 100000) {
               <span class="filter-chip">Min {{ formatLakh(minBudget()) }} <button (click)="minBudget.set(100000)">×</button></span>
@@ -321,7 +321,7 @@
         @if (loading()) {
           <div class="loading-state">
             <div class="spinner"></div>
-            <p>Fetching best used cars for you...</p>
+            <p>{{ 'Fetching best used cars for you...' | t }}</p>
           </div>
         } @else if (listingsFailed()) {
           <!-- Checked BEFORE the empty state, because the two look identical and
@@ -330,25 +330,25 @@
                so no filter change can help. -->
           <div class="empty-state glass-card">
             <div class="empty-icon"><app-icon name="alert-triangle" [size]="48"></app-icon></div>
-            <h3>We couldn't load used car listings</h3>
+            <h3>{{ 'We couldn\'t load used car listings' | t }}</h3>
             <p>
               This is a problem at our end, not with your search — nothing has been filtered out.
               Please try again in a moment.
             </p>
-            <button class="btn-gradient" (click)="retryLoad()">Try again</button>
+            <button class="btn-gradient" (click)="retryLoad()">{{ 'Try again' | t }}</button>
           </div>
         } @else if (displayedCars().length === 0) {
           <div class="empty-state glass-card">
             <div class="empty-icon"><app-icon name="search" [size]="48"></app-icon></div>
             @if (effectiveCity()) {
               <h3>No used cars in {{ effectiveCity() }}</h3>
-              <p>No listings match your filters in this city</p>
-              <button class="btn-gradient" (click)="showAllIndia()">Show All India cars</button>
-              <button class="btn-outline" style="margin-top:8px" (click)="clearAllFilters()">Clear All Filters</button>
+              <p>{{ 'No listings match your filters in this city' | t }}</p>
+              <button class="btn-gradient" (click)="showAllIndia()">{{ 'Show All India cars' | t }}</button>
+              <button class="btn-outline" style="margin-top:8px" (click)="clearAllFilters()">{{ 'Clear All Filters' | t }}</button>
             } @else {
-              <h3>No cars match your filters</h3>
-              <p>Try broadening your search criteria — or let AI find the best match for you.</p>
-              <button class="btn-gradient" (click)="clearAllFilters()">Clear All Filters</button>
+              <h3>{{ 'No cars match your filters' | t }}</h3>
+              <p>{{ 'Try broadening your search criteria — or let AI find the best match for you.' | t }}</p>
+              <button class="btn-gradient" (click)="clearAllFilters()">{{ 'Clear All Filters' | t }}</button>
               <a routerLink="/ai-advisor" class="btn-outline" style="margin-top:8px;display:inline-block">
                 ✨ Try AI Advisor
               </a>
@@ -365,7 +365,7 @@
                   <img [src]="car.image || 'assets/cars/placeholder.svg'" [alt]="car.make + ' ' + car.model"
                     class="car-img" (error)="$any($event.target).src='assets/cars/placeholder.svg'" loading="lazy" />
                   @if (car.verified) {
-                    <span class="verified-badge">✓ Certified</span>
+                    <span class="verified-badge">{{ '✓ Certified' | t }}</span>
                   }
                   <button class="wishlist-btn" [class.active]="wishlist().has(car.id)"
                     (click)="$event.stopPropagation(); toggleWishlist(car.id)" title="Wishlist">
@@ -422,7 +422,7 @@
                   <!-- Actions -->
                   <div class="card-actions">
                     <button class="btn-gradient btn-sm" (click)="viewCar(car.id)">View Details</button>
-                    <a [routerLink]="['/emi-calculator']" class="btn-outline btn-sm">EMI Calc</a>
+                    <a [routerLink]="['/emi-calculator']" class="btn-outline btn-sm">{{ 'EMI Calc' | t }}</a>
                   </div>
                 </div>
               </div>
@@ -438,7 +438,7 @@
         <!-- Recently Viewed -->
         @if (recentlyViewedCars().length > 0) {
           <div class="recently-viewed">
-            <h3 class="rv-title">Recently Viewed</h3>
+            <h3 class="rv-title">{{ 'Recently Viewed' | t }}</h3>
             <div class="rv-cards">
               @for (car of recentlyViewedCars(); track car.id) {
                 <div class="rv-card glass-card" (click)="viewCar(car.id)">
