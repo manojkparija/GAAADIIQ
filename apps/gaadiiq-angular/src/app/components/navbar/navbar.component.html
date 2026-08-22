@@ -4,7 +4,13 @@
       <app-logo [width]="196" [height]="42"></app-logo>
     </a>
 
-    <ul class="nav-links hide-mobile">
+    <!-- Two rows, by request. One row of thirteen links had been squeezed to
+         0.86rem to fit at 1366px; splitting the AI tools onto their own row
+         buys back the width, so the labels can be read at 1rem instead of
+         being shrunk to fit. The split is also editorial: browsing and
+         financing above, everything the AI does below. -->
+    <div class="nav-stack hide-mobile">
+    <ul class="nav-links">
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a></li>
       <!-- New Cars is a menu rather than a link because it is the one section
            with several genuine ways in — by body type, by fuel, by brand.
@@ -123,19 +129,25 @@
         </div>
       </li>
       <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
-      <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>
-      <li><a routerLink="/vehicle-diagnosis" routerLinkActive="active">AI Diagnosis</a></li>
-      <li><a routerLink="/ai-valuation" routerLinkActive="active">Car Value</a></li>
       <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI</a></li>
       <li><a routerLink="/car-loan" routerLinkActive="active">Car Loan</a></li>
       <li><a routerLink="/tco" routerLinkActive="active">TCO</a></li>
       <li><a routerLink="/reviews-news" routerLinkActive="active">News</a></li>
       <li><a routerLink="/buyer-journey" routerLinkActive="active">Journey</a></li>
-      <!-- Given its own emphasis: every other item here is something you browse
-           at leisure, this one is what you need when the car has already
-           stopped. -->
+    </ul>
+
+    <!-- The AI row. "Car Value" is renamed "AI Car Value" because that is
+         literally what /ai-valuation is, and on its own the old label gave no
+         clue why it sits beside the advisor and the diagnosis. Find Mechanic
+         belongs here too: it is the other half of AI Diagnosis — the page
+         tells you what is wrong, this one finds someone to fix it. -->
+    <ul class="nav-links nav-row-ai">
+      <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>
+      <li><a routerLink="/vehicle-diagnosis" routerLinkActive="active">AI Diagnosis</a></li>
+      <li><a routerLink="/ai-valuation" routerLinkActive="active">AI Car Value</a></li>
       <li><a routerLink="/find-mechanic" routerLinkActive="active" class="nav-urgent">Find Mechanic</a></li>
     </ul>
+    </div>
 
     <button class="city-btn-nav hide-mobile" (click)="openCityModal()" title="Select City">
       <app-icon name="map-pin" [size]="14"></app-icon>

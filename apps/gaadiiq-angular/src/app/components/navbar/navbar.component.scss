@@ -70,6 +70,24 @@
   }
 }
 
+// Holds the two link rows. It takes the flex space the single <ul> used to,
+// so the actions on the right still keep their width.
+.nav-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+// Second row: the AI tools. Set apart by a hairline rather than a different
+// colour — the row already reads as a group by position, and tinting four
+// labels would fight the hover underline they share with the row above.
+.nav-row-ai {
+  padding-top: 0.3rem;
+  border-top: 1px solid var(--divider);
+}
+
 .nav-links {
   display: flex;
   list-style: none;
@@ -103,11 +121,12 @@
   a {
     color: var(--text);
     font-weight: 700;
-    // Bigger than it has ever been here: 0.8rem originally, 0.76rem when the
-    // row was overcrowded, 0.86rem now. Measured as the largest step that
-    // still fits all thirteen labels at 1366px, which is where a lot of
-    // laptops sit.
-    font-size: 0.86rem;
+    // 0.8rem originally, 0.76rem when the row was overcrowded, then 0.86rem —
+    // every one of those a compromise with a row carrying thirteen labels.
+    // Splitting the AI tools onto a second row leaves nine above and four
+    // below, so the type no longer has to be sized to fit and can simply be
+    // sized to read.
+    font-size: 1rem;
     // Labels are single-line by design. Without this a two-word item breaks
     // across lines once the row runs short of space, and because every item
     // then grows taller the whole bar looks misaligned rather than merely
@@ -476,7 +495,10 @@
 // .hide-mobile / .hide-desktop pair for these two elements only; the rest of
 // the site keeps the 768px breakpoint.
 @media (max-width: 1350px) {
-  .nav-links.hide-mobile { display: none !important; }
+  // The stack carries .hide-mobile now that the links live in two rows inside
+  // it. Both selectors are kept: the old one alone would stop hiding anything.
+  .nav-links.hide-mobile,
+  .nav-stack.hide-mobile { display: none !important; }
   .hamburger.hide-desktop { display: flex !important; }
 }
 
@@ -512,7 +534,10 @@
   top: calc(100% + 0.75rem);
   left: 0;
   z-index: 300;
-  min-width: 20rem;
+  // Wide enough for three chip columns at their 6.5rem minimum plus the
+  // panel's own padding; at 20rem the grid fell back to two and the rows read
+  // as a narrow ladder.
+  min-width: 24rem;
   padding: 0.6rem;
   border-radius: 14px;
   background: var(--surface, #fff);
@@ -565,11 +590,16 @@
   color: var(--muted);
 }
 
+// A grid, not a wrapping flex row. Flex sized every chip to its own label, so
+// "Under ₹3L" and "Under ₹15L" came out different widths and each row broke in
+// a different place — four ragged blocks stacked on top of each other. Equal
+// columns give straight left and right edges down the whole panel, which is
+// what makes the rows scannable rather than merely present.
 .nav-menu-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  padding: 0 0.7rem 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: 0.4rem;
+  padding: 0 0.7rem 0.6rem;
 }
 
 // Every chip carries the blue-teal gradient — asked for directly, and by the
@@ -582,9 +612,18 @@
 // primary button and body-type chip already carries, not something new here;
 // fixing it is one token value and is the user's call.
 .nav-menu-chip {
-  font-size: 0.78rem;
+  // Grid cells are equal width, so the label has to centre inside its own
+  // chip; left-aligned text in an equal box looks like a mistake rather than
+  // a decision. Fixed height for the same reason the plan badges have one —
+  // it cannot then depend on what characters land inside.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 2rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  padding: 0.28rem 0.65rem;
+  padding: 0 0.6rem;
   border-radius: 999px;
   border: 1px solid transparent;
   background: var(--gradient-cta);

@@ -238,3 +238,52 @@ describe('navbar — Used Cars menu', () => {
     expect(fixture.nativeElement.querySelector('.nav-menu-btn')).toBeTruthy();
   });
 });
+
+/**
+ * The two-row bar.
+ *
+ * One row of thirteen links had been shrunk to 0.86rem to fit at 1366px. The
+ * split exists so the labels can be sized to read instead of sized to fit, so
+ * what is pinned here is the split itself: if the AI row is ever folded back
+ * into the first, the reason for the larger type goes with it.
+ */
+describe('navbar — two-row links', () => {
+  let fixture: ComponentFixture<NavbarComponent>;
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [NavbarComponent],
+      providers: [
+        provideRouter([]),
+        { provide: CarsDataService, useValue: { cars: signal([]), loading: signal(false) } },
+        {
+          provide: AuthService,
+          useValue: {
+            currentUser: signal(null), isAdmin: () => false,
+            isLoggedIn: signal(false), isSeller: () => false,
+          },
+        },
+        { provide: CityService, useValue: { selectedCity: signal(null) } },
+      ],
+    });
+    fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+  });
+
+  it('puts the AI tools on their own row', () => {
+    const ai = fixture.nativeElement.querySelector('.nav-row-ai');
+    expect(ai).toBeTruthy();
+
+    const hrefs = Array.from(ai.querySelectorAll('a'))
+      .map(a => (a as HTMLAnchorElement).getAttribute('href'));
+    expect(hrefs).toEqual(['/ai-advisor', '/vehicle-diagnosis', '/ai-valuation', '/find-mechanic']);
+  });
+
+  it('keeps the desktop rows hidden on mobile', () => {
+    // The .hide-mobile class moved from the <ul> to the wrapper when the rows
+    // were split; losing it would leave both rows on a phone behind the
+    // hamburger.
+    expect(fixture.nativeElement.querySelector('.nav-stack.hide-mobile')).toBeTruthy();
+  });
+});
