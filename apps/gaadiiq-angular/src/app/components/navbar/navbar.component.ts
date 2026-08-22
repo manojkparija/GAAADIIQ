@@ -43,8 +43,15 @@ export class NavbarComponent {
 
   /**
    * Brands taken from the catalogue rather than a fixed list, so the menu can
-   * never offer a make with nothing behind it. Two models today means two
-   * makes at most; it grows on its own as cars are added.
+   * never offer a make with nothing behind it. It grows on its own as cars are
+   * added.
+   *
+   * The test below the filter is the exact one listings.component.ts uses to
+   * decide what "New" means (km === 0 && year >= 2024) — deliberately copied
+   * rather than loosened. If the menu listed every make in the catalogue, the
+   * makes with only used stock would render as chips that land on an empty
+   * New Cars page. A short list here is the catalogue being short of new cars,
+   * not the menu hiding them.
    */
   newCarBrands = computed(() => {
     const makes = this.carsData.cars()

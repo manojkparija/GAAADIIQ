@@ -88,6 +88,18 @@ describe('navbar — New Cars menu', () => {
     }
   });
 
+  it('carries the tools a new-car buyer asks for next', () => {
+    // AI Advisor and Total Cost of Ownership were added by request. Asserted
+    // by destination, not by label, so renaming the text cannot silently drop
+    // the entry.
+    build([car('Maruti Suzuki')]);
+    openMenu();
+
+    const hrefs = menuLinks().map(a => a.getAttribute('href') ?? '');
+    expect(hrefs).toContain('/ai-advisor');
+    expect(hrefs).toContain('/tco');
+  });
+
   it('offers brands the catalogue actually has', () => {
     build([car('Maruti Suzuki'), car('Tata'), car('Maruti Suzuki', { id: 'c2' })]);
     openMenu();

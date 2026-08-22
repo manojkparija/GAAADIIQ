@@ -560,15 +560,24 @@
   padding: 0 0.7rem 0.5rem;
 }
 
+// Every chip carries the blue-teal gradient — asked for directly, and by the
+// same token as the New/Used tabs and the body-type chips rather than by eye,
+// so they cannot drift to a near-miss shade the way three hand-written
+// gradients did before --gradient-cta existed.
+//
+// Known and unresolved: white on this fill measures 2.43:1 at the cyan
+// midpoint (#06B6D4) against a 4.5:1 AA floor. That is the same debt every
+// primary button and body-type chip already carries, not something new here;
+// fixing it is one token value and is the user's call.
 .nav-menu-chip {
   font-size: 0.78rem;
   font-weight: 600;
   padding: 0.28rem 0.65rem;
   border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  background: var(--fill-soft);
-  color: var(--text);
+  border: 1px solid transparent;
+  background: var(--gradient-cta);
+  color: #fff;
   text-decoration: none;
   white-space: nowrap;
-  &:hover { border-color: var(--primary); background: rgba(41, 94, 224, 0.08); }
+  &:hover { filter: brightness(1.08); }
 }
