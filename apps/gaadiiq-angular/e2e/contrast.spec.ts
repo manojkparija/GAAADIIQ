@@ -169,3 +169,66 @@ for (const path of PAGES) {
     expect(distinct.size, `Text below WCAG AA on ${path} (${theme}):\n${report}\n`).toBe(0);
   });
 }
+
+/**
+ * The navbar's own fill must be opaque.
+ *
+ * This is a separate test from the ones above because the contrast walk could
+ * not have caught what it is guarding against, and it is worth being precise
+ * about why. To find the background a run of text actually sits on, the walk
+ * climbs the ancestor chain until it meets a non-transparent fill. For text in
+ * the navbar that chain is .navbar -> body, so when .navbar had no fill at all
+ * the walk resolved to body's --navy and measured the link against a colour
+ * the reader never saw. It reported a comfortable pass while the bar on screen
+ * was a saturated blue-teal with dark text on it.
+ *
+ * The bar is `position: fixed`. What is painted behind it is whatever is
+ * scrolled under it at that instant, which is not an ancestor, differs per
+ * route, and changes as the page moves. No walk over the DOM can resolve it.
+ *
+ * So the invariant is not "the navbar's contrast is good" — it is "the navbar
+ * is not transparent", which makes the contrast measurable at all. The
+ * original defect was a color-mix over `--bg`, a token this app never defines;
+ * an invalid argument invalidates the whole declaration silently, so nothing
+ * failed and nothing warned.
+ */
+for (const theme of THEMES)
+for (const path of ['/', '/compare', '/new-cars']) {
+  test(`navbar is opaque on ${path} in the ${theme} theme`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme });
+    await page.addInitScript(t => {
+      document.documentElement.setAttribute('data-theme', t);
+    }, theme);
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1500);
+
+    const alphaOf = (css: string): number => {
+      if (css === 'transparent') return 0;
+      const parts = css.match(/[\d.]+/g);
+      if (!parts) return 1;
+      return parts.length >= 4 ? Number(parts[3]) : 1;
+    };
+
+    const barBg = await page.evaluate(
+      () => getComputedStyle(document.querySelector('.navbar')!).backgroundColor
+    );
+    expect(alphaOf(barBg), `.navbar background on ${path} (${theme}) is ${barBg}`).toBe(1);
+
+    // The dropdown panels have the same requirement and failed it for the same
+    // kind of reason: --surface resolves to rgba(255,255,255,0.04) in dark
+    // mode, so the mega-menu was a 4%-white pane you could read the page
+    // through.
+    const trigger = page.locator('.nav-dropdown-trigger').first();
+    if (await trigger.count()) {
+      await trigger.click();
+      const panel = page.locator('.nav-mega').first();
+      if (await panel.count()) {
+        const panelBg = await panel.evaluate(el => getComputedStyle(el).backgroundColor);
+        expect(
+          alphaOf(panelBg),
+          `.nav-mega background on ${path} (${theme}) is ${panelBg}`
+        ).toBe(1);
+      }
+    }
+  });
+}

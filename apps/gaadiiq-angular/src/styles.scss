@@ -59,6 +59,9 @@
   --ink:            #0B1220;
 
   --navy:           #F4F7FB;
+  // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
+  --nav-bg:         #FFFFFF;
+  --nav-panel:      #FFFFFF;
   --dark:           #FFFFFF;
   --card-bg:        #FFFFFF;
   --glass:          rgba(255,255,255,0.85);
@@ -131,6 +134,9 @@
     --ink:            #0B1220;
 
     --navy:           #0B1220;
+    // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
+    --nav-bg:         #0B1220;
+    --nav-panel:      #131C2F;
     --dark:           #111827;
     --card-bg:        rgba(255,255,255,0.04);
     --glass:          rgba(255,255,255,0.06);
@@ -177,6 +183,9 @@
   --danger:         #F87171;
   --ink:            #0B1220;
   --navy:           #0B1220;
+  // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
+  --nav-bg:         #0B1220;
+  --nav-panel:      #131C2F;
   --dark:           #111827;
   --card-bg:        rgba(255,255,255,0.04);
   --glass:          rgba(255,255,255,0.06);
@@ -219,6 +228,9 @@
   --danger:         #EF4444;
   --ink:            #0B1220;
   --navy:           #F4F7FB;
+  // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
+  --nav-bg:         #FFFFFF;
+  --nav-panel:      #FFFFFF;
   --dark:           #FFFFFF;
   --card-bg:        #FFFFFF;
   --glass:          rgba(255,255,255,0.85);

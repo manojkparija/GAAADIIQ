@@ -23,19 +23,34 @@
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
 
-  // Glass rather than a flat fill: the page pattern reads faintly through it,
-  // which is what stops a white bar on a white page looking like a seam.
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  /*
+    OPAQUE, AND THIS IS NOT A STYLE PREFERENCE.
+
+    This was a translucent glass fill — color-mix over `--bg` at 82%. `--bg` is
+    not a token this app defines. An invalid value in color-mix invalidates the
+    whole declaration, so the browser dropped the background entirely and the
+    bar rendered fully transparent. On a page with a pale hero nobody noticed;
+    on /compare, whose hero is a saturated blue→teal gradient, the entire bar
+    turned blue and the dark link text on it became unreadable. It shipped in
+    both themes.
+
+    Two things are worth keeping from that. A fixed bar has no background of
+    its own, so any transparency means its contrast is set by whatever page
+    happens to scroll under it — which is not knowable when the colours are
+    chosen, and contrast that varies by route cannot be measured once and
+    trusted. And a token typo in color-mix fails silently: there is no console
+    warning, no build error, and the rule simply is not there.
+
+    So the fill is opaque and comes from a token defined in every theme block.
+  */
+  background: var(--nav-bg);
   border-bottom: 1px solid color-mix(in srgb, var(--primary) 10%, var(--divider));
   // No shadow at rest — it only appears once the page has moved under the bar,
   // which is the moment the reader needs the two separated.
   box-shadow: none;
-  transition: box-shadow .25s ease, background .25s ease;
+  transition: box-shadow .25s ease;
 
   &.scrolled {
-    background: color-mix(in srgb, var(--bg) 92%, transparent);
     box-shadow: 0 6px 24px rgba(15, 23, 42, .08);
   }
 }
@@ -151,7 +166,7 @@
   z-index: 300;
   padding: 1rem;
   border-radius: 16px;
-  background: var(--surface, #fff);
+  background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 20px 48px rgba(11, 18, 32, .14);
   max-height: min(76vh, 40rem);
@@ -266,8 +281,10 @@
   padding: 0 0.7rem;
   border-radius: 999px;
   border: 1px solid var(--border-soft);
-  background: color-mix(in srgb, var(--bg) 60%, transparent);
-  backdrop-filter: blur(8px);
+  // Same undefined-token bug as .navbar had: this was a color-mix over --bg,
+  // so the pills were rendering with no fill at all and taking their apparent
+  // colour from the bar behind them.
+  background: var(--fill-soft);
   color: var(--text);
   font: inherit;
   font-size: 0.85rem;
@@ -292,7 +309,7 @@
    gradient, so the label clears AA. */
 .util-pill-primary {
   border-color: color-mix(in srgb, var(--primary) 35%, transparent);
-  background: color-mix(in srgb, var(--primary) 10%, var(--bg));
+  background: color-mix(in srgb, var(--primary) 10%, var(--nav-bg));
   color: var(--primary-ink, var(--primary));
   font-weight: 700;
   app-icon { color: currentColor; }
@@ -310,7 +327,7 @@
   min-width: 9rem;
   padding: 0.3rem;
   border-radius: 12px;
-  background: var(--surface, #fff);
+  background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 14px 34px rgba(11, 18, 32, .16);
   display: flex;
@@ -759,7 +776,7 @@
   min-width: 24rem;
   padding: 0.6rem;
   border-radius: 14px;
-  background: var(--surface, #fff);
+  background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 12px 36px rgba(11, 18, 32, 0.16);
   display: flex;
@@ -889,7 +906,7 @@
   min-width: 9rem;
   padding: 0.3rem;
   border-radius: 10px;
-  background: var(--surface, #fff);
+  background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 12px 30px rgba(11, 18, 32, 0.16);
   display: flex;
