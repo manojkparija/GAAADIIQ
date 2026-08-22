@@ -661,4 +661,95 @@ export const HINDI: Record<string, string> = {
     '· बराबरी',
   'Driving Profile':
     'ड्राइविंग प्रोफाइल',
+  // ── Sign in, register, compare ───────────────────────────────────────────
+  'Welcome back':
+    'वापस स्वागत है',
+  'Sign in to your account':
+    'अपने अकाउंट में साइन इन करें',
+  'or continue with email':
+    'या ईमेल से जारी रखें',
+  'Email address':
+    'ईमेल पता',
+  'Password':
+    'पासवर्ड',
+  'Remember me':
+    'मुझे याद रखें',
+  'Forgot password?':
+    'पासवर्ड भूल गए?',
+  'Almost there — confirm your email first.':
+    'बस एक कदम बाकी — पहले अपना ईमेल कन्फर्म करें।',
+  'We sent a link to':
+    'हमने लिंक भेजा है',
+  '. Click it, then sign in. Your password is fine.':
+    '। उस पर क्लिक करें, फिर साइन इन करें। आपका पासवर्ड सही है।',
+  'Nothing in your inbox? Check spam, or':
+    'इनबॉक्स में कुछ नहीं? स्पैम देखें, या',
+  'send it again':
+    'दोबारा भेजें',
+  'Sent — check your inbox.':
+    'भेज दिया — अपना इनबॉक्स देखें।',
+  "Don't have an account?":
+    'अकाउंट नहीं है?',
+  'Create one free':
+    'मुफ्त बनाएं',
+  'Reset your password':
+    'अपना पासवर्ड रीसेट करें',
+  "Enter your email and we'll send you a reset link.":
+    'अपना ईमेल डालें, हम रीसेट लिंक भेज देंगे।',
+  'Check your inbox':
+    'अपना इनबॉक्स देखें',
+  'A password reset link has been sent to':
+    'पासवर्ड रीसेट लिंक भेजा गया है',
+  ". Check your spam folder if you don't see it.":
+    '। न दिखे तो स्पैम फोल्डर देखें।',
+  'Create your account':
+    'अपना अकाउंट बनाएं',
+  'Personal Info':
+    'निजी जानकारी',
+  'Preferences':
+    'पसंद',
+  'Check your email':
+    'अपना ईमेल देखें',
+  'We sent a confirmation link to':
+    'हमने पुष्टि लिंक भेजा है',
+  '. Click it, then sign in — your account is ready on the other side.':
+    '। उस पर क्लिक करें, फिर साइन इन करें — आपका अकाउंट तैयार है।',
+  "After signing in you'll be asked for your workshop details and KYC. An admin approves the account before jobs start arriving.":
+    'साइन इन के बाद आपसे वर्कशॉप का विवरण और KYC मांगा जाएगा। काम आने से पहले एक एडमिन अकाउंट को मंज़ूरी देता है।',
+  'Go to sign in':
+    'साइन इन पर जाएं',
+  'Tell us about yourself':
+    'अपने बारे में बताएं',
+  'Full Name':
+    'पूरा नाम',
+  'Email Address':
+    'ईमेल पता',
+  'Phone Number':
+    'फोन नंबर',
+  'I am signing up as':
+    'मैं साइन अप कर रहा हूं',
+  'Customer':
+    'ग्राहक',
+  'Browse & buy cars':
+    'कारें देखें और खरीदें',
+  'Seller':
+    'सेलर',
+  'List & sell cars':
+    'कारें लिस्ट करें और बेचें',
+  'Mechanic':
+    'मैकेनिक',
+  'Take repair jobs':
+    'मरम्मत का काम लें',
+  'Search any car from our database and compare up to 3 side by side. Winner specs highlighted.':
+    'हमारे डेटाबेस से कोई भी कार खोजें और 3 तक साथ-साथ तुलना करें। बेहतर स्पेसिफिकेशन हाइलाइट किए गए हैं।',
+  'No results':
+    'कोई नतीजा नहीं',
+  'Specification':
+    'स्पेसिफिकेशन',
+  'Features Comparison':
+    'फीचर्स की तुलना',
+  '(5-Year Analysis)':
+    '(5 साल का विश्लेषण)',
+  'Search and select at least 2 cars to compare':
+    'तुलना के लिए कम से कम 2 कारें खोजें और चुनें',
 };

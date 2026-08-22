@@ -17,8 +17,8 @@
     </div>
 
     <div class="login-subhead">
-      <h1>Welcome back</h1>
-      <p>Sign in to your account</p>
+      <h1>{{ 'Welcome back' | t }}</h1>
+      <p>{{ 'Sign in to your account' | t }}</p>
     </div>
 
     <div class="social-btns">
@@ -32,23 +32,23 @@
       </button>
     </div>
 
-    <div class="divider"><span>or continue with email</span></div>
+    <div class="divider"><span>{{ 'or continue with email' | t }}</span></div>
 
     <form (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
-        <label>Email address</label>
+        <label>{{ 'Email address' | t }}</label>
         <input type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" placeholder="you@example.com" required>
       </div>
       <div class="form-group">
-        <label>Password</label>
+        <label>{{ 'Password' | t }}</label>
         <div class="pass-input">
           <input [type]="showPass() ? 'text' : 'password'" [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" placeholder="••••••••" required>
           <button type="button" class="show-pass" (click)="toggleShowPass()">{{ showPass() ? '🙈' : '👁' }}</button>
         </div>
       </div>
       <div class="form-row">
-        <label class="checkbox-label"><input type="checkbox"> Remember me</label>
-        <a href="#" class="forgot" (click)="openResetForm($event)">Forgot password?</a>
+        <label class="checkbox-label"><input type="checkbox"> {{ 'Remember me' | t }}</label>
+        <a href="#" class="forgot" (click)="openResetForm($event)">{{ 'Forgot password?' | t }}</a>
       </div>
       <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
 
@@ -59,16 +59,16 @@
         was never the problem — which is exactly what happened.
       -->
       <div class="confirm-msg" *ngIf="needsConfirmation()">
-        <p><strong>Almost there — confirm your email first.</strong></p>
+        <p><strong>{{ 'Almost there — confirm your email first.' | t }}</strong></p>
         <p>
-          We sent a link to <strong>{{ email() }}</strong>. Click it, then sign in.
+          {{ 'We sent a link to' | t }} <strong>{{ email() }}</strong>. Click it, then sign in.
           Your password is fine.
         </p>
         <p *ngIf="!resendSent()">
-          Nothing in your inbox? Check spam, or
-          <button type="button" class="link-btn" (click)="resendConfirmation()">send it again</button>.
+          {{ 'Nothing in your inbox? Check spam, or' | t }}
+          <button type="button" class="link-btn" (click)="resendConfirmation()">{{ 'send it again' | t }}</button>.
         </p>
-        <p *ngIf="resendSent()" class="confirm-sent">Sent — check your inbox.</p>
+        <p *ngIf="resendSent()" class="confirm-sent">{{ 'Sent — check your inbox.' | t }}</p>
         <p *ngIf="resendError()" class="confirm-err">{{ resendError() }}</p>
       </div>
       <button type="submit" class="btn-gradient btn-full" [disabled]="loading()">
@@ -76,7 +76,7 @@
       </button>
     </form>
 
-    <p class="register-link">Don't have an account? <a routerLink="/register">Create one free</a></p>
+    <p class="register-link">{{ 'Don\'t have an account?' | t }} <a routerLink="/register">{{ 'Create one free' | t }}</a></p>
   </div>
 </div>
 
@@ -86,10 +86,10 @@
     <button class="reset-close" (click)="closeResetForm()">✕</button>
 
     <ng-container *ngIf="!resetSent(); else resetDone">
-      <h2>Reset your password</h2>
-      <p class="reset-sub">Enter your email and we'll send you a reset link.</p>
+      <h2>{{ 'Reset your password' | t }}</h2>
+      <p class="reset-sub">{{ 'Enter your email and we\'ll send you a reset link.' | t }}</p>
       <div class="form-group">
-        <label>Email address</label>
+        <label>{{ 'Email address' | t }}</label>
         <input type="email" [ngModel]="resetEmail()" (ngModelChange)="resetEmail.set($event)" name="resetEmail" placeholder="you@example.com">
       </div>
       <div class="error-msg" *ngIf="resetError()">⚠️ {{ resetError() }}</div>
@@ -101,8 +101,8 @@
     <ng-template #resetDone>
       <div class="reset-success">
         <div class="reset-icon">✉️</div>
-        <h2>Check your inbox</h2>
-        <p>A password reset link has been sent to <strong>{{ resetEmail() }}</strong>. Check your spam folder if you don't see it.</p>
+        <h2>{{ 'Check your inbox' | t }}</h2>
+        <p>{{ 'A password reset link has been sent to' | t }} <strong>{{ resetEmail() }}</strong>{{ '. Check your spam folder if you don\'t see it.' | t }}</p>
         <button class="btn-gradient btn-full" (click)="closeResetForm()">Back to Sign In</button>
       </div>
     </ng-template>

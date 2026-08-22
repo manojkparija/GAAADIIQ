@@ -14,7 +14,7 @@
       <button class="auth-tab active">Sign Up</button>
     </div>
 
-    <h1 class="reg-title">Create your account</h1>
+    <h1 class="reg-title">{{ 'Create your account' | t }}</h1>
 
     <!-- Progress Bar -->
     <div class="progress-bar-wrap">
@@ -34,10 +34,10 @@
         }
       </div>
       <div class="step-labels">
-        <span>Personal Info</span>
-        <span>Password</span>
+        <span>{{ 'Personal Info' | t }}</span>
+        <span>{{ 'Password' | t }}</span>
         @if (isCustomer()) {
-          <span>Preferences</span>
+          <span>{{ 'Preferences' | t }}</span>
         }
       </div>
     </div>
@@ -49,38 +49,38 @@
     -->
     @if (awaitingConfirmation()) {
       <div class="step-content">
-        <h2>Check your email</h2>
+        <h2>{{ 'Check your email' | t }}</h2>
         <p class="confirm-copy">
-          We sent a confirmation link to <strong>{{ email() }}</strong>.
+          {{ 'We sent a confirmation link to' | t }} <strong>{{ email() }}</strong>.
           Click it, then sign in — your account is ready on the other side.
         </p>
         <p class="confirm-copy" *ngIf="accountType() === 'mechanic'">
           After signing in you'll be asked for your workshop details and KYC.
           An admin approves the account before jobs start arriving.
         </p>
-        <a routerLink="/login" class="btn-gradient" style="display:block;text-align:center">Go to sign in</a>
+        <a routerLink="/login" class="btn-gradient" style="display:block;text-align:center">{{ 'Go to sign in' | t }}</a>
       </div>
     }
 
     <!-- Step 1: Personal Info + Account Type -->
     @if (step() === 1 && !awaitingConfirmation()) {
       <div class="step-content">
-        <h2>Tell us about yourself</h2>
+        <h2>{{ 'Tell us about yourself' | t }}</h2>
         <div class="form-group">
-          <label>Full Name</label>
+          <label>{{ 'Full Name' | t }}</label>
           <input type="text" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" placeholder="Rahul Sharma">
         </div>
         <div class="form-group">
-          <label>Email Address</label>
+          <label>{{ 'Email Address' | t }}</label>
           <input type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" placeholder="rahul@example.com">
         </div>
         <div class="form-group">
-          <label>Phone Number</label>
+          <label>{{ 'Phone Number' | t }}</label>
           <input type="tel" [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" placeholder="+91 9876543210">
         </div>
 
         <div class="form-group">
-          <label>I am signing up as</label>
+          <label>{{ 'I am signing up as' | t }}</label>
           <div class="role-picker">
 
             <!-- Customer -->
@@ -108,7 +108,7 @@
                 <!-- Tail light -->
                 <rect x="11" y="32" width="4" height="4" rx="1" fill="#FCA5A5"/>
               </svg>
-              <span class="role-label">Customer</span>
+              <span class="role-label">{{ 'Customer' | t }}</span>
               <span class="role-desc">Browse &amp; buy cars</span>
             </button>
 
@@ -136,7 +136,7 @@
                 <rect x="56" y="13" width="18" height="10" rx="2" fill="#FEF08A" stroke="#FCD34D" stroke-width="1"/>
                 <text x="65" y="21" text-anchor="middle" font-size="6" fill="#92400E" font-weight="bold">₹</text>
               </svg>
-              <span class="role-label">Seller</span>
+              <span class="role-label">{{ 'Seller' | t }}</span>
               <span class="role-desc">List &amp; sell cars</span>
             </button>
 
@@ -156,8 +156,8 @@
                 <!-- Spanner -->
                 <path d="M60 44a5 5 0 0 1-6.6 4.7l-9.6 9.6-3.5-3.5 9.6-9.6A5 5 0 0 1 56 39l-2.8 2.8 2.2 2.2L58 41.2A5 5 0 0 1 60 44z" fill="#0EA5E9"/>
               </svg>
-              <span class="role-label">Mechanic</span>
-              <span class="role-desc">Take repair jobs</span>
+              <span class="role-label">{{ 'Mechanic' | t }}</span>
+              <span class="role-desc">{{ 'Take repair jobs' | t }}</span>
             </button>
 
 
@@ -176,7 +176,7 @@
       <div class="step-content">
         <h2>Set your password</h2>
         <div class="form-group">
-          <label>Password</label>
+          <label>{{ 'Password' | t }}</label>
           <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" placeholder="Min 6 characters">
         </div>
         <div class="form-group">

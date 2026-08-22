@@ -5,11 +5,12 @@ import { LogoComponent } from '../../components/logo/logo.component';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UnconfirmedEmailError } from '../../services/auth.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [LogoComponent, RouterLink, CommonModule, FormsModule, IconComponent],
+  imports: [LogoComponent, RouterLink, CommonModule, FormsModule, IconComponent, TranslatePipe],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
