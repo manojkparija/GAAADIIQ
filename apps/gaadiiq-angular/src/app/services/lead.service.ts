@@ -17,6 +17,29 @@ export interface LeadRequest {
   consent: boolean;
 }
 
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'won' | 'lost';
+
+export const LEAD_STATUSES: LeadStatus[] = ['new', 'contacted', 'qualified', 'won', 'lost'];
+
+/** A lead as the dealer inbox sees it. The phone is the point of the record. */
+export interface CarLead {
+  id: string;
+  make: string;
+  model: string;
+  variant: string | null;
+  city: string;
+  locality: string | null;
+  pincode: string | null;
+  phone: string;
+  phone_verified: boolean;
+  name: string | null;
+  email: string | null;
+  consented_at: string | null;
+  source: string;
+  status: LeadStatus;
+  created_at: string;
+}
+
 export interface LeadAck {
   received: boolean;
   city: string;
@@ -59,6 +82,27 @@ export class LeadService {
   async submit(body: LeadRequest): Promise<LeadAck> {
     return await firstValueFrom(
       this.http.post<LeadAck>(`${this.api}/leads`, body),
+    );
+  }
+
+  /**
+   * The calling dealer's city inbox; everything for an admin.
+   *
+   * No city parameter, deliberately. The scope is the caller's own dealer
+   * record on the server, so a client cannot ask for another city's buyers by
+   * changing a query string.
+   *
+   * The Authorization header is not set here: auth.interceptor attaches the
+   * Supabase token to every request aimed at environment.apiUrl, and setting
+   * one manually would shadow it (CLAUDE.md).
+   */
+  async list(): Promise<CarLead[]> {
+    return await firstValueFrom(this.http.get<CarLead[]>(`${this.api}/leads`));
+  }
+
+  async setStatus(id: string, status: LeadStatus): Promise<CarLead> {
+    return await firstValueFrom(
+      this.http.patch<CarLead>(`${this.api}/leads/${id}`, { status }),
     );
   }
 }

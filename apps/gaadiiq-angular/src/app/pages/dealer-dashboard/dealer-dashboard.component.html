@@ -40,6 +40,14 @@
       📩 Enquiries
       <span *ngIf="enquiries().length > 0" class="td-badge">{{ enquiries().length }}</span>
     </button>
+    <!-- Separate from Enquiries on purpose: an enquiry is a buyer contacting
+         the seller of one used listing, a lead is a new-car request routed to
+         every dealer in a city. Same-looking rows, different provenance and
+         different follow-up. -->
+    <button class="dd-tab" [class.active]="activeTab()==='car-leads'" (click)="activeTab.set('car-leads')">
+      🚗 New Car Leads
+      <span *ngIf="newLeads().length > 0" class="td-badge">{{ newLeads().length }}</span>
+    </button>
   </div>
 
   <div class="dd-content container">
@@ -570,6 +578,45 @@
           <span style="font-size:.8rem">#{{ e.car_id }}</span>
           <span style="font-size:.78rem;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="e.notes">{{ e.notes || '—' }}</span>
           <span class="lt-time">{{ timeAgo(e.created_at) }}</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- NEW CAR LEADS TAB -->
+    <ng-container *ngIf="activeTab()==='car-leads'">
+      <h2 class="section-head">🚗 New Car <span class="gradient-text">Leads</span></h2>
+
+      <div *ngIf="leadsLoading()" style="padding:2rem;text-align:center;color:var(--muted)">Loading leads…</div>
+
+      <div *ngIf="leadsError()" class="glass-card" style="padding:1.5rem;text-align:center">
+        <p style="color:var(--danger-ink);font-weight:600;margin:0 0 .35rem">{{ leadsError() }}</p>
+        <!-- Said plainly rather than shown as an empty list: "no leads" and
+             "we could not fetch your leads" look identical otherwise, and one
+             of them means a dealer is not calling people who are waiting. -->
+        <p style="color:var(--muted);font-size:.85rem;margin:0">This is not the same as having no leads.</p>
+      </div>
+
+      <div *ngIf="!leadsLoading() && !leadsError() && carLeads().length === 0" class="glass-card"
+           style="padding:2rem;text-align:center;color:var(--muted)">
+        No new-car leads yet. They arrive when a buyer asks for the best price on a model in your city.
+      </div>
+
+      <div *ngIf="carLeads().length > 0" class="leads-table glass-card">
+        <div class="lt-row lt-header">
+          <span>Buyer</span><span>Phone</span><span>Car</span><span>Where</span><span>Status</span><span>Received</span>
+        </div>
+        <div class="lt-row" *ngFor="let l of carLeads()">
+          <span class="lt-name">{{ l.name || 'Not given' }}</span>
+          <span><a [href]="'tel:' + l.phone" style="color:var(--primary)">{{ l.phone }}</a></span>
+          <span style="font-size:.85rem">{{ l.make }} {{ l.model }}<span *ngIf="l.variant" style="color:var(--muted)"> · {{ l.variant }}</span></span>
+          <span style="font-size:.8rem;color:var(--muted)">{{ l.city }}<span *ngIf="l.locality"> · {{ l.locality }}</span></span>
+          <span>
+            <select class="lead-status" [ngModel]="l.status" (ngModelChange)="setLeadStatus(l, $event)"
+                    [disabled]="savingLeadId() === l.id">
+              <option *ngFor="let s of leadStatuses" [value]="s">{{ s }}</option>
+            </select>
+          </span>
+          <span class="lt-time">{{ timeAgo(l.created_at) }}</span>
         </div>
       </div>
     </ng-container>
