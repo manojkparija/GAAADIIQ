@@ -2,8 +2,8 @@
   <div class="bj-hero">
     <div class="container">
       <div class="bj-badge">🧭 Buyer Journey</div>
-      <h1 class="bj-title">Find Your Perfect Car</h1>
-      <p class="bj-sub">Answer a few quick questions to get your personalized recommendation.</p>
+      <h1 class="bj-title">{{ 'Find Your Perfect Car' | t }}</h1>
+      <p class="bj-sub">{{ 'Answer a few quick questions to get your personalized recommendation.' | t }}</p>
     </div>
   </div>
   <div class="bj-container container">
@@ -12,29 +12,29 @@
     <ng-container *ngIf="done()">
       <div class="bj-done glass-card">
         <div class="done-icon">🎯</div>
-        <h2>Your Personalized Journey</h2>
-        <p class="done-sub">Based on your preferences, here's your buyer profile:</p>
+        <h2>{{ 'Your Personalized Journey' | t }}</h2>
+        <p class="done-sub">{{ 'Based on your preferences, here\'s your buyer profile:' | t }}</p>
 
         <div class="profile-grid" *ngIf="profile">
           <div class="pf-item"><span class="pf-label">Budget</span><span class="pf-val">{{ profile.budget }}</span></div>
-          <div class="pf-item"><span class="pf-label">Use Case</span><span class="pf-val">{{ profile.useCase }}</span></div>
+          <div class="pf-item"><span class="pf-label">{{ 'Use Case' | t }}</span><span class="pf-val">{{ profile.useCase }}</span></div>
           <div class="pf-item"><span class="pf-label">⛽ Fuel</span><span class="pf-val">{{ profile.fuelPreference }}</span></div>
           <div class="pf-item"><span class="pf-label">⚙️ Transmission</span><span class="pf-val">{{ profile.transmission }}</span></div>
           <div class="pf-item"><span class="pf-label">🏎️ Body Type</span><span class="pf-val">{{ profile.bodyType }}</span></div>
-          <div class="pf-item"><span class="pf-label">Priority</span><span class="pf-val">{{ profile.priority }}</span></div>
+          <div class="pf-item"><span class="pf-label">{{ 'Priority' | t }}</span><span class="pf-val">{{ profile.priority }}</span></div>
         </div>
 
         <div class="done-actions">
-          <button class="btn-gradient" (click)="seeMatchedCars()">See Matched Cars →</button>
-          <a routerLink="/ai-advisor" class="btn-outline">Ask AI Advisor</a>
-          <button class="btn-text" (click)="restart()">Retake Journey</button>
+          <button class="btn-gradient" (click)="seeMatchedCars()">{{ 'See Matched Cars →' | t }}</button>
+          <a routerLink="/ai-advisor" class="btn-outline">{{ 'Ask AI Advisor' | t }}</a>
+          <button class="btn-text" (click)="restart()">{{ 'Retake Journey' | t }}</button>
         </div>
       </div>
 
       <!-- Milestone Roadmap -->
       <div class="milestone-section">
         <div class="milestone-header">
-          <h3>Your Buying <span class="gradient-text">Roadmap</span></h3>
+          <h3>{{ 'Your Buying' | t }} <span class="gradient-text">{{ 'Roadmap' | t }}</span></h3>
           <div class="milestone-progress-row">
             <div class="ms-prog-bar">
               <div class="ms-prog-fill" [style.width.%]="milestoneProgress()"></div>
@@ -59,8 +59,8 @@
             <div class="ms-body glass-card">
               <div class="ms-top-row">
                 <h4 class="ms-title">{{ m.title }}</h4>
-                <span class="ms-status-badge" *ngIf="isMilestoneComplete(m.id)">✓ Done</span>
-                <span class="ms-status-badge active-badge" *ngIf="!isMilestoneComplete(m.id) && (i === 0 || isMilestoneComplete(milestones[i-1].id))">▶ Up Next</span>
+                <span class="ms-status-badge" *ngIf="isMilestoneComplete(m.id)">{{ '✓ Done' | t }}</span>
+                <span class="ms-status-badge active-badge" *ngIf="!isMilestoneComplete(m.id) && (i === 0 || isMilestoneComplete(milestones[i-1].id))">{{ '▶ Up Next' | t }}</span>
               </div>
               <p class="ms-desc">{{ m.desc }}</p>
               <div class="ms-actions">

@@ -5,7 +5,7 @@
   <div class="list-container" *ngIf="!submitted()">
     <div class="list-header">
       <h1>List Your Car</h1>
-      <p>Reach 50,000+ verified buyers. Free listing. AI-powered valuation.</p>
+      <p>{{ 'Reach 50,000+ verified buyers. Free listing. AI-powered valuation.' | t }}</p>
     </div>
 
     <!-- Progress -->
@@ -19,7 +19,7 @@
       <div class="step-dot" [class.active]="step() >= 4"><span>4</span></div>
     </div>
     <div class="step-labels">
-      <span>Car Details</span><span>Photos</span><span>Condition & Price</span><span>Your Info</span>
+      <span>{{ 'Car Details' | t }}</span><span>{{ 'Photos' | t }}</span><span>{{ 'Condition & Price' | t }}</span><span>{{ 'Your Info' | t }}</span>
     </div>
 
     <!-- Step 1: Car Details -->
@@ -34,24 +34,24 @@
           owner count and a mileage for a car nobody has driven.
         -->
         <div class="form-group full-width">
-          <label>What are you listing?</label>
+          <label>{{ 'What are you listing?' | t }}</label>
           <div class="lt-choice">
             <button type="button" class="lt-btn" [class.active]="!isNew()"
                     (click)="setListingType('used')">
-              <span class="lt-title">Used car</span>
-              <span class="lt-sub">A resale — we'll estimate its value</span>
+              <span class="lt-title">{{ 'Used car' | t }}</span>
+              <span class="lt-sub">{{ 'A resale — we\'ll estimate its value' | t }}</span>
             </button>
             <button type="button" class="lt-btn" [class.active]="isNew()"
                     (click)="setListingType('new')">
-              <span class="lt-title">New car</span>
-              <span class="lt-sub">Unregistered showroom stock</span>
+              <span class="lt-title">{{ 'New car' | t }}</span>
+              <span class="lt-sub">{{ 'Unregistered showroom stock' | t }}</span>
             </button>
           </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
-            <label>Make (Brand)</label>
+            <label>{{ 'Make (Brand)' | t }}</label>
             <app-custom-select [options]="makes" placeholder="Select brand"
                                [(ngModel)]="form.make" name="make"
                                (ngModelChange)="onMakeChange()" />
@@ -64,7 +64,7 @@
                                (ngModelChange)="onModelChange()" />
           </div>
           <div class="form-group">
-            <label>Variant <span style="color:var(--muted);font-size:0.8rem">(optional)</span></label>
+            <label>Variant <span style="color:var(--muted);font-size:0.8rem">{{ '(optional)' | t }}</span></label>
             <!-- The trim list is a hardcoded map that does not cover every
                  model, and the field used to be disabled outright when it had
                  nothing — leaving a dealer with real stock no way to record
@@ -77,7 +77,7 @@
                    name="variantText" placeholder="e.g. Sigma, Delta, ZXi+"
                    [disabled]="!form.model">
             <small *ngIf="customVariant()" class="lt-hint">
-              <a href="javascript:void(0)" (click)="customVariant.set(false)">Choose from the list instead</a>
+              <a href="javascript:void(0)" (click)="customVariant.set(false)">{{ 'Choose from the list instead' | t }}</a>
             </small>
           </div>
           <div class="form-group">

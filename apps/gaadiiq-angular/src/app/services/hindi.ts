@@ -914,4 +914,89 @@ export const HINDI: Record<string, string> = {
     'पार्टनर के रूप में रजिस्टर करें',
   'to receive jobs from drivers nearby.':
     'ताकि आस-पास के ड्राइवरों से काम मिले।',
+  // ── List a car, buyer journey, test drive ────────────────────────────────
+  'Reach 50,000+ verified buyers. Free listing. AI-powered valuation.':
+    '50,000+ वेरिफाइड खरीदारों तक पहुंचें। मुफ्त लिस्टिंग। AI आधारित मूल्यांकन।',
+  'Car Details':
+    'कार का विवरण',
+  'Photos':
+    'फोटो',
+  'Condition & Price':
+    'हालत और कीमत',
+  'Your Info':
+    'आपकी जानकारी',
+  'What are you listing?':
+    'आप क्या लिस्ट कर रहे हैं?',
+  'Used car':
+    'पुरानी कार',
+  "A resale — we'll estimate its value":
+    'पुनर्विक्रय — हम इसकी कीमत का अनुमान लगाएंगे',
+  'New car':
+    'नई कार',
+  'Unregistered showroom stock':
+    'बिना रजिस्ट्रेशन वाला शोरूम स्टॉक',
+  'Make (Brand)':
+    'मेक (ब्रांड)',
+  '(optional)':
+    '(वैकल्पिक)',
+  'Choose from the list instead':
+    'इसकी जगह सूची में से चुनें',
+  'Find Your Perfect Car':
+    'अपनी सही कार खोजें',
+  'Answer a few quick questions to get your personalized recommendation.':
+    'कुछ आसान सवालों के जवाब दें और अपनी निजी सिफारिश पाएं।',
+  'Your Personalized Journey':
+    'आपकी अपनी यात्रा',
+  "Based on your preferences, here's your buyer profile:":
+    'आपकी पसंद के आधार पर, यह रही आपकी खरीदार प्रोफाइल:',
+  'Use Case':
+    'इस्तेमाल',
+  'Priority':
+    'प्राथमिकता',
+  'See Matched Cars →':
+    'मेल खाती कारें देखें →',
+  'Ask AI Advisor':
+    'AI सलाहकार से पूछें',
+  'Retake Journey':
+    'यात्रा दोबारा शुरू करें',
+  'Your Buying':
+    'आपका खरीद',
+  'Roadmap':
+    'रोडमैप',
+  '✓ Done':
+    '✓ हो गया',
+  '▶ Up Next':
+    '▶ आगे',
+  'Test Drive':
+    'टेस्ट ड्राइव',
+  'Book a':
+    'बुक करें',
+  "Pick any car from our 54-car database. Choose your slot and we'll arrange it.":
+    'हमारे डेटाबेस से कोई भी कार चुनें। अपना समय चुनें, हम इंतज़ाम कर देंगे।',
+  '1. Select a Car':
+    '1. कार चुनें',
+  'Popular cars:':
+    'लोकप्रिय कारें:',
+  'Change':
+    'बदलें',
+  '2. Your Details & Slot':
+    '2. आपका विवरण और समय',
+  'Phone *':
+    'फोन *',
+  'Email':
+    'ईमेल',
+  'Preferred Date *':
+    'पसंदीदा तारीख *',
+  'Time Slot *':
+    'समय *',
+  'Pickup Location (optional)':
+    'पिकअप जगह (वैकल्पिक)',
+  'Notes':
+    'टिप्पणी',
+  '📅 Confirm Test Drive Booking':
+    '📅 टेस्ट ड्राइव बुकिंग पक्की करें',
+  '🔒 Your details are safe. Seller will confirm within 2 hours.':
+    '🔒 आपका विवरण सुरक्षित है। सेलर 2 घंटे के भीतर पुष्टि करेगा।',
+  'Test Drive Booked!':
+    'टेस्ट ड्राइव बुक हो गई!',
 };

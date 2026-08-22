@@ -2,15 +2,15 @@
   <div class="orb orb-1"></div>
   <div class="container">
     <div class="page-header">
-      <div class="ai-badge">Test Drive</div>
-      <h1>Book a <span class="gradient-text">Test Drive</span></h1>
-      <p>Pick any car from our 54-car database. Choose your slot and we'll arrange it.</p>
+      <div class="ai-badge">{{ 'Test Drive' | t }}</div>
+      <h1>{{ 'Book a' | t }} <span class="gradient-text">{{ 'Test Drive' | t }}</span></h1>
+      <p>{{ 'Pick any car from our 54-car database. Choose your slot and we\'ll arrange it.' | t }}</p>
     </div>
 
     <div *ngIf="!submitted()" class="booking-grid">
       <!-- Car picker -->
       <div class="car-picker glass-card">
-        <h2>1. Select a Car</h2>
+        <h2>{{ '1. Select a Car' | t }}</h2>
         <div class="search-wrap" *ngIf="!selectedCar()">
           <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event); showDropdown.set(true)"
             placeholder="Search make or model..." (focus)="showDropdown.set(true)">
@@ -25,7 +25,7 @@
             <div class="drop-empty" *ngIf="filteredCars.length === 0">No results</div>
           </div>
         </div>
-        <div class="popular-label" *ngIf="!selectedCar() && !searchQuery()">Popular cars:</div>
+        <div class="popular-label" *ngIf="!selectedCar() && !searchQuery()">{{ 'Popular cars:' | t }}</div>
         <div class="popular-grid" *ngIf="!selectedCar() && !searchQuery()">
           <div class="pop-chip" *ngFor="let c of allCars.slice(0,9)" (click)="selectCar(c)">
             {{ c.make }} {{ c.model }}
@@ -38,59 +38,59 @@
             <div class="gradient-text" style="font-weight:800">{{ formatPrice(car.price) }}</div>
             <div style="font-size:.85rem;color:var(--muted)">{{ car.fuel }} · {{ car.transmission }} · {{ car.city }}</div>
           </div>
-          <button class="change-btn" (click)="selectedCar.set(null)">Change</button>
+          <button class="change-btn" (click)="selectedCar.set(null)">{{ 'Change' | t }}</button>
         </div>
       </div>
 
       <!-- Booking form -->
       <div class="booking-form glass-card">
-        <h2>2. Your Details & Slot</h2>
+        <h2>{{ '2. Your Details & Slot' | t }}</h2>
         <div class="form-row">
           <div class="form-group">
             <label>Full Name *</label>
             <input type="text" [(ngModel)]="form.name" name="name" placeholder="Manoj Kumar">
           </div>
           <div class="form-group">
-            <label>Phone *</label>
+            <label>{{ 'Phone *' | t }}</label>
             <input type="tel" [(ngModel)]="form.phone" name="phone" placeholder="9876543210">
           </div>
         </div>
         <div class="form-group">
-          <label>Email</label>
+          <label>{{ 'Email' | t }}</label>
           <input type="email" [(ngModel)]="form.email" name="email" placeholder="your@email.com">
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Preferred Date *</label>
+            <label>{{ 'Preferred Date *' | t }}</label>
             <input type="date" [(ngModel)]="form.date" name="date" [min]="minDate">
           </div>
           <div class="form-group">
-            <label>Time Slot *</label>
+            <label>{{ 'Time Slot *' | t }}</label>
             <app-custom-select [options]="timeSlots" placeholder="Select time"
                                [(ngModel)]="form.time" name="time" />
           </div>
         </div>
         <div class="form-group">
-          <label>Pickup Location (optional)</label>
+          <label>{{ 'Pickup Location (optional)' | t }}</label>
           <input type="text" [(ngModel)]="form.location" name="location" placeholder="e.g. Andheri West, Mumbai">
         </div>
         <div class="form-group">
-          <label>Notes</label>
+          <label>{{ 'Notes' | t }}</label>
           <textarea [(ngModel)]="form.notes" name="notes" rows="3" placeholder="Any specific preferences or questions..."></textarea>
         </div>
         <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem"
           [disabled]="!selectedCar() || !form.name || !form.phone || !form.date || !form.time"
           (click)="submit()">
-          📅 Confirm Test Drive Booking
+          {{ '📅 Confirm Test Drive Booking' | t }}
         </button>
-        <p style="text-align:center;font-size:.8rem;color:var(--muted);margin-top:.75rem">🔒 Your details are safe. Seller will confirm within 2 hours.</p>
+        <p style="text-align:center;font-size:.8rem;color:var(--muted);margin-top:.75rem">{{ '🔒 Your details are safe. Seller will confirm within 2 hours.' | t }}</p>
       </div>
     </div>
 
     <!-- Success state -->
     <div *ngIf="submitted()" class="success-card glass-card">
       <div style="font-size:4rem;margin-bottom:1rem">🎉</div>
-      <h2>Test Drive Booked!</h2>
+      <h2>{{ 'Test Drive Booked!' | t }}</h2>
       <p>Your test drive for <strong>{{ selectedCar()?.make }} {{ selectedCar()?.model }}</strong> has been requested for <strong>{{ form.date }}</strong> at <strong>{{ form.time }}</strong>.</p>
       <p style="color:var(--muted);margin-top:.5rem">The seller will confirm within 2 hours via SMS/email.</p>
       <div style="display:flex;gap:1rem;justify-content:center;margin-top:2rem">
