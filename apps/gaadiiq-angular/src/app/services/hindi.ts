@@ -536,4 +536,129 @@ export const HINDI: Record<string, string> = {
     'वेरिफाइड डीलर',
   'Base model — pick a trim under Variants to price that one.':
     'बेस मॉडल — किसी खास ट्रिम की कीमत के लिए वेरिएंट में से चुनें।',
+  // ── Calculators: EMI, TCO, EV ────────────────────────────────────────────
+  'Calculator':
+    'कैलकुलेटर',
+  'Calculate your monthly payment and compare bank rates':
+    'अपनी मासिक किस्त निकालें और बैंकों की दरें तुलना करें',
+  'Loan Details':
+    'लोन का विवरण',
+  'Down Payment (optional)':
+    'डाउन पेमेंट (वैकल्पिक)',
+  'Total Amount':
+    'कुल राशि',
+  'Loan Breakdown':
+    'लोन का ब्यौरा',
+  'per month':
+    'प्रति माह',
+  'Compare Bank Rates':
+    'बैंक दरों की तुलना',
+  '/ month':
+    '/ माह',
+  'Selected ✓':
+    'चुना गया ✓',
+  'Best Rate':
+    'सबसे अच्छी दर',
+  'Affordability':
+    'वहनीयता',
+  'Analysis':
+    'विश्लेषण',
+  'Enter your income details to see if this loan fits your financial health':
+    'अपनी आय का विवरण डालें और देखें कि यह लोन आपकी आर्थिक स्थिति में फिट बैठता है या नहीं',
+  'Monthly Income':
+    'मासिक आय',
+  'Existing EMIs':
+    'मौजूदा EMI',
+  'Monthly Expenses':
+    'मासिक खर्च',
+  'Cost Analysis':
+    'लागत विश्लेषण',
+  'Total Cost of':
+    'कुल लागत',
+  'Ownership':
+    'स्वामित्व की',
+  'Beyond the sticker price — understand the true multi-year cost of owning any car.':
+    'सिर्फ कीमत से आगे — किसी भी कार के कई साल के असली खर्च को समझें।',
+  'Find a nearby mechanic':
+    'पास का मैकेनिक खोजें',
+  'Vehicle Details':
+    'गाड़ी का विवरण',
+  'KM per Year':
+    'प्रति साल KM',
+  'Years Owned':
+    'कितने साल रखी',
+  'Running Costs':
+    'चलाने का खर्च',
+  'Insurance (% of value / year)':
+    'बीमा (मूल्य का % / साल)',
+  'Maintenance per Year':
+    'प्रति साल रखरखाव',
+  'Per Year':
+    'प्रति साल',
+  'Per KM':
+    'प्रति KM',
+  'Cost Breakdown':
+    'खर्च का ब्यौरा',
+  'Grand Total':
+    'कुल योग',
+  '* Depreciation uses market-standard rates (20% → 15% → 12% → 10% → 8% per year). Actual costs vary by city, driving style, and insurer.':
+    '* मूल्यह्रास बाज़ार की मानक दरों पर (20% → 15% → 12% → 10% → 8% प्रति साल)। असली खर्च शहर, चलाने के तरीके और बीमा कंपनी पर निर्भर करता है।',
+  'EV vs Petrol':
+    'EV बनाम पेट्रोल',
+  'Ownership Calculator':
+    'स्वामित्व कैलकुलेटर',
+  'EV On-Road Price':
+    'EV ऑन-रोड कीमत',
+  'Battery Range (km per charge)':
+    'बैटरी रेंज (प्रति चार्ज km)',
+  'Charging Cost (₹ per 100 km)':
+    'चार्जिंग खर्च (₹ प्रति 100 km)',
+  'Annual Maintenance':
+    'सालाना रखरखाव',
+  'Effective Price:':
+    'प्रभावी कीमत:',
+  'Petrol Car On-Road Price':
+    'पेट्रोल कार ऑन-रोड कीमत',
+  'Fuel Efficiency (km/l)':
+    'माइलेज (km/l)',
+  'Current Petrol Price (₹/litre)':
+    'मौजूदा पेट्रोल कीमत (₹/लीटर)',
+  'Daily Distance':
+    'रोज़ाना दूरी',
+  'Comparison Period':
+    'तुलना की अवधि',
+  'Annual Fuel Cost (EV)':
+    'सालाना फ्यूल खर्च (EV)',
+  'Annual Fuel Cost (Petrol)':
+    'सालाना फ्यूल खर्च (पेट्रोल)',
+  'Annual Maintenance (EV)':
+    'सालाना रखरखाव (EV)',
+  'Annual Maintenance (Petrol)':
+    'सालाना रखरखाव (पेट्रोल)',
+  'Get AI Car Recommendations →':
+    'AI कार सिफारिशें पाएं →',
+  'Calculate EMI':
+    'EMI निकालें',
+  'Calculations are indicative. Actual costs vary by usage, electricity tariff, petrol prices, and insurer. FAME-II eligibility subject to government guidelines.':
+    'गणनाएं संकेतात्मक हैं। असली खर्च उपयोग, बिजली दर, पेट्रोल कीमत और बीमा कंपनी पर निर्भर करता है। FAME-II पात्रता सरकारी दिशानिर्देशों के अधीन है।',
+  'Running costs':
+    'चलाने का खर्च',
+  'fuel, service, insurance':
+    'फ्यूल, सर्विस, बीमा',
+  'Current DTI':
+    'मौजूदा DTI',
+  'DTI After Loan':
+    'लोन के बाद DTI',
+  'Total EMIs (Existing + Car)':
+    'कुल EMI (मौजूदा + कार)',
+  'True cost of this car / month':
+    'इस कार का असली खर्च / माह',
+  'Monthly Surplus':
+    'मासिक बचत',
+  'Compare real 5-year costs including fuel, insurance, maintenance & FAME-II subsidy.':
+    'फ्यूल, बीमा, रखरखाव और FAME-II सब्सिडी सहित 5 साल का असली खर्च तुलना करें।',
+  '· Break-even in':
+    '· बराबरी',
+  'Driving Profile':
+    'ड्राइविंग प्रोफाइल',
 };

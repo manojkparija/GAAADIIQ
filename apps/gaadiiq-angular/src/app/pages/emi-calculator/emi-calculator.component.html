@@ -1,8 +1,8 @@
 <div class="emi-page">
   <div class="emi-hero">
     <div class="container">
-      <h1>EMI <span class="gradient-text">Calculator</span></h1>
-      <p>Calculate your monthly payment and compare bank rates</p>
+      <h1>EMI <span class="gradient-text">{{ 'Calculator' | t }}</span></h1>
+      <p>{{ 'Calculate your monthly payment and compare bank rates' | t }}</p>
     </div>
   </div>
 
@@ -10,11 +10,11 @@
     <div class="emi-grid">
       <!-- Controls -->
       <div class="controls-card glass-card">
-        <h2>Loan Details</h2>
+        <h2>{{ 'Loan Details' | t }}</h2>
 
         <div class="slider-group">
           <div class="slider-label">
-            <span>Loan Amount</span>
+            <span>{{ 'Loan Amount' | t }}</span>
             <strong>{{ fmt(loanAmount()) }}</strong>
           </div>
           <input type="range" min="100000" max="10000000" step="50000"
@@ -24,7 +24,7 @@
 
         <div class="slider-group">
           <div class="slider-label">
-            <span>Down Payment (optional)</span>
+            <span>{{ 'Down Payment (optional)' | t }}</span>
             <strong>{{ fmt(downPayment()) }}</strong>
           </div>
           <input type="range" min="0" [max]="loanAmount()" step="10000"
@@ -34,7 +34,7 @@
 
         <div class="slider-group">
           <div class="slider-label">
-            <span>Interest Rate</span>
+            <span>{{ 'Interest Rate' | t }}</span>
             <strong>{{ interestRate() }}%</strong>
           </div>
           <input type="range" min="6" max="18" step="0.1"
@@ -44,7 +44,7 @@
 
         <div class="slider-group">
           <div class="slider-label">
-            <span>Tenure</span>
+            <span>{{ 'Tenure' | t }}</span>
             <strong>{{ tenureMonths() }} months</strong>
           </div>
           <input type="range" min="12" max="84" step="12"
@@ -54,19 +54,19 @@
 
         <div class="loan-summary">
           <div class="sum-row">
-            <span>Principal</span>
+            <span>{{ 'Principal' | t }}</span>
             <strong>{{ fmt(principal()) }}</strong>
           </div>
           <div class="sum-row highlight">
-            <span>Monthly EMI</span>
+            <span>{{ 'Monthly EMI' | t }}</span>
             <strong class="emi-amount">{{ fmtExact(emi()) }}</strong>
           </div>
           <div class="sum-row">
-            <span>Total Interest</span>
+            <span>{{ 'Total Interest' | t }}</span>
             <strong style="color:var(--danger-ink)">{{ fmtExact(totalInterest()) }}</strong>
           </div>
           <div class="sum-row">
-            <span>Total Amount</span>
+            <span>{{ 'Total Amount' | t }}</span>
             <strong>{{ fmtExact(totalAmount()) }}</strong>
           </div>
         </div>
@@ -76,7 +76,7 @@
       <div class="results-col">
         <!-- Donut Chart -->
         <div class="chart-card glass-card">
-          <h3>Loan Breakdown</h3>
+          <h3>{{ 'Loan Breakdown' | t }}</h3>
           <div class="donut-wrap">
             <svg viewBox="0 0 120 120" class="donut-svg">
               <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
@@ -90,7 +90,7 @@
             </svg>
             <div class="donut-center">
               <div class="donut-emi">{{ fmtExact(emi()) }}</div>
-              <div class="donut-label">per month</div>
+              <div class="donut-label">{{ 'per month' | t }}</div>
             </div>
           </div>
           <div class="chart-legend">
@@ -101,7 +101,7 @@
 
         <!-- Bank Comparison -->
         <div class="banks-card glass-card">
-          <h3>Compare Bank Rates</h3>
+          <h3>{{ 'Compare Bank Rates' | t }}</h3>
           <div class="banks-list">
             @for (bank of banks; track bank.name) {
               <div class="bank-row"
@@ -118,12 +118,12 @@
                 </div>
                 <div class="bank-emi">
                   <div class="emi-val">{{ fmtExact(bankEmi(bank.rate)) }}</div>
-                  <div class="emi-label">/ month</div>
+                  <div class="emi-label">{{ '/ month' | t }}</div>
                 </div>
                 @if (selectedBank() === bank.name) {
-                  <div class="selected-badge">Selected ✓</div>
+                  <div class="selected-badge">{{ 'Selected ✓' | t }}</div>
                 } @else if (bank.rate === 8.45) {
-                  <div class="best-badge">Best Rate</div>
+                  <div class="best-badge">{{ 'Best Rate' | t }}</div>
                 }
               </div>
             }
@@ -135,8 +135,8 @@
     <!-- Affordability Score -->
     <div class="afford-card glass-card">
       <div class="afford-header">
-        <h3>Affordability <span class="gradient-text">Analysis</span></h3>
-        <p class="afford-sub">Enter your income details to see if this loan fits your financial health</p>
+        <h3>{{ 'Affordability' | t }} <span class="gradient-text">{{ 'Analysis' | t }}</span></h3>
+        <p class="afford-sub">{{ 'Enter your income details to see if this loan fits your financial health' | t }}</p>
       </div>
 
       <div class="afford-grid">
@@ -144,7 +144,7 @@
         <div class="afford-inputs">
           <div class="slider-group">
             <div class="slider-label">
-              <span>Monthly Income</span>
+              <span>{{ 'Monthly Income' | t }}</span>
               <strong class="gradient-text">{{ fmt(monthlyIncome()) }}</strong>
             </div>
             <input type="range" min="20000" max="500000" step="5000"
@@ -154,7 +154,7 @@
 
           <div class="slider-group">
             <div class="slider-label">
-              <span>Existing EMIs</span>
+              <span>{{ 'Existing EMIs' | t }}</span>
               <strong>{{ fmt(existingEmis()) }}</strong>
             </div>
             <input type="range" min="0" max="500000" step="5000"
@@ -164,7 +164,7 @@
 
           <div class="slider-group">
             <div class="slider-label">
-              <span>Monthly Expenses</span>
+              <span>{{ 'Monthly Expenses' | t }}</span>
               <strong>{{ fmt(monthlyExpenses()) }}</strong>
             </div>
             <input type="range" min="5000" max="200000" step="2500"
@@ -177,7 +177,7 @@
                buyer can afford by roughly a third of the EMI. -->
           <div class="slider-group">
             <div class="slider-label">
-              <span>Running costs <span class="slider-hint">fuel, service, insurance</span></span>
+              <span>{{ 'Running costs' | t }} <span class="slider-hint">{{ 'fuel, service, insurance' | t }}</span></span>
               <strong>{{ fmt(runningCosts()) }}</strong>
             </div>
             <input type="range" min="0" max="80" step="5"
@@ -208,12 +208,12 @@
           <div class="dti-row">
             <div class="dti-item">
               <div class="dti-val" [class.warn]="dtiCurrent() > 35">{{ dtiCurrent() }}%</div>
-              <div class="dti-label">Current DTI</div>
+              <div class="dti-label">{{ 'Current DTI' | t }}</div>
             </div>
             <div class="dti-arrow">→</div>
             <div class="dti-item">
               <div class="dti-val" [class.warn]="dtiAfter() > 40">{{ dtiAfter() }}%</div>
-              <div class="dti-label">DTI After Loan</div>
+              <div class="dti-label">{{ 'DTI After Loan' | t }}</div>
             </div>
             <div class="dti-ideal">
               <span class="ideal-badge" [class.ok]="dtiAfter() <= 40" [class.over]="dtiAfter() > 40">
@@ -229,7 +229,7 @@
               <div class="am-val" [class.bad]="(existingEmis() + emi()) > monthlyIncome() * 0.4">
                 {{ fmt(existingEmis() + emi()) }}
               </div>
-              <div class="am-label">Total EMIs (Existing + Car)</div>
+              <div class="am-label">{{ 'Total EMIs (Existing + Car)' | t }}</div>
             </div>
             <!-- The number this page was missing: the loan plus the cost of
                  keeping the car on the road. -->
@@ -238,14 +238,14 @@
               <div class="am-val" [class.bad]="carCostRatio() > 10" [class.good]="carCostRatio() <= 10">
                 {{ fmt(totalCarCost()) }}
               </div>
-              <div class="am-label">True cost of this car / month</div>
+              <div class="am-label">{{ 'True cost of this car / month' | t }}</div>
             </div>
             <div class="am-item">
               <div class="am-icon"><app-icon name="indian-rupee" [size]="22"></app-icon></div>
               <div class="am-val" [class.bad]="monthlySurplus() < 0" [class.good]="monthlySurplus() > 0">
                 {{ fmt(monthlySurplus()) }}
               </div>
-              <div class="am-label">Monthly Surplus</div>
+              <div class="am-label">{{ 'Monthly Surplus' | t }}</div>
             </div>
             <div class="am-item">
               <div class="am-icon"><app-icon name="shield" [size]="22"></app-icon></div>
@@ -298,7 +298,7 @@
             <tr>
               <th>Month</th>
               <th>EMI</th>
-              <th>Principal</th>
+              <th>{{ 'Principal' | t }}</th>
               <th>Interest</th>
               <th>Balance</th>
             </tr>
