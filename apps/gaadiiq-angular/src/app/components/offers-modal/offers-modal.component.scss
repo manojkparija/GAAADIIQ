@@ -1,0 +1,187 @@
+.om-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(11, 18, 32, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.om-panel {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  // Tall on a phone in landscape, and the consent text must not be cut off —
+  // it is the record that the buyer agreed to be called.
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: 2rem 1.75rem 1.75rem;
+  border-radius: 16px;
+  background: var(--surface, #fff);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.om-close,
+.om-back {
+  position: absolute;
+  top: 0.9rem;
+  background: var(--fill-soft);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &:hover { background: var(--fill-dim); }
+}
+.om-close { right: 0.9rem; }
+.om-back  { left: 0.9rem; }
+
+.om-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.01em;
+  margin: 0.25rem 0 0;
+  padding-right: 2.25rem;   // clear of the close button
+}
+
+.om-sub {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0 0 0.75rem;
+}
+
+.om-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 0.6rem;
+}
+.om-optional { font-weight: 500; color: var(--muted); }
+
+.om-input {
+  width: 100%;
+  // Inherited from the global input rule; only the spacing differs here.
+  margin-top: 0.25rem;
+}
+
+.om-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  .om-input { margin-top: 0.25rem; }
+}
+.om-pin { max-width: 8rem; }
+
+.om-prefix {
+  margin-top: 0.25rem;
+  padding: 0.75rem 0.6rem;
+  border: 1.5px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--fill-soft);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.om-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.om-chip {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: var(--fill-soft);
+  color: var(--text);
+  cursor: pointer;
+  &:hover { border-color: var(--primary); }
+  &.selected {
+    background: var(--gradient-cta);
+    border-color: transparent;
+    color: #fff;
+  }
+}
+
+.om-consent {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin-top: 0.9rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--muted);
+  cursor: pointer;
+  input {
+    // The global input rule styles text boxes; a checkbox needs none of it.
+    width: auto;
+    margin: 0.15rem 0 0;
+    flex: 0 0 auto;
+    padding: 0;
+  }
+}
+
+.om-error {
+  margin: 0.75rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--danger-ink);
+}
+
+.om-cta {
+  width: 100%;
+  margin-top: 1rem;
+  justify-content: center;
+}
+.om-secondary {
+  width: 100%;
+  margin-top: 0.75rem;
+  justify-content: center;
+}
+
+.om-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin: 0.75rem 0 0.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: var(--fill-soft);
+  border: 1px solid var(--border-soft);
+}
+.om-fact { display: flex; flex-direction: column; gap: 0.15rem; }
+.om-fact-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+.om-fact-value { font-size: 1.05rem; font-weight: 800; font-family: 'Outfit', sans-serif; }
+
+.om-done {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0.75rem 0 0;
+}
+
+.om-fineprint {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0.9rem 0 0;
+}
+
+@media (max-width: 480px) {
+  .om-panel { padding: 1.75rem 1.15rem 1.35rem; }
+  .om-title { font-size: 1.1rem; }
+}

@@ -650,6 +650,13 @@
             <div style="color:var(--muted);font-size:0.85rem">EMI from ₹{{ displayEmi().toLocaleString() }}/mo · No cost EMI available</div>
           </ng-container>
           <div class="action-btns">
+            <!-- New cars only: a used listing has a seller to contact directly,
+                 so routing that buyer through a dealer callback would add a
+                 step and reach the wrong person. -->
+            <button *ngIf="isNewCar" class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem"
+                    (click)="openOffers()">
+              <app-icon name="sparkles" [size]="16"></app-icon> Get Best Price
+            </button>
             <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem" (click)="openContactSeller()"><app-icon name="phone" [size]="16"></app-icon> Contact Seller</button>
             <button class="btn-outline" style="width:100%;padding:1rem;font-size:1rem" (click)="bookTestDrive()"><app-icon name="calendar" [size]="16"></app-icon> Book Test Drive</button>
           </div>
@@ -843,3 +850,16 @@
     </ng-container>
   </div>
 </div>
+
+<!-- Lead capture. Rendered only while open so the OTP state cannot survive a
+     dismissal and be resubmitted. -->
+<app-offers-modal
+  *ngIf="offersOpen()"
+  [make]="car.make"
+  [model]="car.model"
+  [carId]="car.id"
+  [variant]="selectedVariant()?.name ?? null"
+  [priceText]="displayPrice()?.text ?? null"
+  [emiText]="'₹' + displayEmi().toLocaleString() + '/mo'"
+  (closed)="offersOpen.set(false)">
+</app-offers-modal>
