@@ -5,17 +5,17 @@
 <div *ngIf="!carLoaded && loadFailed()" class="cd-load-failed"
      style="min-height:60vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;text-align:center;padding:2rem">
   <app-icon name="alert-triangle" [size]="40"></app-icon>
-  <p style="color:var(--text);font-weight:600;margin:0">We could not load this car right now.</p>
-  <p style="color:var(--muted);margin:0">The catalogue is unreachable. This is usually temporary.</p>
+  <p style="color:var(--text);font-weight:600;margin:0">{{ 'We could not load this car right now.' | t }}</p>
+  <p style="color:var(--muted);margin:0">{{ 'The catalogue is unreachable. This is usually temporary.' | t }}</p>
   <div style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center">
     <button class="btn-gradient" (click)="retryLoad()">Try again</button>
-    <a routerLink="/used-cars" class="btn-outline">Browse all cars</a>
+    <a routerLink="/used-cars" class="btn-outline">{{ 'Browse all cars' | t }}</a>
   </div>
 </div>
 
 <div *ngIf="!carLoaded && !loadFailed()" style="min-height:60vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem">
   <div style="font-size:3rem"><app-icon name="loader" [size]="16"></app-icon></div>
-  <p style="color:var(--muted)">Loading car details...</p>
+  <p style="color:var(--muted)">{{ 'Loading car details...' | t }}</p>
 </div>
 
 <div class="detail-page" *ngIf="carLoaded">
@@ -24,7 +24,7 @@
          listing looked like a working page. -->
     <div *ngIf="notFound" class="not-found-banner">
       We couldn't find that car. Showing another listing you might like —
-      <a routerLink="/listings">browse all cars</a>.
+      <a routerLink="/listings">{{ 'browse all cars' | t }}</a>.
     </div>
     <!-- BREADCRUMB -->
     <div class="breadcrumb">
@@ -60,7 +60,7 @@
             </div>
 
             <div class="spin-hint" *ngIf="spinReady()">
-              <app-icon name="move" [size]="14"></app-icon> Drag to rotate
+              <app-icon name="move" [size]="14"></app-icon> {{ 'Drag to rotate' | t }}
             </div>
 
             <button class="spin-toggle active" type="button"
@@ -108,7 +108,7 @@
               <button type="button" (click)="zoomOut()" [disabled]="zoom() <= minZoom" aria-label="Zoom out">−</button>
               <span class="lightbox-zoom">{{ (zoom() * 100).toFixed(0) }}%</span>
               <button type="button" (click)="zoomIn()" [disabled]="zoom() >= maxZoom" aria-label="Zoom in">+</button>
-              <button type="button" (click)="resetZoom()" aria-label="Reset zoom">Reset</button>
+              <button type="button" (click)="resetZoom()" aria-label="Reset zoom">{{ 'Reset' | t }}</button>
               <button type="button" (click)="closeLightbox()" aria-label="Close">✕</button>
             </div>
           </div>
@@ -142,12 +142,12 @@
         <!-- TABS -->
         <div class="tabs glass-card">
           <div class="tab-nav">
-            <button [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">Overview</button>
+            <button [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">{{ 'Overview' | t }}</button>
             <button *ngIf="isNewCar && (variants().length || newCarMeta)" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">Variants</button>
-            <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">Specs</button>
-            <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">Features</button>
-            <button *ngIf="modelColours().length > 0" [class.active]="activeTab()==='colours'" (click)="activeTab.set('colours')">Colours</button>
-            <button [class.active]="activeTab()==='ownership'" (click)="activeTab.set('ownership')">Cost of Ownership</button>
+            <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">{{ 'Specs' | t }}</button>
+            <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">{{ 'Features' | t }}</button>
+            <button *ngIf="modelColours().length > 0" [class.active]="activeTab()==='colours'" (click)="activeTab.set('colours')">{{ 'Colours' | t }}</button>
+            <button [class.active]="activeTab()==='ownership'" (click)="activeTab.set('ownership')">{{ 'Cost of Ownership' | t }}</button>
             <button [class.active]="activeTab()==='reviews'" (click)="activeTab.set('reviews')">Reviews ({{ reviews().length }})</button>
           </div>
 
@@ -155,15 +155,15 @@
           <div class="tab-content" *ngIf="activeTab()==='overview'">
             <div class="overview-pills">
               <div class="pill"><span><app-icon name="fuel" [size]="16"></app-icon></span><div><div class="pill-label">Fuel</div><div class="pill-val">{{ car.fuel }}</div></div></div>
-              <div class="pill"><span><app-icon name="settings" [size]="16"></app-icon></span><div><div class="pill-label">Gearbox</div><div class="pill-val">{{ car.transmission }}</div></div></div>
+              <div class="pill"><span><app-icon name="settings" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Gearbox' | t }}</div><div class="pill-val">{{ car.transmission }}</div></div></div>
               <!-- Owner count is a used-car fact. On a new car it is either
                    blank or "0", and both read as missing data rather than as
                    "nobody has owned this yet" — so it does not appear at all. -->
-              <div class="pill" *ngIf="!isNewCar && car.owners"><span><app-icon name="user" [size]="16"></app-icon></span><div><div class="pill-label">Owners</div><div class="pill-val">{{ car.owners }}</div></div></div>
+              <div class="pill" *ngIf="!isNewCar && car.owners"><span><app-icon name="user" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Owners' | t }}</div><div class="pill-val">{{ car.owners }}</div></div></div>
               <!-- Same rule as Owners: a pill with a label and no value is a
                    gap dressed up as a fact. Catalogue models carry no colour. -->
               <div class="pill" *ngIf="car.color"><span><app-icon name="palette" [size]="16"></app-icon></span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
-              <div class="pill" *ngIf="car.city"><span><app-icon name="map-pin" [size]="14"></app-icon></span><div><div class="pill-label">Location</div><div class="pill-val">{{ car.city }}</div></div></div>
+              <div class="pill" *ngIf="car.city"><span><app-icon name="map-pin" [size]="14"></app-icon></span><div><div class="pill-label">{{ 'Location' | t }}</div><div class="pill-val">{{ car.city }}</div></div></div>
 
               <!--
                 Reported from UAT: the Overview showed two facts on a new car.
@@ -180,11 +180,11 @@
               -->
               <div class="pill" *ngIf="car.bodyType">
                 <span><app-icon name="car" [size]="16"></app-icon></span>
-                <div><div class="pill-label">Body</div><div class="pill-val">{{ car.bodyType }}</div></div>
+                <div><div class="pill-label">{{ 'Body' | t }}</div><div class="pill-val">{{ car.bodyType }}</div></div>
               </div>
               <div class="pill" *ngIf="isNewCar && car.year">
                 <span><app-icon name="calendar" [size]="16"></app-icon></span>
-                <div><div class="pill-label">Model year</div><div class="pill-val">{{ car.year }}</div></div>
+                <div><div class="pill-label">{{ 'Model year' | t }}</div><div class="pill-val">{{ car.year }}</div></div>
               </div>
               <div class="pill" *ngFor="let sp of overviewSpecs()">
                 <span><app-icon [name]="specIcon(sp.label)" [size]="16"></app-icon></span>
@@ -234,15 +234,15 @@
                 {{ car.make }} {{ car.model }} price starts at
                 <strong class="gradient-text">{{ formatLakh(band[0]) }}</strong>
                 <ng-container *ngIf="band[1] > band[0]">
-                  and goes up to <strong class="gradient-text">{{ formatLakh(band[1]) }}</strong>
+                  {{ 'and goes up to' | t }} <strong class="gradient-text">{{ formatLakh(band[1]) }}</strong>
                 </ng-container>
-                (ex-showroom).
+                {{ '(ex-showroom).' | t }}
               </p>
 
               <!-- Only shown when there is a choice to make. One gearbox means
                    the filter can only ever be a no-op. -->
               <div class="gearbox-filter" *ngIf="gearboxOptions().length > 1">
-                <span class="gf-label">Gearbox</span>
+                <span class="gf-label">{{ 'Gearbox' | t }}</span>
                 <button type="button" class="gf-chip" [class.active]="!gearboxFilter()"
                         (click)="setGearbox('')">All</button>
                 <button type="button" class="gf-chip" *ngFor="let g of gearboxOptions()"
@@ -253,7 +253,7 @@
 
             <p class="variants-empty" *ngIf="!filteredVariants().length">
               No {{ gearboxFilter() }} variants of this model.
-              <button type="button" class="gf-clear" (click)="setGearbox('')">Show all</button>
+              <button type="button" class="gf-clear" (click)="setGearbox('')">{{ 'Show all' | t }}</button>
             </p>
 
             <div class="variants-list">
@@ -279,7 +279,7 @@
                     {{ formatLakh(+v.ex_showroom_price) }}
                   </ng-container>
                   <!-- Never render an unpriced trim as ₹0. -->
-                  <ng-container *ngIf="!v.ex_showroom_price">Price on request</ng-container>
+                  <ng-container *ngIf="!v.ex_showroom_price">{{ 'Price on request' | t }}</ng-container>
                 </span>
               </div>
             </div>
@@ -288,8 +288,8 @@
           <div class="tab-content" *ngIf="activeTab()==='variants' && !variants().length && newCarMeta">
             <div class="variants-header">
               <p class="variants-sub">{{ car.make }} {{ car.model }} price starts at
-                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[0]) }}</strong> and goes up to
-                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[1]) }}</strong> (ex-showroom).
+                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[0]) }}</strong> {{ 'and goes up to' | t }}
+                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[1]) }}</strong> {{ '(ex-showroom).' | t }}
               </p>
             </div>
             <div class="variants-list">
@@ -366,19 +366,19 @@
               </div>
             </div>
             <div class="oc-breakdown" *ngIf="ownershipCost() as oc">
-              <div class="oc-item"><span><app-icon name="fuel" [size]="16"></app-icon> Annual Fuel Cost</span><span class="gradient-text">₹{{ oc.fuelCost.toLocaleString('en-IN') }}</span></div>
-              <div class="oc-item"><span><app-icon name="wrench" [size]="16"></app-icon> Maintenance</span><span class="gradient-text">₹{{ oc.maintenance.toLocaleString('en-IN') }}</span></div>
-              <div class="oc-item"><span><app-icon name="shield" [size]="13"></app-icon> Insurance</span><span class="gradient-text">₹{{ oc.insurance.toLocaleString('en-IN') }}</span></div>
-              <div class="oc-item"><span><app-icon name="trending-down" [size]="16"></app-icon> Depreciation</span><span class="gradient-text">₹{{ oc.depreciation.toLocaleString('en-IN') }}</span></div>
-              <div class="oc-total"><span>Total Annual Cost</span><span>₹{{ oc.total.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span><app-icon name="fuel" [size]="16"></app-icon> {{ 'Annual Fuel Cost' | t }}</span><span class="gradient-text">₹{{ oc.fuelCost.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span><app-icon name="wrench" [size]="16"></app-icon> {{ 'Maintenance' | t }}</span><span class="gradient-text">₹{{ oc.maintenance.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span><app-icon name="shield" [size]="13"></app-icon> {{ 'Insurance' | t }}</span><span class="gradient-text">₹{{ oc.insurance.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-item"><span><app-icon name="trending-down" [size]="16"></app-icon> {{ 'Depreciation' | t }}</span><span class="gradient-text">₹{{ oc.depreciation.toLocaleString('en-IN') }}</span></div>
+              <div class="oc-total"><span>{{ 'Total Annual Cost' | t }}</span><span>₹{{ oc.total.toLocaleString('en-IN') }}</span></div>
               <div class="oc-perkm">≈ ₹{{ oc.perKm }} per km</div>
             </div>
             <!-- Year-by-year resale forecast -->
             <div class="resale-forecast glass-card">
               <div class="rf-head">
                 <div>
-                  <div class="rf-title"><app-icon name="trending-up" [size]="16"></app-icon> What can I sell it for?</div>
-                  <div class="rf-sub">Projected resale value, year by year</div>
+                  <div class="rf-title"><app-icon name="trending-up" [size]="16"></app-icon> {{ 'What can I sell it for?' | t }}</div>
+                  <div class="rf-sub">{{ 'Projected resale value, year by year' | t }}</div>
                 </div>
                 <div class="rf-years">
                   <button *ngFor="let n of [3, 5, 7]" type="button"
@@ -412,7 +412,7 @@
                 </span>
                 <ng-template #estimateLabel>
                   <span class="rf-source muted">
-                    Standard depreciation estimate
+                    {{ 'Standard depreciation estimate' | t }}
                     <ng-container *ngIf="forecastTried() && !forecastLoading()">
                       — AI had no specific data for this model
                     </ng-container>
@@ -425,31 +425,31 @@
                 </button>
               </div>
               <div class="rf-disclaimer">
-                Projection only — actual resale depends on condition, service history and local demand.
+                {{ 'Projection only — actual resale depends on condition, service history and local demand.' | t }}
               </div>
             </div>
 
             <!-- 5-Year TCO Analysis -->
             <ng-container *ngIf="car">
               <div class="tco-panel glass-card" style="margin-top:1.5rem;padding:1.5rem">
-                <div style="font-weight:800;font-size:1.1rem;margin-bottom:1rem">5-Year Total Cost of Ownership</div>
+                <div style="font-weight:800;font-size:1.1rem;margin-bottom:1rem">{{ '5-Year Total Cost of Ownership' | t }}</div>
                 <ng-container *ngIf="tco.calculateTco(car) as t">
-                  <div class="oc-item"><span><app-icon name="tag" [size]="16"></app-icon> Purchase Price</span><span>{{ tco.fmt(t.purchasePrice) }}</span></div>
-                  <div class="oc-item"><span><app-icon name="list" [size]="16"></app-icon> Registration</span><span>{{ tco.fmt(t.registration) }}</span></div>
+                  <div class="oc-item"><span><app-icon name="tag" [size]="16"></app-icon> {{ 'Purchase Price' | t }}</span><span>{{ tco.fmt(t.purchasePrice) }}</span></div>
+                  <div class="oc-item"><span><app-icon name="list" [size]="16"></app-icon> {{ 'Registration' | t }}</span><span>{{ tco.fmt(t.registration) }}</span></div>
                   <div class="oc-item"><span><app-icon name="shield" [size]="13"></app-icon> Insurance (5yr)</span><span>{{ tco.fmt(t.insurance5yr) }}</span></div>
                   <div class="oc-item"><span><app-icon name="fuel" [size]="16"></app-icon> Fuel (5yr)</span><span>{{ tco.fmt(t.fuel5yr) }}</span></div>
                   <div class="oc-item"><span><app-icon name="wrench" [size]="16"></app-icon> Maintenance (5yr)</span><span>{{ tco.fmt(t.maintenance5yr) }}</span></div>
-                  <div class="oc-item" style="color:var(--teal)"><span><app-icon name="trending-up" [size]="16"></app-icon> Resale Value</span><span>−{{ tco.fmt(t.resaleValue) }}</span></div>
-                  <div class="oc-total"><span>Net 5-yr Cost</span><span class="gradient-text">{{ tco.fmt(t.netCost5yr) }}</span></div>
+                  <div class="oc-item" style="color:var(--teal)"><span><app-icon name="trending-up" [size]="16"></app-icon> {{ 'Resale Value' | t }}</span><span>−{{ tco.fmt(t.resaleValue) }}</span></div>
+                  <div class="oc-total"><span>{{ 'Net 5-yr Cost' | t }}</span><span class="gradient-text">{{ tco.fmt(t.netCost5yr) }}</span></div>
                   <div class="oc-perkm">≈ {{ tco.fmt(t.monthlyCost) }}/month total ownership cost</div>
                   <ng-container *ngIf="tco.calculateResale(car) as r">
                     <div style="margin-top:1rem;padding:1rem;background:color-mix(in srgb, var(--teal) 8%, transparent);border-radius:10px;border:1px solid color-mix(in srgb, var(--teal) 20%, transparent)">
-                      <div style="font-weight:700;margin-bottom:0.5rem;color:var(--teal)">Depreciation Outlook</div>
+                      <div style="font-weight:700;margin-bottom:0.5rem;color:var(--teal)">{{ 'Depreciation Outlook' | t }}</div>
                       <div style="font-size:0.85rem;color:var(--muted)">{{ r.verdict }} · {{ r.depreciationRate }}% per year</div>
                       <div style="display:flex;gap:1.5rem;margin-top:0.75rem;font-size:0.875rem">
-                        <div><div style="color:var(--muted);font-size:0.72rem">1 Year</div><strong>{{ tco.fmt(r.value1yr) }}</strong></div>
-                        <div><div style="color:var(--muted);font-size:0.72rem">3 Years</div><strong>{{ tco.fmt(r.value3yr) }}</strong></div>
-                        <div><div style="color:var(--muted);font-size:0.72rem">5 Years</div><strong>{{ tco.fmt(r.value5yr) }}</strong></div>
+                        <div><div style="color:var(--muted);font-size:0.72rem">{{ '1 Year' | t }}</div><strong>{{ tco.fmt(r.value1yr) }}</strong></div>
+                        <div><div style="color:var(--muted);font-size:0.72rem">{{ '3 Years' | t }}</div><strong>{{ tco.fmt(r.value3yr) }}</strong></div>
+                        <div><div style="color:var(--muted);font-size:0.72rem">{{ '5 Years' | t }}</div><strong>{{ tco.fmt(r.value5yr) }}</strong></div>
                       </div>
                     </div>
                   </ng-container>
@@ -474,7 +474,7 @@
 
             <!-- Review form -->
             <div class="review-form glass-card" *ngIf="showReviewForm()">
-              <h4>Your Review</h4>
+              <h4>{{ 'Your Review' | t }}</h4>
               <div class="star-select">
                 <span *ngFor="let s of [1,2,3,4,5]"
                   (click)="userReview.rating = s"
@@ -503,14 +503,14 @@
             </div>
 
             <!-- Loading -->
-            <div class="review-loading" *ngIf="reviewsSvc.loading()">Loading reviews…</div>
+            <div class="review-loading" *ngIf="reviewsSvc.loading()">{{ 'Loading reviews…' | t }}</div>
 
             <!-- Success -->
-            <div class="review-success" *ngIf="reviewSubmitted()">Review submitted! Thank you.</div>
+            <div class="review-success" *ngIf="reviewSubmitted()">{{ 'Review submitted! Thank you.' | t }}</div>
 
             <!-- Empty state -->
             <div class="review-empty" *ngIf="!reviewsSvc.loading() && reviews().length === 0 && !reviewSubmitted()">
-              No reviews yet. Be the first to review this car!
+              {{ 'No reviews yet. Be the first to review this car!' | t }}
             </div>
 
             <!-- Review cards -->
@@ -566,10 +566,10 @@
             <table class="similar-table">
               <thead>
                 <tr>
-                  <th>Car</th>
-                  <th>Image</th>
+                  <th>{{ 'Car' | t }}</th>
+                  <th>{{ 'Image' | t }}</th>
                   <th>Avg. Ex-Showroom Price</th>
-                  <th>User Rating</th>
+                  <th>{{ 'User Rating' | t }}</th>
                   <th>Mileage (ARAI)</th>
                 </tr>
               </thead>
@@ -639,7 +639,7 @@
             </button>
           </div>
           <div style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">{{ car.variant }} · {{ car.year }}</div>
-          <div *ngIf="shareState() === 'copied'" class="cd-share-note">Link copied</div>
+          <div *ngIf="shareState() === 'copied'" class="cd-share-note">{{ 'Link copied' | t }}</div>
           <!-- One price, from one source. displayPrice() prefers the published
                trims — the same figures the Variants tab lists and the On-Road
                panel prices — so the three cannot disagree, and it follows the
@@ -655,20 +655,20 @@
                  step and reach the wrong person. -->
             <button *ngIf="isNewCar" class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem"
                     (click)="openOffers()">
-              <app-icon name="sparkles" [size]="16"></app-icon> Get Best Price
+              <app-icon name="sparkles" [size]="16"></app-icon> {{ 'Get Best Price' | t }}
             </button>
-            <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem" (click)="openContactSeller()"><app-icon name="phone" [size]="16"></app-icon> Contact Seller</button>
+            <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem" (click)="openContactSeller()"><app-icon name="phone" [size]="16"></app-icon> {{ 'Contact Seller' | t }}</button>
             <button class="btn-outline" style="width:100%;padding:1rem;font-size:1rem" (click)="bookTestDrive()"><app-icon name="calendar" [size]="16"></app-icon> Book Test Drive</button>
           </div>
           <div style="display:flex;justify-content:center;gap:2rem;font-size:0.8rem;color:var(--muted)">
-            <span><app-icon name="lock" [size]="16"></app-icon> Safe Deal Guarantee</span>
-            <span><app-icon name="list" [size]="16"></app-icon> Free RC Check</span>
+            <span><app-icon name="lock" [size]="16"></app-icon> {{ 'Safe Deal Guarantee' | t }}</span>
+            <span><app-icon name="list" [size]="16"></app-icon> {{ 'Free RC Check' | t }}</span>
           </div>
         </div>
 
         <!-- ON-ROAD PRICE -->
         <div class="onroad-card glass-card" *ngIf="onRoadPrice() as orp">
-          <h3><app-icon name="road" [size]="16"></app-icon> On-Road Price</h3>
+          <h3><app-icon name="road" [size]="16"></app-icon> {{ 'On-Road Price' | t }}</h3>
           <!--
             Which car this is pricing. Trims differ by a lakh or more and can
             fall in different tax bands, so a figure with no trim against it is
@@ -679,15 +679,15 @@
             · <a href="javascript:void(0)" (click)="selectedVariantId.set(null)">clear</a>
           </p>
           <p class="orp-for" *ngIf="!selectedVariant() && variants().length">
-            Base model — pick a trim under Variants to price that one.
+            {{ 'Base model — pick a trim under Variants to price that one.' | t }}
           </p>
           <div class="state-select">
-            <label>State:</label>
+            <label>{{ 'State:' | t }}</label>
             <app-custom-select [options]="states" placeholder="Select state"
                                [ngModel]="selectedState()"
                                (ngModelChange)="selectedState.set($event)" name="state" />
           </div>
-          <div class="orp-row"><span>Ex-Showroom</span><span>{{ formatPrice(orp.base) }}</span></div>
+          <div class="orp-row"><span>{{ 'Ex-Showroom' | t }}</span><span>{{ formatPrice(orp.base) }}</span></div>
           <!--
             Indented and greyed: GST and cess are part of the ex-showroom price
             above, not additions to it, so they must not read as another line
@@ -698,8 +698,8 @@
           <div class="orp-row orp-row--included" *ngIf="orp.cess > 0"><span>↳ Cess ({{ orp.cessRate }}%) — included</span><span>{{ formatPrice(orp.cess) }}</span></div>
           <div class="orp-row"><span>Road Tax ({{ orp.regRate }}%)</span><span>{{ formatPrice(orp.registration) }}</span></div>
           <div class="orp-row"><span>Insurance (TP + OD)</span><span>{{ formatPrice(orp.insurance) }}</span></div>
-          <div class="orp-row"><span>Handling Charges</span><span>{{ formatPrice(orp.handling) }}</span></div>
-          <div class="orp-total"><span>On-Road Price</span><span class="gradient-text">{{ formatPrice(orp.total) }}</span></div>
+          <div class="orp-row"><span>{{ 'Handling Charges' | t }}</span><span>{{ formatPrice(orp.handling) }}</span></div>
+          <div class="orp-total"><span>{{ 'On-Road Price' | t }}</span><span class="gradient-text">{{ formatPrice(orp.total) }}</span></div>
         </div>
 
         <!-- AI VALUATION CARD -->
@@ -707,15 +707,15 @@
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
             <app-icon name="brain" [size]="22"></app-icon>
             <div>
-              <div style="font-weight:700">AI Price Analysis</div>
+              <div style="font-weight:700">{{ 'AI Price Analysis' | t }}</div>
               <div style="font-size:0.78rem;color:var(--muted)">{{ car.aiValuation?.confidence }}% confidence</div>
             </div>
             <span class="badge badge-green" style="margin-left:auto">{{ car.aiValuation?.verdict }}</span>
           </div>
           <div class="val-bar">
             <div class="val-range">
-              <span style="font-size:0.8rem;color:var(--muted)">Market Min</span>
-              <span style="font-size:0.8rem;color:var(--muted)">Market Max</span>
+              <span style="font-size:0.8rem;color:var(--muted)">{{ 'Market Min' | t }}</span>
+              <span style="font-size:0.8rem;color:var(--muted)">{{ 'Market Max' | t }}</span>
             </div>
             <div class="bar-track">
               <div class="bar-fill"></div>
@@ -727,7 +727,7 @@
             </div>
           </div>
           <div style="text-align:center;margin-top:0.75rem">
-            <span style="font-size:0.85rem;color:var(--muted)">AI Fair Value: </span>
+            <span style="font-size:0.85rem;color:var(--muted)">{{ 'AI Fair Value:' | t }} </span>
             <span class="gradient-text" style="font-weight:800;font-size:1.1rem">{{ formatPrice(car.aiValuation?.fairPrice || 0) }}</span>
           </div>
         </div>
@@ -736,22 +736,22 @@
         <div class="emi-card glass-card">
           <h3><app-icon name="credit-card" [size]="16"></app-icon> EMI Calculator</h3>
           <div class="emi-row">
-            <div class="emi-label-row"><label>Loan Amount</label><span class="emi-val">{{ formatPrice(loan.amount) }}</span></div>
+            <div class="emi-label-row"><label>{{ 'Loan Amount' | t }}</label><span class="emi-val">{{ formatPrice(loan.amount) }}</span></div>
             <input type="range" min="100000" [max]="car.price" step="10000"
               [value]="loan.amount" (input)="loan.amount=+$any($event.target).value; calcEmi()">
           </div>
           <div class="emi-row">
-            <div class="emi-label-row"><label>Interest Rate</label><span class="emi-val">{{ loan.rate }}% p.a.</span></div>
+            <div class="emi-label-row"><label>{{ 'Interest Rate' | t }}</label><span class="emi-val">{{ loan.rate }}% p.a.</span></div>
             <input type="range" min="7" max="18" step="0.5"
               [value]="loan.rate" (input)="loan.rate=+$any($event.target).value; calcEmi()">
           </div>
           <div class="emi-row">
-            <div class="emi-label-row"><label>Tenure</label><span class="emi-val">{{ loan.tenure }} months</span></div>
+            <div class="emi-label-row"><label>{{ 'Tenure' | t }}</label><span class="emi-val">{{ loan.tenure }} months</span></div>
             <input type="range" min="12" max="84" step="12"
               [value]="loan.tenure" (input)="loan.tenure=+$any($event.target).value; calcEmi()">
           </div>
           <div class="emi-result">
-            <div style="color:var(--muted);font-size:0.85rem">Monthly EMI</div>
+            <div style="color:var(--muted);font-size:0.85rem">{{ 'Monthly EMI' | t }}</div>
             <div class="gradient-text" style="font-size:2rem;font-weight:900">₹{{ loan.emi.toLocaleString('en-IN') }}</div>
           </div>
           <ng-container *ngIf="emiBreakdown() as eb">
@@ -760,19 +760,19 @@
                 <div class="emi-bar-principal" [style.width.%]="(eb.principal / eb.total) * 100"></div>
                 <div class="emi-bar-interest" [style.width.%]="(eb.interest / eb.total) * 100"></div>
               </div>
-              <div class="emi-bd-row"><span class="emi-dot principal"></span><span>Principal</span><span class="emi-bd-val">₹{{ eb.principal.toLocaleString('en-IN') }}</span></div>
-              <div class="emi-bd-row"><span class="emi-dot interest"></span><span>Total Interest</span><span class="emi-bd-val">₹{{ eb.interest.toLocaleString('en-IN') }}</span></div>
-              <div class="emi-bd-row total-row"><span>Total Payment</span><span class="emi-bd-val gradient-text">₹{{ eb.total.toLocaleString('en-IN') }}</span></div>
+              <div class="emi-bd-row"><span class="emi-dot principal"></span><span>{{ 'Principal' | t }}</span><span class="emi-bd-val">₹{{ eb.principal.toLocaleString('en-IN') }}</span></div>
+              <div class="emi-bd-row"><span class="emi-dot interest"></span><span>{{ 'Total Interest' | t }}</span><span class="emi-bd-val">₹{{ eb.interest.toLocaleString('en-IN') }}</span></div>
+              <div class="emi-bd-row total-row"><span>{{ 'Total Payment' | t }}</span><span class="emi-bd-val gradient-text">₹{{ eb.total.toLocaleString('en-IN') }}</span></div>
             </div>
           </ng-container>
-          <button class="btn-gradient" style="width:100%;margin-top:1rem">Apply for Loan →</button>
+          <button class="btn-gradient" style="width:100%;margin-top:1rem">{{ 'Apply for Loan →' | t }}</button>
         </div>
 
         <!-- COMPARE CTA -->
         <div class="compare-cta glass-card">
-          <div style="font-weight:700;margin-bottom:0.5rem"><app-icon name="scale" [size]="16"></app-icon> Compare with similar cars</div>
-          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">See how this stacks up against competition</p>
-          <a routerLink="/compare" class="btn-outline" style="width:100%;display:block;text-align:center">Open Comparison Tool</a>
+          <div style="font-weight:700;margin-bottom:0.5rem"><app-icon name="scale" [size]="16"></app-icon> {{ 'Compare with similar cars' | t }}</div>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">{{ 'See how this stacks up against competition' | t }}</p>
+          <a routerLink="/compare" class="btn-outline" style="width:100%;display:block;text-align:center">{{ 'Open Comparison Tool' | t }}</a>
         </div>
       </div>
     </div>
@@ -784,9 +784,9 @@
   <div class="seller-modal glass-card" (click)="$event.stopPropagation()">
     <button class="seller-close" (click)="enquiryModalOpen.set(false)">✕</button>
     <div *ngIf="!enquirySent()">
-      <h3 style="margin-bottom:0.25rem"><app-icon name="mail" [size]="16"></app-icon> Send Enquiry</h3>
+      <h3 style="margin-bottom:0.25rem"><app-icon name="mail" [size]="16"></app-icon> {{ 'Send Enquiry' | t }}</h3>
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem">
-        Our team will connect you with the seller within 2 hours.
+        {{ 'Our team will connect you with the seller within 2 hours.' | t }}
       </p>
       <div style="display:flex;flex-direction:column;gap:0.75rem">
         <input class="enq-input" type="text" placeholder="Your Name *" [(ngModel)]="enquiryForm.name">
@@ -803,12 +803,12 @@
     </div>
     <div *ngIf="enquirySent()" style="text-align:center;padding:2rem">
       <div style="color:var(--teal)"><app-icon name="check-circle" [size]="48"></app-icon></div>
-      <h3 style="margin:0.75rem 0 0.5rem">Enquiry Sent!</h3>
+      <h3 style="margin:0.75rem 0 0.5rem">{{ 'Enquiry Sent!' | t }}</h3>
       <p style="color:var(--muted);font-size:0.88rem">
-        Our team will contact you within 2 hours to arrange a callback with the seller.
+        {{ 'Our team will contact you within 2 hours to arrange a callback with the seller.' | t }}
       </p>
       <button class="btn-outline" style="margin-top:1rem;padding:0.75rem 2rem"
-        (click)="enquiryModalOpen.set(false); enquirySent.set(false)">Close</button>
+        (click)="enquiryModalOpen.set(false); enquirySent.set(false)">{{ 'Close' | t }}</button>
     </div>
   </div>
 </div>
@@ -818,7 +818,7 @@
   <div class="seller-modal glass-card" (click)="$event.stopPropagation()">
     <button class="seller-close" (click)="sellerModalOpen.set(false)">✕</button>
 
-    <div *ngIf="!seller()" style="text-align:center;padding:2rem;color:var(--muted)">Loading seller info…</div>
+    <div *ngIf="!seller()" style="text-align:center;padding:2rem;color:var(--muted)">{{ 'Loading seller info…' | t }}</div>
 
     <ng-container *ngIf="seller() as s">
       <div class="seller-header">
@@ -826,7 +826,7 @@
         <div>
           <h3 class="seller-name">{{ s.name }}</h3>
           <p class="seller-biz">{{ s.business_name }}</p>
-          <span *ngIf="s.verified" class="seller-verified"><app-icon name="check-circle" [size]="13"></app-icon> Verified Dealer</span>
+          <span *ngIf="s.verified" class="seller-verified"><app-icon name="check-circle" [size]="13"></app-icon> {{ 'Verified Dealer' | t }}</span>
         </div>
       </div>
 

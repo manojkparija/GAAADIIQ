@@ -379,4 +379,161 @@ export const HINDI: Record<string, string> = {
     'हाल में देखी गई',
   'No used cars in':
     'पुरानी कारें नहीं हैं',
+  // ── Car detail page ──────────────────────────────────────────────────────
+  'We could not load this car right now.':
+    'यह कार अभी लोड नहीं हो सकी।',
+  'The catalogue is unreachable. This is usually temporary.':
+    'कैटलॉग तक पहुंच नहीं हो पा रही। यह आमतौर पर अस्थायी होता है।',
+  'Browse all cars':
+    'सभी कारें देखें',
+  'Loading car details...':
+    'कार का विवरण लोड हो रहा है...',
+  'browse all cars':
+    'सभी कारें देखें',
+  'Drag to rotate':
+    'घुमाने के लिए खींचें',
+  'Reset':
+    'रीसेट',
+  'Overview':
+    'ओवरव्यू',
+  'Specs':
+    'स्पेसिफिकेशन',
+  'Features':
+    'फीचर्स',
+  'Colours':
+    'रंग',
+  'Cost of Ownership':
+    'स्वामित्व लागत',
+  'Gearbox':
+    'गियरबॉक्स',
+  'Owners':
+    'मालिक',
+  'Location':
+    'जगह',
+  'Body':
+    'बॉडी',
+  'Model year':
+    'मॉडल साल',
+  'and goes up to':
+    'और जाती है',
+  '(ex-showroom).':
+    '(एक्स-शोरूम)।',
+  'Show all':
+    'सभी दिखाएं',
+  'Price on request':
+    'कीमत अनुरोध पर',
+  'Annual Fuel Cost':
+    'सालाना फ्यूल खर्च',
+  'Maintenance':
+    'रखरखाव',
+  'Insurance':
+    'बीमा',
+  'Depreciation':
+    'मूल्यह्रास',
+  'Total Annual Cost':
+    'कुल सालाना खर्च',
+  'What can I sell it for?':
+    'मैं इसे कितने में बेच सकता हूं?',
+  'Projected resale value, year by year':
+    'अनुमानित पुनर्विक्रय मूल्य, साल दर साल',
+  'Standard depreciation estimate':
+    'मानक मूल्यह्रास अनुमान',
+  'Projection only — actual resale depends on condition, service history and local demand.':
+    'यह सिर्फ अनुमान है — असली कीमत हालत, सर्विस हिस्ट्री और स्थानीय मांग पर निर्भर करती है।',
+  '5-Year Total Cost of Ownership':
+    '5 साल की कुल स्वामित्व लागत',
+  'Purchase Price':
+    'खरीद कीमत',
+  'Registration':
+    'रजिस्ट्रेशन',
+  'Resale Value':
+    'पुनर्विक्रय मूल्य',
+  'Net 5-yr Cost':
+    'शुद्ध 5-साल खर्च',
+  'Depreciation Outlook':
+    'मूल्यह्रास का अनुमान',
+  '1 Year':
+    '1 साल',
+  '3 Years':
+    '3 साल',
+  '5 Years':
+    '5 साल',
+  'Your Review':
+    'आपकी समीक्षा',
+  'Loading reviews…':
+    'समीक्षाएं लोड हो रही हैं…',
+  'Review submitted! Thank you.':
+    'समीक्षा भेज दी गई! धन्यवाद।',
+  'No reviews yet. Be the first to review this car!':
+    'अभी कोई समीक्षा नहीं। इस कार की पहली समीक्षा आप करें!',
+  'Car':
+    'कार',
+  'Image':
+    'फोटो',
+  'User Rating':
+    'यूज़र रेटिंग',
+  'Link copied':
+    'लिंक कॉपी हो गया',
+  'Get Best Price':
+    'सबसे अच्छी कीमत पाएं',
+  'Contact Seller':
+    'सेलर से संपर्क करें',
+  'Safe Deal Guarantee':
+    'सुरक्षित सौदे की गारंटी',
+  'Free RC Check':
+    'मुफ्त RC जांच',
+  'On-Road Price':
+    'ऑन-रोड कीमत',
+  'State:':
+    'राज्य:',
+  'Ex-Showroom':
+    'एक्स-शोरूम',
+  'Handling Charges':
+    'हैंडलिंग चार्ज',
+  'AI Price Analysis':
+    'AI कीमत विश्लेषण',
+  'Market Min':
+    'बाज़ार न्यूनतम',
+  'Market Max':
+    'बाज़ार अधिकतम',
+  'AI Fair Value:':
+    'AI उचित मूल्य:',
+  'Loan Amount':
+    'लोन राशि',
+  'Interest Rate':
+    'ब्याज दर',
+  'Tenure':
+    'अवधि',
+  'Monthly EMI':
+    'मासिक EMI',
+  'Principal':
+    'मूलधन',
+  'Total Interest':
+    'कुल ब्याज',
+  'Total Payment':
+    'कुल भुगतान',
+  'Apply for Loan →':
+    'लोन के लिए आवेदन करें →',
+  'Compare with similar cars':
+    'मिलती-जुलती कारों से तुलना करें',
+  'See how this stacks up against competition':
+    'देखें यह मुकाबले में कहां ठहरती है',
+  'Open Comparison Tool':
+    'तुलना टूल खोलें',
+  'Send Enquiry':
+    'पूछताछ भेजें',
+  'Our team will connect you with the seller within 2 hours.':
+    'हमारी टीम 2 घंटे के भीतर आपको सेलर से जोड़ेगी।',
+  'Enquiry Sent!':
+    'पूछताछ भेज दी गई!',
+  'Our team will contact you within 2 hours to arrange a callback with the seller.':
+    'हमारी टीम 2 घंटे के भीतर आपसे संपर्क करके सेलर से बात कराएगी।',
+  'Close':
+    'बंद करें',
+  'Loading seller info…':
+    'सेलर की जानकारी लोड हो रही है…',
+  'Verified Dealer':
+    'वेरिफाइड डीलर',
+  'Base model — pick a trim under Variants to price that one.':
+    'बेस मॉडल — किसी खास ट्रिम की कीमत के लिए वेरिएंट में से चुनें।',
 };

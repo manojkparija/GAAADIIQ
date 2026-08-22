@@ -199,13 +199,14 @@ import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentime
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { NativeService } from '../../services/native.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-car-detail',
   standalone: true,
   imports: [
     CommonModule, RouterLink, FormsModule, IconComponent, ImgFallbackDirective,
-    MarketPositionComponent, VehicleScorecardComponent, ListingActivityComponent, CustomSelectComponent, OffersModalComponent],
+    MarketPositionComponent, VehicleScorecardComponent, ListingActivityComponent, CustomSelectComponent, OffersModalComponent, TranslatePipe],
   templateUrl: './car-detail.component.html',
   styleUrl: './car-detail.component.scss'
 })
