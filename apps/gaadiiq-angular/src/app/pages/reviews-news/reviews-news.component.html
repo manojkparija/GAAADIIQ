@@ -84,7 +84,7 @@
 <ng-container *ngIf="!isHub()">
   <section class="rn-hero">
     <div class="container">
-      <a routerLink="/reviews-news" class="back-link">← Reviews &amp; News</a>
+      <a routerLink="/reviews-news" class="back-link">{{ '← Reviews & News' | t }}</a>
       <h1 class="hero-title"><span class="gradient-text">{{ activeTab() }}</span></h1>
       <p class="hero-sub">{{ counts()[activeTab()] }} articles</p>
 

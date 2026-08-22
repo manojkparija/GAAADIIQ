@@ -1542,4 +1542,45 @@ export const HINDI: Record<string, string> = {
     'आपको करना होगा',
   'Register as a mechanic':
     'मैकेनिक के रूप में रजिस्टर करें',
+  // ── Third sweep: entity-encoded text and home/new-cars copy ──────────────
+  '← Reviews & News':
+    '← समीक्षाएं और समाचार',
+  'ARIA by GAADIIQ ·':
+    'ARIA — GAADIIQ द्वारा ·',
+  'Comfortable & stylish':
+    'आरामदायक और स्टाइलिश',
+  'Powerful & versatile':
+    'दमदार और हर काम लायक',
+  'View All 38 Brands':
+    'सभी 38 ब्रांड देखें',
+  'Instant fair market valuation — depreciation model + AI analysis when available.':
+    'तुरंत उचित बाज़ार मूल्यांकन — मूल्यह्रास मॉडल और उपलब्ध होने पर AI विश्लेषण।',
+  'Compare EMI from top banks. Pre-approval in minutes, best rates guaranteed.':
+    'बड़े बैंकों की EMI तुलना करें। मिनटों में प्री-अप्रूवल, सबसे अच्छी दरों की गारंटी।',
+  'Depreciation-based price analysis and resale value estimates for any model.':
+    'किसी भी मॉडल के लिए मूल्यह्रास आधारित कीमत विश्लेषण और पुनर्विक्रय अनुमान।',
+  'Set your target price. Get notified the moment a listing drops below it.':
+    'अपनी लक्ष्य कीमत तय करें। कोई लिस्टिंग उससे नीचे आते ही सूचना पाएं।',
+  'Book a test drive directly with the seller — from your couch, right now.':
+    'सीधे सेलर के साथ टेस्ट ड्राइव बुक करें — अभी, घर बैठे।',
+  'Top Match: Tata Nexon EV':
+    'सबसे बढ़िया मेल: Tata Nexon EV',
+  '98% compatibility score':
+    '98% अनुकूलता स्कोर',
+  '↑ 2.4% vs last month':
+    '↑ पिछले महीने से 2.4%',
+  'Max Budget: ₹1 Cr':
+    'अधिकतम बजट: ₹1 Cr',
+  'Under ₹5L':
+    '₹5L से कम',
+  'Above ₹30L':
+    '₹30L से ऊपर',
+  'Above ₹20L':
+    '₹20L से ऊपर',
+  'Stellar mileage, feature-rich at this price point':
+    'शानदार माइलेज, इस कीमत में भरपूर फीचर',
+  'Longest real-world range, excellent after-sales':
+    'असल में सबसे ज्यादा रेंज, बेहतरीन आफ्टर-सेल्स',
+  '6/7-seater, top safety scores, premium interiors':
+    '6/7 सीटर, बेहतरीन सेफ्टी स्कोर, प्रीमियम इंटीरियर',
 };

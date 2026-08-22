@@ -1,7 +1,7 @@
 <!-- Not found -->
 <ng-container *ngIf="!article()">
   <section class="ad-hero container">
-    <a [routerLink]="['/reviews-news']" class="back-link">← Reviews &amp; News</a>
+    <a [routerLink]="['/reviews-news']" class="back-link">{{ '← Reviews & News' | t }}</a>
     <div class="not-found">
       <div class="nf-icon"><app-icon name="list" [size]="40"></app-icon></div>
       <h1>{{ 'Article not found' | t }}</h1>
