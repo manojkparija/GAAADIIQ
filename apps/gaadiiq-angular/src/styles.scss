@@ -21,7 +21,10 @@
 // compare's sticky header — which positions itself at var(--nav-offset) — sits
 // 28px under the bar and is covered by it.
 @media (min-width: 1351px) {
-  :root { --nav-height: 90px; }
+  // 95px with the labels at 1.1rem/800. Re-measured every time the row's type
+  // changes, because nothing recomputes this: it is a literal that has to be
+  // kept honest by hand, and it was 34px stale once already.
+  :root { --nav-height: 95px; }
 }
 
 // ── Light (default) ──────────────────────────────────────────────────────────

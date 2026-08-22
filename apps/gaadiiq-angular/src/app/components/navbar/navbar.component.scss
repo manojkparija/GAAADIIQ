@@ -120,13 +120,16 @@
   padding-bottom: 4px;
   a {
     color: var(--text);
-    font-weight: 700;
+    // 800, up from 700 — asked for directly.
+    font-weight: 800;
     // 0.8rem originally, 0.76rem when the row was overcrowded, then 0.86rem —
     // every one of those a compromise with a row carrying thirteen labels.
     // Splitting the AI tools onto a second row leaves nine above and four
     // below, so the type no longer has to be sized to fit and can simply be
-    // sized to read.
-    font-size: 1rem;
+    // sized to read. Raised again to 1.1rem by request; measured at 1351px,
+    // the narrowest width that still shows both rows, and the bar does not
+    // overflow.
+    font-size: 1.1rem;
     // Labels are single-line by design. Without this a two-word item breaks
     // across lines once the row runs short of space, and because every item
     // then grows taller the whole bar looks misaligned rather than merely
