@@ -7,8 +7,21 @@
   --safe-left:   env(safe-area-inset-left,   0px);
   --safe-right:  env(safe-area-inset-right,  0px);
   // Nav height + notch clearance (LAY-007)
-  --nav-height:  56px;
+  // Measured in a browser, not estimated: the bar renders 62px at every width
+  // where it shows the hamburger. It had said 56px since before the logo took
+  // its current size, so anything positioned against --nav-offset sat 6px too
+  // high. See the min-width override below for the two-row desktop bar.
+  --nav-height:  62px;
   --nav-offset:  calc(var(--nav-height) + var(--safe-top));
+}
+
+// Above 1350px the navbar shows its two link rows instead of the hamburger and
+// measures 90px, not 62. The breakpoint is the navbar's own (navbar.component
+// .scss), and the height is measured at 1351, 1440 and 1920px. Without this,
+// compare's sticky header — which positions itself at var(--nav-offset) — sits
+// 28px under the bar and is covered by it.
+@media (min-width: 1351px) {
+  :root { --nav-height: 90px; }
 }
 
 // ── Light (default) ──────────────────────────────────────────────────────────
