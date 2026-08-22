@@ -46,6 +46,7 @@ from routers import (  # noqa: E402
     diagnosis_kb,
     health,
     insurance,
+    leads,
     listings,
     loan_applications,
     loans,
@@ -466,6 +467,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(diagnosis_kb.router)
 app.include_router(otp.router)
+app.include_router(leads.router)
 app.include_router(admin.router)
 app.include_router(cars.router)
 app.include_router(listings.router)
