@@ -595,7 +595,10 @@
 
 .nav-menu-group {
   padding: 0.4rem 0.7rem 0.2rem;
-  font-size: 0.68rem;
+  // 0.68rem computed to 10.88px, under the 11px floor the type system
+  // declares. typography.spec.ts never caught it because it does not open the
+  // menus — found by scanning the rendered DOM with them open.
+  font-size: 0.7rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -664,7 +667,11 @@
   font-size: 0.85rem;
   cursor: pointer;
   &:hover { border-color: var(--primary); }
-  .nav-caret { font-size: 0.7em; }
+  // Absolute, not 0.7em. Relative to this button's 0.85rem the caret computed
+  // to 10px, under the 11px floor e2e/typography.spec.ts enforces — and since
+  // the navbar is on every page, that one declaration failed the check on all
+  // 26 routes it covers.
+  .nav-caret { font-size: 0.75rem; }
 }
 
 .lang-menu {
