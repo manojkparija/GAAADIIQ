@@ -7,11 +7,12 @@ import { SubscriptionService, SubscriptionPlan } from '../../services/subscripti
 import { AnalyticsService } from '../../services/analytics.service';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-pricing-plans',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TranslatePipe],
   templateUrl: './pricing-plans.component.html',
   styleUrl: './pricing-plans.component.scss',
 })

@@ -999,4 +999,79 @@ export const HINDI: Record<string, string> = {
     '🔒 आपका विवरण सुरक्षित है। सेलर 2 घंटे के भीतर पुष्टि करेगा।',
   'Test Drive Booked!':
     'टेस्ट ड्राइव बुक हो गई!',
+  // ── Media, pricing, about ────────────────────────────────────────────────
+  'GAADIIQ Media':
+    'GAADIIQ मीडिया',
+  'Expert reviews, real owner stories, breaking news and in-depth special reports on the Indian automotive world.':
+    'भारतीय ऑटोमोटिव जगत पर विशेषज्ञ समीक्षाएं, असली मालिकों की कहानियां, ताज़ा खबरें और विस्तृत विशेष रिपोर्ट।',
+  'Share Your Car Experience':
+    'अपनी कार का अनुभव साझा करें',
+  'Owned a car? Help thousands of buyers with your honest review — text or video.':
+    'कार रखी है? अपनी सच्ची समीक्षा से हजारों खरीदारों की मदद करें — लिखकर या वीडियो से।',
+  'Pick a Car to Review →':
+    'समीक्षा के लिए कार चुनें →',
+  'Featured':
+    'चुनिंदा',
+  'Stories':
+    'कहानियां',
+  'Read more →':
+    'और पढ़ें →',
+  'Curated':
+    'चयनित',
+  'Articles':
+    'लेख',
+  'The latest news results above still match your search.':
+    'ऊपर दिए ताज़ा समाचार अब भी आपकी खोज से मेल खाते हैं।',
+  'Clear Search':
+    'खोज हटाएं',
+  'Simple,':
+    'सरल,',
+  'Transparent':
+    'पारदर्शी',
+  'Pricing':
+    'कीमत',
+  "Start free. Upgrade when you're ready. No hidden charges, no surprises.":
+    'मुफ्त शुरू करें। तैयार हों तब अपग्रेड करें। कोई छिपा शुल्क नहीं, कोई हैरानी नहीं।',
+  'Monthly':
+    'मासिक',
+  'Yearly':
+    'सालाना',
+  'Save 2 months':
+    '2 महीने बचाएं',
+  'Full':
+    'पूरी',
+  'Feature Comparison':
+    'फीचर तुलना',
+  'Free':
+    'मुफ्त',
+  'Frequently':
+    'अक्सर',
+  'Our Story':
+    'हमारी कहानी',
+  "We're Making Car Buying":
+    'हम कार खरीदना बना रहे हैं',
+  'Smarter for India':
+    'भारत के लिए और समझदार',
+  'GAADIIQ was born out of frustration. Our founders spent months trying to buy a used car — only to encounter fake listings, opaque pricing, and pushy dealers. So we built the platform we wished existed.':
+    'GAADIIQ परेशानी से जन्मा। हमारे संस्थापकों ने महीनों एक पुरानी कार खरीदने की कोशिश की — और उन्हें मिलीं नकली लिस्टिंग, अस्पष्ट कीमतें और दबाव डालने वाले डीलर। इसलिए हमने वह प्लेटफॉर्म बनाया जो हम चाहते थे कि होता।',
+  'Our Mission':
+    'हमारा मिशन',
+  'To give every Indian car buyer the same advantage that a seasoned industry insider has — real-time market intelligence, AI-powered price analysis, and verified listings — completely free.':
+    'हर भारतीय कार खरीदार को वही बढ़त देना जो इंडस्ट्री के अनुभवी जानकार के पास होती है — रीयल-टाइम बाज़ार जानकारी, AI आधारित कीमत विश्लेषण और वेरिफाइड लिस्टिंग — पूरी तरह मुफ्त।',
+  'For sellers and dealers, we eliminate friction: instant AI valuations, quality leads, and tools to close faster.':
+    'सेलर और डीलर के लिए हम अड़चनें हटाते हैं: तुरंत AI मूल्यांकन, अच्छे लीड और तेज़ी से सौदा पूरा करने के टूल।',
+  'What We':
+    'हम किसके',
+  'Stand For':
+    'लिए खड़े हैं',
+  'Join':
+    'जुड़ें',
+  'Smart Car Buyers':
+    'समझदार कार खरीदारों से',
+  'Find your perfect car with AI-powered recommendations, verified listings, and transparent pricing.':
+    'AI आधारित सिफारिशों, वेरिफाइड लिस्टिंग और पारदर्शी कीमतों के साथ अपनी सही कार खोजें।',
+  'Browse Cars →':
+    'कारें देखें →',
+  'Create Free Account':
+    'मुफ्त अकाउंट बनाएं',
 };

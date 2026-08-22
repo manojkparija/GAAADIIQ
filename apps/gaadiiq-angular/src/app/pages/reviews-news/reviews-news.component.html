@@ -2,9 +2,9 @@
 <ng-container *ngIf="isHub()">
   <section class="rn-hero">
     <div class="container">
-      <div class="hero-badge"><app-icon name="newspaper" [size]="16"></app-icon> GAADIIQ Media</div>
+      <div class="hero-badge"><app-icon name="newspaper" [size]="16"></app-icon> {{ 'GAADIIQ Media' | t }}</div>
       <h1 class="hero-title">Reviews &amp; <span class="gradient-text">News</span></h1>
-      <p class="hero-sub">Expert reviews, real owner stories, breaking news and in-depth special reports on the Indian automotive world.</p>
+      <p class="hero-sub">{{ 'Expert reviews, real owner stories, breaking news and in-depth special reports on the Indian automotive world.' | t }}</p>
     </div>
   </section>
 
@@ -39,17 +39,17 @@
       <div class="wrc-left">
         <div class="wrc-icon"><app-icon name="pen-line" [size]="28"></app-icon></div>
         <div>
-          <h3 class="wrc-title">Share Your Car Experience</h3>
-          <p class="wrc-sub">Owned a car? Help thousands of buyers with your honest review — text or video.</p>
+          <h3 class="wrc-title">{{ 'Share Your Car Experience' | t }}</h3>
+          <p class="wrc-sub">{{ 'Owned a car? Help thousands of buyers with your honest review — text or video.' | t }}</p>
         </div>
       </div>
-      <a routerLink="/listings" class="btn-gradient wrc-btn">Pick a Car to Review →</a>
+      <a routerLink="/listings" class="btn-gradient wrc-btn">{{ 'Pick a Car to Review →' | t }}</a>
     </div>
   </section>
 
   <!-- Featured Stories -->
   <section class="featured-section container">
-    <h2 class="sec-head">Featured <span class="gradient-text">Stories</span></h2>
+    <h2 class="sec-head">{{ 'Featured' | t }} <span class="gradient-text">{{ 'Stories' | t }}</span></h2>
     <div class="featured-grid">
       <a class="featured-card glass-card" *ngFor="let a of featured" [routerLink]="['/reviews-news', slugMap[a.category], a.id]">
         <div class="fc-image"><app-icon [name]="a.image" [size]="44"></app-icon></div>
@@ -139,13 +139,13 @@
             </div>
             <h3 class="lc-title">{{ a.title }}</h3>
             <p class="lc-desc">{{ a.description }}</p>
-            <span class="lc-read">Read more →</span>
+            <span class="lc-read">{{ 'Read more →' | t }}</span>
           </div>
         </div>
       </div>
 
       <h2 class="sec-head" style="margin-top:2.5rem">
-        Curated <span class="gradient-text">Articles</span>
+        {{ 'Curated' | t }} <span class="gradient-text">{{ 'Articles' | t }}</span>
       </h2>
     </ng-container>
 
@@ -185,9 +185,9 @@
         <!-- On the news page the live results above are searched separately, so
              this only ever means the hand-written articles had no match. -->
         <p class="nr-hint" *ngIf="isNewsPage() && liveArticles().length">
-          The latest news results above still match your search.
+          {{ 'The latest news results above still match your search.' | t }}
         </p>
-        <button class="btn-outline" (click)="onSearch('')">Clear Search</button>
+        <button class="btn-outline" (click)="onSearch('')">{{ 'Clear Search' | t }}</button>
       </div>
     </ng-template>
   </section>
