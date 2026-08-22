@@ -6,7 +6,54 @@
 
     <ul class="nav-links hide-mobile">
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a></li>
-      <li><a routerLink="/new-cars" routerLinkActive="active">New Cars</a></li>
+      <!-- New Cars is a menu rather than a link because it is the one section
+           with several genuine ways in — by body type, by fuel, by brand.
+           Everything listed resolves to a page that exists; the reference menu
+           this follows also offers Offers & Discounts, Find Dealers and Fuel
+           Prices, and we have none of that data. -->
+      <li class="nav-dropdown">
+        <button type="button" class="nav-dropdown-trigger"
+                [class.open]="newCarsOpen()"
+                (click)="toggleNewCars()"
+                [attr.aria-expanded]="newCarsOpen()" aria-haspopup="true">
+          New Cars <span class="nav-caret" aria-hidden="true">▾</span>
+        </button>
+
+        <div class="nav-menu" *ngIf="newCarsOpen()" role="menu">
+          <a routerLink="/new-cars" class="nav-menu-item nav-menu-lead" role="menuitem">
+            Explore New Cars
+          </a>
+          <a routerLink="/new-cars" fragment="upcoming" class="nav-menu-item" role="menuitem">
+            Upcoming Cars
+          </a>
+          <a routerLink="/compare" class="nav-menu-item" role="menuitem">Compare Cars</a>
+          <a routerLink="/ev-calculator" class="nav-menu-item" role="menuitem">EV Savings Calculator</a>
+
+          <div class="nav-menu-sep"></div>
+
+          <div class="nav-menu-group">By body type</div>
+          <div class="nav-menu-chips">
+            <a *ngFor="let b of bodyTypes" class="nav-menu-chip" role="menuitem"
+               routerLink="/new-cars" [queryParams]="{ bodyType: b }">{{ b }}</a>
+          </div>
+
+          <div class="nav-menu-group">By fuel</div>
+          <div class="nav-menu-chips">
+            <a *ngFor="let f of fuels" class="nav-menu-chip" role="menuitem"
+               routerLink="/new-cars" [queryParams]="{ fuel: f }">{{ f }}</a>
+          </div>
+
+          <!-- Brands come from the catalogue, so this section disappears
+               entirely rather than offering a make with nothing behind it. -->
+          <ng-container *ngIf="newCarBrands().length">
+            <div class="nav-menu-group">By brand</div>
+            <div class="nav-menu-chips">
+              <a *ngFor="let m of newCarBrands()" class="nav-menu-chip" role="menuitem"
+                 routerLink="/new-cars" [queryParams]="{ make: m }">{{ m }}</a>
+            </div>
+          </ng-container>
+        </div>
+      </li>
       <li><a routerLink="/used-cars" routerLinkActive="active">Used Cars</a></li>
       <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
       <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>

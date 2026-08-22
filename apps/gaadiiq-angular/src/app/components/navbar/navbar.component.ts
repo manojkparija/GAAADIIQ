@@ -8,6 +8,7 @@ import { ThemeService } from '../../services/theme.service';
 import { CityService } from '../../services/city.service';
 import { LanguageService } from '../../services/language.service';
 import { CitySelectorComponent } from '../city-selector/city-selector.component';
+import { CarsDataService } from '../../services/cars-data.service';
 
 @Component({
   selector: 'app-navbar',
@@ -22,6 +23,40 @@ export class NavbarComponent {
   private _darkHero = signal(false);
   scrolled = computed(() => this._scrolled() || this._darkHero());
 
+  // ── New Cars mega-menu ───────────────────────────────────────────────────
+  newCarsOpen = signal(false);
+
+  /**
+   * Only what the site can actually answer.
+   *
+   * The menu this was modelled on lists Offers & Discounts, Find Dealers, EV
+   * Charging Stations and Fuel Prices. We have no offers data, no dealer
+   * directory and no station data, so those would be entries that look like
+   * navigation and lead nowhere — worse than a shorter menu, because a dead
+   * link costs a click and some trust before it teaches the reader anything.
+   *
+   * Every entry below resolves to a page that exists, using query parameters
+   * /new-cars already honours (bodyType, fuel, make).
+   */
+  readonly bodyTypes = ['SUV', 'Hatchback', 'Sedan', 'MUV'];
+  readonly fuels = ['Electric', 'Petrol', 'Diesel', 'CNG', 'Hybrid'];
+
+  /**
+   * Brands taken from the catalogue rather than a fixed list, so the menu can
+   * never offer a make with nothing behind it. Two models today means two
+   * makes at most; it grows on its own as cars are added.
+   */
+  newCarBrands = computed(() => {
+    const makes = this.carsData.cars()
+      .filter(c => c.km === 0 && c.year >= 2024)
+      .map(c => c.make)
+      .filter(Boolean);
+    return [...new Set(makes)].sort();
+  });
+
+  toggleNewCars(): void { this.newCarsOpen.update(v => !v); }
+  closeNewCars(): void { this.newCarsOpen.set(false); }
+
   menuOpen = signal(false);
   userMenuOpen = signal(false);
   cityModalOpen = signal(false);
@@ -32,9 +67,12 @@ export class NavbarComponent {
     public theme: ThemeService,
     public city: CityService,
     public lang: LanguageService,
+    private carsData: CarsDataService,
     router: Router
   ) {
     router.events.subscribe(e => {
+      // A menu left open across a navigation covers the page you just asked for.
+      if (e instanceof NavigationEnd) this.newCarsOpen.set(false);
       if (e instanceof NavigationEnd) {
         this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
       }
@@ -50,6 +88,16 @@ export class NavbarComponent {
     if (this.userMenuOpen() && !target.closest('.user-menu-wrap')) {
       this.userMenuOpen.set(false);
     }
+    if (this.newCarsOpen() && !target.closest('.nav-dropdown')) {
+      this.newCarsOpen.set(false);
+    }
+  }
+
+  /** Escape closes the menu, so a keyboard user is not trapped inside it. */
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    this.newCarsOpen.set(false);
+    this.userMenuOpen.set(false);
   }
 
   toggleMenu() { this.menuOpen.update(v => !v); }
