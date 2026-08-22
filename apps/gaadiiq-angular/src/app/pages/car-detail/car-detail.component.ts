@@ -189,6 +189,7 @@ const COLOUR_HEX: Record<string, string> = {
 import { TcoService } from '../../services/tco.service';
 import { ForecastYear, ResaleForecastService } from '../../services/resale-forecast.service';
 import { ReviewsService, CarReview } from '../../services/reviews.service';
+import { OffersModalComponent } from '../../components/offers-modal/offers-modal.component';
 import { SeoService } from '../../services/seo.service';
 import { computeOnRoadPrice } from '../../utils/on-road-price';
 import { SellersService, Seller } from '../../services/sellers.service';
@@ -204,7 +205,7 @@ import { NativeService } from '../../services/native.service';
   standalone: true,
   imports: [
     CommonModule, RouterLink, FormsModule, IconComponent, ImgFallbackDirective,
-    MarketPositionComponent, VehicleScorecardComponent, ListingActivityComponent, CustomSelectComponent],
+    MarketPositionComponent, VehicleScorecardComponent, ListingActivityComponent, CustomSelectComponent, OffersModalComponent],
   templateUrl: './car-detail.component.html',
   styleUrl: './car-detail.component.scss'
 })
@@ -1043,6 +1044,13 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   }
 
   get isNewCar() { return this.car?.km === 0 && this.car?.year >= 2024; }
+
+  /** Lead-capture modal. A signal because the template gates on it. */
+  offersOpen = signal(false);
+
+  openOffers(): void {
+    this.offersOpen.set(true);
+  }
   /**
    * Brochure specs worth a pill in the Overview.
    *

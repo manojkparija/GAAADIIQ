@@ -17,6 +17,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { FormsModule } from '@angular/forms';
 import { NativeService, NativePhoto } from '../../services/native.service';
+import { LeadService, CarLead, LeadStatus, LEAD_STATUSES } from '../../services/lead.service';
 
 interface CarEnquiry {
   id: string; car_id: string; buyer_name: string; buyer_phone: string;
@@ -72,7 +73,22 @@ export class DealerDashboardComponent {
     { model: 'Maruti Alto K10', views: 176, enquiries: 9 },
   ];
 
-  activeTab = signal<'overview' | 'leads' | 'inventory' | 'analytics' | 'test-drives' | 'enquiries'>('overview');
+  activeTab = signal<'overview' | 'leads' | 'inventory' | 'analytics' | 'test-drives' | 'enquiries' | 'car-leads'>('overview');
+
+  // ── New-car leads ────────────────────────────────────────────────────────
+  readonly leadStatuses = LEAD_STATUSES;
+  carLeads     = signal<CarLead[]>([]);
+  leadsLoading = signal(false);
+  /**
+   * Held rather than swallowed. A failed fetch and an empty inbox look
+   * identical on screen otherwise, and one of them means buyers are waiting
+   * for a call nobody knows to make.
+   */
+  leadsError    = signal<string | null>(null);
+  savingLeadId  = signal<string | null>(null);
+
+  /** Unworked leads — what the tab badge counts. */
+  newLeads = computed(() => this.carLeads().filter(l => l.status === 'new'));
 
   // ── Sentiment / AI Leads ────────────────────────────────────────────────
   sentimentLeads = this.sentimentSvc.leads;
@@ -245,7 +261,8 @@ export class DealerDashboardComponent {
               private sb: SupabaseService, public sentimentSvc: SentimentService,
               private dealerImages: DealerCarImagesService,
               private myListingsSvc: MyListingsService,
-              private native: NativeService) {
+              private native: NativeService,
+              private leadSvc: LeadService) {
     seo.setPage('Dealer Dashboard', 'Dealer intelligence dashboard — listings, leads, analytics.');
     this.loadSellerInfo();
     this.sentimentSvc.loadLeads();
@@ -276,6 +293,46 @@ export class DealerDashboardComponent {
 
     // Load buyer enquiries for this seller's car listings
     this.loadEnquiries(sellerId ?? null);
+    this.loadLeads();
+  }
+
+  private async loadLeads(): Promise<void> {
+    this.leadsLoading.set(true);
+    this.leadsError.set(null);
+    try {
+      this.carLeads.set(await this.leadSvc.list());
+    } catch (e: any) {
+      // 403 is a real answer, not a fault: the account is not a dealer. Saying
+      // so beats "could not load", which sends someone hunting a bug.
+      this.leadsError.set(
+        e?.status === 403
+          ? 'This account is not registered as a dealer, so it has no lead inbox.'
+          : 'Could not load your leads. Refresh to try again.',
+      );
+    } finally {
+      this.leadsLoading.set(false);
+    }
+  }
+
+  async setLeadStatus(lead: CarLead, status: LeadStatus): Promise<void> {
+    if (lead.status === status) return;
+    const previous = lead.status;
+    this.savingLeadId.set(lead.id);
+    // Optimistic, then rolled back on failure: a status that silently reverts
+    // on the next load is how a dealer loses track of who they have called.
+    this.carLeads.update(rows =>
+      rows.map(r => (r.id === lead.id ? { ...r, status } : r)),
+    );
+    try {
+      await this.leadSvc.setStatus(lead.id, status);
+    } catch {
+      this.carLeads.update(rows =>
+        rows.map(r => (r.id === lead.id ? { ...r, status: previous } : r)),
+      );
+      this.leadsError.set('Could not save that status. It has been put back.');
+    } finally {
+      this.savingLeadId.set(null);
+    }
   }
 
   private async loadEnquiries(sellerId: number | null) {

@@ -1,4 +1,5 @@
 from .car import Car
+from .car_lead import CarLead, LeadSource, LeadStatus
 from .car_variant import CarVariant, VariantSource, VariantStatus
 from .customer_intent import CustomerActivity, CustomerIntentScore
 from .dealer import Dealer
@@ -87,4 +88,5 @@ __all__ = [
     "ServiceRequest",
     "ServiceRequestOffer", "ServiceRequestStatus",
     "WhatsAppMessage", "WhatsAppTemplate", "WhatsAppStatus",
+    "CarLead", "LeadSource", "LeadStatus",
 ]
