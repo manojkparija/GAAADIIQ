@@ -52,7 +52,7 @@ describe('navbar — language picker', () => {
   afterEach(() => localStorage.removeItem('gaadiiq_lang'));
 
   function navLabels(): string[] {
-    return Array.from(fixture.nativeElement.querySelectorAll('.nav-stack .nav-links > li'))
+    return Array.from(fixture.nativeElement.querySelectorAll('.nav-links > li'))
       .map(li => ((li as HTMLElement).querySelector('a, .nav-dropdown-trigger') as HTMLElement)
         .textContent!.trim());
   }

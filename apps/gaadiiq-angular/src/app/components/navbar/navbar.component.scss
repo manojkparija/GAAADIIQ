@@ -1,41 +1,62 @@
+/*
+  Premium two-level bar.
+
+  Structure: .nav-top holds the logo, primary links and utility pills;
+  .nav-ai holds the AI feature tabs. Both sit inside .navbar, which is the
+  fixed element and the one that compacts on scroll.
+
+  CONTRAST NOTE, load-bearing. The brief asks for a blue→teal gradient behind
+  white text on the active AI tab. The house --gradient-cta cannot carry white
+  text: it passes through #06B6D4, where white measures 2.43:1 against a 4.5:1
+  AA floor, and e2e/contrast.spec.ts walks the rendered DOM and fails under AA.
+  --gradient-ai below is the same blue→teal move in darker stops — #1D4ED8 to
+  #0F766E — where white measures 5.19:1 and 5.54:1. It reads as the same idea
+  and is legible; the bright gradient stays for decorative fills that carry no
+  text.
+*/
 .navbar {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 1000;
-  transition: all 0.3s ease;
   // LAY-001: push content below status bar / notch
-  padding-top: max(0.6rem, var(--safe-top));
-  padding-bottom: 0.6rem;
+  padding-top: var(--safe-top);
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--glass-border);
-  box-shadow: var(--card-shadow);
+
+  // Glass rather than a flat fill: the page pattern reads faintly through it,
+  // which is what stops a white bar on a white page looking like a seam.
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 10%, var(--divider));
+  // No shadow at rest — it only appears once the page has moved under the bar,
+  // which is the moment the reader needs the two separated.
+  box-shadow: none;
+  transition: box-shadow .25s ease, background .25s ease;
 
   &.scrolled {
-    background: var(--glass);
-    backdrop-filter: blur(24px);
-    border-bottom-color: var(--border-soft);
-    box-shadow: 0 2px 16px rgba(15,23,42,0.08);
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    box-shadow: 0 6px 24px rgba(15, 23, 42, .08);
   }
 }
 
-// The navbar is not page content and should not be boxed by the 1280px
-// .container: at that width the twelve links needed 970px and were given 753,
-// so "Reviews & News" and "My Journey" were simply cut off with the scrollbar
-// hidden — no affordance, no indication anything was missing.
-.navbar .container {
-  max-width: 1580px;
+/* Blue→teal in stops dark enough to carry white text. See the note above. */
+:host {
+  --gradient-ai: linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
 }
+
+.nav-top { padding: 0.55rem 0; transition: padding .25s ease; }
+.navbar.scrolled .nav-top { padding: 0.3rem 0; }
+
+// The bar is not page content and should not be boxed by the 1280px
+// .container: at that width the links were cut off with the scrollbar hidden.
+.navbar .container { max-width: 1580px; }
 
 .nav-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  min-width: 0; // allow children to shrink
+  gap: 1rem;
+  min-width: 0;
 }
 
 .logo {
@@ -43,138 +64,349 @@
   align-items: center;
   text-decoration: none;
   flex-shrink: 0;
+  transition: transform .25s ease;
 
-  @media (max-width: 360px) {
-    svg { width: 130px; height: 32px; }
-  }
+  // Shrinks with the bar rather than staying put and unbalancing it.
+  .navbar.scrolled & { transform: scale(0.9); transform-origin: left center; }
+
+  @media (max-width: 360px) { svg { width: 130px; height: 32px; } }
 }
 
 .logo-svg {
   display: block;
-
-  .logo-word-main {
-    fill: var(--text);
-  }
-
-  .logo-ii-a {
-    fill: #2B6BFF;
-  }
-
-  .logo-ii-b {
-    fill: #00D4A8;
-    opacity: 0.7;
-  }
-
-  .logo-word-iq {
-    fill: #00D4A8;
-  }
+  .logo-word-main { fill: var(--text); }
+  .logo-ii-a { fill: #2B6BFF; }
+  .logo-ii-b { fill: #00D4A8; opacity: 0.7; }
+  .logo-word-iq { fill: #00D4A8; }
 }
 
-// Holds the two link rows. It takes the flex space the single <ul> used to,
-// so the actions on the right still keep their width.
-.nav-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-// Second row: the AI tools. Set apart by a hairline rather than a different
-// colour — the row already reads as a group by position, and tinting four
-// labels would fight the hover underline they share with the row above.
-.nav-row-ai {
-  padding-top: 0.3rem;
-  border-top: 1px solid var(--divider);
-}
-
+/* ── Primary links ───────────────────────────────────────────────────────── */
 .nav-links {
   display: flex;
+  align-items: center;
   list-style: none;
-  // Tightened twice now, from 0.85rem and then from 0.55rem. Twelve gaps at
-  // the original value cost 150px of a row that had none to spare, and the
-  // alternative to tightening was hiding half the links behind a "Tools"
-  // menu — which fitted beautifully and meant nobody found the calculators.
-  gap: 0.5rem;
-
-  // The row of labels is the part that gives way when the bar runs out of
-  // width, not the actions beside it. Before this the list refused to shrink,
-  // so at 1280px the content measured 1349px and pushed "Select City" and
-  // "Sign In" off the right edge entirely — measured, and already true before
-  // "Find Mechanic" was added, which then made it 1473px.
-  //
-  // Sign-in being unreachable is a worse failure than a nav item needing a
-  // scroll, so the links scroll and the actions stay put.
+  gap: 0.15rem;
+  margin: 0 auto;          // centred between logo and utilities
+  padding: 0;
   min-width: 0;
-  // No scroll container any more. It was added when this row carried thirteen
-  // links and overflowed at every laptop width, and it did the right thing at
-  // the time — sign-in being pushed off the edge is worse than a row that
-  // scrolls. Grouping the tools took it to eight items, which fits with room
-  // to spare at 1280px, so the scrolling is no longer earned.
-  //
-  // It also has to go: `overflow-x: auto` makes the other axis clip too, so
-  // the Tools menu hanging below this row was cut off at the bar's edge. It
-  // was in the DOM, it reported itself visible, and none of it was on screen.
-  //
-  // Room for the focus underline, which sits at bottom: -4px.
-  padding-bottom: 4px;
-  // Both shapes, deliberately. New Cars and Used Cars are <button> triggers,
-  // not links, and a button inherits none of this — so with the rule scoped to
-  // `a` they alone stayed at the browser's default weight and looked lighter
-  // than every label beside them. `font: inherit` on the trigger was not
-  // enough: it inherits from .nav-links, which sets no weight or size of its
-  // own, so there was nothing to inherit.
+
   a, .nav-dropdown-trigger {
-    color: var(--text);
-    // Light, and uniform across the bar. It went 700 to 800 briefly; seeing it
-    // rendered, the lighter weight the two dropdown triggers were accidentally
-    // showing was the one that was wanted, so that is now what every label
-    // uses. The size is unchanged — this is weight only.
-    font-weight: 400;
-    // 0.8rem originally, 0.76rem when the row was overcrowded, then 0.86rem —
-    // every one of those a compromise with a row carrying thirteen labels.
-    // Splitting the AI tools onto a second row leaves nine above and four
-    // below, so the type no longer has to be sized to fit and can simply be
-    // sized to read. Raised again to 1.1rem by request; measured at 1351px,
-    // the narrowest width that still shows both rows, and the bar does not
-    // overflow.
-    font-size: 1.1rem;
-    // Labels are single-line by design. Without this a two-word item breaks
-    // across lines once the row runs short of space, and because every item
-    // then grows taller the whole bar looks misaligned rather than merely
-    // tight — which is what adding one long label caused.
-    white-space: nowrap;
-    transition: color 0.2s;
-    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.45rem 0.7rem;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
     font-family: 'Manrope', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+    position: relative;
+    transition: color .18s ease, background .18s ease;
+
+    // The sliding underline. scaleX from the centre rather than a width
+    // animation, so it does not reflow anything as it grows.
     &::after {
       content: '';
       position: absolute;
-      bottom: -4px; left: 0; right: 0;
+      left: 0.7rem; right: 0.7rem; bottom: 0.15rem;
       height: 2px;
-      background: var(--gradient);
       border-radius: 2px;
+      background: var(--gradient-ai);
       transform: scaleX(0);
-      transition: transform 0.2s;
+      transition: transform .22s cubic-bezier(.4, 0, .2, 1);
     }
-    &:hover, &.active { color: var(--text); &::after { transform: scaleX(1); } }
 
-    // Roadside help reads in the same ink as every other label, by request. It
-    // was tinted to stand out; the row is uniform now, and the hover underline
-    // every other item has is what marks it instead.
-    &.nav-urgent {
+    &:hover {
       color: var(--text);
+      background: color-mix(in srgb, var(--primary) 6%, transparent);
+    }
+    &:hover::after { transform: scaleX(1); }
+
+    &.active {
+      color: var(--text);
+      &::after { transform: scaleX(1); }
     }
   }
 }
 
-.nav-actions {
+.nav-caret {
+  opacity: .6;
+  transition: transform .2s ease;
+  .nav-dropdown-trigger.open & { transform: rotate(180deg); }
+}
+
+.nav-dropdown { position: relative; }
+
+/* ── Mega menus ──────────────────────────────────────────────────────────── */
+.nav-mega {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  left: 0;
+  z-index: 300;
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 20px 48px rgba(11, 18, 32, .14);
+  max-height: min(76vh, 40rem);
+  overflow-y: auto;
+  // Fade and slide, which is the difference between a panel appearing and a
+  // panel arriving.
+  animation: navMegaIn .18s cubic-bezier(.4, 0, .2, 1);
+}
+
+@keyframes navMegaIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-mega { animation: none; }
+  .nav-links a::after, .nav-links .nav-dropdown-trigger::after { transition: none; }
+}
+
+.nav-mega-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(11rem, 1fr));
+  gap: 0.4rem 1.6rem;
+}
+
+/* The finance menu has two items; three columns would be mostly whitespace. */
+.nav-mega-sm { min-width: 15rem; padding: 0.5rem; }
+
+.nav-mega-col { min-width: 0; }
+
+.nav-mega-head {
+  padding: 0.5rem 0.5rem 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.nav-mega-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  // Never squeezed out: this is where signing in lives.
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .16s ease, transform .16s ease;
+
+  app-icon { color: var(--primary); flex-shrink: 0; }
+
+  &:hover {
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+    transform: translateX(2px);
+  }
+}
+.nav-mega-lead { font-weight: 700; }
+
+.nav-mega-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.2rem, 1fr));
+  gap: 0.35rem;
+  padding: 0 0.5rem 0.6rem;
+}
+
+/* Outline chips, not filled ones. Twenty filled gradient chips in one panel is
+   a wall of colour with no hierarchy left for the active state to use. */
+.nav-menu-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 1.9rem;
+  padding: 0 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: var(--fill-soft);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: border-color .16s ease, background .16s ease, color .16s ease;
+
+  &:hover {
+    border-color: transparent;
+    background: var(--gradient-ai);
+    color: #fff;
+  }
+}
+
+/* ── Utility pills ───────────────────────────────────────────────────────── */
+.nav-utils {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;      // never squeezed out: sign-in lives here
+}
+
+.util-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 2.15rem;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+
+  app-icon { color: var(--primary); }
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, .08);
+  }
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+}
+
+.util-icon { padding: 0; width: 2.15rem; justify-content: center; }
+
+/* City is the loudest utility on purpose — it decides on-road price and what
+   stock a buyer is shown. --primary on a 12% tint of itself, not white on the
+   gradient, so the label clears AA. */
+.util-pill-primary {
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background: color-mix(in srgb, var(--primary) 10%, var(--bg));
+  color: var(--primary-ink, var(--primary));
+  font-weight: 700;
+  app-icon { color: currentColor; }
+}
+
+.city-label { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.lang-wrap { position: relative; }
+
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  z-index: 300;
+  min-width: 9rem;
+  padding: 0.3rem;
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 14px 34px rgba(11, 18, 32, .16);
+  display: flex;
+  flex-direction: column;
+  animation: navMegaIn .16s ease;
+}
+
+.lang-option {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  &:hover { background: var(--fill-soft); }
+  // Marks which language is in use, so the list answers "which am I on?" as
+  // well as "what can I switch to?"
+  &.is-current { font-weight: 700; }
+}
+
+/* ── AI feature tabs ─────────────────────────────────────────────────────── */
+.nav-ai {
+  border-top: 1px solid color-mix(in srgb, var(--primary) 8%, var(--divider));
+  background: color-mix(in srgb, var(--primary) 3%, transparent);
+}
+
+.nav-ai-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  // Horizontal scroll rather than wrap: a wrapping row changes the bar's
+  // height per page, and every page offsets its content by --nav-offset.
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.ai-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   flex-shrink: 0;
-  .btn-sm { padding: 0.45rem 1.1rem; font-size: 0.84rem; border-radius: 7px; }
+  padding: 0.38rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 650;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background .18s ease, color .18s ease, transform .18s ease,
+              box-shadow .18s ease;
+
+  app-icon { color: var(--primary); transition: color .18s ease; }
+
+  &:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+
+  // Selected: gradient fill, white text, a soft glow and a little lift.
+  &.active {
+    background: var(--gradient-ai);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 35%, transparent);
+    app-icon { color: #fff; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .util-pill, .ai-tab, .nav-mega-item { transition: none; }
+}
+
+/* Below this width the primary links become the drawer, and the utility pills
+   go with them — they used to disagree, because a leftover breakpoint from the
+   old bar hid the links at 1350px while the pills stayed to 768px, so between
+   those widths the bar showed pills and no navigation. One rule now moves both.
+
+   The AI row stays at every width: four chips that scroll. */
+@media (max-width: 1180px) {
+  .nav-links.hide-mobile, .nav-utils.hide-mobile { display: none !important; }
+  .hamburger.hide-desktop { display: flex !important; }
+  .city-btn-nav.hide-desktop { display: inline-flex !important; }
+  .nav-inner { justify-content: space-between; }
+}
+@media (min-width: 1181px) {
+  .city-btn-nav.hide-desktop { display: none !important; }
 }
 
 .hamburger {
@@ -487,31 +719,6 @@
 // Matches the rest of the menu, same as its desktop counterpart.
 .mobile-urgent {
   font-weight: 700;
-}
-
-// The desktop row hands over to the hamburger at 1350px, not 768px.
-//
-// All thirteen links fit down to 1366px at the current type size — measured,
-// no overflow — and stop fitting just below it: 64px over at 1300px. With the
-// scroll container gone there is nothing to say the row continued, so the
-// handover has to happen where the row actually runs out rather than where
-// phones begin.
-//
-// The number moved up from 1250 when the labels grew. That is the trade: type
-// a reader can take in at a glance, at the cost of the hamburger appearing on
-// a narrower laptop. Readability won, because a row nobody can read is not
-// navigation.
-//
-// The mobile menu already carries every link, grouped under headings, so
-// below this width it is simply the better navigation. Overrides the global
-// .hide-mobile / .hide-desktop pair for these two elements only; the rest of
-// the site keeps the 768px breakpoint.
-@media (max-width: 1350px) {
-  // The stack carries .hide-mobile now that the links live in two rows inside
-  // it. Both selectors are kept: the old one alone would stop hiding anything.
-  .nav-links.hide-mobile,
-  .nav-stack.hide-mobile { display: none !important; }
-  .hamburger.hide-desktop { display: flex !important; }
 }
 
 // ── New Cars dropdown ──────────────────────────────────────────────────────

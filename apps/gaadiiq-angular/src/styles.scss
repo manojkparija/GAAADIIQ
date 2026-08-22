@@ -7,24 +7,24 @@
   --safe-left:   env(safe-area-inset-left,   0px);
   --safe-right:  env(safe-area-inset-right,  0px);
   // Nav height + notch clearance (LAY-007)
-  // Measured in a browser, not estimated: the bar renders 62px at every width
-  // where it shows the hamburger. It had said 56px since before the logo took
-  // its current size, so anything positioned against --nav-offset sat 6px too
-  // high. See the min-width override below for the two-row desktop bar.
-  --nav-height:  62px;
+  // Measured in a browser, not estimated. The redesigned bar is two rows at
+  // every width — primary controls above, AI tabs below — and renders 109px
+  // where it shows the hamburger. This is the RESTING height: the bar compacts
+  // to 101px on scroll, and page content has to clear the taller state.
+  --nav-height:  109px;
   --nav-offset:  calc(var(--nav-height) + var(--safe-top));
 }
 
-// Above 1350px the navbar shows its two link rows instead of the hamburger and
-// measures 90px, not 62. The breakpoint is the navbar's own (navbar.component
-// .scss), and the height is measured at 1351, 1440 and 1920px. Without this,
-// compare's sticky header — which positions itself at var(--nav-offset) — sits
-// 28px under the bar and is covered by it.
-@media (min-width: 1351px) {
-  // 95px with the labels at 1.1rem/800. Re-measured every time the row's type
-  // changes, because nothing recomputes this: it is a literal that has to be
-  // kept honest by hand, and it was 34px stale once already.
-  :root { --nav-height: 95px; }
+// Above 1180px the primary links and utility pills sit on the bar rather than
+// behind the hamburger, and it measures 118px at rest (110px compacted). The
+// breakpoint is the navbar's own; both numbers were read off the rendered bar
+// at 1181, 1280, 1440 and 1920px.
+//
+// Nothing recomputes this literal. It has to be re-measured whenever the bar's
+// contents or type change, and it has been stale twice already: 34px out after
+// the two-row change, 23px out after this redesign.
+@media (min-width: 1181px) {
+  :root { --nav-height: 118px; }
 }
 
 // ── Light (default) ──────────────────────────────────────────────────────────
