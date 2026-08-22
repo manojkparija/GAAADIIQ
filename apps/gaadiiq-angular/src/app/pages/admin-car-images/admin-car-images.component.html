@@ -260,7 +260,7 @@
             }
 
             <div class="aci-form-field">
-              <label class="aci-label">Manufacturer *</label>
+              <label class="aci-label">{{ 'Manufacturer *' | t }}</label>
               @if (!customMake() && makeOptions().length) {
                 <app-custom-select class="aci-input" [options]="makeOptions()"
                                    placeholder="Select manufacturer…"
@@ -354,7 +354,7 @@
                                  [(ngModel)]="fuelType" />
             </div>
             <div class="aci-form-field">
-              <label class="aci-label">Transmission *</label>
+              <label class="aci-label">{{ 'Transmission *' | t }}</label>
               <app-custom-select class="aci-input" [options]="transmissionOptions"
                                  placeholder="Select transmission…"
                                  [(ngModel)]="transmission" />

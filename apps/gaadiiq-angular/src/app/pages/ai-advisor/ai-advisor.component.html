@@ -4,7 +4,7 @@
 <div class="advisor-page" *ngIf="phase() === 'quiz'">
   <div class="advisor-hero">
     <div class="hero-icon"><app-icon name="brain" [size]="40"></app-icon></div>
-    <h1>AI Car <span class="gradient-text">{{ 'Advisor' | t }}</span></h1>
+    <h1>{{ 'AI Car' | t }} <span class="gradient-text">{{ 'Advisor' | t }}</span></h1>
     <p class="hero-sub">Describe what you need in one line — or answer {{ totalSteps() }} questions and get data-driven recommendations with full cost analysis</p>
   </div>
 
@@ -54,7 +54,7 @@
       <div class="step-actions">
         <button class="btn-back" (click)="back()" [disabled]="stepIdx() === 0">{{ '← Back' | t }}</button>
         <button class="btn-gradient btn-next" (click)="next()" [disabled]="!canProceed()">
-          {{ stepIdx() < totalSteps() - 1 ? 'Next →' : '🚀 Find My Car' }}
+          {{ stepIdx() < totalSteps() - 1 ? ('Next →' | t) : '🚀 Find My Car' }}
         </button>
       </div>
     </div>

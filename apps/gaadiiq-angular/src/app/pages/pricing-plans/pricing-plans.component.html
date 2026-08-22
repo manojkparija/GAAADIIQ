@@ -73,9 +73,9 @@
       <div class="ct-head">
         <span>{{ 'Feature' | t }}</span>
         <span>{{ 'Free' | t }}</span>
-        <span>Buyer Pro</span>
+        <span>{{ 'Buyer Pro' | t }}</span>
         <span>{{ 'Seller' | t }}</span>
-        <span>Dealer Pro</span>
+        <span>{{ 'Dealer Pro' | t }}</span>
       </div>
       <div class="ct-row" *ngFor="let row of [
         ['Browse listings',           '✅','✅','✅','✅'],
@@ -102,7 +102,7 @@
 
   <!-- FAQ -->
   <section class="faq-section container">
-    <h2>{{ 'Frequently' | t }} <span class="gradient-text">Asked Questions</span></h2>
+    <h2>{{ 'Frequently' | t }} <span class="gradient-text">{{ 'Asked Questions' | t }}</span></h2>
     <div class="faq-list">
       <div class="faq-item glass-card" *ngFor="let f of faqs; let i = index">
         <button class="faq-q" (click)="toggleFaq(i)">
@@ -117,11 +117,11 @@
   <!-- Bottom CTA -->
   <section class="bottom-cta container">
     <div class="cta-card glass-card">
-      <h2>Still unsure? <span class="gradient-text">Start Free</span></h2>
-      <p>No credit card needed. Upgrade or cancel anytime.</p>
+      <h2>{{ 'Still unsure?' | t }} <span class="gradient-text">{{ 'Start Free' | t }}</span></h2>
+      <p>{{ 'No credit card needed. Upgrade or cancel anytime.' | t }}</p>
       <div class="cta-btns">
-        <a routerLink="/register" class="btn-gradient">Create Free Account →</a>
-        <a routerLink="/ai-advisor" class="btn-outline">Try AI Advisor</a>
+        <a routerLink="/register" class="btn-gradient">{{ 'Create Free Account →' | t }}</a>
+        <a routerLink="/ai-advisor" class="btn-outline">{{ 'Try AI Advisor' | t }}</a>
       </div>
     </div>
   </section>

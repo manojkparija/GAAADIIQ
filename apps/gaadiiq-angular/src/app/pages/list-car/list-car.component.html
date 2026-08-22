@@ -161,7 +161,7 @@
         <div class="btn-row">
           <a routerLink="/" class="btn-outline">{{ 'Cancel' | t }}</a>
           <button class="btn-gradient" (click)="nextStep()" [disabled]="!canLeaveStepOne()">
-            {{ valuationLoading() ? '⚡ Getting AI estimate…' : 'Continue →' }}
+            {{ valuationLoading() ? '⚡ Getting AI estimate…' : ('Continue →' | t) }}
           </button>
         </div>
       </div>
@@ -283,7 +283,7 @@
         <div class="btn-row">
           <button class="btn-outline" (click)="prevStep()">{{ '← Back' | t }}</button>
           <button class="btn-gradient" (click)="nextStep()"
-                  [disabled]="isNew() ? !form.exShowroomPrice : !form.price">Continue →</button>
+                  [disabled]="isNew() ? !form.exShowroomPrice : !form.price">{{ 'Continue →' | t }}</button>
         </div>
       </div>
     }

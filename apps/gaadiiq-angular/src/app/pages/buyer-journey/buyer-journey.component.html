@@ -1,7 +1,7 @@
 <div class="bj-wrap">
   <div class="bj-hero">
     <div class="container">
-      <div class="bj-badge">🧭 Buyer Journey</div>
+      <div class="bj-badge">{{ '🧭 Buyer Journey' | t }}</div>
       <h1 class="bj-title">{{ 'Find Your Perfect Car' | t }}</h1>
       <p class="bj-sub">{{ 'Answer a few quick questions to get your personalized recommendation.' | t }}</p>
     </div>
@@ -111,7 +111,7 @@
         <div class="q-nav">
           <button class="btn-outline btn-sm" (click)="back()" *ngIf="currentStep() > 0">{{ '← Back' | t }}</button>
           <button class="btn-gradient btn-sm next-btn" (click)="next()" [disabled]="!hasSelection()">
-            {{ currentStep() === steps.length - 1 ? 'See My Results →' : 'Next →' }}
+            {{ currentStep() === steps.length - 1 ? 'See My Results →' : ('Next →' | t) }}
           </button>
         </div>
       </div>

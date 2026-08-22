@@ -10,20 +10,20 @@
 <section class="nc-hero">
   <div class="container">
     <div class="hero-content">
-      <span class="hero-badge">🚗 New Cars 2025–26</span>
+      <span class="hero-badge">{{ '🚗 New Cars 2025–26' | t }}</span>
       <h1 class="hero-heading">{{ 'Explore' | t }} <span class="gradient-text">{{ 'New Cars' | t }}</span></h1>
       <p class="hero-sub">{{ 'Find your perfect car from 500+ new models across all budgets' | t }}</p>
 
       <div class="hero-search-card glass-card">
         <div class="hero-tabs">
           <button class="hero-tab" [class.active]="activeHeroTab() === 'brand'" (click)="activeHeroTab.set('brand')">
-            🏷️ By Brand
+            {{ '🏷️ By Brand' | t }}
           </button>
           <button class="hero-tab" [class.active]="activeHeroTab() === 'budget'" (click)="activeHeroTab.set('budget')">
-            💰 By Budget
+            {{ '💰 By Budget' | t }}
           </button>
           <button class="hero-tab" [class.active]="activeHeroTab() === 'bodytype'" (click)="activeHeroTab.set('bodytype')">
-            🚘 By Body Type
+            {{ '🚘 By Body Type' | t }}
           </button>
         </div>
 
@@ -125,7 +125,7 @@
 <section class="nc-section nc-section-alt" #modelsSection>
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">{{ 'Popular' | t }} <span class="gradient-text">New Car Models</span></h2>
+      <h2 class="section-title">{{ 'Popular' | t }} <span class="gradient-text">{{ 'New Car Models' | t }}</span></h2>
       <div class="sort-bar">
         <label class="sort-label">{{ 'Sort by:' | t }}</label>
         <app-custom-select class="sort-select" [options]="sortOptions" [placeholder]="'Sort by' | t"
@@ -301,7 +301,7 @@
 <section class="nc-section">
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">🎉 New <span class="gradient-text">{{ 'Launches' | t }}</span></h2>
+      <h2 class="section-title">{{ '🎉 New' | t }} <span class="gradient-text">{{ 'Launches' | t }}</span></h2>
       <span class="section-sub">{{ 'Cars launched in the last 12 months' | t }}</span>
     </div>
     <div class="launches-scroll">
@@ -335,7 +335,7 @@
 <section id="upcoming" class="nc-section nc-section-alt">
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">⏳ Upcoming <span class="gradient-text">{{ 'Cars' | t }}</span></h2>
+      <h2 class="section-title">{{ '⏳ Upcoming' | t }} <span class="gradient-text">{{ 'Cars' | t }}</span></h2>
       <span class="section-sub">{{ 'Get notified when they launch' | t }}</span>
     </div>
     <div class="upcoming-list">
@@ -351,7 +351,7 @@
           </div>
           <button class="notify-btn" [class.notified]="notifiedCars().has(car.make + '||' + car.model)"
             (click)="toggleNotify(car.make + '||' + car.model)">
-            {{ notifiedCars().has(car.make + '||' + car.model) ? '🔔 Notified' : 'Notify Me' }}
+            {{ notifiedCars().has(car.make + '||' + car.model) ? '🔔 Notified' : ('Notify Me' | t) }}
           </button>
         </div>
       }
@@ -362,7 +362,7 @@
 <!-- ── EXPERT RECOMMENDATIONS ── -->
 <section class="nc-section">
   <div class="container">
-    <h2 class="section-title">🏆 Expert <span class="gradient-text">{{ 'Recommendations' | t }}</span></h2>
+    <h2 class="section-title">{{ '🏆 Expert' | t }} <span class="gradient-text">{{ 'Recommendations' | t }}</span></h2>
     <p class="section-sub expert-note">{{ 'Editorial picks — curated by our team' | t }}</p>
     <div class="expert-grid">
       @for (pick of expertPicks; track pick.category) {

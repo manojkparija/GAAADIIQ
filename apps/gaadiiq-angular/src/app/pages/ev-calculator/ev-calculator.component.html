@@ -8,7 +8,7 @@
   <div class="calc-grid">
     <!-- EV Inputs -->
     <div class="input-card glass-card">
-      <h3>⚡ Electric Vehicle</h3>
+      <h3>{{ '⚡ Electric Vehicle' | t }}</h3>
       <label>
         <span>{{ 'EV On-Road Price' | t }}</span>
         <div class="input-wrap">
@@ -40,7 +40,7 @@
 
     <!-- Petrol Inputs -->
     <div class="input-card glass-card">
-      <h3>⛽ Petrol Vehicle</h3>
+      <h3>{{ '⛽ Petrol Vehicle' | t }}</h3>
       <label>
         <span>{{ 'Petrol Car On-Road Price' | t }}</span>
         <div class="input-wrap">
@@ -68,7 +68,7 @@
 
     <!-- Common Inputs -->
     <div class="input-card glass-card">
-      <h3>🚗 Driving Profile</h3>
+      <h3>{{ '🚗 Driving Profile' | t }}</h3>
       <label>
         <span>{{ 'Daily Distance' | t }}</span>
         <input type="range" [ngModel]="dailyKm()" (ngModelChange)="dailyKm.set($event)" min="10" max="200" step="5" />
@@ -87,13 +87,13 @@
     <h2>{{ tco().label }} Comparison</h2>
     <div class="result-grid">
       <div class="result-col ev-col">
-        <div class="result-label">⚡ EV Total Cost</div>
+        <div class="result-label">{{ '⚡ EV Total Cost' | t }}</div>
         <div class="result-val ev">{{ fmtP(tco().evTotal) }}</div>
         <div class="result-sub">{{ fmtP(monthlyCostEv()) }}/month avg</div>
       </div>
       <div class="vs-divider">VS</div>
       <div class="result-col petrol-col">
-        <div class="result-label">⛽ Petrol Total Cost</div>
+        <div class="result-label">{{ '⛽ Petrol Total Cost' | t }}</div>
         <div class="result-val petrol">{{ fmtP(tco().petrolTotal) }}</div>
         <div class="result-sub">{{ fmtP(monthlyCostPetrol()) }}/month avg</div>
       </div>
@@ -101,7 +101,7 @@
 
     <div class="verdict" [class.ev-wins]="tco().saving > 0" [class.petrol-wins]="tco().saving < 0">
       <ng-container *ngIf="tco().saving > 0">
-        ✅ EV saves you <strong>{{ fmtP(tco().saving) }}</strong> over {{ years() }} years
+        {{ '✅ EV saves you' | t }} <strong>{{ fmtP(tco().saving) }}</strong> over {{ years() }} years
         <span *ngIf="tco().breakEvenMonths < 120">
           {{ '· Break-even in' | t }} <strong>{{ tco().breakEvenMonths }} months</strong>
         </span>

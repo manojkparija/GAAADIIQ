@@ -217,7 +217,7 @@
             </div>
             <div class="dti-ideal">
               <span class="ideal-badge" [class.ok]="dtiAfter() <= 40" [class.over]="dtiAfter() > 40">
-                {{ dtiAfter() <= 40 ? '✓ Within safe range (≤40%)' : '⚠ Exceeds safe range (>40%)' }}
+                {{ dtiAfter() <= 40 ? ('✓ Within safe range (≤40%)' | t) : '⚠ Exceeds safe range (>40%)' }}
               </span>
             </div>
           </div>
@@ -250,7 +250,7 @@
             <div class="am-item">
               <div class="am-icon"><app-icon name="shield" [size]="22"></app-icon></div>
               <div class="am-val" [class.good]="emergencyBufferOk()" [class.bad]="!emergencyBufferOk()">
-                {{ emergencyBufferOk() ? 'Adequate' : 'Tight' }}
+                {{ emergencyBufferOk() ? ('Adequate' | t) : 'Tight' }}
               </div>
               <div class="am-label">{{ 'Emergency Buffer' | t }}</div>
             </div>

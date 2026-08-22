@@ -9,7 +9,7 @@
       <!-- A count of zero is a claim about the catalogue. When the listings
            call failed we do not know the number, so we do not state one. -->
       <span class="hero-badge">
-        {{ listingsFailed() ? 'Used Cars' : usedCarCount() + ' Used Cars Available' }}
+        {{ listingsFailed() ? ('Used Cars' | t) : usedCarCount() + ' Used Cars Available' }}
       </span>
       <h1 class="hero-heading">{{ 'Find Your Perfect' | t }} <span class="gradient-text">{{ 'Used Car' | t }}</span></h1>
       <p class="hero-sub">{{ 'AI-verified pricing, certified inspections, and the best deals in your city' | t }}</p>

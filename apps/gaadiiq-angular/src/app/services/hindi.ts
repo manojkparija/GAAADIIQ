@@ -1329,4 +1329,217 @@ export const HINDI: Record<string, string> = {
     'बताएं आप कहां हैं, आपके पास का डीलर अपनी कीमत बताने के लिए कॉल करेगा।',
   'We ask this once, so a dealer can reach you.':
     'हम यह एक बार पूछते हैं, ताकि डीलर आप तक पहुंच सके।',
+  // ── Second sweep: remaining template copy found by hindi-coverage.js ─────
+  'AI Car':
+    'AI कार',
+  'AI Price Valuation':
+    'AI कीमत मूल्यांकन',
+  'AI-First':
+    'AI-फर्स्ट',
+  'Already have an account?':
+    'पहले से अकाउंट है?',
+  'Analytics dashboard':
+    'एनालिटिक्स डैशबोर्ड',
+  'Asked Questions':
+    'पूछे जाने वाले सवाल',
+  'Adequate':
+    'पर्याप्त',
+  'Advanced':
+    'उन्नत',
+  'Basic':
+    'बेसिक',
+  'Brand New':
+    'बिल्कुल नई',
+  'Browse listings':
+    'लिस्टिंग देखें',
+  'Bulk inventory upload':
+    'थोक इन्वेंटरी अपलोड',
+  'Buyer Pro':
+    'Buyer Pro',
+  'Dealer Pro':
+    'Dealer Pro',
+  'Dealer contact details':
+    'डीलर संपर्क विवरण',
+  'Dedicated account manager':
+    'समर्पित अकाउंट मैनेजर',
+  'Featured placement':
+    'फीचर्ड जगह',
+  'Full pipeline':
+    'पूरी पाइपलाइन',
+  'Lead CRM':
+    'लीड CRM',
+  'List vehicles':
+    'गाड़ियां लिस्ट करें',
+  'Unlimited':
+    'असीमित',
+  'Start Free':
+    'मुफ्त शुरू करें',
+  'Create Free Account →':
+    'मुफ्त अकाउंट बनाएं →',
+  'No credit card needed. Upgrade or cancel anytime.':
+    'क्रेडिट कार्ड की ज़रूरत नहीं। कभी भी अपग्रेड या रद्द करें।',
+  'Confidence Range':
+    'विश्वास की सीमा',
+  'Demand Signals':
+    'मांग के संकेत',
+  'Depreciation Curve':
+    'मूल्यह्रास वक्र',
+  'Market Analysis':
+    'बाज़ार विश्लेषण',
+  'Age, mileage, and ownership history are factored into the estimate.':
+    'उम्र, चली हुई दूरी और मालिकाना इतिहास अनुमान में शामिल हैं।',
+  'We scan thousands of recent sale prices for your make and model.':
+    'हम आपके मेक और मॉडल की हजारों हालिया बिक्री कीमतें देखते हैं।',
+  'You get a low, mid, and high estimate so you know where to price.':
+    'आपको कम, मध्यम और ऊंचा अनुमान मिलता है ताकि आप कीमत तय कर सकें।',
+  'Continue with Google':
+    'Google से जारी रखें',
+  'Continue with Facebook':
+    'Facebook से जारी रखें',
+  'Continue →':
+    'आगे बढ़ें →',
+  'Next →':
+    'आगे →',
+  'Next — Describe Symptoms →':
+    'आगे — लक्षण बताएं →',
+  'Compare loan offers':
+    'लोन ऑफर की तुलना करें',
+  'Loan amount':
+    'लोन राशि',
+  'Employment *':
+    'रोज़गार *',
+  'Full name (as on PAN) *':
+    'पूरा नाम (PAN के अनुसार) *',
+  'Mobile *':
+    'मोबाइल *',
+  'Monthly income *':
+    'मासिक आय *',
+  'PAN number *':
+    'PAN नंबर *',
+  'Your CIBIL score (if you know it)':
+    'आपका CIBIL स्कोर (अगर पता हो)',
+  'Your application':
+    'आपका आवेदन',
+  'How we pick the best':
+    'हम सबसे अच्छा कैसे चुनते हैं',
+  'We rank by the':
+    'हम क्रम तय करते हैं',
+  'total cost of the loan':
+    'लोन की कुल लागत',
+  "Total of any loans you're already repaying.":
+    'आप जो लोन पहले से चुका रहे हैं उनका कुल।',
+  "Tell us about the car and yourself, and we'll compare what every lender would actually charge.":
+    'कार और अपने बारे में बताएं, हम तुलना करेंगे कि हर लेंडर असल में क्या लेगा।',
+  'Why we need this:':
+    'हमें यह क्यों चाहिए:',
+  'car loan':
+    'कार लोन',
+  'sign in':
+    'साइन इन',
+  'Manufacturer *':
+    'निर्माता *',
+  'Model Year *':
+    'मॉडल साल *',
+  'Transmission *':
+    'ट्रांसमिशन *',
+  'Odometer Reading (km)':
+    'ओडोमीटर रीडिंग (km)',
+  'Tell us about your vehicle':
+    'अपनी गाड़ी के बारे में बताएं',
+  'Fill Manually':
+    'खुद भरें',
+  'Use Voice':
+    'आवाज़ से बताएं',
+  'Still unsure?':
+    'अब भी तय नहीं?',
+  'Your report will be shown on screen. You can play it aloud if you want to.':
+    'आपकी रिपोर्ट स्क्रीन पर दिखेगी। चाहें तो उसे सुन भी सकते हैं।',
+  'Full Name *':
+    'पूरा नाम *',
+  'Select time':
+    'समय चुनें',
+  'Test Drive Booking':
+    'टेस्ट ड्राइव बुकिंग',
+  'Notify Me':
+    'मुझे सूचित करें',
+  'New Car Models':
+    'नई कार मॉडल',
+  'Looking for a':
+    'ढूंढ रहे हैं',
+  'Purchase':
+    'खरीद',
+  'Fuel / Energy':
+    'फ्यूल / ऊर्जा',
+  'Depreciation (value you do not get back)':
+    'मूल्यह्रास (जो कीमत वापस नहीं मिलती)',
+  '5-Year TCO Comparison':
+    '5 साल की कुल लागत तुलना',
+  'Try AI Advisor':
+    'AI सलाहकार आज़माएं',
+  'Use the search boxes above to find any car from our 54-car database':
+    'ऊपर दिए खोज बॉक्स से हमारे डेटाबेस की कोई भी कार खोजें',
+  "Optional, and taken as your own estimate — we don't check it. Leaving it blank is fine.":
+    'वैकल्पिक, और आपके अपने अनुमान के रूप में लिया जाता है — हम इसकी जांच नहीं करते। खाली छोड़ना ठीक है।',
+  'A guideline, not a lending criterion — a bank will look at your DTI above all.':
+    'यह एक दिशानिर्देश है, कर्ज़ देने की शर्त नहीं — बैंक सबसे पहले आपका DTI देखेगा।',
+  '✓ Within safe range (≤40%)':
+    '✓ सुरक्षित सीमा में (≤40%)',
+  'Adequate ':
+    'पर्याप्त ',
+  'ARIA · Auto Recommendation & Intelligent Assistant':
+    'ARIA · ऑटो रिकमेंडेशन और इंटेलिजेंट असिस्टेंट',
+  '⚡ Electric Vehicle':
+    '⚡ इलेक्ट्रिक गाड़ी',
+  '⛽ Petrol Vehicle':
+    '⛽ पेट्रोल गाड़ी',
+  '⚡ EV Total Cost':
+    '⚡ EV कुल खर्च',
+  '⛽ Petrol Total Cost':
+    '⛽ पेट्रोल कुल खर्च',
+  '✅ EV saves you':
+    '✅ EV से आपकी बचत',
+  '🚗 Driving Profile':
+    '🚗 ड्राइविंग प्रोफाइल',
+  '🎉 New':
+    '🎉 नई',
+  '⏳ Upcoming':
+    '⏳ आने वाली',
+  '🏆 Expert':
+    '🏆 विशेषज्ञ',
+  '🏷️ By Brand':
+    '🏷️ ब्रांड से',
+  '💰 By Budget':
+    '💰 बजट से',
+  '🚘 By Body Type':
+    '🚘 बॉडी टाइप से',
+  '🧭 Buyer Journey':
+    '🧭 खरीदार यात्रा',
+  '🚗 New Cars 2025–26':
+    '🚗 नई कारें 2025–26',
+  '🔧 Request help now':
+    '🔧 अभी मदद मांगें',
+  'Light Mode':
+    'लाइट मोड',
+  'Dark Mode':
+    'डार्क मोड',
+  'Answer 6 quick questions. Our AI matches you to the ideal car.':
+    '6 आसान सवालों के जवाब दें। हमारा AI आपको सही कार से मिलाएगा।',
+  'Expert Review':
+    'विशेषज्ञ समीक्षा',
+  'User Review':
+    'यूज़र समीक्षा',
+  'Special Report':
+    'विशेष रिपोर्ट',
+  'Reviews &':
+    'समीक्षाएं और',
+  'Used cars':
+    'पुरानी कारें',
+  'English':
+    'English',
+  'All':
+    'सभी',
+  "You'll need to":
+    'आपको करना होगा',
+  'Register as a mechanic':
+    'मैकेनिक के रूप में रजिस्टर करें',
 };

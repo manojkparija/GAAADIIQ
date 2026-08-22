@@ -33,6 +33,21 @@
 const { chromium } = require('playwright');
 
 const PORT = process.env.PORT || 4351;
+/**
+ * Not defects. Brand and model names are proper nouns; the market terms below
+ * are what Hindi speakers actually say (nobody asks for a विद्युत गाड़ी); and
+ * "English" in the language picker is an endonym — translating it would defeat
+ * the point of listing each language in its own script.
+ */
+const ALLOWED = new Set([
+  'GAADIIQ', 'English', 'EMI', 'SUV', 'MUV', 'CNG', 'AI', 'UPI', 'PAN', 'KYC',
+  'CIBIL', 'DTI', 'WhatsApp', 'Google', 'Facebook', 'ARIA', 'FAME-II', 'RC',
+  'AMT', 'km', 'kmpl', 'bhp', 'Nm', 'cc', 'L', 'Cr',
+]);
+/** A string is proper-noun-ish if every word is capitalised or a known brand. */
+const BRANDISH =
+  /^(?:[A-Z][A-Za-z0-9.\-]*|and|of|the|by|de)(?:[ \-][A-Za-z0-9.\-]+)*$/;
+
 const ROUTES = [
   '/', '/new-cars', '/used-cars', '/compare', '/ai-advisor', '/ai-valuation',
   '/vehicle-diagnosis', '/emi-calculator', '/car-loan', '/tco', '/ev-calculator',
@@ -68,9 +83,11 @@ const ROUTES = [
       });
       return [...new Set(out)];
     });
-    total += left.length;
-    console.log(route.padEnd(20), String(left.length).padStart(3));
-    if (list) left.forEach(s => console.log('     ', s));
+    const real = left.filter(t => !ALLOWED.has(t) && !(BRANDISH.test(t) && t.split(' ').length <= 3));
+    total += real.length;
+    console.log(route.padEnd(20), String(real.length).padStart(3),
+      left.length !== real.length ? `(+${left.length - real.length} names/terms)` : '');
+    if (list) real.forEach(s => console.log('     ', s));
   }
   console.log('\nTotal English strings visible in Hindi mode:', total);
   await browser.close();

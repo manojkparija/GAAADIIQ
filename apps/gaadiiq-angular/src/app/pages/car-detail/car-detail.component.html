@@ -244,7 +244,7 @@
               <div class="gearbox-filter" *ngIf="gearboxOptions().length > 1">
                 <span class="gf-label">{{ 'Gearbox' | t }}</span>
                 <button type="button" class="gf-chip" [class.active]="!gearboxFilter()"
-                        (click)="setGearbox('')">All</button>
+                        (click)="setGearbox('')">{{ 'All' | t }}</button>
                 <button type="button" class="gf-chip" *ngFor="let g of gearboxOptions()"
                         [class.active]="gearboxFilter() === g"
                         (click)="setGearbox(g)">{{ g }}</button>
@@ -361,7 +361,7 @@
                 <input type="range" min="5000" max="50000" step="1000" [value]="annualKm()" (input)="annualKm.set(+$any($event.target).value)">
               </div>
               <div class="oc-row" *ngIf="car.fuel !== 'Electric'">
-                <label>{{ car.fuel === 'CNG' ? 'CNG Price' : 'Fuel Price' }}: ₹{{ fuelPrice() }}{{ fuelPriceUnit }}</label>
+                <label>{{ car.fuel === ('CNG' | t) ? 'CNG Price' : 'Fuel Price' }}: ₹{{ fuelPrice() }}{{ fuelPriceUnit }}</label>
                 <input type="range" [min]="fuelPriceMin" [max]="fuelPriceMax" step="1" [value]="fuelPrice()" (input)="fuelPrice.set(+$any($event.target).value)">
               </div>
             </div>
@@ -468,7 +468,7 @@
               </div>
               <button class="btn-gradient" style="height:fit-content" (click)="showReviewForm.set(!showReviewForm())">
                 <app-icon name="pen-line" [size]="15" *ngIf="!showReviewForm()"></app-icon>
-                {{ showReviewForm() ? 'Cancel' : 'Write Review' }}
+                {{ showReviewForm() ? ('Cancel' | t) : 'Write Review' }}
               </button>
             </div>
 

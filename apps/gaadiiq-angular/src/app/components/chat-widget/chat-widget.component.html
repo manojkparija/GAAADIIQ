@@ -34,7 +34,7 @@
         </svg>
         <div class="chat-status">
           <span class="status-dot"></span>
-          {{ chat.isTyping() ? 'ARIA is typing…' : 'ARIA · Auto Recommendation & Intelligent Assistant' }}
+          {{ chat.isTyping() ? 'ARIA is typing…' : ('ARIA · Auto Recommendation & Intelligent Assistant' | t) }}
         </div>
       </div>
     </div>

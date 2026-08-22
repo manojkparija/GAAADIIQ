@@ -334,7 +334,7 @@
          neither. The dashboard itself handles the not-yet-registered case, so
          one link serves both. -->
     <a routerLink="/mechanic-dashboard" (click)="closeMenu()">{{ 'Mechanic Dashboard' | t }}</a>
-    <a routerLink="/mechanic-signup" (click)="closeMenu()">Register as a mechanic</a>
+    <a routerLink="/mechanic-signup" (click)="closeMenu()">{{ 'Register as a mechanic' | t }}</a>
   </nav>
 
   <div class="mm-prefs">
@@ -355,7 +355,7 @@
       </button>
     </div>
     <div class="mobile-theme-row">
-      <span>{{ theme.isDark() ? 'Dark Mode' : 'Light Mode' }}</span>
+      <span>{{ theme.isDark() ? ('Dark Mode' | t) : ('Light Mode' | t) }}</span>
       <button class="theme-toggle" (click)="theme.toggle()">
         <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" [size]="15"></app-icon>
       </button>
@@ -373,7 +373,7 @@
            drifted: it was missing My Profile, Notifications, Leads and
            Analytics entirely, so those four pages could not be reached at all
            on a phone. -->
-      <p class="mm-head">{{ auth.currentUser()?.name || 'Account' }}</p>
+      <p class="mm-head">{{ auth.currentUser()?.name || ('Account' | t) }}</p>
       <a routerLink="/profile" (click)="closeMenu()" class="mm-item">{{ 'My Profile' | t }}</a>
       <a routerLink="/notifications" (click)="closeMenu()" class="mm-item">Notifications</a>
       <a *ngIf="!auth.isSeller() && !auth.isAdmin()"

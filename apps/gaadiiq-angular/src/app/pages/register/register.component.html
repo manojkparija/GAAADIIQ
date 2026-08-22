@@ -166,7 +166,7 @@
 
         <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
         <button class="btn-gradient btn-full" (click)="nextStep()" [disabled]="checkingEmail()">
-          {{ checkingEmail() ? 'Checking…' : 'Continue →' }}
+          {{ checkingEmail() ? 'Checking…' : ('Continue →' | t) }}
         </button>
       </div>
     }
@@ -192,7 +192,7 @@
         <div class="btn-row">
           <button class="btn-outline" (click)="prevStep()">{{ '← Back' | t }}</button>
           <button class="btn-gradient" (click)="nextStep()" [disabled]="loading()">
-            {{ isCustomer() ? 'Continue →' : (loading() ? 'Creating…' : 'Create Account 🎉') }}
+            {{ isCustomer() ? ('Continue →' | t) : (loading() ? 'Creating…' : 'Create Account 🎉') }}
           </button>
         </div>
       </div>
@@ -225,6 +225,6 @@
       </div>
     }
 
-    <p class="login-link">Already have an account? <a routerLink="/login">{{ 'Sign in' | t }}</a></p>
+    <p class="login-link">{{ 'Already have an account?' | t }} <a routerLink="/login">{{ 'Sign in' | t }}</a></p>
   </div>
 </div>

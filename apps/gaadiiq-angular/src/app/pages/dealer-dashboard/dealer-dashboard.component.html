@@ -150,7 +150,7 @@
           AI Purchase Intent <span class="gradient-text">Leads</span>
         </h2>
         <div class="grade-filters">
-          <button class="gf-btn" [class.active]="gradeFilter()===null" (click)="setGradeFilter(null)">All</button>
+          <button class="gf-btn" [class.active]="gradeFilter()===null" (click)="setGradeFilter(null)">{{ 'All' | t }}</button>
           <button class="gf-btn gf-a" [class.active]="gradeFilter()==='A'" (click)="setGradeFilter('A')">A · Hot</button>
           <button class="gf-btn gf-b" [class.active]="gradeFilter()==='B'" (click)="setGradeFilter('B')">B · Warm</button>
           <button class="gf-btn gf-c" [class.active]="gradeFilter()==='C'" (click)="setGradeFilter('C')">C · Cool</button>

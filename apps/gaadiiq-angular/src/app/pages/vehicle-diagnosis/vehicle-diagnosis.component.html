@@ -205,26 +205,26 @@
           [class.mode-btn--active]="inputMode() === 'manual'"
           [attr.aria-pressed]="inputMode() === 'manual'"
           (click)="chooseManualMode()"
-        ><app-icon name="pen-line" [size]="16"></app-icon> Fill Manually</button>
+        ><app-icon name="pen-line" [size]="16"></app-icon> {{ 'Fill Manually' | t }}</button>
         <button
           class="mode-btn mode-btn--voice"
           [class.mode-btn--active]="inputMode() === 'voice'"
           [attr.aria-pressed]="inputMode() === 'voice'"
           (click)="openVoiceMode()"
           *ngIf="voice.supported"
-        ><app-icon name="mic" [size]="16"></app-icon> Use Voice</button>
+        ><app-icon name="mic" [size]="16"></app-icon> {{ 'Use Voice' | t }}</button>
       </div>
       <p class="input-mode-hint">
         {{ inputMode() === 'voice'
           ? 'Your report will be read aloud when it is ready.'
-          : 'Your report will be shown on screen. You can play it aloud if you want to.' }}
+          : ('Your report will be shown on screen. You can play it aloud if you want to.' | t) }}
       </p>
 
-      <h2 class="step-title">Tell us about your vehicle</h2>
+      <h2 class="step-title">{{ 'Tell us about your vehicle' | t }}</h2>
 
       <div class="form-grid">
         <div class="form-group">
-          <label>Manufacturer *</label>
+          <label>{{ 'Manufacturer *' | t }}</label>
           <app-custom-select
             [(ngModel)]="form.manufacturer"
             (ngModelChange)="onMakeChange()"
@@ -252,7 +252,7 @@
           </app-custom-select>
         </div>
         <div class="form-group">
-          <label>Model Year *</label>
+          <label>{{ 'Model Year *' | t }}</label>
           <app-custom-select
             [(ngModel)]="form.model_year"
             [options]="years"
@@ -266,19 +266,19 @@
           </div>
         </div>
         <div class="form-group">
-          <label>Transmission *</label>
+          <label>{{ 'Transmission *' | t }}</label>
           <div class="chip-group">
             <button *ngFor="let t of transmissions" class="chip" [class.selected]="form.transmission === t" (click)="form.transmission = t" type="button">{{ t }}</button>
           </div>
         </div>
         <div class="form-group">
-          <label>Odometer Reading (km)</label>
+          <label>{{ 'Odometer Reading (km)' | t }}</label>
           <input type="number" [(ngModel)]="form.odometer_km" [placeholder]="'e.g. 45000' | t" min="0" />
         </div>
       </div>
 
       <div class="step-actions">
-        <button class="btn-primary" [disabled]="!step1Valid" (click)="next()">Next — Describe Symptoms →</button>
+        <button class="btn-primary" [disabled]="!step1Valid" (click)="next()">{{ 'Next — Describe Symptoms →' | t }}</button>
       </div>
     </div>
 
@@ -697,7 +697,7 @@
                     [class.specialist]="fix.difficulty === 'Specialist'">
                     <app-icon [size]="14"
                       [name]="fix.difficulty === 'DIY' ? 'wrench' : fix.difficulty === 'Mechanic' ? 'store' : 'settings'"></app-icon>
-                    {{ fix.difficulty === 'DIY' ? 'DIY' : fix.difficulty === 'Mechanic' ? 'Mechanic' : 'Specialist' }}
+                    {{ fix.difficulty === 'DIY' ? 'DIY' : fix.difficulty === ('Mechanic' | t) ? ('Mechanic' | t) : 'Specialist' }}
                   </span>
                 </div>
               </div>
