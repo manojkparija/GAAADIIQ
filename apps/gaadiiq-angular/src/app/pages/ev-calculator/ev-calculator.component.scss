@@ -1,4 +1,9 @@
-.ev-calc-page { padding: 2rem 1rem 4rem; max-width: 1100px; }
+// LAY-007: 2rem never cleared the fixed navbar — this page's title has been
+// rendering under it, at y=66 against a bar ending at 90. Not a regression
+// from the two-row bar (the old 62px bar covered it too); found by sweeping
+// every top-level route in a browser, because e2e/smoke.spec.ts does not
+// visit this page.
+.ev-calc-page { padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 1rem 4rem; max-width: 1100px; }
 
 .page-header {
   text-align: center; margin-bottom: 2.5rem;
