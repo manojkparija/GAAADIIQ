@@ -138,9 +138,9 @@
             <div class="range-sub">{{ 'What you should realistically get' | t }}</div>
           </div>
           <div class="range-item high">
-            <div class="range-label">Dealer Forecourt</div>
+            <div class="range-label">{{ 'Dealer Forecourt' | t }}</div>
             <div class="range-val">{{ fmt(r.high) }}</div>
-            <div class="range-sub">What a dealer asks, reconditioned</div>
+            <div class="range-sub">{{ 'What a dealer asks, reconditioned' | t }}</div>
           </div>
         </div>
         <div class="price-bar">
@@ -156,11 +156,7 @@
              away is the right-hand one. Without this line, ours looks like a
              lowball rather than a different kind of sale. -->
         <p class="range-explainer">
-          A dealer gets more for the same car because they recondition it, back
-          it with a warranty and sell it from a showroom. Selling privately you
-          skip all three — and the difference, about
-          {{ fmt(r.high - r.mid) }}, is what that costs.
-        </p>
+          {{ 'A dealer gets more for the same car because they recondition it, back it with a warranty and sell it from a showroom. Selling privately you skip all three — and the difference is what that costs.' | t }}</p>
 
         <app-pricing-strategy
           class="ps-slot"
@@ -171,15 +167,15 @@
       <!-- Stats -->
       <div class="stats-card glass-card">
         <div class="stat-row">
-          <span class="stat-label">Total Depreciation</span>
+          <span class="stat-label">{{ 'Total Depreciation' | t }}</span>
           <span class="stat-val warn">−{{ r.depreciation }}%</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Market Trend</span>
+          <span class="stat-label">{{ 'Market Trend' | t }}</span>
           <span class="stat-val">{{ r.marketTrend }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Kilometres</span>
+          <span class="stat-label">{{ 'Kilometres' | t }}</span>
           <span class="stat-val">{{ (+form.km).toLocaleString('en-IN') }} km</span>
         </div>
         <div class="stat-row">
@@ -187,7 +183,7 @@
           <span class="stat-val">{{ form.owners }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Condition</span>
+          <span class="stat-label">{{ 'Condition' | t }}</span>
           <span class="stat-val">{{ form.condition }}</span>
         </div>
       </div>

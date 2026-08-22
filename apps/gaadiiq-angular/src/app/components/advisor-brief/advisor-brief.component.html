@@ -82,7 +82,7 @@
     <div class="picks" *ngIf="res.items.length">
       <h3 class="picks-title">
         Top {{ res.items.length }} for you
-        <span class="picks-count">from {{ res.total_considered }} models considered</span>
+        <span class="picks-count">{{ 'from' | t }} {{ res.total_considered }} {{ 'models considered' | t }}</span>
       </h3>
 
       <article class="pick" *ngFor="let pick of res.items; let i = index; trackBy: trackByCar">
@@ -126,7 +126,7 @@
             <span class="fig-value">{{ money(pick.monthly_emi.amount) }}</span>
           </div>
           <div class="figure">
-            <span class="fig-label">5-year cost</span>
+            <span class="fig-label">{{ '5-year cost' | t }}</span>
             <span class="fig-value">
               {{ money(pick.five_year_total) }}
               <span class="partial-flag" *ngIf="isPartial(pick)">partial</span>
@@ -137,7 +137,7 @@
             <span class="fig-value">{{ pick.cost_per_km !== null ? '₹' + pick.cost_per_km : '—' }}</span>
           </div>
           <div class="figure">
-            <span class="fig-label">Resale at 5 yrs</span>
+            <span class="fig-label">{{ 'Resale at 5 yrs' | t }}</span>
             <span class="fig-value">{{ money(pick.resale_five_year) }}</span>
           </div>
         </div>
@@ -150,7 +150,7 @@
         </p>
 
         <button type="button" class="pick-more" (click)="toggleDetail(pick.car_id)">
-          {{ isExpanded(pick.car_id) ? 'Hide the breakdown' : 'Where these numbers come from' }}
+          {{ isExpanded(pick.car_id) ? ('Hide the breakdown' | t) : ('Where these numbers come from' | t) }}
         </button>
 
         <div class="breakdown" *ngIf="isExpanded(pick.car_id)">
@@ -208,7 +208,7 @@
                 <td *ngFor="let pick of res.items">{{ money(pick.monthly_emi.amount) }}</td>
               </tr>
               <tr>
-                <th scope="row">5-year cost</th>
+                <th scope="row">{{ '5-year cost' | t }}</th>
                 <td *ngFor="let pick of res.items">
                   {{ money(pick.five_year_total) }}
                   <span class="partial-flag" *ngIf="isPartial(pick)">partial</span>
@@ -221,7 +221,7 @@
                 </td>
               </tr>
               <tr>
-                <th scope="row">Resale at 5 yrs</th>
+                <th scope="row">{{ 'Resale at 5 yrs' | t }}</th>
                 <td *ngFor="let pick of res.items">{{ money(pick.resale_five_year) }}</td>
               </tr>
               <tr>

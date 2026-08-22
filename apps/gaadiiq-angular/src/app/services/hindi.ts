@@ -1583,4 +1583,44 @@ export const HINDI: Record<string, string> = {
     'असल में सबसे ज्यादा रेंज, बेहतरीन आफ्टर-सेल्स',
   '6/7-seater, top safety scores, premium interiors':
     '6/7 सीटर, बेहतरीन सेफ्टी स्कोर, प्रीमियम इंटीरियर',
+  // ── Advisor result cards (client-side labels only; see note below) ───────
+  'Top 3 for you':
+    'आपके लिए टॉप 3',
+  'from':
+    'में से',
+  'models considered':
+    'मॉडल देखे गए',
+  'Where these numbers come from':
+    'ये आंकड़े कहां से आए',
+  'Hide the breakdown':
+    'ब्यौरा छिपाएं',
+  'Resale at 5 yrs':
+    '5 साल पर पुनर्विक्रय',
+  '5-year cost':
+    '5 साल का खर्च',
+  '5-Year cost':
+    '5 साल का खर्च',
+  // ── Valuation result panel and pricing strategy ──────────────────────────
+  'Total Depreciation':
+    'कुल मूल्यह्रास',
+  'Market Trend':
+    'बाज़ार का रुझान',
+  'Kilometres':
+    'किलोमीटर',
+  'Condition':
+    'हालत',
+  'Dealer Forecourt':
+    'डीलर के यहां',
+  'What a dealer asks, reconditioned':
+    'डीलर जो मांगता है, ठीक कराने के बाद',
+  'A dealer gets more for the same car because they recondition it, back it with a warranty and sell it from a showroom. Selling privately you skip all three — and the difference is what that costs.':
+    'डीलर उसी कार के ज्यादा पैसे लेता है क्योंकि वह उसे ठीक कराता है, वारंटी देता है और शोरूम से बेचता है। निजी तौर पर बेचने में ये तीनों नहीं होते — और यही अंतर उसकी कीमत है।',
+  'Typically under':
+    'आमतौर पर',
+  'days':
+    'दिन में',
+  'Often':
+    'अक्सर',
+  'days or more':
+    'दिन या ज्यादा',
 };
