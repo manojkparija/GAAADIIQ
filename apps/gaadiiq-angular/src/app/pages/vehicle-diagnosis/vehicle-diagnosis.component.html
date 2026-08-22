@@ -1,11 +1,11 @@
 <div class="diag-page">
   <div class="diag-hero">
     <div class="container">
-      <div class="hero-badge"><app-icon name="wrench" [size]="16"></app-icon> AI Repair Advisor</div>
-      <h1>Vehicle Preliminary <span class="gradient-text">Diagnosis</span></h1>
-      <p class="hero-sub">Describe your car problem and get an AI-powered preliminary assessment with repair cost estimates. Always consult a certified mechanic to confirm.</p>
+      <div class="hero-badge"><app-icon name="wrench" [size]="16"></app-icon> {{ 'AI Repair Advisor' | t }}</div>
+      <h1>{{ 'Vehicle Preliminary' | t }} <span class="gradient-text">{{ 'Diagnosis' | t }}</span></h1>
+      <p class="hero-sub">{{ 'Describe your car problem and get an AI-powered preliminary assessment with repair cost estimates. Always consult a certified mechanic to confirm.' | t }}</p>
       @if (auth.currentUser()) {
-        <button class="btn btn-ghost btn-sm history-btn" (click)="openHistory()"><app-icon name="list" [size]="16"></app-icon> My Diagnosis History</button>
+        <button class="btn btn-ghost btn-sm history-btn" (click)="openHistory()"><app-icon name="list" [size]="16"></app-icon> {{ 'My Diagnosis History' | t }}</button>
       }
     </div>
   </div>
@@ -22,13 +22,13 @@
     <div class="history-overlay" (click)="closeHistory()">
       <div class="history-panel" (click)="$event.stopPropagation()">
         <div class="history-header">
-          <h2>Past Diagnoses</h2>
+          <h2>{{ 'Past Diagnoses' | t }}</h2>
           <button class="close-btn" (click)="closeHistory()">✕</button>
         </div>
         <!-- ── Detail view (BR-UX-03) ── -->
         @if (historyDetail(); as d) {
           <div class="history-detail">
-            <button class="history-back" (click)="closeHistoryDetail()">← All diagnoses</button>
+            <button class="history-back" (click)="closeHistoryDetail()">{{ '← All diagnoses' | t }}</button>
 
             <div class="hd-head">
               <span class="hd-date">{{ d.created_at | date:'dd MMM yyyy, h:mm a' }}</span>
@@ -45,14 +45,14 @@
             </div>
 
             <div class="hd-facts">
-              <div><span>Estimated cost</span><strong>₹{{ d.cost_min_inr | number }} – ₹{{ d.cost_max_inr | number }}</strong></div>
-              <div><span>Complexity</span><strong>{{ d.repair_complexity }}</strong></div>
-              <div><span>Repair time</span><strong>{{ d.repair_time_estimate }}</strong></div>
-              <div><span>Confidence</span><strong>{{ d.analysis_confidence }}%</strong></div>
+              <div><span>{{ 'Estimated cost' | t }}</span><strong>₹{{ d.cost_min_inr | number }} – ₹{{ d.cost_max_inr | number }}</strong></div>
+              <div><span>{{ 'Complexity' | t }}</span><strong>{{ d.repair_complexity }}</strong></div>
+              <div><span>{{ 'Repair time' | t }}</span><strong>{{ d.repair_time_estimate }}</strong></div>
+              <div><span>{{ 'Confidence' | t }}</span><strong>{{ d.analysis_confidence }}%</strong></div>
             </div>
 
             @if (d.possible_causes?.length) {
-              <h4 class="hd-h">Possible causes</h4>
+              <h4 class="hd-h">{{ 'Possible causes' | t }}</h4>
               <ul class="hd-list">
                 @for (c of d.possible_causes; track c.cause) {
                   <li><strong>{{ c.cause }}</strong> ({{ c.confidence }}%) — {{ c.explanation }}</li>
@@ -61,14 +61,14 @@
             }
 
             @if (d.recommended_steps?.length) {
-              <h4 class="hd-h">Recommended steps</h4>
+              <h4 class="hd-h">{{ 'Recommended steps' | t }}</h4>
               <ul class="hd-list">
                 @for (s of d.recommended_steps; track s) { <li>{{ s }}</li> }
               </ul>
             }
 
             @if (d.diy_fixes?.length) {
-              <h4 class="hd-h">Safe DIY checks</h4>
+              <h4 class="hd-h">{{ 'Safe DIY checks' | t }}</h4>
               <ul class="hd-list">
                 @for (f of d.diy_fixes; track f) { <li>{{ f }}</li> }
               </ul>
@@ -76,31 +76,31 @@
 
             <div class="hd-actions">
               <button class="btn-ghost" (click)="speakHistoryDetail()" *ngIf="voice.synthSupported">
-                <app-icon name="volume-2" [size]="16"></app-icon> Read aloud
+                <app-icon name="volume-2" [size]="16"></app-icon> {{ 'Read aloud' | t }}
               </button>
               <button class="btn-ghost" (click)="voice.stopSpeaking()" *ngIf="voice.speakingState() !== 'idle'">
-                <app-icon name="square" [size]="16"></app-icon> Stop
+                <app-icon name="square" [size]="16"></app-icon> {{ 'Stop' | t }}
               </button>
               <button class="btn-danger-ghost" (click)="askDeleteDiagnosis(d.id)">
-                <app-icon name="trash" [size]="16"></app-icon> Delete
+                <app-icon name="trash" [size]="16"></app-icon> {{ 'Delete' | t }}
               </button>
             </div>
 
             <!-- BR-SEC-05 confirmation — deletion is irreversible -->
             <div class="danger-confirm" *ngIf="confirmDeleteId() === d.id" role="alertdialog">
-              <p>Delete this diagnosis permanently? This cannot be undone.</p>
+              <p>{{ 'Delete this diagnosis permanently? This cannot be undone.' | t }}</p>
               <div class="danger-actions">
                 <button class="btn-danger" [disabled]="deleteBusy()" (click)="confirmDeleteDiagnosis()">
                   {{ deleteBusy() ? 'Deleting…' : 'Yes, delete' }}
                 </button>
-                <button class="btn-ghost" [disabled]="deleteBusy()" (click)="cancelDelete()">Cancel</button>
+                <button class="btn-ghost" [disabled]="deleteBusy()" (click)="cancelDelete()">{{ 'Cancel' | t }}</button>
               </div>
             </div>
 
             <p class="hd-disclaimer">{{ d.disclaimer }}</p>
           </div>
         } @else if (historyDetailLoading()) {
-          <div class="history-loading">Loading diagnosis…</div>
+          <div class="history-loading">{{ 'Loading diagnosis…' | t }}</div>
         } @else {
           <div class="history-detail-error" *ngIf="historyDetailError()" role="alert">
             <app-icon name="alert-triangle" [size]="16"></app-icon> {{ historyDetailError() }}
@@ -113,22 +113,22 @@
           <!-- BR-SEC-06 — DPDP erasure of all voice data -->
           <div class="dpdp-panel">
             <div class="dpdp-copy">
-              <strong>Your voice data</strong>
+              <strong>{{ 'Your voice data' | t }}</strong>
               <p>
                 Delete every stored transcript from your voice diagnoses. Audio recordings are
                 never kept — only the text. This also withdraws microphone consent.
               </p>
             </div>
             <button class="btn-danger-ghost" *ngIf="!confirmVoiceWipe()" (click)="askVoiceWipe()">
-              Delete my voice data
+              {{ 'Delete my voice data' | t }}
             </button>
             <div class="danger-confirm" *ngIf="confirmVoiceWipe()" role="alertdialog">
-              <p>Delete all stored voice transcripts? This cannot be undone.</p>
+              <p>{{ 'Delete all stored voice transcripts? This cannot be undone.' | t }}</p>
               <div class="danger-actions">
                 <button class="btn-danger" [disabled]="deleteBusy()" (click)="confirmVoiceDataWipe()">
                   {{ deleteBusy() ? 'Deleting…' : 'Yes, delete everything' }}
                 </button>
-                <button class="btn-ghost" [disabled]="deleteBusy()" (click)="cancelDelete()">Cancel</button>
+                <button class="btn-ghost" [disabled]="deleteBusy()" (click)="cancelDelete()">{{ 'Cancel' | t }}</button>
               </div>
             </div>
           </div>
@@ -722,7 +722,7 @@
           </div>
           <div class="report-card mini">
             <div class="mini-icon"><app-icon name="wrench" [size]="28"></app-icon></div>
-            <div class="mini-label">Complexity</div>
+            <div class="mini-label">{{ 'Complexity' | t }}</div>
             <div class="mini-value" [style.color]="diagSvc.complexityColor(report.repair_complexity)">{{ report.repair_complexity }}</div>
           </div>
         </div>

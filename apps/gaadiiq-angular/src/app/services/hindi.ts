@@ -833,4 +833,85 @@ export const HINDI: Record<string, string> = {
     'निजी तौर पर बेचना',
   'What you should realistically get':
     'वास्तविक रूप से आपको कितना मिलना चाहिए',
+  // ── Diagnosis and roadside help ──────────────────────────────────────────
+  'AI Repair Advisor':
+    'AI मरम्मत सलाहकार',
+  'Vehicle Preliminary':
+    'गाड़ी की प्रारंभिक',
+  'Diagnosis':
+    'जांच',
+  'Describe your car problem and get an AI-powered preliminary assessment with repair cost estimates. Always consult a certified mechanic to confirm.':
+    'अपनी कार की समस्या बताएं और मरम्मत के अनुमानित खर्च के साथ AI आधारित प्रारंभिक आकलन पाएं। पुष्टि के लिए हमेशा किसी प्रमाणित मैकेनिक से सलाह लें।',
+  'My Diagnosis History':
+    'मेरी जांच का इतिहास',
+  'Past Diagnoses':
+    'पिछली जांचें',
+  '← All diagnoses':
+    '← सभी जांचें',
+  'Estimated cost':
+    'अनुमानित खर्च',
+  'Complexity':
+    'जटिलता',
+  'Repair time':
+    'मरम्मत का समय',
+  'Confidence':
+    'विश्वास',
+  'Possible causes':
+    'संभावित कारण',
+  'Recommended steps':
+    'सुझाए गए कदम',
+  'Safe DIY checks':
+    'खुद से करने लायक सुरक्षित जांच',
+  'Read aloud':
+    'पढ़कर सुनाएं',
+  'Stop':
+    'रोकें',
+  'Delete':
+    'हटाएं',
+  'Delete this diagnosis permanently? This cannot be undone.':
+    'इस जांच को हमेशा के लिए हटाएं? यह वापस नहीं होगा।',
+  'Cancel':
+    'रद्द करें',
+  'Loading diagnosis…':
+    'जांच लोड हो रही है…',
+  'Your voice data':
+    'आपका आवाज़ डेटा',
+  'Delete every stored transcript from your voice diagnoses. Audio recordings are never kept — only the text. This also withdraws microphone consent.':
+    'आपकी आवाज़ से हुई जांचों के सभी संग्रहित टेक्स्ट हटाएं। ऑडियो रिकॉर्डिंग कभी नहीं रखी जाती — सिर्फ टेक्स्ट। इससे माइक्रोफोन की सहमति भी वापस ली जाती है।',
+  'Delete my voice data':
+    'मेरा आवाज़ डेटा हटाएं',
+  'Delete all stored voice transcripts? This cannot be undone.':
+    'सभी संग्रहित आवाज़ टेक्स्ट हटाएं? यह वापस नहीं होगा।',
+  'Roadside Assistance':
+    'सड़क किनारे सहायता',
+  'Find a Nearby':
+    'पास का खोजें',
+  'Broken down? We alert every available GAADIIQ partner mechanic within 1 km. The first to accept comes to you.':
+    'गाड़ी खराब हो गई? हम 1 km के भीतर हर उपलब्ध GAADIIQ पार्टनर मैकेनिक को सूचित करते हैं। जो पहले स्वीकार करता है वही आपके पास आता है।',
+  'Share where you are':
+    'बताएं आप कहां हैं',
+  'We use your live location, not your profile address — what matters is where the car actually stopped.':
+    'हम आपकी मौजूदा लोकेशन लेते हैं, प्रोफाइल का पता नहीं — मायने यह रखता है कि कार असल में कहां रुकी।',
+  'We alert mechanics within 1 km':
+    'हम 1 km के भीतर मैकेनिकों को सूचित करते हैं',
+  'All of them at once. The first to accept is assigned, so you are not left choosing from a list while stranded.':
+    'सबको एक साथ। जो पहले स्वीकार करता है वही तय होता है, ताकि रास्ते में फंसे हुए आपको सूची में से चुनना न पड़े।',
+  'Share your code when they arrive':
+    'वे पहुंचें तो अपना कोड बताएं',
+  'You get a 6-digit code. The mechanic cannot start the job without it — that is how you know the person at your car is the one we sent.':
+    'आपको 6 अंकों का कोड मिलता है। उसके बिना मैकेनिक काम शुरू नहीं कर सकता — इसी से आप जानते हैं कि आपकी कार के पास वही व्यक्ति है जिसे हमने भेजा।',
+  'Pay after the work is priced':
+    'काम की कीमत तय होने के बाद भुगतान करें',
+  'The mechanic inspects and quotes. You are asked to pay only once there is something to pay for.':
+    'मैकेनिक जांच करके कीमत बताता है। भुगतान तभी मांगा जाता है जब कुछ देना बनता हो।',
+  'run an AI diagnosis':
+    'AI जांच चलाएं',
+  'first if you are unsure how serious the problem is.':
+    'अगर आपको समस्या की गंभीरता का अंदाज़ा नहीं है।',
+  'Are you a mechanic?':
+    'क्या आप मैकेनिक हैं?',
+  'Register as a partner':
+    'पार्टनर के रूप में रजिस्टर करें',
+  'to receive jobs from drivers nearby.':
+    'ताकि आस-पास के ड्राइवरों से काम मिले।',
 };

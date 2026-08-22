@@ -15,6 +15,7 @@ import { VoiceModeComponent, VoiceSessionResult } from '../../components/voice-m
 import { firstValueFrom } from 'rxjs';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { ServiceRequestComponent } from '../../components/service-request/service-request.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface ServiceCenter {
   name: string;
@@ -213,7 +214,7 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
 @Component({
   selector: 'app-vehicle-diagnosis',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent, ServiceRequestComponent, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent, ServiceRequestComponent, IconComponent, TranslatePipe],
   templateUrl: './vehicle-diagnosis.component.html',
   styleUrl: './vehicle-diagnosis.component.scss',
 })
