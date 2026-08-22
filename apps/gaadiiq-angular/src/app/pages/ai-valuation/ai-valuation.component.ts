@@ -9,11 +9,12 @@ import { PricingStrategyComponent } from '../../components/pricing-strategy/pric
 import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 import { DemandService, DaysTurn } from '../../services/demand.service';
 import { CATALOGUE, Variant, ValuationResult, computeHeuristicValuation } from '../../utils/valuation-engine';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-ai-valuation',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent, PricingStrategyComponent, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, PricingStrategyComponent, CustomSelectComponent, TranslatePipe],
   templateUrl: './ai-valuation.component.html',
   styleUrl: './ai-valuation.component.scss',
 })

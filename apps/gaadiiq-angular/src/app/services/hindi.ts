@@ -752,4 +752,85 @@ export const HINDI: Record<string, string> = {
     '(5 साल का विश्लेषण)',
   'Search and select at least 2 cars to compare':
     'तुलना के लिए कम से कम 2 कारें खोजें और चुनें',
+  // ── AI advisor and valuation ─────────────────────────────────────────────
+  'Advisor':
+    'सलाहकार',
+  'Select all that apply':
+    'जो भी लागू हो सब चुनें',
+  '← Back':
+    '← पीछे',
+  'Analyzing Your Profile':
+    'आपकी प्रोफाइल का विश्लेषण',
+  'AI Recommendations':
+    'AI सिफारिशें',
+  '← Retake Quiz':
+    '← क्विज़ दोबारा लें',
+  'No matches found':
+    'कोई मेल नहीं मिला',
+  'No cars in our catalogue match this combination of fuel type, body type, and budget. Try broadening one of those criteria.':
+    'हमारे कैटलॉग में फ्यूल टाइप, बॉडी टाइप और बजट के इस मेल की कोई कार नहीं है। इनमें से किसी एक को थोड़ा खुला रखकर देखें।',
+  'Feature':
+    'फीचर',
+  'Monthly Fuel':
+    'मासिक फ्यूल',
+  '5-Year TCO':
+    '5 साल का कुल खर्च',
+  'Resale (5yr)':
+    'पुनर्विक्रय (5 साल)',
+  'Rating':
+    'रेटिंग',
+  'match':
+    'मेल',
+  'Why this car for you':
+    'यह कार आपके लिए क्यों',
+  'Annual Maint.':
+    'सालाना रखरखाव',
+  'Pros':
+    'फायदे',
+  'What Is Your Car':
+    'आपकी कार की',
+  'Worth Today?':
+    'आज कीमत क्या है?',
+  'Get a fair market estimate for your used car based on depreciation, mileage, and market signals. Free, no sign-up needed.':
+    'मूल्यह्रास, चली हुई दूरी और बाज़ार के संकेतों के आधार पर अपनी पुरानी कार का उचित अनुमान पाएं। मुफ्त, बिना साइन-अप के।',
+  'Catalogue-based pricing':
+    'कैटलॉग आधारित कीमत',
+  'AI-enhanced when available':
+    'उपलब्ध होने पर AI से बेहतर',
+  'Preliminary estimate — verify with a dealer':
+    'प्रारंभिक अनुमान — डीलर से पुष्टि करें',
+  'Tell us about your car':
+    'अपनी कार के बारे में बताएं',
+  'Car Make *':
+    'कार मेक *',
+  'Model *':
+    'मॉडल *',
+  'Variant':
+    'वेरिएंट',
+  '— affects price accuracy':
+    '— कीमत की सटीकता पर असर डालता है',
+  'Year *':
+    'साल *',
+  'Kilometres Driven *':
+    'चली हुई किलोमीटर *',
+  'Fuel Type *':
+    'फ्यूल टाइप *',
+  'No. of Owners *':
+    'मालिकों की संख्या *',
+  'Overall Condition *':
+    'कुल हालत *',
+  'Analysing market data':
+    'बाज़ार डेटा का विश्लेषण',
+  "Your Car's":
+    'आपकी कार का',
+  'Market Value':
+    'बाज़ार मूल्य',
+  'Quick Sale':
+    'जल्दी बिक्री',
+  'Priced to go in a fortnight':
+    'दो हफ्ते में बिक जाने वाली कीमत',
+  'Selling Privately':
+    'निजी तौर पर बेचना',
+  'What you should realistically get':
+    'वास्तविक रूप से आपको कितना मिलना चाहिए',
 };

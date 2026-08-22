@@ -4,25 +4,25 @@
 
   <!-- Header -->
   <section class="val-hero container">
-    <div class="ai-badge"><app-icon name="brain" [size]="14"></app-icon> AI Valuation</div>
-    <h1>What Is Your Car <span class="gradient-text">Worth Today?</span></h1>
-    <p class="hero-sub">Get a fair market estimate for your used car based on depreciation, mileage, and market signals. Free, no sign-up needed.</p>
+    <div class="ai-badge"><app-icon name="brain" [size]="14"></app-icon> {{ 'AI Valuation' | t }}</div>
+    <h1>{{ 'What Is Your Car' | t }} <span class="gradient-text">{{ 'Worth Today?' | t }}</span></h1>
+    <p class="hero-sub">{{ 'Get a fair market estimate for your used car based on depreciation, mileage, and market signals. Free, no sign-up needed.' | t }}</p>
     <div class="trust-row">
-      <span><app-icon name="check" [size]="13"></app-icon> Catalogue-based pricing</span>
-      <span><app-icon name="check" [size]="13"></app-icon> AI-enhanced when available</span>
-      <span><app-icon name="check" [size]="13"></app-icon> Preliminary estimate — verify with a dealer</span>
+      <span><app-icon name="check" [size]="13"></app-icon> {{ 'Catalogue-based pricing' | t }}</span>
+      <span><app-icon name="check" [size]="13"></app-icon> {{ 'AI-enhanced when available' | t }}</span>
+      <span><app-icon name="check" [size]="13"></app-icon> {{ 'Preliminary estimate — verify with a dealer' | t }}</span>
     </div>
   </section>
 
   <!-- FORM -->
   <section class="val-form-section container" *ngIf="step() === 'form'">
     <div class="form-card glass-card">
-      <h2>Tell us about your car</h2>
+      <h2>{{ 'Tell us about your car' | t }}</h2>
 
       <div class="form-grid">
         <!-- Make -->
         <div class="form-group">
-          <label>Car Make *</label>
+          <label>{{ 'Car Make *' | t }}</label>
           <!-- Not a native <select>. Its popup is drawn by the operating
                system, so the teal that CSS applies on Linux never reaches
                Chrome on Windows — the highlight stayed the browser's blue on
@@ -34,7 +34,7 @@
 
         <!-- Model — dropdown if catalogue has models, else text input -->
         <div class="form-group">
-          <label>Model *</label>
+          <label>{{ 'Model *' | t }}</label>
           <app-custom-select *ngIf="availableModels.length > 0"
                              [options]="availableModels" placeholder="Select model"
                              [(ngModel)]="form.model" (ngModelChange)="onModelChange()" />
@@ -43,23 +43,23 @@
 
         <!-- Variant — dropdown, shown only when variants exist -->
         <div class="form-group" *ngIf="availableVariants.length > 0">
-          <label>Variant <span class="label-tip">— affects price accuracy</span></label>
+          <label>{{ 'Variant' | t }} <span class="label-tip">{{ '— affects price accuracy' | t }}</span></label>
           <app-custom-select [options]="variantOptions()"
                              placeholder="Select variant (optional)"
                              [(ngModel)]="form.variant" />
         </div>
 
         <div class="form-group">
-          <label>Year *</label>
+          <label>{{ 'Year *' | t }}</label>
           <app-custom-select [options]="yearOptions()" placeholder="Select year"
                              [(ngModel)]="form.year" />
         </div>
         <div class="form-group">
-          <label>Kilometres Driven *</label>
+          <label>{{ 'Kilometres Driven *' | t }}</label>
           <input type="number" [(ngModel)]="form.km" placeholder="e.g. 45000">
         </div>
         <div class="form-group">
-          <label>Fuel Type *</label>
+          <label>{{ 'Fuel Type *' | t }}</label>
           <app-custom-select [options]="fuels" placeholder="Select fuel"
                              [(ngModel)]="form.fuel" />
         </div>
@@ -69,12 +69,12 @@
                              [(ngModel)]="form.transmission" />
         </div>
         <div class="form-group">
-          <label>No. of Owners *</label>
+          <label>{{ 'No. of Owners *' | t }}</label>
           <app-custom-select [options]="ownerOptions" placeholder="Select"
                              [(ngModel)]="form.owners" />
         </div>
         <div class="form-group">
-          <label>Overall Condition *</label>
+          <label>{{ 'Overall Condition *' | t }}</label>
           <app-custom-select [options]="conditions" placeholder="Select condition"
                              [(ngModel)]="form.condition" />
         </div>
@@ -82,7 +82,7 @@
 
       <button class="btn-gradient val-btn" (click)="estimate()" [disabled]="!formValid || loading()">
         <span *ngIf="!loading()">Get AI Valuation</span>
-        <span *ngIf="loading()" class="loading-dots">Analysing market data<span class="dots">...</span></span>
+        <span *ngIf="loading()" class="loading-dots">{{ 'Analysing market data' | t }}<span class="dots">...</span></span>
       </button>
     </div>
 
@@ -110,7 +110,7 @@
 
     <div class="result-header">
       <div class="result-car">{{ form.make }} {{ form.model }}{{ form.variant ? ' ' + form.variant : '' }} · {{ form.year }} · {{ form.fuel }}</div>
-      <h2>Your Car's <span class="gradient-text">Market Value</span></h2>
+      <h2>{{ 'Your Car\'s' | t }} <span class="gradient-text">{{ 'Market Value' | t }}</span></h2>
       <span class="method-badge" [class.badge-claude]="r.method === 'claude'" [class.badge-heuristic]="r.method === 'heuristic'">
         {{ r.method === 'claude' ? '🤖 AI-powered' : '📐 Formula estimate' }}
       </span>
@@ -128,14 +128,14 @@
                the same car than you will, and a seller who does not know that
                lists at the forecourt price and waits forever. -->
           <div class="range-item low">
-            <div class="range-label">Quick Sale</div>
+            <div class="range-label">{{ 'Quick Sale' | t }}</div>
             <div class="range-val">{{ fmt(r.low) }}</div>
-            <div class="range-sub">Priced to go in a fortnight</div>
+            <div class="range-sub">{{ 'Priced to go in a fortnight' | t }}</div>
           </div>
           <div class="range-item mid highlight">
-            <div class="range-label">Selling Privately</div>
+            <div class="range-label">{{ 'Selling Privately' | t }}</div>
             <div class="range-val gradient-text">{{ fmt(r.mid) }}</div>
-            <div class="range-sub">What you should realistically get</div>
+            <div class="range-sub">{{ 'What you should realistically get' | t }}</div>
           </div>
           <div class="range-item high">
             <div class="range-label">Dealer Forecourt</div>
