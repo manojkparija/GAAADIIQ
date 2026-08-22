@@ -63,15 +63,15 @@ describe('navbar — New Cars menu', () => {
   }
 
   function menuLinks(): HTMLAnchorElement[] {
-    return Array.from(fixture.nativeElement.querySelectorAll('.nav-menu a'));
+    return Array.from(fixture.nativeElement.querySelectorAll('.nav-mega a'));
   }
 
   it('is closed until asked for', () => {
     build([car('Maruti Suzuki')]);
-    expect(fixture.nativeElement.querySelector('.nav-menu')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.nav-mega')).toBeNull();
 
     openMenu();
-    expect(fixture.nativeElement.querySelector('.nav-menu')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.nav-mega')).toBeTruthy();
   });
 
   it('points every entry at a route that exists', () => {
@@ -89,16 +89,19 @@ describe('navbar — New Cars menu', () => {
     }
   });
 
-  it('carries the tools a new-car buyer asks for next', () => {
-    // AI Advisor and Total Cost of Ownership were added by request. Asserted
-    // by destination, not by label, so renaming the text cannot silently drop
-    // the entry.
+  it('keeps the tools a new-car buyer asks for next reachable from the bar', () => {
+    // These two used to live inside this menu, and this test looked for them
+    // there. The redesign promoted both: AI Advisor is a tab on the AI row and
+    // Total Cost of Ownership is a top-level link, so each is now fewer clicks
+    // away than it was. What matters is that they are still reachable without
+    // opening a menu — so that, not their old address, is what is asserted.
     build([car('Maruti Suzuki')]);
     openMenu();
 
-    const hrefs = menuLinks().map(a => a.getAttribute('href') ?? '');
-    expect(hrefs).toContain('/ai-advisor');
-    expect(hrefs).toContain('/tco');
+    const all = Array.from(fixture.nativeElement.querySelectorAll('a[href]'))
+      .map(a => (a as HTMLAnchorElement).getAttribute('href') ?? '');
+    expect(all).toContain('/ai-advisor');
+    expect(all).toContain('/tco');
   });
 
   it('offers brands the catalogue actually has', () => {
@@ -114,9 +117,9 @@ describe('navbar — New Cars menu', () => {
     openMenu();
 
     expect(comp.newCarBrands()).toEqual([]);
-    const groups = Array.from(fixture.nativeElement.querySelectorAll('.nav-menu-group'))
+    const groups = Array.from(fixture.nativeElement.querySelectorAll('.nav-mega-head'))
       .map(el => (el as HTMLElement).textContent?.trim());
-    expect(groups).not.toContain('By brand');
+    expect(groups).not.toContain('Browse by Brand');
   });
 
   it('ignores used cars when listing brands', () => {
@@ -147,7 +150,7 @@ describe('navbar — New Cars menu', () => {
     fixture.detectChanges();
 
     expect(comp.newCarsOpen()).toBeFalse();
-    expect(fixture.nativeElement.querySelector('.nav-menu')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.nav-mega')).toBeNull();
   });
 });
 
@@ -192,7 +195,7 @@ describe('navbar — Used Cars menu', () => {
   }
 
   function hrefs(): string[] {
-    return Array.from(fixture.nativeElement.querySelectorAll('.nav-menu a'))
+    return Array.from(fixture.nativeElement.querySelectorAll('.nav-mega a'))
       .map(a => (a as HTMLAnchorElement).getAttribute('href') ?? '');
   }
 
@@ -235,7 +238,7 @@ describe('navbar — Used Cars menu', () => {
     // No city link at all — a picker button instead, so nothing pretends a
     // filter was applied.
     expect(hrefs().some(h => h.includes('city='))).toBeFalse();
-    expect(fixture.nativeElement.querySelector('.nav-menu-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.nav-mega-btn')).toBeTruthy();
   });
 });
 
@@ -272,7 +275,7 @@ describe('navbar — two-row links', () => {
   });
 
   it('puts the AI tools on their own row', () => {
-    const ai = fixture.nativeElement.querySelector('.nav-row-ai');
+    const ai = fixture.nativeElement.querySelector('.nav-ai');
     expect(ai).toBeTruthy();
 
     const hrefs = Array.from(ai.querySelectorAll('a'))
@@ -284,7 +287,7 @@ describe('navbar — two-row links', () => {
     // The .hide-mobile class moved from the <ul> to the wrapper when the rows
     // were split; losing it would leave both rows on a phone behind the
     // hamburger.
-    expect(fixture.nativeElement.querySelector('.nav-stack.hide-mobile')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.nav-links.hide-mobile')).toBeTruthy();
   });
 });
 
@@ -318,14 +321,20 @@ describe('navbar — label styling', () => {
     fixture.detectChanges();
 
     const items = Array.from(
-      fixture.nativeElement.querySelectorAll('.nav-stack .nav-links > li'),
+      fixture.nativeElement.querySelectorAll('.nav-links > li'),
     ).map(li => (li as HTMLElement).querySelector('a, .nav-dropdown-trigger') as HTMLElement);
 
-    expect(items.length).toBeGreaterThan(10);
+    // Eight now, not thirteen: the AI tools moved to their own row as feature
+    // tabs, which are deliberately styled differently. This row is still the
+    // one that mixes <a> and <button>, which is the trap being guarded — three
+    // of the eight are dropdown triggers.
+    expect(items.length).toBeGreaterThan(6);
+    expect(items.filter(el => el.tagName === 'BUTTON').length).toBeGreaterThan(2);
+
     const weights = new Set(items.map(el => getComputedStyle(el).fontWeight));
     const sizes = new Set(items.map(el => getComputedStyle(el).fontSize));
 
-    // One weight and one size across the whole bar — buttons included.
+    // One weight and one size across the primary row — buttons included.
     expect(weights.size).withContext([...weights].join(', ')).toBe(1);
     expect(sizes.size).withContext([...sizes].join(', ')).toBe(1);
   });

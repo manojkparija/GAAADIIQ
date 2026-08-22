@@ -325,6 +325,11 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       if (params['fuel']) this.selectedFuels.set([params['fuel']]);
       if (params['bodyType']) this.selectedBodyTypes.set([params['bodyType']]);
+      // 'Certified Used Cars' in the nav needs a parameter to set, and the
+      // page already had the filter — it just could not be reached by URL.
+      if (params['certified'] === '1' || params['certified'] === 'true') {
+        this.certifiedOnly.set(true);
+      }
       if (params['maxBudget']) {
         const v = +params['maxBudget'];
         this.heroBudgetMax.set(v);

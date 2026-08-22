@@ -97,6 +97,7 @@ export class NavbarComponent {
   toggleNewCars(): void {
     this.usedCarsOpen.set(false);
     this.langOpen.set(false);
+    this.financeOpen.set(false);
     this.newCarsOpen.update(v => !v);
   }
   closeNewCars(): void { this.newCarsOpen.set(false); }
@@ -104,9 +105,44 @@ export class NavbarComponent {
   toggleUsedCars(): void {
     this.newCarsOpen.set(false);
     this.langOpen.set(false);
+    this.financeOpen.set(false);
     this.usedCarsOpen.update(v => !v);
   }
   closeUsedCars(): void { this.usedCarsOpen.set(false); }
+
+  /**
+   * The AI row, as data rather than four hand-written blocks. routerLinkActive
+   * gives each tab its selected state, so the gradient marks where you are
+   * instead of tracking it in a signal that can disagree with the URL.
+   */
+  readonly aiTabs: { link: string; icon: string; label: string }[] = [
+    { link: '/ai-advisor',       icon: 'sparkles',      label: 'AI Advisor' },
+    { link: '/vehicle-diagnosis', icon: 'wrench',       label: 'AI Diagnosis' },
+    { link: '/ai-valuation',     icon: 'indian-rupee',  label: 'AI Car Value' },
+    { link: '/find-mechanic',    icon: 'map-pin',       label: 'Find Mechanic' },
+  ];
+
+  /**
+   * New-car budget bands. /new-cars reads minPrice and maxPrice — NOT the
+   * maxBudget the used-car page uses. Two pages, two parameter names; sending
+   * the wrong one filters nothing and reports no error.
+   */
+  readonly newCarBudgets: { label: string; min: number; max: number }[] = [
+    { label: 'Under ₹5L',  min: 0,        max: 500000 },
+    { label: '₹5 – 10L',   min: 500000,   max: 1000000 },
+    { label: '₹10 – 20L',  min: 1000000,  max: 2000000 },
+    { label: 'Above ₹20L', min: 2000000,  max: 100000000 },
+  ];
+
+  // ── EMI & Loan ───────────────────────────────────────────────────────────
+  financeOpen = signal(false);
+
+  toggleFinance(): void {
+    this.newCarsOpen.set(false);
+    this.usedCarsOpen.set(false);
+    this.langOpen.set(false);
+    this.financeOpen.update(v => !v);
+  }
 
   // ── Language picker ──────────────────────────────────────────────────────
   readonly languages = LANGUAGES;
@@ -115,6 +151,7 @@ export class NavbarComponent {
   toggleLang(): void {
     this.newCarsOpen.set(false);
     this.usedCarsOpen.set(false);
+    this.financeOpen.set(false);
     this.langOpen.update(v => !v);
   }
 
@@ -147,6 +184,7 @@ export class NavbarComponent {
         this.newCarsOpen.set(false);
         this.usedCarsOpen.set(false);
         this.langOpen.set(false);
+        this.financeOpen.set(false);
       }
       if (e instanceof NavigationEnd) {
         this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
@@ -155,7 +193,7 @@ export class NavbarComponent {
   }
 
   @HostListener('window:scroll')
-  onScroll() { this._scrolled.set(window.scrollY > 30); }
+  onScroll() { this._scrolled.set(window.scrollY > 12); }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(e: MouseEvent) {
@@ -166,6 +204,7 @@ export class NavbarComponent {
     if (!target.closest('.nav-dropdown')) {
       this.newCarsOpen.set(false);
       this.usedCarsOpen.set(false);
+      this.financeOpen.set(false);
     }
     if (this.langOpen() && !target.closest('.lang-wrap')) {
       this.langOpen.set(false);
@@ -178,6 +217,7 @@ export class NavbarComponent {
     this.newCarsOpen.set(false);
     this.usedCarsOpen.set(false);
     this.langOpen.set(false);
+    this.financeOpen.set(false);
     this.userMenuOpen.set(false);
   }
 

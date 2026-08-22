@@ -98,7 +98,7 @@ describe('translation does not reach business values', () => {
 
   it('keeps filter query parameters in English when the UI is Hindi', () => {
     const f = build('hi');
-    const hrefs = Array.from(f.nativeElement.querySelectorAll('.nav-menu a'))
+    const hrefs = Array.from(f.nativeElement.querySelectorAll('.nav-mega a'))
       .map(a => (a as HTMLAnchorElement).getAttribute('href') ?? '');
 
     // The chips read Hindi; what they ask the server for must not.
@@ -109,9 +109,9 @@ describe('translation does not reach business values', () => {
   });
 
   it('builds the same links in both languages', () => {
-    const en = Array.from(build('en').nativeElement.querySelectorAll('.nav-menu a'))
+    const en = Array.from(build('en').nativeElement.querySelectorAll('.nav-mega a'))
       .map(a => (a as HTMLAnchorElement).getAttribute('href'));
-    const hi = Array.from(build('hi').nativeElement.querySelectorAll('.nav-menu a'))
+    const hi = Array.from(build('hi').nativeElement.querySelectorAll('.nav-mega a'))
       .map(a => (a as HTMLAnchorElement).getAttribute('href'));
 
     // Identical destinations; only the text between the tags differs.
@@ -120,7 +120,7 @@ describe('translation does not reach business values', () => {
 
   it('translates the group headings that are labels only', () => {
     const f = build('hi');
-    const groups = Array.from(f.nativeElement.querySelectorAll('.nav-menu-group'))
+    const groups = Array.from(f.nativeElement.querySelectorAll('.nav-mega-head'))
       .map(el => (el as HTMLElement).textContent!.trim());
     expect(groups).toContain('बजट से');
     expect(groups).not.toContain('By budget');
