@@ -95,8 +95,8 @@
         {icon:'gauge', title:'Confidence Range', desc:'You get a low, mid, and high estimate so you know where to price.'}
       ]">
         <div class="how-icon"><app-icon [name]="h.icon" [size]="24"></app-icon></div>
-        <h4>{{ h.title }}</h4>
-        <p>{{ h.desc }}</p>
+        <h4>{{ h.title | t }}</h4>
+        <p>{{ h.desc | t }}</p>
       </div>
     </div>
   </section>

@@ -51,12 +51,10 @@
       <div class="step-content">
         <h2>{{ 'Check your email' | t }}</h2>
         <p class="confirm-copy">
-          {{ 'We sent a confirmation link to' | t }} <strong>{{ email() }}</strong>.
-          Click it, then sign in — your account is ready on the other side.
+          {{ 'We sent a confirmation link to' | t }} <strong>{{ email() }}</strong>{{ '. Click it, then sign in — your account is ready on the other side.' | t }}
         </p>
         <p class="confirm-copy" *ngIf="accountType() === 'mechanic'">
-          After signing in you'll be asked for your workshop details and KYC.
-          An admin approves the account before jobs start arriving.
+          {{ 'After signing in you\'ll be asked for your workshop details and KYC. An admin approves the account before jobs start arriving.' | t }}
         </p>
         <a routerLink="/login" class="btn-gradient" style="display:block;text-align:center">{{ 'Go to sign in' | t }}</a>
       </div>
@@ -109,7 +107,7 @@
                 <rect x="11" y="32" width="4" height="4" rx="1" fill="#FCA5A5"/>
               </svg>
               <span class="role-label">{{ 'Customer' | t }}</span>
-              <span class="role-desc">Browse &amp; buy cars</span>
+              <span class="role-desc">{{ 'Browse & buy cars' | t }}</span>
             </button>
 
             <!-- Seller -->
@@ -137,7 +135,7 @@
                 <text x="65" y="21" text-anchor="middle" font-size="6" fill="#92400E" font-weight="bold">₹</text>
               </svg>
               <span class="role-label">{{ 'Seller' | t }}</span>
-              <span class="role-desc">List &amp; sell cars</span>
+              <span class="role-desc">{{ 'List & sell cars' | t }}</span>
             </button>
 
             <!-- Mechanic. Registration continues on /mechanic-signup, which

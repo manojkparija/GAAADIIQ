@@ -4,8 +4,7 @@
       <span class="eyebrow">{{ 'Roadside Assistance' | t }}</span>
       <h1>{{ 'Find a Nearby' | t }} <span class="gradient-text">{{ 'Mechanic' | t }}</span></h1>
       <p>
-        Broken down? We alert every available GAADIIQ partner mechanic within 1 km.
-        The first to accept comes to you.
+        {{ 'Broken down? We alert every available GAADIIQ partner mechanic within 1 km. The first to accept comes to you.' | t }}
       </p>
     </div>
   </header>
@@ -53,13 +52,11 @@
 
       <p class="fm-note">
         Not broken down right now? Bookmark this page — it is easier to find before you need it.
-        You can also <a routerLink="/vehicle-diagnosis">{{ 'run an AI diagnosis' | t }}</a> first if you are
-        unsure how serious the problem is.
+        You can also <a routerLink="/vehicle-diagnosis">{{ 'run an AI diagnosis' | t }}</a> {{ 'first if you are unsure how serious the problem is.' | t }}
       </p>
 
       <p class="fm-note fm-mech">
-        {{ 'Are you a mechanic?' | t }} <a routerLink="/mechanic-signup">{{ 'Register as a partner' | t }}</a> to receive
-        jobs from drivers nearby.
+        {{ 'Are you a mechanic?' | t }} <a routerLink="/mechanic-signup">{{ 'Register as a partner' | t }}</a> {{ 'to receive jobs from drivers nearby.' | t }}
       </p>
     } @else {
       <div class="fm-panel">

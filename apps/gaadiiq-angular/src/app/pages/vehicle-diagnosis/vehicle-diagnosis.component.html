@@ -115,8 +115,7 @@
             <div class="dpdp-copy">
               <strong>{{ 'Your voice data' | t }}</strong>
               <p>
-                Delete every stored transcript from your voice diagnoses. Audio recordings are
-                never kept — only the text. This also withdraws microphone consent.
+                {{ 'Delete every stored transcript from your voice diagnoses. Audio recordings are never kept — only the text. This also withdraws microphone consent.' | t }}
               </p>
             </div>
             <button class="btn-danger-ghost" *ngIf="!confirmVoiceWipe()" (click)="askVoiceWipe()">

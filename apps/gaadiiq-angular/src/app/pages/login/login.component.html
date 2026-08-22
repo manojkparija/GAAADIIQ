@@ -61,8 +61,7 @@
       <div class="confirm-msg" *ngIf="needsConfirmation()">
         <p><strong>{{ 'Almost there — confirm your email first.' | t }}</strong></p>
         <p>
-          {{ 'We sent a link to' | t }} <strong>{{ email() }}</strong>. Click it, then sign in.
-          Your password is fine.
+          {{ 'We sent a link to' | t }} <strong>{{ email() }}</strong>{{ '. Click it, then sign in. Your password is fine.' | t }}
         </p>
         <p *ngIf="!resendSent()">
           {{ 'Nothing in your inbox? Check spam, or' | t }}
