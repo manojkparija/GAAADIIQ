@@ -644,3 +644,82 @@
   white-space: nowrap;
   &:hover { filter: brightness(1.08); }
 }
+
+// ── Language picker ────────────────────────────────────────────────────────
+.lang-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  &:hover { border-color: var(--primary); }
+  .nav-caret { font-size: 0.7em; }
+}
+
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 300;
+  min-width: 9rem;
+  padding: 0.3rem;
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 12px 30px rgba(11, 18, 32, 0.16);
+  display: flex;
+  flex-direction: column;
+}
+
+.lang-option {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  &:hover { background: var(--fill-soft); }
+  // The language in use is marked, so the list answers "which am I on?"
+  // as well as "what can I switch to?" — the question a bare toggle leaves open.
+  &.is-current { font-weight: 700; }
+}
+
+// Mobile: the picker lives in the drawer, where there is room for both
+// languages side by side rather than a menu hanging off a 36px button.
+.mobile-lang {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.mobile-lang-option {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  &.is-current {
+    background: var(--gradient-cta);
+    border-color: transparent;
+    font-weight: 700;
+  }
+}

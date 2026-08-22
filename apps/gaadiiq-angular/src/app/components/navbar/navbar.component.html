@@ -11,7 +11,7 @@
          financing above, everything the AI does below. -->
     <div class="nav-stack hide-mobile">
     <ul class="nav-links">
-      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a></li>
+      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">{{ lang.t('navHome') }}</a></li>
       <!-- New Cars is a menu rather than a link because it is the one section
            with several genuine ways in — by body type, by fuel, by brand.
            Everything listed resolves to a page that exists; the reference menu
@@ -22,7 +22,7 @@
                 [class.open]="newCarsOpen()"
                 (click)="toggleNewCars()"
                 [attr.aria-expanded]="newCarsOpen()" aria-haspopup="true">
-          New Cars <span class="nav-caret" aria-hidden="true">▾</span>
+          {{ lang.t('navNewCars') }} <span class="nav-caret" aria-hidden="true">▾</span>
         </button>
 
         <div class="nav-menu" *ngIf="newCarsOpen()" role="menu">
@@ -72,7 +72,7 @@
                 [class.open]="usedCarsOpen()"
                 (click)="toggleUsedCars()"
                 [attr.aria-expanded]="usedCarsOpen()" aria-haspopup="true">
-          Used Cars <span class="nav-caret" aria-hidden="true">▾</span>
+          {{ lang.t('navUsedCars') }} <span class="nav-caret" aria-hidden="true">▾</span>
         </button>
 
         <div class="nav-menu" *ngIf="usedCarsOpen()" role="menu">
@@ -128,12 +128,12 @@
           </ng-container>
         </div>
       </li>
-      <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
-      <li><a routerLink="/emi-calculator" routerLinkActive="active">EMI</a></li>
-      <li><a routerLink="/car-loan" routerLinkActive="active">Car Loan</a></li>
-      <li><a routerLink="/tco" routerLinkActive="active">TCO</a></li>
-      <li><a routerLink="/reviews-news" routerLinkActive="active">News</a></li>
-      <li><a routerLink="/buyer-journey" routerLinkActive="active">Journey</a></li>
+      <li><a routerLink="/compare" routerLinkActive="active">{{ lang.t('navCompare') }}</a></li>
+      <li><a routerLink="/emi-calculator" routerLinkActive="active">{{ lang.t('navEmi') }}</a></li>
+      <li><a routerLink="/car-loan" routerLinkActive="active">{{ lang.t('navCarLoan') }}</a></li>
+      <li><a routerLink="/tco" routerLinkActive="active">{{ lang.t('navTco') }}</a></li>
+      <li><a routerLink="/reviews-news" routerLinkActive="active">{{ lang.t('navNews') }}</a></li>
+      <li><a routerLink="/buyer-journey" routerLinkActive="active">{{ lang.t('navJourney') }}</a></li>
     </ul>
 
     <!-- The AI row. "Car Value" is renamed "AI Car Value" because that is
@@ -142,11 +142,35 @@
          belongs here too: it is the other half of AI Diagnosis — the page
          tells you what is wrong, this one finds someone to fix it. -->
     <ul class="nav-links nav-row-ai">
-      <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>
-      <li><a routerLink="/vehicle-diagnosis" routerLinkActive="active">AI Diagnosis</a></li>
-      <li><a routerLink="/ai-valuation" routerLinkActive="active">AI Car Value</a></li>
-      <li><a routerLink="/find-mechanic" routerLinkActive="active" class="nav-urgent">Find Mechanic</a></li>
+      <li><a routerLink="/ai-advisor" routerLinkActive="active">{{ lang.t('navAiAdvisor') }}</a></li>
+      <li><a routerLink="/vehicle-diagnosis" routerLinkActive="active">{{ lang.t('navAiDiagnosis') }}</a></li>
+      <li><a routerLink="/ai-valuation" routerLinkActive="active">{{ lang.t('navAiCarValue') }}</a></li>
+      <li><a routerLink="/find-mechanic" routerLinkActive="active" class="nav-urgent">{{ lang.t('navFindMechanic') }}</a></li>
     </ul>
+    </div>
+
+    <!-- Language picker. A list rather than a toggle: a toggle labelled with
+         the *other* language is ambiguous — it reads as "you are in Hindi" to
+         half the people who see it. This shows the language in use and marks
+         the current one when open, so neither reading is possible. -->
+    <div class="lang-wrap hide-mobile">
+      <button type="button" class="lang-btn" (click)="toggleLang()"
+              [attr.aria-expanded]="langOpen()" aria-haspopup="listbox"
+              [attr.aria-label]="lang.t('language')">
+        <span>{{ currentLangLabel() }}</span>
+        <span class="nav-caret" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="lang-menu" *ngIf="langOpen()" role="listbox"
+           [attr.aria-label]="lang.t('language')">
+        <button type="button" *ngFor="let l of languages"
+                class="lang-option" role="option"
+                [class.is-current]="l.code === lang.lang()"
+                [attr.aria-selected]="l.code === lang.lang()"
+                (click)="chooseLang(l.code)">
+          {{ l.label }}
+        </button>
+      </div>
     </div>
 
     <button class="city-btn-nav hide-mobile" (click)="openCityModal()" title="Select City">
@@ -318,6 +342,18 @@
       <app-icon name="map-pin" [size]="15"></app-icon>
       {{ city.selectedCity() || 'Select City' }}
     </button>
+    <!-- Same choice as the desktop picker, laid out for a thumb. It sits with
+         the other preferences rather than among the links, because it changes
+         how the app reads rather than where it goes. -->
+    <div class="mobile-lang" role="group" [attr.aria-label]="lang.t('language')">
+      <button type="button" *ngFor="let l of languages"
+              class="mobile-lang-option"
+              [class.is-current]="l.code === lang.lang()"
+              [attr.aria-pressed]="l.code === lang.lang()"
+              (click)="chooseLang(l.code)">
+        {{ l.label }}
+      </button>
+    </div>
     <div class="mobile-theme-row">
       <span>{{ theme.isDark() ? 'Dark Mode' : 'Light Mode' }}</span>
       <button class="theme-toggle" (click)="theme.toggle()">

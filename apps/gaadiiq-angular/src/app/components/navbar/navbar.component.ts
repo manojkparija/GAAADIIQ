@@ -6,7 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { CityService } from '../../services/city.service';
-import { LanguageService } from '../../services/language.service';
+import { LanguageService, LANGUAGES, Lang } from '../../services/language.service';
 import { CitySelectorComponent } from '../city-selector/city-selector.component';
 import { CarsDataService } from '../../services/cars-data.service';
 
@@ -95,15 +95,37 @@ export class NavbarComponent {
    */
   toggleNewCars(): void {
     this.usedCarsOpen.set(false);
+    this.langOpen.set(false);
     this.newCarsOpen.update(v => !v);
   }
   closeNewCars(): void { this.newCarsOpen.set(false); }
 
   toggleUsedCars(): void {
     this.newCarsOpen.set(false);
+    this.langOpen.set(false);
     this.usedCarsOpen.update(v => !v);
   }
   closeUsedCars(): void { this.usedCarsOpen.set(false); }
+
+  // ── Language picker ──────────────────────────────────────────────────────
+  readonly languages = LANGUAGES;
+  langOpen = signal(false);
+
+  toggleLang(): void {
+    this.newCarsOpen.set(false);
+    this.usedCarsOpen.set(false);
+    this.langOpen.update(v => !v);
+  }
+
+  chooseLang(code: Lang): void {
+    this.lang.set(code);
+    this.langOpen.set(false);
+  }
+
+  /** The label for the language in use, for the closed picker. */
+  currentLangLabel(): string {
+    return LANGUAGES.find(l => l.code === this.lang.lang())?.label ?? 'English';
+  }
 
   menuOpen = signal(false);
   userMenuOpen = signal(false);
@@ -120,7 +142,11 @@ export class NavbarComponent {
   ) {
     router.events.subscribe(e => {
       // A menu left open across a navigation covers the page you just asked for.
-      if (e instanceof NavigationEnd) { this.newCarsOpen.set(false); this.usedCarsOpen.set(false); }
+      if (e instanceof NavigationEnd) {
+        this.newCarsOpen.set(false);
+        this.usedCarsOpen.set(false);
+        this.langOpen.set(false);
+      }
       if (e instanceof NavigationEnd) {
         this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
       }
@@ -140,6 +166,9 @@ export class NavbarComponent {
       this.newCarsOpen.set(false);
       this.usedCarsOpen.set(false);
     }
+    if (this.langOpen() && !target.closest('.lang-wrap')) {
+      this.langOpen.set(false);
+    }
   }
 
   /** Escape closes the menu, so a keyboard user is not trapped inside it. */
@@ -147,6 +176,7 @@ export class NavbarComponent {
   onEscape() {
     this.newCarsOpen.set(false);
     this.usedCarsOpen.set(false);
+    this.langOpen.set(false);
     this.userMenuOpen.set(false);
   }
 
