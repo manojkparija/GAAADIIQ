@@ -491,40 +491,40 @@
 
     <!-- ── STEP 3: Review & Submit ── -->
     <div class="step-card" *ngIf="step() === 3">
-      <h2 class="step-title">Review & submit for AI analysis</h2>
+      <h2 class="step-title">{{ 'Review & submit for AI analysis' | t }}</h2>
 
       <div class="review-grid">
         <div class="review-section">
           <h3><app-icon name="car" [size]="16"></app-icon> {{ 'Vehicle' | t }}</h3>
-          <div class="review-row"><span>Make & Model</span><strong>{{ form.manufacturer }} {{ form.model }}{{ form.variant ? ' ' + form.variant : '' }}</strong></div>
+          <div class="review-row"><span>{{ 'Make & Model' | t }}</span><strong>{{ form.manufacturer }} {{ form.model }}{{ form.variant ? ' ' + form.variant : '' }}</strong></div>
           <div class="review-row"><span>{{ 'Year' | t }}</span><strong>{{ form.model_year }}</strong></div>
-          <div class="review-row"><span>Fuel / Transmission</span><strong>{{ form.fuel_type }} / {{ form.transmission }}</strong></div>
-          <div class="review-row" *ngIf="form.odometer_km"><span>Odometer</span><strong>{{ form.odometer_km | number }} km</strong></div>
+          <div class="review-row"><span>{{ 'Fuel / Transmission' | t }}</span><strong>{{ form.fuel_type }} / {{ form.transmission }}</strong></div>
+          <div class="review-row" *ngIf="form.odometer_km"><span>{{ 'Odometer' | t }}</span><strong>{{ form.odometer_km | number }} km</strong></div>
         </div>
         <div class="review-section">
           <h3><app-icon name="wrench" [size]="16"></app-icon> {{ 'Symptoms' | t }}</h3>
           <div class="review-row"><span>{{ 'Severity' | t }}</span>
             <strong [style.color]="severityColor(severity)">{{ severity | titlecase }}</strong>
           </div>
-          <div class="review-row" *ngIf="selectedWarningLights().length"><span>Warning Lights</span><strong>{{ selectedWarningLights().join(', ') }}</strong></div>
-          <div class="review-row" *ngIf="selectedWhenOccurs().length"><span>Occurs During</span><strong>{{ selectedWhenOccurs().join(', ') }}</strong></div>
+          <div class="review-row" *ngIf="selectedWarningLights().length"><span>{{ 'Warning Lights' | t }}</span><strong>{{ selectedWarningLights().join(', ') }}</strong></div>
+          <div class="review-row" *ngIf="selectedWhenOccurs().length"><span>{{ 'Occurs During' | t }}</span><strong>{{ selectedWhenOccurs().join(', ') }}</strong></div>
           <div class="review-row" *ngIf="selectedImages().length"><span>{{ 'Photos' | t }}</span><strong>{{ selectedImages().length }} selected</strong></div>
         </div>
       </div>
 
       <div class="review-desc">
-        <h3>Problem Description</h3>
+        <h3>{{ 'Problem Description' | t }}</h3>
         <p>{{ problemDescription }}</p>
       </div>
 
       <div class="disclaimer-box">
         <span><app-icon name="alert-triangle" [size]="16"></app-icon></span>
-        <p>This AI analysis is a <strong>preliminary assessment only</strong>. It is not a professional diagnosis. Always consult a certified mechanic before making any repair decisions.</p>
+        <p>{{ 'This AI analysis is a' | t }} <strong>{{ 'preliminary assessment only' | t }}</strong>{{ '. It is not a professional diagnosis. Always consult a certified mechanic before making any repair decisions.' | t }}</p>
       </div>
 
       <div class="step-actions">
-        <button class="btn-ghost" (click)="back()">← Edit</button>
-        <button class="btn-primary" (click)="submit()"><app-icon name="search" [size]="16"></app-icon> Analyse with AI</button>
+        <button class="btn-ghost" (click)="back()">{{ '← Edit' | t }}</button>
+        <button class="btn-primary" (click)="submit()"><app-icon name="search" [size]="16"></app-icon> {{ 'Analyse with AI' | t }}</button>
       </div>
     </div>
 
@@ -608,7 +608,7 @@
           <span><app-icon [name]="report.safe_to_drive ? 'check-circle' : 'ban'" [size]="18"></app-icon></span>
           <div>
             <strong>{{ report.safe_to_drive ? 'Vehicle appears safe to drive with caution' : 'Do NOT drive — immediate inspection required' }}</strong>
-            <p *ngIf="report.immediate_service_required">Professional service required as soon as possible.</p>
+            <p *ngIf="report.immediate_service_required">{{ 'Professional service required as soon as possible.' | t }}</p>
           </div>
         </div>
 
@@ -638,7 +638,7 @@
 
         <!-- Diagnosis summary -->
         <div class="report-card">
-          <h3><app-icon name="search" [size]="16"></app-icon> Preliminary Diagnosis</h3>
+          <h3><app-icon name="search" [size]="16"></app-icon> {{ 'Preliminary Diagnosis' | t }}</h3>
           <p class="diag-text">{{ report.preliminary_diagnosis }}</p>
         </div>
 

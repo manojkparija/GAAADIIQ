@@ -142,7 +142,7 @@
           </div>
           <div class="val-range">
             <div class="val-col">
-              <div class="val-label">Low</div>
+              <div class="val-label">{{ 'Low' | t }}</div>
               <div class="val-num low">{{ fmt(valuation()!.low) }}</div>
             </div>
             <div class="val-col mid">
@@ -150,7 +150,7 @@
               <div class="val-num">{{ fmt(valuation()!.mid) }}</div>
             </div>
             <div class="val-col">
-              <div class="val-label">High</div>
+              <div class="val-label">{{ 'High' | t }}</div>
               <div class="val-num high">{{ fmt(valuation()!.high) }}</div>
             </div>
           </div>
@@ -268,9 +268,9 @@
             <span class="val-conf">{{ valuation()!.confidence }}% confidence</span>
           </div>
           <div class="val-range">
-            <div class="val-col"><div class="val-label">Low</div><div class="val-num low">{{ fmt(valuation()!.low) }}</div></div>
+            <div class="val-col"><div class="val-label">{{ 'Low' | t }}</div><div class="val-num low">{{ fmt(valuation()!.low) }}</div></div>
             <div class="val-col mid"><div class="val-label">{{ 'Fair Price' | t }}</div><div class="val-num">{{ fmt(valuation()!.mid) }}</div></div>
-            <div class="val-col"><div class="val-label">High</div><div class="val-num high">{{ fmt(valuation()!.high) }}</div></div>
+            <div class="val-col"><div class="val-label">{{ 'High' | t }}</div><div class="val-num high">{{ fmt(valuation()!.high) }}</div></div>
           </div>
         </div>
         <div class="form-group full-width">

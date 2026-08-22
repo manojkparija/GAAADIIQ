@@ -1623,4 +1623,51 @@ export const HINDI: Record<string, string> = {
     'अक्सर',
   'days or more':
     'दिन या ज्यादा',
+  // ── Diagnosis review and result screens ─────────────────────────────────
+  'Review & submit for AI analysis':
+    'AI विश्लेषण के लिए जांचें और भेजें',
+  'Make & Model':
+    'मेक और मॉडल',
+  'Fuel / Transmission':
+    'फ्यूल / ट्रांसमिशन',
+  'Odometer':
+    'ओडोमीटर',
+  'Warning Lights':
+    'चेतावनी लाइट',
+  'Occurs During':
+    'कब होता है',
+  'Problem Description':
+    'समस्या का विवरण',
+  'High':
+    'ज्यादा',
+  'Medium':
+    'मध्यम',
+  'Low':
+    'कम',
+  '← Edit':
+    '← बदलें',
+  'Analyse with AI':
+    'AI से विश्लेषण करें',
+  'Preliminary Diagnosis':
+    'प्रारंभिक जांच',
+  'Moderate Repair':
+    'मध्यम मरम्मत',
+  'Minor Repair':
+    'छोटी मरम्मत',
+  'Major Repair':
+    'बड़ी मरम्मत',
+  'Do NOT drive — immediate inspection required':
+    'गाड़ी न चलाएं — तुरंत जांच ज़रूरी',
+  'Professional service required as soon as possible.':
+    'जल्द से जल्द पेशेवर सर्विस ज़रूरी है।',
+  'Drive with caution — get it checked soon':
+    'सावधानी से चलाएं — जल्दी जांच कराएं',
+  'Safe to drive — monitor the symptoms':
+    'चलाना सुरक्षित है — लक्षणों पर नज़र रखें',
+  'This AI analysis is a':
+    'यह AI विश्लेषण एक',
+  'preliminary assessment only':
+    'सिर्फ प्रारंभिक आकलन है',
+  '. It is not a professional diagnosis. Always consult a certified mechanic before making any repair decisions.':
+    '। यह पेशेवर जांच नहीं है। मरम्मत का कोई भी फैसला लेने से पहले हमेशा प्रमाणित मैकेनिक से सलाह लें।',
 };

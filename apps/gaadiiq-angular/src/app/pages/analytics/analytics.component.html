@@ -60,7 +60,7 @@
             <h3>Typical time to sell</h3>
             @if (daysTurn(); as t) {
               @if (t.has_enough_data) {
-                <p class="demand-figure">{{ t.median_days }} <span>days</span></p>
+                <p class="demand-figure">{{ t.median_days }} <span>{{ 'days' | t }}</span></p>
                 <p class="demand-note">{{ t.basis }}</p>
               } @else {
                 <p class="demand-empty">{{ t.note }}</p>
