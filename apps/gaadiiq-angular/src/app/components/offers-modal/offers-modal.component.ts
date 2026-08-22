@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LeadService } from '../../services/lead.service';
 import { CityService, POPULAR_CITIES } from '../../services/city.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 export type OffersStep = 'city' | 'phone' | 'done';
 
@@ -27,7 +28,7 @@ export type OffersStep = 'city' | 'phone' | 'done';
 @Component({
   selector: 'app-offers-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './offers-modal.component.html',
   styleUrl: './offers-modal.component.scss',
 })

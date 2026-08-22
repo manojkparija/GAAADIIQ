@@ -1,7 +1,7 @@
 <div class="compare-page">
   <div class="compare-hero">
     <div class="container">
-      <h1>Compare <span class="gradient-text">Cars</span></h1>
+      <h1>{{ 'Compare' | t }} <span class="gradient-text">{{ 'Cars' | t }}</span></h1>
       <p>{{ 'Search any car from our database and compare up to 3 side by side. Winner specs highlighted.' | t }}</p>
     </div>
   </div>
@@ -26,7 +26,7 @@
               [ngModel]="search(slot)"
               (ngModelChange)="[searchA,searchB,searchC][slot].set($event); showDropdown.set(slot)"
               [name]="'search'+slot"
-              placeholder="Search make or model..."
+              [placeholder]="'Search make or model...' | t"
               (focus)="showDropdown.set(slot)">
             <div class="search-dropdown" *ngIf="showDropdown() === slot && search(slot)">
               <div class="drop-item" *ngFor="let c of filtered(slot)" (click)="selectCar(slot, c)">
@@ -56,7 +56,7 @@
                (load)="onImgLoad($event)" (error)="onImgError($event)">
           <div class="comp-car-name">{{ car.make }} {{ car.model }}</div>
           <div class="comp-car-price gradient-text">{{ formatPrice(car.price) }}</div>
-          <a [routerLink]="['/cars', car.id]" class="btn-outline btn-sm">View Details</a>
+          <a [routerLink]="['/cars', car.id]" class="btn-outline btn-sm">{{ 'View Details' | t }}</a>
         </div>
       </div>
 
@@ -83,7 +83,7 @@
 
       <!-- TCO breakdown -->
       <div class="features-comp tco-section">
-        <h3>Total Cost of Ownership <span style="font-size:0.8rem;color:var(--muted);font-weight:400">{{ '(5-Year Analysis)' | t }}</span></h3>
+        <h3>{{ 'Total Cost of Ownership' | t }} <span style="font-size:0.8rem;color:var(--muted);font-weight:400">{{ '(5-Year Analysis)' | t }}</span></h3>
         <div class="feat-row tco-row" *ngFor="let row of tcoRows"
              [class.tco-total]="row.key === 'netCost5yr'" [class.tco-resale]="row.key === 'resaleValue'">
           <div class="feat-label">{{ row.label }}</div>

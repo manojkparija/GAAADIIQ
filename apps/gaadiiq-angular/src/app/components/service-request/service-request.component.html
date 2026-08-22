@@ -3,14 +3,14 @@
   <!-- Waiting on the browser's location permission -->
   <div class="sr-locating" *ngIf="stage() === 'locating'">
     <div class="sr-spinner"></div>
-    <p class="sr-locating-text">Finding mechanics near your car…</p>
-    <p class="sr-hint">Allow location access so we can send help to where you actually are.</p>
+    <p class="sr-locating-text">{{ 'Finding mechanics near your car…' | t }}</p>
+    <p class="sr-hint">{{ 'Allow location access so we can send help to where you actually are.' | t }}</p>
   </div>
 
   <!-- Pick a mechanic -->
   <ng-container *ngIf="stage() === 'choose'">
     <div class="sr-error" *ngIf="error()">{{ error() }}
-      <button type="button" class="sr-retry" (click)="locate()">Try again</button>
+      <button type="button" class="sr-retry" (click)="locate()">{{ 'Try again' | t }}</button>
     </div>
 
     <div class="sr-fix" *ngIf="fix() as f">
@@ -28,7 +28,7 @@
       </span>
     </button>
 
-    <div class="sr-or" *ngIf="mechanics().length">or choose one yourself</div>
+    <div class="sr-or" *ngIf="mechanics().length">{{ 'or choose one yourself' | t }}</div>
 
     <div class="sr-list">
       <button type="button" class="sr-mech" *ngFor="let m of mechanics()" (click)="choose(m)">
@@ -64,20 +64,20 @@
     </div>
 
     <label class="sr-field">
-      <span class="sr-label">Car registration number</span>
+      <span class="sr-label">{{ 'Car registration number' | t }}</span>
       <input type="text" [(ngModel)]="carNumber" name="carNumber"
              placeholder="OD02AB1234" autocomplete="off" maxlength="15" />
     </label>
 
     <label class="sr-field">
-      <span class="sr-label">Your phone number</span>
+      <span class="sr-label">{{ 'Your phone number' | t }}</span>
       <input type="tel" [(ngModel)]="contactPhone" name="contactPhone"
              placeholder="98765 43210" maxlength="15" />
       <span class="sr-help">The mechanic calls this number, and your payment receipt goes here on WhatsApp.</span>
     </label>
 
     <label class="sr-field">
-      <span class="sr-label">Landmark <span class="sr-optional">(optional)</span></span>
+      <span class="sr-label">{{ 'Landmark' | t }} <span class="sr-optional">{{ '(optional)' | t }}</span></span>
       <input type="text" [(ngModel)]="landmark" name="landmark"
              placeholder="Near the petrol pump on NH-16" maxlength="200" />
     </label>
@@ -110,7 +110,7 @@
            mechanic will ask for it the moment they arrive and hunting for it
            then is the wrong time. -->
       <div class="sr-otp" *ngIf="startOtp() as o">
-        <div class="sr-otp-label">Your start code</div>
+        <div class="sr-otp-label">{{ 'Your start code' | t }}</div>
         <div class="sr-otp-code">{{ o.otp }}</div>
         <p class="sr-otp-hint">
           Read this out to the mechanic when they arrive. They cannot start the job without
@@ -123,7 +123,7 @@
       </div>
 
       <div class="sr-quote" *ngIf="r.quoted_amount_paise != null; else noQuote">
-        <div class="sr-quote-label">Mechanic's quote</div>
+        <div class="sr-quote-label">{{ 'Mechanic\'s quote' | t }}</div>
         <div class="sr-quote-amount">{{ money(r.quoted_amount_paise) }}</div>
         <button type="button" class="sr-primary" [disabled]="busy()" (click)="pay()">
           {{ busy() ? 'Opening…' : 'Pay now' }}
@@ -154,7 +154,7 @@
            alt="UPI QR code to pay this repair" />
 
       <a class="sr-primary sr-upi" *ngIf="p.upi_uri" [href]="safeUpi(p.upi_uri)">
-        Pay with a UPI app
+        {{ 'Pay with a UPI app' | t }}
       </a>
 
       <p class="sr-hint" *ngIf="!p.upi_uri && !p.upi_qr_data_uri">
@@ -163,7 +163,7 @@
 
       <div class="sr-split" *ngIf="commission() as c">
         <div class="sr-split-row">
-          <span>Mechanic receives</span><span>{{ money(c.mechanic_payout_paise) }}</span>
+          <span>{{ 'Mechanic receives' | t }}</span><span>{{ money(c.mechanic_payout_paise) }}</span>
         </div>
         <div class="sr-split-row sr-split-muted">
           <span>GAADIIQ platform fee ({{ c.effective_rate_pct }}%)</span>
@@ -184,11 +184,11 @@
   <ng-container *ngIf="stage() === 'done'">
     <div class="sr-done" *ngIf="request() as r">
       <div class="sr-done-tick">✓</div>
-      <div class="sr-done-title">Payment confirmed</div>
+      <div class="sr-done-title">{{ 'Payment confirmed' | t }}</div>
       <div class="sr-ref">{{ r.reference }}</div>
       <div class="sr-done-amount">{{ money(r.final_amount_paise) }}</div>
-      <p class="sr-hint">The receipt has been sent to your WhatsApp number.</p>
-      <button type="button" class="sr-primary" (click)="close()">Done</button>
+      <p class="sr-hint">{{ 'The receipt has been sent to your WhatsApp number.' | t }}</p>
+      <button type="button" class="sr-primary" (click)="close()">{{ 'Done' | t }}</button>
     </div>
   </ng-container>
 

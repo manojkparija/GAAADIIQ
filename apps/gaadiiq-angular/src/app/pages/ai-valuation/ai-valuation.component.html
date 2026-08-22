@@ -28,7 +28,7 @@
                Chrome on Windows — the highlight stayed the browser's blue on
                a page that is otherwise blue-to-teal throughout. This one is
                ours, so it looks the same everywhere. -->
-          <app-custom-select [options]="makes" placeholder="Select make"
+          <app-custom-select [options]="makes" [placeholder]="'Select make' | t"
                              [(ngModel)]="form.make" (ngModelChange)="onMakeChange()" />
         </div>
 
@@ -36,7 +36,7 @@
         <div class="form-group">
           <label>{{ 'Model *' | t }}</label>
           <app-custom-select *ngIf="availableModels.length > 0"
-                             [options]="availableModels" placeholder="Select model"
+                             [options]="availableModels" [placeholder]="'Select model' | t"
                              [(ngModel)]="form.model" (ngModelChange)="onModelChange()" />
           <input *ngIf="availableModels.length === 0" type="text" [(ngModel)]="form.model" placeholder="e.g. Swift, Creta, Nexon">
         </div>
@@ -45,43 +45,43 @@
         <div class="form-group" *ngIf="availableVariants.length > 0">
           <label>{{ 'Variant' | t }} <span class="label-tip">{{ '— affects price accuracy' | t }}</span></label>
           <app-custom-select [options]="variantOptions()"
-                             placeholder="Select variant (optional)"
+                             [placeholder]="'Select variant (optional)' | t"
                              [(ngModel)]="form.variant" />
         </div>
 
         <div class="form-group">
           <label>{{ 'Year *' | t }}</label>
-          <app-custom-select [options]="yearOptions()" placeholder="Select year"
+          <app-custom-select [options]="yearOptions()" [placeholder]="'Select year' | t"
                              [(ngModel)]="form.year" />
         </div>
         <div class="form-group">
           <label>{{ 'Kilometres Driven *' | t }}</label>
-          <input type="number" [(ngModel)]="form.km" placeholder="e.g. 45000">
+          <input type="number" [(ngModel)]="form.km" [placeholder]="'e.g. 45000' | t">
         </div>
         <div class="form-group">
           <label>{{ 'Fuel Type *' | t }}</label>
-          <app-custom-select [options]="fuels" placeholder="Select fuel"
+          <app-custom-select [options]="fuels" [placeholder]="'Select fuel' | t"
                              [(ngModel)]="form.fuel" />
         </div>
         <div class="form-group">
-          <label>Transmission</label>
-          <app-custom-select [options]="transmissions" placeholder="Select"
+          <label>{{ 'Transmission' | t }}</label>
+          <app-custom-select [options]="transmissions" [placeholder]="'Select' | t"
                              [(ngModel)]="form.transmission" />
         </div>
         <div class="form-group">
           <label>{{ 'No. of Owners *' | t }}</label>
-          <app-custom-select [options]="ownerOptions" placeholder="Select"
+          <app-custom-select [options]="ownerOptions" [placeholder]="'Select' | t"
                              [(ngModel)]="form.owners" />
         </div>
         <div class="form-group">
           <label>{{ 'Overall Condition *' | t }}</label>
-          <app-custom-select [options]="conditions" placeholder="Select condition"
+          <app-custom-select [options]="conditions" [placeholder]="'Select condition' | t"
                              [(ngModel)]="form.condition" />
         </div>
       </div>
 
       <button class="btn-gradient val-btn" (click)="estimate()" [disabled]="!formValid || loading()">
-        <span *ngIf="!loading()">Get AI Valuation</span>
+        <span *ngIf="!loading()">{{ 'Get AI Valuation' | t }}</span>
         <span *ngIf="loading()" class="loading-dots">{{ 'Analysing market data' | t }}<span class="dots">...</span></span>
       </button>
     </div>
@@ -183,7 +183,7 @@
           <span class="stat-val">{{ (+form.km).toLocaleString('en-IN') }} km</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Ownership</span>
+          <span class="stat-label">{{ 'Ownership' | t }}</span>
           <span class="stat-val">{{ form.owners }}</span>
         </div>
         <div class="stat-row">

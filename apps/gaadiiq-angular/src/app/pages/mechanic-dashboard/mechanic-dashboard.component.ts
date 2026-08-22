@@ -12,6 +12,7 @@ import {
 } from '../../services/marketplace.service';
 import { AuthService } from '../../services/auth.service';
 import { SeoService } from '../../services/seo.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * The mechanic's side of the marketplace.
@@ -28,7 +29,7 @@ import { SeoService } from '../../services/seo.service';
 @Component({
   selector: 'app-mechanic-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TranslatePipe],
   templateUrl: './mechanic-dashboard.component.html',
   styleUrls: ['./mechanic-dashboard.component.scss'],
 })

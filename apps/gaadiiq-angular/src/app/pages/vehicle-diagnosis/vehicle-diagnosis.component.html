@@ -134,7 +134,7 @@
           </div>
 
           @if (historyLoading()) {
-            <div class="history-loading">Loading…</div>
+            <div class="history-loading">{{ 'Loading…' | t }}</div>
           } @else if (history().length === 0) {
             <div class="history-empty">No past diagnoses found.</div>
           } @else {
@@ -180,17 +180,17 @@
       <div class="progress-steps">
         <div class="step-item" [class.active]="step() >= 1" [class.done]="step() > 1">
           <div class="step-dot">{{ step() > 1 ? '✓' : '1' }}</div>
-          <span>Vehicle</span>
+          <span>{{ 'Vehicle' | t }}</span>
         </div>
         <div class="step-line" [class.filled]="step() > 1"></div>
         <div class="step-item" [class.active]="step() >= 2" [class.done]="step() > 2">
           <div class="step-dot">{{ step() > 2 ? '✓' : '2' }}</div>
-          <span>Symptoms</span>
+          <span>{{ 'Symptoms' | t }}</span>
         </div>
         <div class="step-line" [class.filled]="step() > 2"></div>
         <div class="step-item" [class.active]="step() >= 3">
           <div class="step-dot">3</div>
-          <span>Review</span>
+          <span>{{ 'Review' | t }}</span>
         </div>
       </div>
     </div>
@@ -229,26 +229,26 @@
             [(ngModel)]="form.manufacturer"
             (ngModelChange)="onMakeChange()"
             [options]="makes"
-            placeholder="Select make">
+            [placeholder]="'Select make' | t">
           </app-custom-select>
         </div>
         <div class="form-group">
-          <label>Model *</label>
+          <label>{{ 'Model *' | t }}</label>
           <app-custom-select
             [(ngModel)]="form.model"
             (ngModelChange)="onModelChange()"
             [options]="models"
             [disabled]="!form.manufacturer"
-            placeholder="Select model">
+            [placeholder]="'Select model' | t">
           </app-custom-select>
         </div>
         <div class="form-group">
-          <label>Variant</label>
+          <label>{{ 'Variant' | t }}</label>
           <app-custom-select
             [(ngModel)]="form.variant"
             [options]="variants"
             [disabled]="!form.model"
-            placeholder="Select variant (optional)">
+            [placeholder]="'Select variant (optional)' | t">
           </app-custom-select>
         </div>
         <div class="form-group">
@@ -256,11 +256,11 @@
           <app-custom-select
             [(ngModel)]="form.model_year"
             [options]="years"
-            placeholder="Select year">
+            [placeholder]="'Select year' | t">
           </app-custom-select>
         </div>
         <div class="form-group">
-          <label>Fuel Type *</label>
+          <label>{{ 'Fuel Type *' | t }}</label>
           <div class="chip-group">
             <button *ngFor="let f of fuelTypes" class="chip" [class.selected]="form.fuel_type === f" (click)="form.fuel_type = f" type="button">{{ f }}</button>
           </div>
@@ -273,7 +273,7 @@
         </div>
         <div class="form-group">
           <label>Odometer Reading (km)</label>
-          <input type="number" [(ngModel)]="form.odometer_km" placeholder="e.g. 45000" min="0" />
+          <input type="number" [(ngModel)]="form.odometer_km" [placeholder]="'e.g. 45000' | t" min="0" />
         </div>
       </div>
 
@@ -375,7 +375,7 @@
       </div>
 
       <div class="form-group">
-        <label>Severity</label>
+        <label>{{ 'Severity' | t }}</label>
         <div class="severity-group">
           <button *ngFor="let s of severities" class="severity-btn" type="button"
             [class.selected]="severity === s.value"
@@ -389,7 +389,7 @@
       </div>
 
       <div class="form-group">
-        <label>Photos <span class="optional-label">(optional, up to 5)</span></label>
+        <label>{{ 'Photos' | t }} <span class="optional-label">(optional, up to 5)</span></label>
         <div class="photo-upload-zone" (click)="photoInput.click()" [class.has-files]="selectedImages().length > 0">
           <ng-container *ngIf="selectedImages().length === 0">
             <span class="photo-icon"><app-icon name="camera" [size]="28"></app-icon></span>
@@ -411,7 +411,7 @@
 
       <!-- Recent service history (BR-IR-07) -->
       <div class="form-group maint-group">
-        <label>Recent service history <span class="optional-label">(optional)</span></label>
+        <label>Recent service history <span class="optional-label">{{ '(optional)' | t }}</span></label>
         <p class="maint-hint">
           A part replaced recently can change the diagnosis — add anything done in the last few months.
         </p>
@@ -446,7 +446,7 @@
 
       <!-- Audio recording (TC-F-12) -->
       <div class="form-group">
-        <label>Sound recording <span class="optional-label">(optional)</span></label>
+        <label>Sound recording <span class="optional-label">{{ '(optional)' | t }}</span></label>
         <div class="photo-upload-zone" (click)="audioInput.click()" [class.has-files]="selectedAudio()">
           <ng-container *ngIf="!selectedAudio()">
             <span class="photo-icon"><app-icon name="headphones" [size]="28"></app-icon></span>
@@ -456,7 +456,7 @@
           <ng-container *ngIf="selectedAudio() as af">
             <span class="photo-icon"><app-icon name="music" [size]="28"></app-icon></span>
             <p class="photo-count">{{ af.name }} ({{ formatBytes(af.size) }})</p>
-            <button type="button" class="photo-clear" (click)="clearAudio($event)">Remove</button>
+            <button type="button" class="photo-clear" (click)="clearAudio($event)">{{ 'Remove' | t }}</button>
           </ng-container>
         </div>
         <input #audioInput type="file" accept="audio/*" class="hidden-input" (change)="onAudioChange($event)" />
@@ -464,7 +464,7 @@
 
       <!-- Video clip (TC-F-13) -->
       <div class="form-group">
-        <label>Video clip <span class="optional-label">(optional)</span></label>
+        <label>Video clip <span class="optional-label">{{ '(optional)' | t }}</span></label>
         <div class="photo-upload-zone" (click)="videoInput.click()" [class.has-files]="selectedVideo()">
           <ng-container *ngIf="!selectedVideo()">
             <span class="photo-icon"><app-icon name="video" [size]="28"></app-icon></span>
@@ -474,7 +474,7 @@
           <ng-container *ngIf="selectedVideo() as vf">
             <span class="photo-icon"><app-icon name="film" [size]="28"></app-icon></span>
             <p class="photo-count">{{ vf.name }} ({{ formatBytes(vf.size) }})</p>
-            <button type="button" class="photo-clear" (click)="clearVideo($event)">Remove</button>
+            <button type="button" class="photo-clear" (click)="clearVideo($event)">{{ 'Remove' | t }}</button>
           </ng-container>
         </div>
         <input #videoInput type="file" accept="video/*" class="hidden-input" (change)="onVideoChange($event)" />
@@ -485,7 +485,7 @@
       </div>
 
       <div class="step-actions">
-        <button class="btn-ghost" (click)="back()">← Back</button>
+        <button class="btn-ghost" (click)="back()">{{ '← Back' | t }}</button>
         <button class="btn-primary" [disabled]="!step2Valid" (click)="next()">Next — Review →</button>
       </div>
     </div>
@@ -496,20 +496,20 @@
 
       <div class="review-grid">
         <div class="review-section">
-          <h3><app-icon name="car" [size]="16"></app-icon> Vehicle</h3>
+          <h3><app-icon name="car" [size]="16"></app-icon> {{ 'Vehicle' | t }}</h3>
           <div class="review-row"><span>Make & Model</span><strong>{{ form.manufacturer }} {{ form.model }}{{ form.variant ? ' ' + form.variant : '' }}</strong></div>
-          <div class="review-row"><span>Year</span><strong>{{ form.model_year }}</strong></div>
+          <div class="review-row"><span>{{ 'Year' | t }}</span><strong>{{ form.model_year }}</strong></div>
           <div class="review-row"><span>Fuel / Transmission</span><strong>{{ form.fuel_type }} / {{ form.transmission }}</strong></div>
           <div class="review-row" *ngIf="form.odometer_km"><span>Odometer</span><strong>{{ form.odometer_km | number }} km</strong></div>
         </div>
         <div class="review-section">
-          <h3><app-icon name="wrench" [size]="16"></app-icon> Symptoms</h3>
-          <div class="review-row"><span>Severity</span>
+          <h3><app-icon name="wrench" [size]="16"></app-icon> {{ 'Symptoms' | t }}</h3>
+          <div class="review-row"><span>{{ 'Severity' | t }}</span>
             <strong [style.color]="severityColor(severity)">{{ severity | titlecase }}</strong>
           </div>
           <div class="review-row" *ngIf="selectedWarningLights().length"><span>Warning Lights</span><strong>{{ selectedWarningLights().join(', ') }}</strong></div>
           <div class="review-row" *ngIf="selectedWhenOccurs().length"><span>Occurs During</span><strong>{{ selectedWhenOccurs().join(', ') }}</strong></div>
-          <div class="review-row" *ngIf="selectedImages().length"><span>Photos</span><strong>{{ selectedImages().length }} selected</strong></div>
+          <div class="review-row" *ngIf="selectedImages().length"><span>{{ 'Photos' | t }}</span><strong>{{ selectedImages().length }} selected</strong></div>
         </div>
       </div>
 
@@ -621,7 +621,7 @@
             <strong>Shown in English</strong>
             <p>We couldn't translate this diagnosis into {{ voice.selectedLanguage().native }} right now. The advice below is unchanged — only the language differs.</p>
           </div>
-          <button class="tb-retry" (click)="retryDiagnosis()">Try again</button>
+          <button class="tb-retry" (click)="retryDiagnosis()">{{ 'Try again' | t }}</button>
         </div>
 
         <!-- Offline estimate notice. The built-in table is a dozen English
@@ -634,7 +634,7 @@
             <strong>Offline estimate — not a diagnosis</strong>
             <p>We couldn't reach the diagnosis service, so this is a generic estimate from a small built-in table. It is in English only and is far less specific than a real diagnosis.</p>
           </div>
-          <button class="tb-retry" (click)="retryDiagnosis()">Try again</button>
+          <button class="tb-retry" (click)="retryDiagnosis()">{{ 'Try again' | t }}</button>
         </div>
 
         <!-- Diagnosis summary -->
@@ -665,7 +665,7 @@
 
         <!-- Possible causes -->
         <div class="report-card">
-          <h3><app-icon name="target" [size]="16"></app-icon> Possible Causes</h3>
+          <h3><app-icon name="target" [size]="16"></app-icon> {{ 'Possible Causes' | t }}</h3>
           <div class="cause-list">
             <div class="cause-item" *ngFor="let cause of report.possible_causes">
               <div class="cause-header">

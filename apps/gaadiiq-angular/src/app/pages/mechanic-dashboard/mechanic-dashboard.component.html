@@ -2,7 +2,7 @@
   <div class="md-hero">
     <div class="container">
       <div class="md-badge">🔧 Partner Workshop</div>
-      <h1>Mechanic <span class="gradient-text">Dashboard</span></h1>
+      <h1>{{ 'Mechanic' | t }} <span class="gradient-text">Dashboard</span></h1>
       <p class="md-sub">Jobs assigned to you, priced and closed out in one place.</p>
     </div>
   </div>
@@ -22,7 +22,7 @@
       <div class="md-empty" *ngIf="!auth.currentUser()">
         <h2>Sign in to see your jobs</h2>
         <p>This dashboard is for registered GAADIIQ partner mechanics.</p>
-        <a routerLink="/login" class="md-primary">Sign in</a>
+        <a routerLink="/login" class="md-primary">{{ 'Sign in' | t }}</a>
       </div>
 
       <!-- Signed in, but no mechanic profile linked -->
@@ -198,7 +198,7 @@
                       [disabled]="busyId() === job.id" (click)="submitOtp(job)">
                 {{ busyId() === job.id ? 'Checking…' : 'Start job' }}
               </button>
-              <button type="button" class="md-ghost" (click)="cancelOtp()">Cancel</button>
+              <button type="button" class="md-ghost" (click)="cancelOtp()">{{ 'Cancel' | t }}</button>
             </div>
             <div class="md-otp-error" *ngIf="otpError()" role="alert">{{ otpError() }}</div>
           </div>
@@ -233,7 +233,7 @@
                       (click)="submitQuote(job)">
                 {{ busyId() === job.id ? 'Sending…' : 'Send price to customer' }}
               </button>
-              <button type="button" class="md-ghost" (click)="cancelQuote()">Cancel</button>
+              <button type="button" class="md-ghost" (click)="cancelQuote()">{{ 'Cancel' | t }}</button>
             </div>
           </div>
         </div>

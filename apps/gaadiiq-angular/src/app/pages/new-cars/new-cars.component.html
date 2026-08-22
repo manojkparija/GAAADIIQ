@@ -11,7 +11,7 @@
   <div class="container">
     <div class="hero-content">
       <span class="hero-badge">🚗 New Cars 2025–26</span>
-      <h1 class="hero-heading">{{ 'Explore' | t }} <span class="gradient-text">New Cars</span></h1>
+      <h1 class="hero-heading">{{ 'Explore' | t }} <span class="gradient-text">{{ 'New Cars' | t }}</span></h1>
       <p class="hero-sub">{{ 'Find your perfect car from 500+ new models across all budgets' | t }}</p>
 
       <div class="hero-search-card glass-card">
@@ -71,7 +71,7 @@
 <section class="nc-section">
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">Browse by <span class="gradient-text">Brand</span></h2>
+      <h2 class="section-title">{{ 'Browse by' | t }} <span class="gradient-text">{{ 'Brand' | t }}</span></h2>
       <a routerLink="/listings" [queryParams]="{carType:'New'}" class="see-all-link">{{ 'See All →' | t }}</a>
     </div>
     <div class="brand-grid">
@@ -90,7 +90,7 @@
 <!-- ── BROWSE BY BODY TYPE ── -->
 <section class="nc-section nc-section-alt">
   <div class="container">
-    <h2 class="section-title">Browse by <span class="gradient-text">Body Type</span></h2>
+    <h2 class="section-title">{{ 'Browse by' | t }} <span class="gradient-text">{{ 'Body Type' | t }}</span></h2>
     <div class="bodytype-grid">
       @for (bt of bodyTypeCards; track bt.name) {
         <button class="bodytype-card glass-card" (click)="navigateToBodyType(bt.name)">
@@ -106,7 +106,7 @@
 <!-- ── BROWSE BY BUDGET ── -->
 <section class="nc-section">
   <div class="container">
-    <h2 class="section-title">Browse by <span class="gradient-text">Budget</span></h2>
+    <h2 class="section-title">{{ 'Browse by' | t }} <span class="gradient-text">{{ 'Budget' | t }}</span></h2>
     <div class="budget-grid">
       @for (range of budgetRanges; track range.label) {
         <button
@@ -128,7 +128,7 @@
       <h2 class="section-title">{{ 'Popular' | t }} <span class="gradient-text">New Car Models</span></h2>
       <div class="sort-bar">
         <label class="sort-label">{{ 'Sort by:' | t }}</label>
-        <app-custom-select class="sort-select" [options]="sortOptions" placeholder="Sort by"
+        <app-custom-select class="sort-select" [options]="sortOptions" [placeholder]="'Sort by' | t"
                            [ngModel]="selectedSort()"
                            (ngModelChange)="selectedSort.set($event)" />
         <button class="filter-toggle-btn btn-outline" (click)="sidebarOpen.set(!sidebarOpen())">
@@ -159,7 +159,7 @@
         </div>
 
         <div class="filter-group">
-          <label class="filter-group-label">Body Type</label>
+          <label class="filter-group-label">{{ 'Body Type' | t }}</label>
           @for (bt of bodyTypeOptions; track bt) {
             <label class="checkbox-label">
               <input type="checkbox"
@@ -279,7 +279,7 @@
                       [queryParams]="{make: model.make, model: model.model, carType: 'New'}"
                       class="btn-gradient btn-sm">{{ 'View Details →' | t }}</a>
                     <button type="button" class="btn-outline btn-sm"
-                      (click)="addAndCompare(model.make + '||' + model.model, $event)">Compare</button>
+                      (click)="addAndCompare(model.make + '||' + model.model, $event)">{{ 'Compare' | t }}</button>
                   </div>
                 </div>
               </div>

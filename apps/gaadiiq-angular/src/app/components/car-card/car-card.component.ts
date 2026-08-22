@@ -2,6 +2,7 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface Car {
   id: string; make: string; model: string; year: number; price: number;
@@ -17,7 +18,7 @@ interface Car {
 @Component({
   selector: 'app-car-card',
   standalone: true,
-  imports: [CommonModule, RouterLink, IconComponent],
+  imports: [CommonModule, RouterLink, IconComponent, TranslatePipe],
   templateUrl: './car-card.component.html',
   styleUrl: './car-card.component.scss'
 })

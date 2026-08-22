@@ -1074,4 +1074,259 @@ export const HINDI: Record<string, string> = {
     'कारें देखें →',
   'Create Free Account':
     'मुफ्त अकाउंट बनाएं',
+  // ── App-wide sweep: placeholders, shared components, remaining copy ──────
+  'Select make':
+    'मेक चुनें',
+  'Select model':
+    'मॉडल चुनें',
+  'Select year':
+    'साल चुनें',
+  'Select fuel':
+    'फ्यूल चुनें',
+  'Select condition':
+    'हालत चुनें',
+  'Select variant (optional)':
+    'वेरिएंट चुनें (वैकल्पिक)',
+  'Select':
+    'चुनें',
+  'e.g. 45000':
+    'जैसे 45000',
+  'e.g. 850000':
+    'जैसे 850000',
+  'e.g. Kolkata':
+    'जैसे कोलकाता',
+  'e.g. Nexon, Swift...':
+    'जैसे Nexon, Swift...',
+  'Search make or model...':
+    'मेक या मॉडल खोजें...',
+  'you@example.com':
+    'you@example.com',
+  'your@email.com':
+    'your@email.com',
+  'Your name':
+    'आपका नाम',
+  'Your name *':
+    'आपका नाम *',
+  'Mobile number':
+    'मोबाइल नंबर',
+  '10-digit number':
+    '10 अंकों का नंबर',
+  'Pincode':
+    'पिनकोड',
+  'Your city':
+    'आपका शहर',
+  'Locality or pincode':
+    'इलाका या पिनकोड',
+  'Continue':
+    'आगे बढ़ें',
+  'Done':
+    'हो गया',
+  'Enter the 6-digit code':
+    '6 अंकों का कोड डालें',
+  'WhatsApp':
+    'WhatsApp',
+  'Update':
+    'अपडेट',
+  'Remove':
+    'हटाएं',
+  'Review':
+    'समीक्षा',
+  'Summary':
+    'सारांश',
+  'Vehicle':
+    'गाड़ी',
+  'Symptoms':
+    'लक्षण',
+  'Severity':
+    'गंभीरता',
+  'Possible Causes':
+    'संभावित कारण',
+  'Sign in':
+    'साइन इन',
+  'Back to Sign In':
+    'साइन इन पर वापस',
+  'Fair Price':
+    'उचित कीमत',
+  'Is this a fair price?':
+    'क्या यह कीमत उचित है?',
+  'EMI from':
+    'EMI शुरू',
+  'ex-showroom':
+    'एक्स-शोरूम',
+  'Ex-showroom price (₹)':
+    'एक्स-शोरूम कीमत (₹)',
+  'Car Photos':
+    'कार की फोटो',
+  'Max Budget:':
+    'अधिकतम बजट:',
+  'All India':
+    'पूरा भारत',
+  'All Makes':
+    'सभी मेक',
+  'Any Budget':
+    'कोई भी बजट',
+  'Loading cars from database...':
+    'डेटाबेस से कारें लोड हो रही हैं...',
+  'Used Car':
+    'पुरानी कार',
+  'Money or time':
+    'पैसा या समय',
+  'Sell quickly':
+    'जल्दी बेचें',
+  'Get the most for it':
+    'सबसे ज्यादा पाएं',
+  'Fastest of the two':
+    'दोनों में सबसे तेज़',
+  'Expect a longer wait':
+    'ज्यादा इंतज़ार करना होगा',
+  'No time estimate yet — too few cars have sold here to know how long either choice takes. The prices stand; the waiting time is the part we cannot promise, so we do not.':
+    'अभी समय का अनुमान नहीं — यहां इतनी कम कारें बिकी हैं कि यह पता न चले कि किस विकल्प में कितना समय लगेगा। कीमतें सही हैं; इंतज़ार का समय वह हिस्सा है जिसका हम वादा नहीं कर सकते, इसलिए नहीं करते।',
+  'Interest in this car':
+    'इस कार में दिलचस्पी',
+  'views in 24 hours':
+    '24 घंटे में देखी गई',
+  'people this week':
+    'इस हफ्ते लोग',
+  'Condition score':
+    'हालत का स्कोर',
+  'Not included:':
+    'शामिल नहीं:',
+  'Estimate':
+    'अनुमान',
+  'Seats':
+    'सीटें',
+  'Fuel / km':
+    'फ्यूल / km',
+  'Fuel per km':
+    'प्रति km फ्यूल',
+  'Side by side':
+    'साथ-साथ',
+  'See the full model page →':
+    'पूरा मॉडल पेज देखें →',
+  'One more thing':
+    'एक और बात',
+  'Roadside help':
+    'सड़क किनारे मदद',
+  'Find a Nearby Mechanic':
+    'पास का मैकेनिक खोजें',
+  'Apply for a Car Loan':
+    'कार लोन के लिए आवेदन करें',
+  'What is my car worth?':
+    'मेरी कार की कीमत क्या है?',
+  'My Journey':
+    'मेरी यात्रा',
+  'Tell me what you need, in one line':
+    'एक लाइन में बताएं आपको क्या चाहिए',
+  'Budget, how many people, where you drive, how far a month.':
+    'बजट, कितने लोग, कहां चलाते हैं, महीने में कितना।',
+  'Describe what you are looking for':
+    'बताएं आप क्या ढूंढ रहे हैं',
+  'Find my car':
+    'मेरी कार खोजें',
+  'Working…':
+    'चल रहा है…',
+  'Try:':
+    'आज़माएं:',
+  '← Ask something else':
+    '← कुछ और पूछें',
+  'What I read':
+    'मैंने क्या समझा',
+  'Not right? Reword it and ask again.':
+    'सही नहीं? दोबारा लिखकर पूछें।',
+  'Microphone access':
+    'माइक्रोफोन की अनुमति',
+  'What happens to your voice':
+    'आपकी आवाज़ का क्या होता है',
+  'How long we keep it':
+    'हम इसे कितने समय रखते हैं',
+  'Allow microphone':
+    'माइक्रोफोन की अनुमति दें',
+  "I've enabled it — try again":
+    'मैंने चालू कर दिया — दोबारा कोशिश करें',
+  "Not now — I'll type instead":
+    'अभी नहीं — मैं लिखकर बताऊंगा',
+  'Which language would you like to speak in?':
+    'आप किस भाषा में बोलना चाहेंगे?',
+  '✨ Detect automatically':
+    '✨ अपने आप पहचानें',
+  '⏹ Done speaking':
+    '⏹ बोलना पूरा',
+  'Captured':
+    'रिकॉर्ड हुआ',
+  'Select your City':
+    'अपना शहर चुनें',
+  'Popular Cities':
+    'लोकप्रिय शहर',
+  'Type your Pincode or City':
+    'अपना पिनकोड या शहर लिखें',
+  'Full Diagnosis Report →':
+    'पूरी जांच रिपोर्ट →',
+  'Full Diagnosis':
+    'पूरी जांच',
+  'Car Advisor':
+    'कार सलाहकार',
+  'Ask ARIA about cars, diagnose issues…':
+    'ARIA से कारों के बारे में पूछें, समस्या जांचें…',
+  'Finding mechanics near your car…':
+    'आपकी कार के पास मैकेनिक खोजे जा रहे हैं…',
+  'Allow location access so we can send help to where you actually are.':
+    'लोकेशन की अनुमति दें ताकि हम मदद वहीं भेज सकें जहां आप असल में हैं।',
+  'or choose one yourself':
+    'या खुद चुनें',
+  'Car registration number':
+    'कार का रजिस्ट्रेशन नंबर',
+  'Your phone number':
+    'आपका फोन नंबर',
+  'Landmark':
+    'पहचान की जगह',
+  'Your start code':
+    'आपका शुरुआती कोड',
+  "Mechanic's quote":
+    'मैकेनिक का कोटेशन',
+  'Pay with a UPI app':
+    'UPI ऐप से भुगतान करें',
+  'Mechanic receives':
+    'मैकेनिक को मिलेगा',
+  'Payment confirmed':
+    'भुगतान की पुष्टि हो गई',
+  'The receipt has been sent to your WhatsApp number.':
+    'रसीद आपके WhatsApp नंबर पर भेज दी गई है।',
+  'Article not found':
+    'लेख नहीं मिला',
+  'Browse all articles':
+    'सभी लेख देखें',
+  "This article doesn't exist or may have been removed.":
+    'यह लेख मौजूद नहीं है या हटा दिया गया होगा।',
+  '← News':
+    '← समाचार',
+  '⚙️ Filters':
+    '⚙️ फ़िल्टर',
+  'Month':
+    'महीना',
+  'Interest':
+    'ब्याज',
+  'Balance':
+    'बकाया',
+  'Amortization Schedule':
+    'किस्तों की तालिका',
+  '(First 12 months)':
+    '(पहले 12 महीने)',
+  'Emergency Buffer':
+    'आपात बचत',
+  'The 20/4/10 rule':
+    '20/4/10 नियम',
+  'At least':
+    'कम से कम',
+  'Term of':
+    'अवधि',
+  '4 years':
+    '4 साल',
+  'All car costs within':
+    'कार के सभी खर्च इसके भीतर',
+  'Your details are with us.':
+    'आपका विवरण हमारे पास है।',
+  'Tell us where you are and a dealer near you will call with their price.':
+    'बताएं आप कहां हैं, आपके पास का डीलर अपनी कीमत बताने के लिए कॉल करेगा।',
+  'We ask this once, so a dealer can reach you.':
+    'हम यह एक बार पूछते हैं, ताकि डीलर आप तक पहुंच सके।',
 };

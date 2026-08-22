@@ -16,7 +16,7 @@
         <p class="done-sub">{{ 'Based on your preferences, here\'s your buyer profile:' | t }}</p>
 
         <div class="profile-grid" *ngIf="profile">
-          <div class="pf-item"><span class="pf-label">Budget</span><span class="pf-val">{{ profile.budget }}</span></div>
+          <div class="pf-item"><span class="pf-label">{{ 'Budget' | t }}</span><span class="pf-val">{{ profile.budget }}</span></div>
           <div class="pf-item"><span class="pf-label">{{ 'Use Case' | t }}</span><span class="pf-val">{{ profile.useCase }}</span></div>
           <div class="pf-item"><span class="pf-label">⛽ Fuel</span><span class="pf-val">{{ profile.fuelPreference }}</span></div>
           <div class="pf-item"><span class="pf-label">⚙️ Transmission</span><span class="pf-val">{{ profile.transmission }}</span></div>
@@ -96,7 +96,7 @@
         </div>
 
         <h2 class="q-text">{{ question() }}</h2>
-        <p class="multi-hint">Select all that apply</p>
+        <p class="multi-hint">{{ 'Select all that apply' | t }}</p>
 
         <div class="options-grid" [class.two-col]="step.options.length > 3">
           <button class="option-btn"
@@ -109,7 +109,7 @@
         </div>
 
         <div class="q-nav">
-          <button class="btn-outline btn-sm" (click)="back()" *ngIf="currentStep() > 0">← Back</button>
+          <button class="btn-outline btn-sm" (click)="back()" *ngIf="currentStep() > 0">{{ '← Back' | t }}</button>
           <button class="btn-gradient btn-sm next-btn" (click)="next()" [disabled]="!hasSelection()">
             {{ currentStep() === steps.length - 1 ? 'See My Results →' : 'Next →' }}
           </button>

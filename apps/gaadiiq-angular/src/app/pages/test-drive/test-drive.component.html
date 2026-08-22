@@ -13,7 +13,7 @@
         <h2>{{ '1. Select a Car' | t }}</h2>
         <div class="search-wrap" *ngIf="!selectedCar()">
           <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event); showDropdown.set(true)"
-            placeholder="Search make or model..." (focus)="showDropdown.set(true)">
+            [placeholder]="'Search make or model...' | t" (focus)="showDropdown.set(true)">
           <div class="search-dropdown" *ngIf="showDropdown() && searchQuery()">
             <div class="drop-item" *ngFor="let c of filteredCars" (click)="selectCar(c)">
               <img [src]="c.image" referrerpolicy="no-referrer" imgFallback="https://placehold.co/60x40/1a1f35/6C63FF?text=img" style="width:60px;height:40px;object-fit:cover;border-radius:.4rem">
@@ -22,7 +22,7 @@
                 <div style="font-size:.8rem;color:var(--muted)">{{ formatPrice(c.price) }} · {{ c.fuel }}</div>
               </div>
             </div>
-            <div class="drop-empty" *ngIf="filteredCars.length === 0">No results</div>
+            <div class="drop-empty" *ngIf="filteredCars.length === 0">{{ 'No results' | t }}</div>
           </div>
         </div>
         <div class="popular-label" *ngIf="!selectedCar() && !searchQuery()">{{ 'Popular cars:' | t }}</div>
@@ -57,7 +57,7 @@
         </div>
         <div class="form-group">
           <label>{{ 'Email' | t }}</label>
-          <input type="email" [(ngModel)]="form.email" name="email" placeholder="your@email.com">
+          <input type="email" [(ngModel)]="form.email" name="email" [placeholder]="'your@email.com' | t">
         </div>
         <div class="form-row">
           <div class="form-group">

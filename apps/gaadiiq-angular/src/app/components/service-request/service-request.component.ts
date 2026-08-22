@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output, inject, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import {
   CommissionPreview,
   DispatchResult,
@@ -29,7 +30,7 @@ type Stage = 'locating' | 'choose' | 'details' | 'awaiting' | 'paying' | 'done';
 @Component({
   selector: 'app-service-request',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './service-request.component.html',
   styleUrls: ['./service-request.component.scss'],
 })

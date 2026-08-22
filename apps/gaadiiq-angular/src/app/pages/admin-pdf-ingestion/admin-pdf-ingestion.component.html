@@ -21,14 +21,14 @@
         </button>
         <button class="cat-option cat-used" (click)="selectCategory('used')">
           <span class="cat-opt-icon">🔄</span>
-          <div class="cat-opt-label">Used Car</div>
+          <div class="cat-opt-label">{{ 'Used Car' | t }}</div>
           <div class="cat-opt-desc">Pre-owned, second-hand or certified resale vehicles</div>
         </button>
       </div>
       <div class="cat-file-count">
         {{ svc.pendingFiles().length }} file{{ svc.pendingFiles().length > 1 ? 's' : '' }} ready to upload
       </div>
-      <button class="btn-ghost cat-cancel" (click)="svc.clearPendingFiles()">Cancel</button>
+      <button class="btn-ghost cat-cancel" (click)="svc.clearPendingFiles()">{{ 'Cancel' | t }}</button>
     </div>
   </div>
 }
@@ -323,8 +323,8 @@
         <table class="review-table">
           <thead>
             <tr>
-              <th>Vehicle</th>
-              <th>Price</th>
+              <th>{{ 'Vehicle' | t }}</th>
+              <th>{{ 'Price' | t }}</th>
               <th>Fuel · Trans</th>
               <th>Power · Mileage</th>
               <th>Quality</th>
@@ -434,7 +434,7 @@
                       </div>
                       <div class="edit-actions">
                         <button class="btn-primary" (click)="saveEdit(job)">Save Changes</button>
-                        <button class="btn-ghost" (click)="cancelEdit()">Cancel</button>
+                        <button class="btn-ghost" (click)="cancelEdit()">{{ 'Cancel' | t }}</button>
                       </div>
                     </div>
                   </td>

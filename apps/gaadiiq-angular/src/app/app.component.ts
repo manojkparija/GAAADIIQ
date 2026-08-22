@@ -6,11 +6,12 @@ import { InstallPwaComponent } from './components/install-pwa/install-pwa.compon
 import { ChatWidgetComponent } from './components/chat-widget/chat-widget.component';
 import { NativeService } from './services/native.service';
 import { SwUpdate } from '@angular/service-worker';
+import { TranslatePipe } from './pipes/translate.pipe';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavbarComponent, FooterComponent, InstallPwaComponent, ChatWidgetComponent],
+  imports: [RouterOutlet, NavbarComponent, FooterComponent, InstallPwaComponent, ChatWidgetComponent, TranslatePipe],
   template: `
     <app-navbar></app-navbar>
     <router-outlet></router-outlet>

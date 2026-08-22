@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { MarketPosition } from '../../utils/market-position';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * The price gauge on a used-car page.
@@ -19,7 +20,7 @@ import { MarketPosition } from '../../utils/market-position';
 @Component({
   selector: 'app-market-position',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './market-position.component.html',
   styleUrl: './market-position.component.scss',
 })

@@ -11,14 +11,14 @@
       <span class="hero-badge">
         {{ listingsFailed() ? 'Used Cars' : usedCarCount() + ' Used Cars Available' }}
       </span>
-      <h1 class="hero-heading">{{ 'Find Your Perfect' | t }} <span class="gradient-text">Used Car</span></h1>
+      <h1 class="hero-heading">{{ 'Find Your Perfect' | t }} <span class="gradient-text">{{ 'Used Car' | t }}</span></h1>
       <p class="hero-sub">{{ 'AI-verified pricing, certified inspections, and the best deals in your city' | t }}</p>
 
       <div class="hero-search-card glass-card">
         <div class="hero-search-row">
           <div class="search-field">
-            <label class="search-field-label">City</label>
-            <input type="text" class="search-input" placeholder="All India"
+            <label class="search-field-label">{{ 'City' | t }}</label>
+            <input type="text" class="search-input" [placeholder]="'All India' | t"
               [value]="heroCity()" (input)="onHeroCityChange($any($event.target).value)" list="city-suggestions" />
             <datalist id="city-suggestions">
               @for (c of cityOptions; track c) { <option [value]="c"></option> }
@@ -27,13 +27,13 @@
           <div class="search-field">
             <label class="search-field-label">{{ 'Make' | t }}</label>
             <app-custom-select class="search-select" [options]="makeOptions()"
-                               placeholder="All Makes"
+                               [placeholder]="'All Makes' | t"
                                [ngModel]="heroMake()"
                                (ngModelChange)="heroMake.set($event); heroModel.set('')" />
           </div>
           <div class="search-field">
             <label class="search-field-label">{{ 'Model' | t }}</label>
-            <input type="text" class="search-input" placeholder="e.g. Nexon, Swift..."
+            <input type="text" class="search-input" [placeholder]="'e.g. Nexon, Swift...' | t"
               autocomplete="off"
               [value]="heroModel()" (input)="heroModel.set($any($event.target).value)"
               list="model-suggestions" />
@@ -44,11 +44,11 @@
           <div class="search-field">
             <label class="search-field-label">{{ 'Max Budget' | t }}</label>
             <app-custom-select class="search-select" [options]="budgetOptions"
-                               placeholder="Any Budget"
+                               [placeholder]="'Any Budget' | t"
                                [ngModel]="heroBudgetMax() ? heroBudgetMax().toString() : ''"
                                (ngModelChange)="heroBudgetMax.set(+$event || 0)" />
           </div>
-          <button class="btn-gradient search-btn" (click)="applyHeroSearch()">Search</button>
+          <button class="btn-gradient search-btn" (click)="applyHeroSearch()">{{ 'Search' | t }}</button>
           <button class="btn-outline search-btn" (click)="clearAllFilters()" style="white-space:nowrap">{{ 'Clear' | t }}</button>
         </div>
       </div>
@@ -106,7 +106,7 @@
         <div class="sheet-handle"></div>
         <button class="sheet-close-btn" (click)="sidebarOpen.set(false)" aria-label="Close filters">✕</button>
         <div class="sidebar-header">
-          <h3 class="sidebar-title">Filters</h3>
+          <h3 class="sidebar-title">{{ 'Filters' | t }}</h3>
           @if (activeFiltersCount() > 0) {
             <button class="clear-all-btn" (click)="clearAllFilters()">Clear All ({{ activeFiltersCount() }})</button>
           }
@@ -140,7 +140,7 @@
 
         <!-- Year Range -->
         <div class="filter-group">
-          <label class="filter-group-label">Year</label>
+          <label class="filter-group-label">{{ 'Year' | t }}</label>
           <div class="year-selects">
             <app-custom-select class="year-select" [options]="yearStrings()"
                                placeholder="From"
@@ -167,7 +167,7 @@
 
         <!-- Fuel Type -->
         <div class="filter-group">
-          <label class="filter-group-label">Fuel Type</label>
+          <label class="filter-group-label">{{ 'Fuel Type' | t }}</label>
           <div class="chip-filters">
             @for (f of fuelOptions; track f) {
               <button class="chip-filter" [class.active]="selectedFuels().includes(f)" (click)="toggleFuel(f)">
@@ -179,7 +179,7 @@
 
         <!-- Transmission -->
         <div class="filter-group">
-          <label class="filter-group-label">Transmission</label>
+          <label class="filter-group-label">{{ 'Transmission' | t }}</label>
           <div class="chip-filters">
             @for (t of transmissionOptions; track t) {
               <button class="chip-filter" [class.active]="selectedTransmissions().includes(t)" (click)="toggleTransmission(t)">
@@ -191,7 +191,7 @@
 
         <!-- Body Type -->
         <div class="filter-group">
-          <label class="filter-group-label">Body Type</label>
+          <label class="filter-group-label">{{ 'Body Type' | t }}</label>
           @for (bt of bodyTypeOptions; track bt) {
             <label class="checkbox-label">
               <input type="checkbox" [checked]="selectedBodyTypes().includes(bt)" (change)="toggleBodyType(bt)" />
@@ -259,7 +259,7 @@
               }
             </button>
             <app-custom-select class="sort-select" [options]="sortOptions"
-                               placeholder="Sort by"
+                               [placeholder]="'Sort by' | t"
                                [ngModel]="selectedSort()"
                                (ngModelChange)="selectedSort.set($event)" />
           </div>
@@ -313,7 +313,7 @@
             @if (maxBudget() < 20000000) {
               <span class="filter-chip">Max {{ formatLakh(maxBudget()) }} <button (click)="maxBudget.set(20000000)">×</button></span>
             }
-            <button class="clear-strip-btn" (click)="clearAllFilters()">Clear All</button>
+            <button class="clear-strip-btn" (click)="clearAllFilters()">{{ 'Clear All' | t }}</button>
           </div>
         }
 
@@ -421,7 +421,7 @@
 
                   <!-- Actions -->
                   <div class="card-actions">
-                    <button class="btn-gradient btn-sm" (click)="viewCar(car.id)">View Details</button>
+                    <button class="btn-gradient btn-sm" (click)="viewCar(car.id)">{{ 'View Details' | t }}</button>
                     <a [routerLink]="['/emi-calculator']" class="btn-outline btn-sm">{{ 'EMI Calc' | t }}</a>
                   </div>
                 </div>

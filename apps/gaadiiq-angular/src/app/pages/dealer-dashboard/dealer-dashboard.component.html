@@ -28,7 +28,7 @@
 
   <!-- Tab Bar -->
   <div class="dd-tabs container">
-    <button class="dd-tab" [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">Overview</button>
+    <button class="dd-tab" [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">{{ 'Overview' | t }}</button>
     <button class="dd-tab" [class.active]="activeTab()==='leads'" (click)="activeTab.set('leads')">💬 AI Leads</button>
     <button class="dd-tab" [class.active]="activeTab()==='inventory'" (click)="activeTab.set('inventory')">Inventory</button>
     <button class="dd-tab" [class.active]="activeTab()==='analytics'" (click)="activeTab.set('analytics')">📈 Analytics</button>
@@ -118,7 +118,7 @@
       <h2 class="section-head" style="margin-top:2rem">Recent <span class="gradient-text">Leads</span></h2>
       <div class="leads-table glass-card">
         <div class="lt-row lt-header">
-          <span>Buyer</span><span>Car</span><span>Budget</span><span>Stage</span><span>Grade</span><span>Time</span>
+          <span>Buyer</span><span>{{ 'Car' | t }}</span><span>{{ 'Budget' | t }}</span><span>Stage</span><span>Grade</span><span>Time</span>
         </div>
         <div class="lt-row" *ngFor="let l of leads.slice(0,4)">
           <span class="lt-name">{{ l.name }}</span>
@@ -133,7 +133,7 @@
       <!-- Top Models -->
       <h2 class="section-head" style="margin-top:2rem">Top <span class="gradient-text">Performing Models</span></h2>
       <div class="top-models glass-card">
-        <div class="tm-row tm-header"><span>Model</span><span>Views</span><span>Enquiries</span><span>Conv. Rate</span></div>
+        <div class="tm-row tm-header"><span>{{ 'Model' | t }}</span><span>Views</span><span>Enquiries</span><span>Conv. Rate</span></div>
         <div class="tm-row" *ngFor="let m of topModels; let i = index">
           <span class="tm-rank-name"><span class="tm-rank">{{ i+1 }}</span>{{ m.model }}</span>
           <span>{{ m.views }}</span>
@@ -225,7 +225,7 @@
           <div class="alc-actions">
             <a [href]="'tel:' + l.phone" class="btn-sm btn-primary" *ngIf="l.phone">📞 Call</a>
             <a [href]="waLink(l.phone)" class="btn-sm btn-whatsapp"
-               target="_blank" *ngIf="l.phone">WhatsApp</a>
+               target="_blank" *ngIf="l.phone">{{ 'WhatsApp' | t }}</a>
             <button class="btn-sm btn-outline" (click)="reanalyse(l)"
                     [disabled]="analysingId() === l.user_id">
               {{ analysingId() === l.user_id ? '⚡ Analysing…' : '🔄 Re-analyse' }}
@@ -245,7 +245,7 @@
           </p>
           <p style="color:var(--muted);margin:0">{{ sentimentSvc.error() }}</p>
           <button class="btn-outline" style="margin-top:1.25rem" (click)="reloadSentiment()">
-            Try again
+            {{ 'Try again' | t }}
           </button>
         </div>
 
@@ -306,7 +306,7 @@
     -->
     <ng-container *ngIf="activeTab()==='inventory'">
       <div class="inventory-header">
-        <h2 class="section-head">Your <span class="gradient-text">Car Photos</span></h2>
+        <h2 class="section-head">Your <span class="gradient-text">{{ 'Car Photos' | t }}</span></h2>
         <p class="inventory-sub">Add photographs to the cars you have listed. Buyers see these on your listing.</p>
       </div>
 
@@ -400,7 +400,7 @@
                   {{ img.rejection_reason }}
                 </div>
                 <button class="btn-outline" style="margin-top:.5rem;font-size:.78rem;padding:.3rem .7rem"
-                        (click)="removeDealerImage(img.id)">Remove</button>
+                        (click)="removeDealerImage(img.id)">{{ 'Remove' | t }}</button>
               </div>
             </div>
           </div>
@@ -457,7 +457,7 @@
 
     <!-- TEST DRIVES TAB -->
     <ng-container *ngIf="activeTab()==='test-drives'">
-      <h2 class="section-head">Test Drive <span class="gradient-text">Requests</span></h2>
+      <h2 class="section-head">{{ 'Test Drive' | t }} <span class="gradient-text">Requests</span></h2>
 
       <!--
         An empty list has two causes and they need different answers. This
@@ -506,7 +506,7 @@
       <div *ngIf="testDriveRequests().length > 0" class="td-table glass-card">
         <div class="td-header">
           <span>Buyer</span>
-          <span>Car</span>
+          <span>{{ 'Car' | t }}</span>
           <span>Date &amp; Time</span>
           <span>Phone</span>
           <span>Status</span>
@@ -569,7 +569,7 @@
       </div>
       <div *ngIf="enquiries().length > 0" class="leads-table glass-card">
         <div class="lt-row lt-header">
-          <span>Buyer</span><span>Phone</span><span>Email</span><span>Car ID</span><span>Notes</span><span>Received</span>
+          <span>Buyer</span><span>Phone</span><span>{{ 'Email' | t }}</span><span>Car ID</span><span>{{ 'Notes' | t }}</span><span>Received</span>
         </div>
         <div class="lt-row" *ngFor="let e of enquiries()">
           <span class="lt-name">{{ e.buyer_name }}</span>
@@ -603,7 +603,7 @@
 
       <div *ngIf="carLeads().length > 0" class="leads-table glass-card">
         <div class="lt-row lt-header">
-          <span>Buyer</span><span>Phone</span><span>Car</span><span>Where</span><span>Status</span><span>Received</span>
+          <span>Buyer</span><span>Phone</span><span>{{ 'Car' | t }}</span><span>Where</span><span>Status</span><span>Received</span>
         </div>
         <div class="lt-row" *ngFor="let l of carLeads()">
           <span class="lt-name">{{ l.name || 'Not given' }}</span>

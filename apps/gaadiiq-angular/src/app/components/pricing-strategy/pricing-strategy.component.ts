@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DaysTurn } from '../../services/demand.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * Two ways to price the same car.
@@ -42,7 +43,7 @@ export interface PricingStrategy {
 @Component({
   selector: 'app-pricing-strategy',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './pricing-strategy.component.html',
   styleUrl: './pricing-strategy.component.scss',
 })

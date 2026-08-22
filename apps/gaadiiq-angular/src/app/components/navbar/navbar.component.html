@@ -205,7 +205,7 @@
             <div class="dropdown-email">{{ auth.currentUser()?.email }}</div>
 
             <a routerLink="/profile" (click)="userMenuOpen.set(false)" class="dropdown-item">
-              <app-icon name="user" [size]="14"></app-icon> My Profile
+              <app-icon name="user" [size]="14"></app-icon> {{ 'My Profile' | t }}
             </a>
             <a routerLink="/notifications" (click)="userMenuOpen.set(false)" class="dropdown-item">
               <app-icon name="bell" [size]="14"></app-icon> Notifications
@@ -218,13 +218,13 @@
                  since selling a car is how they become a seller. -->
             <a *ngIf="!auth.isSeller() && !auth.isAdmin()"
                routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">
-              <app-icon name="car" [size]="14"></app-icon> Sell My Car
+              <app-icon name="car" [size]="14"></app-icon> {{ 'Sell My Car' | t }}
             </a>
 
             <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
               <div class="dropdown-group">Selling</div>
               <a routerLink="/my-listings" (click)="userMenuOpen.set(false)" class="dropdown-item">
-                <app-icon name="car" [size]="14"></app-icon> My Listings
+                <app-icon name="car" [size]="14"></app-icon> {{ 'My Listings' | t }}
               </a>
               <a routerLink="/list-car" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="plus" [size]="14"></app-icon> List a Car
@@ -256,7 +256,7 @@
                 <app-icon name="check-circle" [size]="14"></app-icon> Image Review
               </a>
               <a routerLink="/admin/variants" (click)="userMenuOpen.set(false)" class="dropdown-item">
-                <app-icon name="settings" [size]="14"></app-icon> Variants
+                <app-icon name="settings" [size]="14"></app-icon> {{ 'Variants' | t }}
               </a>
               <a routerLink="/admin/mechanics" (click)="userMenuOpen.set(false)" class="dropdown-item">
                 <app-icon name="wrench" [size]="14"></app-icon> Mechanics
@@ -269,7 +269,7 @@
             <!-- Compare Cars is gone: it is already in the main navbar, two
                  inches to the left of this menu. -->
             <button class="dropdown-item logout" (click)="logout()">
-              <app-icon name="log-out" [size]="14"></app-icon> Sign Out
+              <app-icon name="log-out" [size]="14"></app-icon> {{ 'Sign Out' | t }}
             </button>
           </div>
         </div>
@@ -301,39 +301,39 @@
     padding clears the chat FAB so Sign In is always reachable.
   -->
   <nav class="mm-group">
-    <p class="mm-head">Browse</p>
-    <a routerLink="/" (click)="closeMenu()">Home</a>
-    <a routerLink="/new-cars" (click)="closeMenu()">New Cars</a>
-    <a routerLink="/used-cars" (click)="closeMenu()">Used Cars</a>
-    <a routerLink="/compare" (click)="closeMenu()">Compare Cars</a>
+    <p class="mm-head">{{ 'Browse' | t }}</p>
+    <a routerLink="/" (click)="closeMenu()">{{ 'Home' | t }}</a>
+    <a routerLink="/new-cars" (click)="closeMenu()">{{ 'New Cars' | t }}</a>
+    <a routerLink="/used-cars" (click)="closeMenu()">{{ 'Used Cars' | t }}</a>
+    <a routerLink="/compare" (click)="closeMenu()">{{ 'Compare Cars' | t }}</a>
     <a routerLink="/reviews-news" (click)="closeMenu()">Reviews &amp; News</a>
   </nav>
 
   <nav class="mm-group">
-    <p class="mm-head">Tools</p>
-    <a routerLink="/ai-advisor" (click)="closeMenu()">AI Advisor</a>
-    <a routerLink="/vehicle-diagnosis" (click)="closeMenu()">AI Diagnosis</a>
-    <a routerLink="/emi-calculator" (click)="closeMenu()">EMI Calculator</a>
-    <a routerLink="/car-loan" (click)="closeMenu()">Apply for a Car Loan</a>
-    <a routerLink="/tco" (click)="closeMenu()">Cost of Ownership</a>
-    <a routerLink="/ai-valuation" (click)="closeMenu()">What is my car worth?</a>
-    <a routerLink="/buyer-journey" (click)="closeMenu()">My Journey</a>
+    <p class="mm-head">{{ 'Tools' | t }}</p>
+    <a routerLink="/ai-advisor" (click)="closeMenu()">{{ 'AI Advisor' | t }}</a>
+    <a routerLink="/vehicle-diagnosis" (click)="closeMenu()">{{ 'AI Diagnosis' | t }}</a>
+    <a routerLink="/emi-calculator" (click)="closeMenu()">{{ 'EMI Calculator' | t }}</a>
+    <a routerLink="/car-loan" (click)="closeMenu()">{{ 'Apply for a Car Loan' | t }}</a>
+    <a routerLink="/tco" (click)="closeMenu()">{{ 'Cost of Ownership' | t }}</a>
+    <a routerLink="/ai-valuation" (click)="closeMenu()">{{ 'What is my car worth?' | t }}</a>
+    <a routerLink="/buyer-journey" (click)="closeMenu()">{{ 'My Journey' | t }}</a>
   </nav>
 
   <nav class="mm-group">
-    <p class="mm-head">Roadside help</p>
+    <p class="mm-head">{{ 'Roadside help' | t }}</p>
     <!-- This menu IS the navigation on a phone, and a phone is what a
          stranded person is holding. The icon replaces an inline emoji, which
          rendered at a different size on every device. -->
     <a routerLink="/find-mechanic" (click)="closeMenu()" class="mm-urgent">
-      <app-icon name="wrench" [size]="17"></app-icon> Find a Nearby Mechanic
+      <app-icon name="wrench" [size]="17"></app-icon> {{ 'Find a Nearby Mechanic' | t }}
     </a>
     <!-- Missing entirely until now. A mechanic on a phone had no route to
          their own dashboard or to registration: the signed-in block below
          only ever showed dashboards to sellers and admins, and a mechanic is
          neither. The dashboard itself handles the not-yet-registered case, so
          one link serves both. -->
-    <a routerLink="/mechanic-dashboard" (click)="closeMenu()">Mechanic Dashboard</a>
+    <a routerLink="/mechanic-dashboard" (click)="closeMenu()">{{ 'Mechanic Dashboard' | t }}</a>
     <a routerLink="/mechanic-signup" (click)="closeMenu()">Register as a mechanic</a>
   </nav>
 
@@ -365,7 +365,7 @@
   <div class="mobile-btns">
     <ng-container *ngIf="!auth.isLoggedIn()">
       <a routerLink="/login" (click)="closeMenu()" class="btn-outline mm-cta">{{ 'Sign In' | t }}</a>
-      <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient mm-cta">List Your Car</a>
+      <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient mm-cta">{{ 'List Your Car' | t }}</a>
     </ng-container>
 
     <ng-container *ngIf="auth.isLoggedIn()">
@@ -374,14 +374,14 @@
            Analytics entirely, so those four pages could not be reached at all
            on a phone. -->
       <p class="mm-head">{{ auth.currentUser()?.name || 'Account' }}</p>
-      <a routerLink="/profile" (click)="closeMenu()" class="mm-item">My Profile</a>
+      <a routerLink="/profile" (click)="closeMenu()" class="mm-item">{{ 'My Profile' | t }}</a>
       <a routerLink="/notifications" (click)="closeMenu()" class="mm-item">Notifications</a>
       <a *ngIf="!auth.isSeller() && !auth.isAdmin()"
-         routerLink="/list-car" (click)="closeMenu()" class="mm-item">Sell My Car</a>
+         routerLink="/list-car" (click)="closeMenu()" class="mm-item">{{ 'Sell My Car' | t }}</a>
 
       <ng-container *ngIf="auth.isSeller() || auth.isAdmin()">
         <p class="mm-head">Selling</p>
-        <a routerLink="/my-listings" (click)="closeMenu()" class="mm-item">My Listings</a>
+        <a routerLink="/my-listings" (click)="closeMenu()" class="mm-item">{{ 'My Listings' | t }}</a>
         <a routerLink="/list-car" (click)="closeMenu()" class="mm-item">List a Car</a>
         <a routerLink="/leads" (click)="closeMenu()" class="mm-item">Leads</a>
         <a routerLink="/analytics" (click)="closeMenu()" class="mm-item">Analytics</a>
@@ -392,11 +392,11 @@
         <a routerLink="/admin/pricing" (click)="closeMenu()" class="mm-item">Price Manager</a>
         <a routerLink="/admin/car-images" (click)="closeMenu()" class="mm-item">Car Images</a>
         <a routerLink="/admin/image-review" (click)="closeMenu()" class="mm-item">Image Review</a>
-        <a routerLink="/admin/variants" (click)="closeMenu()" class="mm-item">Variants</a>
+        <a routerLink="/admin/variants" (click)="closeMenu()" class="mm-item">{{ 'Variants' | t }}</a>
         <a routerLink="/admin/mechanics" (click)="closeMenu()" class="mm-item">Mechanics</a>
         <a routerLink="/admin/pdf-ingestion" (click)="closeMenu()" class="mm-item">File Ingestion</a>
       </ng-container>
-      <button class="btn-outline mm-cta" (click)="logout(); closeMenu()">Sign Out</button>
+      <button class="btn-outline mm-cta" (click)="logout(); closeMenu()">{{ 'Sign Out' | t }}</button>
     </ng-container>
   </div>
 </div>

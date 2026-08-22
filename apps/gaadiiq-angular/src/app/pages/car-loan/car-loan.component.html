@@ -49,7 +49,7 @@
           </div>
 
           <div class="offer-grid">
-            <div><span>Monthly EMI</span><strong>{{ formatRupees(offer.monthly_emi) }}</strong></div>
+            <div><span>{{ 'Monthly EMI' | t }}</span><strong>{{ formatRupees(offer.monthly_emi) }}</strong></div>
             <div><span>Loan approved</span><strong>{{ formatRupees(offer.approved_amount) }}</strong></div>
             <div><span>Total interest</span><strong>{{ formatRupees(offer.total_interest) }}</strong></div>
             <div><span>Processing fee</span><strong>{{ formatRupees(offer.processing_fee) }}</strong></div>
@@ -129,13 +129,13 @@
 
           <div class="seg">
             <button type="button" [class.active]="form.vehicle_condition === 'new'"
-                    (click)="form.vehicle_condition = 'new'">New car</button>
+                    (click)="form.vehicle_condition = 'new'">{{ 'New car' | t }}</button>
             <button type="button" [class.active]="form.vehicle_condition === 'used'"
-                    (click)="form.vehicle_condition = 'used'">Used car</button>
+                    (click)="form.vehicle_condition = 'used'">{{ 'Used car' | t }}</button>
           </div>
 
           <div class="field">
-            <label>Car</label>
+            <label>{{ 'Car' | t }}</label>
             <input type="text" [(ngModel)]="form.vehicle_description" name="vehicle_description"
                    placeholder="e.g. Maruti Suzuki S-Presso VXi">
           </div>
@@ -148,7 +148,7 @@
           </div>
 
           <div class="field">
-            <label>On-road price <strong>{{ formatRupees(vehiclePrice()) }}</strong></label>
+            <label>{{ 'On-road price' | t }} <strong>{{ formatRupees(vehiclePrice()) }}</strong></label>
             <input type="range" min="100000" max="5000000" step="25000"
                    [ngModel]="vehiclePrice()" (ngModelChange)="vehiclePrice.set(+$event)"
                    name="vehicle_price">
@@ -168,7 +168,7 @@
           </div>
 
           <div class="field">
-            <label>Tenure <strong>{{ tenureMonths() }} months</strong></label>
+            <label>{{ 'Tenure' | t }} <strong>{{ tenureMonths() }} months</strong></label>
             <input type="range" min="12" max="84" step="6"
                    [ngModel]="tenureMonths()" (ngModelChange)="tenureMonths.set(+$event)"
                    name="tenure_months">
@@ -185,7 +185,7 @@
             <div class="field">
               <label>Mobile *</label>
               <input type="tel" [(ngModel)]="form.mobile" name="mobile"
-                     maxlength="10" placeholder="10-digit number">
+                     maxlength="10" [placeholder]="'10-digit number' | t">
             </div>
           </div>
 
@@ -206,11 +206,11 @@
 
           <div class="field-row">
             <div class="field">
-              <label>City</label>
+              <label>{{ 'City' | t }}</label>
               <input type="text" [(ngModel)]="form.city" name="city" placeholder="e.g. Bhubaneswar">
             </div>
             <div class="field">
-              <label>Pincode</label>
+              <label>{{ 'Pincode' | t }}</label>
               <input type="text" [(ngModel)]="form.pincode" name="pincode" maxlength="6"
                      placeholder="751001">
             </div>
@@ -220,7 +220,7 @@
 
           <div class="field">
             <label>Employment *</label>
-            <app-custom-select [options]="employmentOptions" placeholder="Select"
+            <app-custom-select [options]="employmentOptions" [placeholder]="'Select' | t"
                                [(ngModel)]="form.employment_type" name="employment_type" />
           </div>
 
@@ -232,7 +232,7 @@
                      placeholder="50000">
             </div>
             <div class="field">
-              <label>Existing EMIs</label>
+              <label>{{ 'Existing EMIs' | t }}</label>
               <input type="number" [(ngModel)]="form.existing_emi" name="existing_emi"
                      placeholder="0">
               <small>Total of any loans you're already repaying.</small>

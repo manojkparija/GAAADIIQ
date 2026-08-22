@@ -2,11 +2,12 @@ import { Component, Output, EventEmitter, signal, computed } from '@angular/core
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { CityService, POPULAR_CITIES } from '../../services/city.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-city-selector',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, TranslatePipe],
   templateUrl: './city-selector.component.html',
   styleUrl: './city-selector.component.scss',
 })

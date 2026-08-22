@@ -6,13 +6,13 @@
       <div>
         <h1>
           <span *ngIf="carType()==='New'">
-            <ng-container *ngIf="!selectedModel()">Explore <span class="gradient-text">New Cars</span></ng-container>
+            <ng-container *ngIf="!selectedModel()">{{ 'Explore' | t }} <span class="gradient-text">{{ 'New Cars' | t }}</span></ng-container>
             <ng-container *ngIf="selectedModel()">
-              <span class="gradient-text">{{ selectedModel()!.split('||')[1] }}</span> Variants
+              <span class="gradient-text">{{ selectedModel()!.split('||')[1] }}</span> {{ 'Variants' | t }}
             </ng-container>
           </span>
           <span *ngIf="carType()==='Used'">Used <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></span>
-          <span *ngIf="carType()==='All'">Browse <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></span>
+          <span *ngIf="carType()==='All'">{{ 'Browse' | t }} <span class="gradient-text">{{ selectedMake() !== 'All' ? selectedMake() : 'Cars' }}</span></span>
         </h1>
         <p style="color:var(--muted);font-size:0.9rem">
           <ng-container *ngIf="carType()==='New' && !selectedModel()">{{ newCarModels().length }} models available</ng-container>
@@ -32,12 +32,12 @@
         </p>
       </div>
       <div class="sort-row" *ngIf="carType()!=='New'">
-        <app-custom-select [options]="sorts" placeholder="Sort by"
+        <app-custom-select [options]="sorts" [placeholder]="'Sort by' | t"
                            [ngModel]="selectedSort()"
                            (ngModelChange)="selectedSort.set($event)" />
-        <button class="btn-gradient hide-desktop filter-toggle" (click)="sidebarOpen.set(!sidebarOpen())">⚙️ Filters</button>
+        <button class="btn-gradient hide-desktop filter-toggle" (click)="sidebarOpen.set(!sidebarOpen())">{{ '⚙️ Filters' | t }}</button>
       </div>
-      <button *ngIf="carType()==='New'" class="btn-gradient hide-desktop filter-toggle" (click)="sidebarOpen.set(!sidebarOpen())">⚙️ Filters</button>
+      <button *ngIf="carType()==='New'" class="btn-gradient hide-desktop filter-toggle" (click)="sidebarOpen.set(!sidebarOpen())">{{ '⚙️ Filters' | t }}</button>
     </div>
   </div>
 
@@ -86,23 +86,23 @@
       <div class="container listings-body">
         <aside class="sidebar glass-card" [class.open]="sidebarOpen()">
           <div class="sidebar-header">
-            <h3>Filters</h3>
+            <h3>{{ 'Filters' | t }}</h3>
             <button class="hide-desktop" (click)="sidebarOpen.set(false)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem">✕</button>
           </div>
           <div class="filter-group">
-            <label>Fuel Type</label>
+            <label>{{ 'Fuel Type' | t }}</label>
             <div class="filter-chips">
               <span *ngFor="let f of fuels" class="chip" [class.active]="selectedFuel()===f" (click)="selectedFuel.set(f)">{{ f }}</span>
             </div>
           </div>
           <div class="filter-group">
-            <label>Body Type</label>
+            <label>{{ 'Body Type' | t }}</label>
             <div class="filter-chips">
               <span *ngFor="let b of bodyTypes" class="chip" [class.active]="selectedBodyType()===b" (click)="selectedBodyType.set(b)">{{ b }}</span>
             </div>
           </div>
           <div class="filter-group">
-            <label>Max Budget: <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
+            <label>{{ 'Max Budget:' | t }} <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
             <input type="range" min="300000" max="20000000" step="100000"
               [value]="maxPrice()" (input)="maxPrice.set(+$any($event.target).value)" class="price-range">
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)"><span>₹3L (Min)</span><span>₹2 Cr (Max)</span></div>
@@ -144,8 +144,8 @@
               <div class="nc-card-price">
                 {{ formatPriceLakh(m.minPrice) }}
                 <span *ngIf="m.maxPrice > m.minPrice"> – {{ formatPriceLakh(m.maxPrice) }}</span>
-                <span *ngIf="m.maxPrice <= m.minPrice"> onwards</span>
-                <span class="nc-card-price-note">ex-showroom</span>
+                <span *ngIf="m.maxPrice <= m.minPrice"> {{ 'onwards' | t }}</span>
+                <span class="nc-card-price-note">{{ 'ex-showroom' | t }}</span>
               </div>
               <div class="nc-card-footer">
                 <!-- Published trims only: a draft is a price nobody has vouched for,
@@ -213,7 +213,7 @@
                        otherwise. Reading v.price alone quoted the stale row price
                        here while the card one click back quoted the trims. -->
                   <div class="nc-vc-price-val">{{ variantCardPrice(v) }}</div>
-                  <div class="nc-vc-price-note">ex-showroom</div>
+                  <div class="nc-vc-price-note">{{ 'ex-showroom' | t }}</div>
                 </div>
               </div>
 
@@ -232,7 +232,7 @@
 
               <div class="nc-vc-footer">
                 <span class="nc-vc-emi">EMI from ₹{{ (variantEmiBase(v) * 0.008 / 1000).toFixed(0) }}k/mo</span>
-                <button class="btn-gradient btn-sm">View Details →</button>
+                <button class="btn-gradient btn-sm">{{ 'View Details →' | t }}</button>
               </div>
             </div>
           </div>
@@ -250,17 +250,17 @@
       <!-- SIDEBAR -->
       <aside class="sidebar glass-card" [class.open]="sidebarOpen()">
         <div class="sidebar-header">
-          <h3>Filters</h3>
+          <h3>{{ 'Filters' | t }}</h3>
           <button class="hide-desktop" (click)="sidebarOpen.set(false)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem">✕</button>
         </div>
         <div class="filter-group">
-          <label>Fuel Type</label>
+          <label>{{ 'Fuel Type' | t }}</label>
           <div class="filter-chips">
             <span *ngFor="let f of fuels" class="chip" [class.active]="selectedFuel()===f" (click)="selectedFuel.set(f)">{{ f }}</span>
           </div>
         </div>
         <div class="filter-group">
-          <label>Transmission</label>
+          <label>{{ 'Transmission' | t }}</label>
           <div class="filter-chips">
             <span *ngFor="let t of transmissions" class="chip" [class.active]="selectedTransmission()===t" (click)="selectedTransmission.set(t)">{{ t }}</span>
           </div>
@@ -274,7 +274,7 @@
           </div>
         </div>
         <div class="filter-group">
-          <label>Body Type</label>
+          <label>{{ 'Body Type' | t }}</label>
           <div class="filter-chips">
             <span *ngFor="let b of bodyTypes" class="chip" [class.active]="selectedBodyType()===b" (click)="selectedBodyType.set(b)">{{ b }}</span>
           </div>
@@ -286,7 +286,7 @@
           <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>2015</span><span>2025</span></div>
         </div>
         <div class="filter-group">
-          <label>Max Budget: <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
+          <label>{{ 'Max Budget:' | t }} <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>
           <input type="range" min="300000" max="20000000" step="100000"
             [value]="maxPrice()" (input)="maxPrice.set(+$any($event.target).value)" class="price-range">
           <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)"><span>₹3L</span><span>₹2 Cr</span></div>
@@ -297,7 +297,7 @@
       <!-- LOADING -->
       <div *ngIf="loading()" style="text-align:center;padding:4rem">
         <div style="font-size:3rem;margin-bottom:1rem">⏳</div>
-        <p style="color:var(--muted)">Loading cars from database...</p>
+        <p style="color:var(--muted)">{{ 'Loading cars from database...' | t }}</p>
       </div>
 
       <!-- GRID -->
@@ -310,7 +310,7 @@
           <div style="margin-bottom:1rem;color:var(--muted)"><app-icon name="search" [size]="48"></app-icon></div>
           <h3>No cars found</h3>
           <p style="color:var(--muted)">Try adjusting your filters or search query</p>
-          <button class="btn-gradient" style="margin-top:1.5rem" (click)="clearAll()">Clear All Filters</button>
+          <button class="btn-gradient" style="margin-top:1.5rem" (click)="clearAll()">{{ 'Clear All Filters' | t }}</button>
         </div>
       </ng-template>
     </div>
@@ -319,7 +319,7 @@
   <!-- Loading for New Cars -->
   <div *ngIf="carType()==='New' && loading()" style="text-align:center;padding:4rem">
     <div style="font-size:3rem;margin-bottom:1rem">⏳</div>
-    <p style="color:var(--muted)">Loading cars from database...</p>
+    <p style="color:var(--muted)">{{ 'Loading cars from database...' | t }}</p>
   </div>
 
 </div>

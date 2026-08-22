@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MarketplaceService, MechanicRegistration } from '../../services/marketplace.service';
 import { AuthService } from '../../services/auth.service';
 import { SeoService } from '../../services/seo.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 const SPECIALISATIONS = [
   'general', 'engine', 'electrical', 'transmission', 'ac', 'bodywork', 'tyres', 'ev',
@@ -30,7 +31,7 @@ const SPECIALISATIONS = [
 @Component({
   selector: 'app-mechanic-signup',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TranslatePipe],
   templateUrl: './mechanic-signup.component.html',
   styleUrls: ['./mechanic-signup.component.scss'],
 })

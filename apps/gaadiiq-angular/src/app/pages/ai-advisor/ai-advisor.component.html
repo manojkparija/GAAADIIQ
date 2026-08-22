@@ -136,11 +136,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>Price</td><td *ngFor="let c of results().slice(0,3)" class="gradient-text fw-bold">{{ fmtP(c.price) }}</td></tr>
-            <tr><td>Fuel Type</td><td *ngFor="let c of results().slice(0,3)">{{ c.fuel }}</td></tr>
-            <tr><td>Body Type</td><td *ngFor="let c of results().slice(0,3)">{{ c.bodyType }}</td></tr>
-            <tr><td>Year</td><td *ngFor="let c of results().slice(0,3)">{{ c.year }}</td></tr>
-            <tr><td>Monthly EMI</td><td *ngFor="let c of results().slice(0,3)">{{ fmtK(c.monthlyEmi) }}</td></tr>
+            <tr><td>{{ 'Price' | t }}</td><td *ngFor="let c of results().slice(0,3)" class="gradient-text fw-bold">{{ fmtP(c.price) }}</td></tr>
+            <tr><td>{{ 'Fuel Type' | t }}</td><td *ngFor="let c of results().slice(0,3)">{{ c.fuel }}</td></tr>
+            <tr><td>{{ 'Body Type' | t }}</td><td *ngFor="let c of results().slice(0,3)">{{ c.bodyType }}</td></tr>
+            <tr><td>{{ 'Year' | t }}</td><td *ngFor="let c of results().slice(0,3)">{{ c.year }}</td></tr>
+            <tr><td>{{ 'Monthly EMI' | t }}</td><td *ngFor="let c of results().slice(0,3)">{{ fmtK(c.monthlyEmi) }}</td></tr>
             <tr><td>{{ 'Monthly Fuel' | t }}</td><td *ngFor="let c of results().slice(0,3)">{{ fmtK(c.monthlyFuel) }}</td></tr>
             <tr><td>{{ '5-Year TCO' | t }}</td><td *ngFor="let c of results().slice(0,3)" class="gradient-text">{{ fmtP(c.fiveYearTco) }}</td></tr>
             <tr><td>{{ 'Resale (5yr)' | t }}</td><td *ngFor="let c of results().slice(0,3)">{{ fmtP(c.resale5yr) }}</td></tr>
@@ -197,7 +197,7 @@
         <div class="finance-grid">
           <div class="fin-item">
             <div class="fin-val gradient-text">{{ fmtK(car.monthlyEmi) }}</div>
-            <div class="fin-label">Monthly EMI</div>
+            <div class="fin-label">{{ 'Monthly EMI' | t }}</div>
           </div>
           <div class="fin-item">
             <div class="fin-val gradient-text">{{ fmtK(car.monthlyFuel) }}</div>
@@ -237,7 +237,7 @@
 
         <!-- CTA -->
         <div class="rec-actions">
-          <a [routerLink]="['/cars', car.id]" class="btn-gradient rec-btn">View Details →</a>
+          <a [routerLink]="['/cars', car.id]" class="btn-gradient rec-btn">{{ 'View Details →' | t }}</a>
           <span class="confidence-pill" [class.high]="car.confidence === 'High'" [class.medium]="car.confidence === 'Medium'">
             {{ car.confidence }} Confidence
           </span>

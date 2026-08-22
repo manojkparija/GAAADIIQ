@@ -8,7 +8,7 @@
   <p style="color:var(--text);font-weight:600;margin:0">{{ 'We could not load this car right now.' | t }}</p>
   <p style="color:var(--muted);margin:0">{{ 'The catalogue is unreachable. This is usually temporary.' | t }}</p>
   <div style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center">
-    <button class="btn-gradient" (click)="retryLoad()">Try again</button>
+    <button class="btn-gradient" (click)="retryLoad()">{{ 'Try again' | t }}</button>
     <a routerLink="/used-cars" class="btn-outline">{{ 'Browse all cars' | t }}</a>
   </div>
 </div>
@@ -28,7 +28,7 @@
     </div>
     <!-- BREADCRUMB -->
     <div class="breadcrumb">
-      <a routerLink="/">Home</a> / <a routerLink="/listings">Browse</a> / <span>{{ car.make }} {{ car.model }}</span>
+      <a routerLink="/">{{ 'Home' | t }}</a> / <a routerLink="/listings">{{ 'Browse' | t }}</a> / <span>{{ car.make }} {{ car.model }}</span>
     </div>
 
     <div class="detail-grid">
@@ -143,7 +143,7 @@
         <div class="tabs glass-card">
           <div class="tab-nav">
             <button [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">{{ 'Overview' | t }}</button>
-            <button *ngIf="isNewCar && (variants().length || newCarMeta)" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">Variants</button>
+            <button *ngIf="isNewCar && (variants().length || newCarMeta)" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">{{ 'Variants' | t }}</button>
             <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">{{ 'Specs' | t }}</button>
             <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">{{ 'Features' | t }}</button>
             <button *ngIf="modelColours().length > 0" [class.active]="activeTab()==='colours'" (click)="activeTab.set('colours')">{{ 'Colours' | t }}</button>
@@ -154,7 +154,7 @@
           <!-- OVERVIEW -->
           <div class="tab-content" *ngIf="activeTab()==='overview'">
             <div class="overview-pills">
-              <div class="pill"><span><app-icon name="fuel" [size]="16"></app-icon></span><div><div class="pill-label">Fuel</div><div class="pill-val">{{ car.fuel }}</div></div></div>
+              <div class="pill"><span><app-icon name="fuel" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Fuel' | t }}</div><div class="pill-val">{{ car.fuel }}</div></div></div>
               <div class="pill"><span><app-icon name="settings" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Gearbox' | t }}</div><div class="pill-val">{{ car.transmission }}</div></div></div>
               <!-- Owner count is a used-car fact. On a new car it is either
                    blank or "0", and both read as missing data rather than as
@@ -162,7 +162,7 @@
               <div class="pill" *ngIf="!isNewCar && car.owners"><span><app-icon name="user" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Owners' | t }}</div><div class="pill-val">{{ car.owners }}</div></div></div>
               <!-- Same rule as Owners: a pill with a label and no value is a
                    gap dressed up as a fact. Catalogue models carry no colour. -->
-              <div class="pill" *ngIf="car.color"><span><app-icon name="palette" [size]="16"></app-icon></span><div><div class="pill-label">Color</div><div class="pill-val">{{ car.color }}</div></div></div>
+              <div class="pill" *ngIf="car.color"><span><app-icon name="palette" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Color' | t }}</div><div class="pill-val">{{ car.color }}</div></div></div>
               <div class="pill" *ngIf="car.city"><span><app-icon name="map-pin" [size]="14"></app-icon></span><div><div class="pill-label">{{ 'Location' | t }}</div><div class="pill-val">{{ car.city }}</div></div></div>
 
               <!--
@@ -196,7 +196,7 @@
                    (click)="activeTab.set('variants')">
                 <span><app-icon name="list" [size]="16"></app-icon></span>
                 <div>
-                  <div class="pill-label">Variants</div>
+                  <div class="pill-label">{{ 'Variants' | t }}</div>
                   <div class="pill-val">{{ car.variantCount }} available</div>
                 </div>
               </div>
@@ -482,8 +482,8 @@
                   (mouseleave)="hoverRating.set(0)"
                   [class.active]="s <= (hoverRating() || userReview.rating)">★</span>
               </div>
-              <input type="text" [(ngModel)]="userReview.name" name="rname" placeholder="Your name *">
-              <input type="text" [(ngModel)]="userReview.city" name="rcity" placeholder="City">
+              <input type="text" [(ngModel)]="userReview.name" name="rname" [placeholder]="'Your name *' | t">
+              <input type="text" [(ngModel)]="userReview.city" name="rcity" [placeholder]="'City' | t">
               <input type="text" [(ngModel)]="userReview.title" name="rtitle" placeholder="Review title">
               <textarea [(ngModel)]="userReview.body" name="rbody" rows="4" placeholder="Share your experience with this car... *"></textarea>
 
@@ -583,7 +583,7 @@
                   </td>
                   <td>
                     <span class="similar-price">{{ formatPrice(car.price) }}</span>
-                    <span class="similar-onwards"> onwards</span>
+                    <span class="similar-onwards"> {{ 'onwards' | t }}</span>
                   </td>
                   <td>
                     <span class="similar-rating">★ {{ car.rating }}/5</span>
@@ -605,7 +605,7 @@
                   </td>
                   <td>
                     <span class="similar-price">{{ formatPrice(s.price) }}</span>
-                    <span class="similar-onwards"> onwards</span>
+                    <span class="similar-onwards"> {{ 'onwards' | t }}</span>
                   </td>
                   <td>
                     <span class="similar-rating">★ {{ s.rating }}/5</span>
@@ -624,7 +624,7 @@
         <!-- PRICE CARD -->
         <div class="price-card glass-card">
           <div class="badge-row">
-            <span class="badge badge-green"><app-icon name="check-circle" [size]="12"></app-icon> Verified</span>
+            <span class="badge badge-green"><app-icon name="check-circle" [size]="12"></app-icon> {{ 'Verified' | t }}</span>
             <div class="rating-row"><span>★</span> {{ car.rating }} <span style="color:var(--muted)">({{ car.reviews }} reviews)</span></div>
           </div>
           <div class="cd-title-row">
@@ -658,7 +658,7 @@
               <app-icon name="sparkles" [size]="16"></app-icon> {{ 'Get Best Price' | t }}
             </button>
             <button class="btn-gradient" style="width:100%;padding:1rem;font-size:1rem" (click)="openContactSeller()"><app-icon name="phone" [size]="16"></app-icon> {{ 'Contact Seller' | t }}</button>
-            <button class="btn-outline" style="width:100%;padding:1rem;font-size:1rem" (click)="bookTestDrive()"><app-icon name="calendar" [size]="16"></app-icon> Book Test Drive</button>
+            <button class="btn-outline" style="width:100%;padding:1rem;font-size:1rem" (click)="bookTestDrive()"><app-icon name="calendar" [size]="16"></app-icon> {{ 'Book Test Drive' | t }}</button>
           </div>
           <div style="display:flex;justify-content:center;gap:2rem;font-size:0.8rem;color:var(--muted)">
             <span><app-icon name="lock" [size]="16"></app-icon> {{ 'Safe Deal Guarantee' | t }}</span>
@@ -734,7 +734,7 @@
 
         <!-- EMI CALCULATOR -->
         <div class="emi-card glass-card">
-          <h3><app-icon name="credit-card" [size]="16"></app-icon> EMI Calculator</h3>
+          <h3><app-icon name="credit-card" [size]="16"></app-icon> {{ 'EMI Calculator' | t }}</h3>
           <div class="emi-row">
             <div class="emi-label-row"><label>{{ 'Loan Amount' | t }}</label><span class="emi-val">{{ formatPrice(loan.amount) }}</span></div>
             <input type="range" min="100000" [max]="car.price" step="10000"
@@ -844,7 +844,7 @@
           <app-icon name="phone" [size]="16"></app-icon> Call {{ s.phone }}
         </a>
         <a [href]="waLink(s.phone)" target="_blank" class="btn-whatsapp">
-          <app-icon name="message-circle" [size]="16"></app-icon> WhatsApp
+          <app-icon name="message-circle" [size]="16"></app-icon> {{ 'WhatsApp' | t }}
         </a>
       </div>
     </ng-container>

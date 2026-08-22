@@ -6,7 +6,7 @@
     </header>
 
     @if (loading()) {
-      <p class="state">Loading…</p>
+      <p class="state">{{ 'Loading…' | t }}</p>
     } @else {
       <section class="leads-section">
         <h2>Test Drive Requests</h2>
@@ -20,9 +20,9 @@
                 <tr>
                   <th>Received</th>
                   <th>Preferred Date</th>
-                  <th>Notes</th>
+                  <th>{{ 'Notes' | t }}</th>
                   <th>Status</th>
-                  <th>Update</th>
+                  <th>{{ 'Update' | t }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -61,8 +61,8 @@
               <thead>
                 <tr>
                   <th>Received</th>
-                  <th>Loan Amount</th>
-                  <th>Tenure</th>
+                  <th>{{ 'Loan Amount' | t }}</th>
+                  <th>{{ 'Tenure' | t }}</th>
                   <th>Employment</th>
                   <th>Income</th>
                   <th>Status</th>

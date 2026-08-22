@@ -5,7 +5,7 @@
 <div class="av-page">
   <header class="av-header">
     <div>
-      <h1>Variants</h1>
+      <h1>{{ 'Variants' | t }}</h1>
       <p class="av-sub">
         The trims a model is sold in — what each costs and what each gives you.
       </p>
@@ -28,7 +28,7 @@
         </div>
 
         <div class="av-field">
-          <label>Model</label>
+          <label>{{ 'Model' | t }}</label>
           <app-custom-select [options]="modelNameOptions()" placeholder="Select model…"
                              [ngModel]="selectedModel()" (ngModelChange)="onModelChange($event)"
                              [disabled]="!selectedMake()" />
@@ -41,7 +41,7 @@
              2026 — so it is shown as what it is. Hidden when the model exists
              for one year only, which is most of them. -->
         <div class="av-field" *ngIf="yearOptions().length > 1">
-          <label>Model year</label>
+          <label>{{ 'Model year' | t }}</label>
           <app-custom-select [options]="yearOptions()" placeholder="Select year…"
                              [ngModel]="selectedCarId()" (ngModelChange)="onCarChange($event)"
                              [disabled]="!selectedModel()" />
@@ -84,19 +84,19 @@
                        placeholder="e.g. VXi, ZXi+ AMT" />
               </div>
               <div class="av-field">
-                <label>Ex-showroom price (₹)</label>
+                <label>{{ 'Ex-showroom price (₹)' | t }}</label>
                 <input type="number" [ngModel]="form().ex_showroom_price"
                        (ngModelChange)="setField('ex_showroom_price', $event)"
                        placeholder="549000" />
               </div>
               <div class="av-field">
-                <label>Fuel</label>
+                <label>{{ 'Fuel' | t }}</label>
                 <input [ngModel]="form().fuel_type"
                        (ngModelChange)="setField('fuel_type', $event)"
                        placeholder="Petrol, Petrol + CNG…" />
               </div>
               <div class="av-field">
-                <label>Transmission</label>
+                <label>{{ 'Transmission' | t }}</label>
                 <input [ngModel]="form().transmission"
                        (ngModelChange)="setField('transmission', $event)"
                        placeholder="Manual, AMT…" />
@@ -107,7 +107,7 @@
                        (ngModelChange)="setField('engine_cc', $event)" />
               </div>
               <div class="av-field">
-                <label>Seats</label>
+                <label>{{ 'Seats' | t }}</label>
                 <input type="number" [ngModel]="form().seating_capacity"
                        (ngModelChange)="setField('seating_capacity', $event)" />
               </div>
@@ -118,7 +118,7 @@
                        placeholder="24.76 km/l" />
               </div>
               <div class="av-field av-field--full">
-                <label>Features</label>
+                <label>{{ 'Features' | t }}</label>
                 <input [ngModel]="form().features"
                        (ngModelChange)="setField('features', $event)"
                        placeholder="Touchscreen, 6 Airbags, Cruise Control" />
@@ -128,7 +128,7 @@
             <div class="av-actions">
               <button type="button" class="btn-primary" (click)="save()"
                       [disabled]="!form().name.trim()">Save</button>
-              <button type="button" class="btn-ghost" (click)="cancelEdit()">Cancel</button>
+              <button type="button" class="btn-ghost" (click)="cancelEdit()">{{ 'Cancel' | t }}</button>
             </div>
           </div>
         }
@@ -158,7 +158,7 @@
                 <div class="av-row-actions">
                   <button type="button" (click)="startEdit(v)">Edit</button>
                   <button type="button" class="av-publish" (click)="publish(v)">Publish</button>
-                  <button type="button" class="av-delete" (click)="remove(v)">Delete</button>
+                  <button type="button" class="av-delete" (click)="remove(v)">{{ 'Delete' | t }}</button>
                 </div>
               </div>
             }
@@ -193,7 +193,7 @@
               <div class="av-row-actions">
                 <button type="button" (click)="startEdit(v)">Edit</button>
                 <button type="button" (click)="unpublish(v)">Hide</button>
-                <button type="button" class="av-delete" (click)="remove(v)">Delete</button>
+                <button type="button" class="av-delete" (click)="remove(v)">{{ 'Delete' | t }}</button>
               </div>
             </div>
           }
