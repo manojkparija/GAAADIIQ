@@ -287,3 +287,46 @@ describe('navbar — two-row links', () => {
     expect(fixture.nativeElement.querySelector('.nav-stack.hide-mobile')).toBeTruthy();
   });
 });
+
+/**
+ * Every label in the bar is styled the same.
+ *
+ * New Cars and Used Cars are <button> triggers; the rest are <a>. The label
+ * rule was scoped to `a`, so those two rendered at the browser's default
+ * weight and read lighter than everything beside them — visible in a
+ * screenshot, invisible to any test that only checks the links.
+ */
+describe('navbar — label styling', () => {
+  it('styles the dropdown triggers like the links', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [NavbarComponent],
+      providers: [
+        provideRouter([]),
+        { provide: CarsDataService, useValue: { cars: signal([]), loading: signal(false) } },
+        {
+          provide: AuthService,
+          useValue: {
+            currentUser: signal(null), isAdmin: () => false,
+            isLoggedIn: signal(false), isSeller: () => false,
+          },
+        },
+        { provide: CityService, useValue: { selectedCity: signal(null) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.detectChanges();
+
+    const items = Array.from(
+      fixture.nativeElement.querySelectorAll('.nav-stack .nav-links > li'),
+    ).map(li => (li as HTMLElement).querySelector('a, .nav-dropdown-trigger') as HTMLElement);
+
+    expect(items.length).toBeGreaterThan(10);
+    const weights = new Set(items.map(el => getComputedStyle(el).fontWeight));
+    const sizes = new Set(items.map(el => getComputedStyle(el).fontSize));
+
+    // One weight and one size across the whole bar — buttons included.
+    expect(weights.size).withContext([...weights].join(', ')).toBe(1);
+    expect(sizes.size).withContext([...sizes].join(', ')).toBe(1);
+  });
+});

@@ -118,10 +118,19 @@
   //
   // Room for the focus underline, which sits at bottom: -4px.
   padding-bottom: 4px;
-  a {
+  // Both shapes, deliberately. New Cars and Used Cars are <button> triggers,
+  // not links, and a button inherits none of this — so with the rule scoped to
+  // `a` they alone stayed at the browser's default weight and looked lighter
+  // than every label beside them. `font: inherit` on the trigger was not
+  // enough: it inherits from .nav-links, which sets no weight or size of its
+  // own, so there was nothing to inherit.
+  a, .nav-dropdown-trigger {
     color: var(--text);
-    // 800, up from 700 — asked for directly.
-    font-weight: 800;
+    // Light, and uniform across the bar. It went 700 to 800 briefly; seeing it
+    // rendered, the lighter weight the two dropdown triggers were accidentally
+    // showing was the one that was wanted, so that is now what every label
+    // uses. The size is unchanged — this is weight only.
+    font-weight: 400;
     // 0.8rem originally, 0.76rem when the row was overcrowded, then 0.86rem —
     // every one of those a compromise with a row carrying thirteen labels.
     // Splitting the AI tools onto a second row leaves nine above and four
