@@ -1,4 +1,6 @@
-.listings-page { padding-top: 64px; min-height: 100vh; }
+// LAY-007: a hardcoded 64px was already short of the two-row bar and would go
+// stale again on the next bar change. --nav-offset tracks the real height.
+.listings-page { padding-top: max(7rem, var(--nav-offset)); min-height: 100vh; }
 
 // New / Used toggle bar
 .car-type-bar {
