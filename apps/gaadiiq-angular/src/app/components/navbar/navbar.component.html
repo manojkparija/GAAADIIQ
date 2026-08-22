@@ -56,7 +56,72 @@
           </ng-container>
         </div>
       </li>
-      <li><a routerLink="/used-cars" routerLinkActive="active">Used Cars</a></li>
+      <!-- Used Cars gets the same treatment as New Cars, by request. The
+           entries differ because the questions differ: a used-car buyer starts
+           from a budget, not a body type, so the first chip row is price
+           bands. "Dealership Near Me" from the reference menu is absent — we
+           have no dealer directory to send anyone to. -->
+      <li class="nav-dropdown">
+        <button type="button" class="nav-dropdown-trigger"
+                [class.open]="usedCarsOpen()"
+                (click)="toggleUsedCars()"
+                [attr.aria-expanded]="usedCarsOpen()" aria-haspopup="true">
+          Used Cars <span class="nav-caret" aria-hidden="true">▾</span>
+        </button>
+
+        <div class="nav-menu" *ngIf="usedCarsOpen()" role="menu">
+          <a routerLink="/used-cars" class="nav-menu-item nav-menu-lead" role="menuitem">
+            Buy Used Cars
+          </a>
+
+          <!-- Two shapes, because "in your city" cannot be a link until we know
+               the city. With one chosen it filters directly; without one it
+               opens the city picker rather than navigating somewhere generic
+               and pretending the filter was applied. -->
+          <a *ngIf="city.selectedCity(); else pickCity"
+             routerLink="/used-cars" [queryParams]="{ city: city.selectedCity() }"
+             class="nav-menu-item" role="menuitem">
+            Used Cars in {{ city.selectedCity() }}
+          </a>
+          <ng-template #pickCity>
+            <button type="button" class="nav-menu-item nav-menu-btn" role="menuitem"
+                    (click)="closeUsedCars(); openCityModal()">
+              Used Cars in Your City
+            </button>
+          </ng-template>
+
+          <a routerLink="/list-car" class="nav-menu-item" role="menuitem">Sell My Car</a>
+          <a routerLink="/ai-valuation" class="nav-menu-item" role="menuitem">Used Car Valuation</a>
+
+          <div class="nav-menu-sep"></div>
+
+          <div class="nav-menu-group">By budget</div>
+          <div class="nav-menu-chips">
+            <a *ngFor="let b of usedBudgets" class="nav-menu-chip" role="menuitem"
+               routerLink="/used-cars" [queryParams]="{ maxBudget: b.max }">{{ b.label }}</a>
+          </div>
+
+          <div class="nav-menu-group">By body type</div>
+          <div class="nav-menu-chips">
+            <a *ngFor="let b of bodyTypes" class="nav-menu-chip" role="menuitem"
+               routerLink="/used-cars" [queryParams]="{ bodyType: b }">{{ b }}</a>
+          </div>
+
+          <div class="nav-menu-group">By fuel</div>
+          <div class="nav-menu-chips">
+            <a *ngFor="let f of fuels" class="nav-menu-chip" role="menuitem"
+               routerLink="/used-cars" [queryParams]="{ fuel: f }">{{ f }}</a>
+          </div>
+
+          <ng-container *ngIf="usedCarBrands().length">
+            <div class="nav-menu-group">By brand</div>
+            <div class="nav-menu-chips">
+              <a *ngFor="let m of usedCarBrands()" class="nav-menu-chip" role="menuitem"
+                 routerLink="/used-cars" [queryParams]="{ make: m }">{{ m }}</a>
+            </div>
+          </ng-container>
+        </div>
+      </li>
       <li><a routerLink="/compare" routerLinkActive="active">Compare</a></li>
       <li><a routerLink="/ai-advisor" routerLinkActive="active">AI Advisor</a></li>
       <li><a routerLink="/vehicle-diagnosis" routerLinkActive="active">AI Diagnosis</a></li>

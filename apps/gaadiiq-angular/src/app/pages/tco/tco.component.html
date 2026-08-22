@@ -5,8 +5,14 @@
       <h1>Total Cost of <span class="gradient-text">Ownership</span></h1>
       <p>Beyond the sticker price — understand the true multi-year cost of owning any car.</p>
 
+      <!-- app-icon, not an inline 🔧: the emoji resolves to a fallback font
+           whose glyphs sit on a different baseline and render at a different
+           size per platform, so the label sat visibly off-centre in the pill.
+           The same swap was already made in the mobile menu for the same
+           reason. inline-flex here does the centring the emoji could not. -->
       <button type="button" class="tco-help" (click)="helpOpen.set(true)">
-        🔧 Find a nearby mechanic
+        <app-icon name="wrench" [size]="15"></app-icon>
+        <span>Find a nearby mechanic</span>
       </button>
     </div>
   </header>

@@ -302,6 +302,10 @@
    than a brand colour: the hero is already a blue→teal gradient, and a solid
    button in either of those hues disappears into whichever end it lands on. */
 .tco-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  line-height: 1;
   margin-top: 1.1rem;
   padding: 0.6rem 1.2rem;
   border-radius: 999px;

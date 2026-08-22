@@ -538,6 +538,18 @@
 }
 .nav-menu-lead { font-weight: 800; }
 
+// "Used Cars in Your City" is a button, not a link, when no city is chosen —
+// it opens the picker. It has to be indistinguishable from the links above and
+// below it, so this only undoes the browser's button defaults.
+.nav-menu-btn {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
 .nav-menu-sep {
   height: 1px;
   background: var(--border-soft);

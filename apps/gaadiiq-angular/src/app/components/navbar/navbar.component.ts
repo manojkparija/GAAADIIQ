@@ -61,8 +61,49 @@ export class NavbarComponent {
     return [...new Set(makes)].sort();
   });
 
-  toggleNewCars(): void { this.newCarsOpen.update(v => !v); }
+  // ── Used Cars menu ───────────────────────────────────────────────────────
+  usedCarsOpen = signal(false);
+
+  /**
+   * Budget bands, the way people actually shop for a used car — the first
+   * question is almost always "what can I get for X", not which body type.
+   * `maxBudget` is a query parameter used-cars.component.ts already reads.
+   */
+  readonly usedBudgets: { label: string; max: number }[] = [
+    { label: 'Under ₹3L', max: 300000 },
+    { label: 'Under ₹5L', max: 500000 },
+    { label: 'Under ₹10L', max: 1000000 },
+    { label: 'Under ₹15L', max: 1500000 },
+  ];
+
+  /**
+   * Makes with used stock, by the same test the Used Cars page uses (km > 0).
+   * Same reasoning as the new-car brands above: a chip that lands on an empty
+   * result page is worse than no chip.
+   */
+  usedCarBrands = computed(() => {
+    const makes = this.carsData.cars()
+      .filter(c => (c.km ?? 0) > 0)
+      .map(c => c.make)
+      .filter(Boolean);
+    return [...new Set(makes)].sort();
+  });
+
+  /**
+   * Opening one menu closes the other. Two panels open at once overlap, and
+   * the lower one is unreachable behind the upper.
+   */
+  toggleNewCars(): void {
+    this.usedCarsOpen.set(false);
+    this.newCarsOpen.update(v => !v);
+  }
   closeNewCars(): void { this.newCarsOpen.set(false); }
+
+  toggleUsedCars(): void {
+    this.newCarsOpen.set(false);
+    this.usedCarsOpen.update(v => !v);
+  }
+  closeUsedCars(): void { this.usedCarsOpen.set(false); }
 
   menuOpen = signal(false);
   userMenuOpen = signal(false);
@@ -79,7 +120,7 @@ export class NavbarComponent {
   ) {
     router.events.subscribe(e => {
       // A menu left open across a navigation covers the page you just asked for.
-      if (e instanceof NavigationEnd) this.newCarsOpen.set(false);
+      if (e instanceof NavigationEnd) { this.newCarsOpen.set(false); this.usedCarsOpen.set(false); }
       if (e instanceof NavigationEnd) {
         this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
       }
@@ -95,8 +136,9 @@ export class NavbarComponent {
     if (this.userMenuOpen() && !target.closest('.user-menu-wrap')) {
       this.userMenuOpen.set(false);
     }
-    if (this.newCarsOpen() && !target.closest('.nav-dropdown')) {
+    if (!target.closest('.nav-dropdown')) {
       this.newCarsOpen.set(false);
+      this.usedCarsOpen.set(false);
     }
   }
 
@@ -104,6 +146,7 @@ export class NavbarComponent {
   @HostListener('document:keydown.escape')
   onEscape() {
     this.newCarsOpen.set(false);
+    this.usedCarsOpen.set(false);
     this.userMenuOpen.set(false);
   }
 
