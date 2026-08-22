@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface TcoResult {
   label: string;
@@ -15,7 +16,7 @@ interface TcoResult {
 @Component({
   selector: 'app-ev-calculator',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TranslatePipe],
   templateUrl: './ev-calculator.component.html',
   styleUrl: './ev-calculator.component.scss',
 })

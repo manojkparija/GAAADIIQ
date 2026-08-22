@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ImageReviewService, ReviewableImage } from '../../services/image-review.service';
 import { ImageReviewStatus } from '../../services/dealer-car-images.service';
 import { SeoService } from '../../services/seo.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * Deciding which dealer photographs buyers get to see.
@@ -21,7 +22,7 @@ import { SeoService } from '../../services/seo.service';
 @Component({
   selector: 'app-admin-image-review',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './admin-image-review.component.html',
   styleUrl: './admin-image-review.component.scss',
 })

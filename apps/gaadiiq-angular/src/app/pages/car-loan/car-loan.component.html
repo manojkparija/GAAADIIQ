@@ -49,7 +49,7 @@
           </div>
 
           <div class="offer-grid">
-            <div><span>Monthly EMI</span><strong>{{ formatRupees(offer.monthly_emi) }}</strong></div>
+            <div><span>{{ 'Monthly EMI' | t }}</span><strong>{{ formatRupees(offer.monthly_emi) }}</strong></div>
             <div><span>Loan approved</span><strong>{{ formatRupees(offer.approved_amount) }}</strong></div>
             <div><span>Total interest</span><strong>{{ formatRupees(offer.total_interest) }}</strong></div>
             <div><span>Processing fee</span><strong>{{ formatRupees(offer.processing_fee) }}</strong></div>
@@ -114,7 +114,7 @@
     <!-- ═══ FORM ════════════════════════════════════════════════════════════ -->
     <ng-template #applyForm>
       <div class="loan-head">
-        <h1>Looking for a <span class="gradient-text">car loan</span>?</h1>
+        <h1>{{ 'Looking for a' | t }} <span class="gradient-text">{{ 'car loan' | t }}</span>?</h1>
         <p class="loan-sub">
           Tell us about the car and yourself, and we'll compare what every lender
           on the panel would charge — ranked by what the loan actually costs, not
@@ -125,17 +125,17 @@
       <div class="loan-grid">
         <!-- LEFT: the form -->
         <form class="loan-form glass-card" (ngSubmit)="submit()">
-          <h2>Your application</h2>
+          <h2>{{ 'Your application' | t }}</h2>
 
           <div class="seg">
             <button type="button" [class.active]="form.vehicle_condition === 'new'"
-                    (click)="form.vehicle_condition = 'new'">New car</button>
+                    (click)="form.vehicle_condition = 'new'">{{ 'New car' | t }}</button>
             <button type="button" [class.active]="form.vehicle_condition === 'used'"
-                    (click)="form.vehicle_condition = 'used'">Used car</button>
+                    (click)="form.vehicle_condition = 'used'">{{ 'Used car' | t }}</button>
           </div>
 
           <div class="field">
-            <label>Car</label>
+            <label>{{ 'Car' | t }}</label>
             <input type="text" [(ngModel)]="form.vehicle_description" name="vehicle_description"
                    placeholder="e.g. Maruti Suzuki S-Presso VXi">
           </div>
@@ -148,14 +148,14 @@
           </div>
 
           <div class="field">
-            <label>On-road price <strong>{{ formatRupees(vehiclePrice()) }}</strong></label>
+            <label>{{ 'On-road price' | t }} <strong>{{ formatRupees(vehiclePrice()) }}</strong></label>
             <input type="range" min="100000" max="5000000" step="25000"
                    [ngModel]="vehiclePrice()" (ngModelChange)="vehiclePrice.set(+$event)"
                    name="vehicle_price">
           </div>
 
           <div class="field">
-            <label>Loan amount <strong>{{ formatRupees(loanAmount()) }}</strong></label>
+            <label>{{ 'Loan amount' | t }} <strong>{{ formatRupees(loanAmount()) }}</strong></label>
             <input type="range" min="100000" max="5000000" step="25000"
                    [ngModel]="loanAmount()" (ngModelChange)="loanAmount.set(+$event)"
                    name="loan_amount">
@@ -168,7 +168,7 @@
           </div>
 
           <div class="field">
-            <label>Tenure <strong>{{ tenureMonths() }} months</strong></label>
+            <label>{{ 'Tenure' | t }} <strong>{{ tenureMonths() }} months</strong></label>
             <input type="range" min="12" max="84" step="6"
                    [ngModel]="tenureMonths()" (ngModelChange)="tenureMonths.set(+$event)"
                    name="tenure_months">
@@ -178,19 +178,19 @@
 
           <div class="field-row">
             <div class="field">
-              <label>Full name (as on PAN) *</label>
+              <label>{{ 'Full name (as on PAN) *' | t }}</label>
               <input type="text" [(ngModel)]="form.applicant_name" name="applicant_name"
                      placeholder="Full name">
             </div>
             <div class="field">
-              <label>Mobile *</label>
+              <label>{{ 'Mobile *' | t }}</label>
               <input type="tel" [(ngModel)]="form.mobile" name="mobile"
-                     maxlength="10" placeholder="10-digit number">
+                     maxlength="10" [placeholder]="'10-digit number' | t">
             </div>
           </div>
 
           <div class="field">
-            <label>PAN number *</label>
+            <label>{{ 'PAN number *' | t }}</label>
             <input type="text" [(ngModel)]="form.pan_number" name="pan_number"
                    maxlength="10" placeholder="ABCDE1234F"
                    style="text-transform:uppercase"
@@ -198,7 +198,7 @@
             <!-- The reassurance belongs next to the field being asked for, not
                  in a privacy policy the applicant will not open. -->
             <small class="pan-note">
-              <strong>Why we need this:</strong> lenders assess an application
+              <strong>{{ 'Why we need this:' | t }}</strong> lenders assess an application
               against your PAN. We show it back to you masked, and share it only
               with the lender you choose.
             </small>
@@ -206,11 +206,11 @@
 
           <div class="field-row">
             <div class="field">
-              <label>City</label>
+              <label>{{ 'City' | t }}</label>
               <input type="text" [(ngModel)]="form.city" name="city" placeholder="e.g. Bhubaneswar">
             </div>
             <div class="field">
-              <label>Pincode</label>
+              <label>{{ 'Pincode' | t }}</label>
               <input type="text" [(ngModel)]="form.pincode" name="pincode" maxlength="6"
                      placeholder="751001">
             </div>
@@ -219,28 +219,28 @@
           <hr>
 
           <div class="field">
-            <label>Employment *</label>
-            <app-custom-select [options]="employmentOptions" placeholder="Select"
+            <label>{{ 'Employment *' | t }}</label>
+            <app-custom-select [options]="employmentOptions" [placeholder]="'Select' | t"
                                [(ngModel)]="form.employment_type" name="employment_type" />
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Monthly income *</label>
+              <label>{{ 'Monthly income *' | t }}</label>
               <input type="number" [ngModel]="monthlyIncome()"
                      (ngModelChange)="monthlyIncome.set(+$event)" name="monthly_income"
                      placeholder="50000">
             </div>
             <div class="field">
-              <label>Existing EMIs</label>
+              <label>{{ 'Existing EMIs' | t }}</label>
               <input type="number" [(ngModel)]="form.existing_emi" name="existing_emi"
                      placeholder="0">
-              <small>Total of any loans you're already repaying.</small>
+              <small>{{ 'Total of any loans you\'re already repaying.' | t }}</small>
             </div>
           </div>
 
           <div class="field">
-            <label>Your CIBIL score (if you know it)</label>
+            <label>{{ 'Your CIBIL score (if you know it)' | t }}</label>
             <input type="number" [(ngModel)]="form.credit_score" name="credit_score"
                    min="300" max="900" placeholder="e.g. 780">
             <small>
@@ -261,12 +261,12 @@
           <p class="form-error" *ngIf="error()">{{ error() }}</p>
 
           <p class="signin-note" *ngIf="!isSignedIn()">
-            You'll need to <a routerLink="/login">sign in</a> to submit — an
+            {{ 'You\'ll need to' | t }} <a routerLink="/login">{{ 'sign in' | t }}</a> to submit — an
             application carries your PAN and income details.
           </p>
 
           <button type="submit" class="btn btn-primary submit-btn" [disabled]="submitting()">
-            {{ submitting() ? 'Comparing lenders…' : 'Compare loan offers' }}
+            {{ submitting() ? 'Comparing lenders…' : ('Compare loan offers' | t) }}
           </button>
         </form>
 
@@ -312,9 +312,9 @@
           </div>
 
           <div class="glass-card panel">
-            <h2>How we pick the best</h2>
+            <h2>{{ 'How we pick the best' | t }}</h2>
             <p class="how-note">
-              We rank by the <strong>total cost of the loan</strong> — interest
+              {{ 'We rank by the' | t }} <strong>{{ 'total cost of the loan' | t }}</strong> — interest
               plus processing fees over your tenure — not by the advertised rate.
               A lower rate with a heavy fee can easily cost more.
             </p>

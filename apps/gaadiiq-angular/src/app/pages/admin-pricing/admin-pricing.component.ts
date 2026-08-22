@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth.service';
 import { CarsDataService } from '../../services/cars-data.service';
 import { environment } from '../../../environments/environment';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface ApiCatalogueCar {
   id: string;
@@ -85,7 +86,7 @@ interface PriceRow {
 @Component({
   selector: 'app-admin-pricing',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, CustomSelectComponent, TranslatePipe],
   templateUrl: './admin-pricing.component.html',
   styleUrl: './admin-pricing.component.scss'
 })

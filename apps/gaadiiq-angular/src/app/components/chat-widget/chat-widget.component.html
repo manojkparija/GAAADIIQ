@@ -34,7 +34,7 @@
         </svg>
         <div class="chat-status">
           <span class="status-dot"></span>
-          {{ chat.isTyping() ? 'ARIA is typing…' : 'ARIA · Auto Recommendation & Intelligent Assistant' }}
+          {{ chat.isTyping() ? 'ARIA is typing…' : ('ARIA · Auto Recommendation & Intelligent Assistant' | t) }}
         </div>
       </div>
     </div>
@@ -109,7 +109,7 @@
                   </span>
                 </div>
                 <div class="rdc-causes" *ngIf="asDiagCard(rich).report.possible_causes?.length">
-                  <div class="rdc-label">Possible Causes</div>
+                  <div class="rdc-label">{{ 'Possible Causes' | t }}</div>
                   <div class="rdc-cause" *ngFor="let c of asDiagCard(rich).report.possible_causes.slice(0, 2)">
                     <span class="conf-bar" [style.width]="c.confidence + '%'"></span>
                     <span>{{ c.cause }} ({{ c.confidence }}%)</span>
@@ -118,7 +118,7 @@
                 <div class="rdc-cost">
                   💰 Est. ₹{{ asDiagCard(rich).report.cost_min_inr.toLocaleString('en-IN') }} – ₹{{ asDiagCard(rich).report.cost_max_inr.toLocaleString('en-IN') }}
                 </div>
-                <a routerLink="/vehicle-diagnosis" (click)="chat.close()" class="rdc-link">Full Diagnosis Report →</a>
+                <a routerLink="/vehicle-diagnosis" (click)="chat.close()" class="rdc-link">{{ 'Full Diagnosis Report →' | t }}</a>
               </div>
 
               <!-- Suggested prompts -->
@@ -159,7 +159,7 @@
       class="chat-input"
       [(ngModel)]="inputText"
       (keydown)="onKey($event)"
-      placeholder="Ask ARIA about cars, diagnose issues…"
+      [placeholder]="'Ask ARIA about cars, diagnose issues…' | t"
       rows="1"
       maxlength="500"
       [disabled]="chat.isTyping()"
@@ -171,5 +171,5 @@
       </svg>
     </button>
   </div>
-  <div class="chat-footer">ARIA by GAADIIQ · <a routerLink="/vehicle-diagnosis" (click)="chat.close()">Full Diagnosis</a> · <a routerLink="/ai-advisor" (click)="chat.close()">Car Advisor</a></div>
+  <div class="chat-footer">{{ 'ARIA by GAADIIQ ·' | t }} <a routerLink="/vehicle-diagnosis" (click)="chat.close()">{{ 'Full Diagnosis' | t }}</a> · <a routerLink="/ai-advisor" (click)="chat.close()">{{ 'Car Advisor' | t }}</a></div>
 </div>

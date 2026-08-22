@@ -18,6 +18,7 @@ import { CustomSelectComponent } from '../../components/custom-select/custom-sel
 import { FormsModule } from '@angular/forms';
 import { NativeService, NativePhoto } from '../../services/native.service';
 import { LeadService, CarLead, LeadStatus, LEAD_STATUSES } from '../../services/lead.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface CarEnquiry {
   id: string; car_id: string; buyer_name: string; buyer_phone: string;
@@ -34,7 +35,7 @@ interface LeadRow {
 @Component({
   selector: 'app-dealer-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, IconComponent, CustomSelectComponent, FormsModule],
+  imports: [CommonModule, RouterLink, IconComponent, CustomSelectComponent, FormsModule, TranslatePipe],
   templateUrl: './dealer-dashboard.component.html',
   styleUrl: './dealer-dashboard.component.scss',
 })

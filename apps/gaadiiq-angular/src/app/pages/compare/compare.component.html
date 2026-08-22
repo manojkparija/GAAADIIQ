@@ -1,8 +1,8 @@
 <div class="compare-page">
   <div class="compare-hero">
     <div class="container">
-      <h1>Compare <span class="gradient-text">Cars</span></h1>
-      <p>Search any car from our database and compare up to 3 side by side. Winner specs highlighted.</p>
+      <h1>{{ 'Compare' | t }} <span class="gradient-text">{{ 'Cars' | t }}</span></h1>
+      <p>{{ 'Search any car from our database and compare up to 3 side by side. Winner specs highlighted.' | t }}</p>
     </div>
   </div>
 
@@ -26,14 +26,14 @@
               [ngModel]="search(slot)"
               (ngModelChange)="[searchA,searchB,searchC][slot].set($event); showDropdown.set(slot)"
               [name]="'search'+slot"
-              placeholder="Search make or model..."
+              [placeholder]="'Search make or model...' | t"
               (focus)="showDropdown.set(slot)">
             <div class="search-dropdown" *ngIf="showDropdown() === slot && search(slot)">
               <div class="drop-item" *ngFor="let c of filtered(slot)" (click)="selectCar(slot, c)">
                 <span>{{ c.year }} {{ c.make }} {{ c.model }}</span>
                 <span class="drop-price">{{ formatPrice(c.price) }}</span>
               </div>
-              <div class="drop-empty" *ngIf="filtered(slot).length === 0">No results</div>
+              <div class="drop-empty" *ngIf="filtered(slot).length === 0">{{ 'No results' | t }}</div>
             </div>
           </div>
           <div class="popular-picks">
@@ -49,14 +49,14 @@
     <div class="comparison-table glass-card" *ngIf="activeCars().length >= 2">
       <!-- Header -->
       <div class="comp-header">
-        <div class="comp-label-col">Specification</div>
+        <div class="comp-label-col">{{ 'Specification' | t }}</div>
         <div class="comp-car-col" *ngFor="let car of activeCars()">
           <img [src]="optimisedImageFor(car)" [alt]="car.model" referrerpolicy="no-referrer"
                style="opacity:0;transition:opacity 0.25s ease"
                (load)="onImgLoad($event)" (error)="onImgError($event)">
           <div class="comp-car-name">{{ car.make }} {{ car.model }}</div>
           <div class="comp-car-price gradient-text">{{ formatPrice(car.price) }}</div>
-          <a [routerLink]="['/cars', car.id]" class="btn-outline btn-sm">View Details</a>
+          <a [routerLink]="['/cars', car.id]" class="btn-outline btn-sm">{{ 'View Details' | t }}</a>
         </div>
       </div>
 
@@ -72,7 +72,7 @@
 
       <!-- Features comparison -->
       <div class="features-comp">
-        <h3>Features Comparison</h3>
+        <h3>{{ 'Features Comparison' | t }}</h3>
         <div class="feat-row" *ngFor="let f of ['Sunroof','ADAS','360 Camera','Wireless Charging','Ventilated Seats','6 Airbags']">
           <div class="feat-label">{{ f }}</div>
           <div class="feat-val" *ngFor="let car of activeCars()">
@@ -83,7 +83,7 @@
 
       <!-- TCO breakdown -->
       <div class="features-comp tco-section">
-        <h3>Total Cost of Ownership <span style="font-size:0.8rem;color:var(--muted);font-weight:400">(5-Year Analysis)</span></h3>
+        <h3>{{ 'Total Cost of Ownership' | t }} <span style="font-size:0.8rem;color:var(--muted);font-weight:400">{{ '(5-Year Analysis)' | t }}</span></h3>
         <div class="feat-row tco-row" *ngFor="let row of tcoRows"
              [class.tco-total]="row.key === 'netCost5yr'" [class.tco-resale]="row.key === 'resaleValue'">
           <div class="feat-label">{{ row.label }}</div>
@@ -99,8 +99,8 @@
     <div class="empty-hint" *ngIf="activeCars().length < 2">
       <div class="glass-card" style="text-align:center;padding:3rem">
         <div style="font-size:3rem;margin-bottom:1rem">⚖️</div>
-        <h3>Search and select at least 2 cars to compare</h3>
-        <p style="color:var(--muted)">Use the search boxes above to find any car from our 54-car database</p>
+        <h3>{{ 'Search and select at least 2 cars to compare' | t }}</h3>
+        <p style="color:var(--muted)">{{ 'Use the search boxes above to find any car from our 54-car database' | t }}</p>
       </div>
     </div>
   </div>

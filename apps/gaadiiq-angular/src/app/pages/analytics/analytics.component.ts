@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import { DemandMap, DemandService, DaysTurn, InventoryGapReport } from '../../services/demand.service';
 import { Insight, listingInsights } from '../../utils/listing-insights';
 import { AuthService } from '../../services/auth.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface ListingAnalytics {
   listing_id: string;
@@ -33,7 +34,7 @@ interface SellerAnalytics {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TranslatePipe],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss',
 })

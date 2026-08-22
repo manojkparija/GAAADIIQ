@@ -4,10 +4,10 @@
 
   <!-- Hero -->
   <section class="about-hero container">
-    <div class="ai-badge">Our Story</div>
-    <h1>We're Making Car Buying <span class="gradient-text">Smarter for India</span></h1>
+    <div class="ai-badge">{{ 'Our Story' | t }}</div>
+    <h1>{{ 'We\'re Making Car Buying' | t }} <span class="gradient-text">{{ 'Smarter for India' | t }}</span></h1>
     <p class="hero-sub">
-      GAADIIQ was born out of frustration. Our founders spent months trying to buy a used car — only to encounter fake listings, opaque pricing, and pushy dealers. So we built the platform we wished existed.
+      {{ 'GAADIIQ was born out of frustration. Our founders spent months trying to buy a used car — only to encounter fake listings, opaque pricing, and pushy dealers. So we built the platform we wished existed.' | t }}
     </p>
   </section>
 
@@ -25,19 +25,19 @@
   <section class="mission-section container">
     <div class="mission-card glass-card">
       <div class="mission-icon">🎯</div>
-      <h2>Our Mission</h2>
+      <h2>{{ 'Our Mission' | t }}</h2>
       <p>
-        To give every Indian car buyer the same advantage that a seasoned industry insider has — real-time market intelligence, AI-powered price analysis, and verified listings — completely free.
+        {{ 'To give every Indian car buyer the same advantage that a seasoned industry insider has — real-time market intelligence, AI-powered price analysis, and verified listings — completely free.' | t }}
       </p>
       <p>
-        For sellers and dealers, we eliminate friction: instant AI valuations, quality leads, and tools to close faster.
+        {{ 'For sellers and dealers, we eliminate friction: instant AI valuations, quality leads, and tools to close faster.' | t }}
       </p>
     </div>
   </section>
 
   <!-- Values -->
   <section class="values-section container">
-    <h2 class="section-title">What We <span class="gradient-text">Stand For</span></h2>
+    <h2 class="section-title">{{ 'What We' | t }} <span class="gradient-text">{{ 'Stand For' | t }}</span></h2>
     <div class="values-grid">
       <div class="value-card glass-card" *ngFor="let v of values">
         <div class="v-icon">{{ v.icon }}</div>
@@ -50,11 +50,11 @@
   <!-- CTA -->
   <section class="about-cta container">
     <div class="cta-card glass-card">
-      <h2>Join <span class="gradient-text">2.5 Lakh+</span> Smart Car Buyers</h2>
-      <p>Find your perfect car with AI-powered recommendations, verified listings, and transparent pricing.</p>
+      <h2>{{ 'Join' | t }} <span class="gradient-text">2.5 Lakh+</span> {{ 'Smart Car Buyers' | t }}</h2>
+      <p>{{ 'Find your perfect car with AI-powered recommendations, verified listings, and transparent pricing.' | t }}</p>
       <div class="cta-btns">
-        <a routerLink="/listings" class="btn-gradient">Browse Cars →</a>
-        <a routerLink="/register" class="btn-outline">Create Free Account</a>
+        <a routerLink="/listings" class="btn-gradient">{{ 'Browse Cars →' | t }}</a>
+        <a routerLink="/register" class="btn-outline">{{ 'Create Free Account' | t }}</a>
       </div>
     </div>
   </section>

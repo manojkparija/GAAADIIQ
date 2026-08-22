@@ -6,13 +6,15 @@ import { IconComponent } from '../icon/icon.component';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { CityService } from '../../services/city.service';
-import { LanguageService } from '../../services/language.service';
+import { LanguageService, LANGUAGES, Lang } from '../../services/language.service';
 import { CitySelectorComponent } from '../city-selector/city-selector.component';
+import { CarsDataService } from '../../services/cars-data.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [LogoComponent, RouterLink, RouterLinkActive, CommonModule, CitySelectorComponent, IconComponent],
+  imports: [LogoComponent, RouterLink, RouterLinkActive, CommonModule, CitySelectorComponent, IconComponent, TranslatePipe],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })
@@ -21,6 +23,110 @@ export class NavbarComponent {
   private _scrolled = signal(false);
   private _darkHero = signal(false);
   scrolled = computed(() => this._scrolled() || this._darkHero());
+
+  // ── New Cars mega-menu ───────────────────────────────────────────────────
+  newCarsOpen = signal(false);
+
+  /**
+   * Only what the site can actually answer.
+   *
+   * The menu this was modelled on lists Offers & Discounts, Find Dealers, EV
+   * Charging Stations and Fuel Prices. We have no offers data, no dealer
+   * directory and no station data, so those would be entries that look like
+   * navigation and lead nowhere — worse than a shorter menu, because a dead
+   * link costs a click and some trust before it teaches the reader anything.
+   *
+   * Every entry below resolves to a page that exists, using query parameters
+   * /new-cars already honours (bodyType, fuel, make).
+   */
+  readonly bodyTypes = ['SUV', 'Hatchback', 'Sedan', 'MUV'];
+  readonly fuels = ['Electric', 'Petrol', 'Diesel', 'CNG', 'Hybrid'];
+
+  /**
+   * Brands taken from the catalogue rather than a fixed list, so the menu can
+   * never offer a make with nothing behind it. It grows on its own as cars are
+   * added.
+   *
+   * The test below the filter is the exact one listings.component.ts uses to
+   * decide what "New" means (km === 0 && year >= 2024) — deliberately copied
+   * rather than loosened. If the menu listed every make in the catalogue, the
+   * makes with only used stock would render as chips that land on an empty
+   * New Cars page. A short list here is the catalogue being short of new cars,
+   * not the menu hiding them.
+   */
+  newCarBrands = computed(() => {
+    const makes = this.carsData.cars()
+      .filter(c => c.km === 0 && c.year >= 2024)
+      .map(c => c.make)
+      .filter(Boolean);
+    return [...new Set(makes)].sort();
+  });
+
+  // ── Used Cars menu ───────────────────────────────────────────────────────
+  usedCarsOpen = signal(false);
+
+  /**
+   * Budget bands, the way people actually shop for a used car — the first
+   * question is almost always "what can I get for X", not which body type.
+   * `maxBudget` is a query parameter used-cars.component.ts already reads.
+   */
+  readonly usedBudgets: { label: string; max: number }[] = [
+    { label: 'Under ₹3L', max: 300000 },
+    { label: 'Under ₹5L', max: 500000 },
+    { label: 'Under ₹10L', max: 1000000 },
+    { label: 'Under ₹15L', max: 1500000 },
+  ];
+
+  /**
+   * Makes with used stock, by the same test the Used Cars page uses (km > 0).
+   * Same reasoning as the new-car brands above: a chip that lands on an empty
+   * result page is worse than no chip.
+   */
+  usedCarBrands = computed(() => {
+    const makes = this.carsData.cars()
+      .filter(c => (c.km ?? 0) > 0)
+      .map(c => c.make)
+      .filter(Boolean);
+    return [...new Set(makes)].sort();
+  });
+
+  /**
+   * Opening one menu closes the other. Two panels open at once overlap, and
+   * the lower one is unreachable behind the upper.
+   */
+  toggleNewCars(): void {
+    this.usedCarsOpen.set(false);
+    this.langOpen.set(false);
+    this.newCarsOpen.update(v => !v);
+  }
+  closeNewCars(): void { this.newCarsOpen.set(false); }
+
+  toggleUsedCars(): void {
+    this.newCarsOpen.set(false);
+    this.langOpen.set(false);
+    this.usedCarsOpen.update(v => !v);
+  }
+  closeUsedCars(): void { this.usedCarsOpen.set(false); }
+
+  // ── Language picker ──────────────────────────────────────────────────────
+  readonly languages = LANGUAGES;
+  langOpen = signal(false);
+
+  toggleLang(): void {
+    this.newCarsOpen.set(false);
+    this.usedCarsOpen.set(false);
+    this.langOpen.update(v => !v);
+  }
+
+  chooseLang(code: Lang): void {
+    this.lang.set(code);
+    this.langOpen.set(false);
+  }
+
+  /** The label for the language in use, for the closed picker. */
+  currentLangLabel(): string {
+    return LANGUAGES.find(l => l.code === this.lang.lang())?.label ?? 'English';
+  }
 
   menuOpen = signal(false);
   userMenuOpen = signal(false);
@@ -32,9 +138,16 @@ export class NavbarComponent {
     public theme: ThemeService,
     public city: CityService,
     public lang: LanguageService,
+    private carsData: CarsDataService,
     router: Router
   ) {
     router.events.subscribe(e => {
+      // A menu left open across a navigation covers the page you just asked for.
+      if (e instanceof NavigationEnd) {
+        this.newCarsOpen.set(false);
+        this.usedCarsOpen.set(false);
+        this.langOpen.set(false);
+      }
       if (e instanceof NavigationEnd) {
         this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
       }
@@ -50,6 +163,22 @@ export class NavbarComponent {
     if (this.userMenuOpen() && !target.closest('.user-menu-wrap')) {
       this.userMenuOpen.set(false);
     }
+    if (!target.closest('.nav-dropdown')) {
+      this.newCarsOpen.set(false);
+      this.usedCarsOpen.set(false);
+    }
+    if (this.langOpen() && !target.closest('.lang-wrap')) {
+      this.langOpen.set(false);
+    }
+  }
+
+  /** Escape closes the menu, so a keyboard user is not trapped inside it. */
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    this.newCarsOpen.set(false);
+    this.usedCarsOpen.set(false);
+    this.langOpen.set(false);
+    this.userMenuOpen.set(false);
   }
 
   toggleMenu() { this.menuOpen.update(v => !v); }

@@ -1,18 +1,18 @@
 <div class="la-card">
-  <h3 class="la-title">Interest in this car</h3>
+  <h3 class="la-title">{{ 'Interest in this car' | t }}</h3>
 
   @if (activity.has_enough_data) {
     <div class="la-stats">
       <div class="la-stat">
         <span class="la-num">{{ activity.views_24h }}</span>
-        <span class="la-lab">views in 24 hours</span>
+        <span class="la-lab">{{ 'views in 24 hours' | t }}</span>
       </div>
       <div class="la-stat">
         <span class="la-num">{{ activity.unique_viewers_7d }}</span>
         <!-- People, not page loads. One buyer opening a car eight times is
              one interested buyer, and counting it as eight is how an urgency
              figure becomes fiction. -->
-        <span class="la-lab">people this week</span>
+        <span class="la-lab">{{ 'people this week' | t }}</span>
       </div>
     </div>
   } @else {

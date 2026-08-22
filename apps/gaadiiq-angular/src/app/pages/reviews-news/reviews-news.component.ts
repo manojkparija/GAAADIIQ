@@ -4,6 +4,7 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { NewsService } from '../../services/news.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 export interface Article {
   id: number;
@@ -178,7 +179,7 @@ export const CATEGORY_META = [
 @Component({
   selector: 'app-reviews-news',
   standalone: true,
-  imports: [CommonModule, RouterLink, IconComponent],
+  imports: [CommonModule, RouterLink, IconComponent, TranslatePipe],
   templateUrl: './reviews-news.component.html',
   styleUrl: './reviews-news.component.scss',
 })

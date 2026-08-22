@@ -13,7 +13,7 @@
     </header>
 
     @if (loading()) {
-      <p class="state">Loading…</p>
+      <p class="state">{{ 'Loading…' | t }}</p>
     } @else if (notifications().length === 0) {
       <div class="empty">
         <p class="empty-icon">🔔</p>

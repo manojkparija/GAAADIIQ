@@ -5,11 +5,12 @@ import { LogoComponent } from '../../components/logo/logo.component';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [LogoComponent, CommonModule, FormsModule, RouterLink, IconComponent],
+  imports: [LogoComponent, CommonModule, FormsModule, RouterLink, IconComponent, TranslatePipe],
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.scss',
 })

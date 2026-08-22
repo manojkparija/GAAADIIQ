@@ -1,6 +1,6 @@
 <div class="vs-card" [class]="gradeClass()">
   <div class="vs-head">
-    <h3 class="vs-title">Condition score</h3>
+    <h3 class="vs-title">{{ 'Condition score' | t }}</h3>
     <span class="vs-grade">{{ score.grade }}</span>
   </div>
 
@@ -41,7 +41,7 @@
        history report was checked, and the buyer would be right to think so —
        every score of this kind they have seen elsewhere did check one. -->
   <p class="vs-missing">
-    <strong>Not included:</strong>
+    <strong>{{ 'Not included:' | t }}</strong>
     {{ score.missingFactors.join(', ') }}. We hold no history report for this
     car, so this score covers only what the listing states. Have any used car
     inspected before you pay.

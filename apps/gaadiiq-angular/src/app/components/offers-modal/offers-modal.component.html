@@ -8,11 +8,11 @@
     <!-- ── Step 1: where ─────────────────────────────────────────────── -->
     <ng-container *ngIf="step() === 'city'">
       <h2 class="om-title" id="om-title">Best price on {{ make }} {{ model }}</h2>
-      <p class="om-sub">Tell us where you are and a dealer near you will call with their price.</p>
+      <p class="om-sub">{{ 'Tell us where you are and a dealer near you will call with their price.' | t }}</p>
 
-      <label class="om-label" for="om-city">Your city</label>
+      <label class="om-label" for="om-city">{{ 'Your city' | t }}</label>
       <input id="om-city" class="om-input" type="text" [(ngModel)]="city"
-             name="city" autocomplete="address-level2" placeholder="e.g. Kolkata">
+             name="city" autocomplete="address-level2" [placeholder]="'e.g. Kolkata' | t">
 
       <div class="om-chips">
         <button type="button" class="om-chip" *ngFor="let c of popularCities"
@@ -21,16 +21,16 @@
         </button>
       </div>
 
-      <label class="om-label" for="om-locality">Locality or pincode <span class="om-optional">(optional)</span></label>
+      <label class="om-label" for="om-locality">{{ 'Locality or pincode' | t }} <span class="om-optional">{{ '(optional)' | t }}</span></label>
       <div class="om-row">
         <input id="om-locality" class="om-input" type="text" [(ngModel)]="locality"
                name="locality" placeholder="Area">
         <input class="om-input om-pin" type="text" inputmode="numeric" maxlength="6"
-               [(ngModel)]="pincode" name="pincode" placeholder="Pincode">
+               [(ngModel)]="pincode" name="pincode" [placeholder]="'Pincode' | t">
       </div>
 
       <button class="btn-gradient om-cta" [disabled]="!canContinueCity()" (click)="goToPhone()">
-        Continue
+        {{ 'Continue' | t }}
       </button>
     </ng-container>
 
@@ -38,18 +38,18 @@
     <ng-container *ngIf="step() === 'phone'">
       <button class="om-back" (click)="backToCity()" aria-label="Back">←</button>
       <h2 class="om-title" id="om-title">Best price on {{ make }} {{ model }}</h2>
-      <p class="om-sub">We ask this once, so a dealer can reach you.</p>
+      <p class="om-sub">{{ 'We ask this once, so a dealer can reach you.' | t }}</p>
 
-      <label class="om-label" for="om-name">Your name <span class="om-optional">(optional)</span></label>
+      <label class="om-label" for="om-name">{{ 'Your name' | t }} <span class="om-optional">{{ '(optional)' | t }}</span></label>
       <input id="om-name" class="om-input" type="text" [(ngModel)]="name" name="name"
              autocomplete="name" placeholder="Name">
 
-      <label class="om-label" for="om-phone">Mobile number</label>
+      <label class="om-label" for="om-phone">{{ 'Mobile number' | t }}</label>
       <div class="om-row">
         <span class="om-prefix">+91</span>
         <input id="om-phone" class="om-input" type="tel" inputmode="numeric" maxlength="10"
                [(ngModel)]="phoneRaw" name="phone" autocomplete="tel-national"
-               placeholder="10-digit number">
+               [placeholder]="'10-digit number' | t">
       </div>
 
       <button class="btn-outline om-secondary" [disabled]="!canSendOtp()" (click)="sendOtp()">
@@ -57,7 +57,7 @@
       </button>
 
       <ng-container *ngIf="otpSent()">
-        <label class="om-label" for="om-otp">Enter the 6-digit code</label>
+        <label class="om-label" for="om-otp">{{ 'Enter the 6-digit code' | t }}</label>
         <input id="om-otp" class="om-input" type="text" inputmode="numeric" maxlength="6"
                [(ngModel)]="otp" name="otp" autocomplete="one-time-code" placeholder="······">
 
@@ -86,17 +86,17 @@
            page already computes. -->
       <div class="om-facts">
         <div class="om-fact" *ngIf="priceText">
-          <span class="om-fact-label">Ex-showroom</span>
+          <span class="om-fact-label">{{ 'Ex-showroom' | t }}</span>
           <span class="om-fact-value">{{ priceText }}</span>
         </div>
         <div class="om-fact" *ngIf="emiText">
-          <span class="om-fact-label">EMI from</span>
+          <span class="om-fact-label">{{ 'EMI from' | t }}</span>
           <span class="om-fact-value">{{ emiText }}</span>
         </div>
       </div>
 
       <p class="om-done" *ngIf="dealersInCity() > 0">
-        Your details are with us. <strong>{{ dealersInCity() }}</strong>
+        {{ 'Your details are with us.' | t }} <strong>{{ dealersInCity() }}</strong>
         {{ dealersInCity() === 1 ? 'dealer' : 'dealers' }} in {{ city }}
         can quote on this car, and one will call you with their price.
       </p>
@@ -114,7 +114,7 @@
         accessories. A dealer's on-road quote is the final word.
       </p>
 
-      <button class="btn-gradient om-cta" (click)="close()">Done</button>
+      <button class="btn-gradient om-cta" (click)="close()">{{ 'Done' | t }}</button>
     </ng-container>
   </div>
 </div>

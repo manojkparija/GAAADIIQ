@@ -7,13 +7,14 @@ import { LanguageService } from '../../services/language.service';
 import { SeoService } from '../../services/seo.service';
 import { AnalyticsService } from '../../services/analytics.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface Milestone { id: string; icon: string; title: string; desc: string; link?: string; linkLabel?: string; }
 
 @Component({
   selector: 'app-buyer-journey',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, IconComponent],
+  imports: [CommonModule, RouterLink, FormsModule, IconComponent, TranslatePipe],
   templateUrl: './buyer-journey.component.html',
   styleUrl: './buyer-journey.component.scss',
 })

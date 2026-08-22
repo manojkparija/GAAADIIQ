@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [CommonModule, RouterLink, IconComponent],
+  imports: [CommonModule, RouterLink, IconComponent, TranslatePipe],
   templateUrl: './about.component.html',
   styleUrl: './about.component.scss',
 })

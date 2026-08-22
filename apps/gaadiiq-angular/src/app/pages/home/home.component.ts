@@ -9,6 +9,7 @@ import { CounterDirective } from '../../directives/counter.directive';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface Car {
   id: string; make: string; model: string; year: number; price: number;
@@ -19,7 +20,7 @@ interface Car {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule, FormsModule, CarCardComponent, IconComponent, ScrollAnimateDirective, CounterDirective, ImgFallbackDirective],
+  imports: [RouterLink, RouterLinkActive, CommonModule, FormsModule, CarCardComponent, IconComponent, ScrollAnimateDirective, CounterDirective, ImgFallbackDirective, TranslatePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })

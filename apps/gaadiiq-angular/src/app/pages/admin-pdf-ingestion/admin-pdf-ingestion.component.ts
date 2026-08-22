@@ -8,11 +8,12 @@ import { RouterLink } from '@angular/router';
 import { PdfIngestionService, IngestionJob, ExtractedVehicle, ExtractedImage } from '../../services/pdf-ingestion.service';
 import { AuthService } from '../../services/auth.service';
 import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-admin-pdf-ingestion',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, TranslatePipe],
   templateUrl: './admin-pdf-ingestion.component.html',
   styleUrls: ['./admin-pdf-ingestion.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

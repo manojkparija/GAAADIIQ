@@ -8,6 +8,7 @@ import { SupabaseService } from '../../services/supabase.service';
 import { CarVariant } from '../../services/cars-data.service';
 import { environment } from '../../../environments/environment';
 import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /** A vehicle the catalogue holds, as the picker offers it. */
 interface CatalogueCar {
@@ -60,7 +61,7 @@ const EMPTY_FORM: VariantForm = {
 @Component({
   selector: 'app-admin-variants',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent, TranslatePipe],
   templateUrl: './admin-variants.component.html',
   styleUrls: ['./admin-variants.component.scss'],
 })

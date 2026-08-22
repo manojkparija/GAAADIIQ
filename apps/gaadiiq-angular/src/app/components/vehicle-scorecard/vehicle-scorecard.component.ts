@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { VehicleScore } from '../../utils/market-position';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * The condition score on a used-car page.
@@ -19,7 +20,7 @@ import { VehicleScore } from '../../utils/market-position';
 @Component({
   selector: 'app-vehicle-scorecard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './vehicle-scorecard.component.html',
   styleUrl: './vehicle-scorecard.component.scss',
 })

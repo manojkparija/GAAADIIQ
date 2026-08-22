@@ -2,11 +2,11 @@
 
   <!-- ── Ask ─────────────────────────────────────────────────────────── -->
   <div class="brief-ask" *ngIf="!result()">
-    <h2 class="brief-title">Tell me what you need, in one line</h2>
-    <p class="brief-sub">Budget, how many people, where you drive, how far a month.</p>
+    <h2 class="brief-title">{{ 'Tell me what you need, in one line' | t }}</h2>
+    <p class="brief-sub">{{ 'Budget, how many people, where you drive, how far a month.' | t }}</p>
 
     <form class="brief-form" (ngSubmit)="submit()">
-      <label class="sr-only" for="brief-q">Describe what you are looking for</label>
+      <label class="sr-only" for="brief-q">{{ 'Describe what you are looking for' | t }}</label>
       <textarea
         id="brief-q"
         class="brief-input"
@@ -18,13 +18,13 @@
         (keydown.enter)="$event.preventDefault(); submit()"></textarea>
 
       <button type="submit" class="brief-go" [disabled]="!canSubmit()">
-        <span *ngIf="!busy()">Find my car</span>
-        <span *ngIf="busy()">Working…</span>
+        <span *ngIf="!busy()">{{ 'Find my car' | t }}</span>
+        <span *ngIf="busy()">{{ 'Working…' | t }}</span>
       </button>
     </form>
 
     <div class="brief-examples">
-      <span class="ex-label">Try:</span>
+      <span class="ex-label">{{ 'Try:' | t }}</span>
       <button type="button" class="ex-chip" *ngFor="let ex of examples" (click)="useExample(ex)">
         {{ ex }}
       </button>
@@ -37,26 +37,26 @@
   <div class="brief-result" *ngIf="result() as res">
 
     <div class="result-head">
-      <button type="button" class="btn-restart" (click)="reset()">← Ask something else</button>
+      <button type="button" class="btn-restart" (click)="reset()">{{ '← Ask something else' | t }}</button>
     </div>
 
     <!-- What was read. Shown before the answer so a misread is caught
          before the buyer acts on the recommendation below it. -->
     <div class="understood" *ngIf="res.understood.length">
-      <h3>What I read</h3>
+      <h3>{{ 'What I read' | t }}</h3>
       <ul class="understood-list">
         <li *ngFor="let line of res.understood">
           <app-icon name="check" [size]="14"></app-icon> {{ line }}
         </li>
       </ul>
-      <p class="understood-note">Not right? Reword it and ask again.</p>
+      <p class="understood-note">{{ 'Not right? Reword it and ask again.' | t }}</p>
     </div>
 
     <p class="brief-message" *ngIf="res.message">{{ res.message }}</p>
 
     <!-- Follow-ups for the two fields we can collect without a new sentence. -->
     <div class="followup" *ngIf="missingPrompts().length && res.items.length">
-      <h3>One more thing</h3>
+      <h3>{{ 'One more thing' | t }}</h3>
       <p class="followup-sub">These change the running costs below, so they are left blank rather than guessed.</p>
       <div class="followup-fields">
         <label *ngFor="let prompt of missingPrompts(); trackBy: trackByKey" class="followup-field">
@@ -71,7 +71,7 @@
             [name]="prompt.key" />
         </label>
         <button type="button" class="followup-go" (click)="answerMissing()" [disabled]="busy()">
-          Update
+          {{ 'Update' | t }}
         </button>
       </div>
     </div>
@@ -82,7 +82,7 @@
     <div class="picks" *ngIf="res.items.length">
       <h3 class="picks-title">
         Top {{ res.items.length }} for you
-        <span class="picks-count">from {{ res.total_considered }} models considered</span>
+        <span class="picks-count">{{ 'from' | t }} {{ res.total_considered }} {{ 'models considered' | t }}</span>
       </h3>
 
       <article class="pick" *ngFor="let pick of res.items; let i = index; trackBy: trackByCar">
@@ -100,7 +100,7 @@
           </div>
           <div class="pick-score" [attr.aria-label]="pick.match_score + ' percent match'">
             <span class="score-num">{{ pick.match_score }}%</span>
-            <span class="score-cap">match</span>
+            <span class="score-cap">{{ 'match' | t }}</span>
           </div>
         </header>
 
@@ -122,22 +122,22 @@
         <!-- Headline numbers -->
         <div class="pick-figures">
           <div class="figure">
-            <span class="fig-label">Monthly EMI</span>
+            <span class="fig-label">{{ 'Monthly EMI' | t }}</span>
             <span class="fig-value">{{ money(pick.monthly_emi.amount) }}</span>
           </div>
           <div class="figure">
-            <span class="fig-label">5-year cost</span>
+            <span class="fig-label">{{ '5-year cost' | t }}</span>
             <span class="fig-value">
               {{ money(pick.five_year_total) }}
               <span class="partial-flag" *ngIf="isPartial(pick)">partial</span>
             </span>
           </div>
           <div class="figure">
-            <span class="fig-label">Fuel per km</span>
+            <span class="fig-label">{{ 'Fuel per km' | t }}</span>
             <span class="fig-value">{{ pick.cost_per_km !== null ? '₹' + pick.cost_per_km : '—' }}</span>
           </div>
           <div class="figure">
-            <span class="fig-label">Resale at 5 yrs</span>
+            <span class="fig-label">{{ 'Resale at 5 yrs' | t }}</span>
             <span class="fig-value">{{ money(pick.resale_five_year) }}</span>
           </div>
         </div>
@@ -150,7 +150,7 @@
         </p>
 
         <button type="button" class="pick-more" (click)="toggleDetail(pick.car_id)">
-          {{ isExpanded(pick.car_id) ? 'Hide the breakdown' : 'Where these numbers come from' }}
+          {{ isExpanded(pick.car_id) ? ('Hide the breakdown' | t) : ('Where these numbers come from' | t) }}
         </button>
 
         <div class="breakdown" *ngIf="isExpanded(pick.car_id)">
@@ -180,13 +180,13 @@
             <span *ngIf="pick.variant.mileage"> · {{ pick.variant.mileage }}</span>
           </p>
 
-          <a class="pick-link" [routerLink]="['/car', pick.car_id]">See the full model page →</a>
+          <a class="pick-link" [routerLink]="['/car', pick.car_id]">{{ 'See the full model page →' | t }}</a>
         </div>
       </article>
 
       <!-- ── Comparison ──────────────────────────────────────────────── -->
       <div class="compare" *ngIf="res.items.length > 1">
-        <h3>Side by side</h3>
+        <h3>{{ 'Side by side' | t }}</h3>
         <div class="compare-scroll">
           <table class="compare-table">
             <thead>
@@ -200,32 +200,32 @@
             </thead>
             <tbody>
               <tr>
-                <th scope="row">Ex-showroom</th>
+                <th scope="row">{{ 'Ex-showroom' | t }}</th>
                 <td *ngFor="let pick of res.items">{{ money(pick.variant?.ex_showroom_price) }}</td>
               </tr>
               <tr>
-                <th scope="row">Monthly EMI</th>
+                <th scope="row">{{ 'Monthly EMI' | t }}</th>
                 <td *ngFor="let pick of res.items">{{ money(pick.monthly_emi.amount) }}</td>
               </tr>
               <tr>
-                <th scope="row">5-year cost</th>
+                <th scope="row">{{ '5-year cost' | t }}</th>
                 <td *ngFor="let pick of res.items">
                   {{ money(pick.five_year_total) }}
                   <span class="partial-flag" *ngIf="isPartial(pick)">partial</span>
                 </td>
               </tr>
               <tr>
-                <th scope="row">Fuel / km</th>
+                <th scope="row">{{ 'Fuel / km' | t }}</th>
                 <td *ngFor="let pick of res.items">
                   {{ pick.cost_per_km !== null ? '₹' + pick.cost_per_km : '—' }}
                 </td>
               </tr>
               <tr>
-                <th scope="row">Resale at 5 yrs</th>
+                <th scope="row">{{ 'Resale at 5 yrs' | t }}</th>
                 <td *ngFor="let pick of res.items">{{ money(pick.resale_five_year) }}</td>
               </tr>
               <tr>
-                <th scope="row">Seats</th>
+                <th scope="row">{{ 'Seats' | t }}</th>
                 <td *ngFor="let pick of res.items">{{ pick.variant?.seating_capacity || '—' }}</td>
               </tr>
             </tbody>
@@ -242,7 +242,7 @@
         <p>
           Resale is projected from a general depreciation curve, not from sales data for
           this specific model. Insurance and maintenance are rules of thumb, marked
-          <em>Estimate</em> above. Treat them as a starting point, not a quotation.
+          <em>{{ 'Estimate' | t }}</em> above. Treat them as a starting point, not a quotation.
         </p>
       </footer>
     </div>

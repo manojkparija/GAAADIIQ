@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { ListingActivity } from '../../services/demand.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * How much interest a car is getting.
@@ -19,7 +20,7 @@ import { ListingActivity } from '../../services/demand.service';
 @Component({
   selector: 'app-listing-activity',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './listing-activity.component.html',
   styleUrl: './listing-activity.component.scss',
 })

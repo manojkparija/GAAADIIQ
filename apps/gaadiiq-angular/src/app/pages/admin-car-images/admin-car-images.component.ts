@@ -10,11 +10,12 @@ import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { environment } from '../../../environments/environment';
 import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-admin-car-images',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent, TranslatePipe],
   templateUrl: './admin-car-images.component.html',
   styleUrls: ['./admin-car-images.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

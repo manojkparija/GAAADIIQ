@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 
@@ -34,7 +35,7 @@ interface LoanInquiry {
 @Component({
   selector: 'app-leads',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, CustomSelectComponent, TranslatePipe],
   templateUrl: './leads.component.html',
   styleUrl: './leads.component.scss',
 })

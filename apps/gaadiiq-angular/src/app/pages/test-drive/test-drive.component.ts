@@ -10,11 +10,12 @@ import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentime
 import { SupabaseService } from '../../services/supabase.service';
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-test-drive',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ImgFallbackDirective, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ImgFallbackDirective, CustomSelectComponent, TranslatePipe],
   templateUrl: './test-drive.component.html',
   styleUrl: './test-drive.component.scss'
 })

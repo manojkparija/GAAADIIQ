@@ -5,11 +5,11 @@
     <div class="profile-card glass-card">
       <h2>Personal Details</h2>
       <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" [value]="fullName()" (input)="fullName.set($any($event.target).value)" placeholder="Your name" />
+        <label>{{ 'Full Name' | t }}</label>
+        <input type="text" [value]="fullName()" (input)="fullName.set($any($event.target).value)" [placeholder]="'Your name' | t" />
       </div>
       <div class="form-group">
-        <label>Email</label>
+        <label>{{ 'Email' | t }}</label>
         <input type="email" [value]="user()!.email" disabled />
         <span class="field-hint">Email cannot be changed here.</span>
       </div>
@@ -34,7 +34,7 @@
           <button class="btn-danger" (click)="deleteAccount()" [disabled]="deleteLoading()">
             {{ deleteLoading() ? 'Deleting…' : 'Yes, delete my account' }}
           </button>
-          <button class="btn-outline" (click)="deleteConfirm.set(false)">Cancel</button>
+          <button class="btn-outline" (click)="deleteConfirm.set(false)">{{ 'Cancel' | t }}</button>
         </div>
       }
     </div>

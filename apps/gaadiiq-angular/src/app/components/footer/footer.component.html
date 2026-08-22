@@ -4,7 +4,7 @@
       <a routerLink="/" class="logo" aria-label="GAADIIQ">
         <app-logo [width]="196" [height]="42"></app-logo>
       </a>
-      <p>India's AI-first automotive intelligence platform. Smarter car buying and selling for everyone.</p>
+      <p>{{ 'India\'s AI-first automotive intelligence platform. Smarter car buying and selling for everyone.' | t }}</p>
       <div class="socials">
         <a href="https://twitter.com/gaadiiq" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Twitter / X">
           <app-icon name="twitter" [size]="15"></app-icon>
@@ -22,48 +22,48 @@
     </div>
     <div class="footer-links">
       <div class="link-group">
-        <h4>Buy</h4>
-        <a routerLink="/listings">All Cars</a>
-        <a routerLink="/listings" [queryParams]="{fuel:'Electric'}">Electric Cars</a>
-        <a routerLink="/listings" [queryParams]="{bodyType:'SUV'}">SUVs</a>
-        <a routerLink="/listings" [queryParams]="{bodyType:'Sedan'}">Sedans</a>
+        <h4>{{ 'Buy' | t }}</h4>
+        <a routerLink="/listings">{{ 'All Cars' | t }}</a>
+        <a routerLink="/listings" [queryParams]="{fuel:'Electric'}">{{ 'Electric Cars' | t }}</a>
+        <a routerLink="/listings" [queryParams]="{bodyType:'SUV'}">{{ 'SUVs' | t }}</a>
+        <a routerLink="/listings" [queryParams]="{bodyType:'Sedan'}">{{ 'Sedans' | t }}</a>
       </div>
       <div class="link-group">
-        <h4>Sell</h4>
-        <a routerLink="/list-car">List Your Car</a>
-        <a routerLink="/ai-valuation">AI Valuation</a>
-        <a routerLink="/dealer-dashboard">Seller Dashboard</a>
-        <a routerLink="/pricing-plans">Pricing Plans</a>
+        <h4>{{ 'Sell' | t }}</h4>
+        <a routerLink="/list-car">{{ 'List Your Car' | t }}</a>
+        <a routerLink="/ai-valuation">{{ 'AI Valuation' | t }}</a>
+        <a routerLink="/dealer-dashboard">{{ 'Seller Dashboard' | t }}</a>
+        <a routerLink="/pricing-plans">{{ 'Pricing Plans' | t }}</a>
       </div>
       <div class="link-group">
-        <h4>Tools</h4>
-        <a routerLink="/emi-calculator">EMI Calculator</a>
-        <a routerLink="/compare">Car Comparison</a>
-        <a routerLink="/ai-advisor">AI Car Advisor</a>
-        <a routerLink="/vehicle-diagnosis">AI Diagnosis</a>
-        <a routerLink="/price-alerts">Price Alerts</a>
+        <h4>{{ 'Tools' | t }}</h4>
+        <a routerLink="/emi-calculator">{{ 'EMI Calculator' | t }}</a>
+        <a routerLink="/compare">{{ 'Car Comparison' | t }}</a>
+        <a routerLink="/ai-advisor">{{ 'AI Car Advisor' | t }}</a>
+        <a routerLink="/vehicle-diagnosis">{{ 'AI Diagnosis' | t }}</a>
+        <a routerLink="/price-alerts">{{ 'Price Alerts' | t }}</a>
       </div>
       <div class="link-group">
-        <h4>Partners</h4>
-        <a routerLink="/mechanic-signup">Become a Mechanic</a>
-        <a routerLink="/mechanic-dashboard">Mechanic Dashboard</a>
-        <a routerLink="/dealer-dashboard">Seller Dashboard</a>
+        <h4>{{ 'Partners' | t }}</h4>
+        <a routerLink="/mechanic-signup">{{ 'Become a Mechanic' | t }}</a>
+        <a routerLink="/mechanic-dashboard">{{ 'Mechanic Dashboard' | t }}</a>
+        <a routerLink="/dealer-dashboard">{{ 'Seller Dashboard' | t }}</a>
       </div>
       <div class="link-group">
-        <h4>Account</h4>
-        <a routerLink="/login">Sign In</a>
-        <a routerLink="/register">Create Account</a>
-        <a routerLink="/about">About Us</a>
-        <a href="mailto:support@gaadiiq.com">Contact</a>
+        <h4>{{ 'Account' | t }}</h4>
+        <a routerLink="/login">{{ 'Sign In' | t }}</a>
+        <a routerLink="/register">{{ 'Create Account' | t }}</a>
+        <a routerLink="/about">{{ 'About Us' | t }}</a>
+        <a href="mailto:support@gaadiiq.com">{{ 'Contact' | t }}</a>
       </div>
     </div>
   </div>
   <div class="footer-bottom container">
-    <p>© {{ year }} GAADIIQ. All rights reserved. Built in India.</p>
+    <p>© {{ year }} GAADIIQ. {{ 'All rights reserved.' | t }} {{ 'Built in India.' | t }}</p>
     <div class="footer-legal">
-      <a routerLink="/privacy-policy">Privacy Policy</a>
-      <a routerLink="/terms-of-service">Terms of Service</a>
-      <a routerLink="/cookie-policy">Cookie Policy</a>
+      <a routerLink="/privacy-policy">{{ 'Privacy Policy' | t }}</a>
+      <a routerLink="/terms-of-service">{{ 'Terms of Service' | t }}</a>
+      <a routerLink="/cookie-policy">{{ 'Cookie Policy' | t }}</a>
     </div>
   </div>
 </footer>

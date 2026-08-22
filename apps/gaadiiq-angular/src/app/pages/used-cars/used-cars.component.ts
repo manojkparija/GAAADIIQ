@@ -7,6 +7,7 @@ import { CarsDataService, Car } from '../../services/cars-data.service';
 import { CityService, POPULAR_CITIES } from '../../services/city.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 type PriceVerdict = 'fairDeal' | 'goodPrice' | 'slightlyHigh';
 
@@ -46,7 +47,7 @@ function snapToPopularCity(raw: string): string {
 @Component({
   selector: 'app-used-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, CustomSelectComponent, TranslatePipe],
   templateUrl: './used-cars.component.html',
   styleUrl: './used-cars.component.scss'
 })

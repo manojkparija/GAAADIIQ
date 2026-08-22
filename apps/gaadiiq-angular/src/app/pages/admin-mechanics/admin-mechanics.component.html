@@ -37,7 +37,7 @@
 
   <p class="am-error" *ngIf="error()" role="alert">{{ error() }}</p>
 
-  <p class="am-loading" *ngIf="loading()">Loading…</p>
+  <p class="am-loading" *ngIf="loading()">{{ 'Loading…' | t }}</p>
 
   <p class="am-empty" *ngIf="!loading() && !error() && !visible().length">
     <ng-container *ngIf="search(); else noneAtAll">
@@ -66,8 +66,8 @@
 
       <dl class="am-facts">
         <div><dt>Phone</dt><dd><a [href]="'tel:' + m.phone">{{ m.phone }}</a></dd></div>
-        <div *ngIf="m.whatsapp_phone"><dt>WhatsApp</dt><dd>{{ m.whatsapp_phone }}</dd></div>
-        <div *ngIf="m.email"><dt>Email</dt><dd>{{ m.email }}</dd></div>
+        <div *ngIf="m.whatsapp_phone"><dt>{{ 'WhatsApp' | t }}</dt><dd>{{ m.whatsapp_phone }}</dd></div>
+        <div *ngIf="m.email"><dt>{{ 'Email' | t }}</dt><dd>{{ m.email }}</dd></div>
         <div>
           <dt>Address</dt>
           <dd>
@@ -123,7 +123,7 @@
                   (click)="confirmReject(m)">
             {{ busyId() === m.id ? 'Saving…' : 'Confirm rejection' }}
           </button>
-          <button type="button" class="am-btn am-btn--ghost" (click)="cancelReject()">Cancel</button>
+          <button type="button" class="am-btn am-btn--ghost" (click)="cancelReject()">{{ 'Cancel' | t }}</button>
         </div>
       </div>
     </li>

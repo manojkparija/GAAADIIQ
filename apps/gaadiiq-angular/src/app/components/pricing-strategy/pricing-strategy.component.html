@@ -1,6 +1,6 @@
 <div class="ps-card">
   <div class="ps-head">
-    <h3 class="ps-title">Money or time</h3>
+    <h3 class="ps-title">{{ 'Money or time' | t }}</h3>
     <span class="ps-spread">{{ rupees(spread()) }} between them</span>
   </div>
 
@@ -26,9 +26,7 @@
     </p>
   } @else {
     <p class="ps-basis">
-      No time estimate yet — too few cars have sold here to know how long either
-      choice takes. The prices stand; the waiting time is the part we cannot
-      promise, so we do not.
+      {{ 'No time estimate yet — too few cars have sold here to know how long either choice takes. The prices stand; the waiting time is the part we cannot promise, so we do not.' | t }}
     </p>
   }
 </div>

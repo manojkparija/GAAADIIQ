@@ -12,11 +12,12 @@ import {
 } from '../../services/car-loan.service';
 import { AuthService } from '../../services/auth.service';
 import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-car-loan',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent, LenderMarkComponent, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, LenderMarkComponent, CustomSelectComponent, TranslatePipe],
   templateUrl: './car-loan.component.html',
   styleUrl: './car-loan.component.scss',
 })

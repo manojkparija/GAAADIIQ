@@ -4,14 +4,14 @@
 
   <!-- Header -->
   <section class="pricing-hero container">
-    <div class="ai-badge">Pricing Plans</div>
-    <h1>Simple, <span class="gradient-text">Transparent</span> Pricing</h1>
-    <p class="hero-sub">Start free. Upgrade when you're ready. No hidden charges, no surprises.</p>
+    <div class="ai-badge">{{ 'Pricing Plans' | t }}</div>
+    <h1>{{ 'Simple,' | t }} <span class="gradient-text">{{ 'Transparent' | t }}</span> {{ 'Pricing' | t }}</h1>
+    <p class="hero-sub">{{ 'Start free. Upgrade when you\'re ready. No hidden charges, no surprises.' | t }}</p>
 
     <div class="billing-toggle">
-      <button [class.active]="billing()==='monthly'" (click)="billing.set('monthly')">Monthly</button>
+      <button [class.active]="billing()==='monthly'" (click)="billing.set('monthly')">{{ 'Monthly' | t }}</button>
       <button [class.active]="billing()==='yearly'" (click)="billing.set('yearly')">
-        Yearly <span class="save-chip">Save 2 months</span>
+        {{ 'Yearly' | t }} <span class="save-chip">{{ 'Save 2 months' | t }}</span>
       </button>
     </div>
   </section>
@@ -68,14 +68,14 @@
 
   <!-- Feature Comparison Table -->
   <section class="compare-section container">
-    <h2>Full <span class="gradient-text">Feature Comparison</span></h2>
+    <h2>{{ 'Full' | t }} <span class="gradient-text">{{ 'Feature Comparison' | t }}</span></h2>
     <div class="compare-table glass-card">
       <div class="ct-head">
-        <span>Feature</span>
-        <span>Free</span>
-        <span>Buyer Pro</span>
-        <span>Seller</span>
-        <span>Dealer Pro</span>
+        <span>{{ 'Feature' | t }}</span>
+        <span>{{ 'Free' | t }}</span>
+        <span>{{ 'Buyer Pro' | t }}</span>
+        <span>{{ 'Seller' | t }}</span>
+        <span>{{ 'Dealer Pro' | t }}</span>
       </div>
       <div class="ct-row" *ngFor="let row of [
         ['Browse listings',           '✅','✅','✅','✅'],
@@ -102,7 +102,7 @@
 
   <!-- FAQ -->
   <section class="faq-section container">
-    <h2>Frequently <span class="gradient-text">Asked Questions</span></h2>
+    <h2>{{ 'Frequently' | t }} <span class="gradient-text">{{ 'Asked Questions' | t }}</span></h2>
     <div class="faq-list">
       <div class="faq-item glass-card" *ngFor="let f of faqs; let i = index">
         <button class="faq-q" (click)="toggleFaq(i)">
@@ -117,11 +117,11 @@
   <!-- Bottom CTA -->
   <section class="bottom-cta container">
     <div class="cta-card glass-card">
-      <h2>Still unsure? <span class="gradient-text">Start Free</span></h2>
-      <p>No credit card needed. Upgrade or cancel anytime.</p>
+      <h2>{{ 'Still unsure?' | t }} <span class="gradient-text">{{ 'Start Free' | t }}</span></h2>
+      <p>{{ 'No credit card needed. Upgrade or cancel anytime.' | t }}</p>
       <div class="cta-btns">
-        <a routerLink="/register" class="btn-gradient">Create Free Account →</a>
-        <a routerLink="/ai-advisor" class="btn-outline">Try AI Advisor</a>
+        <a routerLink="/register" class="btn-gradient">{{ 'Create Free Account →' | t }}</a>
+        <a routerLink="/ai-advisor" class="btn-outline">{{ 'Try AI Advisor' | t }}</a>
       </div>
     </div>
   </section>

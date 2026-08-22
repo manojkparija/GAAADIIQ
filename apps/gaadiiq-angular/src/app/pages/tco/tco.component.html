@@ -1,12 +1,18 @@
 <div class="tco-page">
   <header class="tco-hero">
     <div class="container">
-      <span class="eyebrow">Cost Analysis</span>
-      <h1>Total Cost of <span class="gradient-text">Ownership</span></h1>
-      <p>Beyond the sticker price — understand the true multi-year cost of owning any car.</p>
+      <span class="eyebrow">{{ 'Cost Analysis' | t }}</span>
+      <h1>{{ 'Total Cost of' | t }} <span class="gradient-text">{{ 'Ownership' | t }}</span></h1>
+      <p>{{ 'Beyond the sticker price — understand the true multi-year cost of owning any car.' | t }}</p>
 
+      <!-- app-icon, not an inline 🔧: the emoji resolves to a fallback font
+           whose glyphs sit on a different baseline and render at a different
+           size per platform, so the label sat visibly off-centre in the pill.
+           The same swap was already made in the mobile menu for the same
+           reason. inline-flex here does the centring the emoji could not. -->
       <button type="button" class="tco-help" (click)="helpOpen.set(true)">
-        🔧 Find a nearby mechanic
+        <app-icon name="wrench" [size]="15"></app-icon>
+        <span>{{ 'Find a nearby mechanic' | t }}</span>
       </button>
     </div>
   </header>
@@ -26,10 +32,10 @@
     <div class="tco-grid">
       <!-- Inputs -->
       <section class="controls-card">
-        <h2>Vehicle Details</h2>
+        <h2>{{ 'Vehicle Details' | t }}</h2>
 
         <label class="field">
-          <span class="field-label">Purchase Price</span>
+          <span class="field-label">{{ 'Purchase Price' | t }}</span>
           <div class="field-row">
             <span class="affix">₹</span>
             <input type="number" min="100000" step="50000"
@@ -38,7 +44,7 @@
         </label>
 
         <div class="field">
-          <span class="field-label">Fuel Type</span>
+          <span class="field-label">{{ 'Fuel Type' | t }}</span>
           <div class="chip-row">
             @for (ft of fuelTypes; track ft) {
               <button type="button" class="chip" [class.active]="fuelType() === ft"
@@ -51,14 +57,14 @@
 
         <div class="field-pair">
           <label class="field">
-            <span class="field-label">KM per Year</span>
+            <span class="field-label">{{ 'KM per Year' | t }}</span>
             <div class="field-row">
               <input type="number" min="1000" step="1000"
                      [ngModel]="kmPerYear()" (ngModelChange)="kmPerYear.set(+$event)" />
             </div>
           </label>
           <label class="field">
-            <span class="field-label">Years Owned</span>
+            <span class="field-label">{{ 'Years Owned' | t }}</span>
             <div class="field-row">
               <input type="number" min="1" max="10" step="1"
                      [ngModel]="yearsOwned()" (ngModelChange)="yearsOwned.set(+$event)" />
@@ -66,7 +72,7 @@
           </label>
         </div>
 
-        <h2 class="section-break">Running Costs</h2>
+        <h2 class="section-break">{{ 'Running Costs' | t }}</h2>
 
         <div class="field-pair">
           <label class="field">
@@ -86,7 +92,7 @@
         </div>
 
         <label class="field">
-          <span class="field-label">Insurance (% of value / year)</span>
+          <span class="field-label">{{ 'Insurance (% of value / year)' | t }}</span>
           <div class="field-row">
             <input type="number" min="0" step="0.5"
                    [ngModel]="insurancePremiumPct()" (ngModelChange)="insurancePremiumPct.set(+$event)" />
@@ -95,7 +101,7 @@
         </label>
 
         <label class="field">
-          <span class="field-label">Maintenance per Year</span>
+          <span class="field-label">{{ 'Maintenance per Year' | t }}</span>
           <div class="field-row">
             <span class="affix">₹</span>
             <input type="number" min="0" step="5000"
@@ -112,11 +118,11 @@
             <p class="summary-value">{{ formatINR(total()) }}</p>
           </div>
           <div class="summary-card">
-            <p class="summary-label">Per Year</p>
+            <p class="summary-label">{{ 'Per Year' | t }}</p>
             <p class="summary-value">{{ formatINR(perYear()) }}</p>
           </div>
           <div class="summary-card">
-            <p class="summary-label">Per KM</p>
+            <p class="summary-label">{{ 'Per KM' | t }}</p>
             <p class="summary-value">₹{{ perKm() | number: '1.1-1' }}</p>
           </div>
         </div>
@@ -139,7 +145,7 @@
         </div>
 
         <div class="breakdown-card">
-          <h2>Cost Breakdown</h2>
+          <h2>{{ 'Cost Breakdown' | t }}</h2>
 
           @for (row of [
             { label: 'Depreciation (value you do not get back)', value: depreciation(), cls: 'bar-depreciation' },
@@ -162,14 +168,13 @@
           }
 
           <div class="grand-total">
-            <span>Grand Total</span>
+            <span>{{ 'Grand Total' | t }}</span>
             <strong>{{ formatINR(total()) }}</strong>
           </div>
         </div>
 
         <p class="disclaimer">
-          * Depreciation uses market-standard rates (20% → 15% → 12% → 10% → 8% per year).
-          Actual costs vary by city, driving style, and insurer.
+          {{ '* Depreciation uses market-standard rates (20% → 15% → 12% → 10% → 8% per year). Actual costs vary by city, driving style, and insurer.' | t }}
         </p>
       </section>
     </div>

@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BrandsService } from '../../services/brands.service';
 import { Brand } from '../../data/brands';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-brand-logos',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './brand-logos.component.html',
   styleUrl: './brand-logos.component.scss'
 })

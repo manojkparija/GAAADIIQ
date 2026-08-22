@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, signal, HostListener, ElementRef, forwardRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * An option that shows one thing and stores another — a variant whose label
@@ -14,7 +15,7 @@ export interface SelectOption {
 @Component({
   selector: 'app-custom-select',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './custom-select.component.html',
   styleUrl: './custom-select.component.scss',
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => CustomSelectComponent), multi: true }],

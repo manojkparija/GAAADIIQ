@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { IconComponent } from '../../components/icon/icon.component';
 import { SupabaseService } from '../../services/supabase.service';
 import { environment } from '../../../environments/environment';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /** A mechanic as the admin listing returns them. */
 export interface AdminMechanic {
@@ -50,7 +51,7 @@ type Tab = 'pending_verification' | 'active' | 'rejected';
 @Component({
   selector: 'app-admin-mechanics',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, TranslatePipe],
   templateUrl: './admin-mechanics.component.html',
   styleUrls: ['./admin-mechanics.component.scss'],
 })

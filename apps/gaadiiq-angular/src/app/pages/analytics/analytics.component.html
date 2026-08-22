@@ -6,7 +6,7 @@
     </header>
 
     @if (loading()) {
-      <p class="state">Loading…</p>
+      <p class="state">{{ 'Loading…' | t }}</p>
     } @else if (failed() || !data()) {
       <div class="empty">Could not load analytics. Please try again later.</div>
     } @else {
@@ -29,7 +29,7 @@
           <p class="stat-value">{{ data()!.total_loan_inquiries }}</p>
         </div>
         <div class="stat-card">
-          <p class="stat-label">Reviews</p>
+          <p class="stat-label">{{ 'Reviews' | t }}</p>
           <p class="stat-value">{{ data()!.total_reviews }}</p>
         </div>
         <div class="stat-card">
@@ -60,7 +60,7 @@
             <h3>Typical time to sell</h3>
             @if (daysTurn(); as t) {
               @if (t.has_enough_data) {
-                <p class="demand-figure">{{ t.median_days }} <span>days</span></p>
+                <p class="demand-figure">{{ t.median_days }} <span>{{ 'days' | t }}</span></p>
                 <p class="demand-note">{{ t.basis }}</p>
               } @else {
                 <p class="demand-empty">{{ t.note }}</p>
@@ -130,12 +130,12 @@
           <table>
             <thead>
               <tr>
-                <th>Car</th>
-                <th>Price</th>
+                <th>{{ 'Car' | t }}</th>
+                <th>{{ 'Price' | t }}</th>
                 <th class="num">Views</th>
                 <th class="num">Bookings</th>
                 <th class="num">Loan inqs.</th>
-                <th>Rating</th>
+                <th>{{ 'Rating' | t }}</th>
                 <th>Status</th>
               </tr>
             </thead>

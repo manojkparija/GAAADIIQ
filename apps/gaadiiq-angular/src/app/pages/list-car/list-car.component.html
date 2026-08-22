@@ -4,8 +4,8 @@
 
   <div class="list-container" *ngIf="!submitted()">
     <div class="list-header">
-      <h1>List Your Car</h1>
-      <p>Reach 50,000+ verified buyers. Free listing. AI-powered valuation.</p>
+      <h1>{{ 'List Your Car' | t }}</h1>
+      <p>{{ 'Reach 50,000+ verified buyers. Free listing. AI-powered valuation.' | t }}</p>
     </div>
 
     <!-- Progress -->
@@ -19,7 +19,7 @@
       <div class="step-dot" [class.active]="step() >= 4"><span>4</span></div>
     </div>
     <div class="step-labels">
-      <span>Car Details</span><span>Photos</span><span>Condition & Price</span><span>Your Info</span>
+      <span>{{ 'Car Details' | t }}</span><span>{{ 'Photos' | t }}</span><span>{{ 'Condition & Price' | t }}</span><span>{{ 'Your Info' | t }}</span>
     </div>
 
     <!-- Step 1: Car Details -->
@@ -34,37 +34,37 @@
           owner count and a mileage for a car nobody has driven.
         -->
         <div class="form-group full-width">
-          <label>What are you listing?</label>
+          <label>{{ 'What are you listing?' | t }}</label>
           <div class="lt-choice">
             <button type="button" class="lt-btn" [class.active]="!isNew()"
                     (click)="setListingType('used')">
-              <span class="lt-title">Used car</span>
-              <span class="lt-sub">A resale — we'll estimate its value</span>
+              <span class="lt-title">{{ 'Used car' | t }}</span>
+              <span class="lt-sub">{{ 'A resale — we\'ll estimate its value' | t }}</span>
             </button>
             <button type="button" class="lt-btn" [class.active]="isNew()"
                     (click)="setListingType('new')">
-              <span class="lt-title">New car</span>
-              <span class="lt-sub">Unregistered showroom stock</span>
+              <span class="lt-title">{{ 'New car' | t }}</span>
+              <span class="lt-sub">{{ 'Unregistered showroom stock' | t }}</span>
             </button>
           </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
-            <label>Make (Brand)</label>
+            <label>{{ 'Make (Brand)' | t }}</label>
             <app-custom-select [options]="makes" placeholder="Select brand"
                                [(ngModel)]="form.make" name="make"
                                (ngModelChange)="onMakeChange()" />
           </div>
           <div class="form-group">
-            <label>Model</label>
-            <app-custom-select [options]="availableModels" placeholder="Select model"
+            <label>{{ 'Model' | t }}</label>
+            <app-custom-select [options]="availableModels" [placeholder]="'Select model' | t"
                                [(ngModel)]="form.model" name="model"
                                [disabled]="!form.make || availableModels.length === 0"
                                (ngModelChange)="onModelChange()" />
           </div>
           <div class="form-group">
-            <label>Variant <span style="color:var(--muted);font-size:0.8rem">(optional)</span></label>
+            <label>{{ 'Variant' | t }} <span style="color:var(--muted);font-size:0.8rem">{{ '(optional)' | t }}</span></label>
             <!-- The trim list is a hardcoded map that does not cover every
                  model, and the field used to be disabled outright when it had
                  nothing — leaving a dealer with real stock no way to record
@@ -77,31 +77,31 @@
                    name="variantText" placeholder="e.g. Sigma, Delta, ZXi+"
                    [disabled]="!form.model">
             <small *ngIf="customVariant()" class="lt-hint">
-              <a href="javascript:void(0)" (click)="customVariant.set(false)">Choose from the list instead</a>
+              <a href="javascript:void(0)" (click)="customVariant.set(false)">{{ 'Choose from the list instead' | t }}</a>
             </small>
           </div>
           <div class="form-group">
-            <label>Year</label>
-            <app-custom-select [options]="yearStrings()" placeholder="Select year"
+            <label>{{ 'Year' | t }}</label>
+            <app-custom-select [options]="yearStrings()" [placeholder]="'Select year' | t"
                                [(ngModel)]="form.year" name="year" />
           </div>
           <div class="form-group">
-            <label>Body Type</label>
+            <label>{{ 'Body Type' | t }}</label>
             <app-custom-select [options]="bodyTypes" placeholder="Select type"
                                [(ngModel)]="form.bodyType" name="bodyType" />
           </div>
           <div class="form-group">
-            <label>Fuel Type</label>
-            <app-custom-select [options]="fuelTypes" placeholder="Select fuel"
+            <label>{{ 'Fuel Type' | t }}</label>
+            <app-custom-select [options]="fuelTypes" [placeholder]="'Select fuel' | t"
                                [(ngModel)]="form.fuel" name="fuel" />
           </div>
           <div class="form-group">
-            <label>Transmission</label>
+            <label>{{ 'Transmission' | t }}</label>
             <app-custom-select [options]="transmissions" placeholder="Select transmission"
                                [(ngModel)]="form.transmission" name="transmission" />
           </div>
           <div class="form-group">
-            <label>Color</label>
+            <label>{{ 'Color' | t }}</label>
             <input type="text" [(ngModel)]="form.color" name="color" placeholder="e.g. Pearl White">
           </div>
           <!-- Only a resale has these. A new car has no previous owner, no
@@ -110,7 +110,7 @@
           @if (!isNew()) {
             <div class="form-group">
               <label>Kilometres Driven</label>
-              <input type="number" [(ngModel)]="form.km" name="km" placeholder="e.g. 45000" min="0">
+              <input type="number" [(ngModel)]="form.km" name="km" [placeholder]="'e.g. 45000' | t" min="0">
             </div>
             <div class="form-group">
               <label>Number of Owners</label>
@@ -119,14 +119,14 @@
             </div>
             <div class="form-group">
               <label>Car Condition</label>
-              <app-custom-select [options]="conditionOptions" placeholder="Select condition"
+              <app-custom-select [options]="conditionOptions" [placeholder]="'Select condition' | t"
                                  [(ngModel)]="form.condition" name="condition" />
             </div>
           } @else {
             <div class="form-group">
-              <label>Ex-showroom price (₹)</label>
+              <label>{{ 'Ex-showroom price (₹)' | t }}</label>
               <input type="number" [(ngModel)]="form.exShowroomPrice" name="exShowroomPrice"
-                     placeholder="e.g. 850000" min="0">
+                     [placeholder]="'e.g. 850000' | t" min="0">
               <small class="lt-hint">
                 Before road tax, insurance and registration. Buyers compare on
                 this figure.
@@ -142,15 +142,15 @@
           </div>
           <div class="val-range">
             <div class="val-col">
-              <div class="val-label">Low</div>
+              <div class="val-label">{{ 'Low' | t }}</div>
               <div class="val-num low">{{ fmt(valuation()!.low) }}</div>
             </div>
             <div class="val-col mid">
-              <div class="val-label">Fair Price</div>
+              <div class="val-label">{{ 'Fair Price' | t }}</div>
               <div class="val-num">{{ fmt(valuation()!.mid) }}</div>
             </div>
             <div class="val-col">
-              <div class="val-label">High</div>
+              <div class="val-label">{{ 'High' | t }}</div>
               <div class="val-num high">{{ fmt(valuation()!.high) }}</div>
             </div>
           </div>
@@ -159,9 +159,9 @@
         </div>
 
         <div class="btn-row">
-          <a routerLink="/" class="btn-outline">Cancel</a>
+          <a routerLink="/" class="btn-outline">{{ 'Cancel' | t }}</a>
           <button class="btn-gradient" (click)="nextStep()" [disabled]="!canLeaveStepOne()">
-            {{ valuationLoading() ? '⚡ Getting AI estimate…' : 'Continue →' }}
+            {{ valuationLoading() ? '⚡ Getting AI estimate…' : ('Continue →' | t) }}
           </button>
         </div>
       </div>
@@ -170,7 +170,7 @@
     <!-- Step 2: Photos -->
     @if (step() === 2) {
       <div class="step-card glass-card">
-        <h2><app-icon name="camera" [size]="22"></app-icon> Car Photos</h2>
+        <h2><app-icon name="camera" [size]="22"></app-icon> {{ 'Car Photos' | t }}</h2>
         <p class="step-sub">Listings with photos get <strong>5× more enquiries</strong>. Upload up to 10 images.</p>
 
         <!-- Native file input (hidden) -->
@@ -230,7 +230,7 @@
         </div>
 
         <div class="btn-row">
-          <button class="btn-outline" (click)="prevStep()">← Back</button>
+          <button class="btn-outline" (click)="prevStep()">{{ '← Back' | t }}</button>
           <button class="btn-gradient" (click)="nextStep()">
             {{ uploadedImages().length > 0 ? 'Continue (' + uploadedImages().length + ' photos) →' : 'Skip for now →' }}
           </button>
@@ -244,7 +244,7 @@
         <h2>📋 Price & Description</h2>
         <div class="form-grid">
           <div class="form-group">
-            <label>City</label>
+            <label>{{ 'City' | t }}</label>
             <input type="text" [(ngModel)]="form.city" name="city" placeholder="e.g. Mumbai">
           </div>
           @if (!isNew()) {
@@ -254,9 +254,9 @@
             </div>
           } @else {
             <div class="form-group">
-              <label>Ex-showroom price (₹)</label>
+              <label>{{ 'Ex-showroom price (₹)' | t }}</label>
               <input type="number" [(ngModel)]="form.exShowroomPrice" name="exShowroomPrice2"
-                     placeholder="e.g. 850000">
+                     [placeholder]="'e.g. 850000' | t">
               <small class="lt-hint">The figure you entered earlier — change it here if it was wrong.</small>
             </div>
           }
@@ -268,9 +268,9 @@
             <span class="val-conf">{{ valuation()!.confidence }}% confidence</span>
           </div>
           <div class="val-range">
-            <div class="val-col"><div class="val-label">Low</div><div class="val-num low">{{ fmt(valuation()!.low) }}</div></div>
-            <div class="val-col mid"><div class="val-label">Fair Price</div><div class="val-num">{{ fmt(valuation()!.mid) }}</div></div>
-            <div class="val-col"><div class="val-label">High</div><div class="val-num high">{{ fmt(valuation()!.high) }}</div></div>
+            <div class="val-col"><div class="val-label">{{ 'Low' | t }}</div><div class="val-num low">{{ fmt(valuation()!.low) }}</div></div>
+            <div class="val-col mid"><div class="val-label">{{ 'Fair Price' | t }}</div><div class="val-num">{{ fmt(valuation()!.mid) }}</div></div>
+            <div class="val-col"><div class="val-label">{{ 'High' | t }}</div><div class="val-num high">{{ fmt(valuation()!.high) }}</div></div>
           </div>
         </div>
         <div class="form-group full-width">
@@ -281,9 +281,9 @@
           🤖 <strong>AI Tip:</strong> Cars with service history and single ownership sell 23% faster at better prices.
         </div>
         <div class="btn-row">
-          <button class="btn-outline" (click)="prevStep()">← Back</button>
+          <button class="btn-outline" (click)="prevStep()">{{ '← Back' | t }}</button>
           <button class="btn-gradient" (click)="nextStep()"
-                  [disabled]="isNew() ? !form.exShowroomPrice : !form.price">Continue →</button>
+                  [disabled]="isNew() ? !form.exShowroomPrice : !form.price">{{ 'Continue →' | t }}</button>
         </div>
       </div>
     }
@@ -294,17 +294,17 @@
         <h2>👤 Your Contact Info</h2>
         <div class="form-grid">
           <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" [(ngModel)]="form.name" name="name" placeholder="Your name">
+            <label>{{ 'Full Name' | t }}</label>
+            <input type="text" [(ngModel)]="form.name" name="name" [placeholder]="'Your name' | t">
           </div>
           <div class="form-group">
-            <label>Phone Number</label>
+            <label>{{ 'Phone Number' | t }}</label>
             <input type="tel" [(ngModel)]="form.phone" name="phone" placeholder="9876543210" (blur)="validatePhone()">
             <span class="field-error" *ngIf="phoneError()">{{ phoneError() }}</span>
           </div>
           <div class="form-group full-width">
-            <label>Email Address</label>
-            <input type="email" [(ngModel)]="form.email" name="email" placeholder="you@example.com">
+            <label>{{ 'Email Address' | t }}</label>
+            <input type="email" [(ngModel)]="form.email" name="email" [placeholder]="'you@example.com' | t">
           </div>
         </div>
         <div class="guarantee-row">
@@ -316,7 +316,7 @@
           ⚠️ {{ submitError() }}
         </div>
         <div class="btn-row">
-          <button class="btn-outline" (click)="prevStep()">← Back</button>
+          <button class="btn-outline" (click)="prevStep()">{{ '← Back' | t }}</button>
           <button class="btn-gradient" (click)="onSubmit()" [disabled]="loading() || !form.name || !form.phone || !!phoneError()">
             {{ loading() ? 'Submitting…' : 'Submit Listing 🚀' }}
           </button>

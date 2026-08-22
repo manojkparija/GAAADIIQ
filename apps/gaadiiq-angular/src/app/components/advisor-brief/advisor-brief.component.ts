@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService, AdvisorBrief, AdvisorPick } from '../../services/api.service';
 import { AnalyticsService } from '../../services/analytics.service';
 import { IconComponent } from '../icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * "I have ₹12 lakh, family of 5, city driving, 1,000 km/month."
@@ -55,7 +56,7 @@ const MISSING_CAPTIONS: Record<string, string> = {
 @Component({
   selector: 'app-advisor-brief',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent, TranslatePipe],
   templateUrl: './advisor-brief.component.html',
   styleUrl: './advisor-brief.component.scss',
 })

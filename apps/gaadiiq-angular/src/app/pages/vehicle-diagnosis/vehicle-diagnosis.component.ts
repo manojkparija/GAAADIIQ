@@ -1,4 +1,4 @@
-import { Component, signal, OnDestroy, effect } from '@angular/core';
+import { Component, signal, OnDestroy, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -15,6 +15,8 @@ import { VoiceModeComponent, VoiceSessionResult } from '../../components/voice-m
 import { firstValueFrom } from 'rxjs';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { ServiceRequestComponent } from '../../components/service-request/service-request.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+import { LanguageService } from '../../services/language.service';
 
 interface ServiceCenter {
   name: string;
@@ -213,11 +215,12 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
 @Component({
   selector: 'app-vehicle-diagnosis',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent, ServiceRequestComponent, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CustomSelectComponent, VoiceModeComponent, ServiceRequestComponent, IconComponent, TranslatePipe],
   templateUrl: './vehicle-diagnosis.component.html',
   styleUrl: './vehicle-diagnosis.component.scss',
 })
 export class VehicleDiagnosisComponent implements OnDestroy {
+  private readonly lang = inject(LanguageService);
   step = signal(1);
   totalSteps = 4;
 
@@ -407,6 +410,12 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   voiceLangOpen = signal(false);
   showVoiceMode = signal(false);
   private _voiceDetectedLang = 'en-IN';
+
+  /** What language the assessment itself should come back in. */
+  private diagnosisLanguage(): string | undefined {
+    if (this._voiceDetectedLang !== 'en-IN') return this._voiceDetectedLang;
+    return this.lang.lang() === 'hi' ? 'hi-IN' : undefined;
+  }
 
   /**
    * How this diagnosis was entered. Drives whether the report is spoken
@@ -649,7 +658,13 @@ export class VehicleDiagnosisComponent implements OnDestroy {
       image_urls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
       audio_url: audioUrl,
       video_url: videoUrl,
-      detected_language: this._voiceDetectedLang !== 'en-IN' ? this._voiceDetectedLang : undefined,
+      // Voice detection wins — it is evidence of the language actually spoken.
+      // Failing that, the language the user picked in the navbar. The backend
+      // already asks the model to answer in this language rather than
+      // translating afterwards (services/diagnosis.py), so without this a
+      // Hindi reader got a Hindi interface wrapped around an English
+      // diagnosis — the one part of the page they most need to understand.
+      detected_language: this.diagnosisLanguage(),
     };
 
     this.step.set(4);

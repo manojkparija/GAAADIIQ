@@ -21,7 +21,7 @@
     <ng-container *ngIf="isAskingConsent()">
       <div class="vm-consent">
         <div class="vm-consent-icon" aria-hidden="true">🎙️</div>
-        <h3 class="vm-consent-title">Microphone access</h3>
+        <h3 class="vm-consent-title">{{ 'Microphone access' | t }}</h3>
 
         <dl class="vm-consent-terms">
           <dt>Why</dt>
@@ -30,19 +30,19 @@
             of typing — useful when you cannot safely use the keyboard.
           </dd>
 
-          <dt>What happens to your voice</dt>
+          <dt>{{ 'What happens to your voice' | t }}</dt>
           <dd>
             {{ useServerStt
               ? 'Your device cannot transcribe speech on its own, so the recording is sent to our server, converted to text, and deleted immediately.'
               : 'Speech is transcribed by your browser. The audio never leaves your device — only the resulting text is sent.' }}
           </dd>
 
-          <dt>How long we keep it</dt>
+          <dt>{{ 'How long we keep it' | t }}</dt>
           <dd>{{ retentionNotice }}</dd>
         </dl>
 
         <p class="vm-consent-links">
-          <a href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>
+          <a href="/privacy-policy" target="_blank" rel="noopener">{{ 'Privacy Policy' | t }}</a>
           <span aria-hidden="true">·</span>
           <span class="vm-consent-version">Notice v{{ consentVersion }}</span>
         </p>
@@ -57,14 +57,14 @@
             *ngIf="!voice.permissionDenied()"
             class="vm-btn vm-btn--primary"
             (click)="grantConsent()"
-          >Allow microphone</button>
+          >{{ 'Allow microphone' | t }}</button>
           <button
             *ngIf="voice.permissionDenied()"
             class="vm-btn vm-btn--primary"
             (click)="retryPermission()"
-          >I've enabled it — try again</button>
+          >{{ 'I\'ve enabled it — try again' | t }}</button>
           <button class="vm-btn vm-btn--ghost" (click)="declineConsent()">
-            Not now — I'll type instead
+            {{ 'Not now — I\'ll type instead' | t }}
           </button>
         </div>
       </div>
@@ -73,9 +73,9 @@
     <!-- ── Language picker ── -->
     <ng-container *ngIf="isSelectingLanguage()">
       <div class="vm-lang-picker">
-        <p class="vm-lang-prompt">Which language would you like to speak in?</p>
+        <p class="vm-lang-prompt">{{ 'Which language would you like to speak in?' | t }}</p>
         <button class="vm-lang-auto" (click)="useAutoDetect()">
-          ✨ Detect automatically
+          {{ '✨ Detect automatically' | t }}
         </button>
         <div class="vm-lang-grid">
           <button
@@ -116,7 +116,7 @@
     <div class="vm-record-bar" *ngIf="useServerStt && serverStt.recording()">
       <span class="vm-record-timer">{{ serverStt.elapsed() }}s / 60s</span>
       <button class="vm-btn vm-btn--primary vm-btn--sm" (click)="finishRecording()">
-        ⏹ Done speaking
+        {{ '⏹ Done speaking' | t }}
       </button>
     </div>
 
@@ -128,12 +128,12 @@
     <!-- Active language + change control -->
     <div class="vm-lang-badge">
       <span>{{ voice.selectedLanguage().native }} ({{ voice.selectedLanguage().label }})</span>
-      <button class="vm-lang-change" (click)="step.set('select-language')">Change</button>
+      <button class="vm-lang-change" (click)="step.set('select-language')">{{ 'Change' | t }}</button>
     </div>
 
     <!-- Captured so far -->
     <div class="vm-captured" *ngIf="capturedChips().length > 0">
-      <span class="vm-captured-label">Captured</span>
+      <span class="vm-captured-label">{{ 'Captured' | t }}</span>
       <div class="vm-chips">
         <span class="vm-chip" *ngFor="let c of capturedChips()">✓ {{ c.value }}</span>
       </div>
@@ -179,7 +179,7 @@
         *ngIf="step() !== 'done'"
         class="vm-btn vm-btn--danger"
         (click)="cancel()"
-      >Cancel</button>
+      >{{ 'Cancel' | t }}</button>
     </div>
 
   </div>

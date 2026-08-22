@@ -4,6 +4,7 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { NewsService, NewsArticle } from '../../services/news.service';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * One live news item: headline, publisher, date, and a link to the real story.
@@ -21,7 +22,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 @Component({
   selector: 'app-live-news-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, IconComponent],
+  imports: [CommonModule, RouterLink, IconComponent, TranslatePipe],
   templateUrl: './live-news-detail.component.html',
   styleUrl: './live-news-detail.component.scss',
 })

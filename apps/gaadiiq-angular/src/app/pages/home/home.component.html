@@ -14,15 +14,15 @@
     <div class="hero-text">
       <div class="badge badge-blue mb-4">
         <app-icon name="zap" [size]="13" [strokeWidth]="2.5"></app-icon>
-        AI Car Valuation
+        {{ 'AI Car Valuation' | t }}
       </div>
       <h1>
-        Know Your Car's<br>
-        <span class="gradient-text">True Market Value</span>
+        {{ 'Know Your Car\'s' | t }}<br>
+        <span class="gradient-text">{{ 'True Market Value' | t }}</span>
       </h1>
-      <p class="hero-powered">Powered by <strong>200+ AI Signals</strong></p>
+      <p class="hero-powered">{{ 'Powered by' | t }} <strong>{{ '200+ AI Signals' | t }}</strong></p>
       <p class="hero-sub">
-        Get an accurate valuation in under 30 seconds — data-driven, instant, no guesswork.
+        {{ 'Get an accurate valuation in under 30 seconds — data-driven, instant, no guesswork.' | t }}
       </p>
 
       <!-- SEARCH BAR -->
@@ -37,7 +37,7 @@
           (keyup.enter)="doSearch()"
           style="background:transparent;border:none;box-shadow:none;padding:0;font-size:1rem"
         />
-        <button class="btn-gradient search-btn" (click)="doSearch()">Search</button>
+        <button class="btn-gradient search-btn" (click)="doSearch()">{{ 'Search' | t }}</button>
       </div>
 
       <!-- BODY TYPE CHIPS -->
@@ -56,9 +56,9 @@
              of what the label promises. The valuation tool is /ai-valuation. -->
         <button class="btn-gradient btn-lg" routerLink="/ai-valuation">
           <app-icon name="brain" [size]="16"></app-icon>
-          Get AI Valuation
+          {{ 'Get AI Valuation' | t }}
         </button>
-        <button class="btn-outline btn-lg" routerLink="/listings">Browse Cars</button>
+        <button class="btn-outline btn-lg" routerLink="/listings">{{ 'Browse Cars' | t }}</button>
       </div>
     </div>
 
@@ -69,7 +69,7 @@
         <div class="vp-header">
           <div class="vp-live-badge">
             <span class="vp-live-dot"></span>
-            Live Analysis
+            {{ 'Live Analysis' | t }}
           </div>
           <span class="vp-model">Hyundai Creta SX 2023</span>
         </div>
@@ -108,19 +108,19 @@
             <circle cx="280" cy="16" r="10" class="vp-endpoint-ring"/>
           </svg>
           <div class="vp-x-labels">
-            <span>6 mo</span><span>3 mo</span><span>Now</span>
+            <span>6 mo</span><span>3 mo</span><span>{{ 'Now' | t }}</span>
           </div>
         </div>
 
         <!-- Price rows -->
         <div class="vp-price-section">
           <div class="vp-price-main">
-            <div class="vpm-label">AI Fair Value</div>
+            <div class="vpm-label">{{ 'AI Fair Value' | t }}</div>
             <div class="vpm-amount gradient-text">₹14.2L</div>
-            <div class="vpm-delta positive">↑ 2.4% vs last month</div>
+            <div class="vpm-delta positive">{{ '↑ 2.4% vs last month' | t }}</div>
           </div>
           <div class="vp-range-section">
-            <div class="vp-range-label">Market Range</div>
+            <div class="vp-range-label">{{ 'Market Range' | t }}</div>
             <div class="vp-range-row">
               <span class="range-lo">₹12.8L</span>
               <div class="range-track">
@@ -134,7 +134,7 @@
 
         <!-- AI confidence -->
         <div class="vp-confidence">
-          <span class="conf-label">AI Confidence</span>
+          <span class="conf-label">{{ 'AI Confidence' | t }}</span>
           <div class="conf-track">
             <div class="conf-fill" style="width:94%"></div>
           </div>
@@ -145,15 +145,15 @@
         <div class="vp-signals">
           <span class="vsig good">
             <app-icon name="check" [size]="11"></app-icon>
-            Fair Deal
+            {{ 'Fair Deal' | t }}
           </span>
           <span class="vsig">
             <app-icon name="trending-up" [size]="11"></app-icon>
-            High Demand
+            {{ 'High Demand' | t }}
           </span>
           <span class="vsig">
             <app-icon name="gauge" [size]="11"></app-icon>
-            Low Depreciation
+            {{ 'Low Depreciation' | t }}
           </span>
         </div>
       </div>
@@ -161,11 +161,11 @@
       <!-- Floating stat pills -->
       <div class="hero-stat-pill glass-card" style="top:-18px;right:-12px">
         <span class="hsp-num gradient-text">200+</span>
-        <span class="hsp-label">AI Signals</span>
+        <span class="hsp-label">{{ 'AI Signals' | t }}</span>
       </div>
       <div class="hero-stat-pill glass-card" style="bottom:24px;left:-18px">
         <span class="hsp-num gradient-text">30s</span>
-        <span class="hsp-label">Instant Result</span>
+        <span class="hsp-label">{{ 'Instant Result' | t }}</span>
       </div>
     </div>
   </div>
@@ -175,9 +175,9 @@
 <section class="brands-section" id="brands" appScrollAnimate>
   <div class="container">
     <div class="section-header">
-      <span class="section-tag">Popular Brands</span>
-      <h2 class="section-title">Browse by <span class="gradient-text">Brand</span></h2>
-      <p class="section-sub">India's most trusted car manufacturers — all verified listings</p>
+      <span class="section-tag">{{ 'Popular Brands' | t }}</span>
+      <h2 class="section-title">{{ 'Browse by' | t }} <span class="gradient-text">{{ 'Brand' | t }}</span></h2>
+      <p class="section-sub">{{ 'India\'s most trusted car manufacturers — all verified listings' | t }}</p>
     </div>
     <div class="brands-grid">
       @for (make of visibleMakes; track make.name) {
@@ -206,7 +206,7 @@
 <section class="find-cars-section" appScrollAnimate>
   <div class="container">
     <div class="find-cars-card glass-card">
-      <h2 class="find-cars-title">Find The Cars Of Your Choice</h2>
+      <h2 class="find-cars-title">{{ 'Find The Cars Of Your Choice' | t }}</h2>
       <div class="find-cars-tabs">
         <button
           *ngFor="let tab of findCarsTabs"
@@ -231,9 +231,9 @@
 <section class="features-section" id="features" appScrollAnimate>
   <div class="container">
     <div class="section-header center">
-      <span class="section-tag">Why GAADIIQ</span>
-      <h2 class="section-title">Your AI-Powered <span class="gradient-text">Car Co-Pilot</span></h2>
-      <p class="section-sub" style="margin:0 auto">Not just a marketplace — the smartest car-buying experience in India.</p>
+      <span class="section-tag">{{ 'Why GAADIIQ' | t }}</span>
+      <h2 class="section-title">{{ 'Your AI-Powered' | t }} <span class="gradient-text">{{ 'Car Co-Pilot' | t }}</span></h2>
+      <p class="section-sub" style="margin:0 auto">{{ 'Not just a marketplace — the smartest car-buying experience in India.' | t }}</p>
     </div>
     <div class="features-grid">
       @for (f of features; track f.title) {
@@ -259,18 +259,18 @@
     <div class="ai-banner-text">
       <span class="section-tag">
         <app-icon name="brain" [size]="12"></app-icon>
-        AI Advisor
+        {{ 'AI Advisor' | t }}
       </span>
-      <h2 class="section-title">Tell us what you want.<br>We'll find the <span class="gradient-text">perfect car.</span></h2>
+      <h2 class="section-title">{{ 'Tell us what you want.' | t }}<br>{{ 'We\'ll find the' | t }} <span class="gradient-text">{{ 'perfect car.' | t }}</span></h2>
       <p class="section-sub">Answer 6 quick questions. Our AI matches you to the ideal car from 50,000+ listings — with explainable reasoning.</p>
       <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem">
         <button class="btn-gradient btn-lg" routerLink="/ai-advisor">
           <app-icon name="brain" [size]="16"></app-icon>
-          Start AI Advisor
+          {{ 'Start AI Advisor' | t }}
         </button>
         <button class="btn-outline btn-lg" routerLink="/emi-calculator">
           <app-icon name="calculator" [size]="16"></app-icon>
-          EMI Calculator
+          {{ 'EMI Calculator' | t }}
         </button>
       </div>
     </div>
@@ -278,24 +278,24 @@
       <div class="ai-chat">
         <div class="ai-bubble ai">
           <app-icon name="brain" [size]="14" class="ai-chat-icon"></app-icon>
-          What's your budget range?
+          {{ 'What\'s your budget range?' | t }}
         </div>
         <div class="ai-bubble user">₹10L – ₹20L</div>
         <div class="ai-bubble ai">
           <app-icon name="brain" [size]="14" class="ai-chat-icon"></app-icon>
-          Do you prefer petrol or electric?
+          {{ 'Do you prefer petrol or electric?' | t }}
         </div>
-        <div class="ai-bubble user">Electric please!</div>
+        <div class="ai-bubble user">{{ 'Electric please!' | t }}</div>
         <div class="ai-bubble ai success">
           <app-icon name="zap" [size]="14" class="ai-chat-icon"></app-icon>
-          Found 12 perfect matches for you!
+          {{ 'Found 12 perfect matches for you!' | t }}
         </div>
         <div class="ai-result glass-card">
           <div style="font-weight:700;display:flex;align-items:center;gap:0.4rem">
             <app-icon name="star" [size]="14" style="color:#F59E0B"></app-icon>
-            Top Match: Tata Nexon EV
+            {{ 'Top Match: Tata Nexon EV' | t }}
           </div>
-          <div style="color:var(--teal);font-size:0.85rem;margin-top:0.25rem">98% compatibility score</div>
+          <div style="color:var(--teal);font-size:0.85rem;margin-top:0.25rem">{{ '98% compatibility score' | t }}</div>
         </div>
       </div>
     </div>
@@ -306,8 +306,8 @@
 <section class="testimonials-section" appScrollAnimate>
   <div class="container">
     <div class="section-header center">
-      <span class="section-tag">Reviews</span>
-      <h2 class="section-title">Loved by <span class="gradient-text">Car Buyers</span></h2>
+      <span class="section-tag">{{ 'Reviews' | t }}</span>
+      <h2 class="section-title">{{ 'Loved by' | t }} <span class="gradient-text">{{ 'Car Buyers' | t }}</span></h2>
     </div>
     <div class="testimonials-grid">
       @for (t of testimonials; track t.name) {
@@ -338,28 +338,28 @@
 <section class="cta-section" appScrollAnimate>
   <div class="orb orb-purple" style="width:500px;height:500px;bottom:-100px;left:-100px;opacity:0.3"></div>
   <div class="container cta-inner">
-    <h2 class="section-title">Ready to Sell? <span class="gradient-text">Get the Best Price.</span></h2>
-    <p class="section-sub" style="margin:0 auto">List for free. AI valuation included. Reach thousands of verified buyers today.</p>
+    <h2 class="section-title">{{ 'Ready to Sell?' | t }} <span class="gradient-text">{{ 'Get the Best Price.' | t }}</span></h2>
+    <p class="section-sub" style="margin:0 auto">{{ 'List for free. AI valuation included. Reach thousands of verified buyers today.' | t }}</p>
     <div class="cta-btns">
-      <a routerLink="/list-car" class="btn-gradient btn-lg">List Your Car Free</a>
-      <a routerLink="/listings" class="btn-outline btn-lg">Learn More</a>
+      <a routerLink="/list-car" class="btn-gradient btn-lg">{{ 'List Your Car Free' | t }}</a>
+      <a routerLink="/listings" class="btn-outline btn-lg">{{ 'Learn More' | t }}</a>
     </div>
     <div class="cta-perks">
       <span>
         <app-icon name="check" [size]="14" class="perk-icon"></app-icon>
-        Free Listing
+        {{ 'Free Listing' | t }}
       </span>
       <span>
         <app-icon name="check" [size]="14" class="perk-icon"></app-icon>
-        AI Valuation
+        {{ 'AI Valuation' | t }}
       </span>
       <span>
         <app-icon name="check" [size]="14" class="perk-icon"></app-icon>
-        50K+ Buyers
+        {{ '50K+ Buyers' | t }}
       </span>
       <span>
         <app-icon name="check" [size]="14" class="perk-icon"></app-icon>
-        Zero Commission
+        {{ 'Zero Commission' | t }}
       </span>
     </div>
   </div>
@@ -369,11 +369,11 @@
 <nav class="mobile-bottom-nav hide-desktop">
   <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
     <app-icon name="home" [size]="20"></app-icon>
-    <span>Home</span>
+    <span>{{ 'Home' | t }}</span>
   </a>
   <a routerLink="/listings" routerLinkActive="active">
     <app-icon name="search" [size]="20"></app-icon>
-    <span>Browse</span>
+    <span>{{ 'Browse' | t }}</span>
   </a>
   <button class="fab-center btn-gradient" routerLink="/ai-valuation">
     <app-icon name="zap" [size]="22" [strokeWidth]="2.5"></app-icon>
@@ -386,13 +386,13 @@
     <!-- Logged in: open account sheet -->
     <button class="nav-account-btn" [class.active]="accountSheetOpen()" (click)="openAccountSheet()">
       <app-icon name="user" [size]="20"></app-icon>
-      <span>Account</span>
+      <span>{{ 'Account' | t }}</span>
     </button>
   } @else {
     <!-- Logged out: go to login -->
     <a routerLink="/login" routerLinkActive="active">
       <app-icon name="user" [size]="20"></app-icon>
-      <span>Sign In</span>
+      <span>{{ 'Sign In' | t }}</span>
     </a>
   }
 </nav>
@@ -411,16 +411,16 @@
     </div>
     <nav class="sheet-links">
       <a routerLink="/profile" (click)="accountSheetOpen.set(false)">
-        <app-icon name="user" [size]="18"></app-icon> My Profile
+        <app-icon name="user" [size]="18"></app-icon> {{ 'My Profile' | t }}
       </a>
       <a routerLink="/my-listings" (click)="accountSheetOpen.set(false)">
-        <app-icon name="list" [size]="18"></app-icon> My Listings
+        <app-icon name="list" [size]="18"></app-icon> {{ 'My Listings' | t }}
       </a>
       <a routerLink="/sell" (click)="accountSheetOpen.set(false)">
-        <app-icon name="tag" [size]="18"></app-icon> Sell My Car
+        <app-icon name="tag" [size]="18"></app-icon> {{ 'Sell My Car' | t }}
       </a>
       <button class="sheet-signout" (click)="signOut()">
-        <app-icon name="log-out" [size]="18"></app-icon> Sign Out
+        <app-icon name="log-out" [size]="18"></app-icon> {{ 'Sign Out' | t }}
       </button>
     </nav>
   </div>

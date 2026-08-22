@@ -1,12 +1,12 @@
 <!-- Not found -->
 <ng-container *ngIf="!article()">
   <section class="ad-hero container">
-    <a [routerLink]="['/reviews-news']" class="back-link">← Reviews &amp; News</a>
+    <a [routerLink]="['/reviews-news']" class="back-link">{{ '← Reviews & News' | t }}</a>
     <div class="not-found">
       <div class="nf-icon"><app-icon name="list" [size]="40"></app-icon></div>
-      <h1>Article not found</h1>
-      <p>This article doesn't exist or may have been removed.</p>
-      <a routerLink="/reviews-news" class="btn-primary">Browse all articles</a>
+      <h1>{{ 'Article not found' | t }}</h1>
+      <p>{{ 'This article doesn\'t exist or may have been removed.' | t }}</p>
+      <a routerLink="/reviews-news" class="btn-primary">{{ 'Browse all articles' | t }}</a>
     </div>
   </section>
 </ng-container>
@@ -55,7 +55,7 @@
 
       <!-- Excerpt / Summary -->
       <div class="ad-section">
-        <h2 class="section-label">Summary</h2>
+        <h2 class="section-label">{{ 'Summary' | t }}</h2>
         <p class="ad-excerpt">{{ a.excerpt }}</p>
       </div>
 

@@ -11,6 +11,7 @@ import {
 import { ServerSttService } from '../../services/server-stt.service';
 import { extractVehicleInfo, ExtractedVehicleInfo } from '../../utils/vehicle-info-extractor';
 import { environment } from '../../../environments/environment';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 export interface VoiceSessionResult {
   vehicleInfo: Partial<ExtractedVehicleInfo>;
@@ -179,7 +180,7 @@ function promptsFor(code: string): Prompts {
 @Component({
   selector: 'app-voice-mode',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule, HttpClientModule, TranslatePipe],
   templateUrl: './voice-mode.component.html',
   styleUrls: ['./voice-mode.component.scss'],
 })

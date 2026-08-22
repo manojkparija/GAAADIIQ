@@ -2,7 +2,7 @@
   <div class="modal-panel glass-card">
 
     <div class="modal-header">
-      <h2 class="modal-title">Select your City</h2>
+      <h2 class="modal-title">{{ 'Select your City' | t }}</h2>
       <button class="close-btn" (click)="closed.emit()">✕</button>
     </div>
 
@@ -11,7 +11,7 @@
       <span class="search-icon"><app-icon name="search" [size]="16"></app-icon></span>
       <input
         type="text"
-        placeholder="Type your Pincode or City"
+        [placeholder]="'Type your Pincode or City' | t"
         [value]="searchQuery()"
         (input)="searchQuery.set($any($event.target).value)"
         autofocus />
@@ -28,7 +28,7 @@
     <div class="divider"></div>
 
     <!-- Popular Cities -->
-    <p class="section-label">Popular Cities</p>
+    <p class="section-label">{{ 'Popular Cities' | t }}</p>
     <div class="cities-grid">
       <button
         class="city-btn"

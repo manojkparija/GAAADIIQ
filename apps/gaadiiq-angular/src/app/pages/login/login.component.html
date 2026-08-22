@@ -12,43 +12,43 @@
 
     <!-- Sign In / Sign Up tabs -->
     <div class="auth-tabs">
-      <button class="auth-tab active">Sign In</button>
-      <a routerLink="/register" class="auth-tab">Sign Up</a>
+      <button class="auth-tab active">{{ 'Sign In' | t }}</button>
+      <a routerLink="/register" class="auth-tab">{{ 'Sign Up' | t }}</a>
     </div>
 
     <div class="login-subhead">
-      <h1>Welcome back</h1>
-      <p>Sign in to your account</p>
+      <h1>{{ 'Welcome back' | t }}</h1>
+      <p>{{ 'Sign in to your account' | t }}</p>
     </div>
 
     <div class="social-btns">
       <button class="social-btn-large" (click)="loginWithGoogle()" [disabled]="socialLoading() !== null">
         <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        {{ socialLoading() === 'google' ? 'Redirecting…' : 'Continue with Google' }}
+        {{ socialLoading() === 'google' ? 'Redirecting…' : ('Continue with Google' | t) }}
       </button>
       <button class="social-btn-large facebook" (click)="loginWithFacebook()" [disabled]="socialLoading() !== null">
         <span style="font-size:20px">f</span>
-        {{ socialLoading() === 'facebook' ? 'Redirecting…' : 'Continue with Facebook' }}
+        {{ socialLoading() === 'facebook' ? 'Redirecting…' : ('Continue with Facebook' | t) }}
       </button>
     </div>
 
-    <div class="divider"><span>or continue with email</span></div>
+    <div class="divider"><span>{{ 'or continue with email' | t }}</span></div>
 
     <form (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
-        <label>Email address</label>
-        <input type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" placeholder="you@example.com" required>
+        <label>{{ 'Email address' | t }}</label>
+        <input type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" [placeholder]="'you@example.com' | t" required>
       </div>
       <div class="form-group">
-        <label>Password</label>
+        <label>{{ 'Password' | t }}</label>
         <div class="pass-input">
           <input [type]="showPass() ? 'text' : 'password'" [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" placeholder="••••••••" required>
           <button type="button" class="show-pass" (click)="toggleShowPass()">{{ showPass() ? '🙈' : '👁' }}</button>
         </div>
       </div>
       <div class="form-row">
-        <label class="checkbox-label"><input type="checkbox"> Remember me</label>
-        <a href="#" class="forgot" (click)="openResetForm($event)">Forgot password?</a>
+        <label class="checkbox-label"><input type="checkbox"> {{ 'Remember me' | t }}</label>
+        <a href="#" class="forgot" (click)="openResetForm($event)">{{ 'Forgot password?' | t }}</a>
       </div>
       <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
 
@@ -59,24 +59,23 @@
         was never the problem — which is exactly what happened.
       -->
       <div class="confirm-msg" *ngIf="needsConfirmation()">
-        <p><strong>Almost there — confirm your email first.</strong></p>
+        <p><strong>{{ 'Almost there — confirm your email first.' | t }}</strong></p>
         <p>
-          We sent a link to <strong>{{ email() }}</strong>. Click it, then sign in.
-          Your password is fine.
+          {{ 'We sent a link to' | t }} <strong>{{ email() }}</strong>{{ '. Click it, then sign in. Your password is fine.' | t }}
         </p>
         <p *ngIf="!resendSent()">
-          Nothing in your inbox? Check spam, or
-          <button type="button" class="link-btn" (click)="resendConfirmation()">send it again</button>.
+          {{ 'Nothing in your inbox? Check spam, or' | t }}
+          <button type="button" class="link-btn" (click)="resendConfirmation()">{{ 'send it again' | t }}</button>.
         </p>
-        <p *ngIf="resendSent()" class="confirm-sent">Sent — check your inbox.</p>
+        <p *ngIf="resendSent()" class="confirm-sent">{{ 'Sent — check your inbox.' | t }}</p>
         <p *ngIf="resendError()" class="confirm-err">{{ resendError() }}</p>
       </div>
       <button type="submit" class="btn-gradient btn-full" [disabled]="loading()">
-        {{ loading() ? 'Signing in…' : 'Sign In' }}
+        {{ loading() ? 'Signing in…' : ('Sign In' | t) }}
       </button>
     </form>
 
-    <p class="register-link">Don't have an account? <a routerLink="/register">Create one free</a></p>
+    <p class="register-link">{{ 'Don\'t have an account?' | t }} <a routerLink="/register">{{ 'Create one free' | t }}</a></p>
   </div>
 </div>
 
@@ -86,11 +85,11 @@
     <button class="reset-close" (click)="closeResetForm()">✕</button>
 
     <ng-container *ngIf="!resetSent(); else resetDone">
-      <h2>Reset your password</h2>
-      <p class="reset-sub">Enter your email and we'll send you a reset link.</p>
+      <h2>{{ 'Reset your password' | t }}</h2>
+      <p class="reset-sub">{{ 'Enter your email and we\'ll send you a reset link.' | t }}</p>
       <div class="form-group">
-        <label>Email address</label>
-        <input type="email" [ngModel]="resetEmail()" (ngModelChange)="resetEmail.set($event)" name="resetEmail" placeholder="you@example.com">
+        <label>{{ 'Email address' | t }}</label>
+        <input type="email" [ngModel]="resetEmail()" (ngModelChange)="resetEmail.set($event)" name="resetEmail" [placeholder]="'you@example.com' | t">
       </div>
       <div class="error-msg" *ngIf="resetError()">⚠️ {{ resetError() }}</div>
       <button class="btn-gradient btn-full" (click)="onSendReset()" [disabled]="resetLoading()">
@@ -101,9 +100,9 @@
     <ng-template #resetDone>
       <div class="reset-success">
         <div class="reset-icon">✉️</div>
-        <h2>Check your inbox</h2>
-        <p>A password reset link has been sent to <strong>{{ resetEmail() }}</strong>. Check your spam folder if you don't see it.</p>
-        <button class="btn-gradient btn-full" (click)="closeResetForm()">Back to Sign In</button>
+        <h2>{{ 'Check your inbox' | t }}</h2>
+        <p>{{ 'A password reset link has been sent to' | t }} <strong>{{ resetEmail() }}</strong>{{ '. Check your spam folder if you don\'t see it.' | t }}</p>
+        <button class="btn-gradient btn-full" (click)="closeResetForm()">{{ 'Back to Sign In' | t }}</button>
       </div>
     </ng-template>
   </div>

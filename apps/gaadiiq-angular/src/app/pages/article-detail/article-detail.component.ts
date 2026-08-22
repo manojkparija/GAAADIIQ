@@ -4,11 +4,12 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { ARTICLES, Article } from '../reviews-news/reviews-news.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-article-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, IconComponent],
+  imports: [CommonModule, RouterLink, IconComponent, TranslatePipe],
   templateUrl: './article-detail.component.html',
   styleUrl: './article-detail.component.scss',
 })

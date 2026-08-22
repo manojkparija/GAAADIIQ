@@ -11,7 +11,11 @@
 .compare-hero {
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
   border-bottom: 1px solid var(--divider);
-  padding: 5rem 0 2.5rem;
+  // LAY-007: the navbar is fixed, so this clears it by token rather than by a
+  // literal. It used to say 5rem (80px), which was enough for a 62px bar and
+  // not for the 90px two-row one — e2e/smoke.spec.ts caught the heading
+  // landing under it.
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 0 2.5rem;
   text-align: center;
   h1 { font-family: 'Outfit', sans-serif; font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 800; color: #fff; }
   p { color: rgba(255,255,255,0.75); margin-top: 0.5rem; }

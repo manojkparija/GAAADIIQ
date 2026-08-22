@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ServiceRequestComponent } from '../../components/service-request/service-request.component';
 import { SeoService } from '../../services/seo.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * Roadside help, as a page of its own.
@@ -22,7 +23,7 @@ import { SeoService } from '../../services/seo.service';
 @Component({
   selector: 'app-find-mechanic',
   standalone: true,
-  imports: [CommonModule, RouterLink, ServiceRequestComponent],
+  imports: [CommonModule, RouterLink, ServiceRequestComponent, TranslatePipe],
   templateUrl: './find-mechanic.component.html',
   styleUrls: ['./find-mechanic.component.scss'],
 })

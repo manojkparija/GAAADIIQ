@@ -15,7 +15,7 @@
 <ng-container *ngIf="article() as a">
   <section class="lnd-hero">
     <div class="container">
-      <a routerLink="/reviews-news/news" class="back-link">← News</a>
+      <a routerLink="/reviews-news/news" class="back-link">{{ '← News' | t }}</a>
       <div class="lnd-meta">
         <span class="tag tag-blue">{{ a.source.name || 'India Auto News' }}</span>
         <span class="lnd-date" *ngIf="news.formatDate(a.publishedAt) as when">
@@ -31,7 +31,7 @@
       <!-- Only when the feed carried a real summary. Google News usually
            repeats the headline, and the API drops that rather than echo it. -->
       <div class="lnd-section" *ngIf="a.description">
-        <h2 class="section-label">Summary</h2>
+        <h2 class="section-label">{{ 'Summary' | t }}</h2>
         <p class="lnd-excerpt">{{ a.description }}</p>
       </div>
 
@@ -59,7 +59,7 @@
 <!-- Loading / not found -->
 <ng-container *ngIf="!article()">
   <section class="lnd-hero container">
-    <a routerLink="/reviews-news/news" class="back-link">← News</a>
+    <a routerLink="/reviews-news/news" class="back-link">{{ '← News' | t }}</a>
     <div class="not-found">
       <div class="nf-icon"><app-icon name="newspaper" [size]="40"></app-icon></div>
       <p>{{ loadFailed() ? 'That story is no longer in the feed.' : 'Loading article…' }}</p>

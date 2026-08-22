@@ -1,7 +1,7 @@
 <div class="review-page">
   <div class="container">
     <header class="review-head">
-      <h1>Image <span class="gradient-text">Review</span></h1>
+      <h1>{{ 'Image' | t }} <span class="gradient-text">{{ 'Review' | t }}</span></h1>
       <p class="review-sub">
         Photographs submitted by dealers. Nothing here is visible to a buyer
         until it is approved.
@@ -16,7 +16,7 @@
 
     <p class="rv-error" *ngIf="error()">{{ error() }}</p>
 
-    <div class="rv-state" *ngIf="loading()">Loading…</div>
+    <div class="rv-state" *ngIf="loading()">{{ 'Loading…' | t }}</div>
 
     <div class="rv-state" *ngIf="!loading() && images().length === 0">
       <ng-container [ngSwitch]="filter()">
@@ -64,7 +64,7 @@
                     (click)="confirmReject(img)">
               {{ busy() === img.id ? '…' : 'Confirm rejection' }}
             </button>
-            <button class="btn-cancel" (click)="cancelReject()">Cancel</button>
+            <button class="btn-cancel" (click)="cancelReject()">{{ 'Cancel' | t }}</button>
           </div>
         </div>
       </div>

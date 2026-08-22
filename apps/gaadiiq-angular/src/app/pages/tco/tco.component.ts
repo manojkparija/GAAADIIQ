@@ -2,6 +2,8 @@ import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ServiceRequestComponent } from '../../components/service-request/service-request.component';
+import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 type FuelType = 'petrol' | 'diesel' | 'electric' | 'cng';
 
@@ -30,7 +32,7 @@ const DEPRECIATION = [0.2, 0.15, 0.12, 0.10, 0.08];
 @Component({
   selector: 'app-tco',
   standalone: true,
-  imports: [CommonModule, FormsModule, ServiceRequestComponent],
+  imports: [CommonModule, FormsModule, ServiceRequestComponent, IconComponent, TranslatePipe],
   templateUrl: './tco.component.html',
   styleUrl: './tco.component.scss',
 })

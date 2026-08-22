@@ -166,7 +166,7 @@
           </div>
 
           <div class="aci-form-field">
-            <label class="aci-label">Model</label>
+            <label class="aci-label">{{ 'Model' | t }}</label>
             <app-custom-select class="aci-input" [options]="manageModelOptions()"
                                placeholder="Select model…"
                                [ngModel]="manageModel()" (ngModelChange)="onManageModel($event)"
@@ -196,7 +196,7 @@
         }
 
         @if (existingLoading()) {
-          <small class="aci-hint">Loading…</small>
+          <small class="aci-hint">{{ 'Loading…' | t }}</small>
         } @else if (existingImages().length) {
           <div class="aci-existing-grid">
             @for (img of existingImages(); track img.id) {
@@ -260,7 +260,7 @@
             }
 
             <div class="aci-form-field">
-              <label class="aci-label">Manufacturer *</label>
+              <label class="aci-label">{{ 'Manufacturer *' | t }}</label>
               @if (!customMake() && makeOptions().length) {
                 <app-custom-select class="aci-input" [options]="makeOptions()"
                                    placeholder="Select manufacturer…"
@@ -279,7 +279,7 @@
             </div>
 
             <div class="aci-form-field">
-              <label class="aci-label">Model *</label>
+              <label class="aci-label">{{ 'Model *' | t }}</label>
               @if (!customModel() && modelOptions().length) {
                 <app-custom-select class="aci-input" [options]="modelOptions()"
                                    placeholder="Select model…"
@@ -322,7 +322,7 @@
             </div>
 
             <div class="aci-form-field">
-              <label class="aci-label">Year *</label>
+              <label class="aci-label">{{ 'Year *' | t }}</label>
               @if (!customYear() && yearOptions().length) {
                 <app-custom-select [options]="modelYearSelectOptions()"
                                    placeholder="Select year…"
@@ -348,13 +348,13 @@
                                  [(ngModel)]="category" />
             </div>
             <div class="aci-form-field">
-              <label class="aci-label">Fuel Type *</label>
+              <label class="aci-label">{{ 'Fuel Type *' | t }}</label>
               <app-custom-select class="aci-input" [options]="fuelOptions"
                                  placeholder="Select fuel…"
                                  [(ngModel)]="fuelType" />
             </div>
             <div class="aci-form-field">
-              <label class="aci-label">Transmission *</label>
+              <label class="aci-label">{{ 'Transmission *' | t }}</label>
               <app-custom-select class="aci-input" [options]="transmissionOptions"
                                  placeholder="Select transmission…"
                                  [(ngModel)]="transmission" />

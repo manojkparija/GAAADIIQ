@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { MyListingsService, MyListing } from '../../services/my-listings.service';
 import { CarsDataService } from '../../services/cars-data.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-my-listings',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
+  imports: [RouterLink, CommonModule, FormsModule, IconComponent, TranslatePipe],
   templateUrl: './my-listings.component.html',
   styleUrl: './my-listings.component.scss'
 })

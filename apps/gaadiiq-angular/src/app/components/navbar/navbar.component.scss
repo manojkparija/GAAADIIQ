@@ -70,6 +70,24 @@
   }
 }
 
+// Holds the two link rows. It takes the flex space the single <ul> used to,
+// so the actions on the right still keep their width.
+.nav-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+// Second row: the AI tools. Set apart by a hairline rather than a different
+// colour — the row already reads as a group by position, and tinting four
+// labels would fight the hover underline they share with the row above.
+.nav-row-ai {
+  padding-top: 0.3rem;
+  border-top: 1px solid var(--divider);
+}
+
 .nav-links {
   display: flex;
   list-style: none;
@@ -100,14 +118,27 @@
   //
   // Room for the focus underline, which sits at bottom: -4px.
   padding-bottom: 4px;
-  a {
+  // Both shapes, deliberately. New Cars and Used Cars are <button> triggers,
+  // not links, and a button inherits none of this — so with the rule scoped to
+  // `a` they alone stayed at the browser's default weight and looked lighter
+  // than every label beside them. `font: inherit` on the trigger was not
+  // enough: it inherits from .nav-links, which sets no weight or size of its
+  // own, so there was nothing to inherit.
+  a, .nav-dropdown-trigger {
     color: var(--text);
-    font-weight: 700;
-    // Bigger than it has ever been here: 0.8rem originally, 0.76rem when the
-    // row was overcrowded, 0.86rem now. Measured as the largest step that
-    // still fits all thirteen labels at 1366px, which is where a lot of
-    // laptops sit.
-    font-size: 0.86rem;
+    // Light, and uniform across the bar. It went 700 to 800 briefly; seeing it
+    // rendered, the lighter weight the two dropdown triggers were accidentally
+    // showing was the one that was wanted, so that is now what every label
+    // uses. The size is unchanged — this is weight only.
+    font-weight: 400;
+    // 0.8rem originally, 0.76rem when the row was overcrowded, then 0.86rem —
+    // every one of those a compromise with a row carrying thirteen labels.
+    // Splitting the AI tools onto a second row leaves nine above and four
+    // below, so the type no longer has to be sized to fit and can simply be
+    // sized to read. Raised again to 1.1rem by request; measured at 1351px,
+    // the narrowest width that still shows both rows, and the bar does not
+    // overflow.
+    font-size: 1.1rem;
     // Labels are single-line by design. Without this a two-word item breaks
     // across lines once the row runs short of space, and because every item
     // then grows taller the whole bar looks misaligned rather than merely
@@ -476,6 +507,226 @@
 // .hide-mobile / .hide-desktop pair for these two elements only; the rest of
 // the site keeps the 768px breakpoint.
 @media (max-width: 1350px) {
-  .nav-links.hide-mobile { display: none !important; }
+  // The stack carries .hide-mobile now that the links live in two rows inside
+  // it. Both selectors are kept: the old one alone would stop hiding anything.
+  .nav-links.hide-mobile,
+  .nav-stack.hide-mobile { display: none !important; }
   .hamburger.hide-desktop { display: flex !important; }
+}
+
+// ── New Cars dropdown ──────────────────────────────────────────────────────
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  // Matches the sibling <a> items, which are styled by .nav-links a. A button
+  // inherits none of that, and without this it sits a couple of pixels off and
+  // in the browser's default face.
+  font: inherit;
+  color: inherit;
+  padding: 0;
+}
+
+.nav-caret {
+  font-size: 0.7em;
+  line-height: 1;
+  transition: transform 0.18s ease;
+  .nav-dropdown-trigger.open & { transform: rotate(180deg); }
+}
+
+.nav-menu {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  left: 0;
+  z-index: 300;
+  // Wide enough for three chip columns at their 6.5rem minimum plus the
+  // panel's own padding; at 20rem the grid fell back to two and the rows read
+  // as a narrow ladder.
+  min-width: 24rem;
+  padding: 0.6rem;
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 12px 36px rgba(11, 18, 32, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  // Long on a short window once brands are added.
+  max-height: min(70vh, 34rem);
+  overflow-y: auto;
+}
+
+.nav-menu-item {
+  display: block;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  &:hover { background: var(--fill-soft); }
+}
+.nav-menu-lead { font-weight: 800; }
+
+// "Used Cars in Your City" is a button, not a link, when no city is chosen —
+// it opens the picker. It has to be indistinguishable from the links above and
+// below it, so this only undoes the browser's button defaults.
+.nav-menu-btn {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.nav-menu-sep {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 0.45rem 0.3rem;
+}
+
+.nav-menu-group {
+  padding: 0.4rem 0.7rem 0.2rem;
+  // 0.68rem computed to 10.88px, under the 11px floor the type system
+  // declares. typography.spec.ts never caught it because it does not open the
+  // menus — found by scanning the rendered DOM with them open.
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+// A grid, not a wrapping flex row. Flex sized every chip to its own label, so
+// "Under ₹3L" and "Under ₹15L" came out different widths and each row broke in
+// a different place — four ragged blocks stacked on top of each other. Equal
+// columns give straight left and right edges down the whole panel, which is
+// what makes the rows scannable rather than merely present.
+.nav-menu-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: 0.4rem;
+  padding: 0 0.7rem 0.6rem;
+}
+
+// Every chip carries the blue-teal gradient — asked for directly, and by the
+// same token as the New/Used tabs and the body-type chips rather than by eye,
+// so they cannot drift to a near-miss shade the way three hand-written
+// gradients did before --gradient-cta existed.
+//
+// Known and unresolved: white on this fill measures 2.43:1 at the cyan
+// midpoint (#06B6D4) against a 4.5:1 AA floor. That is the same debt every
+// primary button and body-type chip already carries, not something new here;
+// fixing it is one token value and is the user's call.
+.nav-menu-chip {
+  // Grid cells are equal width, so the label has to centre inside its own
+  // chip; left-aligned text in an equal box looks like a mistake rather than
+  // a decision. Fixed height for the same reason the plan badges have one —
+  // it cannot then depend on what characters land inside.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 2rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0 0.6rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--gradient-cta);
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+  &:hover { filter: brightness(1.08); }
+}
+
+// ── Language picker ────────────────────────────────────────────────────────
+.lang-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  &:hover { border-color: var(--primary); }
+  // Absolute, not 0.7em. Relative to this button's 0.85rem the caret computed
+  // to 10px, under the 11px floor e2e/typography.spec.ts enforces — and since
+  // the navbar is on every page, that one declaration failed the check on all
+  // 26 routes it covers.
+  .nav-caret { font-size: 0.75rem; }
+}
+
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 300;
+  min-width: 9rem;
+  padding: 0.3rem;
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 12px 30px rgba(11, 18, 32, 0.16);
+  display: flex;
+  flex-direction: column;
+}
+
+.lang-option {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  &:hover { background: var(--fill-soft); }
+  // The language in use is marked, so the list answers "which am I on?"
+  // as well as "what can I switch to?" — the question a bare toggle leaves open.
+  &.is-current { font-weight: 700; }
+}
+
+// Mobile: the picker lives in the drawer, where there is room for both
+// languages side by side rather than a menu hanging off a 36px button.
+.mobile-lang {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.mobile-lang-option {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  &.is-current {
+    background: var(--gradient-cta);
+    border-color: transparent;
+    font-weight: 700;
+  }
 }

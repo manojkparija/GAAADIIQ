@@ -12,11 +12,12 @@ import { ImageUploadService, UploadedImage } from '../../services/image-upload.s
 import { NativeService, NativePhoto } from '../../services/native.service';
 import { ValuationResult, computeHeuristicValuation } from '../../utils/valuation-engine';
 import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-list-car',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule, IconComponent, CustomSelectComponent],
+  imports: [RouterLink, CommonModule, FormsModule, IconComponent, CustomSelectComponent, TranslatePipe],
   templateUrl: './list-car.component.html',
   styleUrl: './list-car.component.scss'
 })

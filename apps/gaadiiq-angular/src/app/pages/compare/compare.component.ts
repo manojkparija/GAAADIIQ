@@ -6,13 +6,14 @@ import { CarsDataService, Car } from '../../services/cars-data.service';
 import { TcoService, TcoBreakdown } from '../../services/tco.service';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 const COMPARE_KEY = 'gaadiiq_compare_keys';
 
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule, IconComponent],
+  imports: [RouterLink, CommonModule, FormsModule, IconComponent, TranslatePipe],
   templateUrl: './compare.component.html',
   styleUrl: './compare.component.scss'
 })

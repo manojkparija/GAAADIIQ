@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LenderMarkComponent } from '../../components/lender-mark/lender-mark.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface AmortizationRow {
   month: number;
@@ -17,7 +18,7 @@ interface AmortizationRow {
 @Component({
   selector: 'app-emi-calculator',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, LenderMarkComponent],
+  imports: [CommonModule, FormsModule, IconComponent, LenderMarkComponent, TranslatePipe],
   templateUrl: './emi-calculator.component.html',
   styleUrl: './emi-calculator.component.scss'
 })
