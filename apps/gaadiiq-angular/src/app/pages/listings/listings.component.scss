@@ -12,38 +12,34 @@
 .type-btn {
   display: flex; align-items: center; gap: .6rem;
   padding: .65rem 1.5rem; border-radius: 2rem;
-  border: 2px solid var(--glass-border); background: transparent;
-  color: var(--muted); font-size: .95rem; font-weight: 700; cursor: pointer;
+  // Every tab carries the blue-teal gradient — asked for directly. They used
+  // to sit grey and unfilled, and turned green (New) or orange (Used) when
+  // selected, so the same control changed hue depending on which tab you were
+  // on, against a brand that is blue-teal everywhere else.
+  // The same fill as the body-type chips and every primary button, by token
+  // rather than by eye. A darker blue-teal was tried here first and read as a
+  // different colour beside the chips two rows below — which is the whole
+  // complaint this is fixing, so matching matters more than the shade.
+  background: var(--gradient-cta);
+  border: 2px solid transparent;
+  color: #fff;
+  font-size: .95rem; font-weight: 700; cursor: pointer;
   transition: all .25s; letter-spacing: .01em;
 
-  &:hover { transform: translateY(-1px); border-color: var(--primary); color: var(--text); }
+  &:hover { transform: translateY(-1px); filter: brightness(1.06); }
 
-  // All Cars — active: gradient fill
+  // With hue no longer marking the selection, the ring and elevation do. A
+  // filled row of identical tabs would otherwise say nothing about which one
+  // is showing.
   &.active {
-    background: var(--gradient);
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(47,107,255,.45);
-  }
-
-  // New Cars — active: green gradient
-  &.new-btn.active {
-    background: linear-gradient(135deg, #11998e, #38ef7d);
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(56,239,125,.4);
-  }
-
-  // Used Cars — active: orange gradient
-  &.used-btn.active {
-    background: linear-gradient(135deg, #f7971e, #ffd200);
-    border-color: transparent;
-    color: #1a1a2e;
-    box-shadow: 0 4px 18px rgba(255,210,0,.35);
+    box-shadow: 0 0 0 3px rgba(41,94,224,.32), 0 4px 18px rgba(47,107,255,.45);
   }
 }
 .type-count {
-  background: rgba(255,255,255,.2); border-radius: 1rem;
+  // A white-on-white pill is invisible on the light theme, which is what the
+  // inactive tabs sat on. Tinted with the same blue the label now uses; the
+  // active tab keeps the translucent white that reads against its gradient.
+  background: rgba(41,94,224,.12); border-radius: 1rem;
   padding: .15rem .55rem; font-size: .78rem; font-weight: 800;
   .active & { background: rgba(255,255,255,.25); }
 }

@@ -137,3 +137,95 @@ describe('listings — green pill legibility', () => {
     assertLegible('.nc-feature-chip');
   });
 });
+
+/**
+ * The New / Used tabs are legible and blue-teal in both states.
+ *
+ * They sat in --muted with a grey border, which read as disabled beside the
+ * one filled tab — and when selected, New Cars turned green and Used Cars
+ * orange, so the same control changed hue depending on which tab you were on.
+ *
+ * The contrast assertion is the point: --primary clears AA on this background
+ * (measured 5.57:1) but the brand mint would not, and the difference is not
+ * visible in the source. The active tab is white on a gradient, which
+ * getComputedStyle reports as a transparent background-color, so it is checked
+ * for the gradient instead of a ratio.
+ */
+describe('listings — New / Used tabs', () => {
+  let fixture: ComponentFixture<ListingsComponent>;
+  let comp: ListingsComponent;
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [ListingsComponent],
+      providers: [
+        provideRouter([]),
+        { provide: CarsDataService, useValue: { cars: signal([car({})]), loading: signal(false) } },
+      ],
+    });
+    fixture = TestBed.createComponent(ListingsComponent);
+    comp = fixture.componentInstance;
+    fixture.detectChanges();
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => fixture.nativeElement.remove());
+
+  function tabs(): HTMLElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('.type-btn'));
+  }
+
+  it('renders all three tabs', () => {
+    expect(tabs().length).toBe(3);
+  });
+
+  it('uses the same fill as the chips beside it', () => {
+    // The complaint was that the tabs did not match the body-type chips, and
+    // they did not: the chips, the buttons and the tabs each spelled out a
+    // near-identical gradient by hand. Comparing the two computed values is
+    // the only assertion that would have caught it — both "look blue-teal" in
+    // the source.
+    const chip = fixture.nativeElement.querySelector('.chip.active') as HTMLElement;
+    expect(chip).withContext('no active chip to compare against').toBeTruthy();
+
+    expect(getComputedStyle(tabs()[0]).backgroundImage)
+      .toBe(getComputedStyle(chip).backgroundImage);
+  });
+
+  it('is a known contrast debt, recorded rather than silently accepted', () => {
+    // White on this gradient bottoms out at 2.43:1 — at the CYAN midpoint
+    // #06B6D4, not the teal end, which is a touch darker at 2.49:1. Measured;
+    // the teal end is the obvious suspect and it is not the worst one, which
+    // is exactly why the number comes from the browser rather than from
+    // reading the stops.
+    //
+    // Under the 4.5:1 floor, and true of every chip and primary button in the
+    // app rather than only these tabs. Darkening it is a brand decision; this
+    // pins the debt so it cannot quietly become a *different* gradient without
+    // someone reading this.
+    const stops = getComputedStyle(tabs()[0]).backgroundImage.match(/rgba?\([^)]+\)/g) ?? [];
+    const worst = Math.min(...stops.map(st => contrast([255, 255, 255], parseColor(st))));
+
+    expect(worst).withContext(
+      `worst stop is now ${worst.toFixed(2)}:1 — if this improved, raise the ` +
+      `expectation; if it worsened, something changed the brand gradient`,
+    ).toBeCloseTo(2.43, 1);
+  });
+
+  it('gives the selected tab the brand gradient, whichever tab it is', () => {
+    for (const type of ['All', 'New', 'Used'] as const) {
+      comp.setCarType(type);
+      fixture.detectChanges();
+
+      const active = tabs().find(t => t.classList.contains('active'))!;
+      const bg = getComputedStyle(active).backgroundImage;
+
+      expect(bg).withContext(`${type} tab has no gradient`).toContain('gradient');
+      // The old per-tab hues: green for New, orange/yellow for Used.
+      expect(bg).withContext(`${type} tab is still green`).not.toContain('56, 239, 125');
+      expect(bg).withContext(`${type} tab is still orange`).not.toContain('255, 210, 0');
+    }
+  });
+});
