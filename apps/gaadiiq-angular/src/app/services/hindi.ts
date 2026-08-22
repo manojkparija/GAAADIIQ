@@ -1670,4 +1670,49 @@ export const HINDI: Record<string, string> = {
     'सिर्फ प्रारंभिक आकलन है',
   '. It is not a professional diagnosis. Always consult a certified mechanic before making any repair decisions.':
     '। यह पेशेवर जांच नहीं है। मरम्मत का कोई भी फैसला लेने से पहले हमेशा प्रमाणित मैकेनिक से सलाह लें।',
+  // ── Diagnosis: attachments step, result sections, disclaimer ────────────
+  'Next — Review →':
+    'आगे — समीक्षा →',
+  'Sound recording':
+    'आवाज़ की रिकॉर्डिंग',
+  'Video clip':
+    'वीडियो क्लिप',
+  'Tap to attach a recording of the noise':
+    'आवाज़ की रिकॉर्डिंग जोड़ने के लिए टैप करें',
+  'Engine knock, brake squeal, rattle — max 25 MB':
+    'इंजन की खटखट, ब्रेक की चीं, खड़खड़ाहट — अधिकतम 25 MB',
+  'Tap to attach a short video of the issue':
+    'समस्या का छोटा वीडियो जोड़ने के लिए टैप करें',
+  'Smoke, warning lights, unusual movement — max 75 MB':
+    'धुआं, चेतावनी लाइट, असामान्य हरकत — अधिकतम 75 MB',
+  'Estimated Cost':
+    'अनुमानित खर्च',
+  'Repair Time':
+    'मरम्मत का समय',
+  'Recommended Next Steps':
+    'सुझाए गए अगले कदम',
+  'Safe DIY Checks':
+    'खुद से करने लायक सुरक्षित जांच',
+  'These are preliminary checks you can safely perform yourself — they are not repairs:':
+    'ये शुरुआती जांचें हैं जो आप खुद सुरक्षित रूप से कर सकते हैं — ये मरम्मत नहीं हैं:',
+  'Preventive Maintenance Tips':
+    'रखरखाव के सुझाव',
+  'Knowledge Sources':
+    'जानकारी के स्रोत',
+  'Listen to this report':
+    'यह रिपोर्ट सुनें',
+  'Voice ready':
+    'आवाज़ तैयार',
+  'Find a mechanic':
+    'मैकेनिक खोजें',
+  '+ New Diagnosis':
+    '+ नई जांच',
+  '⚠️ IMPORTANT DISCLAIMER: This is a preliminary AI-assisted assessment only. It is NOT a professional diagnosis. Results may be inaccurate or incomplete. A certified automotive mechanic must physically inspect the vehicle to confirm any diagnosis. For safety-critical issues (brakes, steering, engine warning lights), do NOT drive the vehicle until it has been professionally inspected. Never attempt repairs beyond your skill level.':
+    '⚠️ ज़रूरी सूचना: यह सिर्फ AI की मदद से किया गया शुरुआती आकलन है। यह पेशेवर जांच नहीं है। नतीजे गलत या अधूरे हो सकते हैं। किसी भी जांच की पुष्टि के लिए प्रमाणित मैकेनिक का गाड़ी को खुद देखना ज़रूरी है। सुरक्षा से जुड़ी समस्याओं (ब्रेक, स्टीयरिंग, इंजन की चेतावनी लाइट) में पेशेवर जांच होने तक गाड़ी न चलाएं। अपनी क्षमता से बाहर की मरम्मत कभी न करें।',
+  'e.g. Brake pads replaced':
+    'जैसे ब्रेक पैड बदले गए',
+  'When (e.g. May 2026)':
+    'कब (जैसे मई 2026)',
+  '+ Add':
+    '+ जोड़ें',
 };

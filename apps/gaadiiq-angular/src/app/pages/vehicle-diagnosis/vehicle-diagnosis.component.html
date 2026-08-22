@@ -97,7 +97,7 @@
               </div>
             </div>
 
-            <p class="hd-disclaimer">{{ d.disclaimer }}</p>
+            <p class="hd-disclaimer">{{ d.disclaimer | t }}</p>
           </div>
         } @else if (historyDetailLoading()) {
           <div class="history-loading">{{ 'Loading diagnosis…' | t }}</div>
@@ -429,14 +429,14 @@
 
         <div class="maint-add">
           <input type="text" [(ngModel)]="newMaintItem" [ngModelOptions]="{standalone: true}"
-                 placeholder="e.g. Brake pads replaced" maxlength="120" />
+                 [placeholder]="'e.g. Brake pads replaced' | t" maxlength="120" />
           <input type="text" [(ngModel)]="newMaintDate" [ngModelOptions]="{standalone: true}"
-                 placeholder="When (e.g. May 2026)" maxlength="40" />
+                 [placeholder]="'When (e.g. May 2026)' | t" maxlength="40" />
           <input type="number" [(ngModel)]="newMaintOdo" [ngModelOptions]="{standalone: true}"
                  placeholder="km" min="0" />
           <button type="button" class="maint-add-btn"
                   [disabled]="!newMaintItem.trim() || maintenanceHistory().length >= 20"
-                  (click)="addMaintenanceEntry()">+ Add</button>
+                  (click)="addMaintenanceEntry()">{{ '+ Add' | t }}</button>
         </div>
         <p class="maint-full" *ngIf="maintenanceHistory().length >= 20">
           Maximum of 20 entries reached.
@@ -445,12 +445,12 @@
 
       <!-- Audio recording (TC-F-12) -->
       <div class="form-group">
-        <label>Sound recording <span class="optional-label">{{ '(optional)' | t }}</span></label>
+        <label>{{ 'Sound recording' | t }} <span class="optional-label">{{ '(optional)' | t }}</span></label>
         <div class="photo-upload-zone" (click)="audioInput.click()" [class.has-files]="selectedAudio()">
           <ng-container *ngIf="!selectedAudio()">
             <span class="photo-icon"><app-icon name="headphones" [size]="28"></app-icon></span>
-            <p class="photo-hint">Tap to attach a recording of the noise</p>
-            <p class="photo-sub">Engine knock, brake squeal, rattle — max 25 MB</p>
+            <p class="photo-hint">{{ 'Tap to attach a recording of the noise' | t }}</p>
+            <p class="photo-sub">{{ 'Engine knock, brake squeal, rattle — max 25 MB' | t }}</p>
           </ng-container>
           <ng-container *ngIf="selectedAudio() as af">
             <span class="photo-icon"><app-icon name="music" [size]="28"></app-icon></span>
@@ -463,12 +463,12 @@
 
       <!-- Video clip (TC-F-13) -->
       <div class="form-group">
-        <label>Video clip <span class="optional-label">{{ '(optional)' | t }}</span></label>
+        <label>{{ 'Video clip' | t }} <span class="optional-label">{{ '(optional)' | t }}</span></label>
         <div class="photo-upload-zone" (click)="videoInput.click()" [class.has-files]="selectedVideo()">
           <ng-container *ngIf="!selectedVideo()">
             <span class="photo-icon"><app-icon name="video" [size]="28"></app-icon></span>
-            <p class="photo-hint">Tap to attach a short video of the issue</p>
-            <p class="photo-sub">Smoke, warning lights, unusual movement — max 75 MB</p>
+            <p class="photo-hint">{{ 'Tap to attach a short video of the issue' | t }}</p>
+            <p class="photo-sub">{{ 'Smoke, warning lights, unusual movement — max 75 MB' | t }}</p>
           </ng-container>
           <ng-container *ngIf="selectedVideo() as vf">
             <span class="photo-icon"><app-icon name="film" [size]="28"></app-icon></span>
@@ -485,7 +485,7 @@
 
       <div class="step-actions">
         <button class="btn-ghost" (click)="back()">{{ '← Back' | t }}</button>
-        <button class="btn-primary" [disabled]="!step2Valid" (click)="next()">Next — Review →</button>
+        <button class="btn-primary" [disabled]="!step2Valid" (click)="next()">{{ 'Next — Review →' | t }}</button>
       </div>
     </div>
 
@@ -607,7 +607,7 @@
         <div class="drive-warning" [class.danger]="!report.safe_to_drive" [class.safe]="report.safe_to_drive">
           <span><app-icon [name]="report.safe_to_drive ? 'check-circle' : 'ban'" [size]="18"></app-icon></span>
           <div>
-            <strong>{{ report.safe_to_drive ? 'Vehicle appears safe to drive with caution' : 'Do NOT drive — immediate inspection required' }}</strong>
+            <strong>{{ report.safe_to_drive ? 'Vehicle appears safe to drive with caution' : ('Do NOT drive — immediate inspection required' | t) }}</strong>
             <p *ngIf="report.immediate_service_required">{{ 'Professional service required as soon as possible.' | t }}</p>
           </div>
         </div>
@@ -711,12 +711,12 @@
         <div class="report-grid">
           <div class="report-card mini">
             <div class="mini-icon"><app-icon name="indian-rupee" [size]="28"></app-icon></div>
-            <div class="mini-label">Estimated Cost</div>
+            <div class="mini-label">{{ 'Estimated Cost' | t }}</div>
             <div class="mini-value">{{ formatCost(report.cost_min_inr) }} – {{ formatCost(report.cost_max_inr) }}</div>
           </div>
           <div class="report-card mini">
             <div class="mini-icon">⏱️</div>
-            <div class="mini-label">Repair Time</div>
+            <div class="mini-label">{{ 'Repair Time' | t }}</div>
             <div class="mini-value">{{ report.repair_time_estimate }}</div>
           </div>
           <div class="report-card mini">
@@ -728,7 +728,7 @@
 
         <!-- Recommended steps -->
         <div class="report-card" *ngIf="report.recommended_steps?.length">
-          <h3><app-icon name="list" [size]="16"></app-icon> Recommended Next Steps</h3>
+          <h3><app-icon name="list" [size]="16"></app-icon> {{ 'Recommended Next Steps' | t }}</h3>
           <ol class="step-list">
             <li *ngFor="let step of report.recommended_steps">{{ step }}</li>
           </ol>
@@ -736,8 +736,8 @@
 
         <!-- DIY fixes -->
         <div class="report-card diy-card" *ngIf="report.diy_fixes?.length">
-          <h3><app-icon name="wrench" [size]="16"></app-icon> Safe DIY Checks</h3>
-          <p class="diy-note">These are preliminary checks you can safely perform yourself — they are not repairs:</p>
+          <h3><app-icon name="wrench" [size]="16"></app-icon> {{ 'Safe DIY Checks' | t }}</h3>
+          <p class="diy-note">{{ 'These are preliminary checks you can safely perform yourself — they are not repairs:' | t }}</p>
           <ul class="bullet-list">
             <li *ngFor="let fix of report.diy_fixes">{{ fix }}</li>
           </ul>
@@ -745,7 +745,7 @@
 
         <!-- Preventive maintenance -->
         <div class="report-card" *ngIf="report.preventive_maintenance?.length">
-          <h3><app-icon name="shield" [size]="16"></app-icon> Preventive Maintenance Tips</h3>
+          <h3><app-icon name="shield" [size]="16"></app-icon> {{ 'Preventive Maintenance Tips' | t }}</h3>
           <ul class="bullet-list">
             <li *ngFor="let tip of report.preventive_maintenance">{{ tip }}</li>
           </ul>
@@ -753,7 +753,7 @@
 
         <!-- Sources -->
         <div class="report-card sources-card" *ngIf="report.retrieved_sources?.length">
-          <h3><app-icon name="book" [size]="16"></app-icon> Knowledge Sources</h3>
+          <h3><app-icon name="book" [size]="16"></app-icon> {{ 'Knowledge Sources' | t }}</h3>
           <div class="source-tags">
             <span *ngFor="let src of report.retrieved_sources" class="source-tag">{{ src }}</span>
           </div>
@@ -762,7 +762,7 @@
         <!-- Disclaimer -->
         <div class="disclaimer-box">
           <span><app-icon name="alert-triangle" [size]="16"></app-icon></span>
-          <p>{{ report.disclaimer }}</p>
+          <p>{{ report.disclaimer | t }}</p>
         </div>
 
         <!-- TTS playback controls -->
@@ -773,7 +773,7 @@
               {{ voice.speakingState() === 'speaking' ? 'Playing diagnosis…' :
                  voice.speakingState() === 'paused' ? 'Paused' :
                  voice.muted() ? 'Voice muted' :
-                 inputMode() === 'voice' ? 'Voice ready' : 'Listen to this report' }}
+                 inputMode() === 'voice' ? ('Voice ready' | t) : ('Listen to this report' | t) }}
             </span>
           </div>
           <div class="tts-controls">
@@ -806,8 +806,8 @@
 
         <!-- Actions -->
         <div class="report-actions">
-          <button class="btn-primary" (click)="bookService()"><app-icon name="map-pin" [size]="16"></app-icon> Find a mechanic</button>
-          <button class="btn-ghost" (click)="reset()">+ New Diagnosis</button>
+          <button class="btn-primary" (click)="bookService()"><app-icon name="map-pin" [size]="16"></app-icon> {{ 'Find a mechanic' | t }}</button>
+          <button class="btn-ghost" (click)="reset()">{{ '+ New Diagnosis' | t }}</button>
         </div>
       </ng-container>
     </div>
