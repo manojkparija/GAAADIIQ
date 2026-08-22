@@ -157,4 +157,104 @@ export const HINDI: Record<string, string> = {
   'Create Account': 'अकाउंट बनाएं',
   'Contact': 'संपर्क',
   'Built in India.': 'भारत में बना।',
+
+  // ── Home page ────────────────────────────────────────────────────────────
+  'AI Car Valuation':
+    'AI कार मूल्यांकन',
+  "Know Your Car's":
+    'जानिए अपनी कार की',
+  'True Market Value':
+    'असली बाज़ार कीमत',
+  'Powered by':
+    'संचालित',
+  '200+ AI Signals':
+    '200+ AI सिग्नल',
+  'Get an accurate valuation in under 30 seconds — data-driven, instant, no guesswork.':
+    '30 सेकंड से कम में सटीक मूल्यांकन — डेटा आधारित, तुरंत, बिना अंदाज़े के।',
+  'Get AI Valuation':
+    'AI मूल्यांकन पाएं',
+  'Live Analysis':
+    'लाइव विश्लेषण',
+  'AI Fair Value':
+    'AI उचित मूल्य',
+  'Market Range':
+    'बाज़ार रेंज',
+  'AI Confidence':
+    'AI विश्वास',
+  'Fair Deal':
+    'सही सौदा',
+  'High Demand':
+    'ज्यादा मांग',
+  'Low Depreciation':
+    'कम मूल्यह्रास',
+  'AI Signals':
+    'AI सिग्नल',
+  'Instant Result':
+    'तुरंत नतीजा',
+  'Popular Brands':
+    'लोकप्रिय ब्रांड',
+  'Browse by':
+    'देखें',
+  "India's most trusted car manufacturers — all verified listings":
+    'भारत के सबसे भरोसेमंद कार निर्माता — सभी वेरिफाइड लिस्टिंग',
+  'Find The Cars Of Your Choice':
+    'अपनी पसंद की कारें खोजें',
+  'Your AI-Powered':
+    'आपका AI-संचालित',
+  'Car Co-Pilot':
+    'कार को-पायलट',
+  'Not just a marketplace — the smartest car-buying experience in India.':
+    'सिर्फ एक मार्केटप्लेस नहीं — भारत का सबसे स्मार्ट कार खरीदने का अनुभव।',
+  'Tell us what you want.':
+    'बताइए आपको क्या चाहिए।',
+  "We'll find the":
+    'हम ढूंढेंगे',
+  'perfect car.':
+    'सही कार।',
+  'Start AI Advisor':
+    'AI सलाहकार शुरू करें',
+  "What's your budget range?":
+    'आपका बजट कितना है?',
+  'Do you prefer petrol or electric?':
+    'आप पेट्रोल पसंद करेंगे या इलेक्ट्रिक?',
+  'Electric please!':
+    'इलेक्ट्रिक!',
+  'Found 12 perfect matches for you!':
+    'आपके लिए 12 बेहतरीन विकल्प मिले!',
+  'Reviews':
+    'समीक्षाएं',
+  'Loved by':
+    'पसंद किया गया',
+  'Car Buyers':
+    'कार खरीदारों द्वारा',
+  'Ready to Sell?':
+    'बेचने के लिए तैयार?',
+  'Get the Best Price.':
+    'सबसे अच्छी कीमत पाएं।',
+  'List for free. AI valuation included. Reach thousands of verified buyers today.':
+    'मुफ्त लिस्ट करें। AI मूल्यांकन शामिल। आज ही हजारों वेरिफाइड खरीदारों तक पहुंचें।',
+  'List Your Car Free':
+    'अपनी कार मुफ्त लिस्ट करें',
+  'Now':
+    'अभी',
+
+  // ── Home page, continued ─────────────────────────────────────────────────
+  'Browse':
+    'देखें',
+  'Sign Out':
+    'साइन आउट',
+  'My Listings':
+    'मेरी लिस्टिंग',
+  'My Profile':
+    'मेरी प्रोफाइल',
+  'Free Listing':
+    'मुफ्त लिस्टिंग',
+  'Zero Commission':
+    'ज़ीरो कमीशन',
+  '50K+ Buyers':
+    '50K+ खरीदार',
+  'Answer 6 quick questions. Our AI matches you to the ideal car from 50,000+ listings — with':
+    '6 आसान सवालों के जवाब दें। हमारा AI 50,000+ लिस्टिंग में से आपके लिए सही कार चुनेगा — साथ में',
+  // ── Navbar actions ───────────────────────────────────────────────────────
+  'Used Cars in': 'पुरानी कारें —',
 };

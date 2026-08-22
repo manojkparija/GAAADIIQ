@@ -87,12 +87,12 @@
           <a *ngIf="city.selectedCity(); else pickCity"
              routerLink="/used-cars" [queryParams]="{ city: city.selectedCity() }"
              class="nav-menu-item" role="menuitem">
-            Used Cars in {{ city.selectedCity() }}
+            {{ 'Used Cars in' | t }} {{ city.selectedCity() }}
           </a>
           <ng-template #pickCity>
             <button type="button" class="nav-menu-item nav-menu-btn" role="menuitem"
                     (click)="closeUsedCars(); openCityModal()">
-              Used Cars in Your City
+              {{ 'Used Cars in Your City' | t }}
             </button>
           </ng-template>
 
@@ -175,7 +175,7 @@
 
     <button class="city-btn-nav hide-mobile" (click)="openCityModal()" title="Select City">
       <app-icon name="map-pin" [size]="14"></app-icon>
-      <span class="city-label">{{ city.selectedCity() || 'Select City' }}</span>
+      <span class="city-label">{{ city.selectedCity() || ('Select City' | t) }}</span>
     </button>
 
     <button class="theme-toggle hide-mobile" (click)="theme.toggle()" [title]="theme.isDark() ? 'Switch to Light' : 'Switch to Dark'">
@@ -184,7 +184,7 @@
 
     <div class="nav-actions hide-mobile">
       <ng-container *ngIf="!auth.isLoggedIn()">
-        <a routerLink="/login" class="btn-outline btn-sm">Sign In</a>
+        <a routerLink="/login" class="btn-outline btn-sm">{{ 'Sign In' | t }}</a>
       </ng-container>
 
       <ng-container *ngIf="auth.isLoggedIn()">
@@ -340,7 +340,7 @@
   <div class="mm-prefs">
     <button class="city-btn-mobile" (click)="closeMenu(); openCityModal()">
       <app-icon name="map-pin" [size]="15"></app-icon>
-      {{ city.selectedCity() || 'Select City' }}
+      {{ city.selectedCity() || ('Select City' | t) }}
     </button>
     <!-- Same choice as the desktop picker, laid out for a thumb. It sits with
          the other preferences rather than among the links, because it changes
@@ -364,7 +364,7 @@
 
   <div class="mobile-btns">
     <ng-container *ngIf="!auth.isLoggedIn()">
-      <a routerLink="/login" (click)="closeMenu()" class="btn-outline mm-cta">Sign In</a>
+      <a routerLink="/login" (click)="closeMenu()" class="btn-outline mm-cta">{{ 'Sign In' | t }}</a>
       <a routerLink="/list-car" (click)="closeMenu()" class="btn-gradient mm-cta">List Your Car</a>
     </ng-container>
 
