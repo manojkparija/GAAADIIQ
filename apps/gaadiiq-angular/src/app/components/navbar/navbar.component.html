@@ -27,25 +27,25 @@
 
         <div class="nav-menu" *ngIf="newCarsOpen()" role="menu">
           <a routerLink="/new-cars" class="nav-menu-item nav-menu-lead" role="menuitem">
-            Explore New Cars
+            {{ 'Explore New Cars' | t }}
           </a>
           <a routerLink="/new-cars" fragment="upcoming" class="nav-menu-item" role="menuitem">
-            Upcoming Cars
+            {{ 'Upcoming Cars' | t }}
           </a>
-          <a routerLink="/compare" class="nav-menu-item" role="menuitem">Compare Cars</a>
-          <a routerLink="/ev-calculator" class="nav-menu-item" role="menuitem">EV Savings Calculator</a>
-          <a routerLink="/ai-advisor" class="nav-menu-item" role="menuitem">AI Advisor</a>
-          <a routerLink="/tco" class="nav-menu-item" role="menuitem">Total Cost of Ownership</a>
+          <a routerLink="/compare" class="nav-menu-item" role="menuitem">{{ 'Compare Cars' | t }}</a>
+          <a routerLink="/ev-calculator" class="nav-menu-item" role="menuitem">{{ 'EV Savings Calculator' | t }}</a>
+          <a routerLink="/ai-advisor" class="nav-menu-item" role="menuitem">{{ 'AI Advisor' | t }}</a>
+          <a routerLink="/tco" class="nav-menu-item" role="menuitem">{{ 'Total Cost of Ownership' | t }}</a>
 
           <div class="nav-menu-sep"></div>
 
-          <div class="nav-menu-group">By body type</div>
+          <div class="nav-menu-group">{{ 'By body type' | t }}</div>
           <div class="nav-menu-chips">
             <a *ngFor="let b of bodyTypes" class="nav-menu-chip" role="menuitem"
                routerLink="/new-cars" [queryParams]="{ bodyType: b }">{{ b }}</a>
           </div>
 
-          <div class="nav-menu-group">By fuel</div>
+          <div class="nav-menu-group">{{ 'By fuel' | t }}</div>
           <div class="nav-menu-chips">
             <a *ngFor="let f of fuels" class="nav-menu-chip" role="menuitem"
                routerLink="/new-cars" [queryParams]="{ fuel: f }">{{ f }}</a>
@@ -54,7 +54,7 @@
           <!-- Brands come from the catalogue, so this section disappears
                entirely rather than offering a make with nothing behind it. -->
           <ng-container *ngIf="newCarBrands().length">
-            <div class="nav-menu-group">By brand</div>
+            <div class="nav-menu-group">{{ 'By brand' | t }}</div>
             <div class="nav-menu-chips">
               <a *ngFor="let m of newCarBrands()" class="nav-menu-chip" role="menuitem"
                  routerLink="/new-cars" [queryParams]="{ make: m }">{{ m }}</a>
@@ -77,7 +77,7 @@
 
         <div class="nav-menu" *ngIf="usedCarsOpen()" role="menu">
           <a routerLink="/used-cars" class="nav-menu-item nav-menu-lead" role="menuitem">
-            Buy Used Cars
+            {{ 'Buy Used Cars' | t }}
           </a>
 
           <!-- Two shapes, because "in your city" cannot be a link until we know
@@ -96,31 +96,31 @@
             </button>
           </ng-template>
 
-          <a routerLink="/list-car" class="nav-menu-item" role="menuitem">Sell My Car</a>
-          <a routerLink="/ai-valuation" class="nav-menu-item" role="menuitem">Used Car Valuation</a>
+          <a routerLink="/list-car" class="nav-menu-item" role="menuitem">{{ 'Sell My Car' | t }}</a>
+          <a routerLink="/ai-valuation" class="nav-menu-item" role="menuitem">{{ 'Used Car Valuation' | t }}</a>
 
           <div class="nav-menu-sep"></div>
 
-          <div class="nav-menu-group">By budget</div>
+          <div class="nav-menu-group">{{ 'By budget' | t }}</div>
           <div class="nav-menu-chips">
             <a *ngFor="let b of usedBudgets" class="nav-menu-chip" role="menuitem"
                routerLink="/used-cars" [queryParams]="{ maxBudget: b.max }">{{ b.label }}</a>
           </div>
 
-          <div class="nav-menu-group">By body type</div>
+          <div class="nav-menu-group">{{ 'By body type' | t }}</div>
           <div class="nav-menu-chips">
             <a *ngFor="let b of bodyTypes" class="nav-menu-chip" role="menuitem"
                routerLink="/used-cars" [queryParams]="{ bodyType: b }">{{ b }}</a>
           </div>
 
-          <div class="nav-menu-group">By fuel</div>
+          <div class="nav-menu-group">{{ 'By fuel' | t }}</div>
           <div class="nav-menu-chips">
             <a *ngFor="let f of fuels" class="nav-menu-chip" role="menuitem"
                routerLink="/used-cars" [queryParams]="{ fuel: f }">{{ f }}</a>
           </div>
 
           <ng-container *ngIf="usedCarBrands().length">
-            <div class="nav-menu-group">By brand</div>
+            <div class="nav-menu-group">{{ 'By brand' | t }}</div>
             <div class="nav-menu-chips">
               <a *ngFor="let m of usedCarBrands()" class="nav-menu-chip" role="menuitem"
                  routerLink="/used-cars" [queryParams]="{ make: m }">{{ m }}</a>

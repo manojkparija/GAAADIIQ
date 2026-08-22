@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { HINDI } from './hindi';
 
 export type Lang = 'en' | 'hi';
 
@@ -85,6 +86,18 @@ export class LanguageService {
 
   toggle() {
     this.set(this.lang() === 'en' ? 'hi' : 'en');
+  }
+
+  /**
+   * Translate a sentence of English UI copy.
+   *
+   * Falls back to the English it was given, so a string with no Hindi yet
+   * renders exactly as it did before — a page can be translated a piece at a
+   * time without any stage of that work looking broken.
+   */
+  translate(text: string): string {
+    if (this.lang() === 'en') return text;
+    return HINDI[text] ?? text;
   }
 
   t(key: string): string {

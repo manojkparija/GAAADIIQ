@@ -9,11 +9,12 @@ import { CityService } from '../../services/city.service';
 import { LanguageService, LANGUAGES, Lang } from '../../services/language.service';
 import { CitySelectorComponent } from '../city-selector/city-selector.component';
 import { CarsDataService } from '../../services/cars-data.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [LogoComponent, RouterLink, RouterLinkActive, CommonModule, CitySelectorComponent, IconComponent],
+  imports: [LogoComponent, RouterLink, RouterLinkActive, CommonModule, CitySelectorComponent, IconComponent, TranslatePipe],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })
