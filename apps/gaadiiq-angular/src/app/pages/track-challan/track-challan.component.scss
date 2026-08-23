@@ -1,0 +1,233 @@
+// No background on the page root — body::before paints the watermark and
+// anything opaque over it hides it. Same note as tco.component.
+.chl-page {
+  min-height: 100vh;
+  padding-bottom: 4rem;
+}
+
+.chl-hero {
+  // Clears the fixed navbar (LAY-007).
+  padding: max(7rem, var(--nav-offset)) 1rem 3rem;
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  border-bottom: 1px solid var(--divider);
+  text-align: center;
+  color: #fff;
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    // 0.86, not 0.7: below that this falls under AA on the gradient's darkest
+    // stop, and the hero text is not decorative.
+    color: rgba(255, 255, 255, 0.86);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 800;
+    margin: 0 0 0.75rem;
+    color: #fff;
+  }
+
+  .sub {
+    max-width: 44rem;
+    margin: 0 auto;
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.92);
+  }
+}
+
+.chl-card {
+  max-width: 46rem;
+  margin: 2rem auto 0;
+  padding: 1.5rem;
+  border: 1px solid var(--divider);
+  border-radius: 18px;
+  background: var(--card-bg);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+
+  > span {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  input {
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    background: var(--fill-soft);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.05rem;
+    // Plates are read back character by character; the extra tracking is what
+    // stops 0/O and 1/I being misread.
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  }
+}
+
+.btn-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gradient-cta);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .16s ease, opacity .16s ease;
+
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+}
+
+.hint { color: var(--text-muted); font-size: 0.88rem; margin: 0.6rem 0 0; }
+.err  { color: var(--danger);     font-size: 0.9rem;  margin: 0.6rem 0 0; }
+
+/* ── Result states ───────────────────────────────────────────────────────── */
+.state {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  background: var(--fill-dim);
+
+  app-icon { flex-shrink: 0; margin-top: 0.15rem; }
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0 0 0.35rem;
+    color: var(--text);
+  }
+
+  p {
+    margin: 0 0 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.93rem;
+    line-height: 1.6;
+
+    &:last-child { margin-bottom: 0; }
+  }
+}
+
+// The *-ink tokens, not the brand colours: these sit on a tint of their own
+// hue, where the bright original drops below AA at this size.
+.state-unknown app-icon { color: var(--warning-ink, var(--warning)); }
+.state-clear   app-icon { color: var(--success-ink, var(--teal)); }
+.state-low     app-icon { color: var(--teal-ink, var(--teal)); }
+.state-warn    app-icon { color: var(--warning-ink, var(--warning)); }
+.state-high    app-icon { color: var(--danger); }
+
+.reason { color: var(--text) !important; font-weight: 600; }
+.asof   { font-size: 0.85rem !important; }
+
+.portal a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  // --ink-on-white: --primary brightens in dark mode, and this sits on
+  // --fill-dim which stays pale in both.
+  color: var(--ink-on-white, var(--primary));
+  font-weight: 700;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+
+  > div {
+    padding: 0.75rem;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .k { display: block; font-size: 0.75rem; color: var(--text-muted); }
+  .v { display: block; font-size: 1.2rem; font-weight: 800; color: var(--text); }
+}
+
+.rows {
+  margin-top: 1rem;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1.2fr;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--divider);
+  font-size: 0.9rem;
+  color: var(--text);
+
+  &:last-child { border-bottom: 0; }
+
+  // Stacks rather than scrolling the page sideways.
+  @media (max-width: 640px) { grid-template-columns: 1fr 1fr; }
+}
+
+.row-head {
+  background: var(--fill-dim);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.btn-again {
+  margin-top: 1.25rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { border-color: var(--primary); }
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+}
+
+.chl-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  max-width: 46rem;
+  margin: 1.25rem auto 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  background: var(--fill-dim);
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.55;
+
+  app-icon { color: var(--info-ink, var(--primary)); flex-shrink: 0; margin-top: 0.1rem; }
+}

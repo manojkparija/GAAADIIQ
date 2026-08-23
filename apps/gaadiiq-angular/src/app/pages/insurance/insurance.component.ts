@@ -81,7 +81,7 @@ export class InsuranceComponent {
     },
     {
       id: 'third_party',
-      icon: 'users',
+      icon: 'scale',
       name: 'Third-Party',
       summary: 'The legal minimum. Does NOT cover your own car.',
       detail:
@@ -142,7 +142,7 @@ export class InsuranceComponent {
     },
     {
       id: 'deductible',
-      icon: 'scissors',
+      icon: 'credit-card',
       term: 'Deductible',
       short: 'The part of every claim you pay yourself.',
       body: [

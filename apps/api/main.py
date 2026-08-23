@@ -40,6 +40,7 @@ from routers import (  # noqa: E402
     bookings,
     brochures,
     cars,
+    challan,
     dealers,
     demand,
     diagnosis,
@@ -494,6 +495,7 @@ app.include_router(news.router)
 app.include_router(brochures.media_router)
 app.include_router(media_admin.router)
 app.include_router(upload.router)
+app.include_router(challan.router)
 app.include_router(insurance.router)
 app.include_router(resale.router)
 app.include_router(valuation.router)

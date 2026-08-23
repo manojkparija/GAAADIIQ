@@ -1,0 +1,121 @@
+<div class="chl-page">
+
+  <section class="chl-hero">
+    <div class="container">
+      <span class="eyebrow">{{ 'Track Challan' | t }}</span>
+      <h1>{{ 'Check a vehicle for outstanding challans' | t }}</h1>
+      <p class="sub">
+        {{ 'Enter a registration number to see what GAADIIQ\'s verification source holds for that vehicle.' | t }}
+      </p>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="chl-card">
+
+      <label class="field">
+        <span>{{ 'Vehicle registration number' | t }}</span>
+        <input type="text" [(ngModel)]="registrationNumber" name="reg"
+               placeholder="WB 02 AB 1234" autocomplete="off"
+               (keyup.enter)="check()">
+      </label>
+
+      <button type="button" class="btn-check"
+              [disabled]="!canCheck() || checking()" (click)="check()">
+        <app-icon name="search" [size]="16"></app-icon>
+        {{ (checking() ? 'Checking…' : 'Check challans') | t }}
+      </button>
+
+      <p class="hint" *ngIf="!canCheck() && registrationNumber">
+        {{ 'That does not look like a registration number.' | t }}
+      </p>
+      <p class="err" *ngIf="error()">{{ error() }}</p>
+
+      <!-- ── Result ──────────────────────────────────────────────────────── -->
+      <ng-container *ngIf="result() as r">
+
+        <!-- Could not verify. Said plainly, and never dressed up as "clean".
+             This is the state until NIC/Parivahan access is granted. -->
+        <div class="state state-unknown" *ngIf="unavailable(); else checked">
+          <app-icon name="alert-triangle" [size]="22"></app-icon>
+          <div>
+            <h2>{{ 'We could not check this vehicle' | t }}</h2>
+            <p>
+              {{ 'GAADIIQ verifies challans through an authorised government data source. That connection is not live yet, so we cannot tell you anything about this vehicle — and we will not guess.' | t }}
+            </p>
+            <p class="portal">
+              {{ 'You can check it yourself on the official portal:' | t }}
+              <a [href]="officialPortal" target="_blank" rel="noopener noreferrer">
+                echallan.parivahan.gov.in
+                <app-icon name="external-link" [size]="13"></app-icon>
+              </a>
+            </p>
+          </div>
+        </div>
+
+        <ng-template #checked>
+          <div class="state"
+               [class.state-clear]="r.risk_category === 'clear'"
+               [class.state-low]="r.risk_category === 'low'"
+               [class.state-warn]="r.risk_category === 'moderate' || r.risk_category === 'court_review'"
+               [class.state-high]="r.risk_category === 'high'">
+            <app-icon [name]="r.risk_category === 'high' ? 'alert-triangle' : 'check-circle'"
+                      [size]="22"></app-icon>
+            <div>
+              <h2>{{ r.registration_number }}</h2>
+              <p class="reason">{{ r.decision_reason }}</p>
+
+              <!-- BRD §16: the claim is always "checked on this date", never
+                   "this vehicle has never had a challan". A record can appear
+                   tomorrow for an offence last month. -->
+              <p class="asof" *ngIf="r.verified_at">
+                {{ 'Checked on' | t }} {{ r.verified_at | date:'d MMM y, HH:mm' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="totals" *ngIf="r.total_challan_count">
+            <div>
+              <span class="k">{{ 'Challans found' | t }}</span>
+              <span class="v">{{ r.total_challan_count }}</span>
+            </div>
+            <div>
+              <span class="k">{{ 'Still outstanding' | t }}</span>
+              <span class="v">{{ r.outstanding_challan_count }}</span>
+            </div>
+            <div>
+              <span class="k">{{ 'Total outstanding' | t }}</span>
+              <span class="v">₹{{ r.total_outstanding_amount | number:'1.0-0' }}</span>
+            </div>
+          </div>
+
+          <div class="rows" *ngIf="r.challans.length">
+            <div class="row row-head">
+              <span>{{ 'Challan' | t }}</span>
+              <span>{{ 'Date' | t }}</span>
+              <span>{{ 'Outstanding' | t }}</span>
+              <span>{{ 'Status' | t }}</span>
+            </div>
+            <div class="row" *ngFor="let c of r.challans">
+              <span>{{ c.challan_number || '—' }}</span>
+              <span>{{ c.challan_date ? (c.challan_date | date:'d MMM y') : '—' }}</span>
+              <span>{{ c.outstanding_amount != null ? '₹' + (c.outstanding_amount | number:'1.0-0') : '—' }}</span>
+              <span>{{ c.court_status || c.status || '—' }}</span>
+            </div>
+          </div>
+        </ng-template>
+
+        <button type="button" class="btn-again" (click)="reset()">
+          {{ 'Check another vehicle' | t }}
+        </button>
+      </ng-container>
+    </div>
+
+    <p class="chl-note" role="note">
+      <app-icon name="info" [size]="15"></app-icon>
+      <span>
+        {{ 'A challan check reflects what the verification source held at the moment it was asked. Records can be added later for earlier offences, so a check is never proof that a vehicle has never had a challan.' | t }}
+      </span>
+    </p>
+  </div>
+</div>

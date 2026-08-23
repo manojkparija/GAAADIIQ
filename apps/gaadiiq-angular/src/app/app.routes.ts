@@ -57,6 +57,7 @@ export const routes: Routes = [
   // the "Forgot password?" link on the login page.
   { path: 'tco', loadComponent: () => import('./pages/tco/tco.component').then(m => m.TcoComponent) },
   { path: 'insurance', loadComponent: () => import('./pages/insurance/insurance.component').then(m => m.InsuranceComponent) },
+  { path: 'track-challan', loadComponent: () => import('./pages/track-challan/track-challan.component').then(m => m.TrackChallanComponent) },
   // Roadside help. A route of its own rather than only a modal, so it can sit in
   // the navbar, be bookmarked before it is needed, and be sent to someone in a
   // message — which is how a stranded person actually reaches it.

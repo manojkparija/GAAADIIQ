@@ -954,3 +954,22 @@
     font-weight: 700;
   }
 }
+
+/* ── More (AI row) ───────────────────────────────────────────────────────── */
+.ai-more { display: inline-flex; }
+
+/* A button, styled to match the anchors beside it. The row should read as one
+   set of controls, not four tabs and a differently-shaped fifth thing. */
+.ai-tab-more {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+
+  .nav-caret { opacity: .65; transition: transform .2s ease; }
+  &.open .nav-caret { transform: rotate(180deg); }
+}
+
+/* The More panel hangs off the right edge of its trigger rather than the left.
+   It is the last item in the row, so a left-anchored panel would open past the
+   viewport edge on narrower screens. */
+.nav-mega-right { left: auto; right: 0; }

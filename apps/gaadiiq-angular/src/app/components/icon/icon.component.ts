@@ -2,7 +2,10 @@ import { Component, Input, OnChanges } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 
-const ICONS: Record<string, string> = {
+// Exported so tests can assert that every name used in the app resolves to a
+// real glyph. An unknown name renders an empty <svg> at runtime, which is the
+// right fallback and completely invisible — see icon.names.spec.ts.
+export const ICONS: Record<string, string> = {
   'zap': '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
   // Left/right arrows only: the 360 viewer turns on one axis, and the usual
   // four-way "move" glyph would promise a vertical drag that does nothing.
