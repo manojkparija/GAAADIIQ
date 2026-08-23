@@ -19,6 +19,20 @@ from .diagnosis_kb import (
     VerificationStatus,
     WarrantyImpact,
 )
+from .insurance import (
+    InsuranceLead,
+    InsuranceLeadStatus,
+    InsurancePartner,
+    InsurancePartnerType,
+    InsurancePolicy,
+    InsuranceQuote,
+    InsuranceReferenceCounter,
+    InsuranceRevenue,
+    PolicyStatus,
+    PolicyType,
+    QuoteStatus,
+    RevenueStatus,
+)
 from .lending_partner import (
     CreditBand,
     LenderRateSlab,
@@ -89,4 +103,8 @@ __all__ = [
     "ServiceRequestOffer", "ServiceRequestStatus",
     "WhatsAppMessage", "WhatsAppTemplate", "WhatsAppStatus",
     "CarLead", "LeadSource", "LeadStatus",
+    "InsurancePartner", "InsuranceQuote", "InsuranceLead", "InsurancePolicy",
+    "InsuranceRevenue", "InsuranceReferenceCounter",
+    "InsurancePartnerType", "QuoteStatus", "InsuranceLeadStatus", "PolicyStatus",
+    "RevenueStatus", "PolicyType",
 ]
