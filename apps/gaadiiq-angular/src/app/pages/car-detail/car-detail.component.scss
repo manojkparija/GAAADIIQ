@@ -311,7 +311,7 @@
 .ownership-controls { margin-bottom: 1.5rem; }
 .oc-row { margin-bottom: 1rem; label { display:block; font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem; } input[type=range] { width:100%; } }
 .oc-breakdown { display:flex; flex-direction:column; gap:0.75rem; }
-.oc-item { display:flex; justify-content:space-between; font-size:0.9rem; padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+.oc-item { display:flex; justify-content:space-between; font-size:0.9rem; padding:0.5rem 0; border-bottom:1px solid var(--divider); }
 .oc-total { display:flex; justify-content:space-between; font-weight:800; font-size:1.05rem; padding:0.75rem 0; border-top:2px solid rgba(47,107,255,0.3); margin-top:0.5rem; }
 .oc-perkm { text-align:center; font-size:0.8rem; color:var(--muted); margin-top:0.5rem; }
 .resale-card { background:color-mix(in srgb, var(--teal) 6%, transparent); border:1px solid color-mix(in srgb, var(--teal) 20%, transparent); border-radius:12px; padding:1rem; text-align:center; margin-top:1.5rem; }
@@ -389,7 +389,7 @@
 .state-select { display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; font-size:0.85rem; color:var(--muted);
   select { background: var(--fill-soft); border: 1px solid var(--border-soft); border-radius:8px; padding:0.4rem 0.75rem; color: var(--input-color); font-size:0.85rem; outline:none; option { background: var(--dropdown-bg); } }
 }
-.orp-row { display:flex; justify-content:space-between; font-size:0.875rem; padding:0.4rem 0; border-bottom:1px solid rgba(255,255,255,0.05); color: var(--muted); }
+.orp-row { display:flex; justify-content:space-between; font-size:0.875rem; padding:0.4rem 0; border-bottom:1px solid var(--divider); color: var(--muted); }
 /* Part of the ex-showroom price above, not another charge: indented and
    dimmed so it cannot be mistaken for a line the buyer pays on top. */
 .orp-row--included { padding-left:0.75rem; opacity:0.72; font-size:0.8rem; }
@@ -404,8 +404,39 @@
     &:focus { border-color:var(--primary); }
   }
 }
-.star-select { display:flex; gap:0.5rem; font-size:2rem; color:rgba(255,255,255,0.2); cursor:pointer; margin-bottom:1rem;
-  span { transition:color 0.15s; &.active { color:var(--warning-ink); } }
+/* The rating control.
+   The empty state used to be rgba(255,255,255,0.2) — white at 20% alpha. On
+   --card-bg, which is #FFFFFF in light mode, that composites to 1.00:1: the
+   stars rendered, and were perfectly invisible. There was no way to see or
+   set a rating, so submitReview() rejected every attempt with "Please fill in
+   your name, a rating, and your review" against a form that looked complete.
+   A user reported it as "I was trying to write a review but it is not
+   happening", which is exactly what it looked like from outside.
+
+   These are buttons now, not spans. A rating that only responds to click and
+   mouseenter cannot be set with a keyboard at all, and a screen reader had
+   nothing to announce — for a required field that is not a nicety. */
+.star-select {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+
+  button {
+    padding: 0 0.1rem;
+    border: 0;
+    background: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    // An explicit token, never a bare alpha over an assumed background.
+    color: var(--text-muted);
+    opacity: 0.45;
+    transition: color .15s ease, opacity .15s ease, transform .15s ease;
+
+    &:hover { opacity: 0.75; transform: scale(1.08); }
+    &.active { color: var(--warning-ink); opacity: 1; }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+  }
 }
 .review-success { background:rgba(67,233,123,0.1); border:1px solid rgba(67,233,123,0.3); color:var(--success-ink); border-radius:8px; padding:0.75rem 1rem; font-size:0.875rem; margin-bottom:1rem; }
 .review-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:8px; padding:0.6rem 0.9rem; font-size:0.82rem; margin-bottom:0.75rem; }
@@ -416,7 +447,7 @@
 .video-preview { width:100%; max-height:200px; border-radius:10px; margin-top:0.75rem; object-fit:cover; }
 .review-video-wrap { margin:0.75rem 0; }
 .review-video { width:100%; max-height:240px; border-radius:10px; object-fit:cover; background:#000; }
-.review-card { border-bottom:1px solid rgba(255,255,255,0.07); padding:1.25rem 0;
+.review-card { border-bottom:1px solid var(--divider); padding:1.25rem 0;
   &:last-child { border-bottom:none; }
 }
 .review-top { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem; }

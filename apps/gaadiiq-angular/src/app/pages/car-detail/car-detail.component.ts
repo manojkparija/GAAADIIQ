@@ -851,8 +851,20 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   }
 
   async submitReview() {
-    if (!this.userReview.rating || !this.userReview.body || !this.userReview.name) {
-      this.reviewError.set('Please fill in your name, a rating, and your review.');
+    // Name what is actually missing. The old message listed all three fields
+    // whichever one was empty, so someone who had filled in their name and
+    // their review — and could not see the rating control, because it was
+    // painted white on a white card — was told to fill in a form that looked
+    // complete, with no clue which part it meant.
+    const missing: string[] = [];
+    if (!this.userReview.name) missing.push('your name');
+    if (!this.userReview.rating) missing.push('a star rating');
+    if (!this.userReview.body) missing.push('your review');
+    if (missing.length) {
+      const list = missing.length > 1
+        ? `${missing.slice(0, -1).join(', ')} and ${missing[missing.length - 1]}`
+        : missing[0];
+      this.reviewError.set(`Please add ${list}.`);
       return;
     }
     this.reviewError.set('');
