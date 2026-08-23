@@ -1,0 +1,116 @@
+<div class="acp-page container">
+  <header class="acp-head">
+    <h1>{{ 'EV charging profiles' | t }}</h1>
+    <p class="sub">
+      {{ 'Battery capacity, connectors and charging limits, taken from the manufacturer\'s brochure. These figures drive the compatibility check and every charging-time estimate, so nothing here should be guessed.' | t }}
+    </p>
+  </header>
+
+  <div class="acp-grid">
+    <!-- Entry -->
+    <section class="acp-card">
+      <h2>{{ form.id ? ('Edit profile' | t) : ('Add a profile' | t) }}</h2>
+
+      <div class="pair">
+        <label class="field">
+          <span>{{ 'Make' | t }} *</span>
+          <input type="text" [(ngModel)]="form.make" name="make" placeholder="Tata">
+        </label>
+        <label class="field">
+          <span>{{ 'Model' | t }} *</span>
+          <input type="text" [(ngModel)]="form.model" name="model" placeholder="Nexon EV 45">
+        </label>
+      </div>
+
+      <label class="field">
+        <span>{{ 'Variant' | t }}</span>
+        <input type="text" [(ngModel)]="form.variant" name="variant"
+               [placeholder]="'Leave blank to cover every variant' | t">
+      </label>
+
+      <div class="pair">
+        <label class="field">
+          <span>{{ 'Battery, total kWh' | t }}</span>
+          <input type="number" step="0.1" [(ngModel)]="form.battery_capacity_kwh" name="gross">
+        </label>
+        <label class="field">
+          <!-- The figure estimates use: cars hold back a buffer at both ends. -->
+          <span>{{ 'Battery, usable kWh' | t }}</span>
+          <input type="number" step="0.1" [(ngModel)]="form.usable_battery_capacity_kwh" name="usable">
+        </label>
+      </div>
+
+      <div class="pair">
+        <label class="field">
+          <span>{{ 'AC connector' | t }}</span>
+          <select [(ngModel)]="form.ac_connector" name="acc">
+            <option [ngValue]="null">{{ 'Not known' | t }}</option>
+            <option *ngFor="let c of acConnectors" [value]="c">{{ c }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>{{ 'Max AC kW' | t }}</span>
+          <input type="number" step="0.1" [(ngModel)]="form.max_ac_kw" name="ackw" placeholder="7.2">
+        </label>
+      </div>
+
+      <div class="pair">
+        <label class="field">
+          <span>{{ 'DC connector' | t }}</span>
+          <select [(ngModel)]="form.dc_connector" name="dcc">
+            <option [ngValue]="null">{{ 'Not known' | t }}</option>
+            <option *ngFor="let c of dcConnectors" [value]="c">{{ c }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>{{ 'Max DC kW' | t }}</span>
+          <input type="number" step="1" [(ngModel)]="form.max_dc_kw" name="dckw" placeholder="50">
+        </label>
+      </div>
+
+      <label class="field">
+        <!-- Required: a driver disputing a figure cannot be answered without it. -->
+        <span>{{ 'Where these figures came from' | t }} *</span>
+        <textarea rows="2" [(ngModel)]="form.source_note" name="src"
+                  [placeholder]="'e.g. Tata Nexon EV brochure, Aug 2026, p.14' | t"></textarea>
+      </label>
+
+      <div class="acp-actions">
+        <button type="button" class="btn-gradient" (click)="save()" [disabled]="saving()">
+          {{ saving() ? ('Saving…' | t) : ('Save profile' | t) }}
+        </button>
+        <button type="button" class="btn-outline" (click)="reset()">{{ 'Clear' | t }}</button>
+      </div>
+
+      <p class="err" *ngIf="error()">{{ error() }}</p>
+      <p class="ok" *ngIf="saved()">{{ saved() }}</p>
+    </section>
+
+    <!-- Existing -->
+    <section class="acp-card">
+      <h2>{{ 'Saved profiles' | t }} ({{ profiles().length }})</h2>
+
+      <p class="acp-empty" *ngIf="loading()">{{ 'Loading…' | t }}</p>
+      <p class="acp-empty" *ngIf="!loading() && !profiles().length">
+        {{ 'No profiles yet. Until a car has one, every charger shows "Compatibility unknown" for it.' | t }}
+      </p>
+
+      <div class="acp-row" *ngFor="let p of profiles()">
+        <div>
+          <div class="r-name">{{ label(p) }}</div>
+          <div class="r-spec">
+            <span *ngIf="p.usable_battery_capacity_kwh || p.battery_capacity_kwh">
+              {{ p.usable_battery_capacity_kwh || p.battery_capacity_kwh }} kWh
+            </span>
+            <span *ngIf="p.max_ac_kw"> · AC {{ p.max_ac_kw }} kW</span>
+            <span *ngIf="p.max_dc_kw"> · DC {{ p.max_dc_kw }} kW</span>
+          </div>
+          <div class="r-gaps" *ngIf="gaps(p).length">
+            {{ 'Missing:' | t }} {{ gaps(p).join(', ') }}
+          </div>
+        </div>
+        <button type="button" (click)="edit(p)">{{ 'Edit' | t }}</button>
+      </div>
+    </section>
+  </div>
+</div>

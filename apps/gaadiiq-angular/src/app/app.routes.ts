@@ -32,6 +32,7 @@ export const routes: Routes = [
   { path: 'admin/variants', loadComponent: () => import('./pages/admin-variants/admin-variants.component').then(m => m.AdminVariantsComponent), canActivate: [adminGuard] },
   { path: 'admin/car-images', loadComponent: () => import('./pages/admin-car-images/admin-car-images.component').then(m => m.AdminCarImagesComponent), canActivate: [adminGuard] },
   { path: 'admin/image-review', loadComponent: () => import('./pages/admin-image-review/admin-image-review.component').then(m => m.AdminImageReviewComponent), canActivate: [adminGuard] },
+  { path: 'admin/charging-profiles', loadComponent: () => import('./pages/admin-charging-profiles/admin-charging-profiles.component').then(m => m.AdminChargingProfilesComponent), canActivate: [adminGuard] },
   { path: 'admin/video-reviews', loadComponent: () => import('./pages/admin-video-reviews/admin-video-reviews.component').then(m => m.AdminVideoReviewsComponent), canActivate: [adminGuard] },
   { path: 'admin/mechanics', loadComponent: () => import('./pages/admin-mechanics/admin-mechanics.component').then(m => m.AdminMechanicsComponent), canActivate: [adminGuard] },
   { path: 'pricing-plans', loadComponent: () => import('./pages/pricing-plans/pricing-plans.component').then(m => m.PricingPlansComponent) },

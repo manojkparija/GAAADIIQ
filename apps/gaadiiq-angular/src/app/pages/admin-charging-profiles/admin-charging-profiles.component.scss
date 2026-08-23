@@ -1,0 +1,79 @@
+.acp-page {
+  // Clears the fixed navbar (LAY-007). Both admin screens were missing this
+  // once and rendered their titles under the nav, unnoticed because they sit
+  // behind adminGuard and nobody had opened them in a browser.
+  padding-top: max(7rem, var(--nav-offset));
+  padding-bottom: 4rem;
+  min-height: 100vh;
+}
+
+.acp-head {
+  margin-bottom: 1.5rem;
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800;
+    margin: 0 0 0.4rem; color: var(--text);
+  }
+  .sub { margin: 0; color: var(--text-muted); font-size: 0.95rem; max-width: 46rem; line-height: 1.6; }
+}
+
+.acp-grid { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); gap: 1.5rem; }
+@media (max-width: 900px) { .acp-grid { grid-template-columns: 1fr; } }
+
+.acp-card {
+  padding: 1.25rem; border: 1px solid var(--divider);
+  border-radius: 16px; background: var(--card-bg);
+  h2 { font-size: 1.05rem; font-weight: 800; margin: 0 0 0.9rem; color: var(--text); }
+}
+
+.field {
+  display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.8rem;
+  > span { font-size: 0.78rem; font-weight: 700; color: var(--text); }
+
+  input, select, textarea {
+    padding: 0.55rem 0.7rem; border: 1px solid var(--divider); border-radius: 9px;
+    background: var(--fill-soft); color: var(--text); font: inherit; font-size: 0.9rem;
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  }
+  textarea { resize: vertical; }
+}
+
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+
+.acp-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem;
+  button {
+    padding: 0.55rem 1.1rem; border-radius: 999px; font: inherit;
+    font-weight: 650; font-size: 0.88rem; cursor: pointer;
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  }
+}
+
+.err { color: var(--danger); font-size: 0.86rem; margin: 0.6rem 0 0; }
+.ok  { color: var(--success-ink); font-size: 0.86rem; margin: 0.6rem 0 0; }
+
+.acp-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem; padding: 0.7rem 0; border-bottom: 1px solid var(--divider);
+  &:last-child { border-bottom: 0; }
+
+  .r-name { font-weight: 700; color: var(--text); font-size: 0.92rem; }
+  .r-spec { font-size: 0.82rem; color: var(--text-muted); }
+
+  // Gaps are the point of this list: a profile missing its DC limit produces
+  // no estimate at all, and that should be visible without opening it.
+  .r-gaps {
+    font-size: 0.75rem; font-weight: 700;
+    color: var(--warning-ink);
+  }
+
+  button {
+    border: 1px solid var(--divider); background: var(--card-bg);
+    color: var(--text); padding: 0.35rem 0.8rem; border-radius: 999px;
+    font: inherit; font-size: 0.82rem; cursor: pointer;
+    &:hover { border-color: var(--primary); }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  }
+}
+
+.acp-empty { color: var(--text-muted); padding: 1.5rem 0; }
