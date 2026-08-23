@@ -126,3 +126,77 @@ def delete_image(url: str) -> None:
         _r2_client().delete_object(Bucket=settings.r2_bucket_name, Key=key)
     except (BotoCoreError, ClientError):
         pass  # best-effort delete
+
+
+# ── Private objects ──────────────────────────────────────────────────────────
+#
+# upload_image() and upload_media() both set ACL "public-read": the object is
+# readable by anyone with the URL the moment it lands. That is right for a
+# listing photograph, which is published by the act of uploading it.
+#
+# It is wrong for anything awaiting moderation. A video review is held until a
+# person approves it, and if the bytes are public from the moment of upload
+# then "held" describes the row in the database and not the file — the uploader
+# already has a working gaadiiq.com URL to hand round, which is most of what
+# they wanted if their intent was to host something unpleasant on your domain.
+#
+# So these two write without a public ACL and read back through a short-lived
+# signed URL. The bucket policy still has to not be world-readable for this to
+# mean anything; on R2 the default is private, which is why the ACL is set
+# explicitly on the public paths above rather than assumed.
+
+
+def upload_private(data: bytes, key: str, content_type: str) -> str:
+    """
+    Store bytes at an exact key, not publicly readable. Returns the key.
+
+    The key is chosen by the caller rather than generated here, because for
+    moderated content the key encodes who uploaded what and is needed to find
+    every object belonging to one author during a takedown.
+    """
+    if not _r2_available():
+        # Dev / test — nothing to upload to. The key is still the identifier,
+        # so callers behave identically; only fetching will find nothing.
+        return key
+
+    try:
+        _r2_client().put_object(
+            Bucket=settings.r2_bucket_name,
+            Key=key,
+            Body=data,
+            ContentType=content_type,
+        )
+    except (BotoCoreError, ClientError) as exc:
+        raise RuntimeError(f"Upload failed: {exc}") from exc
+
+    return key
+
+
+def signed_url(key: str, expires_seconds: int = 900) -> str | None:
+    """
+    A time-limited URL for a private object, or None when storage is absent.
+
+    Fifteen minutes: long enough to watch a two-minute clip and to survive a
+    moderator leaving the tab open for a bit, short enough that a URL pasted
+    somewhere public stops working before it spreads.
+    """
+    if not _r2_available():
+        return None
+    try:
+        return _r2_client().generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings.r2_bucket_name, "Key": key},
+            ExpiresIn=expires_seconds,
+        )
+    except (BotoCoreError, ClientError):
+        return None
+
+
+def delete_key(key: str) -> None:
+    """Best-effort delete by key (delete_image() takes a public URL instead)."""
+    if not _r2_available():
+        return
+    try:
+        _r2_client().delete_object(Bucket=settings.r2_bucket_name, Key=key)
+    except (BotoCoreError, ClientError):
+        pass

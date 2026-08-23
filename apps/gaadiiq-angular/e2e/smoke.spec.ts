@@ -146,7 +146,7 @@ test('the car detail page shows a car and its gallery', async ({ page }) => {
  * every module it matched and hung the browser; and source-scanning could not
  * have caught a name assembled at runtime anyway.
  */
-for (const path of ['/', '/insurance', '/track-challan', '/compare', '/emi-calculator']) {
+for (const path of ['/', '/insurance', '/track-challan', '/video-review', '/compare', '/emi-calculator']) {
   test(`every icon on ${path} draws a glyph`, async ({ page }) => {
     await page.goto(path, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('app-icon svg', { state: 'attached' });

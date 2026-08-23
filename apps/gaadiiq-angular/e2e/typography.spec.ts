@@ -36,7 +36,7 @@ const PUBLIC_ROUTES = [
   '/emi-calculator', '/car-loan', '/tco', '/ev-calculator',
   '/ai-advisor', '/ai-valuation', '/vehicle-diagnosis',
   '/test-drive', '/list-car', '/find-mechanic', '/mechanic-signup',
-  '/reviews-news', '/pricing-plans', '/about', '/brand-logos',
+  '/reviews-news', '/video-review', '/pricing-plans', '/about', '/brand-logos',
   '/buyer-journey', '/login', '/register',
   '/privacy-policy', '/terms-of-service', '/cookie-policy',
 ];

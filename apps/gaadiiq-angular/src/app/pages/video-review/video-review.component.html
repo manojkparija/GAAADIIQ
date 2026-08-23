@@ -1,0 +1,138 @@
+<div class="vr-page">
+  <section class="vr-hero">
+    <div class="container">
+      <span class="eyebrow">{{ 'GAADIIQ Owner Reviews' | t }}</span>
+      <h1>{{ 'Post a Video Review' | t }}</h1>
+      <p class="sub">
+        {{ 'Record a short video about the car you drive — what you like, what you would change, what it costs to run. Other buyers see it on the car\'s page.' | t }}
+      </p>
+    </div>
+  </section>
+
+  <!-- Signed out. The API refuses an anonymous upload regardless; this says so
+       before someone records two minutes of video, rather than after. -->
+  <div class="vr-card vr-gate" *ngIf="!auth.isLoggedIn()">
+    <div class="gate-icon"><app-icon name="user" [size]="34"></app-icon></div>
+    <h2>{{ 'Sign in to post a review' | t }}</h2>
+    <p>
+      {{ 'Video reviews are published against a real account so buyers know who wrote them. Signing in takes a moment.' | t }}
+    </p>
+    <button type="button" class="btn-gradient" (click)="signIn()">{{ 'Sign in' | t }}</button>
+  </div>
+
+  <ng-container *ngIf="auth.isLoggedIn()">
+
+    <!-- Submitted -->
+    <div class="vr-card vr-done" *ngIf="submitted()">
+      <div class="done-icon"><app-icon name="check-circle" [size]="34"></app-icon></div>
+      <h2>{{ 'Thanks — your review is in the queue' | t }}</h2>
+      <p>
+        {{ 'Someone checks every video before it goes on the site, so it will not appear straight away. You will see it below marked "Awaiting review".' | t }}
+      </p>
+      <button type="button" class="btn-outline" (click)="submitted.set(false)">
+        {{ 'Post another' | t }}
+      </button>
+    </div>
+
+    <!-- The form -->
+    <div class="vr-card" *ngIf="!submitted()">
+
+      <!-- Car -->
+      <label class="field">
+        <span>{{ 'Which car?' | t }} *</span>
+        <div class="picked" *ngIf="selectedCar() as c; else carSearch">
+          <span class="picked-name">{{ carLabel(c) }}</span>
+          <button type="button" class="picked-clear" (click)="clearCar()"
+                  [attr.aria-label]="'Choose a different car' | t">×</button>
+        </div>
+        <ng-template #carSearch>
+          <input type="text" [(ngModel)]="carQuery" name="carq"
+                 [placeholder]="'Start typing — e.g. Creta, Nexon, Swift' | t"
+                 autocomplete="off">
+        </ng-template>
+      </label>
+
+      <ul class="matches" *ngIf="!selectedCar() && carMatches().length">
+        <li *ngFor="let c of carMatches()">
+          <button type="button" (click)="pickCar(c)">{{ carLabel(c) }}</button>
+        </li>
+      </ul>
+
+      <!-- Rating. Buttons, not spans: a control that answers only to click
+           cannot be used with a keyboard and announces nothing. -->
+      <div class="field">
+        <span>{{ 'Your rating' | t }} *</span>
+        <div class="star-select" role="radiogroup" [attr.aria-label]="'Your rating' | t">
+          <button *ngFor="let s of [1,2,3,4,5]"
+                  type="button" role="radio"
+                  [attr.aria-checked]="rating() === s"
+                  [attr.aria-label]="s + ' star' + (s > 1 ? 's' : '')"
+                  (click)="setRating(s)"
+                  (mouseenter)="hoverRating.set(s)"
+                  (mouseleave)="hoverRating.set(0)"
+                  [class.active]="s <= (hoverRating() || rating())">★</button>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>{{ 'Headline' | t }}</span>
+        <input type="text" [(ngModel)]="title" name="vtitle" maxlength="200"
+               [placeholder]="'e.g. Two years and 40,000 km later' | t">
+      </label>
+
+      <label class="field">
+        <span>{{ 'Anything to add in writing?' | t }}</span>
+        <textarea [(ngModel)]="body" name="vbody" rows="3" maxlength="5000"
+                  [placeholder]="'Optional — mileage, service costs, what surprised you' | t"></textarea>
+      </label>
+
+      <!-- Video -->
+      <div class="field">
+        <span>{{ 'Your video' | t }} *</span>
+        <label class="video-drop" *ngIf="!videoFile()">
+          <app-icon name="video" [size]="26"></app-icon>
+          <strong>{{ 'Choose a video' | t }}</strong>
+          <small>{{ 'MP4, MOV or WebM · up to ' | t }}{{ maxMb }} MB</small>
+          <input type="file" accept="video/mp4,video/quicktime,video/webm"
+                 (change)="onVideoSelected($event)" hidden>
+        </label>
+
+        <div class="video-picked" *ngIf="videoFile() as f">
+          <video [src]="videoPreview()" controls preload="metadata"></video>
+          <div class="vp-row">
+            <span>{{ f.name }} · {{ (f.size / 1048576).toFixed(1) }} MB</span>
+            <button type="button" class="link-btn" (click)="clearVideo()">{{ 'Remove' | t }}</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="vr-hold">
+        <app-icon name="shield" [size]="15"></app-icon>
+        {{ 'Every video is checked by a person before it appears on the site.' | t }}
+      </p>
+
+      <p class="err" *ngIf="error()">{{ error() }}</p>
+
+      <button type="button" class="btn-gradient vr-submit"
+              [disabled]="!canSubmit()" (click)="submit()">
+        <span *ngIf="!uploading()">{{ 'Submit review' | t }}</span>
+        <span *ngIf="uploading()">{{ 'Uploading…' | t }}</span>
+      </button>
+    </div>
+
+    <!-- Past submissions -->
+    <div class="vr-card vr-mine" *ngIf="mine().length">
+      <h2>{{ 'Your reviews' | t }}</h2>
+      <div class="mine-row" *ngFor="let r of mine()">
+        <div class="mine-main">
+          <span class="mine-car">{{ r.car_label || 'Car review' }}</span>
+          <span class="mine-stars">{{ stars(r.rating).join('') }}</span>
+          <span class="mine-status" [ngClass]="'st-' + r.status">{{ statusLabel(r.status) | t }}</span>
+        </div>
+        <!-- Shown so a rejection is answerable rather than just "no". -->
+        <p class="mine-note" *ngIf="r.status === 'rejected' && r.review_note">{{ r.review_note }}</p>
+        <button type="button" class="link-btn" (click)="withdraw(r.id)">{{ 'Remove' | t }}</button>
+      </div>
+    </div>
+  </ng-container>
+</div>

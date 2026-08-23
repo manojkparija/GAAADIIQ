@@ -16,6 +16,7 @@ export const routes: Routes = [
   { path: 'emi-calculator', loadComponent: () => import('./pages/emi-calculator/emi-calculator.component').then(m => m.EmiCalculatorComponent) },
   { path: 'car-loan', loadComponent: () => import('./pages/car-loan/car-loan.component').then(m => m.CarLoanComponent) },
   { path: 'list-car', loadComponent: () => import('./pages/list-car/list-car.component').then(m => m.ListCarComponent), canActivate: [authGuard] },
+  { path: 'video-review', loadComponent: () => import('./pages/video-review/video-review.component').then(m => m.VideoReviewComponent) },
   { path: 'reviews-news', loadComponent: () => import('./pages/reviews-news/reviews-news.component').then(m => m.ReviewsNewsComponent) },
   { path: 'reviews-news/:category', loadComponent: () => import('./pages/reviews-news/reviews-news.component').then(m => m.ReviewsNewsComponent) },
   { path: 'reviews-news/:category/:id', loadComponent: () => import('./pages/article-detail/article-detail.component').then(m => m.ArticleDetailComponent) },

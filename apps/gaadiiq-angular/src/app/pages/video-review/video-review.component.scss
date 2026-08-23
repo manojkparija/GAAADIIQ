@@ -1,0 +1,291 @@
+// No background on the page root — body::before paints the watermark and
+// anything opaque over it hides it. Same note as track-challan.
+.vr-page {
+  min-height: 100vh;
+  padding-bottom: 4rem;
+}
+
+.vr-hero {
+  // Clears the fixed navbar (LAY-007).
+  padding: max(7rem, var(--nav-offset)) 1rem 3rem;
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  border-bottom: 1px solid var(--divider);
+  text-align: center;
+  color: #fff;
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    // 0.86, not 0.7: below that this falls under AA on the gradient's darkest
+    // stop, and the hero text is not decorative.
+    color: rgba(255, 255, 255, 0.86);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 800;
+    margin: 0 0 0.75rem;
+    color: #fff;
+  }
+
+  .sub {
+    max-width: 44rem;
+    margin: 0 auto;
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.92);
+  }
+}
+
+.vr-card {
+  max-width: 44rem;
+  margin: 2rem auto 0;
+  padding: 1.75rem;
+  border: 1px solid var(--divider);
+  border-radius: 18px;
+  background: var(--card-bg);
+
+  h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin: 0 0 0.6rem;
+    color: var(--text);
+  }
+}
+
+.vr-gate, .vr-done {
+  text-align: center;
+
+  .gate-icon, .done-icon { margin-bottom: 0.75rem; }
+  .gate-icon { color: var(--info-ink, var(--primary)); }
+  .done-icon { color: var(--success-ink, var(--teal)); }
+
+  p {
+    max-width: 32rem;
+    margin: 0 auto 1.5rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.1rem;
+
+  > span {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  input, textarea {
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    background: var(--fill-soft);
+    color: var(--text);
+    font: inherit;
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  }
+
+  textarea { resize: vertical; }
+}
+
+.picked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+
+  .picked-name { font-weight: 700; color: var(--text); }
+  .picked-clear {
+    border: 0; background: none; cursor: pointer;
+    font-size: 1.3rem; line-height: 1; color: var(--text-muted);
+    &:hover { color: var(--danger); }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  }
+}
+
+.matches {
+  list-style: none;
+  margin: -0.6rem 0 1.1rem;
+  padding: 0.3rem;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--card-bg);
+
+  button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.55rem 0.7rem;
+    border: 0;
+    border-radius: 8px;
+    // Never inherit `buttonface` — the UA default is resolved from the
+    // browser's colour scheme, not the page's data-theme, so a bare button on
+    // a themed surface comes out grey in one environment and dark in another.
+    background: none;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+    &:hover { background: var(--fill-dim); }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+  }
+}
+
+/* The rating control. Tokens, never a bare white alpha over an assumed
+   background — that is what made the car-detail stars invisible on a light
+   card at 1.00:1. */
+.star-select {
+  display: flex;
+  gap: 0.35rem;
+
+  button {
+    padding: 0 0.1rem;
+    border: 0;
+    background: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-muted);
+    opacity: 0.45;
+    transition: color .15s ease, opacity .15s ease, transform .15s ease;
+
+    &:hover { opacity: 0.75; transform: scale(1.08); }
+    &.active { color: var(--warning-ink); opacity: 1; }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+  }
+}
+
+.video-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1.75rem 1rem;
+  border: 1.5px dashed var(--divider);
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: border-color .2s ease, color .2s ease;
+
+  app-icon { color: var(--primary); }
+  strong { color: var(--text); font-size: 0.95rem; }
+  small { font-size: 0.8rem; }
+
+  &:hover { border-color: var(--primary); }
+  &:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+}
+
+.video-picked {
+  video {
+    width: 100%;
+    max-height: 260px;
+    border-radius: 12px;
+    background: #000;
+  }
+
+  .vp-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    font-size: 0.83rem;
+    color: var(--text-muted);
+  }
+}
+
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  // --ink-on-white: --primary brightens in dark mode and this sits on a card
+  // that stays pale in both.
+  color: var(--ink-on-white, var(--primary));
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+}
+
+.vr-hold {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--fill-dim);
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.5;
+
+  app-icon { color: var(--info-ink, var(--primary)); flex-shrink: 0; margin-top: 0.1rem; }
+}
+
+.err { color: var(--danger); font-size: 0.9rem; margin: 0 0 0.75rem; }
+
+.vr-submit {
+  width: 100%;
+  padding: 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+}
+
+// ── Past submissions ─────────────────────────────────────────────────────────
+.vr-mine .mine-row {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--divider);
+  &:last-child { border-bottom: 0; }
+}
+
+.mine-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.mine-car { font-weight: 700; color: var(--text); }
+.mine-stars { color: var(--warning-ink); }
+
+.mine-status {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  // The *-ink tokens: these sit on a tint of their own hue, where the bright
+  // original drops below AA at this size.
+  &.st-pending   { background: color-mix(in srgb, var(--warning) 15%, transparent); color: var(--warning-ink); }
+  &.st-approved  { background: color-mix(in srgb, var(--teal) 15%, transparent);    color: var(--success-ink); }
+  &.st-rejected  { background: color-mix(in srgb, var(--danger) 12%, transparent);  color: var(--danger); }
+  &.st-withdrawn { background: var(--fill-dim); color: var(--text-muted); }
+}
+
+.mine-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}

@@ -22,7 +22,7 @@ export class NavbarComponent {
   private static readonly DARK_HERO_ROUTES = ['/new-cars', '/used-cars'];
 
   /** Routes reachable from the More menu. Keep in step with the panel's links. */
-  private static readonly MORE_ROUTES = ['/track-challan'];
+  private static readonly MORE_ROUTES = ['/track-challan', '/video-review'];
   private _scrolled = signal(false);
   private _darkHero = signal(false);
   scrolled = computed(() => this._scrolled() || this._darkHero());
