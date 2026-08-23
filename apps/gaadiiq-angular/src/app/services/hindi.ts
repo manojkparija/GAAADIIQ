@@ -1881,4 +1881,48 @@ export const HINDI: Record<string, string> = {
     'कृपया ऊपर का बॉक्स टिक करें ताकि हमें पता चले कि हम आपसे संपर्क कर सकते हैं।',
   'Sending…':
     'भेजा जा रहा है…',
+  // ── Track Challan ────────────────────────────────────────────────────────
+  //    "Challan" stays as चालान — the word every Indian driver, RTO notice and
+  //    payment portal uses. Translating it to a coined synonym would make the
+  //    page harder to read, not easier.
+  'More':
+    'और',
+  'Track Challan':
+    'चालान ट्रैक करें',
+  'Check a vehicle for outstanding challans':
+    'किसी वाहन के बकाया चालान जांचें',
+  'Enter a registration number to see what GAADIIQ\'s verification source holds for that vehicle.':
+    'रजिस्ट्रेशन नंबर डालें और देखें कि GAADIIQ के सत्यापन स्रोत के पास उस वाहन के बारे में क्या है।',
+  'Vehicle registration number':
+    'वाहन रजिस्ट्रेशन नंबर',
+  'Check challans':
+    'चालान जांचें',
+  'Checking…':
+    'जांचा जा रहा है…',
+  'That does not look like a registration number.':
+    'यह रजिस्ट्रेशन नंबर नहीं लग रहा।',
+  'We could not check this vehicle':
+    'हम इस वाहन की जांच नहीं कर सके',
+  'GAADIIQ verifies challans through an authorised government data source. That connection is not live yet, so we cannot tell you anything about this vehicle — and we will not guess.':
+    'GAADIIQ चालान की जांच एक अधिकृत सरकारी डेटा स्रोत से करता है। वह कनेक्शन अभी चालू नहीं है, इसलिए हम इस वाहन के बारे में कुछ नहीं बता सकते — और हम अनुमान नहीं लगाएंगे।',
+  'You can check it yourself on the official portal:':
+    'आप इसे आधिकारिक पोर्टल पर स्वयं जांच सकते हैं:',
+  'Checked on':
+    'जांच की तारीख',
+  'Challans found':
+    'मिले चालान',
+  'Still outstanding':
+    'अब भी बकाया',
+  'Total outstanding':
+    'कुल बकाया',
+  'Challan':
+    'चालान',
+  'Outstanding':
+    'बकाया',
+  'Check another vehicle':
+    'दूसरा वाहन जांचें',
+  'A challan check reflects what the verification source held at the moment it was asked. Records can be added later for earlier offences, so a check is never proof that a vehicle has never had a challan.':
+    'चालान जांच वही दिखाती है जो सत्यापन स्रोत के पास पूछे जाने के समय था। पुराने उल्लंघनों के रिकॉर्ड बाद में भी जुड़ सकते हैं, इसलिए यह जांच कभी इस बात का प्रमाण नहीं है कि वाहन पर कभी चालान नहीं रहा।',
+  'We could not reach the verification service just now. Please try again in a moment.':
+    'हम अभी सत्यापन सेवा तक नहीं पहुंच सके। कृपया थोड़ी देर बाद फिर कोशिश करें।',
 };

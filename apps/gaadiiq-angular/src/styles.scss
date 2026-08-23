@@ -11,7 +11,7 @@
   // every width — primary controls above, AI tabs below — and renders 109px
   // where it shows the hamburger. This is the RESTING height: the bar compacts
   // to 101px on scroll, and page content has to clear the taller state.
-  --nav-height:  109px;
+  --nav-height:  111px;
   --nav-offset:  calc(var(--nav-height) + var(--safe-top));
 }
 
@@ -24,7 +24,7 @@
 // contents or type change, and it has been stale twice already: 34px out after
 // the two-row change, 23px out after this redesign.
 @media (min-width: 1181px) {
-  :root { --nav-height: 118px; }
+  :root { --nav-height: 119px; }
 }
 
 // ── Light (default) ──────────────────────────────────────────────────────────

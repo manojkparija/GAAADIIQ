@@ -211,7 +211,7 @@
               <app-icon name="indian-rupee" [size]="15"></app-icon> {{ 'What is IDV?' | t }}
             </a>
             <a routerLink="/insurance" fragment="addons" class="nav-mega-item" role="menuitem">
-              <app-icon name="layers" [size]="15"></app-icon> {{ 'Add-ons Explained' | t }}
+              <app-icon name="list" [size]="15"></app-icon> {{ 'Add-ons Explained' | t }}
             </a>
           </div>
         </li>
@@ -381,6 +381,25 @@
         <app-icon [name]="t.icon" [size]="15"></app-icon>
         <span>{{ t.label | t }}</span>
       </a>
+
+      <!-- More. Styled as an .ai-tab so the row stays one set of controls
+           rather than four tabs and a differently-shaped fifth thing. Its
+           panel reuses .nav-mega-sm, which is what the EMI menu above uses. -->
+      <div class="nav-dropdown ai-more">
+        <button type="button" class="ai-tab ai-tab-more"
+                [class.open]="moreOpen()" (click)="toggleMore()"
+                [attr.aria-expanded]="moreOpen()" aria-haspopup="true">
+          <app-icon name="layout-dashboard" [size]="15"></app-icon>
+          <span>{{ 'More' | t }}</span>
+          <app-icon name="chevron-down" [size]="12" class="nav-caret"></app-icon>
+        </button>
+
+        <div class="nav-mega nav-mega-sm nav-mega-right" *ngIf="moreOpen()" role="menu">
+          <a routerLink="/track-challan" class="nav-mega-item" role="menuitem">
+            <app-icon name="shield" [size]="15"></app-icon> {{ 'Track Challan' | t }}
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 </nav>

@@ -1,6 +1,17 @@
 from .car import Car
 from .car_lead import CarLead, LeadSource, LeadStatus
 from .car_variant import CarVariant, VariantSource, VariantStatus
+from .challan import (
+    ChallanAuditEvent,
+    ChallanDetail,
+    ChallanRiskCategory,
+    ChallanRuleAction,
+    ChallanRuleType,
+    ChallanVerificationRule,
+    ChallanVerificationStatus,
+    ListingDecision,
+    VehicleChallanVerification,
+)
 from .customer_intent import CustomerActivity, CustomerIntentScore
 from .dealer import Dealer
 from .diagnosis_kb import (
@@ -103,6 +114,9 @@ __all__ = [
     "ServiceRequestOffer", "ServiceRequestStatus",
     "WhatsAppMessage", "WhatsAppTemplate", "WhatsAppStatus",
     "CarLead", "LeadSource", "LeadStatus",
+    "VehicleChallanVerification", "ChallanDetail", "ChallanVerificationRule",
+    "ChallanAuditEvent", "ChallanVerificationStatus", "ChallanRiskCategory",
+    "ListingDecision", "ChallanRuleType", "ChallanRuleAction",
     "InsurancePartner", "InsuranceQuote", "InsuranceLead", "InsurancePolicy",
     "InsuranceRevenue", "InsuranceReferenceCounter",
     "InsurancePartnerType", "QuoteStatus", "InsuranceLeadStatus", "PolicyStatus",

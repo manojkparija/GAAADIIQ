@@ -138,6 +138,14 @@ export class NavbarComponent {
     this.financeOpen.update(v => !v);
   }
 
+  // ── More (AI row) ────────────────────────────────────────────────────────
+  moreOpen = signal(false);
+
+  toggleMore(): void {
+    this.closeOthers('more');
+    this.moreOpen.update(v => !v);
+  }
+
   // ── Insurance ────────────────────────────────────────────────────────────
   insuranceOpen = signal(false);
 
@@ -155,11 +163,14 @@ export class NavbarComponent {
    * other with the lower one unreachable. Adding a menu now means adding it
    * here once.
    */
-  private closeOthers(keep: 'newCars' | 'usedCars' | 'finance' | 'insurance' | 'lang' | 'none'): void {
+  private closeOthers(
+    keep: 'newCars' | 'usedCars' | 'finance' | 'insurance' | 'more' | 'lang' | 'none',
+  ): void {
     if (keep !== 'newCars') this.newCarsOpen.set(false);
     if (keep !== 'usedCars') this.usedCarsOpen.set(false);
     if (keep !== 'finance') this.financeOpen.set(false);
     if (keep !== 'insurance') this.insuranceOpen.set(false);
+    if (keep !== 'more') this.moreOpen.set(false);
     if (keep !== 'lang') this.langOpen.set(false);
   }
 
@@ -220,6 +231,7 @@ export class NavbarComponent {
       this.usedCarsOpen.set(false);
       this.financeOpen.set(false);
       this.insuranceOpen.set(false);
+      this.moreOpen.set(false);
     }
     if (this.langOpen() && !target.closest('.lang-wrap')) {
       this.langOpen.set(false);

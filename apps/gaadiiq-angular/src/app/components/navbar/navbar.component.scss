@@ -954,3 +954,35 @@
     font-weight: 700;
   }
 }
+
+/* ── More (AI row) ───────────────────────────────────────────────────────── */
+.ai-more { display: inline-flex; }
+
+/* A button, styled to match the anchors beside it. The row should read as one
+   set of controls, not four tabs and a differently-shaped fifth thing.
+
+   `background: none` is load-bearing and was missing. A <button> carries the
+   UA default `background-color: buttonface`, which the four <a> tabs beside it
+   do not. Clearing the border and font but not the fill left the label sitting
+   on Chrome's grey #efefef while inheriting .ai-tab's near-white dark-theme
+   colour: 1.09:1, on every page, because this is the navbar.
+
+   It passed locally and failed in CI, which is the part worth remembering.
+   `buttonface` is resolved by the browser from its own colour-scheme, not from
+   the page's data-theme attribute, so whether it comes out light or dark
+   depends on the environment. Any UA-styled control dropped into a themed
+   surface has to set its own fill rather than inherit one. */
+.ai-tab-more {
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+
+  .nav-caret { opacity: .65; transition: transform .2s ease; }
+  &.open .nav-caret { transform: rotate(180deg); }
+}
+
+/* The More panel hangs off the right edge of its trigger rather than the left.
+   It is the last item in the row, so a left-anchored panel would open past the
+   viewport edge on narrower screens. */
+.nav-mega-right { left: auto; right: 0; }

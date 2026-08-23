@@ -126,3 +126,51 @@ test('the car detail page shows a car and its gallery', async ({ page }) => {
 
   expect(errors, `console errors:\n${errors.join('\n')}`).toEqual([]);
 });
+
+/**
+ * Every rendered icon draws something.
+ *
+ * icon.component resolves an unknown name to `ICONS[name] ?? ''` and renders
+ * an empty <svg>. That is the right fallback — a typo should not blank the
+ * page — but it fails silently in the worst way: the element is present, it
+ * occupies its box, and it draws nothing. No console error, no build failure,
+ * no layout shift.
+ *
+ * Four names shipped that way before this test existed — `users`, `scissors`
+ * and `layers` on the insurance page, `grid` in the navbar — and two reached
+ * production. An invisible icon beside a readable label looks like a
+ * deliberately plain list, which is why nobody reported it.
+ *
+ * This checks the rendered DOM rather than the source. An earlier attempt
+ * scanned the source from a unit test via require.context, which executed
+ * every module it matched and hung the browser; and source-scanning could not
+ * have caught a name assembled at runtime anyway.
+ */
+for (const path of ['/', '/insurance', '/track-challan', '/compare', '/emi-calculator']) {
+  test(`every icon on ${path} draws a glyph`, async ({ page }) => {
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('app-icon svg', { state: 'attached' });
+
+    const empty = await page.evaluate(() => {
+      const bad: string[] = [];
+      for (const el of Array.from(document.querySelectorAll('app-icon'))) {
+        const svg = el.querySelector('svg');
+        if (!svg) continue;
+        // A real glyph has at least one drawing element inside it.
+        if (svg.querySelector('path, circle, rect, line, polyline, polygon')) continue;
+        bad.push(
+          (el.getAttribute('name') || '(no name attribute)') +
+            ' near "' +
+            (el.parentElement?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) +
+            '"'
+        );
+      }
+      return bad;
+    });
+
+    expect(
+      empty,
+      `These <app-icon> elements rendered an empty svg on ${path}:\n  ${empty.join('\n  ')}\n`
+    ).toEqual([]);
+  });
+}
