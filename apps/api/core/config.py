@@ -142,6 +142,13 @@ class Settings(BaseSettings):
     openai_api_url: str = "https://api.openai.com/v1"
     openai_timeout_seconds: float = 20.0
 
+    # ── EV charging station data ─────────────────────────────────────────────
+    # Open Charge Map. The key is optional — OCM answers unauthenticated
+    # requests — but rate limits are far kinder with one. Server-side only: a
+    # key in the Angular bundle is public the moment it ships.
+    ocm_api_url: str = "https://api.openchargemap.io/v3"
+    ocm_api_key: str = ""
+
     # ── News provider ────────────────────────────────────────────────────────
     # Which upstream the /news endpoint reads. "google" is the Google News RSS
     # feed and needs no key; "apitube" is APITube's News API and needs one.

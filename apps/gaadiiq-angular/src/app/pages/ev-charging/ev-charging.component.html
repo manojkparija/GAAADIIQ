@@ -1,0 +1,137 @@
+<div class="evc-page">
+  <section class="evc-hero">
+    <div class="container">
+      <span class="eyebrow">{{ 'GAADIIQ EV Charging Intelligence' | t }}</span>
+      <h1>{{ 'Find the right charger for your car' | t }}</h1>
+      <p class="sub">
+        {{ 'Not just the nearest one. Pick your EV and we will tell you which chargers fit, how fast yours will actually charge, and roughly how long the stop will take.' | t }}
+      </p>
+    </div>
+  </section>
+
+  <div class="evc-panel">
+    <label class="field">
+      <span>{{ 'Your electric car' | t }}</span>
+      <select [ngModel]="selectedProfileId()" (ngModelChange)="selectedProfileId.set($event)" name="car">
+        <option value="">{{ 'Not selected — show all chargers' | t }}</option>
+        <option *ngFor="let p of profiles()" [value]="p.id">{{ profileLabel(p) }}</option>
+      </select>
+    </label>
+
+    <!-- Honest about the gap rather than hiding the picker. -->
+    <p class="hint" *ngIf="!profiles().length">
+      {{ 'No charging specifications have been entered yet, so compatibility cannot be checked. Chargers will still show their connector and power.' | t }}
+    </p>
+
+    <label class="field">
+      <span>{{ 'Search within' | t }}</span>
+      <select [(ngModel)]="radiusKm" name="radius">
+        <option [ngValue]="5">5 km</option>
+        <option [ngValue]="15">15 km</option>
+        <option [ngValue]="30">30 km</option>
+        <option [ngValue]="50">50 km</option>
+      </select>
+    </label>
+
+    <button type="button" class="btn-gradient" (click)="useMyLocation()" [disabled]="locating() || loading()">
+      <app-icon name="map-pin" [size]="16"></app-icon>
+      <span *ngIf="!locating() && !loading()">{{ 'Find chargers near me' | t }}</span>
+      <span *ngIf="locating()">{{ 'Getting your location…' | t }}</span>
+      <span *ngIf="loading()">{{ 'Searching…' | t }}</span>
+    </button>
+  </div>
+
+  <p class="err" *ngIf="error()">{{ error() }}</p>
+
+  <ng-container *ngIf="result() as res">
+    <!-- No provider connected. Says so rather than drawing an empty map that
+         reads as "no chargers near you". -->
+    <div class="evc-note evc-note-warn" *ngIf="!res.provider_configured">
+      <app-icon name="alert-triangle" [size]="18"></app-icon>
+      <span>{{ res.notice }}</span>
+    </div>
+
+    <div class="evc-note" *ngIf="res.provider_configured && res.notice">
+      <app-icon name="info" [size]="18"></app-icon>
+      <span>{{ res.notice }}</span>
+    </div>
+
+    <!-- BR-07 / AC-07. Never a green "Available" we cannot substantiate. -->
+    <div class="evc-note" *ngIf="res.provider_configured && !res.live_availability">
+      <app-icon name="alert-triangle" [size]="18"></app-icon>
+      <span>{{ 'Live availability is not published for these stations. Please check with the operator before travelling.' | t }}</span>
+    </div>
+
+    <div class="evc-filters" *ngIf="res.stations.length">
+      <button type="button" [class.on]="filterCurrent() === 'all'" (click)="filterCurrent.set('all')">{{ 'All' | t }}</button>
+      <button type="button" [class.on]="filterCurrent() === 'ac'" (click)="filterCurrent.set('ac')">{{ 'AC only' | t }}</button>
+      <button type="button" [class.on]="filterCurrent() === 'dc'" (click)="filterCurrent.set('dc')">{{ 'DC only' | t }}</button>
+      <button type="button" *ngIf="selectedProfile()"
+              [class.on]="filterCompatibleOnly()"
+              (click)="filterCompatibleOnly.set(!filterCompatibleOnly())">
+        {{ 'Fits my car' | t }}
+      </button>
+    </div>
+
+    <div class="evc-session" *ngIf="selectedProfile()">
+      <span>{{ 'Estimate a charge from' | t }}</span>
+      <input type="number" [(ngModel)]="fromPct" name="from" min="0" max="99"> %
+      <span>{{ 'to' | t }}</span>
+      <input type="number" [(ngModel)]="toPct" name="to" min="1" max="100"> %
+    </div>
+
+    <div class="evc-list">
+      <article class="evc-station" *ngFor="let s of visibleStations()">
+        <header>
+          <div>
+            <h2>{{ s.name }}</h2>
+            <p class="meta">
+              <span *ngIf="s.operator_name">{{ s.operator_name }}</span>
+              <span *ngIf="s.distance_km !== null"> · {{ s.distance_km }} km</span>
+              <span *ngIf="s.city"> · {{ s.city }}</span>
+            </p>
+          </div>
+          <a [href]="directionsUrl(s)" target="_blank" rel="noopener noreferrer" class="btn-outline">
+            {{ 'Directions' | t }}
+          </a>
+        </header>
+
+        <!-- Each charger separately (§8): collapsing a site to its best number
+             is how "120 kW" ends up in front of a car that can use 7.2. -->
+        <div class="evc-charger" *ngFor="let c of s.chargers" [ngClass]="compatibilityClass(c)">
+          <div class="ch-head">
+            <span class="ch-current" [class.dc]="c.current_type === 'dc'">{{ currentLabel(c) }}</span>
+            <!-- BR-03: the actual figure, always, next to the category. -->
+            <strong class="ch-kw" *ngIf="c.power_kw">{{ c.power_kw }} kW</strong>
+            <strong class="ch-kw ch-kw-unknown" *ngIf="!c.power_kw">{{ 'Power not stated' | t }}</strong>
+            <span class="ch-speed">{{ c.speed_label }}</span>
+          </div>
+
+          <p class="ch-connector">{{ connectorLabel(c.connector_type) }}</p>
+
+          <p class="ch-compat" *ngIf="c.compatibility">
+            <span class="dot"></span>{{ compatibilityLabel(c) }}
+          </p>
+          <p class="ch-msg" *ngIf="c.compatibility_message">{{ c.compatibility_message }}</p>
+
+          <p class="ch-est" *ngIf="estimateFor(c) as est">
+            {{ fromPct }}% → {{ toPct }}%: <strong>{{ est }}</strong>
+            <span class="ch-est-note"> {{ '(estimate, not a guarantee)' | t }}</span>
+          </p>
+        </div>
+
+        <footer class="evc-prov">
+          <span *ngIf="s.last_updated">{{ 'Last updated' | t }} {{ s.last_updated | date:'d MMM y' }}</span>
+          <span *ngIf="!s.last_updated">{{ 'Update date not published' | t }}</span>
+          <a *ngIf="s.source_url" [href]="s.source_url" target="_blank" rel="noopener noreferrer">
+            {{ 'Source' | t }}
+          </a>
+        </footer>
+      </article>
+    </div>
+
+    <p class="evc-empty" *ngIf="res.provider_configured && !visibleStations().length && !loading()">
+      {{ 'No charging stations matched here. Try a wider radius, or clear the filters.' | t }}
+    </p>
+  </ng-container>
+</div>

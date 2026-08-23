@@ -122,4 +122,13 @@ __all__ = [
     "InsurancePartnerType", "QuoteStatus", "InsuranceLeadStatus", "PolicyStatus",
     "RevenueStatus", "PolicyType",
 ]
+from .ev_charging import (  # noqa: E402,F401
+    Charger,
+    ChargerStatus,
+    ChargingStation,
+    ChargingStationReport,
+    CurrentType,
+    StationStatus,
+    VehicleChargingProfile,
+)
 from .video_review import VideoReview, VideoReviewStatus  # noqa: E402,F401
