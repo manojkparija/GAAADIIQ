@@ -306,6 +306,23 @@
   &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 }
 
+.submit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+/* The reason the button is disabled. --text-muted, not --danger: nothing has
+   gone wrong, the form is simply not finished, and colouring it as an error
+   makes an unfilled field feel like a failure. */
+.blocking {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .done-state {
   text-align: center;
   padding: 1.5rem 0;

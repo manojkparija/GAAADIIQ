@@ -75,6 +75,70 @@ describe('InsuranceComponent', () => {
       expect(c.canSubmit()).toBe(true);
     });
 
+    it('accepts the ways people actually write an Indian mobile', () => {
+      // Reported from the deployed page: a user typed 9999999999, the button
+      // stayed disabled, and nothing said why. The +91 prefix is a formatting
+      // convention, not information the user has to supply.
+      const fixture = TestBed.createComponent(InsuranceComponent);
+      const c = fixture.componentInstance;
+      c.form.make = 'Maruti Suzuki';
+      c.form.model = 'Swift';
+      c.form.consent = true;
+
+      for (const written of [
+        '9999999999',
+        '+919999999999',
+        '919999999999',
+        '09999999999',
+        '99999 99999',
+        '+91 99999 99999',
+        '+91-9999-999-999',
+      ]) {
+        c.form.phone = written;
+        expect(c.canSubmit()).withContext(written).toBe(true);
+      }
+    });
+
+    it('normalises the number before sending it', async () => {
+      const fixture = TestBed.createComponent(InsuranceComponent);
+      const c = fixture.componentInstance;
+      Object.assign(c.form, {
+        make: 'Maruti Suzuki',
+        model: 'Swift',
+        phone: '99999 99999',
+        consent: true,
+      });
+
+      const done = c.submit();
+      const req = http.expectOne(`${environment.apiUrl}/insurance/interest`);
+      // The API takes exactly one form; the user should not have to know which.
+      expect(req.request.body.phone).toBe('+919999999999');
+      req.flush({ id: 'x', status: 'consented', message: 'ok' });
+      await done;
+    });
+
+    it('says why the button is disabled, for every reason', () => {
+      // A greyed-out control with no explanation reads as a broken page. That
+      // is how this was reported, so each blocking state must name itself.
+      const fixture = TestBed.createComponent(InsuranceComponent);
+      const c = fixture.componentInstance;
+
+      expect(c.blockingReason()).toContain('make and model');
+
+      c.form.make = 'Maruti Suzuki';
+      c.form.model = 'Swift';
+      expect(c.blockingReason()).toContain('mobile number');
+
+      c.form.phone = '12345';
+      expect(c.blockingReason()).toContain('Indian mobile number');
+
+      c.form.phone = '9999999999';
+      expect(c.blockingReason()).toContain('tick the box');
+
+      c.form.consent = true;
+      expect(c.blockingReason()).toBeNull();
+    });
+
     it('rejects a phone number that is not an Indian mobile', () => {
       const fixture = TestBed.createComponent(InsuranceComponent);
       const c = fixture.componentInstance;
@@ -82,12 +146,15 @@ describe('InsuranceComponent', () => {
       c.form.model = 'Swift';
       c.form.consent = true;
 
-      for (const bad of ['+14155551234', '9876543210', '+911234567890', '']) {
+      // 9876543210 is valid and was wrongly in this list before. These are
+      // numbers no Indian mobile can be: wrong country, wrong leading digit,
+      // wrong length.
+      for (const bad of ['+14155551234', '1234567890', '5999999999', '99999', '']) {
         c.form.phone = bad;
         expect(c.canSubmit()).withContext(bad).toBe(false);
       }
 
-      c.form.phone = '+919876543210';
+      c.form.phone = '9876543210';
       expect(c.canSubmit()).toBe(true);
     });
 

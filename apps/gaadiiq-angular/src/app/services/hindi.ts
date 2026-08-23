@@ -1871,4 +1871,14 @@ export const HINDI: Record<string, string> = {
     'जैसे स्विफ़्ट',
   'e.g. 2021':
     'जैसे 2021',
+  'Please enter the make and model of your car.':
+    'कृपया अपनी कार का मेक और मॉडल भरें।',
+  'Please enter your mobile number.':
+    'कृपया अपना मोबाइल नंबर भरें।',
+  'That does not look like an Indian mobile number. Ten digits starting 6, 7, 8 or 9.':
+    'यह भारतीय मोबाइल नंबर नहीं लग रहा। 6, 7, 8 या 9 से शुरू होने वाले दस अंक।',
+  'Please tick the box above so we know we may contact you.':
+    'कृपया ऊपर का बॉक्स टिक करें ताकि हमें पता चले कि हम आपसे संपर्क कर सकते हैं।',
+  'Sending…':
+    'भेजा जा रहा है…',
 };

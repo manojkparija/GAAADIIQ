@@ -221,20 +221,62 @@ export class InsuranceComponent {
   }
 
   /**
-   * Deliberately a method, not a computed().
+   * Accept a phone number the way people actually type it, and normalise it to
+   * the one form the API takes.
    *
-   * The fields it reads are plain properties bound with ngModel, and
-   * computed() tracks signal reads only — over a plain field it evaluates once
-   * and then reports a stale answer forever. CLAUDE.md records this having
-   * shipped twice.
+   * This first shipped demanding a literal `+91XXXXXXXXXX` and nothing else.
+   * Somebody typed `9999999999` — the ordinary way to write an Indian mobile —
+   * and the submit button stayed disabled with no message. The form simply did
+   * not respond, which reads as a broken page, not as a rejected input.
+   *
+   * The prefix is a formatting convention, not information the user has to
+   * supply: `98765 43210`, `09876543210`, `+91 98765 43210` and
+   * `919876543210` all identify the same phone. Rejecting nine of ten ways of
+   * writing it buys nothing.
+   *
+   * Returns the canonical form, or null if it is not a valid Indian mobile.
+   * The 6-9 first-digit rule is real — Indian mobile numbers do not start
+   * below 6 — so a ten-digit number beginning 1-5 is a typo, not a format
+   * preference, and is still rejected.
    */
+  static normalisePhone(raw: string): string | null {
+    const digits = (raw ?? '').replace(/[\s()+-]/g, '');
+    if (!digits) return null;
+
+    let local = digits;
+    if (local.startsWith('91') && local.length === 12) local = local.slice(2);
+    else if (local.startsWith('0') && local.length === 11) local = local.slice(1);
+
+    return /^[6-9]\d{9}$/.test(local) ? `+91${local}` : null;
+  }
+
+  /**
+   * Why the form cannot be submitted yet, or null when it can.
+   *
+   * A disabled button with no explanation is the defect this fixes, so the
+   * reason is rendered next to it. Deliberately a method, not a computed():
+   * the fields are plain properties bound with ngModel, and computed() tracks
+   * signal reads only — over a plain field it evaluates once and reports a
+   * stale answer forever. CLAUDE.md records that having shipped twice.
+   */
+  blockingReason(): string | null {
+    if (!this.form.make.trim() || !this.form.model.trim()) {
+      return 'Please enter the make and model of your car.';
+    }
+    if (!this.form.phone.trim()) {
+      return 'Please enter your mobile number.';
+    }
+    if (!InsuranceComponent.normalisePhone(this.form.phone)) {
+      return 'That does not look like an Indian mobile number. Ten digits starting 6, 7, 8 or 9.';
+    }
+    if (!this.form.consent) {
+      return 'Please tick the box above so we know we may contact you.';
+    }
+    return null;
+  }
+
   canSubmit(): boolean {
-    return (
-      this.form.make.trim().length > 0 &&
-      this.form.model.trim().length > 0 &&
-      /^\+91[6-9]\d{9}$/.test(this.form.phone.trim()) &&
-      this.form.consent
-    );
+    return this.blockingReason() === null;
   }
 
   async submit(): Promise<void> {
@@ -247,7 +289,9 @@ export class InsuranceComponent {
         ...this.form,
         make: this.form.make.trim(),
         model: this.form.model.trim(),
-        phone: this.form.phone.trim(),
+        // Normalised, not merely trimmed: the API takes one form and the user
+        // should not have to know which.
+        phone: InsuranceComponent.normalisePhone(this.form.phone)!,
       });
       this.submitted.set(true);
     } catch {

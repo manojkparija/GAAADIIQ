@@ -158,10 +158,13 @@
                    [placeholder]="'Optional' | t" autocomplete="name">
           </label>
 
+          <!-- The placeholder shows the plain ten-digit form, because that is
+               what people type and what the field now accepts. Showing
+               "+919876543210" implied a prefix was required and it was. -->
           <label class="field">
             <span>{{ 'Mobile' | t }} *</span>
             <input type="tel" [(ngModel)]="form.phone" name="phone"
-                   placeholder="+919876543210" autocomplete="tel">
+                   placeholder="98765 43210" autocomplete="tel" inputmode="tel">
           </label>
         </div>
 
@@ -179,10 +182,17 @@
 
         <p class="err" *ngIf="error()">{{ error() }}</p>
 
-        <button type="button" class="btn-submit"
-                [disabled]="!canSubmit() || submitting()" (click)="submit()">
-          {{ (submitting() ? 'Sending…' : 'Tell me when it is available') | t }}
-        </button>
+        <div class="submit-row">
+          <button type="button" class="btn-submit"
+                  [disabled]="!canSubmit() || submitting()" (click)="submit()">
+            {{ (submitting() ? 'Sending…' : 'Tell me when it is available') | t }}
+          </button>
+
+          <!-- Says why the button is disabled. A greyed-out control with no
+               explanation reads as a broken page rather than as a form that
+               is not finished, which is exactly how this was first reported. -->
+          <p class="blocking" *ngIf="blockingReason() as reason">{{ reason | t }}</p>
+        </div>
       </ng-container>
 
       <ng-template #done>
