@@ -209,6 +209,40 @@ export class ReviewsNewsComponent implements OnDestroy {
     return out;
   });
 
+  /**
+   * A CSS background-image value for a thumbnail URL from the feed.
+   *
+   * The template used to build this by concatenation:
+   *
+   *     [style.backgroundImage]="a.image ? 'url(' + a.image + ')' : 'none'"
+   *
+   * That pastes third-party text straight into a CSS value. A URL containing a
+   * closing parenthesis ends the url() early and everything after it is parsed
+   * as further CSS — so the provider, not us, decides what declarations land on
+   * the element. Angular escapes interpolation into the DOM; it does not parse
+   * a string we assembled ourselves into CSS.
+   *
+   * So: require https (the API enforces this too — this is the second layer,
+   * not the only one), percent-encode the URL so no character can terminate
+   * the function, and wrap it in quotes. A value that fails returns 'none' and
+   * the card falls back to its icon, which is a visible, harmless outcome.
+   */
+  thumb(image: string | null): string {
+    if (!image || !/^https:\/\//i.test(image)) return 'none';
+    try {
+      // encodeURI leaves '(' ')' and "'" alone, so escape those explicitly.
+      const safe = encodeURI(image)
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29')
+        .replace(/'/g, '%27')
+        .replace(/"/g, '%22');
+      return `url('${safe}')`;
+    } catch {
+      // encodeURI throws on a lone surrogate.
+      return 'none';
+    }
+  }
+
   stars(n: number) { return Array.from({ length: 5 }, (_, i) => i < Math.floor(n) ? '★' : i < n ? '½' : '☆'); }
 
   tagClass(color: string) {

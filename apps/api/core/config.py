@@ -142,6 +142,20 @@ class Settings(BaseSettings):
     openai_api_url: str = "https://api.openai.com/v1"
     openai_timeout_seconds: float = 20.0
 
+    # ── News provider ────────────────────────────────────────────────────────
+    # Which upstream the /news endpoint reads. "google" is the Google News RSS
+    # feed and needs no key; "apitube" is APITube's News API and needs one.
+    #
+    # The key lives here and only here. It is read by the API process, sent
+    # from the server to APITube, and never reaches the browser — a key in
+    # frontend code is public the moment the bundle ships, and APITube bills
+    # per request against it. Set it as an environment variable in Render, not
+    # in a file in this repository.
+    news_provider: str = "google"
+    apitube_api_key: str = ""
+    apitube_api_url: str = "https://api.apitube.io/v1/news"
+    apitube_timeout_seconds: float = 10.0
+
     # Gemini — the second model, and the last one before Ollama and the
     # heuristic. Leave the key blank and the ladder skips it.
     gemini_api_key: str = ""

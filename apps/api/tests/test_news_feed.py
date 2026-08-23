@@ -37,13 +37,29 @@ FEED = b"""<?xml version="1.0" encoding="UTF-8"?>
 
 
 def _stub_get(monkeypatch, *, body=FEED, status_code=200, seen=None):
-    class FakeResponse:
-        content = body
-        status_code_ = status_code
+    """
+    Stub the streaming fetch.
+
+    The service reads the body in chunks via client.stream() rather than
+    resp.content, so the size cap bounds what is received instead of what is
+    parsed. This fake mirrors that shape — it is what the real call looks like.
+    """
+    class FakeStream:
+        url = "https://news.google.com/rss/search"
+        history: list = []
 
         def raise_for_status(self):
             if status_code >= 400:
                 raise httpx.HTTPStatusError("boom", request=None, response=None)
+
+        async def aiter_bytes(self):
+            yield body
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return False
 
     class FakeClient:
         async def __aenter__(self):
@@ -52,10 +68,10 @@ def _stub_get(monkeypatch, *, body=FEED, status_code=200, seen=None):
         async def __aexit__(self, *exc):
             return False
 
-        async def get(self, url, **kwargs):
+        def stream(self, method, url, **kwargs):
             if seen is not None:
                 seen.append(url)
-            return FakeResponse()
+            return FakeStream()
 
     monkeypatch.setattr(news_feed.httpx, "AsyncClient", lambda **kw: FakeClient())
 
@@ -346,3 +362,186 @@ async def test_endpoint_rejects_an_out_of_range_limit(monkeypatch):
     async with await _client() as c:
         assert (await c.get("/news", params={"limit": 500})).status_code == 422
         assert (await c.get("/news", params={"limit": 0})).status_code == 422
+
+
+# ── Security hardening ───────────────────────────────────────────────────────
+#
+# Each test below stands against a specific gap found reviewing this path
+# before switching providers. They are written so that reverting the fix makes
+# them fail, rather than asserting that the code is merely present.
+
+
+def test_download_refuses_a_url_into_the_private_network():
+    """
+    Goes through _download, not the helper.
+
+    An earlier version of this test called _assert_public_url directly. That
+    proved the helper worked and nothing about whether _download used it —
+    deleting every call site left the test green. Driving the real entry point
+    is the difference between testing the guard and testing that the guard is
+    wired in.
+    """
+    # Matching the refusal message, not just the exception type: a hostile URL
+    # that reached the network would raise NewsUnavailable too, from the
+    # connection failing, and the test would pass without the guard existing.
+    for hostile, expected in (
+        ("https://169.254.169.254/latest/meta-data/", "non-public"),
+        ("https://10.0.0.5/admin", "non-public"),
+        ("https://127.0.0.1/", "non-public"),
+        ("https://localhost/", "pointing at localhost"),
+        ("http://news.google.com/rss/search", "non-https"),  # downgrade
+    ):
+        with pytest.raises(news_feed.NewsUnavailable, match=expected):
+            asyncio.run(news_feed._download(hostile))
+
+
+def test_download_refuses_a_redirect_that_lands_on_a_private_address(monkeypatch):
+    """
+    The URL we build is a constant; the redirect target is not.
+
+    follow_redirects=True hands the second request's destination to the
+    upstream. A feed host that is compromised can send us to the cloud metadata
+    endpoint or an address inside our own network, and the body comes back
+    through the API to the browser — a news feed turned into a read primitive.
+    """
+    class _Hop:
+        def __init__(self, url):
+            self.url = url
+
+    class _Stream:
+        url = "https://169.254.169.254/latest/meta-data/"
+        history = [_Hop("https://news.google.com/rss/search")]
+
+        def raise_for_status(self):
+            return None
+
+        async def aiter_bytes(self):
+            yield b"<rss></rss>"
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return False
+
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return False
+
+        def stream(self, *_a, **_k):
+            return _Stream()
+
+    monkeypatch.setattr(news_feed.httpx, "AsyncClient", _Client)
+
+    with pytest.raises(news_feed.NewsUnavailable, match="non-public"):
+        asyncio.run(news_feed._download("https://news.google.com/rss/search"))
+
+
+def test_download_allows_the_real_feed_host():
+    news_feed._assert_public_url("https://news.google.com/rss/search?q=car")
+    news_feed._assert_public_url("https://api.apitube.io/v1/news/everything")
+
+
+def test_download_stops_reading_once_the_body_exceeds_the_cap(monkeypatch):
+    """
+    The cap has to bound what we RECEIVE, not what we agree to parse.
+
+    This previously read resp.content — the whole body into memory — and only
+    then compared its length. The check meant to prevent exhaustion ran after
+    the exhaustion. Here the stream is effectively endless: if the cap is not
+    enforced per chunk, this test does not fail, it hangs or dies.
+    """
+    chunk = b"x" * (256 * 1024)
+    chunks_yielded = 0
+
+    class _Stream:
+        url = "https://news.google.com/rss/search"
+        history: list = []
+
+        def raise_for_status(self):
+            return None
+
+        async def aiter_bytes(self):
+            nonlocal chunks_yielded
+            # Far more than the 4 MB cap, and more than we should ever read.
+            for _ in range(1000):
+                chunks_yielded += 1
+                yield chunk
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return False
+
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return False
+
+        def stream(self, *_a, **_k):
+            return _Stream()
+
+    monkeypatch.setattr(news_feed.httpx, "AsyncClient", _Client)
+
+    with pytest.raises(news_feed.NewsUnavailable, match="implausibly large"):
+        asyncio.run(news_feed._download("https://news.google.com/rss/search"))
+
+    # 4 MB cap / 256 KB chunks = it should give up after ~17, not read 1000.
+    assert chunks_yielded < 40, f"read {chunks_yielded} chunks before stopping"
+
+
+def test_a_transport_error_does_not_leak_the_request_url(monkeypatch):
+    """
+    For a keyed provider the URL can carry credentials, and this message is
+    logged. Report the class of failure, not the request.
+    """
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return False
+
+        def stream(self, *_a, **_k):
+            raise httpx.ConnectError("failed connecting to https://api.example/?apikey=SECRET")
+
+    monkeypatch.setattr(news_feed.httpx, "AsyncClient", _Client)
+
+    with pytest.raises(news_feed.NewsUnavailable) as caught:
+        asyncio.run(news_feed._download("https://api.apitube.io/v1/news/everything"))
+
+    assert "SECRET" not in str(caught.value)
+    assert "ConnectError" in str(caught.value)
+
+
+def test_an_oversized_title_is_capped():
+    """
+    Field length is the upstream's choice unless we bound it. One item with a
+    megabyte title is otherwise served to every reader of that cached query.
+    """
+    huge = ("A" * 5000).encode()
+    feed = (
+        b'<?xml version="1.0"?><rss><channel><item>'
+        b"<title>" + huge + b"</title>"
+        b"<link>https://example.com/a</link>"
+        b"<source>Example</source>"
+        b"</item></channel></rss>"
+    )
+    articles = news_feed._parse(feed)
+    assert len(articles) == 1
+    assert len(articles[0].title) <= news_feed._MAX_TITLE_CHARS

@@ -106,7 +106,7 @@
       <div class="live-grid" *ngIf="!liveLoading() && liveArticles().length">
         <div class="live-card glass-card" *ngFor="let a of liveArticles(); let i = index"
              [routerLink]="['/reviews-news', categorySlug(), 'live', i]">
-          <div class="lc-thumb" [style.backgroundImage]="a.image ? 'url(' + a.image + ')' : 'none'">
+          <div class="lc-thumb" [style.backgroundImage]="thumb(a.image)">
             <span *ngIf="!a.image" class="lc-thumb-emoji"><app-icon name="newspaper" [size]="32"></app-icon></span>
           </div>
           <div class="lc-body">
