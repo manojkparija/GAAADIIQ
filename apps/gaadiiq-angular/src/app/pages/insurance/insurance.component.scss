@@ -1,0 +1,398 @@
+// No background on the page root. body::before paints the page watermark, and
+// anything opaque over it hides it for no reason. Same note as tco.component.
+.ins-page {
+  min-height: 100vh;
+  padding-bottom: 4rem;
+}
+
+.ins-hero {
+  // Clears the fixed navbar (LAY-007). max() rather than a bare value because
+  // --nav-offset changes with the bar's compaction and the breakpoint.
+  padding: max(7rem, var(--nav-offset)) 1rem 3rem;
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  border-bottom: 1px solid var(--divider);
+  text-align: center;
+  color: #fff;
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    // 0.7 alpha white on this gradient's darkest stop measures below AA at
+    // this size; 0.86 clears it. The hero text is not decorative.
+    color: rgba(255, 255, 255, 0.86);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 800;
+    margin: 0 0 0.75rem;
+    color: #fff;
+  }
+
+  .sub {
+    max-width: 46rem;
+    margin: 0 auto 1.5rem;
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.92);
+  }
+}
+
+.btn-hero {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  background: #fff;
+  // Not var(--primary): that token brightens to #5B8FFF in dark mode, and this
+  // pill stays white in both, so the text would fall to ~3:1. --ink-on-white
+  // exists for exactly this case.
+  color: var(--ink-on-white, #1E3A8A);
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform .16s ease, box-shadow .16s ease;
+
+  &:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(0, 0, 0, .18); }
+}
+
+/* The "we are not the insurer" line. Full contrast, normal size. */
+.ins-standing {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 1.5rem auto 0;
+  padding: 0.85rem 1rem;
+  max-width: 60rem;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  background: var(--fill-dim);
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.55;
+
+  app-icon { color: var(--info-ink, var(--primary)); flex-shrink: 0; margin-top: 0.1rem; }
+}
+
+.ins-section {
+  margin-top: 3rem;
+
+  h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(1.3rem, 2.6vw, 1.75rem);
+    font-weight: 800;
+    color: var(--text);
+    margin: 0 0 0.5rem;
+  }
+}
+
+.section-sub {
+  color: var(--text-muted);
+  margin: 0 0 1.25rem;
+  max-width: 52rem;
+  line-height: 1.6;
+}
+
+/* ── Cover types ─────────────────────────────────────────────────────────── */
+.cover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.cover-card {
+  padding: 1.25rem;
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  background: var(--card-bg);
+
+  app-icon { color: var(--primary); }
+
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0.6rem 0 0.35rem;
+    color: var(--text);
+  }
+}
+
+.cover-summary {
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.cover-detail {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+/* ── Terms ───────────────────────────────────────────────────────────────── */
+.term-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.term-card {
+  padding: 1.25rem;
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  background: var(--card-bg);
+
+  p {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    line-height: 1.65;
+    margin: 0 0 0.6rem;
+
+    &:last-child { margin-bottom: 0; }
+  }
+}
+
+.term-head {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+
+  app-icon { color: var(--teal-ink, var(--teal)); flex-shrink: 0; margin-top: 0.15rem; }
+
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text);
+  }
+}
+
+.term-short {
+  font-weight: 600;
+  color: var(--text) !important;
+  margin: 0.15rem 0 0 !important;
+  font-size: 0.9rem;
+}
+
+/* ── Add-ons ─────────────────────────────────────────────────────────────── */
+.addon-table {
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+.addon-row {
+  display: grid;
+  grid-template-columns: 12rem 1fr 1fr;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--divider);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+
+  &:last-child { border-bottom: 0; }
+
+  // Wide content must scroll inside its own container rather than making the
+  // page scroll sideways. Below this width the table becomes stacked blocks.
+  @media (max-width: 760px) {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+}
+
+.addon-head {
+  background: var(--fill-dim);
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+
+  @media (max-width: 760px) { display: none; }
+}
+
+.addon-name { font-weight: 700; color: var(--text); }
+.addon-skip { color: var(--warning-ink, var(--text-muted)); }
+
+/* ── Enquiry ─────────────────────────────────────────────────────────────── */
+.enquiry-card {
+  padding: 1.5rem;
+  border: 1px solid var(--divider);
+  border-radius: 18px;
+  background: var(--card-bg);
+  scroll-margin-top: calc(var(--nav-offset) + 1rem);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  > span {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  input, select {
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    background: var(--fill-soft);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.95rem;
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 1px;
+    }
+  }
+}
+
+/* ── Fuel listbox ────────────────────────────────────────────────────────── */
+.listbox-wrap { position: relative; }
+
+.listbox-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--fill-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+
+  &.open { border-color: var(--primary); }
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+  app-icon { color: var(--text-muted); flex-shrink: 0; }
+  .placeholder { color: var(--text-muted); }
+}
+
+.listbox {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  // Opaque, for the reason the navbar panels are: a translucent panel takes
+  // its contrast from whatever happens to be behind it.
+  background: var(--nav-panel);
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(11, 18, 32, .16);
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.listbox-option {
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.93rem;
+  color: var(--text);
+  cursor: pointer;
+
+  &:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+
+  // The selected row, in the brand blue-teal rather than the OS accent colour
+  // a native <select> would use. White on --gradient-ai measures 5.47:1 at its
+  // lightest stop, so the label stays legible across the whole sweep.
+  &.selected {
+    background: var(--gradient-ai);
+    color: #fff;
+    font-weight: 600;
+  }
+}
+
+.consent {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+
+  input {
+    margin-top: 0.2rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
+  }
+}
+
+.err {
+  color: var(--danger);
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+
+.btn-submit {
+  padding: 0.75rem 1.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gradient-cta);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .16s ease, opacity .16s ease;
+
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+}
+
+.submit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+/* The reason the button is disabled. --text-muted, not --danger: nothing has
+   gone wrong, the form is simply not finished, and colouring it as an error
+   makes an unfilled field feel like a failure. */
+.blocking {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.done-state {
+  text-align: center;
+  padding: 1.5rem 0;
+
+  app-icon { color: var(--success-ink, var(--teal)); }
+
+  h2 { margin: 0.5rem 0 0.4rem; }
+  p { color: var(--text-muted); margin: 0; line-height: 1.6; }
+}

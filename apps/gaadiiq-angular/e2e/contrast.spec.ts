@@ -27,7 +27,7 @@ import { test, expect, Page } from '@playwright/test';
  * All cleared, so dark is measured here too and stays measured.
  */
 
-const PAGES = ['/', '/new-cars', '/used-cars', '/compare', '/emi-calculator', '/reviews-news', '/car-loan'];
+const PAGES = ['/', '/new-cars', '/used-cars', '/compare', '/emi-calculator', '/reviews-news', '/car-loan', '/insurance'];
 
 interface Failure {
   text: string;
@@ -149,6 +149,21 @@ for (const path of PAGES) {
     // since a skeleton has different colours from the thing it stands in for.
     await page.waitForTimeout(2500);
 
+    // A page that rendered nothing has no low-contrast text on it and passes
+    // every assertion below. That is not a hypothetical: a static server left
+    // pointing at the wrong directory served 404s for every bundle, and this
+    // whole suite reported green against blank pages while the run that
+    // actually looked for an element failed. "No failures found" and "nothing
+    // was measured" must not look the same, so assert the page has content
+    // before drawing any conclusion from its absence of faults.
+    const visibleText = await page.evaluate(
+      () => (document.body.innerText || '').trim().length
+    );
+    expect(
+      visibleText,
+      `${path} (${theme}) rendered no text — the contrast result below would be vacuous`
+    ).toBeGreaterThan(200);
+
     const failures = await findLowContrastText(page);
 
     // One bad rule repeated across twenty cards is one problem, not twenty.
@@ -200,7 +215,13 @@ for (const path of ['/', '/compare', '/new-cars']) {
       document.documentElement.setAttribute('data-theme', t);
     }, theme);
     await page.goto(path, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(1500);
+    // Wait for the bar itself rather than a fixed delay. This was
+    // waitForTimeout(1500) and began failing the moment the bundle grew:
+    // querySelector('.navbar') returned null and the error surfaced as
+    // "getComputedStyle: parameter 1 is not of type 'Element'", which reads
+    // like a broken test rather than a slow boot. A timeout tuned to today's
+    // bundle is a test that expires.
+    await page.waitForSelector('.navbar', { state: 'attached' });
 
     const alphaOf = (css: string): number => {
       if (css === 'transparent') return 0;

@@ -95,17 +95,13 @@ export class NavbarComponent {
    * the lower one is unreachable behind the upper.
    */
   toggleNewCars(): void {
-    this.usedCarsOpen.set(false);
-    this.langOpen.set(false);
-    this.financeOpen.set(false);
+    this.closeOthers('newCars');
     this.newCarsOpen.update(v => !v);
   }
   closeNewCars(): void { this.newCarsOpen.set(false); }
 
   toggleUsedCars(): void {
-    this.newCarsOpen.set(false);
-    this.langOpen.set(false);
-    this.financeOpen.set(false);
+    this.closeOthers('usedCars');
     this.usedCarsOpen.update(v => !v);
   }
   closeUsedCars(): void { this.usedCarsOpen.set(false); }
@@ -138,10 +134,33 @@ export class NavbarComponent {
   financeOpen = signal(false);
 
   toggleFinance(): void {
-    this.newCarsOpen.set(false);
-    this.usedCarsOpen.set(false);
-    this.langOpen.set(false);
+    this.closeOthers('finance');
     this.financeOpen.update(v => !v);
+  }
+
+  // ── Insurance ────────────────────────────────────────────────────────────
+  insuranceOpen = signal(false);
+
+  toggleInsurance(): void {
+    this.closeOthers('insurance');
+    this.insuranceOpen.update(v => !v);
+  }
+
+  /**
+   * Close every panel except the one being opened.
+   *
+   * This replaces four hand-written lists of "set the other three false",
+   * which is a shape that quietly rots: adding a fifth menu means editing four
+   * unrelated methods, and missing one leaves two panels open on top of each
+   * other with the lower one unreachable. Adding a menu now means adding it
+   * here once.
+   */
+  private closeOthers(keep: 'newCars' | 'usedCars' | 'finance' | 'insurance' | 'lang' | 'none'): void {
+    if (keep !== 'newCars') this.newCarsOpen.set(false);
+    if (keep !== 'usedCars') this.usedCarsOpen.set(false);
+    if (keep !== 'finance') this.financeOpen.set(false);
+    if (keep !== 'insurance') this.insuranceOpen.set(false);
+    if (keep !== 'lang') this.langOpen.set(false);
   }
 
   // ── Language picker ──────────────────────────────────────────────────────
@@ -149,9 +168,7 @@ export class NavbarComponent {
   langOpen = signal(false);
 
   toggleLang(): void {
-    this.newCarsOpen.set(false);
-    this.usedCarsOpen.set(false);
-    this.financeOpen.set(false);
+    this.closeOthers('lang');
     this.langOpen.update(v => !v);
   }
 
@@ -181,10 +198,7 @@ export class NavbarComponent {
     router.events.subscribe(e => {
       // A menu left open across a navigation covers the page you just asked for.
       if (e instanceof NavigationEnd) {
-        this.newCarsOpen.set(false);
-        this.usedCarsOpen.set(false);
-        this.langOpen.set(false);
-        this.financeOpen.set(false);
+        this.closeOthers('none');
       }
       if (e instanceof NavigationEnd) {
         this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
@@ -205,6 +219,7 @@ export class NavbarComponent {
       this.newCarsOpen.set(false);
       this.usedCarsOpen.set(false);
       this.financeOpen.set(false);
+      this.insuranceOpen.set(false);
     }
     if (this.langOpen() && !target.closest('.lang-wrap')) {
       this.langOpen.set(false);
@@ -214,10 +229,7 @@ export class NavbarComponent {
   /** Escape closes the menu, so a keyboard user is not trapped inside it. */
   @HostListener('document:keydown.escape')
   onEscape() {
-    this.newCarsOpen.set(false);
-    this.usedCarsOpen.set(false);
-    this.langOpen.set(false);
-    this.financeOpen.set(false);
+    this.closeOthers('none');
     this.userMenuOpen.set(false);
   }
 

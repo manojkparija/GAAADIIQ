@@ -1,0 +1,242 @@
+<!--
+  Car insurance.
+
+  The order is deliberate and is not the order the BRD lists. A quote form at
+  the top would be a form that cannot produce a quote, so the page leads with
+  what it can actually give somebody: an explanation of what they are buying.
+  The enquiry sits below that, reached by a CTA for anyone who already knows
+  what they want.
+-->
+<div class="ins-page">
+
+  <section class="ins-hero">
+    <div class="container">
+      <span class="eyebrow">{{ 'Car Insurance' | t }}</span>
+      <h1>{{ 'Understand your cover before you buy it' | t }}</h1>
+      <p class="sub">
+        {{ 'What IDV, NCB and each add-on actually mean for what you pay and what you get back.' | t }}
+      </p>
+
+      <!--
+        No "Get Quote" button. There is nothing behind it yet, and a CTA that
+        leads to "not available" is worse than one that says what it does.
+      -->
+      <a href="#enquiry" class="btn-hero">
+        <app-icon name="bell" [size]="16"></app-icon>
+        {{ 'Tell us when your policy expires' | t }}
+      </a>
+    </div>
+  </section>
+
+  <!--
+    Stated once, plainly, near the top. Burying this at the foot of the page in
+    grey 11px would be the standard move and would defeat the point of saying
+    it: GAADIIQ is not the insurer and cannot be mistaken for one.
+  -->
+  <div class="container">
+    <p class="ins-standing" role="note">
+      <app-icon name="info" [size]="15"></app-icon>
+      <span>
+        {{ 'GAADIIQ does not sell, price or issue insurance. When cover becomes available here it will be provided by a regulated insurance partner, and named as theirs.' | t }}
+      </span>
+    </p>
+  </div>
+
+  <!-- ── Cover types ──────────────────────────────────────────────────────── -->
+  <section class="ins-section container" id="cover">
+    <h2>{{ 'The three kinds of cover' | t }}</h2>
+    <div class="cover-grid">
+      <article class="cover-card" *ngFor="let c of coverTypes">
+        <app-icon [name]="c.icon" [size]="22"></app-icon>
+        <h3>{{ c.name | t }}</h3>
+        <p class="cover-summary">{{ c.summary | t }}</p>
+        <p class="cover-detail">{{ c.detail | t }}</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ── Terms ────────────────────────────────────────────────────────────── -->
+  <section class="ins-section container" id="idv">
+    <h2>{{ 'The words that decide what you pay' | t }}</h2>
+    <div class="term-list">
+      <article class="term-card" *ngFor="let e of explainers" [id]="e.id">
+        <div class="term-head">
+          <app-icon [name]="e.icon" [size]="18"></app-icon>
+          <div>
+            <h3>{{ e.term | t }}</h3>
+            <p class="term-short">{{ e.short | t }}</p>
+          </div>
+        </div>
+        <p *ngFor="let para of e.body">{{ para | t }}</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ── Add-ons ──────────────────────────────────────────────────────────── -->
+  <section class="ins-section container" id="addons">
+    <h2>{{ 'Add-ons, and when they are not worth it' | t }}</h2>
+    <p class="section-sub">
+      {{ 'Every add-on raises your premium. These are the ones worth understanding before you are asked to tick them.' | t }}
+    </p>
+    <div class="addon-table" role="table">
+      <div class="addon-row addon-head" role="row">
+        <span role="columnheader">{{ 'Add-on' | t }}</span>
+        <span role="columnheader">{{ 'What it covers' | t }}</span>
+        <span role="columnheader">{{ 'When to skip it' | t }}</span>
+      </div>
+      <div class="addon-row" role="row" *ngFor="let a of addOns">
+        <span class="addon-name" role="cell">{{ a.name | t }}</span>
+        <span role="cell">{{ a.covers | t }}</span>
+        <span class="addon-skip" role="cell">{{ a.whenNot | t }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Enquiry ──────────────────────────────────────────────────────────── -->
+  <section class="ins-section container" id="enquiry">
+    <div class="enquiry-card">
+
+      <ng-container *ngIf="!submitted(); else done">
+        <h2>{{ 'Tell us about your car' | t }}</h2>
+        <p class="section-sub">
+          {{ 'We will get in touch when insurance goes live on GAADIIQ. Your policy expiry date is the useful part — it tells us when to contact you rather than how often.' | t }}
+        </p>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>{{ 'Make' | t }} *</span>
+            <input type="text" [(ngModel)]="form.make" name="make"
+                   [placeholder]="'e.g. Maruti Suzuki' | t" autocomplete="off">
+          </label>
+
+          <label class="field">
+            <span>{{ 'Model' | t }} *</span>
+            <input type="text" [(ngModel)]="form.model" name="model"
+                   [placeholder]="'e.g. Swift' | t" autocomplete="off">
+          </label>
+
+          <label class="field">
+            <span>{{ 'Year of manufacture' | t }}</span>
+            <input type="number" [(ngModel)]="form.manufacturing_year" name="year"
+                   min="1980" [placeholder]="'e.g. 2021' | t">
+          </label>
+
+          <!--
+            A listbox, not a <select>.
+
+            The option list of a native select is drawn by the operating
+            system, and its highlight colour cannot be set from CSS in any
+            browser worth relying on — it came out dark green on the reporter's
+            machine and blue on the next row. This is the only way to have the
+            selected row match the rest of the brand.
+
+            Built to the listbox role properly rather than as styled divs:
+            aria-expanded, aria-selected, arrow keys, Home/End, Enter, Escape,
+            and focus returning to the trigger on close. A custom dropdown that
+            skips those is a downgrade from the native control it replaced.
+          -->
+          <div class="field">
+            <span id="fuel-label">{{ 'Fuel' | t }}</span>
+            <div class="listbox-wrap">
+              <button type="button" class="listbox-trigger"
+                      [class.open]="fuelOpen()"
+                      (click)="toggleFuel()" (keydown)="onFuelTriggerKey($event)"
+                      aria-haspopup="listbox" [attr.aria-expanded]="fuelOpen()"
+                      aria-labelledby="fuel-label">
+                <span [class.placeholder]="!form.fuel_type">
+                  {{ (form.fuel_type || 'Select') | t }}
+                </span>
+                <app-icon name="chevron-down" [size]="14"></app-icon>
+              </button>
+
+              <ul class="listbox" role="listbox" *ngIf="fuelOpen()"
+                  aria-labelledby="fuel-label">
+                <li role="option" class="listbox-option"
+                    [class.selected]="!form.fuel_type"
+                    [attr.aria-selected]="!form.fuel_type"
+                    (click)="chooseFuel(null)">{{ 'Select' | t }}</li>
+                <li role="option" class="listbox-option" *ngFor="let f of fuels"
+                    [class.selected]="form.fuel_type === f"
+                    [attr.aria-selected]="form.fuel_type === f"
+                    (click)="chooseFuel(f)">{{ f | t }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <label class="field">
+            <span>{{ 'City' | t }}</span>
+            <input type="text" [(ngModel)]="form.city" name="city"
+                   [placeholder]="'Where the car is registered' | t">
+          </label>
+
+          <label class="field">
+            <span>{{ 'Registration number' | t }}</span>
+            <input type="text" [(ngModel)]="form.registration_no" name="reg"
+                   [placeholder]="'Optional' | t" autocomplete="off">
+          </label>
+
+          <label class="field">
+            <span>{{ 'Current policy expires' | t }}</span>
+            <input type="date" [(ngModel)]="form.existing_policy_expiry" name="expiry">
+          </label>
+
+          <label class="field">
+            <span>{{ 'Current insurer' | t }}</span>
+            <input type="text" [(ngModel)]="form.existing_insurer" name="insurer"
+                   [placeholder]="'Optional' | t">
+          </label>
+
+          <label class="field">
+            <span>{{ 'Your name' | t }}</span>
+            <input type="text" [(ngModel)]="form.name" name="name"
+                   [placeholder]="'Optional' | t" autocomplete="name">
+          </label>
+
+          <!-- The placeholder shows the plain ten-digit form, because that is
+               what people type and what the field now accepts. Showing
+               "+919876543210" implied a prefix was required and it was. -->
+          <label class="field">
+            <span>{{ 'Mobile' | t }} *</span>
+            <input type="tel" [(ngModel)]="form.phone" name="phone"
+                   placeholder="98765 43210" autocomplete="tel" inputmode="tel">
+          </label>
+        </div>
+
+        <!--
+          Consent is a checkbox with the actual sentence next to it, unticked.
+          A pre-ticked box is not consent, and a link to a policy elsewhere is
+          not the sentence being agreed to.
+        -->
+        <label class="consent">
+          <input type="checkbox" [(ngModel)]="form.consent" name="consent">
+          <span>
+            {{ 'I agree that GAADIIQ may contact me about insurance for this vehicle, and may share these details with a regulated insurance partner once one is available.' | t }}
+          </span>
+        </label>
+
+        <p class="err" *ngIf="error()">{{ error() }}</p>
+
+        <div class="submit-row">
+          <button type="button" class="btn-submit"
+                  [disabled]="!canSubmit() || submitting()" (click)="submit()">
+            {{ (submitting() ? 'Sending…' : 'Tell me when it is available') | t }}
+          </button>
+
+          <!-- Says why the button is disabled. A greyed-out control with no
+               explanation reads as a broken page rather than as a form that
+               is not finished, which is exactly how this was first reported. -->
+          <p class="blocking" *ngIf="blockingReason() as reason">{{ reason | t }}</p>
+        </div>
+      </ng-container>
+
+      <ng-template #done>
+        <div class="done-state">
+          <app-icon name="check-circle" [size]="30"></app-icon>
+          <h2>{{ 'Noted — thank you' | t }}</h2>
+          <p>{{ 'We have your details and will contact you when insurance goes live on GAADIIQ.' | t }}</p>
+        </div>
+      </ng-template>
+
+    </div>
+  </section>
+</div>

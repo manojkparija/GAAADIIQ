@@ -55,10 +55,10 @@
   }
 }
 
-/* Blue→teal in stops dark enough to carry white text. See the note above. */
-:host {
-  --gradient-ai: linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
-}
+/* --gradient-ai is defined in styles.scss, not here. As a :host variable it
+   existed only inside this component, so the insurance page's fuel listbox
+   reached for it and got nothing. Two definitions of one brand gradient
+   drift; there is now one. */
 
 .nav-top { padding: 0.55rem 0; transition: padding .25s ease; }
 .navbar.scrolled .nav-top { padding: 0.3rem 0; }

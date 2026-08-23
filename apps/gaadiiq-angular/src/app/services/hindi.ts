@@ -29,6 +29,7 @@ export const HINDI: Record<string, string> = {
   'Compare': 'तुलना',
   'Compare Cars': 'कारों की तुलना',
   'EMI': 'EMI',
+  'EMI & Loan': 'EMI और लोन',
   'EMI Calculator': 'EMI कैलकुलेटर',
   'Car Loan': 'कार लोन',
   'TCO': 'खर्च',
@@ -1715,4 +1716,169 @@ export const HINDI: Record<string, string> = {
     'कब (जैसे मई 2026)',
   '+ Add':
     '+ जोड़ें',
+
+  // ── Insurance (BRD §6). Terms of art stay in the form Indian buyers meet
+  //    them in: IDV and NCB are used untranslated on every policy document
+  //    and in every agent conversation, so translating them into a coined
+  //    Hindi phrase would make the page harder to read, not easier. The
+  //    explanation around them is what needs to be in Hindi.
+  'Car Insurance':
+    'कार बीमा',
+  'Renew Insurance':
+    'बीमा रिन्यू करें',
+  'What is IDV?':
+    'IDV क्या है?',
+  'Add-ons Explained':
+    'ऐड-ऑन की जानकारी',
+  'Understand your cover before you buy it':
+    'खरीदने से पहले अपना कवर समझें',
+  'What IDV, NCB and each add-on actually mean for what you pay and what you get back.':
+    'IDV, NCB और हर ऐड-ऑन का आपके भुगतान और आपको मिलने वाली रकम पर क्या असर पड़ता है।',
+  'Tell us when your policy expires':
+    'बताइए आपकी पॉलिसी कब खत्म हो रही है',
+  'GAADIIQ does not sell, price or issue insurance. When cover becomes available here it will be provided by a regulated insurance partner, and named as theirs.':
+    'GAADIIQ बीमा न तो बेचता है, न उसकी कीमत तय करता है, न जारी करता है। जब यहाँ कवर उपलब्ध होगा, वह किसी नियामक-अनुमोदित बीमा पार्टनर द्वारा दिया जाएगा और उन्हीं के नाम से दिखाया जाएगा।',
+  'The three kinds of cover':
+    'कवर के तीन प्रकार',
+  'Comprehensive':
+    'कॉम्प्रिहेंसिव',
+  'Covers damage to your own car as well as to others.':
+    'आपकी अपनी कार और दूसरों — दोनों के नुकसान को कवर करता है।',
+  'Pays for repairs to your car after an accident, and for theft, fire and natural disasters — plus everything third-party cover includes. This is what most people mean by "full" insurance.':
+    'दुर्घटना के बाद आपकी कार की मरम्मत, तथा चोरी, आग और प्राकृतिक आपदा का खर्च देता है — साथ ही वह सब जो थर्ड-पार्टी कवर में आता है। ज़्यादातर लोग "फुल" बीमा इसी को कहते हैं।',
+  'Third-Party':
+    'थर्ड-पार्टी',
+  'The legal minimum. Does NOT cover your own car.':
+    'कानूनन न्यूनतम ज़रूरत। आपकी अपनी कार को कवर नहीं करता।',
+  'Required by law to drive on Indian roads. It pays for injury or damage you cause to other people and their property. It pays nothing towards repairing your own car, however the accident happened.':
+    'भारतीय सड़कों पर गाड़ी चलाने के लिए कानूनन ज़रूरी। यह दूसरों को या उनकी संपत्ति को आपसे हुए नुकसान का भुगतान करता है। दुर्घटना चाहे जैसे भी हुई हो, आपकी अपनी कार की मरम्मत के लिए यह कुछ नहीं देता।',
+  'Own Damage':
+    'ओन डैमेज',
+  'Covers your car only. Bought alongside third-party cover.':
+    'सिर्फ़ आपकी कार को कवर करता है। थर्ड-पार्टी कवर के साथ लिया जाता है।',
+  'Covers repairs to your own car, and is bought in addition to a separate third-party policy rather than instead of one. Useful if your third-party cover still has time left on it.':
+    'आपकी अपनी कार की मरम्मत कवर करता है, और अलग थर्ड-पार्टी पॉलिसी के बदले नहीं बल्कि उसके साथ लिया जाता है। अगर आपके थर्ड-पार्टी कवर में अभी समय बचा है तो यह काम आता है।',
+  'The words that decide what you pay':
+    'वे शब्द जो तय करते हैं कि आप कितना देंगे',
+  'Insured Declared Value — the most a claim can pay out.':
+    'Insured Declared Value — क्लेम में मिलने वाली अधिकतम रकम।',
+  'No Claim Bonus — a discount for years without a claim.':
+    'No Claim Bonus — बिना क्लेम वाले सालों पर मिलने वाली छूट।',
+  'Deductible':
+    'डिडक्टिबल',
+  'The part of every claim you pay yourself.':
+    'हर क्लेम का वह हिस्सा जो आप खुद देते हैं।',
+  'Add-ons, and when they are not worth it':
+    'ऐड-ऑन, और कब वे लेने लायक नहीं',
+  'Every add-on raises your premium. These are the ones worth understanding before you are asked to tick them.':
+    'हर ऐड-ऑन आपका प्रीमियम बढ़ाता है। टिक करने से पहले इन्हें समझ लेना ठीक रहेगा।',
+  'Add-on':
+    'ऐड-ऑन',
+  'What it covers':
+    'क्या कवर होता है',
+  'When to skip it':
+    'कब छोड़ देना बेहतर',
+  'We will get in touch when insurance goes live on GAADIIQ. Your policy expiry date is the useful part — it tells us when to contact you rather than how often.':
+    'GAADIIQ पर बीमा शुरू होते ही हम आपसे संपर्क करेंगे। सबसे काम की जानकारी आपकी पॉलिसी की समाप्ति तिथि है — इससे हमें पता चलता है कि आपसे कब संपर्क करना है, न कि कितनी बार।',
+  'Year of manufacture':
+    'निर्माण वर्ष',
+  'Where the car is registered':
+    'कार कहाँ रजिस्टर्ड है',
+  'Registration number':
+    'रजिस्ट्रेशन नंबर',
+  'Current policy expires':
+    'मौजूदा पॉलिसी की समाप्ति',
+  'Current insurer':
+    'मौजूदा बीमा कंपनी',
+  'I agree that GAADIIQ may contact me about insurance for this vehicle, and may share these details with a regulated insurance partner once one is available.':
+    'मैं सहमत हूँ कि GAADIIQ इस वाहन के बीमा के बारे में मुझसे संपर्क कर सकता है, और उपलब्ध होने पर ये विवरण किसी नियामक-अनुमोदित बीमा पार्टनर के साथ साझा कर सकता है।',
+  'Tell me when it is available':
+    'उपलब्ध होने पर मुझे बताएं',
+  'Noted — thank you':
+    'दर्ज कर लिया — धन्यवाद',
+  'We have your details and will contact you when insurance goes live on GAADIIQ.':
+    'आपके विवरण हमारे पास हैं। GAADIIQ पर बीमा शुरू होते ही हम आपसे संपर्क करेंगे।',
+  'We could not record your details just now. Please try again in a moment.':
+    'अभी आपके विवरण दर्ज नहीं हो सके। कृपया थोड़ी देर बाद फिर कोशिश करें।',
+
+  // Explainer bodies and add-on descriptions. These are the strings a person
+  // reading in Hindi most needs — the short labels are guessable from context,
+  // a paragraph explaining what NCB costs you is not.
+  'IDV is the value your insurer puts on your car for the policy year. It is the maximum they will pay if the car is stolen or written off.':
+    'IDV वह मूल्य है जो आपकी बीमा कंपनी उस पॉलिसी वर्ष के लिए आपकी कार का तय करती है। कार चोरी होने या पूरी तरह खराब हो जाने पर वे अधिकतम इतना ही देंगे।',
+  'It is set by the insurer from the manufacturer\'s listed price minus depreciation for the car\'s age — not by you, and not by GAADIIQ.':
+    'यह बीमा कंपनी तय करती है — निर्माता की सूचीबद्ध कीमत में से कार की उम्र के हिसाब से मूल्यह्रास घटाकर। न आप इसे तय करते हैं, न GAADIIQ।',
+  'A lower IDV means a lower premium and a smaller payout. Choosing the lowest IDV on offer to save on the premium is the trade people most often regret making.':
+    'कम IDV का मतलब कम प्रीमियम और कम भुगतान। प्रीमियम बचाने के लिए सबसे कम IDV चुन लेना वह सौदा है जिसका पछतावा लोगों को सबसे ज़्यादा होता है।',
+  'Each policy year you do not claim, your renewal discount rises: 20% after the first year, then 25%, 35%, 45% and 50% after five.':
+    'हर पॉलिसी वर्ष जिसमें आप क्लेम नहीं करते, आपकी रिन्यूअल छूट बढ़ती है: पहले साल के बाद 20%, फिर 25%, 35%, 45% और पाँच साल बाद 50%।',
+  'The bonus belongs to you, not to the car. It moves with you when you sell and buy another, provided you transfer it in time.':
+    'यह बोनस आपका है, कार का नहीं। कार बेचकर दूसरी लेने पर यह आपके साथ जाता है, बशर्ते आप इसे समय पर ट्रांसफर करा लें।',
+  'One claim resets it. This is why a small claim can cost more over the following years than paying for the repair yourself.':
+    'एक क्लेम इसे शून्य कर देता है। इसीलिए छोटा क्लेम आगे के सालों में उस मरम्मत से ज़्यादा महँगा पड़ सकता है जो आप खुद करा लेते।',
+  'Also called the excess. A compulsory deductible is fixed by regulation and depends on engine size; you can agree to a higher voluntary one in exchange for a lower premium.':
+    'इसे एक्सेस भी कहते हैं। अनिवार्य डिडक्टिबल नियमों से तय होता है और इंजन के आकार पर निर्भर करता है; कम प्रीमियम के बदले आप इससे ज़्यादा स्वैच्छिक राशि पर सहमत हो सकते हैं।',
+  'It applies to each claim, not each year.':
+    'यह हर क्लेम पर लगता है, हर साल पर नहीं।',
+  'Zero Depreciation':
+    'ज़ीरो डेप्रिसिएशन',
+  'Pays the full cost of replaced parts, without deducting for age.':
+    'बदले गए पुर्ज़ों की पूरी कीमत देता है, उम्र के हिसाब से कटौती किए बिना।',
+  'Rarely offered, and rarely worth it, on cars older than about five years.':
+    'लगभग पाँच साल से पुरानी कारों पर यह कम ही मिलता है, और कम ही फ़ायदेमंद होता है।',
+  'Engine Protection':
+    'इंजन प्रोटेक्शन',
+  'Covers engine damage from water ingress or oil leakage.':
+    'पानी भरने या तेल रिसाव से हुए इंजन के नुकसान को कवर करता है।',
+  'Least useful if you never park or drive where water collects.':
+    'अगर आप कभी वहाँ पार्क या ड्राइव नहीं करते जहाँ पानी भरता है, तो इसकी सबसे कम ज़रूरत है।',
+  'Towing, jump-starts, flat tyres and lockouts.':
+    'टोइंग, जंप-स्टार्ट, पंचर और चाबी अंदर रह जाने पर मदद।',
+  'Often already included with a new car\'s warranty package.':
+    'नई कार के वारंटी पैकेज में यह अक्सर पहले से शामिल होता है।',
+  'Return to Invoice':
+    'रिटर्न टू इनवॉइस',
+  'Pays the original invoice price if the car is stolen or written off, not the depreciated IDV.':
+    'कार चोरी होने या पूरी तरह खराब होने पर घटी हुई IDV नहीं, बल्कि मूल इनवॉइस कीमत देता है।',
+  'Only meaningful in the first few years, while invoice and IDV still differ a lot.':
+    'सिर्फ़ शुरुआती कुछ सालों में मायने रखता है, जब तक इनवॉइस और IDV में बड़ा अंतर है।',
+  'Consumables Cover':
+    'कंज़्यूमेबल्स कवर',
+  'Pays for oils, coolant, nuts and bolts, which a standard claim excludes.':
+    'तेल, कूलेंट, नट-बोल्ट का खर्च देता है, जिन्हें सामान्य क्लेम में शामिल नहीं किया जाता।',
+  'A small sum on most claims; worth it mainly on expensive cars.':
+    'ज़्यादातर क्लेम में यह छोटी रकम होती है; मुख्य रूप से महँगी कारों पर फ़ायदेमंद।',
+
+  // Fuel values are rendered lowercase from the option list.
+  'petrol':
+    'पेट्रोल',
+  'diesel':
+    'डीज़ल',
+  'electric':
+    'इलेक्ट्रिक',
+  'cng':
+    'CNG',
+  'hybrid':
+    'हाइब्रिड',
+
+  'Mobile':
+    'मोबाइल',
+  'Optional':
+    'वैकल्पिक',
+  'e.g. Maruti Suzuki':
+    'जैसे मारुति सुज़ुकी',
+  'e.g. Swift':
+    'जैसे स्विफ़्ट',
+  'e.g. 2021':
+    'जैसे 2021',
+  'Please enter the make and model of your car.':
+    'कृपया अपनी कार का मेक और मॉडल भरें।',
+  'Please enter your mobile number.':
+    'कृपया अपना मोबाइल नंबर भरें।',
+  'That does not look like an Indian mobile number. Ten digits starting 6, 7, 8 or 9.':
+    'यह भारतीय मोबाइल नंबर नहीं लग रहा। 6, 7, 8 या 9 से शुरू होने वाले दस अंक।',
+  'Please tick the box above so we know we may contact you.':
+    'कृपया ऊपर का बॉक्स टिक करें ताकि हमें पता चले कि हम आपसे संपर्क कर सकते हैं।',
+  'Sending…':
+    'भेजा जा रहा है…',
 };

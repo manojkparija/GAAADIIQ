@@ -62,6 +62,8 @@
   // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
   --nav-bg:         #FFFFFF;
   --nav-panel:      #FFFFFF;
+  // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
+  --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #FFFFFF;
   --card-bg:        #FFFFFF;
   --glass:          rgba(255,255,255,0.85);
@@ -137,6 +139,8 @@
     // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
     --nav-bg:         #0B1220;
     --nav-panel:      #131C2F;
+    // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
+    --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
     --dark:           #111827;
     --card-bg:        rgba(255,255,255,0.04);
     --glass:          rgba(255,255,255,0.06);
@@ -186,6 +190,8 @@
   // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
   --nav-bg:         #0B1220;
   --nav-panel:      #131C2F;
+  // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
+  --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #111827;
   --card-bg:        rgba(255,255,255,0.04);
   --glass:          rgba(255,255,255,0.06);
@@ -231,6 +237,8 @@
   // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
   --nav-bg:         #FFFFFF;
   --nav-panel:      #FFFFFF;
+  // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
+  --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #FFFFFF;
   --card-bg:        #FFFFFF;
   --glass:          rgba(255,255,255,0.85);
