@@ -61,47 +61,50 @@ const SEARCH_MIN_CHARS = 4;
  */
 export const ARTICLES: Article[] = [];
 
-const TABS = ['All', 'News', 'Expert Review', 'User Review', 'Special Report'] as const;
+// Expert Review and Special Report are gone. Both were feeds of other
+// publications' road tests: a strictly worse Google News, and worse than
+// nothing for the business — a buyer researching a car on GAADIIQ clicked
+// through to Autocar, who then sold them a different car. That is the site's
+// highest-intent traffic being handed to a competitor at the deciding moment.
+//
+// News stays because a wire feed is a normal utility nobody mistakes for our
+// own reporting. User Review stays because it is the one section GAADIIQ can
+// actually own: reviews written by the people who bought the cars listed here.
+const TABS = ['All', 'News', 'User Review'] as const;
 type Tab = typeof TABS[number];
 
 const CATEGORY_SLUGS: Record<string, Tab> = {
   'news': 'News',
-  'expert-reviews': 'Expert Review',
   'user-reviews': 'User Review',
-  'special-reports': 'Special Report',
 };
 
 /**
- * The four sections, each with the search that fills it.
+ * The two sections that remain.
  *
- * `query` goes to our own /news endpoint, which asks Google News and caches the
- * answer. Every category is a live feed now rather than a fixed list, so a
- * section is as current as the publishers are — and nothing in it was written
- * here.
+ * `live: true` means the section is filled from our /news endpoint, which asks
+ * Google News and caches the answer. `live: false` means it holds GAADIIQ's own
+ * content and must never be backfilled from a feed to look busier.
  *
- * There is no `count`: the number of stories is whatever the feed returned this
- * minute, so a number baked in at build time would be decoration.
+ * There is no `count`: for a live section the number is whatever the feed
+ * returned this minute, so a number baked in at build time would be decoration.
  */
 export const CATEGORY_META = [
   {
     slug: 'news', label: 'News', icon: 'newspaper', color: 'blue',
-    desc: 'Breaking news, launches & industry updates',
+    desc: 'Launches, prices and industry updates from the Indian motoring press',
     query: '',   // blank = the endpoint's default India car/EV feed
+    live: true,
   },
   {
-    slug: 'expert-reviews', label: 'Expert Reviews', icon: 'gauge', color: 'purple',
-    desc: 'Road tests and first drives, from the publications that ran them',
-    query: 'car review road test first drive India',
-  },
-  {
-    slug: 'user-reviews', label: 'User Reviews', icon: 'user', color: 'green',
-    desc: 'Ownership reports and long-term experiences',
-    query: 'car ownership review long term India owner',
-  },
-  {
-    slug: 'special-reports', label: 'Special Reports', icon: 'bar-chart', color: 'gold',
-    desc: 'Sales data, cost analysis and buying guides',
-    query: 'car sales report buying guide cost analysis India',
+    slug: 'user-reviews', label: 'Owner Reviews', icon: 'user', color: 'green',
+    desc: 'Real ownership experiences from GAADIIQ owners',
+    // No query. This section is NOT a feed and must never become one — the
+    // whole point is that it holds reviews written by people who bought the
+    // car, which is the one thing an aggregator cannot reproduce. Until the
+    // submission flow exists it shows an honest empty state, not other
+    // publications' ownership columns dressed up as ours.
+    query: '',
+    live: false,
   },
 ];
 
@@ -127,10 +130,12 @@ export class ReviewsNewsComponent implements OnDestroy {
    * The feed query behind the category currently open.
    *
    * Kept so that clearing the search box returns to the category's own feed
-   * rather than the site-wide default — clearing a search on Expert Reviews
-   * should not silently leave you looking at general news.
+   * rather than the site-wide default.
    */
   categoryQuery = signal('');
+
+  /** True when the open section is filled from the news feed. */
+  isLiveSection = signal(false);
 
   /** The slug of the open category, so live cards link back into it. */
   categorySlug = signal('news');
@@ -142,9 +147,7 @@ export class ReviewsNewsComponent implements OnDestroy {
 
   readonly slugMap: Record<string, string> = {
     'News': 'news',
-    'Expert Review': 'expert-reviews',
     'User Review': 'user-reviews',
-    'Special Report': 'special-reports',
   };
 
   // Live news, fetched through our own API (see services/news.service.ts).
@@ -266,7 +269,12 @@ export class ReviewsNewsComponent implements OnDestroy {
         this.categorySlug.set(slug);
         const meta = CATEGORY_META.find(c => c.slug === slug);
         this.categoryQuery.set(meta?.query ?? '');
-        this.news.fetchNews(this.categoryQuery());
+        this.isLiveSection.set(!!meta?.live);
+        // Only a live section fetches. Owner Reviews holds our own content, so
+        // asking the feed for it would be the exact substitution this section
+        // exists to avoid.
+        if (meta?.live) this.news.fetchNews(this.categoryQuery());
+        else this.news.articles.set([]);
         seo.setPage(CATEGORY_SLUGS[slug], `${CATEGORY_SLUGS[slug]} articles on GAADIIQ`);
       } else {
         this.isHub.set(true);

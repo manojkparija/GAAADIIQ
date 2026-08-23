@@ -4,7 +4,7 @@
     <div class="container">
       <div class="hero-badge"><app-icon name="newspaper" [size]="16"></app-icon> {{ 'GAADIIQ Media' | t }}</div>
       <h1 class="hero-title">{{ 'Reviews &' | t }} <span class="gradient-text">{{ 'News' | t }}</span></h1>
-      <p class="hero-sub">{{ 'Expert reviews, real owner stories, breaking news and in-depth special reports on the Indian automotive world.' | t }}</p>
+      <p class="hero-sub">{{ 'Car news from the Indian motoring press, and ownership reviews from the people who bought the cars.' | t }}</p>
     </div>
   </section>
 
@@ -23,7 +23,9 @@
       <a class="cat-card glass-card" *ngFor="let c of categoryMeta" [routerLink]="['/reviews-news', c.slug]">
         <div class="cat-icon"><app-icon [name]="c.icon" [size]="30"></app-icon></div>
         <div class="cat-body">
-          <div class="cat-count-badge" [ngClass]="'cat-badge-' + c.color">{{ 'Updated daily' | t }}</div>
+          <div class="cat-count-badge" [ngClass]="'cat-badge-' + c.color">
+            {{ (c.live ? 'Updated daily' : 'Written by owners') | t }}
+          </div>
           <h2 class="cat-title">{{ c.label }}</h2>
           <p class="cat-desc">{{ c.desc }}</p>
         </div>
@@ -47,10 +49,7 @@
   </section>
 
   <!-- The hub's "Featured Stories" strip is gone with the hand-written
-       articles it rendered. It showed five invented headlines under invented
-       bylines; there is nothing honest to put in its place until GAADIIQ has
-       editorial output of its own, and the four live sections above are the
-       real content. -->
+       articles it rendered — five invented headlines under invented bylines. -->
 </ng-container>
 
 <!-- ── CATEGORY PAGE (/reviews-news/:category) ─────────────────────────── -->
@@ -60,16 +59,16 @@
       <a routerLink="/reviews-news" class="back-link">{{ '← Reviews & News' | t }}</a>
       <h1 class="hero-title"><span class="gradient-text">{{ activeTab() }}</span></h1>
       <p class="hero-sub">{{ categoryDesc() | t }}</p>
-      <!-- Who assembled this, and who wrote the stories, are different things
-           and the page says both. GAADIIQ selects and publishes the feed; each
-           story stays credited to the publication that reported it, and the
-           card links there. -->
-      <p class="hero-byline">
+      <!-- Only on a collected section. Who assembled the feed and who wrote
+           the stories are different things and the page says both. On Owner
+           Reviews it would be untrue in the other direction: those are written
+           by the owner, not collected by us. -->
+      <p class="hero-byline" *ngIf="isLiveSection()">
         <app-icon name="newspaper" [size]="14"></app-icon>
         {{ 'Collected and published by the GAADIIQ Team — each story credited to its publisher.' | t }}
       </p>
 
-      <div class="search-bar">
+      <div class="search-bar" *ngIf="isLiveSection()">
         <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
         <input type="text"
                [placeholder]="isNewsPage() ? 'Search the latest car news…' : 'Search articles…'"
@@ -83,7 +82,7 @@
   <section class="articles-section container">
 
     <!-- ── LIVE NEWS (News category only) ──────────────────────────────────── -->
-    <ng-container *ngIf="isNewsPage()">
+    <ng-container *ngIf="isLiveSection()">
 
       <!-- Loading skeleton -->
       <div class="live-grid" *ngIf="liveLoading()">
@@ -111,12 +110,14 @@
           </div>
           <div class="lc-body">
             <div class="lc-meta">
-              <!-- The publisher, not a fixed label. Titles have their
-                   " - Publisher" suffix stripped, so this is the only thing
-                   telling a reader who reported it — and on an aggregated feed
-                   that is what decides whether a headline is worth trusting. -->
-              <span class="tag tag-blue">{{ a.source.name || 'India Auto News' }}</span>
+              <!-- The publisher stays — the headline is theirs and dropping the
+                   credit while keeping the words is passing off. But it is set
+                   as quiet grey text rather than a bright branded pill: the
+                   credit has to be clear, not prominent, and a blue badge
+                   reading AUTOCAR INDIA on every card turned our own News page
+                   into an advertisement for a competitor. -->
               <span class="lc-date">{{ news.formatDate(a.publishedAt) }}</span>
+              <span class="lc-via" *ngIf="a.source.name">via {{ a.source.name }}</span>
             </div>
             <h3 class="lc-title">{{ a.title }}</h3>
             <p class="lc-desc">{{ a.description }}</p>
@@ -137,8 +138,17 @@
       </div>
     </ng-container>
 
-    <!-- The "Curated Articles" grid that sat here rendered ARTICLES, which was
-         sixteen invented entries. It is empty now and the section is gone with
-         it rather than left to render a permanent "no articles found". -->
+    <!-- ── OWNER REVIEWS ──────────────────────────────────────────────────── -->
+    <!-- Not a feed, and deliberately empty rather than backfilled. Other
+         publications' ownership columns shown here would be the same
+         substitution the rest of this page just removed. -->
+    <div class="own-empty" *ngIf="!isLiveSection()">
+      <div class="nr-icon"><app-icon name="user" [size]="34"></app-icon></div>
+      <h2>{{ 'No owner reviews yet' | t }}</h2>
+      <p>
+        {{ 'This section carries reviews written by people who actually bought and drove the car — not reprints from elsewhere. It fills up as GAADIIQ owners write them.' | t }}
+      </p>
+      <a routerLink="/listings" class="btn-gradient">{{ 'Pick a car to review →' | t }}</a>
+    </div>
   </section>
 </ng-container>
