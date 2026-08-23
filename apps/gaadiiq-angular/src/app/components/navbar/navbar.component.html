@@ -406,7 +406,10 @@
         </button>
 
         <div class="nav-mega nav-mega-sm nav-mega-right" *ngIf="moreOpen()" role="menu">
-          <a routerLink="/track-challan" class="nav-mega-item" role="menuitem">
+          <a routerLink="/video-review" class="nav-mega-item" role="menuitem">
+          <app-icon name="video" [size]="15"></app-icon> {{ 'Post a Video Review' | t }}
+        </a>
+        <a routerLink="/track-challan" class="nav-mega-item" role="menuitem">
             <app-icon name="shield" [size]="15"></app-icon> {{ 'Track Challan' | t }}
           </a>
         </div>

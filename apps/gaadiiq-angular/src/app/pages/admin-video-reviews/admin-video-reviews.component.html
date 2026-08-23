@@ -1,0 +1,97 @@
+<div class="avr-page container">
+  <!-- padding-top clears the fixed navbar (LAY-007). Both admin screens were
+       missing this once and rendered their titles under the nav, unnoticed
+       because they sit behind adminGuard and nobody had opened them. -->
+  <header class="avr-head">
+    <h1>{{ 'Video review queue' | t }}</h1>
+    <p class="sub">
+      {{ 'Owner-submitted videos. Nothing appears on the site until it is approved here.' | t }}
+    </p>
+  </header>
+
+  <div class="avr-tabs">
+    <button *ngFor="let t of tabs" type="button"
+            class="avr-tab" [class.active]="filter() === t.key"
+            (click)="select(t.key)">
+      {{ t.label | t }}
+      <span class="avr-count" *ngIf="count(t.key)">{{ count(t.key) }}</span>
+    </button>
+  </div>
+
+  <p class="err" *ngIf="error()">{{ error() }}</p>
+
+  <p class="avr-loading" *ngIf="loading()">{{ 'Loading…' | t }}</p>
+
+  <p class="avr-empty" *ngIf="!loading() && !rows().length">
+    <ng-container *ngIf="filter() === 'pending'">{{ 'Nothing waiting. The queue is clear.' | t }}</ng-container>
+    <ng-container *ngIf="filter() !== 'pending'">{{ 'Nothing here yet.' | t }}</ng-container>
+  </p>
+
+  <div class="avr-list" *ngIf="!loading()">
+    <article class="avr-card" *ngFor="let r of rows()">
+
+      <!-- The clip itself, not a thumbnail. A row of Approve buttons beside
+           unplayed previews is a queue that gets cleared rather than reviewed. -->
+      <div class="avr-video">
+        <video *ngIf="r.video_url" [src]="r.video_url" controls preload="metadata"></video>
+        <div class="avr-novideo" *ngIf="!r.video_url">
+          <app-icon name="alert-triangle" [size]="20"></app-icon>
+          {{ 'The file could not be loaded — storage may not be configured.' | t }}
+        </div>
+      </div>
+
+      <div class="avr-body">
+        <div class="avr-meta">
+          <span class="avr-car">{{ r.car_label || 'Unnamed car' }}</span>
+          <span class="avr-stars">{{ stars(r.rating).join('') }}</span>
+        </div>
+
+        <h2 class="avr-title" *ngIf="r.title">{{ r.title }}</h2>
+        <p class="avr-text" *ngIf="r.body">{{ r.body }}</p>
+
+        <p class="avr-by">
+          {{ r.author_name || 'Unknown author' }}
+          <span *ngIf="r.created_at"> · {{ r.created_at | date:'d MMM y' }}</span>
+        </p>
+
+        <!-- On a settled row, what was decided and why. -->
+        <p class="avr-note" *ngIf="r.review_note">
+          <strong>{{ 'Note:' | t }}</strong> {{ r.review_note }}
+        </p>
+
+        <!-- Rejection reason entry -->
+        <div class="avr-reject" *ngIf="rejecting() === r.id">
+          <label>
+            <span>{{ 'Why? The author is shown this.' | t }}</span>
+            <textarea [(ngModel)]="reason" name="reason" rows="2"
+                      [placeholder]="'e.g. The number plate is readable — please blur it and resubmit' | t"></textarea>
+          </label>
+          <div class="avr-actions">
+            <button type="button" class="btn-danger"
+                    [disabled]="!canReject() || busy() === r.id"
+                    (click)="confirmReject(r)">{{ 'Confirm rejection' | t }}</button>
+            <button type="button" class="btn-outline" (click)="cancelReject()">{{ 'Cancel' | t }}</button>
+          </div>
+        </div>
+
+        <div class="avr-actions" *ngIf="rejecting() !== r.id">
+          <button type="button" class="btn-gradient"
+                  *ngIf="r.status !== 'approved'"
+                  [disabled]="busy() === r.id"
+                  (click)="approve(r)">{{ 'Approve' | t }}</button>
+
+          <button type="button" class="btn-outline"
+                  *ngIf="r.status !== 'rejected'"
+                  [disabled]="busy() === r.id"
+                  (click)="startReject(r)">{{ 'Reject' | t }}</button>
+
+          <!-- Offered on published reviews too: taking one down after the fact
+               is the case that actually matters. -->
+          <button type="button" class="btn-danger-outline"
+                  [disabled]="busy() === r.id"
+                  (click)="remove(r)">{{ 'Delete' | t }}</button>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
