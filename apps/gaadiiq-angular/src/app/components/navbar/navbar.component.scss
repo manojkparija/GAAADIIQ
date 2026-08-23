@@ -372,7 +372,12 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  flex: 1;
+  // `0 1 auto`, not `1`. Growing the scroller pushed More to the far right of
+  // the bar, a screen away from the four tabs it belongs with — it read as an
+  // unrelated control and the first question was "where is More?".
+  // Shrink-only keeps it immediately after Find Mechanic at every width, and
+  // still lets the tabs scroll when the row runs out of room.
+  flex: 0 1 auto;
   min-width: 0;
   // Horizontal scroll rather than wrap: a wrapping row changes the bar's
   // height per page, and every page offsets its content by --nav-offset.
