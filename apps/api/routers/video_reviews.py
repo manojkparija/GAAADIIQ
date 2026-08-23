@@ -4,7 +4,8 @@ Owner video reviews.
     POST   /video-reviews              signed in — submit a video review
     GET    /video-reviews/mine         signed in — your own, any status
     GET    /video-reviews/car/{car_id} public    — approved only
-    GET    /video-reviews/pending      admin     — the moderation queue
+    GET    /video-reviews/queue        admin     — the moderation queue
+    GET    /video-reviews/queue/counts admin     — how many in each state
     POST   /video-reviews/{id}/approve admin
     POST   /video-reviews/{id}/reject  admin     — reason required
     DELETE /video-reviews/{id}         author or admin
@@ -46,8 +47,10 @@ from fastapi import (
     status,
 )
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.dependencies import get_admin_user, get_current_user
 from core.limiter import limiter
@@ -100,6 +103,15 @@ def _out(review: VideoReview, *, include_video: bool) -> VideoReviewOut:
     guess which file was refused. A public reader gets a URL only for approved
     reviews, and that is enforced by the query, not by this flag.
     """
+    # NEVER touch review.author unconditionally. It is a lazy relationship, so
+    # reading it on an object that was not loaded with it triggers synchronous
+    # IO inside the async request and raises MissingGreenlet — a 500 on every
+    # list endpoint. That shipped past a set of tests which only read the
+    # source of these handlers; it took driving the real endpoint to see it.
+    author_name = None
+    if "author" not in sa_inspect(review).unloaded:
+        author_name = getattr(review.author, "full_name", None) if review.author else None
+
     return VideoReviewOut(
         id=review.id,
         car_id=review.car_id,
@@ -108,7 +120,7 @@ def _out(review: VideoReview, *, include_video: bool) -> VideoReviewOut:
         title=review.title,
         body=review.body,
         status=review.status.value,
-        author_name=getattr(review.author, "full_name", None) if review.author else None,
+        author_name=author_name,
         created_at=review.created_at,
         video_url=storage.signed_url(review.video_key) if include_video else None,
         review_note=review.review_note,
@@ -186,6 +198,7 @@ async def my_video_reviews(db: DbDep, current_user: CurrentUser):
     rows = (
         await db.execute(
             select(VideoReview)
+            .options(selectinload(VideoReview.author))
             .where(VideoReview.author_id == current_user.id)
             .order_by(VideoReview.created_at.desc())
         )
@@ -205,6 +218,7 @@ async def approved_reviews_for_car(request: Request, car_id: uuid.UUID, db: DbDe
     rows = (
         await db.execute(
             select(VideoReview)
+            .options(selectinload(VideoReview.author))
             .where(
                 VideoReview.car_id == car_id,
                 VideoReview.status == VideoReviewStatus.approved,
@@ -216,18 +230,67 @@ async def approved_reviews_for_car(request: Request, car_id: uuid.UUID, db: DbDe
     return [_out(r, include_video=True) for r in rows]
 
 
-@router.get("/pending", response_model=list[VideoReviewOut])
-async def pending_queue(db: DbDep, admin: AdminUser):
-    """The moderation queue, oldest first — the order they should be dealt with."""
+@router.get("/queue", response_model=list[VideoReviewOut])
+async def moderation_queue(
+    db: DbDep,
+    admin: AdminUser,
+    status_filter: str = "pending",
+):
+    """
+    The moderation queue.
+
+    Not pending-only. A decision has to be revisitable: an approved video that
+    turns out to be a problem needs taking down, and a rejection an author
+    disputes needs looking at again. A screen that can only ever see the
+    untouched pile makes both of those a database job.
+
+    Pending comes oldest-first — that is the order it should be worked. The
+    settled lists come newest-first, because there the question is "what was
+    decided recently".
+    """
+    try:
+        wanted = VideoReviewStatus(status_filter)
+    except ValueError:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"Unknown status '{status_filter}'.",
+        ) from None
+
+    order = (
+        VideoReview.created_at.asc()
+        if wanted == VideoReviewStatus.pending
+        else VideoReview.created_at.desc()
+    )
     rows = (
         await db.execute(
             select(VideoReview)
-            .where(VideoReview.status == VideoReviewStatus.pending)
-            .order_by(VideoReview.created_at.asc())
+            .options(selectinload(VideoReview.author))
+            .where(VideoReview.status == wanted)
+            .order_by(order)
             .limit(200)
         )
     ).scalars().all()
     return [_out(r, include_video=True) for r in rows]
+
+
+@router.get("/queue/counts", response_model=dict)
+async def queue_counts(db: DbDep, admin: AdminUser):
+    """
+    How many sit in each state.
+
+    The pending figure is the one that matters — it is the only way an admin
+    who is not already on this screen learns there is something waiting.
+    """
+    rows = (
+        await db.execute(
+            select(VideoReview.status, func.count()).group_by(VideoReview.status)
+        )
+    ).all()
+    counts = {s.value: 0 for s in VideoReviewStatus}
+    for value, total in rows:
+        # SQLite hands back the raw string, Postgres the enum.
+        counts[value.value if hasattr(value, "value") else str(value)] = total
+    return counts
 
 
 class ModerationBody(BaseModel):

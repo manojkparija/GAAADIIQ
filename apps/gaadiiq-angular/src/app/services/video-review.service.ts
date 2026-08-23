@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -95,8 +95,23 @@ export class VideoReviewService {
 
   // ── Moderation (admin) ─────────────────────────────────────────────────────
 
-  pending(): Promise<VideoReview[]> {
-    return firstValueFrom(this.http.get<VideoReview[]>(`${this.base}/pending`));
+  /**
+   * The moderation queue for one status.
+   *
+   * Not pending-only. A decision has to be revisitable: an approved video that
+   * turns out to be a problem needs taking down, and a rejection the author
+   * disputes needs looking at again.
+   */
+  queue(status: VideoReviewStatus = 'pending'): Promise<VideoReview[]> {
+    const params = new HttpParams().set('status_filter', status);
+    return firstValueFrom(this.http.get<VideoReview[]>(`${this.base}/queue`, { params }));
+  }
+
+  /** How many sit in each state — the pending figure is the one that matters. */
+  counts(): Promise<Record<VideoReviewStatus, number>> {
+    return firstValueFrom(
+      this.http.get<Record<VideoReviewStatus, number>>(`${this.base}/queue/counts`),
+    );
   }
 
   approve(id: string, note = ''): Promise<VideoReview> {
