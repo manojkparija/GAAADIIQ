@@ -58,8 +58,13 @@
   overflow: hidden;
 
   .cover-emoji {
-    font-size: 6rem;
+    // No font-size: this holds an <app-icon>, which is sized by its [size]
+    // input. The 6rem here was for the emoji this used to render.
+    display: flex;
+    align-items: center;
+    justify-content: center;
     z-index: 1;
+    color: var(--primary);
     filter: drop-shadow(0 4px 20px rgba(47,107,255,0.3));
   }
 

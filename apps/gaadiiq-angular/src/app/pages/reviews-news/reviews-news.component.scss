@@ -40,6 +40,20 @@
     margin: 0 auto 2rem;
     line-height: 1.7;
   }
+
+  /* 0.88, not the 0.75 above: this is smaller text, and the contrast suite
+     measures the composited colour on the hero rather than the token. */
+  .hero-byline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: -1.25rem auto 1.75rem;
+    color: rgba(255,255,255,0.88);
+    font-size: 0.85rem;
+    line-height: 1.5;
+
+    app-icon { flex-shrink: 0; }
+  }
 }
 
 .search-bar {

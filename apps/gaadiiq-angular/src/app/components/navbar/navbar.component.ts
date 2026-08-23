@@ -20,6 +20,9 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 })
 export class NavbarComponent {
   private static readonly DARK_HERO_ROUTES = ['/new-cars', '/used-cars'];
+
+  /** Routes reachable from the More menu. Keep in step with the panel's links. */
+  private static readonly MORE_ROUTES = ['/track-challan'];
   private _scrolled = signal(false);
   private _darkHero = signal(false);
   scrolled = computed(() => this._scrolled() || this._darkHero());
@@ -141,6 +144,10 @@ export class NavbarComponent {
   // ── More (AI row) ────────────────────────────────────────────────────────
   moreOpen = signal(false);
 
+  /** True while the current route is one of the pages listed inside More. */
+  private readonly _moreActive = signal(false);
+  readonly moreActive = this._moreActive.asReadonly();
+
   toggleMore(): void {
     this.closeOthers('more');
     this.moreOpen.update(v => !v);
@@ -213,6 +220,12 @@ export class NavbarComponent {
       }
       if (e instanceof NavigationEnd) {
         this._darkHero.set(NavbarComponent.DARK_HERO_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)));
+        // The four tabs get their highlight from routerLinkActive. More is a
+        // <button>, so it has no route of its own to match — its selected
+        // state is "you are on one of the pages inside it", tracked here.
+        this._moreActive.set(
+          NavbarComponent.MORE_ROUTES.some(r => e.urlAfterRedirects?.startsWith(r)),
+        );
       }
     });
   }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { NewsService, NewsArticle } from '../../services/news.service';
 import { SeoService } from '../../services/seo.service';
+import { CATEGORY_META } from '../reviews-news/reviews-news.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -52,7 +53,14 @@ export class LiveNewsDetailComponent implements OnDestroy {
       }
 
       // A refresh lands here with an empty service, so refetch and look again.
-      this.news.fetchNews();
+      //
+      // It has to be THIS category's query, not the default feed. Each section
+      // now runs its own search, so the index in the URL is an offset into that
+      // section's results — refetching the general news feed and reading index
+      // 3 of it returns a real article that is simply not the one linked to,
+      // which is a worse failure than showing nothing.
+      const meta = CATEGORY_META.find(c => c.slug === params['category']);
+      this.news.fetchNews(meta?.query ?? '');
       clearTimeout(this.retryTimer);
       this.retryTimer = setTimeout(() => {
         const refreshed = this.news.articles()[idx] ?? null;

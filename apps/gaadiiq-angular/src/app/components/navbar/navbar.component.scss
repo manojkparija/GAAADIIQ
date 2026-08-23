@@ -1005,6 +1005,24 @@
 
   .nav-caret { opacity: .65; transition: transform .2s ease; }
   &.open .nav-caret { transform: rotate(180deg); }
+
+  /* Open, or sitting on one of the pages behind it, is the same "this is the
+     selected tab" state the four anchors get from .active — so it takes the
+     same gradient. Without this, opening More left the blue-teal pill on
+     whichever tab you came from, so the bar showed a selection that was no
+     longer where you were.
+
+     `background: none` above wins on specificity over .ai-tab.active, hence
+     re-declaring the fill here rather than relying on the shared rule. */
+  &.open,
+  &.active {
+    background: var(--gradient-ai);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 35%, transparent);
+    app-icon { color: #fff; }
+    .nav-caret { opacity: .9; }
+  }
 }
 
 /* The More panel hangs off the right edge of its trigger rather than the left.
