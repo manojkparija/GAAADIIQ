@@ -222,8 +222,18 @@ for (const path of ['/', '/ai-valuation']) {
     });
     expect(hit.ok, `More panel on ${path} is not hittable: ${hit.why}`).toBe(true);
 
-    // And it goes somewhere.
-    await page.locator('.ai-more .nav-mega-item').first().click();
-    await page.waitForURL('**/track-challan');
+    // And it goes somewhere — specifically, where the item it clicked says.
+    //
+    // This used to click .first() and wait for '**/track-challan', which
+    // encoded the order of the menu rather than the behaviour under test.
+    // Adding "Post a Video Review" above Track Challan turned it red on a
+    // working menu. Reading the destination off the link's own routerLink
+    // asserts the same thing — the item navigates where it points — and
+    // survives the next item anybody adds.
+    const firstItem = page.locator('.ai-more .nav-mega-item').first();
+    const href = await firstItem.getAttribute('href');
+    expect(href, 'the first More item should be a real link').toBeTruthy();
+    await firstItem.click();
+    await page.waitForURL(`**${href}`);
   });
 }
