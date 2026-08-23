@@ -375,16 +375,26 @@
     moves the top of every page with it.
   -->
   <div class="nav-ai">
-    <div class="container nav-ai-inner">
-      <a *ngFor="let t of aiTabs" class="ai-tab" routerLinkActive="active"
-         [routerLink]="t.link" [attr.aria-label]="t.label | t">
-        <app-icon [name]="t.icon" [size]="15"></app-icon>
-        <span>{{ t.label | t }}</span>
-      </a>
+    <!--
+      More sits OUTSIDE .nav-ai-inner, and that is load-bearing rather than
+      cosmetic. .nav-ai-inner scrolls horizontally, and an element with
+      overflow-x: auto clips on BOTH axes — the other axis computes to auto
+      too. A dropdown panel hanging below the row was therefore clipped to the
+      row's height and never appeared, while still being present in the DOM
+      with a real bounding box.
 
-      <!-- More. Styled as an .ai-tab so the row stays one set of controls
-           rather than four tabs and a differently-shaped fifth thing. Its
-           panel reuses .nav-mega-sm, which is what the EMI menu above uses. -->
+      Keeping it out of the scroller also reads better on a narrow screen: the
+      four AI tabs scroll under a More button that stays put.
+    -->
+    <div class="container nav-ai-row">
+      <div class="nav-ai-inner">
+        <a *ngFor="let t of aiTabs" class="ai-tab" routerLinkActive="active"
+           [routerLink]="t.link" [attr.aria-label]="t.label | t">
+          <app-icon [name]="t.icon" [size]="15"></app-icon>
+          <span>{{ t.label | t }}</span>
+        </a>
+      </div>
+
       <div class="nav-dropdown ai-more">
         <button type="button" class="ai-tab ai-tab-more"
                 [class.open]="moreOpen()" (click)="toggleMore()"

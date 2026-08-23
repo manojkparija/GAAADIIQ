@@ -358,14 +358,30 @@
   background: color-mix(in srgb, var(--primary) 3%, transparent);
 }
 
-.nav-ai-inner {
+/* The row: scrolling tabs on the left, a pinned trigger on the right. */
+.nav-ai-row {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
+  min-width: 0;
+}
+
+.nav-ai-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
   // Horizontal scroll rather than wrap: a wrapping row changes the bar's
   // height per page, and every page offsets its content by --nav-offset.
+  //
+  // NOTHING WITH A DROPDOWN MAY LIVE INSIDE THIS. Setting one overflow axis to
+  // auto makes the other compute to auto as well, so this element clips its
+  // absolutely-positioned descendants vertically too. A panel hanging below
+  // the row disappears while still reporting a bounding box and its text
+  // content, which is why it looked fine to a DOM-reading test.
   overflow-x: auto;
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
@@ -956,7 +972,11 @@
 }
 
 /* ── More (AI row) ───────────────────────────────────────────────────────── */
-.ai-more { display: inline-flex; }
+.ai-more {
+  display: inline-flex;
+  flex-shrink: 0;   // stays put while the tabs scroll under it
+  position: relative;
+}
 
 /* A button, styled to match the anchors beside it. The row should read as one
    set of controls, not four tabs and a differently-shaped fifth thing.

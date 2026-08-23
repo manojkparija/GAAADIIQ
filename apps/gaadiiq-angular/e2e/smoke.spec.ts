@@ -174,3 +174,56 @@ for (const path of ['/', '/insurance', '/track-challan', '/compare', '/emi-calcu
     ).toEqual([]);
   });
 }
+
+/**
+ * The More menu actually appears when clicked.
+ *
+ * WHY THIS ASSERTS elementFromPoint AND NOT toBeVisible()
+ *
+ * This shipped broken. The panel lived inside .nav-ai-inner, which scrolls
+ * horizontally — and an element with `overflow-x: auto` clips on both axes,
+ * because the other axis computes to `auto` too. The panel rendered below the
+ * row, was clipped to the row's height, and was invisible on screen.
+ *
+ * Every cheap check passed anyway. The markup was in the DOM, so
+ * textContent found the items. Layout ran normally, so boundingBox() returned
+ * a real rectangle. Even Playwright's toBeVisible() passes: it means "has a
+ * non-empty box and is not visibility:hidden", which a clipped element still
+ * satisfies.
+ *
+ * The only question that distinguishes clipped from visible is "if a user
+ * clicked the middle of this panel, would they hit it?" — which is what
+ * elementFromPoint answers, and what a person reporting "no response" was
+ * actually describing.
+ */
+for (const path of ['/', '/ai-valuation']) {
+  test(`the More menu opens and is clickable on ${path}`, async ({ page }) => {
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.ai-tab-more');
+    await page.click('.ai-tab-more');
+
+    const panel = page.locator('.ai-more .nav-mega');
+    await expect(panel).toBeVisible();
+
+    const hit = await page.evaluate(() => {
+      const el = document.querySelector('.ai-more .nav-mega') as HTMLElement | null;
+      if (!el) return { ok: false, why: 'panel not in the DOM' };
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return { ok: false, why: 'panel has no box' };
+
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const top = document.elementFromPoint(cx, cy);
+      if (!top) return { ok: false, why: 'nothing at the panel centre — off-screen or clipped' };
+      return {
+        ok: el.contains(top) || el === top,
+        why: `the element at the panel centre is <${top.tagName.toLowerCase()} class="${top.className}">`,
+      };
+    });
+    expect(hit.ok, `More panel on ${path} is not hittable: ${hit.why}`).toBe(true);
+
+    // And it goes somewhere.
+    await page.locator('.ai-more .nav-mega-item').first().click();
+    await page.waitForURL('**/track-challan');
+  });
+}
