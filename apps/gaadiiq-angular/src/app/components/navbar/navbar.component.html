@@ -397,7 +397,8 @@
 
       <div class="nav-dropdown ai-more">
         <button type="button" class="ai-tab ai-tab-more"
-                [class.open]="moreOpen()" (click)="toggleMore()"
+                [class.open]="moreOpen()" [class.active]="moreActive()"
+                (click)="toggleMore()"
                 [attr.aria-expanded]="moreOpen()" aria-haspopup="true">
           <app-icon name="layout-dashboard" [size]="15"></app-icon>
           <span>{{ 'More' | t }}</span>

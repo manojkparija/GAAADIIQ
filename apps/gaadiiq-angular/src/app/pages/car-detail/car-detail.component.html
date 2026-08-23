@@ -475,12 +475,18 @@
             <!-- Review form -->
             <div class="review-form glass-card" *ngIf="showReviewForm()">
               <h4>{{ 'Your Review' | t }}</h4>
-              <div class="star-select">
-                <span *ngFor="let s of [1,2,3,4,5]"
+              <!-- type="button": this sits inside a form, and a bare <button>
+                   defaults to type="submit". -->
+              <div class="star-select" role="radiogroup" [attr.aria-label]="'Your rating' | t">
+                <button *ngFor="let s of [1,2,3,4,5]"
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="userReview.rating === s"
+                  [attr.aria-label]="s + ' star' + (s > 1 ? 's' : '')"
                   (click)="userReview.rating = s"
                   (mouseenter)="hoverRating.set(s)"
                   (mouseleave)="hoverRating.set(0)"
-                  [class.active]="s <= (hoverRating() || userReview.rating)">★</span>
+                  [class.active]="s <= (hoverRating() || userReview.rating)">★</button>
               </div>
               <input type="text" [(ngModel)]="userReview.name" name="rname" [placeholder]="'Your name *' | t">
               <input type="text" [(ngModel)]="userReview.city" name="rcity" [placeholder]="'City' | t">

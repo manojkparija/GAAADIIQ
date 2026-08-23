@@ -40,7 +40,12 @@
 
   <!-- Hero image -->
   <div class="ad-cover">
-    <div class="cover-emoji">{{ a.image }}</div>
+    <!-- `image` is an icon NAME ("battery", "zap", "rocket"), not an emoji.
+         Interpolating it printed the word itself across the cover in the hero
+         font — a 96px "battery" above the Nexon EV review. Every other surface
+         (the hub cards, the category grid) already passed it to <app-icon>;
+         this was the one place that did not. -->
+    <div class="cover-emoji"><app-icon [name]="a.image" [size]="72"></app-icon></div>
     <div class="cover-gradient"></div>
   </div>
 

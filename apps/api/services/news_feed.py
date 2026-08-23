@@ -29,6 +29,7 @@ visibly labelled as such, not folded into a list that looks like reporting.
 """
 import asyncio
 import html
+import ipaddress
 import logging
 import re
 import time
@@ -55,6 +56,14 @@ _TOPIC_SCOPE = "(car OR automobile OR vehicle OR EV)"
 _MAX_QUERY_CHARS = 120
 _MAX_ARTICLES = 30
 _FETCH_TIMEOUT = 10.0
+
+# Field caps. Feed text is external input and its length is the upstream's
+# choice, not ours: without a bound, one item with a megabyte "title" is served
+# straight through to every reader of that cached query. The description was
+# already truncated at 300; the title was not.
+_MAX_TITLE_CHARS = 300
+_MAX_SOURCE_CHARS = 120
+_MAX_DESCRIPTION_CHARS = 300
 
 # Google News is not a fast-moving wire for our purposes — a used-car buyer does
 # not need sub-minute freshness, and this is the difference between one request
@@ -195,20 +204,100 @@ def _parse(xml_bytes: bytes) -> list[Article]:
         articles.append(
             Article(
                 id=f"live-{index}",
-                title=clean_title,
+                title=clean_title[:_MAX_TITLE_CHARS],
                 description=_summary(
                     item.findtext("description") or "", clean_title, source
-                )[:300],
+                )[:_MAX_DESCRIPTION_CHARS],
                 url=link,
                 # Google News RSS carries no per-article image. The old client
                 # read `thumbnail` from the rss2json wrapper, which was empty
                 # for this feed too — so the cards were never getting one.
                 image=None,
                 publishedAt=(item.findtext("pubDate") or "").strip(),
-                source=source or "Google News",
+                source=(source or "Google News")[:_MAX_SOURCE_CHARS],
             )
         )
     return articles
+
+
+def _assert_public_url(url: str) -> None:
+    """
+    Refuse anything that is not an https URL on a public hostname.
+
+    This guards the redirect chain, not the URL we build — that one is a
+    constant. `follow_redirects=True` means the upstream chooses where the
+    second request goes, and a feed host that is compromised (or simply
+    misconfigured) can point it at `http://169.254.169.254/`, the cloud
+    metadata endpoint, or at `http://10.x` inside our own network. The
+    response body then comes back through this function to the browser, which
+    turns a news feed into a read primitive on the private network.
+
+    Hostnames are not resolved here: the check is on the literal host, so a
+    name that resolves to a private address still passes. Closing that needs
+    resolution pinned to the socket that actually connects, which httpx does
+    not expose. This blocks the direct forms, which is what an opportunistic
+    redirect uses.
+    """
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme != "https":
+        raise NewsUnavailable(f"refusing a non-https feed URL ({parsed.scheme or 'no scheme'})")
+
+    host = (parsed.hostname or "").lower()
+    if not host:
+        raise NewsUnavailable("feed URL had no host")
+
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        # A name, not a literal address.
+        if host == "localhost" or host.endswith(".localhost") or host.endswith(".internal"):
+            raise NewsUnavailable(f"refusing a feed URL pointing at {host}") from None
+        return
+
+    if not address.is_global:
+        raise NewsUnavailable(f"refusing a feed URL pointing at the non-public address {host}")
+
+
+async def _download(url: str, headers: dict[str, str] | None = None) -> bytes:
+    """
+    Fetch a feed, streaming, and stop reading once it exceeds the size cap.
+
+    Streaming is the point. This used to call `resp.content`, which reads the
+    whole body into memory and only then compared its length to the cap — so
+    the cap described what we would refuse to parse, not what we would refuse
+    to receive. An upstream returning a multi-gigabyte body exhausted the
+    process before the check ran, and the check itself was what was supposed
+    to prevent that. Reading in chunks and aborting mid-body makes the limit
+    real.
+    """
+    _assert_public_url(url)
+    request_headers = {"User-Agent": "GAADIIQ/1.0 (+news)", **(headers or {})}
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=_FETCH_TIMEOUT,
+            follow_redirects=True,
+            max_redirects=3,
+        ) as client:
+            async with client.stream("GET", url, headers=request_headers) as resp:
+                # Every hop, not just the one we asked for.
+                for hop in [*resp.history, resp]:
+                    _assert_public_url(str(hop.url))
+                resp.raise_for_status()
+
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in resp.aiter_bytes():
+                    total += len(chunk)
+                    if total > _MAX_FEED_BYTES:
+                        raise NewsUnavailable("news feed response was implausibly large")
+                    chunks.append(chunk)
+    except httpx.HTTPError as exc:
+        # The message can carry the full URL, and for a keyed provider that URL
+        # may hold the key. Report the class of failure, not the request.
+        raise NewsUnavailable(f"could not reach the news feed: {type(exc).__name__}") from exc
+
+    return b"".join(chunks)
 
 
 async def fetch(query: str | None = None, limit: int = 12) -> list[dict]:
@@ -227,19 +316,17 @@ async def fetch(query: str | None = None, limit: int = 12) -> list[dict]:
         if hit and time.monotonic() - hit[0] < _CACHE_TTL_SECONDS:
             return hit[1][:limit]
 
-    url = _feed_url(cleaned)
-    try:
-        async with httpx.AsyncClient(timeout=_FETCH_TIMEOUT, follow_redirects=True) as client:
-            resp = await client.get(url, headers={"User-Agent": "GAADIIQ/1.0 (+news)"})
-            resp.raise_for_status()
-            body = resp.content
-    except httpx.HTTPError as exc:
-        raise NewsUnavailable(f"could not reach the news feed: {exc}") from exc
+    # Which upstream answers is a deployment setting, not a code change. Import
+    # here rather than at module scope: news_apitube imports names from this
+    # module, and a top-level import either way is a cycle.
+    from . import news_apitube
 
-    if len(body) > _MAX_FEED_BYTES:
-        raise NewsUnavailable("news feed response was implausibly large")
+    if news_apitube.configured():
+        parsed = await news_apitube.fetch(cleaned, _MAX_ARTICLES)
+    else:
+        parsed = _parse(await _download(_feed_url(cleaned)))
 
-    articles = [asdict(a) for a in _parse(body)][:_MAX_ARTICLES]
+    articles = [asdict(a) for a in parsed][:_MAX_ARTICLES]
 
     async with _cache_lock:
         if len(_cache) >= _CACHE_MAX_ENTRIES:

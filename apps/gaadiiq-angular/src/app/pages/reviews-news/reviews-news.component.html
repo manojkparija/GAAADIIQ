@@ -4,7 +4,7 @@
     <div class="container">
       <div class="hero-badge"><app-icon name="newspaper" [size]="16"></app-icon> {{ 'GAADIIQ Media' | t }}</div>
       <h1 class="hero-title">{{ 'Reviews &' | t }} <span class="gradient-text">{{ 'News' | t }}</span></h1>
-      <p class="hero-sub">{{ 'Expert reviews, real owner stories, breaking news and in-depth special reports on the Indian automotive world.' | t }}</p>
+      <p class="hero-sub">{{ 'Car news from the Indian motoring press, and ownership reviews from the people who bought the cars.' | t }}</p>
     </div>
   </section>
 
@@ -13,7 +13,6 @@
     <div class="tabs-scroll">
       <a *ngFor="let c of categoryMeta" class="tab-btn" [routerLink]="['/reviews-news', c.slug]">
         {{ c.label }}
-        <span class="tab-count">{{ c.count }}</span>
       </a>
     </div>
   </div>
@@ -24,7 +23,9 @@
       <a class="cat-card glass-card" *ngFor="let c of categoryMeta" [routerLink]="['/reviews-news', c.slug]">
         <div class="cat-icon"><app-icon [name]="c.icon" [size]="30"></app-icon></div>
         <div class="cat-body">
-          <div class="cat-count-badge" [ngClass]="'cat-badge-' + c.color">{{ c.count }} Articles</div>
+          <div class="cat-count-badge" [ngClass]="'cat-badge-' + c.color">
+            {{ (c.live ? 'Updated daily' : 'Written by owners') | t }}
+          </div>
           <h2 class="cat-title">{{ c.label }}</h2>
           <p class="cat-desc">{{ c.desc }}</p>
         </div>
@@ -47,37 +48,8 @@
     </div>
   </section>
 
-  <!-- Featured Stories -->
-  <section class="featured-section container">
-    <h2 class="sec-head">{{ 'Featured' | t }} <span class="gradient-text">{{ 'Stories' | t }}</span></h2>
-    <div class="featured-grid">
-      <a class="featured-card glass-card" *ngFor="let a of featured" [routerLink]="['/reviews-news', slugMap[a.category], a.id]">
-        <div class="fc-image"><app-icon [name]="a.image" [size]="44"></app-icon></div>
-        <div class="fc-body">
-          <div class="fc-meta">
-            <span class="tag" [ngClass]="tagClass(a.tagColor)">{{ a.tag }}</span>
-            <span class="cat-chip">{{ a.category }}</span>
-          </div>
-          <h3 class="fc-title">{{ a.title }}</h3>
-          <p class="fc-excerpt">{{ a.excerpt }}</p>
-          <div class="fc-footer">
-            <div class="author-row">
-              <span class="avatar">{{ a.authorAvatar }}</span>
-              <span class="author-name">{{ a.author }}</span>
-            </div>
-            <div class="fc-info">
-              <span><app-icon name="calendar" [size]="14"></app-icon> {{ a.date }}</span>
-              <span><app-icon name="clock" [size]="14"></app-icon> {{ a.readTime }}</span>
-            </div>
-            <div class="stars-row" *ngIf="a.rating">
-              <span *ngFor="let s of stars(a.rating)" class="star">{{ s }}</span>
-              <span class="rating-num">{{ a.rating }}</span>
-            </div>
-          </div>
-        </div>
-      </a>
-    </div>
-  </section>
+  <!-- The hub's "Featured Stories" strip is gone with the hand-written
+       articles it rendered — five invented headlines under invented bylines. -->
 </ng-container>
 
 <!-- ── CATEGORY PAGE (/reviews-news/:category) ─────────────────────────── -->
@@ -86,9 +58,17 @@
     <div class="container">
       <a routerLink="/reviews-news" class="back-link">{{ '← Reviews & News' | t }}</a>
       <h1 class="hero-title"><span class="gradient-text">{{ activeTab() }}</span></h1>
-      <p class="hero-sub">{{ counts()[activeTab()] }} articles</p>
+      <p class="hero-sub">{{ categoryDesc() | t }}</p>
+      <!-- Only on a collected section. Who assembled the feed and who wrote
+           the stories are different things and the page says both. On Owner
+           Reviews it would be untrue in the other direction: those are written
+           by the owner, not collected by us. -->
+      <p class="hero-byline" *ngIf="isLiveSection()">
+        <app-icon name="newspaper" [size]="14"></app-icon>
+        {{ 'Collected and published by the GAADIIQ Team — each story credited to its publisher.' | t }}
+      </p>
 
-      <div class="search-bar">
+      <div class="search-bar" *ngIf="isLiveSection()">
         <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
         <input type="text"
                [placeholder]="isNewsPage() ? 'Search the latest car news…' : 'Search articles…'"
@@ -102,7 +82,7 @@
   <section class="articles-section container">
 
     <!-- ── LIVE NEWS (News category only) ──────────────────────────────────── -->
-    <ng-container *ngIf="isNewsPage()">
+    <ng-container *ngIf="isLiveSection()">
 
       <!-- Loading skeleton -->
       <div class="live-grid" *ngIf="liveLoading()">
@@ -124,18 +104,20 @@
       <!-- Live articles -->
       <div class="live-grid" *ngIf="!liveLoading() && liveArticles().length">
         <div class="live-card glass-card" *ngFor="let a of liveArticles(); let i = index"
-             [routerLink]="['/reviews-news', 'news', 'live', i]">
-          <div class="lc-thumb" [style.backgroundImage]="a.image ? 'url(' + a.image + ')' : 'none'">
+             [routerLink]="['/reviews-news', categorySlug(), 'live', i]">
+          <div class="lc-thumb" [style.backgroundImage]="thumb(a.image)">
             <span *ngIf="!a.image" class="lc-thumb-emoji"><app-icon name="newspaper" [size]="32"></app-icon></span>
           </div>
           <div class="lc-body">
             <div class="lc-meta">
-              <!-- The publisher, not a fixed label. Titles have their
-                   " - Publisher" suffix stripped, so this is the only thing
-                   telling a reader who reported it — and on an aggregated feed
-                   that is what decides whether a headline is worth trusting. -->
-              <span class="tag tag-blue">{{ a.source.name || 'India Auto News' }}</span>
+              <!-- The publisher stays — the headline is theirs and dropping the
+                   credit while keeping the words is passing off. But it is set
+                   as quiet grey text rather than a bright branded pill: the
+                   credit has to be clear, not prominent, and a blue badge
+                   reading AUTOCAR INDIA on every card turned our own News page
+                   into an advertisement for a competitor. -->
               <span class="lc-date">{{ news.formatDate(a.publishedAt) }}</span>
+              <span class="lc-via" *ngIf="a.source.name">via {{ a.source.name }}</span>
             </div>
             <h3 class="lc-title">{{ a.title }}</h3>
             <p class="lc-desc">{{ a.description }}</p>
@@ -144,51 +126,29 @@
         </div>
       </div>
 
-      <h2 class="sec-head" style="margin-top:2.5rem">
-        {{ 'Curated' | t }} <span class="gradient-text">{{ 'Articles' | t }}</span>
-      </h2>
+      <!-- Nothing found for this section's feed. Distinct from an error: the
+           request worked, there is just no story matching right now. -->
+      <div class="no-results" *ngIf="!liveLoading() && !liveArticles().length && !liveError()">
+        <div class="nr-icon"><app-icon name="search" [size]="34"></app-icon></div>
+        <p *ngIf="searchQuery()">
+          No stories found for "<strong>{{ searchQuery() }}</strong>".
+        </p>
+        <p *ngIf="!searchQuery()">{{ 'No stories in this section right now. Please check back shortly.' | t }}</p>
+        <button class="btn-outline" *ngIf="searchQuery()" (click)="onSearch('')">{{ 'Clear Search' | t }}</button>
+      </div>
     </ng-container>
 
-    <!-- ── STANDARD ARTICLE GRID ────────────────────────────────────────────── -->
-    <div class="articles-grid" *ngIf="articles().length; else noResults">
-      <a class="article-card glass-card" *ngFor="let a of articles()" [routerLink]="['/reviews-news', slugMap[a.category], a.id]">
-        <div class="ac-image"><app-icon [name]="a.image" [size]="40"></app-icon></div>
-        <div class="ac-body">
-          <div class="ac-meta">
-            <span class="tag" [ngClass]="tagClass(a.tagColor)">{{ a.tag }}</span>
-          </div>
-          <h3 class="ac-title">{{ a.title }}</h3>
-          <p class="ac-excerpt">{{ a.excerpt }}</p>
-          <div class="stars-row" *ngIf="a.rating">
-            <span *ngFor="let s of stars(a.rating)" class="star">{{ s }}</span>
-            <span class="rating-num">{{ a.rating }}/5</span>
-            <span class="car-model" *ngIf="a.carModel">— {{ a.carModel }}</span>
-          </div>
-          <div class="ac-footer">
-            <div class="author-row">
-              <span class="avatar">{{ a.authorAvatar }}</span>
-              <span class="author-name">{{ a.author }}</span>
-            </div>
-            <div class="ac-info">
-              <span>{{ a.date }}</span>
-              <span class="dot">·</span>
-              <span>{{ a.readTime }}</span>
-            </div>
-          </div>
-        </div>
-      </a>
+    <!-- ── OWNER REVIEWS ──────────────────────────────────────────────────── -->
+    <!-- Not a feed, and deliberately empty rather than backfilled. Other
+         publications' ownership columns shown here would be the same
+         substitution the rest of this page just removed. -->
+    <div class="own-empty" *ngIf="!isLiveSection()">
+      <div class="nr-icon"><app-icon name="user" [size]="34"></app-icon></div>
+      <h2>{{ 'No owner reviews yet' | t }}</h2>
+      <p>
+        {{ 'This section carries reviews written by people who actually bought and drove the car — not reprints from elsewhere. It fills up as GAADIIQ owners write them.' | t }}
+      </p>
+      <a routerLink="/listings" class="btn-gradient">{{ 'Pick a car to review →' | t }}</a>
     </div>
-    <ng-template #noResults>
-      <div class="no-results">
-        <div class="nr-icon"><app-icon name="search" [size]="34"></app-icon></div>
-        <p>No curated articles found for "<strong>{{ searchQuery() }}</strong>"</p>
-        <!-- On the news page the live results above are searched separately, so
-             this only ever means the hand-written articles had no match. -->
-        <p class="nr-hint" *ngIf="isNewsPage() && liveArticles().length">
-          {{ 'The latest news results above still match your search.' | t }}
-        </p>
-        <button class="btn-outline" (click)="onSearch('')">{{ 'Clear Search' | t }}</button>
-      </div>
-    </ng-template>
   </section>
 </ng-container>

@@ -40,6 +40,20 @@
     margin: 0 auto 2rem;
     line-height: 1.7;
   }
+
+  /* 0.88, not the 0.75 above: this is smaller text, and the contrast suite
+     measures the composited colour on the hero rather than the token. */
+  .hero-byline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: -1.25rem auto 1.75rem;
+    color: rgba(255,255,255,0.88);
+    font-size: 0.85rem;
+    line-height: 1.5;
+
+    app-icon { flex-shrink: 0; }
+  }
 }
 
 .search-bar {
@@ -78,10 +92,14 @@
   gap: 0.4rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--primary);
+  // White, not --primary. This sits inside .rn-hero, whose background is the
+  // blue-to-teal gradient — so the brand blue was blue text on blue, and at
+  // 0.8 opacity it was very nearly invisible. It is the only way back to the
+  // hub from a category page.
+  color: #fff;
   margin-bottom: 1rem;
-  opacity: 0.8;
-  &:hover { opacity: 1; }
+  opacity: 0.9;
+  &:hover { opacity: 1; text-decoration: underline; }
 }
 
 // ── Hub Category Cards ───────────────────────────────────────────────────────
@@ -499,4 +517,44 @@
 @media (max-width: 768px) {
   .featured-grid, .articles-grid, .hub-grid { grid-template-columns: 1fr; }
   .rn-hero { padding: 5.5rem 0 2rem; }
+}
+
+/* The publisher credit on a live card.
+   Grey text beside the date rather than the tag-blue pill this used to be. The
+   credit is required — the headline belongs to whoever wrote it — but it does
+   not need to be the brightest thing on the card. */
+.lc-via {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Owner Reviews, before anyone has written one. */
+.own-empty {
+  max-width: 34rem;
+  margin: 2rem auto;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px solid var(--divider);
+  border-radius: 18px;
+  background: var(--card-bg);
+
+  .nr-icon { color: var(--teal-ink, var(--teal)); margin-bottom: 0.75rem; }
+
+  h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin: 0 0 0.6rem;
+    color: var(--text);
+  }
+
+  p {
+    margin: 0 auto 1.5rem;
+    max-width: 30rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
 }
