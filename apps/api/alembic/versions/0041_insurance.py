@@ -223,6 +223,12 @@ def upgrade() -> None:
         sa.Column("manufacturing_year", sa.Integer()),
         sa.Column("registration_no", sa.String(20)),
         sa.Column("city", sa.String(100)),
+        # BRD §5.5. The most valuable attribute on an insurance lead:
+        # motor cover is bought in the weeks before expiry, so a lead
+        # without a date cannot be timed. Also what the renewal reminder
+        # job (BRD §16) will read.
+        sa.Column("existing_policy_expiry", sa.Date()),
+        sa.Column("existing_insurer", sa.String(160)),
         sa.Column("name", sa.String(160)),
         sa.Column("phone", sa.String(16), nullable=False),
         sa.Column("email", sa.String(255)),

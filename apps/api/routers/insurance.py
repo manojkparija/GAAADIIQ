@@ -36,7 +36,7 @@ believed. The same holds here, more strongly.
 """
 import re
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -113,6 +113,8 @@ class InterestIn(VehicleIn):
     means something.
     """
 
+    existing_policy_expiry: date | None = None
+    existing_insurer: str | None = Field(None, max_length=160)
     name: str | None = Field(None, max_length=160)
     phone: str = Field(..., description="+91XXXXXXXXXX")
     email: str | None = Field(None, max_length=255)
@@ -293,6 +295,8 @@ async def register_insurance_interest(
         manufacturing_year=body.manufacturing_year,
         registration_no=body.registration_no,
         city=body.city,
+        existing_policy_expiry=body.existing_policy_expiry,
+        existing_insurer=body.existing_insurer,
         name=body.name,
         phone=body.phone,
         email=body.email,

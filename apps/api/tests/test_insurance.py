@@ -29,6 +29,7 @@ registered inside tests and never at import time, so no code path in a running
 application can reach it.
 """
 import re
+from datetime import date
 
 import pytest
 import pytest_asyncio
@@ -331,6 +332,32 @@ async def test_interest_is_persisted_with_dated_consent(client, session_factory)
         # An interest lead: no quote, no partner.
         assert lead.quote_id is None
         assert lead.partner_id is None
+
+
+@pytest.mark.asyncio
+async def test_the_policy_expiry_date_is_stored(client, session_factory):
+    """BRD §5.5, and the field the form exists to collect.
+
+    Motor cover is bought in the weeks before expiry and is close to
+    unsellable outside that window, so a lead without a date cannot be timed.
+    It is also what the renewal reminder job (BRD §16) will read.
+    """
+    resp = await client.post(
+        "/insurance/interest",
+        json={
+            **VEHICLE,
+            "phone": "+919876543210",
+            "existing_policy_expiry": "2026-11-30",
+            "existing_insurer": "Some General Insurance",
+            "consent": True,
+        },
+    )
+    assert resp.status_code == 201, resp.text
+
+    async with session_factory() as s:
+        lead = (await s.execute(select(InsuranceLead))).scalars().one()
+        assert lead.existing_policy_expiry == date(2026, 11, 30)
+        assert lead.existing_insurer == "Some General Insurance"
 
 
 @pytest.mark.asyncio

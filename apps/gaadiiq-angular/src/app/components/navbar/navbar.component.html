@@ -184,6 +184,37 @@
         </li>
 
         <li><a routerLink="/tco" routerLinkActive="active">{{ lang.t('navTco') }}</a></li>
+
+        <!-- Insurance. The BRD suggests eight entries here — Compare
+             Insurance, Check IDV, My Policies, Renewal Reminder and the rest.
+             Five of those need a partner, a quote or a policy, none of which
+             exist yet, so they would be navigation that leads nowhere. Same
+             rule as the New Cars menu above: every entry resolves to something
+             the site can answer today, and the list grows when the answers
+             do. -->
+        <li class="nav-dropdown">
+          <button type="button" class="nav-dropdown-trigger"
+                  [class.open]="insuranceOpen()" (click)="toggleInsurance()"
+                  [attr.aria-expanded]="insuranceOpen()" aria-haspopup="true">
+            {{ 'Insurance' | t }}
+            <app-icon name="chevron-down" [size]="13" class="nav-caret"></app-icon>
+          </button>
+          <div class="nav-mega nav-mega-sm" *ngIf="insuranceOpen()" role="menu">
+            <a routerLink="/insurance" class="nav-mega-item" role="menuitem">
+              <app-icon name="shield" [size]="15"></app-icon> {{ 'Car Insurance' | t }}
+            </a>
+            <a routerLink="/insurance" [queryParams]="{ intent: 'renew' }"
+               class="nav-mega-item" role="menuitem">
+              <app-icon name="bell" [size]="15"></app-icon> {{ 'Renew Insurance' | t }}
+            </a>
+            <a routerLink="/insurance" fragment="idv" class="nav-mega-item" role="menuitem">
+              <app-icon name="indian-rupee" [size]="15"></app-icon> {{ 'What is IDV?' | t }}
+            </a>
+            <a routerLink="/insurance" fragment="addons" class="nav-mega-item" role="menuitem">
+              <app-icon name="layers" [size]="15"></app-icon> {{ 'Add-ons Explained' | t }}
+            </a>
+          </div>
+        </li>
         <li><a routerLink="/reviews-news" routerLinkActive="active">{{ lang.t('navNews') }}</a></li>
         <li><a routerLink="/buyer-journey" routerLinkActive="active">{{ lang.t('navJourney') }}</a></li>
       </ul>

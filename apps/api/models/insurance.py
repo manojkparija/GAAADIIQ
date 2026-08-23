@@ -330,6 +330,18 @@ class InsuranceLead(UUIDMixin, TimestampMixin, Base):
     # will ask for first when assessing whether this demand is worth serving.
     city: Mapped[str | None] = mapped_column(String(100))
 
+    # When their current policy runs out (BRD §5.5). This is the single most
+    # valuable attribute on an insurance lead: motor insurance is bought in the
+    # weeks before expiry and is nearly unsellable outside that window, so a
+    # lead without it cannot be timed and a lead with it is a dated
+    # appointment. It is also what the renewal reminder job (BRD §16) will
+    # eventually read.
+    #
+    # Nullable because plenty of people do not know the date offhand, and
+    # making it mandatory would cost more leads than the field is worth.
+    existing_policy_expiry: Mapped[date | None] = mapped_column(Date)
+    existing_insurer: Mapped[str | None] = mapped_column(String(160))
+
     # Contact details, stored in the clear because they are the point of the
     # record. Same reasoning as models/car_lead.py.
     name: Mapped[str | None] = mapped_column(String(160))
