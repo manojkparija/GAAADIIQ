@@ -121,13 +121,47 @@
                    min="1980" [placeholder]="'e.g. 2021' | t">
           </label>
 
-          <label class="field">
-            <span>{{ 'Fuel' | t }}</span>
-            <select [(ngModel)]="form.fuel_type" name="fuel">
-              <option [ngValue]="null">{{ 'Select' | t }}</option>
-              <option *ngFor="let f of fuels" [ngValue]="f">{{ f | t }}</option>
-            </select>
-          </label>
+          <!--
+            A listbox, not a <select>.
+
+            The option list of a native select is drawn by the operating
+            system, and its highlight colour cannot be set from CSS in any
+            browser worth relying on — it came out dark green on the reporter's
+            machine and blue on the next row. This is the only way to have the
+            selected row match the rest of the brand.
+
+            Built to the listbox role properly rather than as styled divs:
+            aria-expanded, aria-selected, arrow keys, Home/End, Enter, Escape,
+            and focus returning to the trigger on close. A custom dropdown that
+            skips those is a downgrade from the native control it replaced.
+          -->
+          <div class="field">
+            <span id="fuel-label">{{ 'Fuel' | t }}</span>
+            <div class="listbox-wrap">
+              <button type="button" class="listbox-trigger"
+                      [class.open]="fuelOpen()"
+                      (click)="toggleFuel()" (keydown)="onFuelTriggerKey($event)"
+                      aria-haspopup="listbox" [attr.aria-expanded]="fuelOpen()"
+                      aria-labelledby="fuel-label">
+                <span [class.placeholder]="!form.fuel_type">
+                  {{ (form.fuel_type || 'Select') | t }}
+                </span>
+                <app-icon name="chevron-down" [size]="14"></app-icon>
+              </button>
+
+              <ul class="listbox" role="listbox" *ngIf="fuelOpen()"
+                  aria-labelledby="fuel-label">
+                <li role="option" class="listbox-option"
+                    [class.selected]="!form.fuel_type"
+                    [attr.aria-selected]="!form.fuel_type"
+                    (click)="chooseFuel(null)">{{ 'Select' | t }}</li>
+                <li role="option" class="listbox-option" *ngFor="let f of fuels"
+                    [class.selected]="form.fuel_type === f"
+                    [attr.aria-selected]="form.fuel_type === f"
+                    (click)="chooseFuel(f)">{{ f | t }}</li>
+              </ul>
+            </div>
+          </div>
 
           <label class="field">
             <span>{{ 'City' | t }}</span>

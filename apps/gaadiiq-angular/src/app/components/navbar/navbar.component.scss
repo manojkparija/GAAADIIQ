@@ -55,10 +55,10 @@
   }
 }
 
-/* Blue→teal in stops dark enough to carry white text. See the note above. */
-:host {
-  --gradient-ai: linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
-}
+/* --gradient-ai is defined in styles.scss, not here. It was a :host variable,
+   which meant it existed only inside this component — the insurance page's
+   listbox reached for it, got nothing, and silently fell back to a duplicated
+   copy of the same stops. Two definitions of one brand gradient drift. */
 
 .nav-top { padding: 0.55rem 0; transition: padding .25s ease; }
 .navbar.scrolled .nav-top { padding: 0.3rem 0; }
@@ -113,16 +113,42 @@
     border: 0;
     border-radius: 10px;
     background: none;
-    color: var(--text-muted);
+    /*
+      Block-style 3D lettering in gloss black — OEM paint code F9R, "Black
+      Magic": a near-black carrying a slight blue cast rather than a flat #000,
+      which is what stops it reading as pure ink.
+
+      The depth is a text-shadow stack, not a filter or a duplicated layer: a
+      highlight above the glyph, two solid steps below it for the body of the
+      extrusion, then a soft drop. Solid offsets before the blurred one is what
+      makes a letter look moulded rather than merely shadowed.
+
+      TWO THINGS THIS DELIBERATELY DOES NOT DO.
+
+      It is not `background-clip: text`. That sets `color: transparent`, and
+      e2e/contrast.spec.ts reads the computed colour to measure legibility — it
+      would report a nonsense ratio or skip the links entirely, which is worse
+      than a wrong answer because it looks like a pass.
+
+      And it is not gloss black in both themes. On the dark bar (#0B1220) black
+      lettering would be invisible; the relief is kept and the face inverted to
+      a gloss light, so it reads as the same moulded object under different
+      lighting. See the tokens in styles.scss.
+    */
+    color: var(--nav-link);
+    text-shadow: var(--nav-link-relief);
     font: inherit;
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Outfit', 'Manrope', sans-serif;
     font-size: 0.95rem;
-    font-weight: 600;
+    // 800, not 600: a bevel needs a thick enough stem to show a highlight and
+    // a body. At 600 the relief closes up and reads as a blur.
+    font-weight: 800;
+    letter-spacing: 0.01em;
     white-space: nowrap;
     cursor: pointer;
     text-decoration: none;
     position: relative;
-    transition: color .18s ease, background .18s ease;
+    transition: color .18s ease, background .18s ease, transform .18s ease;
 
     // The sliding underline. scaleX from the centre rather than a width
     // animation, so it does not reflow anything as it grows.
@@ -137,15 +163,22 @@
       transition: transform .22s cubic-bezier(.4, 0, .2, 1);
     }
 
+    // Hover lifts the letter a hair and deepens the drop, so the relief reads
+    // as physical rather than as a colour change.
     &:hover {
-      color: var(--text);
+      color: var(--nav-link-hover);
       background: color-mix(in srgb, var(--primary) 6%, transparent);
+      transform: translateY(-1px);
     }
     &:hover::after { transform: scaleX(1); }
 
-    &.active {
-      color: var(--text);
-      &::after { transform: scaleX(1); }
+    // The current page is marked by the underline, which is already there.
+    // Weight cannot mark it — the letters are 800 everywhere now — and going
+    // heavier still would reflow the row every time the route changed.
+    &.active { &::after { transform: scaleX(1); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      &:hover { transform: none; }
     }
   }
 }
@@ -280,24 +313,36 @@
   height: 2.15rem;
   padding: 0 0.7rem;
   border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  // Same undefined-token bug as .navbar had: this was a color-mix over --bg,
-  // so the pills were rendering with no fill at all and taking their apparent
-  // colour from the bar behind them.
-  background: var(--fill-soft);
-  color: var(--text);
+  border: 1px solid transparent;
+  /*
+    Blue-teal fill, the same --gradient-ai the AI tabs use, so the bar has one
+    accent rather than two.
+
+    White on this gradient measures 6.70:1 at #1D4ED8 and 5.47:1 at #0F766E,
+    both clear of the 4.5:1 floor across the whole sweep. That is the reason
+    this gradient exists at all — the house --gradient-cta passes through
+    #06B6D4 where white falls to 2.43:1, which e2e/contrast.spec.ts fails.
+
+    The pills were --fill-soft with --text before, which is what the letters
+    beside them still are. Filling them is what makes them read as controls
+    rather than as more words in the row.
+  */
+  background: var(--gradient-ai);
+  color: #fff;
   font: inherit;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
 
-  app-icon { color: var(--primary); }
+  // currentColor, not --primary: the icon sits on the gradient now, and a blue
+  // glyph on a blue fill disappears.
+  app-icon { color: currentColor; }
 
   &:hover {
     transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--primary) 40%, transparent);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, .08);
+    filter: brightness(1.08);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, .18);
   }
   &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 }
@@ -307,12 +352,17 @@
 /* City is the loudest utility on purpose — it decides on-road price and what
    stock a buyer is shown. --primary on a 12% tint of itself, not white on the
    gradient, so the label clears AA. */
+/* City is the loudest utility on purpose — it decides on-road price and what
+   stock a buyer is shown. Now that every pill carries the gradient, a second
+   fill cannot mark it, so it is marked by a ring instead. */
 .util-pill-primary {
-  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
-  background: color-mix(in srgb, var(--primary) 10%, var(--nav-bg));
-  color: var(--primary-ink, var(--primary));
-  font-weight: 700;
-  app-icon { color: currentColor; }
+  box-shadow: 0 0 0 2px color-mix(in srgb, #fff 55%, transparent);
+  font-weight: 800;
+
+  &:hover {
+    box-shadow: 0 0 0 2px color-mix(in srgb, #fff 70%, transparent),
+                0 6px 18px rgba(15, 23, 42, .18);
+  }
 }
 
 .city-label { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -545,31 +595,14 @@
   border-top: 1px solid rgba(255, 255, 255, 0.09);
 }
 
+/* These four rules predate the two-level redesign. Each set its own
+   background, border and colour, and being later in the file at equal
+   specificity they beat .util-pill — which is why filling the pills changed
+   nothing on screen until this was found. What remains here is only geometry
+   and per-button detail; appearance comes from .util-pill alone. */
 .city-btn-nav {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: var(--fill-soft);
-  border: 1px solid var(--border-soft);
-  border-radius: 7px;
-  padding: 0.4rem 0.85rem;
-  cursor: pointer;
-  color: var(--text);
-  font-size: 0.83rem;
-  font-weight: 600;
   max-width: 140px;
-  transition: all 0.2s;
-  font-family: 'Manrope', sans-serif;
-
-  lucide-icon { color: var(--muted); flex-shrink: 0; }
-
-  &:hover {
-    background: rgba(47,107,255,0.08);
-    border-color: var(--primary);
-    color: var(--primary);
-    lucide-icon { color: var(--primary); }
-  }
-
+  lucide-icon { color: currentColor; flex-shrink: 0; }
   .city-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
@@ -595,24 +628,8 @@
 }
 
 .theme-toggle {
-  width: 36px;
-  height: 36px;
-  border-radius: 7px;
-  border: 1px solid var(--border-soft);
-  background: var(--fill-soft);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
-  color: var(--muted);
   flex-shrink: 0;
-
-  &:hover {
-    background: rgba(47,107,255,0.08);
-    border-color: var(--primary);
-    color: var(--primary);
-  }
 }
 
 .mobile-theme-row {
@@ -631,24 +648,8 @@
 .user-menu-wrap { position: relative; }
 
 .user-avatar-btn {
-  display: flex;
-  align-items: center;
   gap: 0.45rem;
-  background: rgba(47,107,255,0.08);
-  border: 1px solid rgba(47,107,255,0.25);
-  border-radius: 7px;
-  padding: 0.38rem 0.75rem 0.38rem 0.38rem;
-  cursor: pointer;
-  color: var(--input-color);
-  font-size: 0.875rem;
-  font-family: 'Manrope', sans-serif;
-  font-weight: 600;
-  transition: background 0.2s, border-color 0.2s;
-
-  &:hover {
-    background: rgba(47,107,255,0.14);
-    border-color: var(--primary);
-  }
+  padding-left: 0.38rem;
 }
 
 .user-avatar {
@@ -879,18 +880,7 @@
 }
 
 .lang-btn {
-  display: inline-flex;
-  align-items: center;
   gap: 0.3rem;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-  &:hover { border-color: var(--primary); }
   // Absolute, not 0.7em. Relative to this button's 0.85rem the caret computed
   // to 10px, under the 11px floor e2e/typography.spec.ts enforces — and since
   // the navbar is on every page, that one declaration failed the check on all

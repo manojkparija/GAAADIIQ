@@ -62,6 +62,19 @@
   // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
   --nav-bg:         #FFFFFF;
   --nav-panel:      #FFFFFF;
+  // Nav lettering: gloss black, OEM paint code F9R ("Black Magic") — a
+  // near-black with a blue cast rather than a flat #000.
+  --nav-link:        #0A0A0C;
+  --nav-link-hover:  #000000;
+  // The relief. Highlight above, body below, then a soft drop: that
+  // stack is what makes a letter look raised rather than shadowed.
+  --nav-link-relief:
+    0 -1px 0 rgba(255, 255, 255, 0.65),
+    0 1px 0 #33343A,
+    0 2px 0 #1E1F24,
+    0 3px 4px rgba(0, 0, 0, 0.30);
+  // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
+  --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #FFFFFF;
   --card-bg:        #FFFFFF;
   --glass:          rgba(255,255,255,0.85);
@@ -137,6 +150,18 @@
     // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
     --nav-bg:         #0B1220;
     --nav-panel:      #131C2F;
+    // Gloss black cannot be used on a #0B1220 bar — it would be black on
+    // black. The treatment is kept and the face inverted: same bevel,
+    // gloss white, so it reads as the same moulded object lit differently.
+    --nav-link:        #F2F5F9;
+    --nav-link-hover:  #FFFFFF;
+    --nav-link-relief:
+      0 -1px 0 rgba(255, 255, 255, 0.28),
+      0 1px 0 #05070C,
+      0 2px 0 #020306,
+      0 3px 5px rgba(0, 0, 0, 0.55);
+    // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
+    --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
     --dark:           #111827;
     --card-bg:        rgba(255,255,255,0.04);
     --glass:          rgba(255,255,255,0.06);
@@ -186,6 +211,18 @@
   // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
   --nav-bg:         #0B1220;
   --nav-panel:      #131C2F;
+  // Gloss black cannot be used on a #0B1220 bar — it would be black on
+  // black. The treatment is kept and the face inverted: same bevel,
+  // gloss white, so it reads as the same moulded object lit differently.
+  --nav-link:        #F2F5F9;
+  --nav-link-hover:  #FFFFFF;
+  --nav-link-relief:
+    0 -1px 0 rgba(255, 255, 255, 0.28),
+    0 1px 0 #05070C,
+    0 2px 0 #020306,
+    0 3px 5px rgba(0, 0, 0, 0.55);
+  // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
+  --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #111827;
   --card-bg:        rgba(255,255,255,0.04);
   --glass:          rgba(255,255,255,0.06);
@@ -231,6 +268,19 @@
   // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
   --nav-bg:         #FFFFFF;
   --nav-panel:      #FFFFFF;
+  // Nav lettering: gloss black, OEM paint code F9R ("Black Magic") — a
+  // near-black with a blue cast rather than a flat #000.
+  --nav-link:        #0A0A0C;
+  --nav-link-hover:  #000000;
+  // The relief. Highlight above, body below, then a soft drop: that
+  // stack is what makes a letter look raised rather than shadowed.
+  --nav-link-relief:
+    0 -1px 0 rgba(255, 255, 255, 0.65),
+    0 1px 0 #33343A,
+    0 2px 0 #1E1F24,
+    0 3px 4px rgba(0, 0, 0, 0.30);
+  // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
+  --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #FFFFFF;
   --card-bg:        #FFFFFF;
   --glass:          rgba(255,255,255,0.85);

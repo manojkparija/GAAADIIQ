@@ -267,6 +267,70 @@
   }
 }
 
+/* ── Fuel listbox ────────────────────────────────────────────────────────── */
+.listbox-wrap { position: relative; }
+
+.listbox-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--fill-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+
+  &.open { border-color: var(--primary); }
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+  app-icon { color: var(--text-muted); flex-shrink: 0; }
+  .placeholder { color: var(--text-muted); }
+}
+
+.listbox {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  // Opaque, for the reason the navbar panels are: a translucent panel takes
+  // its contrast from whatever happens to be behind it.
+  background: var(--nav-panel);
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(11, 18, 32, .16);
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.listbox-option {
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.93rem;
+  color: var(--text);
+  cursor: pointer;
+
+  &:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+
+  // The selected row, in the brand blue-teal rather than the OS accent colour
+  // a native <select> would use. White on --gradient-ai measures 5.47:1 at its
+  // lightest stop, so the label stays legible across the whole sweep.
+  &.selected {
+    background: var(--gradient-ai);
+    color: #fff;
+    font-weight: 600;
+  }
+}
+
 .consent {
   display: flex;
   gap: 0.6rem;

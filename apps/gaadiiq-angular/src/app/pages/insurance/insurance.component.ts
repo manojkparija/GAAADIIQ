@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, HostListener, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -208,6 +208,78 @@ export class InsuranceComponent {
   submitting = signal(false);
   submitted = signal(false);
   error = signal<string | null>(null);
+
+  // ── Fuel listbox ───────────────────────────────────────────────────────────
+  //
+  // A native <select> renders its option list through the operating system, so
+  // the highlight on the focused row is the OS accent colour and no CSS
+  // reaches it. This replaces it with a listbox we can actually style, and
+  // therefore has to reimplement the keyboard behaviour the native control
+  // gave for free.
+
+  fuelOpen = signal(false);
+
+  /** null (no choice yet) followed by the real values, matching the markup. */
+  private get fuelOptions(): (string | null)[] {
+    return [null, ...this.fuels];
+  }
+
+  toggleFuel(): void {
+    this.fuelOpen.update(v => !v);
+  }
+
+  chooseFuel(value: string | null): void {
+    this.form.fuel_type = value;
+    this.fuelOpen.set(false);
+  }
+
+  onFuelTriggerKey(event: KeyboardEvent): void {
+    const step = (delta: number) => {
+      const options = this.fuelOptions;
+      const current = options.indexOf(this.form.fuel_type ?? null);
+      const next = Math.min(options.length - 1, Math.max(0, current + delta));
+      this.form.fuel_type = options[next];
+    };
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        // Matches the native control: closed, an arrow moves the value; open,
+        // it moves through the list.
+        this.fuelOpen() ? step(1) : this.fuelOpen.set(true);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.fuelOpen() ? step(-1) : this.fuelOpen.set(true);
+        break;
+      case 'Home':
+        if (this.fuelOpen()) { event.preventDefault(); this.form.fuel_type = null; }
+        break;
+      case 'End':
+        if (this.fuelOpen()) {
+          event.preventDefault();
+          this.form.fuel_type = this.fuels[this.fuels.length - 1];
+        }
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.fuelOpen.update(v => !v);
+        break;
+      case 'Escape':
+        this.fuelOpen.set(false);
+        break;
+    }
+  }
+
+  /** Clicking anywhere else closes it, as a native select would. */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (this.fuelOpen() && !target.closest('.listbox-wrap')) {
+      this.fuelOpen.set(false);
+    }
+  }
 
   constructor() {
     // /insurance?intent=renew scrolls straight to the form, since somebody
