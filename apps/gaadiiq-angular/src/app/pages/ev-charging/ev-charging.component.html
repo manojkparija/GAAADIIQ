@@ -10,28 +10,56 @@
   </section>
 
   <div class="evc-panel">
-    <label class="field">
+    <!-- app-custom-select, not a native <select>: a native option list is
+         painted by the operating system, so its highlight is the OS accent
+         colour and no CSS of ours reaches inside it. That put a stock blue bar
+         in the middle of a blue-teal page. -->
+    <div class="field">
       <span>{{ 'Your electric car' | t }}</span>
-      <select [ngModel]="selectedProfileId()" (ngModelChange)="selectedProfileId.set($event)" name="car">
-        <option value="">{{ 'Not selected — show all chargers' | t }}</option>
-        <option *ngFor="let p of profiles()" [value]="p.id">{{ profileLabel(p) }}</option>
-      </select>
-    </label>
+      <app-custom-select
+        [options]="carOptions()"
+        [ngModel]="manual() ? '__manual__' : selectedProfileId()"
+        (ngModelChange)="onCarChange($event)"
+        name="car"
+        [placeholder]="'Not selected — show all chargers' | t"></app-custom-select>
+    </div>
+
+    <div class="field">
+      <span>{{ 'Search within' | t }}</span>
+      <!-- The placeholder row always renders in this component and selecting
+           it clears the value, so it is labelled with what clearing actually
+           does rather than a meaningless "Select…". -->
+      <app-custom-select [options]="radiusOptions" [(ngModel)]="radiusKm" name="radius"
+                         [placeholder]="'15 km (default)' | t"></app-custom-select>
+    </div>
+
+    <!-- Typing your own figures, so the page works before any profile exists.
+         Everything here comes from the person who owns the car and has the
+         handbook — nothing is filled in on their behalf. -->
+    <div class="evc-manual" *ngIf="manual()">
+      <p class="mn-lead">
+        {{ 'Enter your car\'s figures from its handbook. We do not guess them.' | t }}
+      </p>
+      <div class="mn-row">
+        <label>
+          <span>{{ 'Usable battery kWh' | t }}</span>
+          <input type="number" step="0.1" [(ngModel)]="manualUsableKwh" name="mkwh" placeholder="37.5">
+        </label>
+        <label>
+          <span>{{ 'Max AC kW' | t }}</span>
+          <input type="number" step="0.1" [(ngModel)]="manualAcKw" name="mac" placeholder="7.2">
+        </label>
+        <label>
+          <span>{{ 'Max DC kW' | t }}</span>
+          <input type="number" step="1" [(ngModel)]="manualDcKw" name="mdc" placeholder="50">
+        </label>
+      </div>
+    </div>
 
     <!-- Honest about the gap rather than hiding the picker. -->
-    <p class="hint" *ngIf="!profiles().length">
-      {{ 'No charging specifications have been entered yet, so compatibility cannot be checked. Chargers will still show their connector and power.' | t }}
+    <p class="hint" *ngIf="!profiles().length && !manual()">
+      {{ 'No cars have charging specifications saved yet. Choose "My car is not listed" to enter yours, or search without one — chargers still show their connector and power.' | t }}
     </p>
-
-    <label class="field">
-      <span>{{ 'Search within' | t }}</span>
-      <select [(ngModel)]="radiusKm" name="radius">
-        <option [ngValue]="5">5 km</option>
-        <option [ngValue]="15">15 km</option>
-        <option [ngValue]="30">30 km</option>
-        <option [ngValue]="50">50 km</option>
-      </select>
-    </label>
 
     <button type="button" class="btn-gradient" (click)="useMyLocation()" [disabled]="locating() || loading()">
       <app-icon name="map-pin" [size]="16"></app-icon>

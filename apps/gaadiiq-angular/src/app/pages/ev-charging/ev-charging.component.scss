@@ -163,3 +163,29 @@
 }
 
 .evc-empty { max-width: 62rem; margin: 2rem auto; text-align: center; color: var(--text-muted); }
+
+// Manual specification entry, shown when the driver's car has no saved
+// profile. The figures come from their handbook — nothing is filled in for
+// them, because a guessed max_dc_kw is a wrong answer to "can I get there on
+// one stop", delivered with a straight face.
+.evc-manual {
+  flex: 1 1 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  background: var(--fill-dim);
+
+  .mn-lead { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--text-muted); }
+
+  .mn-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+  label { display: flex; flex-direction: column; gap: 0.25rem; flex: 1 1 8rem; min-width: 0; }
+  label > span { font-size: 0.76rem; font-weight: 700; color: var(--text); }
+
+  input {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--divider); border-radius: 8px;
+    background: var(--card-bg); color: var(--text); font: inherit; font-size: 0.9rem;
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  }
+}

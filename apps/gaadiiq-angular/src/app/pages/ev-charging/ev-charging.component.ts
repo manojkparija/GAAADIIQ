@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { SeoService } from '../../services/seo.service';
@@ -11,6 +12,9 @@ import {
   StationOut,
   StationsResponse,
 } from '../../services/ev-charging.service';
+
+/** Sentinel for the "not listed" row — no real profile id can collide with it. */
+const MANUAL = '__manual__';
 
 /**
  * Find a charger your car can actually use (BRD §14-17).
@@ -36,7 +40,7 @@ import {
 @Component({
   selector: 'app-ev-charging',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, CustomSelectComponent, IconComponent, TranslatePipe],
   templateUrl: './ev-charging.component.html',
   styleUrl: './ev-charging.component.scss',
 })
@@ -51,7 +55,50 @@ export class EvChargingComponent {
   error = signal<string | null>(null);
   locating = signal(false);
 
-  radiusKm = 15;
+  radiusKm = '15 km';
+
+  /**
+   * Native <select> was replaced by app-custom-select.
+   *
+   * Not cosmetics. A native option list is painted by the operating system —
+   * the highlight is the OS accent colour, not ours, and no amount of CSS
+   * reaches inside it. On this page that meant a stock blue bar in the middle
+   * of a blue-teal design, and it looks like a bug rather than a default.
+   */
+  readonly radiusOptions = ['5 km', '15 km', '30 km', '50 km'];
+
+  private radiusValue(): number {
+    return parseInt(this.radiusKm, 10) || 15;
+  }
+
+  /**
+   * The car picker's options.
+   *
+   * Always carries the manual entry row, so the page is usable before anybody
+   * has entered a single profile. An empty dropdown reads as broken; an empty
+   * dropdown on a page whose whole promise is "tell me if my car fits" reads
+   * as broken AND useless.
+   */
+  carOptions(): SelectOption[] {
+    // No explicit '' row: app-custom-select renders its own placeholder option
+    // which selects '', and adding one here would show it twice.
+    return [
+      ...this.profiles().map(p => ({ value: p.id, label: this.profileLabel(p) })),
+      { value: MANUAL, label: 'My car is not listed — enter its figures' },
+    ];
+  }
+
+  /** True when the driver is typing their own car's specification. */
+  manual = signal(false);
+  manualAcKw: number | null = 7.2;
+  manualDcKw: number | null = 50;
+  manualUsableKwh: number | null = null;
+  manualDcConnector = 'ccs2';
+
+  onCarChange(value: string) {
+    this.manual.set(value === MANUAL);
+    this.selectedProfileId.set(value === MANUAL ? '' : value);
+  }
 
   // Filters (§15). Applied client-side over what the API returned.
   filterCurrent = signal<'all' | 'ac' | 'dc'>('all');
@@ -82,6 +129,31 @@ export class EvChargingComponent {
   selectedProfile = computed(
     () => this.profiles().find(p => p.id === this.selectedProfileId()) ?? null,
   );
+
+  /**
+   * The specification in force: a saved profile, or what the driver typed.
+   *
+   * A method rather than a computed(): the manual fields are plain and bound
+   * with ngModel, and computed() tracks signal reads only — over a plain field
+   * it evaluates once and is stale for ever. CLAUDE.md records that having
+   * shipped twice.
+   */
+  activeSpec(): { usableKwh: number | null; acKw: number | null; dcKw: number | null } | null {
+    if (this.manual()) {
+      return {
+        usableKwh: this.manualUsableKwh,
+        acKw: this.manualAcKw,
+        dcKw: this.manualDcKw,
+      };
+    }
+    const p = this.selectedProfile();
+    if (!p) return null;
+    return {
+      usableKwh: p.usable_battery_capacity_kwh ?? p.battery_capacity_kwh,
+      acKw: p.max_ac_kw,
+      dcKw: p.max_dc_kw,
+    };
+  }
 
   profileLabel(p: ChargingProfile): string {
     return [p.make, p.model, p.variant].filter(Boolean).join(' ');
@@ -119,7 +191,7 @@ export class EvChargingComponent {
         await this.api.stations({
           lat,
           lon,
-          radiusKm: this.radiusKm,
+          radiusKm: this.radiusValue(),
           make: car?.make,
           model: car?.model,
           variant: car?.variant || undefined,
@@ -164,9 +236,18 @@ export class EvChargingComponent {
    * having shipped twice.
    */
   estimateFor(c: ChargerOut): string | null {
-    const car = this.selectedProfile();
-    const usable = car?.usable_battery_capacity_kwh ?? car?.battery_capacity_kwh ?? null;
-    const power = c.expected_max_kw ?? c.power_kw;
+    const spec = this.activeSpec();
+    const usable = spec?.usableKwh ?? null;
+
+    // min(charger, car) — the whole point. Estimating from the station's
+    // advertised figure is the misleading-number bug in its most damaging
+    // form: a specific, confident, far-too-short time.
+    const carLimit = c.current_type === 'dc' ? spec?.dcKw : spec?.acKw;
+    const stationKw = c.expected_max_kw ?? c.power_kw;
+    const power = carLimit != null && stationKw != null
+      ? Math.min(carLimit, stationKw)
+      : stationKw;
+
     if (!usable || !power || this.toPct <= this.fromPct) return null;
 
     // Mirrors services/ev_charging/duration.py. Kept in step deliberately:
