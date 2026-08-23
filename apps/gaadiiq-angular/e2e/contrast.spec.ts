@@ -27,7 +27,7 @@ import { test, expect, Page } from '@playwright/test';
  * All cleared, so dark is measured here too and stays measured.
  */
 
-const PAGES = ['/', '/new-cars', '/used-cars', '/compare', '/emi-calculator', '/reviews-news', '/car-loan', '/insurance', '/video-review'];
+const PAGES = ['/', '/new-cars', '/used-cars', '/compare', '/emi-calculator', '/reviews-news', '/car-loan', '/insurance', '/video-review', '/ev-charging'];
 
 interface Failure {
   text: string;

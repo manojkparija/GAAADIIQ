@@ -45,6 +45,7 @@ from routers import (  # noqa: E402
     demand,
     diagnosis,
     diagnosis_kb,
+    ev_charging,
     health,
     insurance,
     leads,
@@ -498,6 +499,7 @@ app.include_router(media_admin.router)
 app.include_router(upload.router)
 app.include_router(challan.router)
 app.include_router(insurance.router)
+app.include_router(ev_charging.router)
 app.include_router(video_reviews.router)
 app.include_router(resale.router)
 app.include_router(valuation.router)

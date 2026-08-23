@@ -1,0 +1,191 @@
+// No background on the page root — body::before paints the watermark.
+.evc-page { min-height: 100vh; padding-bottom: 4rem; }
+
+.evc-hero {
+  // Clears the fixed navbar (LAY-007).
+  padding: max(7rem, var(--nav-offset)) 1rem 3rem;
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  border-bottom: 1px solid var(--divider);
+  text-align: center;
+  color: #fff;
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase;
+    // 0.86, not 0.7: below that this falls under AA on the gradient's dark stop.
+    color: rgba(255,255,255,0.86);
+    margin-bottom: 0.5rem;
+  }
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800;
+    margin: 0 0 0.75rem; color: #fff;
+  }
+  .sub {
+    max-width: 46rem; margin: 0 auto; font-size: 1.02rem; line-height: 1.6;
+    color: rgba(255,255,255,0.92);
+  }
+}
+
+.evc-panel {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem;
+  max-width: 62rem; margin: 2rem auto 0; padding: 1.25rem;
+  border: 1px solid var(--divider); border-radius: 16px; background: var(--card-bg);
+
+  .field { display: flex; flex-direction: column; gap: 0.3rem; flex: 1 1 14rem; min-width: 0; }
+  .field > span { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+
+  select {
+    padding: 0.6rem 0.7rem; border: 1px solid var(--divider); border-radius: 10px;
+    background: var(--fill-soft); color: var(--text); font: inherit;
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  }
+
+  button {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.7rem 1.25rem; border: 0; border-radius: 999px;
+    font: inherit; font-weight: 700; cursor: pointer;
+    &:disabled { opacity: 0.55; cursor: not-allowed; }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  }
+
+  .hint { flex: 1 1 100%; margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+}
+
+.err { max-width: 62rem; margin: 1rem auto 0; color: var(--danger); font-size: 0.9rem; }
+
+.evc-note {
+  display: flex; align-items: flex-start; gap: 0.55rem;
+  max-width: 62rem; margin: 1rem auto 0; padding: 0.8rem 1rem;
+  border: 1px solid var(--divider); border-radius: 12px; background: var(--fill-dim);
+  color: var(--text); font-size: 0.88rem; line-height: 1.55;
+
+  app-icon { color: var(--info-ink, var(--primary)); flex-shrink: 0; margin-top: 0.1rem; }
+
+  &.evc-note-warn app-icon { color: var(--warning-ink); }
+}
+
+.evc-filters {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+  max-width: 62rem; margin: 1.25rem auto 0;
+
+  button {
+    padding: 0.4rem 0.9rem; border: 1px solid var(--divider); border-radius: 999px;
+    // Explicit, never inherited: a bare <button> carries the UA default
+    // `buttonface`, resolved from the browser's colour scheme rather than the
+    // page's data-theme, so it comes out light in one place and dark in another.
+    background: var(--card-bg); color: var(--text-muted);
+    font: inherit; font-size: 0.85rem; font-weight: 650; cursor: pointer;
+    &:hover { border-color: var(--primary); color: var(--text); }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    &.on { background: var(--gradient-ai); border-color: transparent; color: #fff; }
+  }
+}
+
+.evc-session {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem;
+  max-width: 62rem; margin: 1rem auto 0; font-size: 0.9rem; color: var(--text);
+
+  input {
+    width: 4.5rem; padding: 0.4rem 0.5rem;
+    border: 1px solid var(--divider); border-radius: 8px;
+    background: var(--fill-soft); color: var(--text); font: inherit;
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  }
+}
+
+.evc-list { max-width: 62rem; margin: 1.5rem auto 0; display: grid; gap: 1rem; }
+
+.evc-station {
+  border: 1px solid var(--divider); border-radius: 16px;
+  background: var(--card-bg); overflow: hidden;
+
+  > header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; padding: 1rem 1.15rem;
+    border-bottom: 1px solid var(--divider);
+
+    h2 { font-size: 1.05rem; font-weight: 800; margin: 0 0 0.2rem; color: var(--text); }
+    .meta { margin: 0; font-size: 0.83rem; color: var(--text-muted); }
+    a { flex-shrink: 0; padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.85rem; }
+  }
+}
+
+.evc-charger {
+  padding: 0.9rem 1.15rem;
+  border-bottom: 1px solid var(--divider);
+  border-left: 4px solid transparent;
+  &:last-of-type { border-bottom: 0; }
+
+  .ch-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.6rem; }
+
+  .ch-current {
+    padding: 0.1rem 0.5rem; border-radius: 6px;
+    background: color-mix(in srgb, var(--teal) 15%, transparent);
+    color: var(--success-ink);
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em;
+    &.dc { background: color-mix(in srgb, var(--primary) 15%, transparent); color: var(--info-ink); }
+  }
+
+  // BR-03: the number is the fact, so it is the largest thing on the row.
+  .ch-kw { font-size: 1.15rem; font-weight: 800; color: var(--text); }
+  .ch-kw-unknown { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }
+  .ch-speed { font-size: 0.83rem; color: var(--text-muted); }
+
+  .ch-connector { margin: 0.3rem 0 0; font-size: 0.86rem; color: var(--text); }
+
+  .ch-compat {
+    display: flex; align-items: center; gap: 0.4rem;
+    margin: 0.45rem 0 0; font-size: 0.85rem; font-weight: 700;
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  }
+
+  .ch-msg { margin: 0.25rem 0 0; font-size: 0.84rem; line-height: 1.5; color: var(--text-muted); }
+
+  .ch-est { margin: 0.45rem 0 0; font-size: 0.86rem; color: var(--text); }
+  .ch-est-note { color: var(--text-muted); font-size: 0.8rem; }
+}
+
+// §11's four states. The *-ink tokens, not the brand colours: these sit on a
+// tint of their own hue where the bright original drops below AA at this size.
+.cmp-compatible        { border-left-color: var(--teal);    .ch-compat { color: var(--success-ink); } }
+.cmp-limited_by_vehicle{ border-left-color: var(--primary); .ch-compat { color: var(--info-ink); } }
+.cmp-not_compatible    { border-left-color: var(--danger);  .ch-compat { color: var(--danger); } }
+.cmp-unknown           { border-left-color: var(--divider); .ch-compat { color: var(--text-muted); } }
+
+.evc-prov {
+  display: flex; gap: 0.75rem; align-items: center;
+  padding: 0.6rem 1.15rem; background: var(--fill-dim);
+  font-size: 0.78rem; color: var(--text-muted);
+
+  // §26 — without a date, a station that closed months ago looks open.
+  a { color: var(--ink-on-white, var(--primary)); font-weight: 600; }
+}
+
+.evc-empty { max-width: 62rem; margin: 2rem auto; text-align: center; color: var(--text-muted); }
+
+// Manual specification entry, shown when the driver's car has no saved
+// profile. The figures come from their handbook — nothing is filled in for
+// them, because a guessed max_dc_kw is a wrong answer to "can I get there on
+// one stop", delivered with a straight face.
+.evc-manual {
+  flex: 1 1 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  background: var(--fill-dim);
+
+  .mn-lead { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--text-muted); }
+
+  .mn-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+  label { display: flex; flex-direction: column; gap: 0.25rem; flex: 1 1 8rem; min-width: 0; }
+  label > span { font-size: 0.76rem; font-weight: 700; color: var(--text); }
+
+  input {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--divider); border-radius: 8px;
+    background: var(--card-bg); color: var(--text); font: inherit; font-size: 0.9rem;
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  }
+}
