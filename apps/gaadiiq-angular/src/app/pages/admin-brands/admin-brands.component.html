@@ -25,9 +25,17 @@
       <div class="abr-top">
         <!-- The same circular tile the homepage uses, so what is previewed here
              is what a visitor sees rather than a differently-sized approximation. -->
+        <!-- The initial shows only when there is no image to show.
+             It used to sit behind the logo unconditionally, which is invisible
+             for a logo with a solid backdrop and a ghosted letter behind every
+             transparent one — a T behind Tata, an N behind Nissan. The fixture
+             URLs this screen was checked against never resolved, so an image
+             and a letter were never on screen together and the bug could not
+             be seen. -->
         <div class="abr-tile">
-          <span class="abr-initial">{{ initial(b) }}</span>
-          <img *ngIf="b.logo_url" [src]="b.logo_url" [alt]="b.name" (error)="onImgError($event)">
+          <span class="abr-initial" *ngIf="!showsImage(b)">{{ initial(b) }}</span>
+          <img *ngIf="b.logo_url" [src]="b.logo_url" [alt]="b.name"
+               (error)="onImgError(b, $event)" (load)="onImgLoad(b)">
         </div>
 
         <div class="abr-meta">

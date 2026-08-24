@@ -15,6 +15,21 @@ export interface AdminBrand {
   logo_updated_by: string | null;
 }
 
+/**
+ * What cleanUp did, so the screen can say it.
+ *
+ * Always returned, never null: `changed: false` carries the ORIGINAL file, so a
+ * logo that needed nothing is uploaded byte-for-byte rather than re-encoded —
+ * which is what keeps a healthy SVG an SVG.
+ */
+export interface CleanUpResult {
+  file: File;
+  changed: boolean;
+  /** Source dimensions, e.g. "2000x1069" — empty if it could not be decoded. */
+  from: string;
+  to: string;
+}
+
 /** Where a row's current logo comes from. Derived, not stored — see `origin()`. */
 export type LogoOrigin = 'uploaded' | 'cdn' | 'bundled' | 'none';
 
@@ -187,7 +202,8 @@ export class BrandLogoService {
    * Returns null when there was nothing to do, so the caller uploads the
    * original file untouched rather than a re-encoded copy of it.
    */
-  async cleanUp(file: File): Promise<File | null> {
+  async cleanUp(file: File): Promise<CleanUpResult> {
+    const unchanged = (from = ''): CleanUpResult => ({ file, changed: false, from, to: from });
     let url: string | null = null;
     try {
       url = URL.createObjectURL(file);
@@ -204,13 +220,14 @@ export class BrandLogoService {
       const scale = Math.min(1, 1024 / Math.max(natW, natH));
       const w = Math.max(1, Math.round(natW * scale));
       const h = Math.max(1, Math.round(natH * scale));
-      if (!w || !h) return null;
+      if (!w || !h) return unchanged();
 
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) return null;
+      const dims = `${natW}x${natH}`;
+      if (!ctx) return unchanged(dims);
       ctx.drawImage(img, 0, 0, w, h);
 
       const image = ctx.getImageData(0, 0, w, h);
@@ -219,8 +236,8 @@ export class BrandLogoService {
 
       // Nothing connected to the edge matched, and the artwork already fills the
       // frame: the file is fine as it is.
-      if (!cleared && bounds.full) return null;
-      if (!bounds.any) return null; // everything was cleared — refuse to ship an empty tile
+      if (!cleared && bounds.full) return unchanged(dims);
+      if (!bounds.any) return unchanged(dims); // all cleared — refuse to ship an empty tile
 
       ctx.putImageData(image, 0, 0);
 
@@ -230,7 +247,7 @@ export class BrandLogoService {
       out.width = bounds.width + pad * 2;
       out.height = bounds.height + pad * 2;
       const outCtx = out.getContext('2d');
-      if (!outCtx) return null;
+      if (!outCtx) return unchanged(dims);
       outCtx.drawImage(
         canvas,
         bounds.x, bounds.y, bounds.width, bounds.height,
@@ -238,12 +255,17 @@ export class BrandLogoService {
       );
 
       const blob: Blob | null = await new Promise(r => out.toBlob(r, 'image/png'));
-      if (!blob) return null;
+      if (!blob) return unchanged(dims);
 
       const base = file.name.replace(/\.[^.]+$/, '');
-      return new File([blob], `${base}.png`, { type: 'image/png' });
+      return {
+        file: new File([blob], `${base}.png`, { type: 'image/png' }),
+        changed: true,
+        from: dims,
+        to: `${out.width}x${out.height}`,
+      };
     } catch {
-      return null;
+      return unchanged();
     } finally {
       if (url) URL.revokeObjectURL(url);
     }

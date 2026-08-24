@@ -164,9 +164,9 @@ describe('BrandLogoService', () => {
       });
 
       const cleaned = await svc.cleanUp(file);
-      expect(cleaned).not.toBeNull();
+      expect(cleaned.changed).toBe(true);
 
-      const p = await pixels(cleaned!);
+      const p = await pixels(cleaned.file);
       // Trimmed to the mark plus a small pad, not the original 200x100.
       expect(p.width).toBeLessThan(40);
       expect(p.height).toBeLessThan(40);
@@ -190,7 +190,7 @@ describe('BrandLogoService', () => {
       });
 
       const cleaned = await svc.cleanUp(file);
-      const p = await pixels(cleaned!);
+      const p = await pixels(cleaned.file);
 
       const mid = Math.floor(p.width / 2);
       // The enclosed white is not connected to the edge, so it stays opaque.
@@ -222,9 +222,9 @@ describe('BrandLogoService', () => {
       });
 
       const cleaned = await svc.cleanUp(file);
-      expect(cleaned).not.toBeNull();
+      expect(cleaned.changed).toBe(true);
 
-      const p = await pixels(cleaned!);
+      const p = await pixels(cleaned.file);
       // Trimmed to the mark plus its small pad, not to the halo.
       expect(p.width).toBeLessThan(80);
       expect(p.height).toBeLessThan(80);
@@ -247,7 +247,7 @@ describe('BrandLogoService', () => {
       });
 
       const cleaned = await svc.cleanUp(file);
-      const p = await pixels(cleaned!);
+      const p = await pixels(cleaned.file);
       // The bright core must survive; a runaway fill would have cleared it.
       expect(p.at(Math.floor(p.width / 2), Math.floor(p.height / 2))[3]).toBeGreaterThan(250);
     });
@@ -258,19 +258,21 @@ describe('BrandLogoService', () => {
       });
       // Nothing connected to the edge differs from the corner, but the artwork
       // fills the frame — there is nothing to remove and nothing to trim.
-      expect(await svc.cleanUp(file)).toBeNull();
+      expect((await svc.cleanUp(file)).changed).toBe(false);
     });
 
     it('refuses to return an empty tile when everything matched', async () => {
       const file = await make(50, 50, ctx => {
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 50, 50);
       });
-      expect(await svc.cleanUp(file)).toBeNull();
+      expect((await svc.cleanUp(file)).changed).toBe(false);
     });
 
     it('returns null rather than throwing on a file it cannot decode', async () => {
       const bad = new File([new Uint8Array([9, 9, 9])], 'x.png', { type: 'image/png' });
-      expect(await svc.cleanUp(bad)).toBeNull();
+      const r = await svc.cleanUp(bad);
+      expect(r.changed).toBe(false);
+      expect(r.file).toBe(bad);   // the original, so the upload still goes ahead
     });
   });
 });

@@ -114,29 +114,28 @@ export class AdminBrandsComponent implements OnInit {
       // mechanical: a backdrop, and a wide empty margin around a small mark.
       // The browser can remove them, and the uploaded artwork is still the real
       // logo rather than a redrawn one.
-      let toUpload = file;
-      let note = '';
-      const background = await this.svc.solidBackgroundColour(file);
-      if (background) {
-        const cleaned = await this.svc.cleanUp(file);
-        if (cleaned) {
-          toUpload = cleaned;
-          note = ` The solid ${background} background was removed and the empty margin trimmed.`;
-        } else {
-          // Say so rather than uploading something that will look wrong with no
-          // explanation. A backdrop the fill could not lift is usually a
-          // gradient or a photograph, and neither belongs in the tile.
-          this.setRowError(
-            brand.id,
-            `This image sits on a solid ${background} background and it could not be removed ` +
-            `automatically — usually that means the backdrop is a gradient or a photo rather ` +
-            `than one flat colour. A logo on a plain or transparent background will work.`,
-          );
-          return;
-        }
-      }
+      // No gate in front of it.
+      //
+      // This used to run only when solidBackgroundColour() reported a backdrop,
+      // and a file with a visibly black background came through that gate with
+      // nothing found — so the cleanup never ran and the tile stayed a black
+      // rectangle. Two conditions had to agree before anything happened, and
+      // the stricter one silently won.
+      //
+      // cleanUp is conservative on its own: when there is nothing connected to
+      // the edge to remove it returns the ORIGINAL file, so a healthy logo is
+      // uploaded byte-for-byte and a healthy SVG stays an SVG. The gate was
+      // adding a way to fail, not a safeguard.
+      const clean = await this.svc.cleanUp(file);
 
-      const updated = await this.svc.uploadLogo(brand, toUpload, this.auth.currentUser()?.email ?? null);
+      // Report either way. A silent "Logo updated." after a tile comes out
+      // wrong gives nobody — admin or maintainer — anything to go on; that is
+      // exactly how the black rectangle above went unexplained.
+      const note = clean.changed
+        ? ` Background removed and trimmed ${clean.from} to ${clean.to}.`
+        : ` No background found to remove${clean.from ? ` (${clean.from})` : ''}; uploaded unchanged.`;
+
+      const updated = await this.svc.uploadLogo(brand, clean.file, this.auth.currentUser()?.email ?? null);
       this.brands.update(list => list.map(b => (b.id === updated.id ? updated : b)));
       this.setRowMessage(brand.id, `Logo updated.${note}`);
       // The homepage grid reads a separate cached signal; without this the
@@ -194,8 +193,35 @@ export class AdminBrandsComponent implements OnInit {
     return (b.name || '?').trim().charAt(0).toUpperCase();
   }
 
-  onImgError(event: Event) {
+  /** Brand ids whose logo failed to load, so the initial takes over for those. */
+  private broken = signal<Set<number>>(new Set());
+
+  /**
+   * Is a logo actually on screen for this row?
+   *
+   * A method, not a computed: it takes the brand as an argument and reads a
+   * plain field on it, and a computed over a non-signal evaluates once and then
+   * reports that first answer forever.
+   */
+  showsImage(b: AdminBrand): boolean {
+    return !!b.logo_url && !this.broken().has(b.id);
+  }
+
+  onImgError(b: AdminBrand, event: Event) {
     (event.target as HTMLImageElement).style.display = 'none';
+    this.broken.update(s => new Set(s).add(b.id));
+  }
+
+  onImgLoad(b: AdminBrand) {
+    // A replaced logo that now loads must clear the flag, or the tile keeps
+    // showing the letter after a successful re-upload.
+    if (this.broken().has(b.id)) {
+      this.broken.update(s => {
+        const next = new Set(s);
+        next.delete(b.id);
+        return next;
+      });
+    }
   }
 
   private setRowMessage(id: number, text: string) {
