@@ -6,6 +6,7 @@ when Redis cannot be reached — see _usable_storage_uri. In dev/test the limite
 is disabled entirely, which means every decorated endpoint still accepts an
 unlimited number of requests — no Redis required.
 """
+import hmac
 import logging
 
 from slowapi import Limiter
@@ -17,18 +18,71 @@ from core.config import settings
 _log = logging.getLogger("gaadiiq.limiter")
 
 
+def came_through_trusted_proxy(request: Request) -> bool:
+    """
+    Did this request arrive via the proxy we put in front, or straight at us?
+
+    A shared secret rather than an IP allow-list: Cloudflare's ranges change and
+    a stale copy fails in the direction that locks out real traffic. The secret
+    is injected by a Transform Rule and never travels to a browser, so a client
+    addressing the origin directly cannot produce it.
+
+    Constant-time comparison — this is a secret, and it is checked on every
+    single request, which is exactly the volume a timing attack wants.
+    """
+    secret = settings.trusted_proxy_secret
+    if not secret:
+        return False
+    presented = request.headers.get(settings.trusted_proxy_secret_header, "")
+    return hmac.compare_digest(presented, secret)
+
+
 def _real_ip(request: Request) -> str:
     """
-    Extract the real client IP when running behind a reverse proxy (Nginx,
-    Cloudflare, AWS ALB).  Trusts CF-Connecting-IP first (Cloudflare), then
-    X-Forwarded-For first element, then falls back to the direct peer address.
+    The client's address, taken only from sources that cannot be forged.
+
+    WHAT THIS USED TO DO, AND WHY IT MATTERED
+
+    It read CF-Connecting-IP, then the FIRST element of X-Forwarded-For, and
+    trusted whichever it found — from anybody. Both are attacker-controlled on a
+    request that did not pass through a proxy, and X-Forwarded-For's first
+    element is attacker-controlled even on one that did, because a proxy appends
+    to the header and whatever the client sent stays on the left.
+
+    Measured against a 3/minute limit, six requests each carrying a different
+    forged CF-Connecting-IP:
+
+        same caller, no headers   [200, 200, 200, 429, 429, 429]
+        forged CF-Connecting-IP   [200, 200, 200, 200, 200, 200]
+        forged X-Forwarded-For    [200, 200, 200, 200, 200, 200]
+
+    Every request minted a fresh bucket. The rate limiting was bypassable with
+    one header, which is worse than having none: it looks like a control.
+
+    NOW
+
+    1. CF-Connecting-IP, but only when the request proved it came through our
+       proxy. Until trusted_proxy_secret is set, that is never.
+    2. Otherwise X-Forwarded-For counted from the RIGHT, by trusted_proxy_hops.
+       Render appends the peer it actually saw, so the rightmost entry is the
+       one Render wrote and everything to its left is whatever the client chose
+       to send. Counting from the right is what makes this unspoofable — a
+       client can add entries, and they all land on the wrong side.
+    3. Otherwise the peer address.
     """
-    cf_ip = request.headers.get("CF-Connecting-IP")
-    if cf_ip:
-        return cf_ip.strip()
+    if came_through_trusted_proxy(request):
+        cf_ip = request.headers.get("CF-Connecting-IP")
+        if cf_ip:
+            return cf_ip.strip()
+
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        parts = [p.strip() for p in forwarded.split(",") if p.strip()]
+        if parts:
+            # hops=1 -> parts[-1], the entry our own proxy appended.
+            hops = max(1, settings.trusted_proxy_hops)
+            return parts[-min(hops, len(parts))]
+
     return get_remote_address(request)
 
 

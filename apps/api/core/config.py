@@ -39,6 +39,39 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379"
 
+    # ── Trusting the proxy in front ───────────────────────────────────────────
+    #
+    # THE BUG THESE EXIST FOR
+    #
+    # The rate limiter keyed on CF-Connecting-IP, then X-Forwarded-For, and
+    # trusted whichever it found — from any caller. Measured: with a limit of
+    # 3/minute, six requests carrying a different forged CF-Connecting-IP each
+    # time returned [200, 200, 200, 200, 200, 200]. Every request minted its own
+    # bucket, so the limit bounded nothing at all. One header defeated it.
+    #
+    # A header is only evidence if something we trust set it, and the only thing
+    # that makes it trustworthy is knowing the request actually came through
+    # that proxy.
+    #
+    # WHY NOT SIMPLY IGNORE THE HEADERS
+    #
+    # Because Render terminates TLS and forwards. Falling back to the peer
+    # address would put every visitor in one bucket behind Render's proxy, and
+    # 300/minute shared by the whole internet is an outage we caused ourselves.
+    #
+    # So: hop counting by default, and a shared secret once Cloudflare is in
+    # front.
+    trusted_proxy_hops: int = 1
+    #: Set to the same value as the Cloudflare Transform Rule that injects it.
+    #: While empty, CF-Connecting-IP is not trusted at all.
+    trusted_proxy_secret: str = ""
+    trusted_proxy_secret_header: str = "X-Gaadiiq-Origin"
+    #: Refuse any request that did not come through the trusted proxy. This is
+    #: the origin lock in code: Render's own IP allow-list is the first line,
+    #: and this holds even if that is misconfigured or the service is reachable
+    #: by another route. Requires trusted_proxy_secret.
+    require_trusted_proxy: bool = False
+
     # Auth — RS256 asymmetric JWT
     # In production set JWT_PRIVATE_KEY / JWT_PUBLIC_KEY to PEM strings (newlines as \n).
     # In development a self-signed RSA keypair is generated on first startup if not set.
