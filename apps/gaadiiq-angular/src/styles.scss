@@ -91,6 +91,24 @@
   --fill-dim:       rgba(15,23,42,0.02);
   --fill-soft:      rgba(15,23,42,0.035);
   --fill-medium:    rgba(15,23,42,0.065);
+
+  // ── Brand logo chip ────────────────────────────────────────────────────────
+  //
+  // Manufacturer logos are drawn for a light ground, and most of them are a
+  // single dark colour: Jaguar's leaper, the Audi rings, the Mercedes star,
+  // Porsche, Aston Martin, McLaren, Maserati, Isuzu, Jeep. On the dark fill the
+  // tile used to have, those are near-invisible — Jaguar disappeared entirely,
+  // which is how it was reported.
+  //
+  // So the chip is light in BOTH themes. A white badge on a dark card reads as
+  // deliberate, and it is what every logo in the set was designed to sit on.
+  //
+  // The alternative — inverting dark logos in dark mode — is why the dead
+  // `--logo-filter` hook existed. It cannot work: invert() turns Ferrari's
+  // yellow blue and Kia's red cyan. A filter cannot tell a logo that is dark
+  // because it is monochrome from one that is dark because that is its colour.
+  --logo-chip:        #FFFFFF;
+  --logo-chip-border: rgba(15,23,42,0.12);
   // The light-mode text ramp, deliberately compressed and darkened.
   //
   // These were #94A3B8 / #475569 / #64748B — a conventional Tailwind-ish scale
@@ -159,6 +177,10 @@
     --fill-dim:       rgba(255,255,255,0.03);
     --fill-soft:      rgba(255,255,255,0.06);
     --fill-medium:    rgba(255,255,255,0.09);
+  --logo-chip:        #FFFFFF;
+  --logo-chip-border: rgba(255,255,255,0.18);
+    --logo-chip:        #FFFFFF;
+    --logo-chip-border: rgba(255,255,255,0.18);
     // Was rgba(255,255,255,0.38), which measured 3.32-3.51:1 on the tinted
     // panels it actually lands on. Solid, not alpha: compositing over an
     // unpredictable stack is exactly what made the old value untrustworthy.
@@ -255,6 +277,8 @@
   --fill-dim:       rgba(15,23,42,0.02);
   --fill-soft:      rgba(15,23,42,0.035);
   --fill-medium:    rgba(15,23,42,0.065);
+  --logo-chip:        #FFFFFF;
+  --logo-chip-border: rgba(15,23,42,0.12);
   // Kept identical to the bare :root ramp above — see the reasoning there.
   // These two blocks disagreeing is how a theme toggle produces a page that
   // looks different from the same page loaded fresh.
