@@ -55,13 +55,17 @@
   position: relative;
   width: 64px; height: 64px; flex-shrink: 0;
   border-radius: 50%;
-  background: var(--fill-dim);
+  // Same chip as the homepage grid, so this preview is what a visitor sees
+  // rather than a differently-lit approximation — the whole point of showing a
+  // tile here instead of a thumbnail.
+  background: var(--logo-chip, #fff);
+  border: 1px solid var(--logo-chip-border, rgba(15,23,42,0.12));
   display: grid; place-items: center;
   overflow: hidden;
 
   img {
     position: relative;
-    max-width: 74%; max-height: 74%;
+    max-width: 86%; max-height: 86%;
     object-fit: contain;
   }
 
@@ -72,7 +76,11 @@
     position: absolute;
     font-family: 'Outfit', sans-serif;
     font-weight: 800; font-size: 1.4rem;
-    color: var(--text-muted);
+    // A fixed slate, not --text-muted. The chip behind it is white in BOTH
+    // themes now, and --text-muted goes near-white in dark — which would have
+    // put pale grey on white and reproduced, on the fallback letter, exactly
+    // the invisibility this change is fixing for the logos.
+    color: #64748B;
   }
 }
 
