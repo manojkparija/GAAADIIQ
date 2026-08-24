@@ -35,6 +35,7 @@ export const routes: Routes = [
   { path: 'admin/charging-profiles', loadComponent: () => import('./pages/admin-charging-profiles/admin-charging-profiles.component').then(m => m.AdminChargingProfilesComponent), canActivate: [adminGuard] },
   { path: 'admin/video-reviews', loadComponent: () => import('./pages/admin-video-reviews/admin-video-reviews.component').then(m => m.AdminVideoReviewsComponent), canActivate: [adminGuard] },
   { path: 'admin/mechanics', loadComponent: () => import('./pages/admin-mechanics/admin-mechanics.component').then(m => m.AdminMechanicsComponent), canActivate: [adminGuard] },
+  { path: 'admin/brands', loadComponent: () => import('./pages/admin-brands/admin-brands.component').then(m => m.AdminBrandsComponent), canActivate: [adminGuard] },
   { path: 'pricing-plans', loadComponent: () => import('./pages/pricing-plans/pricing-plans.component').then(m => m.PricingPlansComponent) },
   { path: 'ai-valuation', loadComponent: () => import('./pages/ai-valuation/ai-valuation.component').then(m => m.AiValuationComponent) },
   // No guard: the page itself distinguishes signed-out, signed-in-but-not-a-

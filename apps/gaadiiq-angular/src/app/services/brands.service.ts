@@ -14,6 +14,18 @@ export class BrandsService {
     this.load();
   }
 
+  /**
+   * Re-read the table.
+   *
+   * The brand list is fetched once at construction and this service is a
+   * root singleton, so without this an admin who uploads a logo keeps seeing
+   * the old grid until a full page reload — and reasonably concludes the
+   * upload did not work.
+   */
+  reload(): Promise<void> {
+    return this.load();
+  }
+
   private async load() {
     try {
       const { data, error } = await this.sb.client
