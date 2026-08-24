@@ -34,6 +34,15 @@ export class AdminBrandsComponent implements OnInit {
   urlEditingId = signal<number | null>(null);
   urlDraft = '';
 
+  /**
+   * Row whose solid-background warning has been shown once.
+   *
+   * Picking a file again is the confirmation. A checkbox or a second button
+   * would have to be reset on every other path through this screen, and a
+   * forgotten reset means a later upload silently skips the check.
+   */
+  pendingConfirm = signal<number | null>(null);
+
   readonly acceptAttr = this.svc.acceptAttr;
 
   async ngOnInit() {
@@ -103,6 +112,23 @@ export class AdminBrandsComponent implements OnInit {
       this.setRowError(brand.id, reason);
       return;
     }
+
+    // A solid background is not an invalid file, so it is a warning rather than
+    // a refusal — but it has to be seen BEFORE the tile goes live, because the
+    // upload itself succeeds and only the result looks wrong. Uploading again
+    // with the same file confirms it.
+    const background = await this.svc.solidBackgroundColour(file);
+    if (background && this.pendingConfirm() !== brand.id) {
+      this.pendingConfirm.set(brand.id);
+      this.setRowError(
+        brand.id,
+        `This image sits on a solid ${background} background, so it will show as a square ` +
+        `inside the round tile rather than floating on it like the other logos. ` +
+        `Use a version with a transparent background — or pick the same file again to upload it anyway.`,
+      );
+      return;
+    }
+    this.pendingConfirm.set(null);
 
     this.busyId.set(brand.id);
     try {
