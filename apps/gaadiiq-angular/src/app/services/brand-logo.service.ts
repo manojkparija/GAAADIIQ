@@ -232,11 +232,13 @@ export class BrandLogoService {
 
       const image = ctx.getImageData(0, 0, w, h);
       const cleared = this.clearBackground(image, w, h);
+      // Before measuring the box: a stray speck anywhere drags it to the edge.
+      const specks = this.removeSpecks(image, w, h);
       const bounds = this.opaqueBounds(image, w, h);
 
       // Nothing connected to the edge matched, and the artwork already fills the
       // frame: the file is fine as it is.
-      if (!cleared && bounds.full) return unchanged(dims);
+      if (!cleared && !specks && bounds.full) return unchanged(dims);
       if (!bounds.any) return unchanged(dims); // all cleared — refuse to ship an empty tile
 
       ctx.putImageData(image, 0, 0);
@@ -354,6 +356,66 @@ export class BrandLogoService {
       if (y < h - 1) stack.push(p + w, p);
     }
     return changed;
+  }
+
+  /**
+   * Clear specks that are not part of the mark. Returns how many it removed.
+   *
+   * WHY
+   *
+   * The trim takes the box around everything still opaque, so ONE stray pixel
+   * in a far corner drags that box out to the corner. A render carrying a small
+   * sparkle in its bottom-right — a decoration, a watermark, a generator's
+   * flourish — trims to a box spanning the logo AND the sparkle: the mark ends
+   * up in the top-left of the tile at half the size, with a dot opposite it.
+   * That was reported as "logo has to be in the centre of the circle", and the
+   * off-centre was a symptom of the box, not of the centring.
+   *
+   * Relative to the largest piece, not an absolute size, because a logo may be
+   * 40px or 2000px across. One per cent is far below any real part of a mark —
+   * Mahindra's two wings are comparable in size to each other, and a dot over
+   * an "i" is nearer a tenth of its stem than a hundredth.
+   */
+  private removeSpecks(image: ImageData, w: number, h: number): number {
+    const d = image.data;
+    const label = new Int32Array(w * h).fill(-1);
+    const areas: number[] = [];
+
+    for (let start = 0; start < w * h; start++) {
+      if (label[start] !== -1 || d[start * 4 + 3] <= 8) continue;
+
+      const id = areas.length;
+      let area = 0;
+      const stack = [start];
+      label[start] = id;
+
+      while (stack.length) {
+        const p = stack.pop()!;
+        area++;
+        const x = p % w;
+        const y = (p - x) / w;
+        const push = (q: number) => {
+          if (label[q] === -1 && d[q * 4 + 3] > 8) { label[q] = id; stack.push(q); }
+        };
+        if (x > 0) push(p - 1);
+        if (x < w - 1) push(p + 1);
+        if (y > 0) push(p - w);
+        if (y < h - 1) push(p + w);
+      }
+      areas.push(area);
+    }
+
+    if (areas.length < 2) return 0; // one piece, or none: nothing to prune
+
+    const biggest = Math.max(...areas);
+    const floor = biggest * 0.01;
+    const doomed = new Set(areas.map((a, i) => (a < floor ? i : -1)).filter(i => i >= 0));
+    if (!doomed.size) return 0;
+
+    for (let p = 0; p < w * h; p++) {
+      if (doomed.has(label[p])) d[p * 4 + 3] = 0;
+    }
+    return doomed.size;
   }
 
   /** The box containing everything not fully transparent. */

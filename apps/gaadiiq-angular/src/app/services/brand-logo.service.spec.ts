@@ -252,6 +252,53 @@ describe('BrandLogoService', () => {
       expect(p.at(Math.floor(p.width / 2), Math.floor(p.height / 2))[3]).toBeGreaterThan(250);
     });
 
+    /**
+     * The one that reached production as "logo has to be in the centre".
+     *
+     * The uploaded render carried a small sparkle in its bottom-right corner.
+     * The fill correctly left it alone — it is not background — so the trim box
+     * spanned the mark AND the sparkle, and the mark landed in the top-left of
+     * the tile at half size with a dot opposite it. The centring was never
+     * wrong; the box was.
+     */
+    it('ignores a stray speck when deciding where to trim', async () => {
+      const file = await make(400, 214, ctx => {
+        ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 400, 214);
+        ctx.fillStyle = '#c8c8c8'; ctx.fillRect(80, 60, 70, 70);   // the mark
+        ctx.fillRect(384, 200, 4, 4);                              // the sparkle
+      });
+
+      const cleaned = await svc.cleanUp(file);
+      const p = await pixels(cleaned.file);
+
+      // Without the prune this is ~310x150 — the box out to the corner.
+      expect(p.width).toBeLessThan(90);
+      expect(p.height).toBeLessThan(90);
+
+      // And the mark is centred in what remains, rather than pinned to a corner.
+      const cx = Math.floor(p.width / 2), cy = Math.floor(p.height / 2);
+      expect(p.at(cx, cy)[3]).toBeGreaterThan(250);
+    });
+
+    /** A mark in genuinely separate pieces must survive intact. */
+    it('keeps every piece of a multi-part mark', async () => {
+      const file = await make(200, 120, ctx => {
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 200, 120);
+        ctx.fillStyle = '#295EE0';
+        ctx.fillRect(40, 40, 40, 40);    // left wing
+        ctx.fillRect(120, 40, 40, 40);   // right wing, not touching
+      });
+
+      const cleaned = await svc.cleanUp(file);
+      const p = await pixels(cleaned.file);
+
+      // Both pieces are inside the box, so it spans them: wider than one alone.
+      expect(p.width).toBeGreaterThan(110);
+      // Left and right both still painted.
+      expect(p.at(Math.floor(p.width * 0.15), Math.floor(p.height / 2))[3]).toBeGreaterThan(250);
+      expect(p.at(Math.floor(p.width * 0.85), Math.floor(p.height / 2))[3]).toBeGreaterThan(250);
+    });
+
     it('leaves a logo that is already transparent and tight alone', async () => {
       const file = await make(60, 60, ctx => {
         ctx.fillStyle = '#14B8A6'; ctx.fillRect(0, 0, 60, 60);
