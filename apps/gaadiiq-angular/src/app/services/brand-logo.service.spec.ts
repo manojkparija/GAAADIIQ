@@ -198,6 +198,60 @@ describe('BrandLogoService', () => {
       expect(p.at(mid, mid).slice(0, 3)).toEqual([255, 255, 255]);
     });
 
+    /**
+     * The bug that shipped and came back from production.
+     *
+     * A product render is lit, so its ground is not flat: black at the edges,
+     * lifting to a soft glow behind the subject. The first version compared
+     * every pixel against the CORNER colour, so the fill stopped the moment the
+     * vignette drifted past its tolerance and left a wide dark halo — a black
+     * rectangle by another name. Measured before the fix: a 60x60 mark came back
+     * as 243x232, still 69% opaque.
+     *
+     * The numbers below are the point of the test. Asserting only "some pixels
+     * were cleared" passes on the broken version too.
+     */
+    it('follows a vignetted background all the way in', async () => {
+      const W = 400, H = 214;
+      const file = await make(W, H, ctx => {
+        const g = ctx.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, W / 2);
+        g.addColorStop(0, '#464646');   // glow behind the mark
+        g.addColorStop(1, '#000000');   // black at the corners
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#c8c8c8'; ctx.fillRect(170, 80, 60, 60);
+      });
+
+      const cleaned = await svc.cleanUp(file);
+      expect(cleaned).not.toBeNull();
+
+      const p = await pixels(cleaned!);
+      // Trimmed to the mark plus its small pad, not to the halo.
+      expect(p.width).toBeLessThan(80);
+      expect(p.height).toBeLessThan(80);
+      expect(p.at(0, 0)[3]).toBe(0);
+    });
+
+    /**
+     * The guard that stops the gradient-following fill from eating the artwork.
+     * A mark that fades into its own shadow has small steps all the way up, so
+     * only the cap on total deviation from the seed colour stops the crawl.
+     */
+    it('does not crawl up a soft edge into the mark', async () => {
+      const file = await make(120, 120, ctx => {
+        ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 120, 120);
+        // A mark with a wide soft halo around it, black through to near-white.
+        const g = ctx.createRadialGradient(60, 60, 6, 60, 60, 55);
+        g.addColorStop(0, '#f0f0f0');
+        g.addColorStop(1, '#000000');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(60, 60, 55, 0, Math.PI * 2); ctx.fill();
+      });
+
+      const cleaned = await svc.cleanUp(file);
+      const p = await pixels(cleaned!);
+      // The bright core must survive; a runaway fill would have cleared it.
+      expect(p.at(Math.floor(p.width / 2), Math.floor(p.height / 2))[3]).toBeGreaterThan(250);
+    });
+
     it('leaves a logo that is already transparent and tight alone', async () => {
       const file = await make(60, 60, ctx => {
         ctx.fillStyle = '#14B8A6'; ctx.fillRect(0, 0, 60, 60);

@@ -173,11 +173,11 @@ export class BrandLogoService {
    *
    * TWO STEPS
    *
-   * 1. Flood-fill from the four corners, clearing pixels within `tolerance` of
-   *    the corner colour. Flood-fill, NOT "replace every pixel of this colour":
-   *    a mark with white inside it — a counter, a highlight, the gap in a
-   *    letter — must keep that white. Only the region actually connected to the
-   *    edge is a background.
+   * 1. Flood-fill from the four corners — see clearBackground for how the
+   *    boundary is decided. Flood-fill, NOT "replace every pixel of this
+   *    colour": a mark with white inside it — a counter, a highlight, the gap
+   *    in a letter — must keep that white. Only the region actually connected
+   *    to the edge is a background.
    *
    * 2. Trim the fully transparent margin. The tile uses object-fit: contain, so
    *    it fits the whole canvas — a mark centred in a wide frame renders at a
@@ -187,17 +187,23 @@ export class BrandLogoService {
    * Returns null when there was nothing to do, so the caller uploads the
    * original file untouched rather than a re-encoded copy of it.
    */
-  async cleanUp(file: File, tolerance = 32): Promise<File | null> {
+  async cleanUp(file: File): Promise<File | null> {
     let url: string | null = null;
     try {
       url = URL.createObjectURL(file);
       const img = await this.decode(url);
 
-      // Rasterise at the natural size, bounded. An SVG reports 0 for natural
-      // dimensions in some browsers, so fall back to a size that is generous
-      // for a tile rendered at 72px.
-      const w = Math.min(img.naturalWidth || 512, 1024);
-      const h = Math.min(img.naturalHeight || 512, 1024);
+      // Rasterise at the natural size, bounded — scaling BOTH sides by one
+      // factor. Clamping width and height independently squashed a 2000x1069
+      // render into 1024x1024 and stretched the logo with it.
+      //
+      // An SVG reports 0 for natural dimensions in some browsers, so fall back
+      // to a size that is generous for a tile rendered at 72px.
+      const natW = img.naturalWidth || 512;
+      const natH = img.naturalHeight || 512;
+      const scale = Math.min(1, 1024 / Math.max(natW, natH));
+      const w = Math.max(1, Math.round(natW * scale));
+      const h = Math.max(1, Math.round(natH * scale));
       if (!w || !h) return null;
 
       const canvas = document.createElement('canvas');
@@ -208,7 +214,7 @@ export class BrandLogoService {
       ctx.drawImage(img, 0, 0, w, h);
 
       const image = ctx.getImageData(0, 0, w, h);
-      const cleared = this.clearBackground(image, w, h, tolerance);
+      const cleared = this.clearBackground(image, w, h);
       const bounds = this.opaqueBounds(image, w, h);
 
       // Nothing connected to the edge matched, and the artwork already fills the
@@ -246,59 +252,84 @@ export class BrandLogoService {
   /**
    * Clear the background region, in place. Returns whether anything changed.
    *
+   * COMPARED TO THE NEIGHBOUR, NOT ONLY TO THE CORNER
+   *
+   * The first version measured every pixel against the corner colour, which
+   * assumes a perfectly flat backdrop. Product renders are not flat: they are
+   * lit, so the ground is black at the edges and lifts to a soft glow behind
+   * the subject. The fill stopped the moment the vignette drifted past the
+   * tolerance and left a large dark halo, which is a black rectangle by another
+   * name — measured on a reproduction, a 60x60 mark came back as a 243x232
+   * image that was still 69% opaque.
+   *
+   * So the test is the STEP from the pixel this one was reached from. A smooth
+   * gradient has tiny steps and is followed all the way in; the edge of a mark
+   * is a cliff and stops it. `maxDeviation` is the backstop: however gently the
+   * ground shades, the fill may not wander arbitrarily far from the colour it
+   * started at, so a logo that fades into its own shadow cannot be crawled into
+   * and eaten.
+   *
+   * Only alpha is written, never RGB, which is what lets a pixel's original
+   * colour still be read after it has been cleared — the neighbour comparison
+   * depends on it.
+   *
    * An explicit stack rather than recursion: a 1024x1024 background is a
    * million pixels, and a recursive fill blows the call stack long before it
    * finishes.
    */
   private clearBackground(
-    image: ImageData, w: number, h: number, tolerance: number,
+    image: ImageData,
+    w: number,
+    h: number,
+    step = 16,
+    maxDeviation = 120,
   ): boolean {
     const d = image.data;
-    const at = (x: number, y: number) => (y * w + x) * 4;
+    const corners: [number, number][] = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]];
 
-    // Every corner seeds the fill. A logo can sit on a backdrop that is not
-    // uniform across the whole image — a subtle vignette, for instance — and
-    // seeding from one corner would leave the opposite side behind.
-    const seeds: number[] = [];
-    for (const [x, y] of [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]]) {
-      const i = at(x, y);
-      if (d[i + 3] > 250) seeds.push(i);
-    }
-    if (!seeds.length) return false; // already transparent at the edges
+    // Every corner seeds the fill: a backdrop can differ corner to corner, and
+    // seeding from one would leave the opposite side behind.
+    const seedPixels = corners
+      .map(([x, y]) => y * w + x)
+      .filter(p => d[p * 4 + 3] > 250);
+    if (!seedPixels.length) return false; // already transparent at the edges
 
-    const [sr, sg, sb] = [d[seeds[0]], d[seeds[0] + 1], d[seeds[0] + 2]];
+    const s = seedPixels[0] * 4;
+    const [sr, sg, sb] = [d[s], d[s + 1], d[s + 2]];
 
     const seen = new Uint8Array(w * h);
+    // Pairs of [pixel, cameFrom]. A seed came from itself.
     const stack: number[] = [];
-    for (const [x, y] of [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]]) {
-      stack.push(y * w + x);
-    }
+    for (const p of seedPixels) stack.push(p, p);
 
     let changed = false;
     while (stack.length) {
+      const from = stack.pop()!;
       const p = stack.pop()!;
       if (seen[p]) continue;
       seen[p] = 1;
 
       const i = p * 4;
       if (d[i + 3] < 8) continue; // already clear
-      if (
-        Math.abs(d[i] - sr) > tolerance ||
-        Math.abs(d[i + 1] - sg) > tolerance ||
-        Math.abs(d[i + 2] - sb) > tolerance
-      ) {
-        continue; // reached the artwork
-      }
+
+      const f = from * 4;
+      const localStep = Math.max(
+        Math.abs(d[i] - d[f]), Math.abs(d[i + 1] - d[f + 1]), Math.abs(d[i + 2] - d[f + 2]),
+      );
+      const deviation = Math.max(
+        Math.abs(d[i] - sr), Math.abs(d[i + 1] - sg), Math.abs(d[i + 2] - sb),
+      );
+      if (localStep > step || deviation > maxDeviation) continue; // reached the artwork
 
       d[i + 3] = 0;
       changed = true;
 
       const x = p % w;
       const y = (p - x) / w;
-      if (x > 0) stack.push(p - 1);
-      if (x < w - 1) stack.push(p + 1);
-      if (y > 0) stack.push(p - w);
-      if (y < h - 1) stack.push(p + w);
+      if (x > 0) stack.push(p - 1, p);
+      if (x < w - 1) stack.push(p + 1, p);
+      if (y > 0) stack.push(p - w, p);
+      if (y < h - 1) stack.push(p + w, p);
     }
     return changed;
   }
