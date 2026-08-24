@@ -159,28 +159,119 @@ export class EvChargingComponent {
     return [p.make, p.model, p.variant].filter(Boolean).join(' ');
   }
 
-  /** Ask the browser where we are, then search. */
+  /**
+   * How precise the last fix was, in metres, and whether that is good enough.
+   *
+   * Surfaced rather than swallowed. A browser can return a position derived
+   * from the IP address that is kilometres out, and it is indistinguishable
+   * from a GPS fix unless you read `accuracy` — so "2.4 km away" gets printed
+   * against a centre that is in the wrong part of the city.
+   */
+  accuracyM = signal<number | null>(null);
+
+  /** Beyond this the fix is a network or IP guess, not a real position. */
+  private static readonly POOR_ACCURACY_M = 2000;
+
+  poorAccuracy(): boolean {
+    const a = this.accuracyM();
+    return a !== null && a > EvChargingComponent.POOR_ACCURACY_M;
+  }
+
+  cityQuery = '';
+  cityLookup = signal(false);
+
+  /**
+   * Ask the browser where we are, then search.
+   *
+   * enableHighAccuracy: true is the important one. Without it the browser
+   * answers from Wi-Fi and network positioning, which in Indian cities is
+   * routinely 1-5 km out; with it a phone uses GPS and lands within tens of
+   * metres. For a feature whose whole job is "drive to this specific charger",
+   * a three-kilometre error picks the wrong charger.
+   *
+   * maximumAge: 0 because somebody who has just tapped "near me" has usually
+   * moved — a minute-old cached fix is exactly the case this button exists to
+   * refresh. The longer timeout is the cost of asking for GPS: a cold fix
+   * takes noticeably longer than reading a cached network position.
+   */
   async useMyLocation() {
     if (!navigator.geolocation) {
-      this.error.set('This browser cannot share your location. Please search by city instead.');
+      this.error.set(
+        'This browser cannot share your location. Enter your city instead.',
+      );
       return;
     }
     this.locating.set(true);
     this.error.set(null);
+    this.accuracyM.set(null);
+
     navigator.geolocation.getCurrentPosition(
       pos => {
         this.locating.set(false);
+        this.accuracyM.set(Math.round(pos.coords.accuracy));
+        this.searchedCity.set(null);
         this.search(pos.coords.latitude, pos.coords.longitude);
       },
-      () => {
+      err => {
         this.locating.set(false);
+        // Distinguished, because the remedy differs: a refusal needs a browser
+        // setting changed, a timeout just needs trying again or going outside,
+        // and "unavailable" usually means no GPS and no network fix at all.
         this.error.set(
-          'We could not get your location. Check location permission for this site, or search by city.',
+          err.code === err.PERMISSION_DENIED
+            ? 'Location is blocked for this site. Allow it in your browser settings, or enter your city below.'
+            : err.code === err.TIMEOUT
+              ? 'Getting a GPS fix took too long. Try again near a window, or enter your city below.'
+              : 'Your device could not work out where it is. Please enter your city below.',
         );
       },
-      { timeout: 10000, maximumAge: 60000 },
+      // See the docstring: high accuracy, no cached fix, and enough time for
+      // GPS to actually acquire.
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   }
+
+  /**
+   * Search around a named city, when the device cannot place itself.
+   *
+   * Geocoded through Nominatim, which the city selector in the navbar already
+   * uses for the reverse direction — so this is the same third party the app
+   * has already accepted rather than a new one. A city centre is a coarse
+   * origin and the page says so: distances are "from the centre of Kolkata",
+   * not "from you".
+   */
+  async searchByCity() {
+    const q = this.cityQuery.trim();
+    if (q.length < 3) {
+      this.error.set('Please type at least three letters of a city name.');
+      return;
+    }
+    this.cityLookup.set(true);
+    this.error.set(null);
+    try {
+      const url =
+        'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=in&q=' +
+        encodeURIComponent(q);
+      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      const hits = (await res.json()) as { lat: string; lon: string }[];
+      if (!hits.length) {
+        this.error.set(`We could not find "${q}". Try a larger nearby city.`);
+        return;
+      }
+      // A city centre, not a device position — recorded as such so the page
+      // can label the distances honestly rather than implying a GPS fix.
+      this.accuracyM.set(null);
+      this.searchedCity.set(q);
+      await this.search(parseFloat(hits[0].lat), parseFloat(hits[0].lon));
+    } catch {
+      this.error.set('We could not look up that city just now. Please try again.');
+    } finally {
+      this.cityLookup.set(false);
+    }
+  }
+
+  /** Set when the origin is a city centre rather than the device. */
+  searchedCity = signal<string | null>(null);
 
   async search(lat: number, lon: number) {
     this.loading.set(true);
