@@ -208,37 +208,29 @@ async def test_tc74b_a_non_capture_event_is_acknowledged_without_touching_anythi
 
 
 @pytest.mark.asyncio
-async def test_tc60_the_frontend_cannot_reach_the_verify_endpoint_at_all(client):
+async def test_tc60_the_checkout_flow_can_reach_the_verify_endpoint(client):
     """
-    TC-60, and it fails for a reason the scenario did not anticipate.
+    TC-60, and the defect this test was written to catch.
 
-    POST /payments/verify declares payment_id, razorpay_payment_id and
-    razorpay_signature as bare scalars. FastAPI reads bare scalars as QUERY
-    parameters, so the endpoint expects a query string. The pricing page sends
-    them as a JSON body:
+    POST /payments/verify used to declare payment_id, razorpay_payment_id and
+    razorpay_signature as bare scalars, which FastAPI reads as QUERY parameters.
+    The pricing page sends them as a JSON body:
 
         this.http.post(`${apiUrl}/payments/verify`, {
           payment_id, razorpay_payment_id, razorpay_signature })
 
-    So every real verification from the checkout flow returns 422 and the user
-    is shown "Payment received but verification failed. Contact support." after
-    Razorpay has taken their money.
+    So every verification from the real checkout returned 422 and the user was
+    shown "Payment received but verification failed. Contact support." after
+    Razorpay had taken their money.
 
-    This is the trap CLAUDE.md already names for `from __future__ import
-    annotations` — body params read as query params — arriving here by the other
-    route: no request model at all.
-
-    The webhook is the reliable path and does still activate the subscription,
-    so this is a broken user experience rather than lost money — provided the
-    webhook is configured. It documents the CURRENT behaviour; when the endpoint
-    grows a request model, this test should be replaced by one asserting a
-    forged signature is refused.
+    This drives the endpoint exactly as the frontend does. A 422 here means the
+    contract has drifted apart again.
     """
     token = await _token(client, f"verify_{uuid.uuid4().hex[:8]}@test.com")
     order = await client.post("/subscriptions/upgrade", json={"tier": "pro"}, headers=_auth(token))
     assert order.status_code in (200, 201), order.text
 
-    as_the_frontend_sends_it = await client.post(
+    r = await client.post(
         "/payments/verify",
         json={
             "payment_id": order.json()["payment_id"],
@@ -247,36 +239,47 @@ async def test_tc60_the_frontend_cannot_reach_the_verify_endpoint_at_all(client)
         },
         headers=_auth(token),
     )
-    assert as_the_frontend_sends_it.status_code == 422, (
-        "the endpoint now accepts a JSON body — good; replace this test with one "
-        "that asserts a forged signature is refused"
+    assert r.status_code != 422, (
+        "the checkout's JSON body is being read as query parameters again"
     )
 
 
 @pytest.mark.asyncio
-async def test_tc60b_a_forged_signature_is_refused_when_the_call_is_shaped_right(client):
-    """The security property itself, driven the way the endpoint actually reads."""
+async def test_tc60b_a_forged_signature_is_never_accepted_as_a_new_payment(client):
+    """
+    The security property itself, now that the call can actually land.
+
+    Dev mode marks the order paid at creation, so this short-circuits to
+    already_paid. What must never happen is a forged signature being accepted as
+    proof of a NEW payment.
+    """
     token = await _token(client, f"verify2_{uuid.uuid4().hex[:8]}@test.com")
     order = await client.post("/subscriptions/upgrade", json={"tier": "pro"}, headers=_auth(token))
-    payment_id = order.json()["payment_id"]
 
     r = await client.post(
         "/payments/verify",
-        params={
-            "payment_id": payment_id,
+        json={
+            "payment_id": order.json()["payment_id"],
             "razorpay_payment_id": "pay_forged",
             "razorpay_signature": "deadbeef" * 8,
         },
         headers=_auth(token),
     )
-    # Dev mode marks the order paid at creation, so this short-circuits to
-    # already_paid. What must never happen is a forged signature being accepted
-    # as proof of a new payment.
     assert r.status_code in (200, 400), r.text
     if r.status_code == 200:
         assert r.json().get("status") == "already_paid", (
             f"a forged signature was accepted as verification: {r.text}"
         )
+
+
+@pytest.mark.asyncio
+async def test_tc60c_a_verify_body_missing_a_field_is_refused(client):
+    """A declared model means missing fields are a 422 rather than a None."""
+    token = await _token(client, f"verify3_{uuid.uuid4().hex[:8]}@test.com")
+    r = await client.post(
+        "/payments/verify", json={"payment_id": str(uuid.uuid4())}, headers=_auth(token)
+    )
+    assert r.status_code == 422
 
 
 @pytest.mark.asyncio

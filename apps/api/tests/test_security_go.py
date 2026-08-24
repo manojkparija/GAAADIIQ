@@ -174,7 +174,7 @@ async def test_verify_rejects_forged_signature_when_keys_set(client: AsyncClient
         # Forged signature must be rejected
         r = await client.post(
             "/payments/verify",
-            params={
+            json={
                 "payment_id": payment_id,
                 "razorpay_payment_id": "pay_forged",
                 "razorpay_signature": "deadbeef" * 8,
@@ -215,7 +215,7 @@ async def test_verify_accepts_valid_hmac_signature(client: AsyncClient):
 
         r = await client.post(
             "/payments/verify",
-            params={
+            json={
                 "payment_id": payment_id,
                 "razorpay_payment_id": razorpay_payment_id,
                 "razorpay_signature": signature,
@@ -247,7 +247,7 @@ async def test_verify_cannot_mark_others_payment(client: AsyncClient):
     # Already paid in dev mode — but ownership check still applies for other user
     r = await client.post(
         "/payments/verify",
-        params={
+        json={
             "payment_id": payment_id,
             "razorpay_payment_id": "pay_x",
             "razorpay_signature": "sig",

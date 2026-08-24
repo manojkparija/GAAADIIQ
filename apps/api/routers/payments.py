@@ -30,6 +30,7 @@ from models.user import User
 from schemas.payment import (
     FeatureListingRequest,
     PaymentOut,
+    PaymentVerifyRequest,
     RazorpayOrderOut,
     SubscriptionOut,
     SubscriptionUpgradeRequest,
@@ -146,13 +147,23 @@ async def feature_listing(
 
 @router.post("/verify", status_code=status.HTTP_200_OK)
 async def verify_payment(
-    payment_id: uuid.UUID,
-    razorpay_payment_id: str,
-    razorpay_signature: str,
+    payload: PaymentVerifyRequest,
     db: DbDep,
     current_user: CurrentUser,
 ):
-    """Verify Razorpay HMAC signature and mark payment as paid."""
+    """
+    Verify the Razorpay HMAC signature and mark the payment paid.
+
+    Takes a request MODEL, not bare scalars. Declared as scalars these three
+    were read by FastAPI as query parameters, while the checkout page posts them
+    as a JSON body — so every verification from the real flow returned 422 and
+    the user was told "Payment received but verification failed" after being
+    charged. See PaymentVerifyRequest for the full account.
+    """
+    payment_id = payload.payment_id
+    razorpay_payment_id = payload.razorpay_payment_id
+    razorpay_signature = payload.razorpay_signature
+
     payment = await db.get(Payment, payment_id)
     if not payment or payment.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
