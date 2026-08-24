@@ -75,8 +75,42 @@ def _usable_storage_uri() -> str | None:
 
 _storage_uri = _usable_storage_uri()
 
+#: Applies to every route that does not carry its own @limiter.limit.
+#:
+#: WHY THIS EXISTS
+#:
+#: Counted on 24 Aug 2026: 193 route decorators across routers/, and 76
+#: @limiter.limit decorations. Without a default, the other 117 endpoints were
+#: unlimited — including the plain catalogue reads, which are the cheapest for
+#: an attacker to find and the most expensive for us to serve, since each is a
+#: database round trip. Protection was opt-in, and the opt-in had been applied
+#: to well under half the surface.
+#:
+#: DELIBERATELY GENEROUS
+#:
+#: 300/minute is five requests a second from one IP, which no human browsing
+#: the site will reach and which still stops a flood dead. The temptation is to
+#: set it tight, and that is the wrong risk to take first: a limit set too high
+#: still blocks the attack, while a limit set too low takes the site down for
+#: real users at exactly the moment anyone is watching — and on a production we
+#: cannot reach into afterwards, that failure is expensive and the other is not.
+#:
+#: Tighten it once real traffic has been observed. Endpoints that need something
+#: stricter already say so with their own decorator, and those still win: an
+#: explicit @limiter.limit overrides this, it does not stack with it.
+DEFAULT_LIMITS = ["300/minute"]
+
 limiter = Limiter(
     key_func=_real_ip,
     enabled=settings.is_production,
     storage_uri=_storage_uri,
+    default_limits=DEFAULT_LIMITS,
 )
+
+#: True when the limiter is running on per-process memory rather than Redis.
+#:
+#: _usable_storage_uri already logs the fallback, but a warning in a log nobody
+#: is reading during an incident is not a control. This is surfaced on the
+#: health endpoint so the condition can be alerted on: with N replicas, memory
+#: storage means the effective limit is N times the configured one.
+USING_MEMORY_STORAGE = _storage_uri == "memory://"

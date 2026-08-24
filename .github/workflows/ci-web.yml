@@ -34,6 +34,22 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # Vulnerabilities in what actually SHIPS.
+      #
+      # --omit=dev is the whole point. A bare `npm audit` on this repo reports 59
+      # findings, 37 high and 1 critical — and almost all of them are webpack and
+      # @angular-devkit, build tooling that never reaches a browser. Gating on
+      # that number teaches everyone to ignore the step, which is worse than not
+      # having it.
+      #
+      # Restricted to runtime dependencies it is 12 high and 0 critical, so the
+      # gate is set at critical: it passes today and fails the moment something
+      # worse lands in the shipped bundle. The 12 highs are real and tracked in
+      # docs/PRODUCTION_RELEASE_PLAN.md — clearing them means moving Angular
+      # ecosystem majors, which is scheduled work, not a CI fix.
+      - name: Audit shipped dependencies (npm audit)
+        run: npm audit --omit=dev --audit-level=critical
+
       # The development configuration, not production: it points the app at
       # localhost, so a missing API fails immediately instead of hanging on a
       # request to the live one. CI must not depend on — or hammer — production

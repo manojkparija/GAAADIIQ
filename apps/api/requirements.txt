@@ -17,10 +17,17 @@ alembic==1.14.0
 redis==5.2.1
 slowapi==0.1.9
 prometheus-client==0.21.1
-python-jose[cryptography]==3.3.0
+# 3.4.0, not 3.3.0: PYSEC-2024-232/233 are an algorithm-confusion flaw and a
+# decompression bomb in JWT handling, and core/security.py signs and verifies
+# our tokens with this. PYSEC-2025-185 has no fix upstream and is accepted —
+# it is tracked in docs/PRODUCTION_RELEASE_PLAN.md rather than silently.
+python-jose[cryptography]==3.4.0
 passlib[bcrypt]==1.7.4
 bcrypt<4.0.0
-python-multipart==0.0.20
+# 0.0.31 closes six advisories in multipart parsing, all of them shapes of
+# resource exhaustion on a request the server has already accepted — which is
+# the file-upload path, reachable by anyone who can POST.
+python-multipart==0.0.31
 httpx==0.28.1
 aiosmtplib>=3.0.0
 langchain==0.3.14

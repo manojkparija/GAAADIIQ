@@ -33,10 +33,65 @@ jobs:
       - name: Lint (ruff)
         run: ruff check .
 
-      # SQLite: fast, and what a developer gets by just running pytest. It is
-      # the floor, not the guarantee — see the Postgres job below.
-      - name: Test (SQLite)
-        run: pytest tests/ -v
+      # Dependency vulnerabilities.
+      #
+      # BLOCKING, but only for advisories that are NEW. The audit on 24 Aug 2026
+      # found ten affected packages; python-jose and python-multipart were on
+      # security paths and were upgraded there and then, and the rest are listed
+      # below with the reason each is tolerated. Freezing the known set is what
+      # makes this a gate rather than a permanently-red step that everyone
+      # learns to ignore — the failure mode of adding `continue-on-error` and
+      # calling it done.
+      #
+      # To clear an entry: upgrade the package and delete its line. Do not add a
+      # line without recording why in docs/PRODUCTION_RELEASE_PLAN.md.
+      #
+      #   PYSEC-2025-185  python-jose  — no upstream fix exists
+      #   PYSEC-2026-1325 ecdsa        — no upstream fix; maintainers consider
+      #                                  the Minerva timing attack out of scope,
+      #                                  and python-jose[cryptography] does not
+      #                                  route our JWT work through it
+      #   pyasn1          — a fix exists (0.6.4) and cannot be taken:
+      #                     python-jose 3.4.0 pins pyasn1<0.5.0. Upgrading it
+      #                     anyway installs a combination pip itself reports as
+      #                     incompatible, so it waits on python-jose moving.
+      #   starlette / langchain / langsmith / pytest — transitive, pinned by
+      #                     fastapi and the LLM stack; upgrading means moving
+      #                     those majors, which is scheduled work not a CI fix
+      #
+      # The list below is GENERATED from a real audit run, not typed. Typing it
+      # is how an id ends up wrong and silently widens the gate.
+      - name: Audit dependencies (pip-audit)
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt --progress-spinner off \
+            --ignore-vuln GHSA-f4xh-w4cj-qxq8 \
+            --ignore-vuln PYSEC-2026-1325 \
+            --ignore-vuln PYSEC-2026-1515 \
+            --ignore-vuln PYSEC-2026-1518 \
+            --ignore-vuln PYSEC-2026-1520 \
+            --ignore-vuln PYSEC-2026-161 \
+            --ignore-vuln PYSEC-2026-1845 \
+            --ignore-vuln PYSEC-2026-1941 \
+            --ignore-vuln PYSEC-2026-1942 \
+            --ignore-vuln PYSEC-2026-2192 \
+            --ignore-vuln PYSEC-2026-2193 \
+            --ignore-vuln PYSEC-2026-2263 \
+            --ignore-vuln PYSEC-2026-2280 \
+            --ignore-vuln PYSEC-2026-2281 \
+            --ignore-vuln PYSEC-2026-248 \
+            --ignore-vuln PYSEC-2026-249 \
+            --ignore-vuln PYSEC-2026-2555 \
+            --ignore-vuln PYSEC-2026-2562 \
+            --ignore-vuln PYSEC-2026-2563 \
+            --ignore-vuln PYSEC-2026-2564 \
+            --ignore-vuln PYSEC-2026-2582 \
+            --ignore-vuln PYSEC-2026-2583 \
+            --ignore-vuln PYSEC-2026-3455 \
+            --ignore-vuln PYSEC-2026-3456 \
+            --ignore-vuln PYSEC-2026-3457 \
+            --ignore-vuln PYSEC-2026-373 \
+            --ignore-vuln PYSEC-2026-77
 
   postgres:
     name: Test on Postgres

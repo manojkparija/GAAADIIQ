@@ -15,6 +15,14 @@ out/
 .env.*.local
 .env.production
 !.env.example
+# .env.backup was tracked. Its values turned out to be placeholders — Razorpay,
+# R2 and SMTP blank, Gemini a literal "your..." — so it was not a leak. It is
+# the shape of an accident rather than one, and the name is now excluded so the
+# next copy of a working .env cannot be committed by the same route.
+.env.backup
+.env.bak
+.env.save
+.env.*.backup
 
 # Python
 __pycache__/
