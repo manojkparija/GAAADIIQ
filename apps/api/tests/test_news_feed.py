@@ -50,7 +50,15 @@ def _stub_get(monkeypatch, *, body=FEED, status_code=200, seen=None):
 
         def raise_for_status(self):
             if status_code >= 400:
-                raise httpx.HTTPStatusError("boom", request=None, response=None)
+                # A real response, not None. httpx always attaches one, and a
+                # stub without it let _download's error path go untested — the
+                # branch that reads the status code would have raised
+                # AttributeError against this fake while passing in production.
+                raise httpx.HTTPStatusError(
+                    "boom",
+                    request=httpx.Request("GET", "https://news.example/rss"),
+                    response=httpx.Response(status_code),
+                )
 
         async def aiter_bytes(self):
             yield body
@@ -545,3 +553,29 @@ def test_an_oversized_title_is_capped():
     articles = news_feed._parse(feed)
     assert len(articles) == 1
     assert len(articles[0].title) <= news_feed._MAX_TITLE_CHARS
+
+
+@pytest.mark.asyncio
+async def test_a_failed_fetch_reports_the_status_but_never_the_url(monkeypatch):
+    """
+    The status code, because 403 and 503 need different actions.
+
+    A provider that is rate-limited or missing its key answers 403; one that is
+    down answers 5xx. Reporting only the exception class ("HTTPStatusError")
+    made those indistinguishable in the logs, which is the one question a
+    failed upstream call actually raises.
+
+    The URL still never appears. _download is shared with the keyed providers
+    (Open Charge Map, APITube) whose key travels in the query string, so an
+    error message carrying the request would put the key in the log.
+    """
+    key = "SECRET-KEY-VALUE"
+    _stub_get(monkeypatch, status_code=403)
+
+    with pytest.raises(news_feed.NewsUnavailable) as caught:
+        await news_feed._download(f"https://news.example/rss?key={key}")
+
+    message = str(caught.value)
+    assert "403" in message
+    assert key not in message
+    assert "news.example" not in message

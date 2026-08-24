@@ -114,7 +114,12 @@
        compatibility — a map of identical pins says where chargers are, this one
        says which ones your car can use, which is the point (§29). -->
   <div class="evc-maprow" *ngIf="result()">
-    <div id="evc-map" class="evc-map" [class.ready]="mapReady()"></div>
+    <!-- Not rendered once the map has failed. It is a fixed 360px box, and
+         leaving it up after a failure put an empty band the height of a
+         viewport above the error explaining it — which read as the page being
+         broken rather than as the map being unavailable. -->
+    <div id="evc-map" class="evc-map" [class.ready]="mapReady()"
+         *ngIf="mapsConfigured() && !mapProblem()"></div>
 
     <p class="evc-mapnote" *ngIf="mapProblem()">
       <app-icon name="alert-triangle" [size]="15"></app-icon>
