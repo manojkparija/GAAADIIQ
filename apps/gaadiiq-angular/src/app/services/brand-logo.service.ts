@@ -15,6 +15,21 @@ export interface AdminBrand {
   logo_updated_by: string | null;
 }
 
+/**
+ * What cleanUp did, so the screen can say it.
+ *
+ * Always returned, never null: `changed: false` carries the ORIGINAL file, so a
+ * logo that needed nothing is uploaded byte-for-byte rather than re-encoded —
+ * which is what keeps a healthy SVG an SVG.
+ */
+export interface CleanUpResult {
+  file: File;
+  changed: boolean;
+  /** Source dimensions, e.g. "2000x1069" — empty if it could not be decoded. */
+  from: string;
+  to: string;
+}
+
 /** Where a row's current logo comes from. Derived, not stored — see `origin()`. */
 export type LogoOrigin = 'uploaded' | 'cdn' | 'bundled' | 'none';
 
@@ -157,6 +172,278 @@ export class BrandLogoService {
     } finally {
       if (url) URL.revokeObjectURL(url);
     }
+  }
+
+  /**
+   * Turn a logo on a solid backdrop into one that sits on the tile properly.
+   *
+   * WHY THIS IS IN THE APP AND NOT IN A NOTE TELLING SOMEONE TO USE PHOTOSHOP
+   *
+   * Because the note did not work. The uploaded file already IS the correct
+   * logo; what is wrong with it is mechanical — a backdrop and a wide empty
+   * margin — and both are the kind of thing a computer should do rather than
+   * a person. Asking an admin to find an image editor, or to hunt for a
+   * differently-prepared copy of a logo they already have, is asking them to do
+   * a conversion by hand every time.
+   *
+   * TWO STEPS
+   *
+   * 1. Flood-fill from the four corners — see clearBackground for how the
+   *    boundary is decided. Flood-fill, NOT "replace every pixel of this
+   *    colour": a mark with white inside it — a counter, a highlight, the gap
+   *    in a letter — must keep that white. Only the region actually connected
+   *    to the edge is a background.
+   *
+   * 2. Trim the fully transparent margin. The tile uses object-fit: contain, so
+   *    it fits the whole canvas — a mark centred in a wide frame renders at a
+   *    fraction of the size of the logos beside it, which is the second half of
+   *    why the uploaded render looked wrong.
+   *
+   * Returns null when there was nothing to do, so the caller uploads the
+   * original file untouched rather than a re-encoded copy of it.
+   */
+  async cleanUp(file: File): Promise<CleanUpResult> {
+    const unchanged = (from = ''): CleanUpResult => ({ file, changed: false, from, to: from });
+    let url: string | null = null;
+    try {
+      url = URL.createObjectURL(file);
+      const img = await this.decode(url);
+
+      // Rasterise at the natural size, bounded — scaling BOTH sides by one
+      // factor. Clamping width and height independently squashed a 2000x1069
+      // render into 1024x1024 and stretched the logo with it.
+      //
+      // An SVG reports 0 for natural dimensions in some browsers, so fall back
+      // to a size that is generous for a tile rendered at 72px.
+      const natW = img.naturalWidth || 512;
+      const natH = img.naturalHeight || 512;
+      const scale = Math.min(1, 1024 / Math.max(natW, natH));
+      const w = Math.max(1, Math.round(natW * scale));
+      const h = Math.max(1, Math.round(natH * scale));
+      if (!w || !h) return unchanged();
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const dims = `${natW}x${natH}`;
+      if (!ctx) return unchanged(dims);
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const image = ctx.getImageData(0, 0, w, h);
+      const cleared = this.clearBackground(image, w, h);
+      // Before measuring the box: a stray speck anywhere drags it to the edge.
+      const specks = this.removeSpecks(image, w, h);
+      const bounds = this.opaqueBounds(image, w, h);
+
+      // Nothing connected to the edge matched, and the artwork already fills the
+      // frame: the file is fine as it is.
+      if (!cleared && !specks && bounds.full) return unchanged(dims);
+      if (!bounds.any) return unchanged(dims); // all cleared — refuse to ship an empty tile
+
+      ctx.putImageData(image, 0, 0);
+
+      // A little breathing room, so the mark does not touch the tile's edge.
+      const pad = Math.round(Math.max(bounds.width, bounds.height) * 0.04);
+      const out = document.createElement('canvas');
+      out.width = bounds.width + pad * 2;
+      out.height = bounds.height + pad * 2;
+      const outCtx = out.getContext('2d');
+      if (!outCtx) return unchanged(dims);
+      outCtx.drawImage(
+        canvas,
+        bounds.x, bounds.y, bounds.width, bounds.height,
+        pad, pad, bounds.width, bounds.height,
+      );
+
+      const blob: Blob | null = await new Promise(r => out.toBlob(r, 'image/png'));
+      if (!blob) return unchanged(dims);
+
+      const base = file.name.replace(/\.[^.]+$/, '');
+      return {
+        file: new File([blob], `${base}.png`, { type: 'image/png' }),
+        changed: true,
+        from: dims,
+        to: `${out.width}x${out.height}`,
+      };
+    } catch {
+      return unchanged();
+    } finally {
+      if (url) URL.revokeObjectURL(url);
+    }
+  }
+
+  /**
+   * Clear the background region, in place. Returns whether anything changed.
+   *
+   * COMPARED TO THE NEIGHBOUR, NOT ONLY TO THE CORNER
+   *
+   * The first version measured every pixel against the corner colour, which
+   * assumes a perfectly flat backdrop. Product renders are not flat: they are
+   * lit, so the ground is black at the edges and lifts to a soft glow behind
+   * the subject. The fill stopped the moment the vignette drifted past the
+   * tolerance and left a large dark halo, which is a black rectangle by another
+   * name — measured on a reproduction, a 60x60 mark came back as a 243x232
+   * image that was still 69% opaque.
+   *
+   * So the test is the STEP from the pixel this one was reached from. A smooth
+   * gradient has tiny steps and is followed all the way in; the edge of a mark
+   * is a cliff and stops it. `maxDeviation` is the backstop: however gently the
+   * ground shades, the fill may not wander arbitrarily far from the colour it
+   * started at, so a logo that fades into its own shadow cannot be crawled into
+   * and eaten.
+   *
+   * Only alpha is written, never RGB, which is what lets a pixel's original
+   * colour still be read after it has been cleared — the neighbour comparison
+   * depends on it.
+   *
+   * An explicit stack rather than recursion: a 1024x1024 background is a
+   * million pixels, and a recursive fill blows the call stack long before it
+   * finishes.
+   */
+  private clearBackground(
+    image: ImageData,
+    w: number,
+    h: number,
+    step = 16,
+    maxDeviation = 120,
+  ): boolean {
+    const d = image.data;
+    const corners: [number, number][] = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]];
+
+    // Every corner seeds the fill: a backdrop can differ corner to corner, and
+    // seeding from one would leave the opposite side behind.
+    const seedPixels = corners
+      .map(([x, y]) => y * w + x)
+      .filter(p => d[p * 4 + 3] > 250);
+    if (!seedPixels.length) return false; // already transparent at the edges
+
+    const s = seedPixels[0] * 4;
+    const [sr, sg, sb] = [d[s], d[s + 1], d[s + 2]];
+
+    const seen = new Uint8Array(w * h);
+    // Pairs of [pixel, cameFrom]. A seed came from itself.
+    const stack: number[] = [];
+    for (const p of seedPixels) stack.push(p, p);
+
+    let changed = false;
+    while (stack.length) {
+      const from = stack.pop()!;
+      const p = stack.pop()!;
+      if (seen[p]) continue;
+      seen[p] = 1;
+
+      const i = p * 4;
+      if (d[i + 3] < 8) continue; // already clear
+
+      const f = from * 4;
+      const localStep = Math.max(
+        Math.abs(d[i] - d[f]), Math.abs(d[i + 1] - d[f + 1]), Math.abs(d[i + 2] - d[f + 2]),
+      );
+      const deviation = Math.max(
+        Math.abs(d[i] - sr), Math.abs(d[i + 1] - sg), Math.abs(d[i + 2] - sb),
+      );
+      if (localStep > step || deviation > maxDeviation) continue; // reached the artwork
+
+      d[i + 3] = 0;
+      changed = true;
+
+      const x = p % w;
+      const y = (p - x) / w;
+      if (x > 0) stack.push(p - 1, p);
+      if (x < w - 1) stack.push(p + 1, p);
+      if (y > 0) stack.push(p - w, p);
+      if (y < h - 1) stack.push(p + w, p);
+    }
+    return changed;
+  }
+
+  /**
+   * Clear specks that are not part of the mark. Returns how many it removed.
+   *
+   * WHY
+   *
+   * The trim takes the box around everything still opaque, so ONE stray pixel
+   * in a far corner drags that box out to the corner. A render carrying a small
+   * sparkle in its bottom-right — a decoration, a watermark, a generator's
+   * flourish — trims to a box spanning the logo AND the sparkle: the mark ends
+   * up in the top-left of the tile at half the size, with a dot opposite it.
+   * That was reported as "logo has to be in the centre of the circle", and the
+   * off-centre was a symptom of the box, not of the centring.
+   *
+   * Relative to the largest piece, not an absolute size, because a logo may be
+   * 40px or 2000px across. One per cent is far below any real part of a mark —
+   * Mahindra's two wings are comparable in size to each other, and a dot over
+   * an "i" is nearer a tenth of its stem than a hundredth.
+   */
+  private removeSpecks(image: ImageData, w: number, h: number): number {
+    const d = image.data;
+    const label = new Int32Array(w * h).fill(-1);
+    const areas: number[] = [];
+
+    for (let start = 0; start < w * h; start++) {
+      if (label[start] !== -1 || d[start * 4 + 3] <= 8) continue;
+
+      const id = areas.length;
+      let area = 0;
+      const stack = [start];
+      label[start] = id;
+
+      while (stack.length) {
+        const p = stack.pop()!;
+        area++;
+        const x = p % w;
+        const y = (p - x) / w;
+        const push = (q: number) => {
+          if (label[q] === -1 && d[q * 4 + 3] > 8) { label[q] = id; stack.push(q); }
+        };
+        if (x > 0) push(p - 1);
+        if (x < w - 1) push(p + 1);
+        if (y > 0) push(p - w);
+        if (y < h - 1) push(p + w);
+      }
+      areas.push(area);
+    }
+
+    if (areas.length < 2) return 0; // one piece, or none: nothing to prune
+
+    const biggest = Math.max(...areas);
+    const floor = biggest * 0.01;
+    const doomed = new Set(areas.map((a, i) => (a < floor ? i : -1)).filter(i => i >= 0));
+    if (!doomed.size) return 0;
+
+    for (let p = 0; p < w * h; p++) {
+      if (doomed.has(label[p])) d[p * 4 + 3] = 0;
+    }
+    return doomed.size;
+  }
+
+  /** The box containing everything not fully transparent. */
+  private opaqueBounds(image: ImageData, w: number, h: number) {
+    const d = image.data;
+    let minX = w, minY = h, maxX = -1, maxY = -1;
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (d[(y * w + x) * 4 + 3] > 8) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (maxX < 0) return { any: false, full: false, x: 0, y: 0, width: 0, height: 0 };
+
+    const width = maxX - minX + 1;
+    const height = maxY - minY + 1;
+    return {
+      any: true,
+      // Already tight, within a pixel or two either side.
+      full: minX <= 1 && minY <= 1 && maxX >= w - 2 && maxY >= h - 2,
+      x: minX, y: minY, width, height,
+    };
   }
 
   private decode(url: string): Promise<HTMLImageElement> {

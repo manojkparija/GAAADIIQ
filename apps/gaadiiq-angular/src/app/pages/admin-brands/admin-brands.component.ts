@@ -34,15 +34,6 @@ export class AdminBrandsComponent implements OnInit {
   urlEditingId = signal<number | null>(null);
   urlDraft = '';
 
-  /**
-   * Row whose solid-background warning has been shown once.
-   *
-   * Picking a file again is the confirmation. A checkbox or a second button
-   * would have to be reset on every other path through this screen, and a
-   * forgotten reset means a later upload silently skips the check.
-   */
-  pendingConfirm = signal<number | null>(null);
-
   readonly acceptAttr = this.svc.acceptAttr;
 
   async ngOnInit() {
@@ -113,28 +104,40 @@ export class AdminBrandsComponent implements OnInit {
       return;
     }
 
-    // A solid background is not an invalid file, so it is a warning rather than
-    // a refusal — but it has to be seen BEFORE the tile goes live, because the
-    // upload itself succeeds and only the result looks wrong. Uploading again
-    // with the same file confirms it.
-    const background = await this.svc.solidBackgroundColour(file);
-    if (background && this.pendingConfirm() !== brand.id) {
-      this.pendingConfirm.set(brand.id);
-      this.setRowError(
-        brand.id,
-        `This image sits on a solid ${background} background, so it will show as a square ` +
-        `inside the round tile rather than floating on it like the other logos. ` +
-        `Use a version with a transparent background — or pick the same file again to upload it anyway.`,
-      );
-      return;
-    }
-    this.pendingConfirm.set(null);
-
     this.busyId.set(brand.id);
     try {
-      const updated = await this.svc.uploadLogo(brand, file, this.auth.currentUser()?.email ?? null);
+      // Fix the file rather than send the admin away to fix it.
+      //
+      // This was a warning first — "use a version with a transparent
+      // background" — and the warning did not help, because the person reading
+      // it has the logo they want and no image editor to hand. Both faults are
+      // mechanical: a backdrop, and a wide empty margin around a small mark.
+      // The browser can remove them, and the uploaded artwork is still the real
+      // logo rather than a redrawn one.
+      // No gate in front of it.
+      //
+      // This used to run only when solidBackgroundColour() reported a backdrop,
+      // and a file with a visibly black background came through that gate with
+      // nothing found — so the cleanup never ran and the tile stayed a black
+      // rectangle. Two conditions had to agree before anything happened, and
+      // the stricter one silently won.
+      //
+      // cleanUp is conservative on its own: when there is nothing connected to
+      // the edge to remove it returns the ORIGINAL file, so a healthy logo is
+      // uploaded byte-for-byte and a healthy SVG stays an SVG. The gate was
+      // adding a way to fail, not a safeguard.
+      const clean = await this.svc.cleanUp(file);
+
+      // Report either way. A silent "Logo updated." after a tile comes out
+      // wrong gives nobody — admin or maintainer — anything to go on; that is
+      // exactly how the black rectangle above went unexplained.
+      const note = clean.changed
+        ? ` Background removed and trimmed ${clean.from} to ${clean.to}.`
+        : ` No background found to remove${clean.from ? ` (${clean.from})` : ''}; uploaded unchanged.`;
+
+      const updated = await this.svc.uploadLogo(brand, clean.file, this.auth.currentUser()?.email ?? null);
       this.brands.update(list => list.map(b => (b.id === updated.id ? updated : b)));
-      this.setRowMessage(brand.id, 'Logo updated.');
+      this.setRowMessage(brand.id, `Logo updated.${note}`);
       // The homepage grid reads a separate cached signal; without this the
       // admin navigates back and sees the old logo.
       await this.brandsService.reload();
@@ -190,8 +193,35 @@ export class AdminBrandsComponent implements OnInit {
     return (b.name || '?').trim().charAt(0).toUpperCase();
   }
 
-  onImgError(event: Event) {
+  /** Brand ids whose logo failed to load, so the initial takes over for those. */
+  private broken = signal<Set<number>>(new Set());
+
+  /**
+   * Is a logo actually on screen for this row?
+   *
+   * A method, not a computed: it takes the brand as an argument and reads a
+   * plain field on it, and a computed over a non-signal evaluates once and then
+   * reports that first answer forever.
+   */
+  showsImage(b: AdminBrand): boolean {
+    return !!b.logo_url && !this.broken().has(b.id);
+  }
+
+  onImgError(b: AdminBrand, event: Event) {
     (event.target as HTMLImageElement).style.display = 'none';
+    this.broken.update(s => new Set(s).add(b.id));
+  }
+
+  onImgLoad(b: AdminBrand) {
+    // A replaced logo that now loads must clear the flag, or the tile keeps
+    // showing the letter after a successful re-upload.
+    if (this.broken().has(b.id)) {
+      this.broken.update(s => {
+        const next = new Set(s);
+        next.delete(b.id);
+        return next;
+      });
+    }
   }
 
   private setRowMessage(id: number, text: string) {
