@@ -63,21 +63,38 @@ and diffs the migration chain against the models. `ci-web.yml` runs Playwright
 
 ## Part 2 — Gaps, ranked by what they would actually cost
 
-### G1 — 117 of 193 endpoints have no rate limit at all — DoS
+### G1 — 117 of 193 endpoints had no rate limit at all — **now closed**
 
 Counted: 193 route decorators across `routers/`, 76 `@limiter.limit`
-decorations. The limiter is constructed with **no `default_limits`**, so an
-endpoint without an explicit decorator is unlimited.
+decorations, and the limiter constructed with **no `default_limits`** — so an
+endpoint without an explicit decorator was unlimited. This was the single
+largest exposure to the "millions of requests" scenario, and the undecorated set
+included ordinary catalogue reads: the cheapest endpoints to discover, the most
+expensive to serve, one database round trip each.
 
-This is the single largest exposure to the "millions of requests" scenario. The
-undecorated set includes ordinary catalogue reads, which are the cheapest
-endpoints to discover and the most expensive to serve — each is a database
-round trip.
+**Fixed** with `DEFAULT_LIMITS = ["300/minute"]` in `core/limiter.py`.
 
-**Fix:** give the `Limiter` a conservative `default_limits` (e.g.
-`["120/minute"]`) so protection is opt-out rather than opt-in, then raise it
-per-endpoint where a legitimate client genuinely needs more. Assert in a test
-that no route is exempt unless explicitly marked.
+Deliberately generous. Five requests a second from one IP is beyond any human
+browsing the site and still stops a flood dead. The temptation is to set it
+tight and that is the wrong risk to take first: a limit set too high still
+blocks the attack, while a limit set too low takes the site down for real users
+at the exact moment anyone is watching. On a production we cannot reach into
+afterwards those two failures are not symmetric. Tighten against observed
+traffic later; endpoints needing something stricter already carry their own
+decorator, which overrides the default rather than stacking with it.
+
+**And the part that would have made it decorative.** `default_limits` are
+enforced only by `SlowAPIMiddleware`, and this app registered the limiter and
+the exception handler but **not the middleware**. Adding `default_limits` alone
+would have looked like a fix, passed a test that reads the Limiter's attributes,
+and left all 117 endpoints exactly as unlimited as before.
+
+Found because the test drives a real undecorated route to a 429 instead of
+inspecting configuration — the config assertions passed while the behaviour was
+still broken. `app.add_middleware(SlowAPIMiddleware)` is now registered, before
+`CORSMiddleware` so a 429 goes out with CORS headers; a rate-limit response the
+browser may not read reaches the user as "could not reach the API" and sends
+whoever investigates to the wrong machine.
 
 ### G2 — The limiter silently weakens itself under load
 
@@ -86,9 +103,11 @@ unreachable. The docstring is honest about the cost: with N replicas the
 effective limit is N times the configured one. It logs a warning — which nobody
 is reading during an incident.
 
-**Fix:** emit a metric/alert on fallback, not just a log line. Decide
-deliberately whether Redis being down should fail closed for the most sensitive
-endpoints (payments, OTP, upload).
+**Partly closed.** `core/limiter.py` now exposes `USING_MEMORY_STORAGE`, so the
+condition is a value that can be read and alerted on rather than a line in a log
+nobody opens during an incident. Wiring it to the health endpoint and deciding
+whether Redis being down should fail *closed* for the most sensitive endpoints
+(payments, OTP, upload) is still open.
 
 ### G3 — Nothing in front of the origin
 
@@ -116,14 +135,49 @@ most: staging must be **built by migrations rather than by hand**, and it must
 not hold real applicant data (different `KYC_HASH_PEPPER`, no copied rows, no
 live WhatsApp or payment credentials).
 
-### G5 — No dependency or secret scanning in CI
+### G5 — No dependency scanning in CI — **now closed, and it found things**
 
 Checked: no Dependabot, CodeQL, `pip-audit`, `npm audit`, gitleaks or
-equivalent anywhere in `.github/`. A vulnerable transitive dependency or a
-committed key would reach production unremarked.
+equivalent anywhere in `.github/`. Adding it was meant to be routine
+configuration. It was not.
 
-**Fix:** Dependabot for `pip` and `npm`; `pip-audit` and `npm audit --audit-level=high`
-as CI steps; a secret scanner on push. All are configuration, not code.
+**What the first run found (24 Aug 2026):** 10 of 172 Python packages carried
+advisories. Two were on security paths and were fixed immediately:
+
+| Package | Was | Now | Why it mattered |
+|---|---|---|---|
+| `python-jose` | 3.3.0 | **3.4.0** | PYSEC-2024-232/233 — algorithm confusion and a decompression bomb in JWT handling. `core/security.py` signs and verifies our tokens with this. |
+| `python-multipart` | 0.0.20 | **0.0.31** | Six advisories in multipart parsing, all shapes of resource exhaustion on the file-upload path — reachable by anyone who can POST. |
+
+Both upgrades are in `requirements.txt` and the full suite passes on them.
+
+**What remains, and why.** The gate is blocking, but only for advisories that
+are *new*: today's set is frozen in `ci-api.yml`, with the list generated from a
+real audit run rather than typed. Anything not on it fails the build.
+
+- `pyasn1` — a fix exists (0.6.4) and **cannot be taken**: `python-jose` 3.4.0
+  pins `pyasn1<0.5.0`. Installing it anyway produces a combination pip itself
+  reports as incompatible. Waits on python-jose moving.
+- `ecdsa` PYSEC-2026-1325 — no upstream fix; the maintainers consider the
+  Minerva timing attack out of scope, and `python-jose[cryptography]` does not
+  route our JWT work through it.
+- `python-jose` PYSEC-2025-185 — no upstream fix exists.
+- `starlette`, `langchain*`, `langsmith`, `pytest` — transitive, pinned by
+  FastAPI and the LLM stack. Clearing them means moving those majors, which is
+  scheduled work rather than a CI fix. **`starlette` is the one to schedule
+  first**: nine advisories, and it is the HTTP layer every request passes
+  through.
+
+**On the web side**, a bare `npm audit` reports 59 findings — 37 high, 1
+critical — and almost all of them are `webpack` and `@angular-devkit`, build
+tooling that never reaches a browser. Gating on that number teaches everyone to
+ignore the step. Restricted to what actually ships (`--omit=dev`) it is **12
+high and 0 critical**, so the gate sits at critical: it passes today and fails
+the moment something worse lands in the bundle. The 12 highs are real and need
+an Angular ecosystem upgrade.
+
+**Still open under this heading:** secret scanning. GitHub's push protection is
+a repository setting rather than a workflow, so it is a dashboard action.
 
 ### G6 — `is_production` is one switch gating three different security behaviours
 
@@ -174,12 +228,14 @@ Task #16 has been pending throughout. Admin actions — approving a dealer image
 replacing a brand logo, changing a price — leave no trail. For a marketplace
 handling money this matters both for incident response and for disputes.
 
-### G10 — `.env.backup` is committed
+### G10 — `.env.backup` was committed — **now closed**
 
 `apps/api/.env.backup` is tracked. I checked its contents: **no live secrets** —
 Razorpay, R2 and SMTP values are blank, Gemini is a placeholder. So this is not
-a leak. It is a bad pattern that will eventually become one, and it should be
-deleted and the name added to `.gitignore`.
+a leak — it is the shape of an accident rather than one. Deleted, and
+`.env.backup`, `.env.bak`, `.env.save` and `.env.*.backup` are now in
+`.gitignore`, so the next copy of a working `.env` cannot be committed by the
+same route.
 
 ---
 
@@ -289,14 +345,16 @@ The code is in good shape here (Part 1). What remains is operational:
 
 Nothing here is code-heavy; most of it is configuration and process.
 
-**Before any production release:**
-G4 staging → G1 default rate limits → G3 Cloudflare → G6 environment assertion
+**Done (this change):** G1 default rate limits, plus the middleware that makes
+them real · G5 CI dependency scanning, plus the two upgrades it surfaced on the
+JWT and upload paths · G10 `.env.backup` · G2 in part.
 
-**Same release:**
-G5 CI scanning → G10 delete `.env.backup` → G8 migration runner
+**Before any production release:** G3 Cloudflare · G6 environment assertion,
+shipped warn-only first · a rehearsal of both, whether that is G4 staging or the
+local-Postgres route already documented in `docs/STAGING.md`.
 
-**Next release:**
-G9 audit log → G7 review write path → G2 limiter alerting → reconciliation job
+**Next release:** G8 migration runner · G9 audit log · G7 review write path ·
+the `starlette` upgrade · the 12 shipped npm highs · reconciliation job.
 
 The first four are the ones that would be expensive to retrofit once production
 is frozen. The rest can follow the normal release train.

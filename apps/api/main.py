@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from core.config import settings
 from core.limiter import limiter
@@ -373,6 +374,27 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# WITHOUT THIS, THE DEFAULT LIMIT DOES NOTHING.
+#
+# slowapi applies @limiter.limit decorators through the decorator itself, but
+# default_limits are enforced only by SlowAPIMiddleware. This app registered the
+# limiter and the exception handler and not the middleware — which was fine
+# while every protected endpoint carried its own decorator, and became the whole
+# problem the moment protection was supposed to cover the endpoints that do not.
+#
+# Adding default_limits to the Limiter without this line would have looked like
+# a fix, passed a test that reads the Limiter's attributes, and left 117
+# endpoints exactly as unlimited as before. test_limiter_storage.py drives a
+# real undecorated route to a 429 rather than inspecting configuration, which is
+# the only version of that test that can fail for the right reason.
+#
+# ORDERING, for the same reason the comment below gives: registered BEFORE
+# CORSMiddleware so CORS stays the outer layer and a 429 goes out with
+# Access-Control-Allow-Origin. A rate-limit response the browser is not allowed
+# to read is reported to the user as "could not reach the API", which sends
+# whoever investigates to the wrong machine.
+app.add_middleware(SlowAPIMiddleware)
 
 @app.middleware("http")
 async def _unhandled_error_middleware(request: Request, call_next):
