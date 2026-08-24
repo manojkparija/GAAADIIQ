@@ -109,6 +109,26 @@
     </button>
   </div>
 
+  <!-- The map. Rendered only once a search has returned, so the container is
+       never an empty grey rectangle waiting for something. Pins are coloured by
+       compatibility — a map of identical pins says where chargers are, this one
+       says which ones your car can use, which is the point (§29). -->
+  <div class="evc-maprow" *ngIf="result()">
+    <div id="evc-map" class="evc-map" [class.ready]="mapReady()"></div>
+
+    <p class="evc-mapnote" *ngIf="mapProblem()">
+      <app-icon name="alert-triangle" [size]="15"></app-icon>
+      <span>{{ mapProblem() }}</span>
+    </p>
+
+    <div class="evc-legend" *ngIf="mapReady() && selectedProfile()">
+      <span><i style="background:#14B8A6"></i>{{ 'Fits your car' | t }}</span>
+      <span><i style="background:#295EE0"></i>{{ 'Fits, limited by your car' | t }}</span>
+      <span><i style="background:#EF4444"></i>{{ 'Will not fit' | t }}</span>
+      <span><i style="background:#64748B"></i>{{ 'Not known' | t }}</span>
+    </div>
+  </div>
+
   <ng-container *ngIf="result() as res">
     <!-- No provider connected. Says so rather than drawing an empty map that
          reads as "no chargers near you". -->

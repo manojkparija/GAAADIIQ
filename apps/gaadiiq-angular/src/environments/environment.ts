@@ -8,6 +8,21 @@ export const environment = {
   // Emails shown the admin screens. Keep in step with the API's ADMIN_EMAILS —
   // this only decides what the UI offers; the server decides what it allows.
   adminEmails: ['manojkparija@gaadiiq.com'],
+
+  // Google Maps JavaScript API.
+  //
+  // PUBLIC BY DESIGN, unlike every other credential in this project. A Maps JS
+  // key is loaded by the browser and is therefore readable in the page source —
+  // that is unavoidable, not an oversight, and it is why this one lives here
+  // rather than in Render's environment alongside OCM_API_KEY and the APITube
+  // key.
+  //
+  // What protects it is the restriction, not the secrecy: the key is limited to
+  // the Maps JavaScript API alone and to four referrers (this app's Vercel
+  // hosts, gaadiiq.com and localhost:4200). If the map ever fails with
+  // RefererNotAllowedMapError, a new deployment URL needs adding there — the
+  // code is not the problem.
+  googleMapsApiKey: 'AIzaSyDKQwqMc8DGIHoia5QYmAnHaPBc8q0FOeI',
   supabase: {
     url: 'https://gnhixykdvnuoxeccntjo.supabase.co',
     key: 'sb_publishable_K-cu3EbiH3uDIsonlonRmw_tqsKfp_K'
