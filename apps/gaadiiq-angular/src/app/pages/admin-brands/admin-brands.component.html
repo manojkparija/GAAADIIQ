@@ -1,0 +1,82 @@
+<div class="abr-page container">
+  <header class="abr-head">
+    <h1>{{ 'Brand logos' | t }}</h1>
+    <p class="sub">
+      {{ 'The marks shown in Browse by Brand on the homepage. Uploading here replaces a logo immediately — no deploy, and no SQL.' | t }}
+    </p>
+  </header>
+
+  <div class="abr-note" *ngIf="!loading() && !error()">
+    <app-icon name="info" [size]="16"></app-icon>
+    <span>
+      {{ 'Use the manufacturer\'s own brand assets. A logo redrawn by hand looks plausible and is wrong — that is exactly how the Mahindra tile ended up showing a shape that is not its mark.' | t }}
+    </span>
+  </div>
+
+  <div class="abr-error" *ngIf="error()">
+    <app-icon name="alert-triangle" [size]="16"></app-icon>
+    <span>{{ error() }}</span>
+  </div>
+
+  <p class="abr-loading" *ngIf="loading()">{{ 'Loading brands…' | t }}</p>
+
+  <div class="abr-grid" *ngIf="!loading()">
+    <article class="abr-card" *ngFor="let b of brands()" [class.inactive]="!b.active">
+      <div class="abr-top">
+        <!-- The same circular tile the homepage uses, so what is previewed here
+             is what a visitor sees rather than a differently-sized approximation. -->
+        <div class="abr-tile">
+          <span class="abr-initial">{{ initial(b) }}</span>
+          <img *ngIf="b.logo_url" [src]="b.logo_url" [alt]="b.name" (error)="onImgError($event)">
+        </div>
+
+        <div class="abr-meta">
+          <h2>{{ b.name }}</h2>
+          <p class="slug">{{ b.slug }}</p>
+          <span class="abr-origin" [attr.data-origin]="origin(b)" [title]="originHint(b)">
+            {{ originLabel(b) | t }}
+          </span>
+        </div>
+      </div>
+
+      <p class="abr-updated" *ngIf="b.logo_updated_at">
+        {{ 'Updated' | t }} {{ b.logo_updated_at | date:'d MMM y' }}<ng-container *ngIf="b.logo_updated_by"> · {{ b.logo_updated_by }}</ng-container>
+      </p>
+
+      <div class="abr-actions">
+        <label class="abr-btn primary" [class.disabled]="busyId() === b.id">
+          <app-icon name="upload" [size]="15"></app-icon>
+          <span>{{ busyId() === b.id ? ('Uploading…' | t) : ('Upload logo' | t) }}</span>
+          <input type="file" [accept]="acceptAttr" hidden
+                 [disabled]="busyId() === b.id"
+                 (change)="onFile(b, fileInput)" #fileInput>
+        </label>
+
+        <button type="button" class="abr-btn" (click)="openUrl(b)" [disabled]="busyId() === b.id">
+          {{ 'Use a URL' | t }}
+        </button>
+
+        <button type="button" class="abr-btn subtle" (click)="toggleActive(b)" [disabled]="busyId() === b.id">
+          {{ b.active ? ('Hide' | t) : ('Show' | t) }}
+        </button>
+      </div>
+
+      <div class="abr-url" *ngIf="urlEditingId() === b.id">
+        <label class="field">
+          <span>{{ 'Logo URL or assets path' | t }}</span>
+          <input type="text" [(ngModel)]="urlDraft" name="urlDraft"
+                 placeholder="https://… or assets/brand-logos/tata.svg">
+        </label>
+        <div class="abr-url-actions">
+          <button type="button" class="abr-btn primary" (click)="saveUrl(b)" [disabled]="busyId() === b.id">
+            {{ 'Save' | t }}
+          </button>
+          <button type="button" class="abr-btn subtle" (click)="cancelUrl()">{{ 'Cancel' | t }}</button>
+        </div>
+      </div>
+
+      <p class="abr-ok"  *ngIf="rowMessage()[b.id]">{{ rowMessage()[b.id] }}</p>
+      <p class="abr-bad" *ngIf="rowError()[b.id]">{{ rowError()[b.id] }}</p>
+    </article>
+  </div>
+</div>

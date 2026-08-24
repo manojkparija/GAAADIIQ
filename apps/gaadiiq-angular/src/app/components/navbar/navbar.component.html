@@ -328,6 +328,9 @@
                 <a routerLink="/admin/image-review" (click)="userMenuOpen.set(false)" class="dropdown-item">
                   <app-icon name="check-circle" [size]="14"></app-icon> Image Review
                 </a>
+                <a routerLink="/admin/brands" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                  <app-icon name="upload" [size]="14"></app-icon> Brand Logos
+                </a>
                 <a routerLink="/admin/variants" (click)="userMenuOpen.set(false)" class="dropdown-item">
                   <app-icon name="settings" [size]="14"></app-icon> {{ 'Variants' | t }}
                 </a>
@@ -528,6 +531,7 @@
         <a routerLink="/admin/pricing" (click)="closeMenu()" class="mm-item">Price Manager</a>
         <a routerLink="/admin/car-images" (click)="closeMenu()" class="mm-item">Car Images</a>
         <a routerLink="/admin/image-review" (click)="closeMenu()" class="mm-item">Image Review</a>
+        <a routerLink="/admin/brands" (click)="closeMenu()" class="mm-item">Brand Logos</a>
         <a routerLink="/admin/variants" (click)="closeMenu()" class="mm-item">{{ 'Variants' | t }}</a>
         <a routerLink="/admin/mechanics" (click)="closeMenu()" class="mm-item">Mechanics</a>
         <a routerLink="/admin/pdf-ingestion" (click)="closeMenu()" class="mm-item">File Ingestion</a>

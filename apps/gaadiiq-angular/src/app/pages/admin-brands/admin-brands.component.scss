@@ -1,0 +1,141 @@
+.abr-page {
+  // Clears the fixed navbar (LAY-007). Every admin screen needs this, and the
+  // two that were missing it rendered their titles under the nav unnoticed —
+  // they sit behind adminGuard, so nobody had opened them in a browser.
+  padding-top: max(7rem, var(--nav-offset));
+  padding-bottom: 4rem;
+  min-height: 100vh;
+}
+
+.abr-head {
+  margin-bottom: 1.25rem;
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800;
+    margin: 0 0 0.4rem; color: var(--text);
+  }
+  .sub { margin: 0; color: var(--text-muted); font-size: 0.95rem; max-width: 46rem; line-height: 1.6; }
+}
+
+.abr-note, .abr-error {
+  display: flex; align-items: flex-start; gap: 0.55rem;
+  padding: 0.7rem 0.9rem; border-radius: 10px;
+  border: 1px solid var(--divider); background: var(--fill-dim);
+  font-size: 0.85rem; line-height: 1.55; color: var(--text);
+  margin-bottom: 1.25rem;
+  app-icon { flex-shrink: 0; margin-top: 0.12rem; }
+}
+// --info-ink and --warning-ink, not --primary: these sit on a tint of their own
+// hue, where the brand colour measures below AA at this size.
+.abr-note  app-icon { color: var(--info-ink); }
+.abr-error app-icon { color: var(--warning-ink); }
+
+.abr-loading { color: var(--text-muted); }
+
+.abr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: 1rem;
+}
+
+.abr-card {
+  padding: 1rem; border: 1px solid var(--divider);
+  border-radius: 14px; background: var(--card-bg);
+  display: flex; flex-direction: column; gap: 0.7rem;
+
+  // Hidden brands stay legible rather than being greyed into unreadability —
+  // this is the screen on which someone goes looking for the one they hid.
+  &.inactive { border-style: dashed; }
+  &.inactive .abr-tile { opacity: 0.55; }
+}
+
+.abr-top { display: flex; align-items: center; gap: 0.85rem; }
+
+.abr-tile {
+  position: relative;
+  width: 64px; height: 64px; flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--fill-dim);
+  display: grid; place-items: center;
+  overflow: hidden;
+
+  img {
+    position: relative;
+    max-width: 74%; max-height: 74%;
+    object-fit: contain;
+  }
+
+  // Sits behind the image, so it shows through when the image is missing or
+  // fails to load — no extra state to track, and a broken URL still reads as
+  // the brand rather than as an empty circle.
+  .abr-initial {
+    position: absolute;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800; font-size: 1.4rem;
+    color: var(--text-muted);
+  }
+}
+
+.abr-meta {
+  min-width: 0;
+  h2 { margin: 0; font-size: 1rem; font-weight: 800; color: var(--text); }
+  .slug {
+    margin: 0.1rem 0 0.35rem; font-size: 0.78rem; color: var(--text-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+}
+
+.abr-origin {
+  display: inline-block;
+  padding: 0.15rem 0.5rem; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
+  border: 1px solid var(--divider); color: var(--text-muted);
+  cursor: help;
+
+  // The ink tokens rather than the bright brand colours: this is 11px text on a
+  // tint, which is where --primary measured 4.27:1 and failed AA.
+  &[data-origin="uploaded"] { color: var(--success-ink); }
+  &[data-origin="cdn"]      { color: var(--warning-ink); }
+  &[data-origin="none"]     { color: var(--warning-ink); }
+}
+
+.abr-updated { margin: 0; font-size: 0.76rem; color: var(--text-muted); }
+
+.abr-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
+.abr-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.42rem 0.75rem; border-radius: 9px;
+  border: 1px solid var(--divider); background: var(--fill-soft);
+  color: var(--text); font: inherit; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled):not(.disabled) { border-color: var(--teal); }
+  &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  &:disabled, &.disabled { opacity: 0.55; cursor: not-allowed; }
+
+  &.primary {
+    background: var(--primary); border-color: var(--primary); color: #fff;
+  }
+  &.subtle { background: transparent; }
+}
+
+.abr-url {
+  padding-top: 0.5rem; border-top: 1px solid var(--divider);
+
+  .field {
+    display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.55rem;
+    > span { font-size: 0.76rem; font-weight: 700; color: var(--text); }
+    input {
+      padding: 0.5rem 0.65rem; border: 1px solid var(--divider); border-radius: 9px;
+      background: var(--fill-soft); color: var(--text); font: inherit; font-size: 0.85rem;
+      &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+    }
+  }
+}
+
+.abr-url-actions { display: flex; gap: 0.45rem; }
+
+.abr-ok, .abr-bad { margin: 0; font-size: 0.8rem; line-height: 1.5; }
+.abr-ok  { color: var(--success-ink); }
+.abr-bad { color: var(--warning-ink); }
