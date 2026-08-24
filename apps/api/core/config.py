@@ -72,6 +72,16 @@ class Settings(BaseSettings):
     #: by another route. Requires trusted_proxy_secret.
     require_trusted_proxy: bool = False
 
+    #: Make an environment mismatch fatal instead of a warning.
+    #:
+    #: Off by default, and that is the whole point of shipping it this way. A
+    #: refuse-to-boot check that is wrong takes the service down on the release
+    #: meant to harden it, and this one reasons from a heuristic — the database
+    #: host — so it can be wrong in ways a test will not show. Deploy it
+    #: warn-only, read the log, and turn it on in a later release once the line
+    #: has been seen to say the right thing about a real deployment.
+    strict_environment_check: bool = False
+
     # Auth — RS256 asymmetric JWT
     # In production set JWT_PRIVATE_KEY / JWT_PUBLIC_KEY to PEM strings (newlines as \n).
     # In development a self-signed RSA keypair is generated on first startup if not set.
@@ -343,6 +353,72 @@ class Settings(BaseSettings):
     def payments_enabled(self) -> bool:
         """Payments are only real when Razorpay keys are present."""
         return bool(self.RAZORPAY_KEY_ID and self.RAZORPAY_KEY_SECRET)
+
+    def environment_mismatch(self) -> str | None:
+        """
+        Does the environment we say we are in match the evidence?
+
+        WHY THIS CANNOT LIVE IN validate_production_config
+
+        That method's first two lines are `if not self.is_production: return`.
+        Every check it performs is gated on the very flag that might be wrong,
+        so a deployment with ENVIRONMENT unset or misspelt skips all of them
+        silently — and it is not alone. The same string decides:
+
+          * whether get_admin_user hands an unauthenticated caller a synthetic
+            Dev Admin (core/dependencies.py)
+          * whether payments accept a dev-mode bypass (routers/payments.py)
+          * whether the rate limiter runs at all (core/limiter.py)
+
+        One wrong string is an open admin API, auto-approved payments and no
+        rate limiting, at the same time, on real data. So this check runs
+        unconditionally and asks the opposite question: never "are we
+        configured for production", but "does what we are connected to look
+        like production, whatever we called ourselves".
+
+        Returns a description of the disagreement, or None.
+        """
+        from urllib.parse import urlparse
+
+        url = (self.database_url or "").strip()
+        if not url:
+            return None
+
+        if url.startswith("sqlite"):
+            host = ""
+        else:
+            try:
+                host = (urlparse(url.replace("+asyncpg", "").replace("+psycopg", "")).hostname or "")
+            except ValueError:
+                # A URL we cannot parse is not evidence of anything. Saying
+                # nothing beats a false alarm that trains people to ignore this.
+                return None
+
+        host = host.lower()
+        local = (
+            not host
+            or host in ("localhost", "127.0.0.1", "::1", "host.docker.internal")
+            or host.endswith(".local")
+            or host.startswith("192.168.")
+            or host.startswith("10.")
+        )
+
+        if not local and not self.is_production:
+            return (
+                f"ENVIRONMENT is {self.environment!r} but the database is a remote "
+                f"host ({host}). In this mode the admin dependency grants a "
+                f"synthetic Dev Admin to unauthenticated callers, payments accept "
+                f"a dev bypass, and the rate limiter is disabled — against what "
+                f"looks like real data."
+            )
+
+        if local and self.is_production:
+            return (
+                f"ENVIRONMENT is 'production' but the database is local ({host or 'sqlite'}). "
+                f"Production is pointed at a database that holds nothing."
+            )
+
+        return None
 
     def validate_production_config(self) -> None:
         """Call at startup — aborts if required prod secrets are missing/default."""

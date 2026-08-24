@@ -54,6 +54,16 @@ services:
         sync: false
       - key: REQUIRE_TRUSTED_PROXY
         sync: false
+      # Environment mismatch check — warn-only until deliberately turned on.
+      #
+      # The check runs unconditionally at startup and logs ENVIRONMENT MISMATCH
+      # when what we are connected to disagrees with what we called ourselves.
+      # Setting this to true makes it refuse to boot instead. Leave it unset
+      # until the log has been read against a real deployment: it reasons from
+      # the database host, which is a heuristic, and a refuse-to-boot heuristic
+      # that is wrong takes the service down on the release meant to harden it.
+      - key: STRICT_ENVIRONMENT_CHECK
+        sync: false
       # Secrets — set these in the Render dashboard, not here.
       - key: DATABASE_URL
         sync: false            # Supabase connection string
