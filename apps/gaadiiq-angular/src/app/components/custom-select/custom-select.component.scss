@@ -41,7 +41,21 @@
   // separate pages. The z-index clears the sticky page header (100) and the
   // mobile filter sheet (200).
   position: fixed; z-index: 1000;
-  background: var(--bg, #fff); border: 1.5px solid var(--teal);
+  // --nav-panel, NOT --bg. `--bg` is not defined anywhere in styles.scss, so
+  // `var(--bg, #fff)` silently took the fallback and the panel was white in
+  // BOTH themes — while .cs-option's `var(--text)` correctly went near-white
+  // in dark. Light text on a white panel: the list was unreadable in dark mode
+  // on every page this component appears on.
+  //
+  // An undefined token fails silently — no console warning, no build error —
+  // which is how it survived. The navbar had the identical bug with the
+  // identical token.
+  //
+  // It also has to be a token rather than a host-context rule: the open list is
+  // moved onto <body> to escape ancestor clipping, so it is no longer inside
+  // the component and :host-context() cannot reach it. A custom property
+  // defined on :root still cascades to it wherever it is parked.
+  background: var(--nav-panel, #fff); border: 1.5px solid var(--teal);
   border-radius: 10px; overflow: hidden;
   box-shadow: 0 8px 28px rgba(20,184,166,0.18), 0 2px 8px rgba(0,0,0,0.08);
   max-height: 260px; overflow-y: auto;
@@ -78,14 +92,52 @@
   }
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .cs-trigger { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
-  .cs-dropdown { background: #1e293b; border-color: var(--teal); }
-  .cs-option { color: #e2e8f0; }
+/* ── Dark mode ───────────────────────────────────────────────────────────────
+   :host-context(), not :root.
+
+   These rules were written as `:root[data-theme="dark"] { .cs-trigger {…} }`,
+   which reads correctly and does nothing. :root is <html> — an ancestor
+   OUTSIDE this component — and Angular's emulated encapsulation cannot express
+   "an element in my template, when an ancestor beyond me has an attribute".
+   The compiled output dropped the ancestor entirely, so the dark rules never
+   matched on the strength of the theme attribute.
+
+   Measured on /ev-charging with data-theme="dark" before the fix:
+
+     trigger background  rgb(255,255,255)
+     trigger colour      rgb(241,245,249)
+     option colour       rgba(255,255,255,0.62)
+
+   White text on a white box. The control was invisible in dark mode — not
+   subtly wrong, unusable — and the same component is on the insurance page and
+   anywhere else it has been dropped in.
+
+   :host-context() is the construct built for this: it walks up past the host
+   and survives compilation. Both arms are kept — the attribute for an explicit
+   choice, prefers-color-scheme for the "system" default, with the media arm
+   guarded so an explicit light choice on a dark OS still wins.
+
+   Tokens rather than the hardcoded #1e293b it used before: --nav-panel and
+   --text are already defined per theme, so this follows a retheme instead of
+   pinning one shade of slate. */
+@mixin cs-dark {
+  .cs-trigger {
+    background: var(--nav-panel, #1e293b);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--text, #e2e8f0);
+  }
+  .cs-dropdown {
+    background: var(--nav-panel, #1e293b);
+    border-color: var(--teal);
+  }
+  .cs-option { color: var(--text, #e2e8f0); }
+  .cs-option.placeholder-opt { color: var(--text-muted, #94a3b8); }
+  .cs-value.placeholder { color: var(--text-muted, #94a3b8); }
 }
-:root[data-theme="dark"] {
-  .cs-trigger { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
-  .cs-dropdown { background: #1e293b; border-color: var(--teal); }
-  .cs-option { color: #e2e8f0; }
+
+:host-context([data-theme="dark"]) { @include cs-dark; }
+
+@media (prefers-color-scheme: dark) {
+  // Guarded: someone on a dark OS who has explicitly chosen light must get light.
+  :host-context(:root:not([data-theme="light"])) { @include cs-dark; }
 }
