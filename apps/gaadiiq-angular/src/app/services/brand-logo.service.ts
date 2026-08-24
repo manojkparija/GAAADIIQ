@@ -96,6 +96,79 @@ export class BrandLogoService {
   }
 
   /**
+   * Is the image sitting on a solid background?
+   *
+   * WHY THIS EXISTS
+   *
+   * The first logo uploaded through this screen was a PNG on white. The grid
+   * renders every logo inside a round tile on a dark surface, so it appeared as
+   * a white SQUARE in a row of marks that float on the tile — the upload worked
+   * perfectly and the result still looked broken. Nothing in the file is
+   * invalid, so no format or size check could have caught it.
+   *
+   * The test is deliberately narrow: all four corners opaque AND near-identical
+   * in colour. A brand mark that reaches every corner of its own canvas in one
+   * flat colour is not something that happens by accident, so a positive here
+   * is a background rather than artwork.
+   *
+   * Returns null when the image is fine, or when it could not be examined —
+   * a browser that will not decode the file must not turn into a refusal to
+   * upload it.
+   */
+  async solidBackgroundColour(file: File): Promise<string | null> {
+    let url: string | null = null;
+    try {
+      url = URL.createObjectURL(file);
+      const img = await this.decode(url);
+
+      // Cap the raster: a 4000px logo tells us nothing four corners do not, and
+      // allocating it costs real memory on a phone.
+      const size = 64;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return null;
+
+      ctx.drawImage(img, 0, 0, size, size);
+
+      // Two pixels in, not zero: antialiasing at the very edge of a scaled draw
+      // can leave a softened pixel that is not the background's true colour.
+      const corners = [
+        ctx.getImageData(2, 2, 1, 1).data,
+        ctx.getImageData(size - 3, 2, 1, 1).data,
+        ctx.getImageData(2, size - 3, 1, 1).data,
+        ctx.getImageData(size - 3, size - 3, 1, 1).data,
+      ];
+
+      if (corners.some(c => c[3] < 250)) return null; // transparent somewhere: fine
+
+      const [r, g, b] = corners[0];
+      const sameEverywhere = corners.every(
+        c => Math.abs(c[0] - r) < 12 && Math.abs(c[1] - g) < 12 && Math.abs(c[2] - b) < 12,
+      );
+      if (!sameEverywhere) return null;
+
+      return `rgb(${r}, ${g}, ${b})`;
+    } catch {
+      // Could not decode it. Say nothing rather than blocking an upload on a
+      // check that did not run.
+      return null;
+    } finally {
+      if (url) URL.revokeObjectURL(url);
+    }
+  }
+
+  private decode(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('could not decode'));
+      img.src = url;
+    });
+  }
+
+  /**
    * Upload a logo and point the brand row at it.
    *
    * The object key carries a timestamp rather than being just the slug. Supabase

@@ -78,4 +78,46 @@ describe('BrandLogoService', () => {
       expect(svc.rejectionReason(file('tata.svg', '', 1000))).toBeNull();
     });
   });
+
+  describe('solidBackgroundColour', () => {
+    /**
+     * Build a real PNG so the check is exercised through canvas decoding rather
+     * than against a stub of it. `background` null means transparent.
+     */
+    const png = async (background: string | null): Promise<File> => {
+      const c = document.createElement('canvas');
+      c.width = 40; c.height = 40;
+      const ctx = c.getContext('2d')!;
+      if (background) { ctx.fillStyle = background; ctx.fillRect(0, 0, 40, 40); }
+      // A mark in the middle either way, so the two cases differ only in the
+      // background — which is the thing under test.
+      ctx.fillStyle = '#d0021b';
+      ctx.fillRect(12, 12, 16, 16);
+      const blob: Blob = await new Promise(r => c.toBlob(b => r(b!), 'image/png'));
+      return new File([blob], 'logo.png', { type: 'image/png' });
+    };
+
+    /**
+     * The case that shipped: the first logo uploaded through this screen was a
+     * PNG on white, and it rendered as a white square inside the round tile.
+     * Nothing about the file is invalid, so format and size checks pass it.
+     */
+    it('reports a white background', async () => {
+      expect(await svc.solidBackgroundColour(await png('#ffffff'))).toBe('rgb(255, 255, 255)');
+    });
+
+    it('reports a coloured background too, not just white', async () => {
+      expect(await svc.solidBackgroundColour(await png('#000000'))).toBe('rgb(0, 0, 0)');
+    });
+
+    it('passes a transparent logo', async () => {
+      expect(await svc.solidBackgroundColour(await png(null))).toBeNull();
+    });
+
+    /** A file the browser cannot decode must not become a refusal to upload. */
+    it('says nothing when the image cannot be examined', async () => {
+      const bad = new File([new Uint8Array([1, 2, 3])], 'x.png', { type: 'image/png' });
+      expect(await svc.solidBackgroundColour(bad)).toBeNull();
+    });
+  });
 });
