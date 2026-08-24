@@ -116,11 +116,50 @@ cannot help with a volumetric flood: the process still parses every request. The
 limiter reads `CF-Connecting-IP`, which implies Cloudflare was intended, but
 nothing in `render.yaml` or the DNS setup in this repo shows it in place.
 
-**Fix, and this is the highest-leverage item for the DoS question:** put
-Cloudflare (free tier is sufficient) in front of both `gaadiiq.com` and the API
-hostname. Enable "Under Attack" mode capability, bot fight mode, and a WAF rule
-set. Then lock the Render service to accept traffic only from Cloudflare, or the
-attacker simply addresses the origin directly and the WAF is decorative.
+**The code half is done; the dashboard half is in `docs/CLOUDFLARE.md`.**
+`REQUIRE_TRUSTED_PROXY` + `TRUSTED_PROXY_SECRET` make the API refuse anything
+that did not arrive through Cloudflare — the origin lock in code, holding even
+if Render's IP allow-list is misconfigured. Both switches must be set
+deliberately, because a lock that activates on deploy against a service
+Cloudflare is not yet fronting is a self-inflicted outage on the exact release
+meant to harden things.
+
+Still yours: the domain, the nameservers, the Transform Rule that injects the
+secret, and Render's IP allow-list.
+
+### G3a — the rate limiter's key could be chosen by the caller — **now closed**
+
+Found while implementing the above, and worse than the gap it was meant to
+close. `_real_ip` read `CF-Connecting-IP`, then the *first* element of
+`X-Forwarded-For`, and trusted whichever it found — from anybody. Measured
+against a 3/minute limit, six requests each carrying a different forged
+`CF-Connecting-IP`:
+
+```
+same caller, no headers   [200, 200, 200, 429, 429, 429]
+forged CF-Connecting-IP   [200, 200, 200, 200, 200, 200]
+forged X-Forwarded-For    [200, 200, 200, 200, 200, 200]
+```
+
+Every request minted a fresh bucket. **The rate limiting shipped that morning
+was defeated by one header** — worse than having none, because it looks like a
+control.
+
+The naive fix would have caused an outage of its own: Render terminates TLS, so
+ignoring proxy headers puts every visitor behind one address and shares a single
+300/minute bucket across the whole internet. So `CF-Connecting-IP` is trusted
+only when the shared secret proves where the request came from, and
+`X-Forwarded-For` is counted **from the right** — a proxy appends the peer it
+actually saw, so anything the caller adds lands on the wrong side. Measured
+after:
+
+```
+behind a proxy, forged XFF      [200, 200, 200, 429, 429, 429]
+two genuine clients             [200, 200, 200, 200, 200, 200]
+```
+
+Forgery ineffective, and distinct clients still counted separately. Reverting
+`_real_ip` to the original turns two of the eight tests red.
 
 ### G4 — No staging environment
 

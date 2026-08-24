@@ -15,7 +15,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from core.config import settings
-from core.limiter import limiter
+from core.limiter import came_through_trusted_proxy, limiter
 
 # Debug: Verify configuration is loaded (redact credentials)
 async_url = settings.async_database_url
@@ -395,6 +395,50 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # to read is reported to the user as "could not reach the API", which sends
 # whoever investigates to the wrong machine.
 app.add_middleware(SlowAPIMiddleware)
+
+
+@app.middleware("http")
+async def _origin_lock(request: Request, call_next):
+    """
+    Refuse requests that did not come through the proxy in front of us.
+
+    THE POINT
+
+    Cloudflare's WAF and DDoS protection only apply to traffic that goes through
+    Cloudflare. An origin that is still reachable at its own hostname can simply
+    be addressed directly, and every rule configured at the edge is decorative.
+    Render's IP allow-list is the first line; this is the second, and it holds
+    even if that is misconfigured or the service becomes reachable another way.
+
+    OFF UNTIL DELIBERATELY TURNED ON
+
+    Requires both REQUIRE_TRUSTED_PROXY=true and a TRUSTED_PROXY_SECRET, so it
+    cannot switch itself on and lock out every user the moment this deploys.
+    Turn it on only after Cloudflare is injecting the header — verify by
+    watching the log line below stay silent while real traffic flows.
+
+    /health is exempt. Render's own health check does not come through
+    Cloudflare, and a liveness probe answered with 403 makes the platform
+    restart a service that is working perfectly.
+    """
+    if not (settings.require_trusted_proxy and settings.trusted_proxy_secret):
+        return await call_next(request)
+
+    if request.url.path.startswith("/health"):
+        return await call_next(request)
+
+    if not came_through_trusted_proxy(request):
+        # Logged, because the first thing this will catch is our own
+        # misconfiguration rather than an attacker, and the difference is
+        # visible only if the refusal says something.
+        _log.warning(
+            "Refused a request that did not come through the trusted proxy: %s %s",
+            request.method,
+            request.url.path,
+        )
+        return JSONResponse(status_code=403, content={"detail": "Direct access is not permitted."})
+
+    return await call_next(request)
 
 @app.middleware("http")
 async def _unhandled_error_middleware(request: Request, call_next):

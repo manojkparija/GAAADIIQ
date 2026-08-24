@@ -39,6 +39,21 @@ services:
         sync: false
       - key: ENVIRONMENT
         value: production
+      # Cloudflare origin lock — see docs/CLOUDFLARE.md.
+      #
+      # Both left unmanaged so they are turned on deliberately, from the
+      # dashboard, once Cloudflare is actually in front and its Transform Rule is
+      # injecting the header. A lock that activates on deploy against a service
+      # Cloudflare is not yet fronting refuses every request — a total outage,
+      # self-inflicted, on the exact release meant to harden things.
+      #
+      # Until TRUSTED_PROXY_SECRET is set, CF-Connecting-IP is not trusted at
+      # all and the limiter keys on X-Forwarded-For counted from the right,
+      # which is correct behind Render on its own.
+      - key: TRUSTED_PROXY_SECRET
+        sync: false
+      - key: REQUIRE_TRUSTED_PROXY
+        sync: false
       # Secrets — set these in the Render dashboard, not here.
       - key: DATABASE_URL
         sync: false            # Supabase connection string
