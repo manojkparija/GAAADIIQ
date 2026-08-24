@@ -159,6 +159,178 @@ export class BrandLogoService {
     }
   }
 
+  /**
+   * Turn a logo on a solid backdrop into one that sits on the tile properly.
+   *
+   * WHY THIS IS IN THE APP AND NOT IN A NOTE TELLING SOMEONE TO USE PHOTOSHOP
+   *
+   * Because the note did not work. The uploaded file already IS the correct
+   * logo; what is wrong with it is mechanical — a backdrop and a wide empty
+   * margin — and both are the kind of thing a computer should do rather than
+   * a person. Asking an admin to find an image editor, or to hunt for a
+   * differently-prepared copy of a logo they already have, is asking them to do
+   * a conversion by hand every time.
+   *
+   * TWO STEPS
+   *
+   * 1. Flood-fill from the four corners, clearing pixels within `tolerance` of
+   *    the corner colour. Flood-fill, NOT "replace every pixel of this colour":
+   *    a mark with white inside it — a counter, a highlight, the gap in a
+   *    letter — must keep that white. Only the region actually connected to the
+   *    edge is a background.
+   *
+   * 2. Trim the fully transparent margin. The tile uses object-fit: contain, so
+   *    it fits the whole canvas — a mark centred in a wide frame renders at a
+   *    fraction of the size of the logos beside it, which is the second half of
+   *    why the uploaded render looked wrong.
+   *
+   * Returns null when there was nothing to do, so the caller uploads the
+   * original file untouched rather than a re-encoded copy of it.
+   */
+  async cleanUp(file: File, tolerance = 32): Promise<File | null> {
+    let url: string | null = null;
+    try {
+      url = URL.createObjectURL(file);
+      const img = await this.decode(url);
+
+      // Rasterise at the natural size, bounded. An SVG reports 0 for natural
+      // dimensions in some browsers, so fall back to a size that is generous
+      // for a tile rendered at 72px.
+      const w = Math.min(img.naturalWidth || 512, 1024);
+      const h = Math.min(img.naturalHeight || 512, 1024);
+      if (!w || !h) return null;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return null;
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const image = ctx.getImageData(0, 0, w, h);
+      const cleared = this.clearBackground(image, w, h, tolerance);
+      const bounds = this.opaqueBounds(image, w, h);
+
+      // Nothing connected to the edge matched, and the artwork already fills the
+      // frame: the file is fine as it is.
+      if (!cleared && bounds.full) return null;
+      if (!bounds.any) return null; // everything was cleared — refuse to ship an empty tile
+
+      ctx.putImageData(image, 0, 0);
+
+      // A little breathing room, so the mark does not touch the tile's edge.
+      const pad = Math.round(Math.max(bounds.width, bounds.height) * 0.04);
+      const out = document.createElement('canvas');
+      out.width = bounds.width + pad * 2;
+      out.height = bounds.height + pad * 2;
+      const outCtx = out.getContext('2d');
+      if (!outCtx) return null;
+      outCtx.drawImage(
+        canvas,
+        bounds.x, bounds.y, bounds.width, bounds.height,
+        pad, pad, bounds.width, bounds.height,
+      );
+
+      const blob: Blob | null = await new Promise(r => out.toBlob(r, 'image/png'));
+      if (!blob) return null;
+
+      const base = file.name.replace(/\.[^.]+$/, '');
+      return new File([blob], `${base}.png`, { type: 'image/png' });
+    } catch {
+      return null;
+    } finally {
+      if (url) URL.revokeObjectURL(url);
+    }
+  }
+
+  /**
+   * Clear the background region, in place. Returns whether anything changed.
+   *
+   * An explicit stack rather than recursion: a 1024x1024 background is a
+   * million pixels, and a recursive fill blows the call stack long before it
+   * finishes.
+   */
+  private clearBackground(
+    image: ImageData, w: number, h: number, tolerance: number,
+  ): boolean {
+    const d = image.data;
+    const at = (x: number, y: number) => (y * w + x) * 4;
+
+    // Every corner seeds the fill. A logo can sit on a backdrop that is not
+    // uniform across the whole image — a subtle vignette, for instance — and
+    // seeding from one corner would leave the opposite side behind.
+    const seeds: number[] = [];
+    for (const [x, y] of [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]]) {
+      const i = at(x, y);
+      if (d[i + 3] > 250) seeds.push(i);
+    }
+    if (!seeds.length) return false; // already transparent at the edges
+
+    const [sr, sg, sb] = [d[seeds[0]], d[seeds[0] + 1], d[seeds[0] + 2]];
+
+    const seen = new Uint8Array(w * h);
+    const stack: number[] = [];
+    for (const [x, y] of [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]]) {
+      stack.push(y * w + x);
+    }
+
+    let changed = false;
+    while (stack.length) {
+      const p = stack.pop()!;
+      if (seen[p]) continue;
+      seen[p] = 1;
+
+      const i = p * 4;
+      if (d[i + 3] < 8) continue; // already clear
+      if (
+        Math.abs(d[i] - sr) > tolerance ||
+        Math.abs(d[i + 1] - sg) > tolerance ||
+        Math.abs(d[i + 2] - sb) > tolerance
+      ) {
+        continue; // reached the artwork
+      }
+
+      d[i + 3] = 0;
+      changed = true;
+
+      const x = p % w;
+      const y = (p - x) / w;
+      if (x > 0) stack.push(p - 1);
+      if (x < w - 1) stack.push(p + 1);
+      if (y > 0) stack.push(p - w);
+      if (y < h - 1) stack.push(p + w);
+    }
+    return changed;
+  }
+
+  /** The box containing everything not fully transparent. */
+  private opaqueBounds(image: ImageData, w: number, h: number) {
+    const d = image.data;
+    let minX = w, minY = h, maxX = -1, maxY = -1;
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (d[(y * w + x) * 4 + 3] > 8) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (maxX < 0) return { any: false, full: false, x: 0, y: 0, width: 0, height: 0 };
+
+    const width = maxX - minX + 1;
+    const height = maxY - minY + 1;
+    return {
+      any: true,
+      // Already tight, within a pixel or two either side.
+      full: minX <= 1 && minY <= 1 && maxX >= w - 2 && maxY >= h - 2,
+      x: minX, y: minY, width, height,
+    };
+  }
+
   private decode(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
       const img = new Image();

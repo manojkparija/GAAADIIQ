@@ -34,15 +34,6 @@ export class AdminBrandsComponent implements OnInit {
   urlEditingId = signal<number | null>(null);
   urlDraft = '';
 
-  /**
-   * Row whose solid-background warning has been shown once.
-   *
-   * Picking a file again is the confirmation. A checkbox or a second button
-   * would have to be reset on every other path through this screen, and a
-   * forgotten reset means a later upload silently skips the check.
-   */
-  pendingConfirm = signal<number | null>(null);
-
   readonly acceptAttr = this.svc.acceptAttr;
 
   async ngOnInit() {
@@ -113,28 +104,41 @@ export class AdminBrandsComponent implements OnInit {
       return;
     }
 
-    // A solid background is not an invalid file, so it is a warning rather than
-    // a refusal — but it has to be seen BEFORE the tile goes live, because the
-    // upload itself succeeds and only the result looks wrong. Uploading again
-    // with the same file confirms it.
-    const background = await this.svc.solidBackgroundColour(file);
-    if (background && this.pendingConfirm() !== brand.id) {
-      this.pendingConfirm.set(brand.id);
-      this.setRowError(
-        brand.id,
-        `This image sits on a solid ${background} background, so it will show as a square ` +
-        `inside the round tile rather than floating on it like the other logos. ` +
-        `Use a version with a transparent background — or pick the same file again to upload it anyway.`,
-      );
-      return;
-    }
-    this.pendingConfirm.set(null);
-
     this.busyId.set(brand.id);
     try {
-      const updated = await this.svc.uploadLogo(brand, file, this.auth.currentUser()?.email ?? null);
+      // Fix the file rather than send the admin away to fix it.
+      //
+      // This was a warning first — "use a version with a transparent
+      // background" — and the warning did not help, because the person reading
+      // it has the logo they want and no image editor to hand. Both faults are
+      // mechanical: a backdrop, and a wide empty margin around a small mark.
+      // The browser can remove them, and the uploaded artwork is still the real
+      // logo rather than a redrawn one.
+      let toUpload = file;
+      let note = '';
+      const background = await this.svc.solidBackgroundColour(file);
+      if (background) {
+        const cleaned = await this.svc.cleanUp(file);
+        if (cleaned) {
+          toUpload = cleaned;
+          note = ` The solid ${background} background was removed and the empty margin trimmed.`;
+        } else {
+          // Say so rather than uploading something that will look wrong with no
+          // explanation. A backdrop the fill could not lift is usually a
+          // gradient or a photograph, and neither belongs in the tile.
+          this.setRowError(
+            brand.id,
+            `This image sits on a solid ${background} background and it could not be removed ` +
+            `automatically — usually that means the backdrop is a gradient or a photo rather ` +
+            `than one flat colour. A logo on a plain or transparent background will work.`,
+          );
+          return;
+        }
+      }
+
+      const updated = await this.svc.uploadLogo(brand, toUpload, this.auth.currentUser()?.email ?? null);
       this.brands.update(list => list.map(b => (b.id === updated.id ? updated : b)));
-      this.setRowMessage(brand.id, 'Logo updated.');
+      this.setRowMessage(brand.id, `Logo updated.${note}`);
       // The homepage grid reads a separate cached signal; without this the
       // admin navigates back and sees the old logo.
       await this.brandsService.reload();

@@ -120,4 +120,103 @@ describe('BrandLogoService', () => {
       expect(await svc.solidBackgroundColour(bad)).toBeNull();
     });
   });
+
+  describe('cleanUp', () => {
+    /** Draw onto a canvas and hand back a real PNG File. */
+    const make = async (
+      w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void,
+    ): Promise<File> => {
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      draw(c.getContext('2d')!);
+      const blob: Blob = await new Promise(r => c.toBlob(b => r(b!), 'image/png'));
+      return new File([blob], 'logo.png', { type: 'image/png' });
+    };
+
+    /** Read a File back into pixels so the result can be asserted on. */
+    const pixels = async (file: File) => {
+      const url = URL.createObjectURL(file);
+      try {
+        const img: HTMLImageElement = await new Promise((res, rej) => {
+          const i = new Image();
+          i.onload = () => res(i); i.onerror = rej; i.src = url;
+        });
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        const ctx = c.getContext('2d', { willReadFrequently: true })!;
+        ctx.drawImage(img, 0, 0);
+        return {
+          width: c.width,
+          height: c.height,
+          at: (x: number, y: number) => Array.from(ctx.getImageData(x, y, 1, 1).data),
+        };
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+
+    it('removes a solid background and trims the empty margin', async () => {
+      // A small mark adrift in a wide frame — the shape of the file that
+      // prompted this, where object-fit: contain rendered the mark tiny.
+      const file = await make(200, 100, ctx => {
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 200, 100);
+        ctx.fillStyle = '#d0021b'; ctx.fillRect(90, 40, 20, 20);
+      });
+
+      const cleaned = await svc.cleanUp(file);
+      expect(cleaned).not.toBeNull();
+
+      const p = await pixels(cleaned!);
+      // Trimmed to the mark plus a small pad, not the original 200x100.
+      expect(p.width).toBeLessThan(40);
+      expect(p.height).toBeLessThan(40);
+      // Corner is now transparent; the mark survived.
+      expect(p.at(0, 0)[3]).toBe(0);
+      expect(p.at(Math.floor(p.width / 2), Math.floor(p.height / 2))[3]).toBeGreaterThan(250);
+    });
+
+    /**
+     * The case that separates a flood fill from "delete every white pixel".
+     *
+     * Plenty of marks have white inside them — a counter, a gap, a highlight.
+     * Replacing by colour would punch holes straight through the artwork, and
+     * the result would look deliberate enough to ship.
+     */
+    it('keeps white that is inside the mark', async () => {
+      const file = await make(100, 100, ctx => {
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 100, 100);
+        ctx.fillStyle = '#000000'; ctx.fillRect(20, 20, 60, 60);   // mark
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(45, 45, 10, 10);   // hole inside it
+      });
+
+      const cleaned = await svc.cleanUp(file);
+      const p = await pixels(cleaned!);
+
+      const mid = Math.floor(p.width / 2);
+      // The enclosed white is not connected to the edge, so it stays opaque.
+      expect(p.at(mid, mid)[3]).toBeGreaterThan(250);
+      expect(p.at(mid, mid).slice(0, 3)).toEqual([255, 255, 255]);
+    });
+
+    it('leaves a logo that is already transparent and tight alone', async () => {
+      const file = await make(60, 60, ctx => {
+        ctx.fillStyle = '#14B8A6'; ctx.fillRect(0, 0, 60, 60);
+      });
+      // Nothing connected to the edge differs from the corner, but the artwork
+      // fills the frame — there is nothing to remove and nothing to trim.
+      expect(await svc.cleanUp(file)).toBeNull();
+    });
+
+    it('refuses to return an empty tile when everything matched', async () => {
+      const file = await make(50, 50, ctx => {
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 50, 50);
+      });
+      expect(await svc.cleanUp(file)).toBeNull();
+    });
+
+    it('returns null rather than throwing on a file it cannot decode', async () => {
+      const bad = new File([new Uint8Array([9, 9, 9])], 'x.png', { type: 'image/png' });
+      expect(await svc.cleanUp(bad)).toBeNull();
+    });
+  });
 });
