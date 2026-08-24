@@ -292,9 +292,22 @@ async def _download(url: str, headers: dict[str, str] | None = None) -> bytes:
                     if total > _MAX_FEED_BYTES:
                         raise NewsUnavailable("news feed response was implausibly large")
                     chunks.append(chunk)
+    except httpx.HTTPStatusError as exc:
+        # The status, but still never the URL — for a keyed provider the URL
+        # holds the key, which is why this reports the class of failure rather
+        # than str(exc). A status code is not a secret, and without it the log
+        # cannot tell "the key is missing" (403) from "upstream is down" (5xx),
+        # which is exactly the question a failed provider call raises.
+        #
+        # getattr rather than exc.response.status_code: this is an error path,
+        # and an AttributeError raised while reporting a failure replaces the
+        # real cause with a less useful one.
+        status = getattr(exc.response, "status_code", None)
+        raise NewsUnavailable(
+            f"upstream returned HTTP {status}" if status
+            else f"could not reach the news feed: {type(exc).__name__}"
+        ) from exc
     except httpx.HTTPError as exc:
-        # The message can carry the full URL, and for a keyed provider that URL
-        # may hold the key. Report the class of failure, not the request.
         raise NewsUnavailable(f"could not reach the news feed: {type(exc).__name__}") from exc
 
     return b"".join(chunks)

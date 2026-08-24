@@ -396,6 +396,19 @@ export class EvChargingComponent {
   mapReady = signal(false);
   mapProblem = signal<string | null>(null);
 
+  /**
+   * Whether a map could be drawn at all. A method, not a computed: it reads a
+   * plain field on the loader rather than a signal, and a computed over a
+   * non-signal evaluates once and then reports that answer forever.
+   *
+   * With no key there is no failure to report — the page simply has a list and
+   * no map — so the container must not be rendered either. Otherwise it is a
+   * 360px grey rectangle that never becomes anything.
+   */
+  mapsConfigured(): boolean {
+    return this.maps.configured();
+  }
+
   private map: any = null;
   private markers: any[] = [];
   private info: any = null;
