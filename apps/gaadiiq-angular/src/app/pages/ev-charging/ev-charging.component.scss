@@ -189,3 +189,104 @@
     &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
   }
 }
+
+// Accuracy and origin notices. Deliberately not styled as an error — the
+// search worked, the answer is just coarser than a GPS fix and the distances
+// inherit that.
+.evc-accuracy {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--fill-dim);
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.5;
+
+  app-icon { color: var(--warning-ink); flex-shrink: 0; margin-top: 0.1rem; }
+}
+
+// The city fallback, always visible rather than revealed after a refusal.
+.evc-city {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+
+  label { display: flex; flex-direction: column; gap: 0.25rem; flex: 1 1 12rem; min-width: 0; }
+  label > span { font-size: 0.78rem; font-weight: 700; color: var(--text); }
+
+  input {
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--divider);
+    border-radius: 9px;
+    background: var(--fill-soft);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.9rem;
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  }
+
+  button {
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 650;
+    font-size: 0.86rem;
+    cursor: pointer;
+    white-space: nowrap;
+    &:disabled { opacity: 0.55; cursor: not-allowed; }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  }
+}
+
+// ── Map (§14) ────────────────────────────────────────────────────────────────
+.evc-maprow { margin-top: 1.25rem; }
+
+.evc-map {
+  width: 100%;
+  height: 360px;
+  border-radius: 14px;
+  border: 1px solid var(--divider);
+  // Until the API answers this is an empty box; the placeholder colour keeps it
+  // from flashing white on a dark page.
+  background: var(--fill-dim);
+  overflow: hidden;
+
+  @media (max-width: 640px) { height: 260px; }
+}
+
+.evc-mapnote {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  margin: 0.6rem 0 0; padding: 0.6rem 0.8rem;
+  border: 1px solid var(--divider); border-radius: 10px;
+  background: var(--fill-dim); color: var(--text);
+  font-size: 0.85rem; line-height: 1.5;
+  app-icon { color: var(--warning-ink); flex-shrink: 0; margin-top: 0.1rem; }
+}
+
+.evc-legend {
+  display: flex; flex-wrap: wrap; gap: 0.9rem;
+  margin-top: 0.6rem;
+  font-size: 0.8rem; color: var(--text-muted);
+
+  span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+}
+
+// The marker itself is created in the component and appended by the Maps API,
+// so it lives outside this component's DOM — ::ng-deep is required for the
+// style to reach it, and the class name is namespaced to keep that safe.
+:host ::ng-deep .evc-pin,
+::ng-deep .evc-pin {
+  width: 16px; height: 16px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  cursor: pointer;
+}

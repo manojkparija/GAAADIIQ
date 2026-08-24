@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CustomSelectComponent, SelectOption } from '../../components/custom-select/custom-select.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { GoogleMapsLoader } from '../../services/google-maps-loader.service';
 import { SeoService } from '../../services/seo.service';
 import {
   ChargerOut,
@@ -46,6 +47,7 @@ const MANUAL = '__manual__';
 })
 export class EvChargingComponent {
   private readonly api = inject(EvChargingService);
+  private readonly maps = inject(GoogleMapsLoader);
 
   profiles = signal<ChargingProfile[]>([]);
   selectedProfileId = signal<string>('');
@@ -159,44 +161,136 @@ export class EvChargingComponent {
     return [p.make, p.model, p.variant].filter(Boolean).join(' ');
   }
 
-  /** Ask the browser where we are, then search. */
+  /**
+   * How precise the last fix was, in metres, and whether that is good enough.
+   *
+   * Surfaced rather than swallowed. A browser can return a position derived
+   * from the IP address that is kilometres out, and it is indistinguishable
+   * from a GPS fix unless you read `accuracy` — so "2.4 km away" gets printed
+   * against a centre that is in the wrong part of the city.
+   */
+  accuracyM = signal<number | null>(null);
+
+  /** Beyond this the fix is a network or IP guess, not a real position. */
+  private static readonly POOR_ACCURACY_M = 2000;
+
+  poorAccuracy(): boolean {
+    const a = this.accuracyM();
+    return a !== null && a > EvChargingComponent.POOR_ACCURACY_M;
+  }
+
+  cityQuery = '';
+  cityLookup = signal(false);
+
+  /**
+   * Ask the browser where we are, then search.
+   *
+   * enableHighAccuracy: true is the important one. Without it the browser
+   * answers from Wi-Fi and network positioning, which in Indian cities is
+   * routinely 1-5 km out; with it a phone uses GPS and lands within tens of
+   * metres. For a feature whose whole job is "drive to this specific charger",
+   * a three-kilometre error picks the wrong charger.
+   *
+   * maximumAge: 0 because somebody who has just tapped "near me" has usually
+   * moved — a minute-old cached fix is exactly the case this button exists to
+   * refresh. The longer timeout is the cost of asking for GPS: a cold fix
+   * takes noticeably longer than reading a cached network position.
+   */
   async useMyLocation() {
     if (!navigator.geolocation) {
-      this.error.set('This browser cannot share your location. Please search by city instead.');
+      this.error.set(
+        'This browser cannot share your location. Enter your city instead.',
+      );
       return;
     }
     this.locating.set(true);
     this.error.set(null);
+    this.accuracyM.set(null);
+
     navigator.geolocation.getCurrentPosition(
       pos => {
         this.locating.set(false);
+        this.accuracyM.set(Math.round(pos.coords.accuracy));
+        this.searchedCity.set(null);
         this.search(pos.coords.latitude, pos.coords.longitude);
       },
-      () => {
+      err => {
         this.locating.set(false);
+        // Distinguished, because the remedy differs: a refusal needs a browser
+        // setting changed, a timeout just needs trying again or going outside,
+        // and "unavailable" usually means no GPS and no network fix at all.
         this.error.set(
-          'We could not get your location. Check location permission for this site, or search by city.',
+          err.code === err.PERMISSION_DENIED
+            ? 'Location is blocked for this site. Allow it in your browser settings, or enter your city below.'
+            : err.code === err.TIMEOUT
+              ? 'Getting a GPS fix took too long. Try again near a window, or enter your city below.'
+              : 'Your device could not work out where it is. Please enter your city below.',
         );
       },
-      { timeout: 10000, maximumAge: 60000 },
+      // See the docstring: high accuracy, no cached fix, and enough time for
+      // GPS to actually acquire.
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   }
+
+  /**
+   * Search around a named city, when the device cannot place itself.
+   *
+   * Geocoded through Nominatim, which the city selector in the navbar already
+   * uses for the reverse direction — so this is the same third party the app
+   * has already accepted rather than a new one. A city centre is a coarse
+   * origin and the page says so: distances are "from the centre of Kolkata",
+   * not "from you".
+   */
+  async searchByCity() {
+    const q = this.cityQuery.trim();
+    if (q.length < 3) {
+      this.error.set('Please type at least three letters of a city name.');
+      return;
+    }
+    this.cityLookup.set(true);
+    this.error.set(null);
+    try {
+      const url =
+        'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=in&q=' +
+        encodeURIComponent(q);
+      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      const hits = (await res.json()) as { lat: string; lon: string }[];
+      if (!hits.length) {
+        this.error.set(`We could not find "${q}". Try a larger nearby city.`);
+        return;
+      }
+      // A city centre, not a device position — recorded as such so the page
+      // can label the distances honestly rather than implying a GPS fix.
+      this.accuracyM.set(null);
+      this.searchedCity.set(q);
+      await this.search(parseFloat(hits[0].lat), parseFloat(hits[0].lon));
+    } catch {
+      this.error.set('We could not look up that city just now. Please try again.');
+    } finally {
+      this.cityLookup.set(false);
+    }
+  }
+
+  /** Set when the origin is a city centre rather than the device. */
+  searchedCity = signal<string | null>(null);
 
   async search(lat: number, lon: number) {
     this.loading.set(true);
     this.error.set(null);
     const car = this.selectedProfile();
     try {
-      this.result.set(
-        await this.api.stations({
+      const found = await this.api.stations({
           lat,
           lon,
           radiusKm: this.radiusValue(),
           make: car?.make,
           model: car?.model,
           variant: car?.variant || undefined,
-        }),
-      );
+      });
+      this.result.set(found);
+      // After the results, not before: the markers are the stations.
+      await this.ensureMap(lat, lon);
     } catch {
       this.error.set('We could not load charging stations just now. Please try again.');
       this.result.set(null);
@@ -295,6 +389,153 @@ export class EvChargingComponent {
       bharat_ac_001: 'Bharat AC-001', bharat_dc_001: 'Bharat DC-001',
       three_pin: '3-pin socket', unknown: 'Connector not stated',
     } as Record<string, string>)[value] ?? value;
+  }
+
+  // ── Map (BRD §14) ──────────────────────────────────────────────────────────
+
+  mapReady = signal(false);
+  mapProblem = signal<string | null>(null);
+
+  private map: any = null;
+  private markers: any[] = [];
+  private info: any = null;
+
+  /**
+   * Marker colour carries the compatibility, because that is the one thing a
+   * pin cannot say on its own. A map of identical pins tells a driver where
+   * chargers are; this one tells them which ones their car can use, which is
+   * the entire premise of the page (§29).
+   */
+  private markerColour(s: StationOut): string {
+    const states = s.chargers.map(c => c.compatibility);
+    if (states.some(c => c === 'compatible')) return '#14B8A6';           // teal
+    if (states.some(c => c === 'limited_by_vehicle')) return '#295EE0';   // blue
+    if (states.length && states.every(c => c === 'not_compatible')) return '#EF4444';
+    return '#64748B';                                                     // unknown
+  }
+
+  /** Wait for an element the template has only just been told to render. */
+  private awaitElement(id: string, tries = 20): Promise<HTMLElement | null> {
+    return new Promise(resolve => {
+      const look = (left: number) => {
+        const found = document.getElementById(id);
+        if (found || left <= 0) { resolve(found); return; }
+        setTimeout(() => look(left - 1), 25);
+      };
+      look(tries);
+    });
+  }
+
+  private async ensureMap(lat: number, lon: number) {
+    if (!this.maps.configured()) return;
+    try {
+      await this.maps.load();
+    } catch {
+      this.mapProblem.set('We could not load the map. The list below still works.');
+      return;
+    }
+    // gm_authFailure fires asynchronously after load when the key is rejected
+    // for this referrer — the script itself loads fine, so onerror never runs.
+    if (this.maps.failure() === 'auth') {
+      this.mapProblem.set(
+        'The map could not start — this site is not authorised for the map key yet. The list below still works.',
+      );
+      return;
+    }
+
+    const g = (window as any).google;
+    if (!g?.maps) return;
+
+    // The container is behind *ngIf="result()", and ensureMap() is called
+    // immediately after result.set() — before Angular has rendered it. Looking
+    // the element up straight away found nothing and the map silently never
+    // built, with no error anywhere: zero markers, no legend, and a page that
+    // looked like the map feature had not been written.
+    //
+    // Waiting a frame is not reliably enough on a slow device, so this polls
+    // briefly and gives up rather than hanging.
+    const el = await this.awaitElement('evc-map');
+    if (!el) {
+      this.mapProblem.set('The map could not be placed on the page. The list below still works.');
+      return;
+    }
+
+    if (!this.map) {
+      this.map = new g.maps.Map(el, {
+        center: { lat, lng: lon },
+        zoom: 12,
+        mapId: 'DEMO_MAP_ID',
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+      });
+      this.info = new g.maps.InfoWindow();
+    } else {
+      this.map.setCenter({ lat, lng: lon });
+    }
+    this.mapReady.set(true);
+    this.drawMarkers();
+  }
+
+  private drawMarkers() {
+    const g = (window as any).google;
+    if (!g?.maps || !this.map) return;
+
+    for (const m of this.markers) m.map = null;
+    this.markers = [];
+
+    const stations = this.visibleStations();
+    if (!stations.length) return;
+
+    const bounds = new g.maps.LatLngBounds();
+
+    for (const s of stations) {
+      const pin = document.createElement('div');
+      pin.className = 'evc-pin';
+      pin.style.background = this.markerColour(s);
+      pin.title = s.name;
+
+      const marker = new g.maps.marker.AdvancedMarkerElement({
+        map: this.map,
+        position: { lat: s.latitude, lng: s.longitude },
+        content: pin,
+        title: s.name,
+      });
+
+      marker.addListener('click', () => {
+        // Deliberately terse, and it repeats the kW rather than only the
+        // speed band — BR-03 applies inside an info window too.
+        const rows = s.chargers
+          .map(c => `${this.currentLabel(c)} · ${c.power_kw ?? '—'} kW · ${this.connectorLabel(c.connector_type)}`)
+          .join('<br>');
+        this.info.setContent(
+          `<div style="font:600 13px system-ui;color:#0F172A;max-width:16rem">` +
+          `<div style="font-weight:800;margin-bottom:.25rem">${this.escape(s.name)}</div>` +
+          `<div style="font-weight:400;color:#334155">${rows || 'Charger details not published'}</div>` +
+          `<a href="${this.directionsUrl(s)}" target="_blank" rel="noopener noreferrer" ` +
+          `style="display:inline-block;margin-top:.4rem;color:#1D4ED8">Directions →</a></div>`,
+        );
+        this.info.open({ map: this.map, anchor: marker });
+      });
+
+      this.markers.push(marker);
+      bounds.extend({ lat: s.latitude, lng: s.longitude });
+    }
+
+    // Fit to what is actually shown, but never zoom past street level on a
+    // single result — a lone station otherwise fills the frame with rooftops.
+    this.map.fitBounds(bounds, 48);
+    const once = g.maps.event.addListenerOnce(this.map, 'idle', () => {
+      if (this.map.getZoom() > 15) this.map.setZoom(15);
+    });
+    void once;
+  }
+
+  /** Info-window content is built as HTML, so station names must be escaped. */
+  private escape(value: string): string {
+    const d = document.createElement('div');
+    d.textContent = value;
+    return d.innerHTML;
   }
 
   directionsUrl(s: StationOut): string {

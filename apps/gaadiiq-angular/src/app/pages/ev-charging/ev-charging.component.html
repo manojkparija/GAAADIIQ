@@ -71,6 +71,64 @@
 
   <p class="err" *ngIf="error()">{{ error() }}</p>
 
+  <!-- The device answered, but only roughly. Saying so matters: a fix that is
+       kilometres out is indistinguishable from a GPS one unless the accuracy
+       figure is read, and every distance below is measured from whatever
+       centre it gave us. -->
+  <p class="evc-accuracy" *ngIf="poorAccuracy()">
+    <app-icon name="alert-triangle" [size]="15"></app-icon>
+    <span>
+      {{ 'Your device could only place you to within about' | t }}
+      {{ (accuracyM()! / 1000).toFixed(1) }} km.
+      {{ 'Distances below are measured from that point, so treat them as rough — or search a city instead.' | t }}
+    </span>
+  </p>
+
+  <p class="evc-accuracy" *ngIf="searchedCity()">
+    <app-icon name="map-pin" [size]="15"></app-icon>
+    <span>
+      {{ 'Showing chargers around the centre of' | t }} {{ searchedCity() }}.
+      {{ 'Distances are from there, not from you.' | t }}
+    </span>
+  </p>
+
+  <!-- The fallback. Offered always, not only after a failure: some people
+       would rather not share their location at all, and a page that reveals
+       the alternative only once geolocation has failed has already made them
+       refuse something first. -->
+  <div class="evc-city">
+    <label>
+      <span>{{ 'Or search a city' | t }}</span>
+      <input type="text" [(ngModel)]="cityQuery" name="city"
+             (keyup.enter)="searchByCity()"
+             [placeholder]="'e.g. Kolkata' | t">
+    </label>
+    <button type="button" class="btn-outline" (click)="searchByCity()"
+            [disabled]="cityLookup()">
+      {{ cityLookup() ? ('Looking up…' | t) : ('Search' | t) }}
+    </button>
+  </div>
+
+  <!-- The map. Rendered only once a search has returned, so the container is
+       never an empty grey rectangle waiting for something. Pins are coloured by
+       compatibility — a map of identical pins says where chargers are, this one
+       says which ones your car can use, which is the point (§29). -->
+  <div class="evc-maprow" *ngIf="result()">
+    <div id="evc-map" class="evc-map" [class.ready]="mapReady()"></div>
+
+    <p class="evc-mapnote" *ngIf="mapProblem()">
+      <app-icon name="alert-triangle" [size]="15"></app-icon>
+      <span>{{ mapProblem() }}</span>
+    </p>
+
+    <div class="evc-legend" *ngIf="mapReady() && selectedProfile()">
+      <span><i style="background:#14B8A6"></i>{{ 'Fits your car' | t }}</span>
+      <span><i style="background:#295EE0"></i>{{ 'Fits, limited by your car' | t }}</span>
+      <span><i style="background:#EF4444"></i>{{ 'Will not fit' | t }}</span>
+      <span><i style="background:#64748B"></i>{{ 'Not known' | t }}</span>
+    </div>
+  </div>
+
   <ng-container *ngIf="result() as res">
     <!-- No provider connected. Says so rather than drawing an empty map that
          reads as "no chargers near you". -->
