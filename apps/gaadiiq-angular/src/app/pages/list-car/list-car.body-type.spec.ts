@@ -126,6 +126,47 @@ describe('ListCarComponent — body type as an enum label', () => {
     });
   });
 
+  /**
+   * A listed EV never appeared under Electric.
+   *
+   * `cars` holds the fuel twice: `fuel` (text, written here) and `fuel_type`
+   * (the enum routers/cars.py:57 filters on). Measured in production — both
+   * `e Vitara 2026` rows had a fuel and a NULL fuel_type, so every fuel
+   * filter skipped them, however many photographs were approved.
+   */
+  describe('fuel_type', () => {
+    const FUEL_ENUM = ['petrol', 'diesel', 'electric', 'cng', 'hybrid'];
+
+    it('sends the enum label the API filters on', () => {
+      c.form.fuel = 'Electric';
+      expect(c.fuelTypeForDb()).toBe('electric');
+    });
+
+    it('maps every fuel the dropdown offers', () => {
+      for (const shown of c.fuelTypes) {
+        c.form.fuel = shown;
+        expect(FUEL_ENUM)
+          .withContext(`"${shown}" maps to ${c.fuelTypeForDb()}, not a fuel_type label`)
+          .toContain(c.fuelTypeForDb() as string);
+      }
+    });
+
+    it('leaves the free-text fuel column exactly as the seller picked it', () => {
+      // `fuel` is text and is read elsewhere. Rewriting it would change
+      // stored data; fuel_type is written *alongside* it, not instead.
+      c.form.fuel = 'CNG';
+      expect(c.fuelTypeForDb()).toBe('cng');
+      expect(c.form.fuel).toBe('CNG');
+    });
+
+    it('sends null for an unknown or empty fuel', () => {
+      c.form.fuel = '';
+      expect(c.fuelTypeForDb()).toBeNull();
+      c.form.fuel = 'Nuclear';
+      expect(c.fuelTypeForDb()).toBeNull();
+    });
+  });
+
   it('does not normalise the columns that are plain text', () => {
     // badge, badge_type, city, color and fuel are text in the same table.
     // Lower-casing them would change stored data for no reason.

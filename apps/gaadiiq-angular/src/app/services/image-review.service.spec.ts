@@ -17,10 +17,17 @@ import { ImageReviewService } from './image-review.service';
 import { SupabaseService } from './supabase.service';
 
 class FakeSupabase {
-  updateReply: { data: unknown[] | null; error: unknown } = { data: [{ id: 1 }], error: null };
+  /**
+   * Null means "behave like Postgres": echo back the row as written. A fixed
+   * `[{ id: 1 }]` was the old default, and it hid the very defect these tests
+   * now cover — the service could not tell a saved decision from an unsaved
+   * one, and neither could a fake that never returned a status.
+   */
+  updateReply: { data: unknown[] | null; error: unknown } | null = null;
   selectReply: { data: unknown[] | null; error: unknown } = { data: [], error: null };
   lastUpdate: Record<string, unknown> | null = null;
   lastStatusFilter: string | null = null;
+  lastUpdateSelect: string | null = null;
 
   client = {
     from: () => ({
@@ -32,7 +39,14 @@ class FakeSupabase {
       }),
       update: (patch: Record<string, unknown>) => {
         this.lastUpdate = patch;
-        return { eq: () => ({ select: async () => this.updateReply }) };
+        return {
+          eq: () => ({
+            select: async (cols: string) => {
+              this.lastUpdateSelect = cols;
+              return this.updateReply ?? { data: [{ id: 1, ...patch }], error: null };
+            },
+          }),
+        };
       },
     }),
   };
@@ -135,5 +149,78 @@ describe('ImageReviewService', () => {
 
     expect(svc.images()).toEqual([]);
     expect(svc.error()).toBeTruthy();
+  });
+
+  /**
+   * A decision that did not stick must not read as one that did.
+   *
+   * Reported from production: rejecting an image put it straight back in the
+   * Approved bucket. The database showed why — both rows carried reviewed_by
+   * and reviewed_at (so the write path and the admin check were working)
+   * while `status` had never once been 'rejected' and rejection_reason was
+   * NULL. No rejection had ever landed, and the screen said nothing.
+   *
+   * The service asked for `id` alone and treated a returned row as proof. A
+   * row coming back says the statement matched something; it says nothing
+   * about what the row now holds.
+   */
+  describe('when a decision does not actually stick', () => {
+    it('reads the status back, not just the key', async () => {
+      await svc.approve(1);
+      // Selecting 'id' alone cannot answer the question that matters.
+      expect(sb.lastUpdateSelect).toContain('status');
+    });
+
+    it('fails when the row comes back with a different status', async () => {
+      // Exactly the production shape: the update returns a row, still approved.
+      sb.updateReply = { data: [{ id: 1, status: 'approved' }], error: null };
+      svc.images.set([img(1, 'approved')]);
+
+      const ok = await svc.reject(1, 'Number plate visible');
+
+      expect(ok).toBe(false);
+      expect(svc.error()).toContain('approved');
+      expect(svc.error()).toContain('rejected');
+      // And the row must stay on screen: dropping it is what made a failed
+      // rejection look like a successful one.
+      expect(svc.images().length).toBe(1);
+    });
+
+    it('reports what the database said instead of a fixed string', async () => {
+      sb.updateReply = {
+        data: null,
+        error: { code: '42501', message: 'new row violates row-level security policy' },
+      };
+
+      const ok = await svc.approve(1);
+
+      expect(ok).toBe(false);
+      expect(svc.error()).toContain('42501');
+      expect(svc.error()).toContain('row-level security');
+    });
+
+    it('names a refusal that returns no row and no error', async () => {
+      sb.updateReply = { data: [], error: null };
+
+      const ok = await svc.approve(1);
+
+      expect(ok).toBe(false);
+      expect(svc.error()).toContain('permissions');
+      // Retrying an RLS refusal is pointless, and saying so saves a round.
+      expect(svc.error()).toContain('not something retrying will fix');
+    });
+
+    it('still succeeds, and drops the row, when the status really changed', async () => {
+      svc.images.set([img(1, 'pending')]);
+
+      const ok = await svc.reject(1, 'Number plate visible');
+
+      expect(ok).toBe(true);
+      expect(svc.error()).toBe('');
+      expect(svc.images()).toEqual([]);
+      expect(sb.lastUpdate).toEqual({
+        status: 'rejected', rejection_reason: 'Number plate visible',
+      });
+    });
   });
 });
