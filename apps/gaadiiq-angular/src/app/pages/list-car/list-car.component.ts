@@ -63,7 +63,55 @@ export class ListCarComponent {
   fuelTypes = ['Petrol','Diesel','CNG','Electric','Hybrid'];
   transmissions = ['Manual','Automatic','AMT','CVT','DCT'];
   ownerOptions = ['1st Owner','2nd Owner','3rd Owner','4th+ Owner'];
-  bodyTypes = ['Hatchback','Sedan','SUV','MUV','Coupe','Convertible','Pickup','Van'];
+  /**
+   * Body types a seller can choose.
+   *
+   * These are exactly the labels of the `body_type` enum in Postgres, in
+   * their display casing. Pickup and Van used to be offered here and are not:
+   * the enum has no label for either, so choosing one made the whole insert
+   * fail with `22P02: invalid input value for enum body_type`. Adding a
+   * dropdown entry with no matching label breaks submission for that seller
+   * entirely, so this list and BODY_TYPE_LABELS below must stay in step —
+   * see list-car.body-type.spec.ts, which fails if they drift apart.
+   */
+  bodyTypes = ['Hatchback','Sedan','SUV','MUV','Coupe','Convertible'];
+
+  /**
+   * Display label -> `body_type` enum label.
+   *
+   * The column is a native enum (USER-DEFINED / body_type), not text, so
+   * Postgres rejects anything that is not one of its labels exactly —
+   * casing included. The form has always shown title case and sent it
+   * straight through, which is why 'SUV' was rejected.
+   *
+   * Verified against the live database rather than assumed:
+   *   SELECT enumlabel FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
+   *    WHERE t.typname = 'body_type';
+   *   -> hatchback, sedan, suv, muv, coupe, convertible
+   *
+   * Only body_type needs this. badge, badge_type, city, color and fuel are
+   * plain `text` in the same table — normalising those would change stored
+   * data for no reason.
+   */
+  private readonly BODY_TYPE_LABELS: Record<string, string> = {
+    'Hatchback':   'hatchback',
+    'Sedan':       'sedan',
+    'SUV':         'suv',
+    'MUV':         'muv',
+    'Coupe':       'coupe',
+    'Convertible': 'convertible',
+  };
+
+  /**
+   * The enum label for what the seller picked, or null.
+   *
+   * Returns null rather than passing an unknown value through: an unmapped
+   * string reaches Postgres and fails the entire insert, losing the listing.
+   * A null body type loses one field and saves the advert.
+   */
+  bodyTypeForDb(): string | null {
+    return this.BODY_TYPE_LABELS[this.form.bodyType] ?? null;
+  }
 
   private modelCatalogue: Record<string, Record<string, string[]>> = {
     'Maruti Suzuki': {
@@ -644,7 +692,8 @@ export class ListCarComponent {
         // migration — see the backlog.
         price: this.isNew() ? (+this.form.exShowroomPrice || 0) : +this.form.price,
         description: this.form.description || null,
-        body_type: this.form.bodyType || null,
+        // The enum label, not the display text. See BODY_TYPE_LABELS.
+        body_type: this.bodyTypeForDb(),
         // Was hardcoded to 'Used' on every listing this form ever created.
         badge: this.isNew() ? 'New' : 'Used',
         badge_type: this.isNew() ? 'new' : 'used',
