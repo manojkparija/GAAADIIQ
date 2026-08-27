@@ -58,10 +58,23 @@
           </div>
           <div class="form-group">
             <label>{{ 'Model' | t }}</label>
-            <app-custom-select [options]="availableModels" [placeholder]="'Select model' | t"
-                               [(ngModel)]="form.model" name="model"
-                               [disabled]="!form.make || availableModels.length === 0"
-                               (ngModelChange)="onModelChange()" />
+            <!-- The model list is a hardcoded map covering a fraction of what
+                 each manufacturer sells. It used to end in a literal 'Other',
+                 which stored "Other" as the model name — a listing no buyer
+                 could find and no photograph could attach to, because both
+                 match on make + model + year exactly. Typed instead, the same
+                 way the variant below already worked. -->
+            <app-custom-select *ngIf="!customModel()"
+                               [options]="modelOptions()" [placeholder]="'Select model' | t"
+                               [ngModel]="form.model" (ngModelChange)="onModelPick($event)"
+                               name="model"
+                               [disabled]="!form.make || availableModels.length === 0" />
+            <input *ngIf="customModel()" type="text" [(ngModel)]="form.model"
+                   name="modelText" [placeholder]="'e.g. Grand Vitara, e Vitara' | t"
+                   (ngModelChange)="onModelChange()" [disabled]="!form.make">
+            <small *ngIf="customModel()" class="lt-hint">
+              <a href="javascript:void(0)" (click)="customModel.set(false)">{{ 'Choose from the list instead' | t }}</a>
+            </small>
           </div>
           <div class="form-group">
             <label>{{ 'Variant' | t }} <span style="color:var(--muted);font-size:0.8rem">{{ '(optional)' | t }}</span></label>

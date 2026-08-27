@@ -207,7 +207,12 @@ export class ListCarComponent {
 
   get availableModels(): string[] {
     if (!this.form.make || !this.modelCatalogue[this.form.make]) return [];
-    return [...Object.keys(this.modelCatalogue[this.form.make]), 'Other'];
+    // 'Other' is filtered out rather than offered. Every make in the map
+    // carries an 'Other' key, and a list also used to append one — either way
+    // picking it stored the string "Other" as the model name. See
+    // modelOptions() for why that is worse than it looks.
+    return Object.keys(this.modelCatalogue[this.form.make])
+      .filter(m => m !== 'Other');
   }
 
   get availableVariants(): string[] {
@@ -218,12 +223,56 @@ export class ListCarComponent {
   onMakeChange() {
     this.form.model = '';
     this.form.variant = '';
+    this.customModel.set(false);
     this.customVariant.set(false);
   }
 
   onModelChange() {
     this.form.variant = '';
     this.customVariant.set(false);
+  }
+
+  /** Sentinel option meaning "the model I want is not in this list". */
+  readonly MODEL_OTHER = '__type_model__';
+
+  /** Whether the model is being typed rather than chosen. */
+  customModel = signal(false);
+
+  /**
+   * The models offered, plus a way out of the list.
+   *
+   * THE LIST USED TO END IN A LITERAL 'Other', AND THAT WAS THE BUG.
+   *
+   * modelCatalogue is a hardcoded map covering a fraction of what each
+   * manufacturer sells, so a seller with an ordinary car frequently finds it
+   * missing. Picking 'Other' stored the string "Other" as the model name —
+   * which is worse than refusing the listing, because it succeeds. Images
+   * resolve onto catalogue cars by make + model + year, all three exact
+   * (services/media_library.py), and New Cars and search match the same way,
+   * so a car filed under model "Other" is one no buyer will ever find and no
+   * photograph will ever attach to.
+   *
+   * The escape hatch was the right idea; storing its label as data was not.
+   * Same shape as the variant field below, which already solved this.
+   */
+  modelOptions(): SelectOption[] {
+    return [
+      ...this.availableModels.map(m => ({ value: m, label: m })),
+      { value: this.MODEL_OTHER, label: '✏️ Type a different model…' },
+    ];
+  }
+
+  onModelPick(value: string) {
+    if (value === this.MODEL_OTHER) {
+      this.customModel.set(true);
+      this.form.model = '';
+      this.form.variant = '';
+      this.customVariant.set(false);
+      return;
+    }
+    this.customModel.set(false);
+    this.form.model = value;
+    this.onModelChange();
   }
 
   /** Sentinel option meaning "the trim I want is not in this list". */
