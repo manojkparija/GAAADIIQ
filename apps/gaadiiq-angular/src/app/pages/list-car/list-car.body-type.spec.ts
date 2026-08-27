@@ -167,6 +167,39 @@ describe('ListCarComponent — body type as an enum label', () => {
     });
   });
 
+  /**
+   * A new car listed here never appeared on New Cars.
+   *
+   * cars-data.service.ts:519 drops any catalogue row whose ex_showroom_price
+   * is NULL *before* it looks at fuel or body type. The form wrote the figure
+   * to `price` only, so the car was never in the list to be filtered — which
+   * is why fixing fuel_type (a real bug) did not make the EV appear.
+   */
+  describe('ex_showroom_price', () => {
+    it('is sent for new stock, so New Cars can see the car at all', () => {
+      c.setListingType('new');
+      c.form.exShowroomPrice = '1799000';
+      expect(c.exShowroomPriceForDb()).toBe(1799000);
+    });
+
+    it('is null for a used advert, not the asking price', () => {
+      // `price` on a used advert is one seller's number for one car. Writing
+      // it here would state it as the manufacturer's published price.
+      c.setListingType('used');
+      c.form.price = '650000';
+      expect(c.exShowroomPriceForDb()).toBeNull();
+    });
+
+    it('is null rather than zero when no price was entered', () => {
+      // 0 reads as "free" everywhere downstream; NULL reads as "unpriced".
+      c.setListingType('new');
+      c.form.exShowroomPrice = '';
+      expect(c.exShowroomPriceForDb()).toBeNull();
+      c.form.exShowroomPrice = '0';
+      expect(c.exShowroomPriceForDb()).toBeNull();
+    });
+  });
+
   it('does not normalise the columns that are plain text', () => {
     // badge, badge_type, city, color and fuel are text in the same table.
     // Lower-casing them would change stored data for no reason.

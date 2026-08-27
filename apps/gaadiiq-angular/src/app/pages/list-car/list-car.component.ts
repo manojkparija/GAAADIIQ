@@ -92,6 +92,26 @@ export class ListCarComponent {
   fuelTypeForDb(): string | null {
     return this.FUEL_TYPE_LABELS[this.form.fuel] ?? null;
   }
+
+  /**
+   * The manufacturer's published price, for new stock only.
+   *
+   * New Cars drops any catalogue row whose ex_showroom_price is NULL before
+   * it looks at anything else (cars-data.service.ts:519), so a new car listed
+   * without this was invisible there however correct its fuel or body type.
+   *
+   * Null, never 0, when nothing was entered: 0 reads as "free" everywhere
+   * downstream while NULL reads as "nobody has entered a price" — the
+   * distinction the Car model's own comment insists on.
+   *
+   * Null for used adverts. `price` there is one seller's asking figure for
+   * one car; recording it here would state it as the manufacturer's published
+   * price for the model, which the discrepancy warnings then trust.
+   */
+  exShowroomPriceForDb(): number | null {
+    if (!this.isNew()) return null;
+    return +this.form.exShowroomPrice || null;
+  }
   transmissions = ['Manual','Automatic','AMT','CVT','DCT'];
 
   /**
@@ -747,13 +767,28 @@ export class ListCarComponent {
         owners: this.isNew() ? null : (this.form.owners || null),
         color: this.form.color || null,
         city: this.form.city || null,
-        // For new stock the ex-showroom figure is the price, so it goes in the
-        // column that already exists. Deliberately not written to a separate
-        // `ex_showroom_price` column: this file cannot see the live schema, and
-        // naming a column that may not be there fails the whole insert. If that
-        // column does exist on `cars`, moving to it is a one-line change and a
-        // migration — see the backlog.
+        // For new stock the ex-showroom figure is the price, so it goes here
+        // too — `price` is what the used-car views and My Listings read.
         price: this.isNew() ? (+this.form.exShowroomPrice || 0) : +this.form.price,
+
+        // ...and in ex_showroom_price, which is what New Cars requires.
+        //
+        // The comment that used to sit here said this column was deliberately
+        // skipped because "this file cannot see the live schema, and naming a
+        // column that may not be there fails the whole insert". That was true
+        // when it was written and is not now: the column exists, 017 declares
+        // it, and listing-columns.spec.ts holds every inserted column to that.
+        //
+        // Skipping it made a listed new car invisible on New Cars entirely.
+        // cars-data.service.ts:519 drops any catalogue row whose
+        // ex_showroom_price is NULL *before* it looks at fuel or body type, so
+        // no amount of fixing fuel_type could have made an EV appear — it was
+        // never in the list to be filtered.
+        //
+        // Only for new stock. A used advert's asking price is one seller's
+        // number for one car; writing it here would state it as the
+        // manufacturer's published price for the model, which it is not.
+        ex_showroom_price: this.exShowroomPriceForDb(),
         description: this.form.description || null,
         // The enum label, not the display text. See BODY_TYPE_LABELS.
         body_type: this.bodyTypeForDb(),
