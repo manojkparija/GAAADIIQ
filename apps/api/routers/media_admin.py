@@ -199,7 +199,8 @@ async def _ensure_catalogue_car(
     fuel_type: str | None,
     transmission: str | None,
     ex_showroom_price: Decimal | None,
-) -> tuple[Car, bool]:
+    variant: str | None = None,
+) -> tuple[Car, bool, str | None]:
     """
     Find or create a catalogue model this upload is a photograph of.
 
@@ -250,7 +251,7 @@ async def _ensure_catalogue_car(
         )
         db.add(car)
         await db.flush()
-        return car, True
+        return car, True, None
 
     # An existing row's price is never touched from here.
     #
@@ -275,7 +276,46 @@ async def _ensure_catalogue_car(
     car.body_type = car.body_type or _enum_or_none(BodyType, body_type)
     car.fuel_type = car.fuel_type or _enum_or_none(FuelType, fuel_type)
     car.transmission = car.transmission or _enum_or_none(Transmission, transmission)
-    return car, False
+
+    # A price is applied here in exactly one case: the row has none, and this
+    # upload is not claiming to be of a particular trim.
+    #
+    # Refusing it outright — which is what shipped with the fix above — went
+    # too far. The upload form marks the price *required* when the catalogue
+    # knows the model but has no price for it, and tells the admin "give it a
+    # price here to list it". The value was then dropped on this branch,
+    # because the row already existed. So the form compelled a price, promised
+    # it would list the car, discarded it, and the response then reported the
+    # car had no price. Reported from production exactly that way.
+    #
+    # Setting a price where there is none cannot reproduce the original fault.
+    # That fault was *replacing* a curated figure — base at ₹6.5L, upload a
+    # ZXi, base silently becomes ₹11.5L. There is nothing to replace here.
+    #
+    # The variant condition is what keeps it honest. The match above is
+    # variant-blind, so without it a ZXi's price could still land on the base
+    # row — the same misattribution, just into an empty field. When the admin
+    # names a trim, the price is that trim's and belongs to /admin/variants;
+    # when they do not, the row carries no variant either and the figure is
+    # the model's own.
+    price_note: str | None = None
+    if ex_showroom_price is not None:
+        if car.ex_showroom_price is not None:
+            price_note = (
+                "This model already has an ex-showroom price, which an image "
+                "upload does not change. Edit it on the pricing screen, or set "
+                "per-trim prices under Variants."
+            )
+        elif (variant or "").strip():
+            price_note = (
+                f"The price was not applied because this upload names the "
+                f"'{variant.strip()}' trim, and a trim's price belongs to that "
+                f"trim. Set it under Variants."
+            )
+        else:
+            car.ex_showroom_price = ex_showroom_price
+
+    return car, False, price_note
 
 
 def _default_alt_text(make, model, variant, year, category) -> str:
@@ -517,7 +557,7 @@ async def upload_images(
     # something was actually stored — a request where every file was rejected
     # should not leave a catalogue entry behind.
     if result.images:
-        car, created = await _ensure_catalogue_car(
+        car, created, price_note = await _ensure_catalogue_car(
             db,
             make=make,
             model=model,
@@ -526,10 +566,16 @@ async def upload_images(
             fuel_type=fuel_type,
             transmission=transmission,
             ex_showroom_price=ex_showroom_price,
+            variant=variant,
         )
         result.catalogue_car_id = car.id
         result.catalogue_car_created = created
         vehicle = f"{make} {model} {model_year}"
+
+        # Say so when a price was typed and not used. Silence here is what made
+        # the original report look like the feature had been removed.
+        if price_note:
+            result.catalogue_warnings.append(f"{vehicle}: {price_note}")
 
         if car.ex_showroom_price is None and chosen_bucket in ("new", "both"):
             result.catalogue_warnings.append(
