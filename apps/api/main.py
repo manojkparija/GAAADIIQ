@@ -25,6 +25,23 @@ print(f"[DEBUG] DATABASE_URL = {db_redacted}")
 print(f"[DEBUG] ASYNC_DATABASE_URL = {async_redacted}")
 print(f"[DEBUG] ENVIRONMENT = {settings.environment}")
 
+# Does the environment we declare match what we are connected to?
+#
+# BEFORE validate_production_config, deliberately. That method returns
+# immediately unless is_production is already true, so every check it makes is
+# gated on the one flag most worth doubting. This asks the opposite question and
+# runs whatever the flag says.
+#
+# Warn-only unless STRICT_ENVIRONMENT_CHECK is set: the check reasons from the
+# database host, which is a heuristic, and a refuse-to-boot heuristic takes the
+# service down on the release meant to harden it. Read the log first, then turn
+# it on.
+_mismatch = settings.environment_mismatch()
+if _mismatch:
+    if settings.strict_environment_check:
+        raise RuntimeError(f"Refusing to start — environment mismatch. {_mismatch}")
+    logging.getLogger("gaadiiq").error("ENVIRONMENT MISMATCH — %s", _mismatch)
+
 # Fail fast in production if secrets are missing/default
 settings.validate_production_config()
 

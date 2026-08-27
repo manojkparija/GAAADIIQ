@@ -30,6 +30,7 @@ from models.user import User
 from schemas.payment import (
     FeatureListingRequest,
     PaymentOut,
+    PaymentVerifyRequest,
     RazorpayOrderOut,
     SubscriptionOut,
     SubscriptionUpgradeRequest,
@@ -47,9 +48,37 @@ FEATURED_PRICES: dict[int, int] = {
     90: 349900,  # ₹3,499
 }
 
+#: What each plan costs, in paise, and the only place that decides.
+#:
+#: THESE NUMBERS WERE WRONG, AND WRONG IN THE DIRECTION THAT COSTS TRUST
+#:
+#: They read ₹999 for pro and ₹2,999 for dealer while the pricing page — and the
+#: QA test strategy document — both said ₹299 and ₹2,499. The page displays a
+#: price from the Supabase catalogue and the server charges from this table, and
+#: nothing reconciled the two. A visitor shown "₹299/month" was charged ₹999:
+#: 3.3x, silently, at the moment they entered card details.
+#:
+#: Two independent sources agreed on 299/499/2499 and only this table disagreed,
+#: so this table was the outlier and has been corrected to match.
+#:
+#: The drift is the real defect, not the numbers. GET /subscriptions/plans now
+#: serves this table so the page can display exactly what the server will
+#: charge, and test_pricing_plans_e2e.py fails if a purchasable tier is ever
+#: missing a price again.
 SUBSCRIPTION_PRICES: dict[SubscriptionTier, int] = {
-    SubscriptionTier.pro: 99900,     # ₹999/mo
-    SubscriptionTier.dealer: 299900, # ₹2,999/mo
+    SubscriptionTier.pro: 29900,           # Buyer Pro    ₹299/mo
+    SubscriptionTier.seller_basic: 49900,  # Seller Basic ₹499/mo
+    SubscriptionTier.dealer: 249900,       # Dealer Pro   ₹2,499/mo
+}
+
+#: The label each tier is sold under. The tier names predate the pricing page,
+#: so `pro` is "Buyer Pro" and `dealer` is "Dealer Pro" — a mapping that exists
+#: only here rather than being guessed at each call site.
+SUBSCRIPTION_PLAN_NAMES: dict[SubscriptionTier, str] = {
+    SubscriptionTier.free: "Free Buyer",
+    SubscriptionTier.pro: "Buyer Pro",
+    SubscriptionTier.seller_basic: "Seller Basic",
+    SubscriptionTier.dealer: "Dealer Pro",
 }
 
 
@@ -146,13 +175,23 @@ async def feature_listing(
 
 @router.post("/verify", status_code=status.HTTP_200_OK)
 async def verify_payment(
-    payment_id: uuid.UUID,
-    razorpay_payment_id: str,
-    razorpay_signature: str,
+    payload: PaymentVerifyRequest,
     db: DbDep,
     current_user: CurrentUser,
 ):
-    """Verify Razorpay HMAC signature and mark payment as paid."""
+    """
+    Verify the Razorpay HMAC signature and mark the payment paid.
+
+    Takes a request MODEL, not bare scalars. Declared as scalars these three
+    were read by FastAPI as query parameters, while the checkout page posts them
+    as a JSON body — so every verification from the real flow returned 422 and
+    the user was told "Payment received but verification failed" after being
+    charged. See PaymentVerifyRequest for the full account.
+    """
+    payment_id = payload.payment_id
+    razorpay_payment_id = payload.razorpay_payment_id
+    razorpay_signature = payload.razorpay_signature
+
     payment = await db.get(Payment, payment_id)
     if not payment or payment.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
@@ -319,6 +358,44 @@ async def my_subscription(db: DbDep, current_user: CurrentUser):
     if not sub:
         return SubscriptionOut(user_id=current_user.id, tier=SubscriptionTier.free, valid_until=None)
     return sub
+
+
+@subs_router.get("/plans")
+@limiter.limit("60/minute")
+async def list_plans(request: Request):
+    """
+    The authoritative price list.
+
+    WHY THIS ENDPOINT EXISTS
+
+    The pricing page read its plans from Supabase and the server charged from
+    SUBSCRIPTION_PRICES, with nothing keeping the two in step. They drifted: the
+    page said ₹299 and the charge was ₹999. Correcting the number fixes today;
+    only removing the second source of truth fixes tomorrow.
+
+    Marketing copy — feature bullets, badges, ordering — can stay in Supabase.
+    The PRICE cannot, because the price is what gets charged, and a displayed
+    price that disagrees with the charge is a chargeback rather than a bug
+    report.
+
+    Public and unauthenticated: the pricing page is the front door, and
+    prospects have no token. It reveals nothing a visitor is not already being
+    shown.
+    """
+    return {
+        "plans": [
+            {
+                "tier": tier.value,
+                "name": SUBSCRIPTION_PLAN_NAMES.get(tier, tier.value),
+                "amount_paise": SUBSCRIPTION_PRICES.get(tier, 0),
+                "amount_inr": SUBSCRIPTION_PRICES.get(tier, 0) // 100,
+                "purchasable": tier is not SubscriptionTier.free,
+            }
+            for tier in SubscriptionTier
+        ],
+        "currency": "INR",
+        "period": "month",
+    }
 
 
 @subs_router.post("/upgrade", response_model=RazorpayOrderOut)

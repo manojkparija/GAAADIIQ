@@ -229,11 +229,38 @@ limiter runs at all.
 correct. But the blast radius of that one string being wrong is: an open admin
 API, auto-approved payments, and no rate limiting, simultaneously.
 
-**Fix:** a startup assertion that refuses to boot if the app can see a
-production database URL while `environment != "production"`, plus a
-`/health`-adjacent endpoint (admin-only) that reports which mode it believes it
-is in. Verify it on the running service after deploy rather than trusting the
-blueprint.
+**Now closed, warn-only.** `Settings.environment_mismatch()` runs at startup,
+*before* `validate_production_config()` and unconditionally.
+
+That ordering is the point. `validate_production_config` opens with
+`if not self.is_production: return` — every check it makes is gated on the one
+flag most worth doubting, so a deployment with `ENVIRONMENT` unset or misspelt
+skips all of them in silence. The new check asks the opposite question: not "are
+we configured for production" but "does what we are connected to look like
+production, whatever we called ourselves". It reasons from the database host.
+
+Measured against the real `main.py` import:
+
+```
+warn-only, dev flag + remote DB   logs ENVIRONMENT MISMATCH, still boots
+strict, same mismatch             RuntimeError: Refusing to start
+ordinary local development        silent
+```
+
+The message names what is actually exposed rather than saying "mismatch":
+
+> ENVIRONMENT is 'development' but the database is a remote host
+> (db.x.supabase.co). In this mode the admin dependency grants a synthetic Dev
+> Admin to unauthenticated callers, payments accept a dev bypass, and the rate
+> limiter is disabled — against what looks like real data.
+
+**`STRICT_ENVIRONMENT_CHECK` is off by default and that is deliberate.** The
+check reasons from a heuristic, so it can be wrong in ways no test here would
+reveal, and a refuse-to-boot heuristic that is wrong takes the service down on
+the exact release meant to harden it. Deploy warn-only, read the log against a
+real deployment, turn it on in a later release. `"Production"` with a capital P
+is caught too — `is_production` is an exact string comparison, and nothing else
+in the codebase would have noticed.
 
 ### G7 — Reviews are written from the browser straight to Supabase
 

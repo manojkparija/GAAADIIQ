@@ -14,8 +14,27 @@ if TYPE_CHECKING:
 
 
 class SubscriptionTier(str, enum.Enum):
+    """
+    The plans that can be held.
+
+    `pro` is Buyer Pro and `dealer` is Dealer Pro on the pricing page; the names
+    differ because these predate the page. `seller_basic` was added in migration
+    0045 — the page had offered it with a price since before there was any tier
+    to sell, so its call to action navigated instead of charging.
+
+    Adding a member here needs THREE other things in step, or the failure is at
+    runtime rather than at import:
+      * a price in routers/payments.SUBSCRIPTION_PRICES (a missing one is a
+        zero-rupee order, not an error)
+      * a matching PaymentPurpose label, because the purpose is built by string
+        interpolation from tier.value
+      * an ALTER TYPE migration, since this is a native enum on Postgres
+    test_pricing_plans_e2e.py asserts the first two.
+    """
+
     free = "free"
     pro = "pro"
+    seller_basic = "seller_basic"
     dealer = "dealer"
 
 

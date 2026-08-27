@@ -22,6 +22,11 @@ class PaymentStatus(str, enum.Enum):
 class PaymentPurpose(str, enum.Enum):
     featured_listing = "featured_listing"
     subscription_pro = "subscription_pro"
+    # Built by interpolation in routers/payments.py as
+    # PaymentPurpose(f"subscription_{tier.value}"), so this list must carry a
+    # label for every purchasable SubscriptionTier or the checkout raises
+    # ValueError inside the request.
+    subscription_seller_basic = "subscription_seller_basic"
     subscription_dealer = "subscription_dealer"
     service_request = "service_request"
 
