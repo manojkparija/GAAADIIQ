@@ -100,6 +100,7 @@ async def main() -> int:
 
     engine = create_async_engine(url)
     created, existing = [], []
+    near_misses: list[tuple[str, list[str]]] = []
 
     async with engine.begin() as conn:
         for make, model in pairs:
@@ -116,6 +117,32 @@ async def main() -> int:
                 existing.append(f"{make} {model}")
                 continue
 
+            # Not an exact match — but is there a row that differs only in
+            # spacing, case or punctuation?
+            #
+            # This is the failure this script is most likely to cause, and the
+            # one nothing else would report. "eVitara" here against an "e
+            # Vitara" already in the catalogue inserts a SECOND row for the
+            # same car: the dropdown then offers both, photographs attach to
+            # whichever the admin picked that day, and the gallery looks half
+            # empty with no error anywhere. Caught the same way a person would
+            # catch it — strip everything that is not a letter or digit and
+            # compare what is left.
+            near = (await conn.execute(sa.text(
+                "SELECT DISTINCT model FROM cars "
+                "WHERE lower(trim(make)) = :make "
+                "  AND regexp_replace(lower(model), '[^a-z0-9]', '', 'g') = :squashed "
+                "  AND lower(trim(model)) <> :model"
+            ), {
+                "make": make.lower(),
+                "model": model.lower(),
+                "squashed": "".join(c for c in model.lower() if c.isalnum()),
+            })).scalars().all()
+
+            if near:
+                near_misses.append((f"{make} {model}", list(near)))
+                continue
+
             created.append(f"{make} {model}")
             if not args.dry_run:
                 await conn.execute(sa.text(
@@ -127,6 +154,18 @@ async def main() -> int:
 
     verb = "would create" if args.dry_run else "created"
     print(f"{len(existing)} already in the catalogue, {verb} {len(created)}.")
+
+    # Reported before the created list, and never inserted: a near miss is a
+    # spelling decision for a person, and guessing it wrong is the one outcome
+    # here that damages data rather than merely omitting it.
+    if near_misses:
+        print(f"\n{len(near_misses)} SKIPPED — the catalogue already has a "
+              "differently-spelled row for these:")
+        for wanted, found in near_misses:
+            print(f"  ? {wanted!r} vs existing {found}")
+        print("  Nothing was inserted for those. Make the CSV match the "
+              "catalogue, or rename the catalogue row — but pick one, because "
+              "images attach by make + model + year, all three exact.")
     for name in created:
         print(f"  + {name} {args.year}")
     if args.dry_run and created:
