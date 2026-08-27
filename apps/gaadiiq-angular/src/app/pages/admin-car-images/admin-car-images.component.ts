@@ -122,6 +122,20 @@ export class AdminCarImagesComponent implements OnInit {
   pricingError = signal('');
   savingTrim = signal<string>('');
   inPricingStep = computed(() => this.pricingCarId() !== '');
+  /**
+   * Offer the pricing step before the upload, not after.
+   *
+   * Only when the catalogue already holds this model: trim research is
+   * addressed by car id, and a model the catalogue has never seen has no row
+   * to research against until the upload creates one. For that case — a new
+   * launch — the step still runs, just after the upload instead, which is the
+   * only order physically available.
+   */
+  canPriceBeforeUpload = computed(() =>
+    ['new', 'both'].includes(this.mediaBucket()) && this.modelIsKnown()
+  );
+  /** True once the admin has been through (or skipped) the pricing step. */
+  pricingReviewed = signal(false);
   /** Trims whose price the admin has changed and not yet saved. */
   unsavedTrims = computed(() => this.pricingTrims().filter(t => t.dirty).length);
 
@@ -520,6 +534,10 @@ export class AdminCarImagesComponent implements OnInit {
     // step 3 still needs to know which vehicle it is pricing.
     const bucket = this.mediaBucket();
     const vehicleLabel = `${this.make()} ${this.model()} ${this.modelYear()}`;
+    // Whether the trims were already reviewed on the metadata screen. If they
+    // were, re-running research after the upload would reopen a panel the
+    // admin has just finished with.
+    const pricedBefore = this.inPricingStep() || this.pricingReviewed();
 
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
@@ -584,10 +602,13 @@ export class AdminCarImagesComponent implements OnInit {
         this.uploadError.set(`Errors: ${result.errors.join('; ')}`);
       }
 
-      // Step 3. Read the vehicle from the result rather than the form: the
-      // reset above has already cleared the form fields, and this needs the
-      // model that was actually uploaded.
-      if (result.catalogue_car_id && ['new', 'both'].includes(bucket)) {
+      // The pricing step normally runs *before* this, from the metadata
+      // screen. It runs here only for the case that could not: a model the
+      // catalogue had never seen, whose row this upload has just created.
+      //
+      // Read the vehicle from the result rather than the form — the reset
+      // above has already cleared the form fields.
+      if (result.catalogue_car_id && ['new', 'both'].includes(bucket) && !pricedBefore) {
         await this.startPricingStep(result.catalogue_car_id, vehicleLabel);
       }
     } catch (err) {
@@ -612,6 +633,48 @@ export class AdminCarImagesComponent implements OnInit {
    * catalogue model has no asking price, so trim pricing has nothing to say
    * there.
    */
+  /**
+   * Enter the pricing step from the metadata screen, before the images are
+   * committed — which is where it was asked for and where it belongs: the
+   * admin decides the figures, then uploads.
+   *
+   * Resolving the row first matters more than it looks. Research is addressed
+   * by car id, and the id has to be the one the upload will attach to; the
+   * endpoint answering that mirrors the upload's own matching, with a test
+   * pinning the two together.
+   */
+  async reviewPricesBeforeUpload() {
+    const make = this.make(), model = this.model(), year = this.modelYear();
+    if (!make || !model || !year) {
+      this.toast('❌ Choose make, model and year first');
+      return;
+    }
+    this.researchingPrices.set(true);
+    this.pricingError.set('');
+    try {
+      const params = new URLSearchParams({ make, model, year: String(year) });
+      const resp = await fetch(`${this.apiUrl}/cars/catalogue/resolve?${params}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const carId: string | null = (await resp.json()).car_id;
+      if (!carId) {
+        // A model the catalogue has never seen. There is nothing to research
+        // against yet, so the step runs after the upload creates the row.
+        this.pricingReviewed.set(true);
+        this.toast('New model — trim prices can be set once the images are uploaded');
+        return;
+      }
+      await this.startPricingStep(carId, `${make} ${model} ${year}`);
+      this.pricingReviewed.set(true);
+    } catch (err) {
+      this.pricingError.set(`Could not load trims: ${err}`);
+      // Never trap the admin on this step: the images are the job, and a
+      // pricing lookup failing must not stop them being uploaded.
+      this.pricingReviewed.set(true);
+    } finally {
+      this.researchingPrices.set(false);
+    }
+  }
+
   private async startPricingStep(carId: string, vehicle: string) {
     this.pricingCarId.set(carId);
     this.pricingVehicle.set(vehicle);
@@ -730,6 +793,7 @@ export class AdminCarImagesComponent implements OnInit {
     this.pricingVehicle.set('');
     this.pricingTrims.set([]);
     this.pricingError.set('');
+    this.pricingReviewed.set(true);
   }
 
   cancelUpload() {
@@ -757,6 +821,10 @@ export class AdminCarImagesComponent implements OnInit {
     this.source.set('');
     this.copyright.set('');
     this.license.set('');
+    // Not the pricing panel itself — that is deliberately left on screen after
+    // an upload so the admin can finish publishing trims. Only the flag that
+    // decides whether the *next* batch gets offered the step.
+    this.pricingReviewed.set(false);
   }
 
   /**

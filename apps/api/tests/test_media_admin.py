@@ -427,6 +427,46 @@ class TestCatalogueEntrySuite:
         )
 
     @pytest.mark.asyncio
+    async def test_resolve_names_the_row_the_upload_attaches_to(self, client):
+        """
+        The upload screen prices a model's trims before committing the images,
+        so it asks /cars/catalogue/resolve which row it is about to land on.
+
+        If that answer ever disagrees with _ensure_catalogue_car, the admin
+        prices one row and the photographs attach to another — the trims look
+        right on the pricing step and the car stays unpriced. Pinned here
+        rather than left to the two orderings staying in step by habit.
+        """
+        first = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Brezza",
+                  "model_year": "2026", "category": "SUV", "media_bucket": "new",
+                  "ex_showroom_price": "899000"},
+            files=[("files", ("brezza.png", io.BytesIO(_png((5, 5, 5))), "image/png"))],
+        )
+        assert first.status_code == 201
+        uploaded_to = first.json()["catalogue_car_id"]
+
+        resolved = await client.get(
+            "/cars/catalogue/resolve",
+            params={"make": "Maruti Suzuki", "model": "Brezza", "year": 2026},
+        )
+        assert resolved.status_code == 200
+        assert resolved.json()["car_id"] == uploaded_to, (
+            "the pricing step would price a different row than the upload uses"
+        )
+
+    @pytest.mark.asyncio
+    async def test_resolve_returns_null_for_a_model_the_catalogue_lacks(self, client):
+        """A new launch is an ordinary answer here, not an error."""
+        resolved = await client.get(
+            "/cars/catalogue/resolve",
+            params={"make": "Maruti Suzuki", "model": "Nonexistent", "year": 2026},
+        )
+        assert resolved.status_code == 200
+        assert resolved.json()["car_id"] is None
+
+    @pytest.mark.asyncio
     async def test_a_price_reaches_a_known_but_unpriced_model(self, client):
         """
         Reported from production: the upload form makes the price *required*

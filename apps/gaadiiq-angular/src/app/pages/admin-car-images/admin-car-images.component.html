@@ -139,14 +139,18 @@
         }
 
         <!--
-          STEP 3: REVIEW THE TRIM PRICES
+          STEP 3, THE FALLBACK PLACEMENT.
 
-          Shown after a New Cars upload, against the model just photographed.
-          Every figure here is a draft until the admin publishes it, and New
-          Cars renders published trims only — so nothing on this panel is
-          visible to a buyer while it is being reviewed.
+          The pricing step normally runs before the upload, from the metadata
+          screen. This copy is for the one case that cannot: a model the
+          catalogue had never seen, which has no row to research against until
+          this upload creates it.
+
+          Guarded on the metadata grid being *hidden* so the two placements are
+          provably exclusive — a shared inPricingStep() alone would render the
+          panel twice if the sections ever overlapped.
         -->
-        @if (inPricingStep()) {
+        @if (inPricingStep() && !showMetadataGrid()) {
           <div class="aci-pricing-step">
             <h2 class="aci-section-title">
               Step 3: Review Trim Prices — {{ pricingVehicle() }}
@@ -537,10 +541,97 @@
           </div>
         }
 
+        <!--
+          STEP 3 — REVIEW THE TRIM PRICES, BEFORE THE IMAGES ARE COMMITTED.
+
+          Above the action row, not below it: the admin sets the figures and
+          then uploads. Every price here is a draft until published, and New
+          Cars renders published trims only, so nothing on this panel is
+          visible to a buyer while it is being reviewed.
+        -->
+        @if (inPricingStep() && showMetadataGrid()) {
+          <div class="aci-pricing-step">
+            <h2 class="aci-section-title">
+              Step 3: Review Trim Prices — {{ pricingVehicle() }}
+            </h2>
+
+            @if (researchingPrices()) {
+              <p class="aci-hint">🔎 Researching this model's trims and prices…</p>
+            } @else {
+              <p class="aci-hint">
+                Prices drafted by AI are a starting point, not a source. A
+                language model states a wrong price as confidently as a right
+                one, so check each figure — nothing here is shown to a buyer
+                until you publish it. Upload the images when you are done.
+              </p>
+            }
+
+            @if (pricingError()) {
+              <div class="aci-error">{{ pricingError() }}</div>
+            }
+
+            @if (!researchingPrices() && !pricingTrims().length) {
+              <p class="aci-hint">
+                No trims recorded for this model. You can add them under
+                <a routerLink="/admin/variants">Variants</a>.
+              </p>
+            }
+
+            @for (t of pricingTrims(); track t.id) {
+              <div class="aci-trim-row">
+                <div class="aci-trim-name">
+                  {{ t.name }}
+                  @if (t.status === 'draft') { <span class="aci-badge-draft">Draft</span> }
+                  @if (t.status === 'published') { <span class="aci-badge-live">Published</span> }
+                  @if (t.source === 'ai') { <span class="aci-badge-ai">AI</span> }
+                </div>
+                <input
+                  type="number"
+                  class="aci-input aci-trim-price"
+                  min="0"
+                  step="1000"
+                  placeholder="Ex-showroom ₹"
+                  [ngModel]="t.price"
+                  (ngModelChange)="setTrimPrice(t.id, $event)" />
+                <button type="button" class="btn-secondary"
+                        [disabled]="savingTrim() === t.id || !t.dirty"
+                        (click)="saveTrim(t)">
+                  {{ savingTrim() === t.id ? 'Saving…' : 'Save' }}
+                </button>
+                <button type="button" class="btn-primary"
+                        [disabled]="savingTrim() === t.id || t.price == null"
+                        (click)="publishTrim(t)">
+                  Publish
+                </button>
+              </div>
+            }
+
+            <div class="aci-pricing-actions">
+              <a class="btn-secondary" routerLink="/admin/variants">
+                Open full Variants editor
+              </a>
+            </div>
+          </div>
+        }
+
         <div class="aci-actions">
-          <button class="btn-primary" (click)="uploadImages()" [disabled]="isUploading()">
-            {{ isUploading() ? 'Uploading…' : '✓ Upload ' + selectedFiles().length + ' Image(s)' }}
-          </button>
+          <!--
+            Two stages, in the order asked for: review the prices, then upload.
+            The review is offered only when the catalogue already knows this
+            model — trim research needs a row to research against, and a new
+            launch has none until the upload creates it, so for that case the
+            step runs afterwards instead.
+          -->
+          @if (canPriceBeforeUpload() && !inPricingStep() && !pricingReviewed()) {
+            <button class="btn-primary" (click)="reviewPricesBeforeUpload()"
+                    [disabled]="researchingPrices()">
+              {{ researchingPrices() ? 'Researching…' : '→ Review Trim Prices' }}
+            </button>
+          } @else {
+            <button class="btn-primary" (click)="uploadImages()" [disabled]="isUploading()">
+              {{ isUploading() ? 'Uploading…' : '✓ Upload ' + selectedFiles().length + ' Image(s)' }}
+            </button>
+          }
           <button class="btn-ghost" (click)="cancelUpload()" [disabled]="isUploading()">
             Cancel & Start Over
           </button>

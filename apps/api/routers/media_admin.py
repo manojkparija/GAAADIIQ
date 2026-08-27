@@ -229,6 +229,11 @@ async def _ensure_catalogue_car(
     # Any variant will do: they share the photographs. Prefer the one without
     # a variant — the base entry — so repeated uploads settle on the same row
     # rather than whichever trim happens to sort first.
+    #
+    # KEEP IN STEP with routers/cars.py::resolve_catalogue_car, which answers
+    # "which row will this upload attach to?" for the upload screen's pricing
+    # step. If the two orderings diverge, the admin prices one row and the
+    # photographs land on another.
     existing = await db.execute(
         select(Car).where(
             func.lower(func.trim(Car.make)) == make.strip().lower(),
