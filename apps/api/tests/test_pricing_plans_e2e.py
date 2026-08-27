@@ -117,14 +117,15 @@ async def test_tc70_the_client_cannot_choose_what_it_pays(client):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("tier", ["dealer_pro", "seller_basic", "PRO", "admin", "", "free "])
+@pytest.mark.parametrize("tier", ["dealer_pro", "sellerbasic", "PRO", "admin", "", "free "])
 async def test_tc71_an_unknown_plan_identifier_is_refused(client, tier):
     """
     TC-71 — plan manipulation.
 
-    Includes the frontend's own plan ids (dealer_pro, seller_basic), which are
-    NOT the backend's tier names. If one of those were ever accepted it would
-    fall through .get(tier, 0) to a zero-rupee order.
+    Includes dealer_pro — the frontend's own id for a plan whose backend tier
+    is named `dealer`. If a page id were ever accepted as a tier it would
+    fall through .get(tier, 0) to a zero-rupee order. (seller_basic is a real
+    tier as of migration 0045 and is tested for purchase above.)
     """
     token = await _token(client, f"plan_{uuid.uuid4().hex[:8]}@test.com")
     r = await client.post("/subscriptions/upgrade", json={"tier": tier}, headers=_auth(token))
@@ -355,14 +356,30 @@ def test_the_paid_tier_gate_is_defined_server_side():
 # rather than leaving a passing-looking suite that never exercised them.
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Seller Basic (₹499) has no backend tier. SubscriptionTier is "
-    "free/pro/dealer; the pricing page offers buyer_pro/seller_basic/dealer_pro "
-    "and TIER_MAP has no entry for seller_basic, so its CTA cannot charge.",
-)
 def test_tc30_seller_basic_exists_as_a_purchasable_tier():
+    """
+    It did not. The page offered Seller Basic at ₹499 and TIER_MAP had no entry
+    for it, so its call to action fell through to a navigation — a plan
+    advertised with a price that could not be bought. Migration 0045 adds the
+    tier; this is what stops it being dropped again.
+    """
     assert any(t.value == "seller_basic" for t in SubscriptionTier)
+    assert SUBSCRIPTION_PRICES[SubscriptionTier.seller_basic] == 49900
+
+
+def test_every_purchasable_tier_has_a_payment_purpose_label():
+    """
+    routers/payments builds the purpose as PaymentPurpose(f"subscription_{tier}"),
+    so a tier without its matching label raises ValueError INSIDE the request —
+    a 500 at checkout rather than an error at import. Adding seller_basic to one
+    enum and not the other would have done exactly that.
+    """
+    from models.payment import PaymentPurpose
+
+    for tier in SubscriptionTier:
+        if tier is SubscriptionTier.free:
+            continue
+        PaymentPurpose(f"subscription_{tier.value}")  # raises if missing
 
 
 @pytest.mark.xfail(
@@ -458,16 +475,70 @@ def test_subscription_status_reflects_expiry():
     assert "valid_until" in src and ("now" in src or "expire" in src)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="The price a user is SHOWN comes from Supabase (buyer_pro ₹299) and "
-    "the price they are CHARGED comes from SUBSCRIPTION_PRICES (pro ₹999). "
-    "Two sources of truth, no reconciliation. This is doc TC-02 and the "
-    "highest-risk defect the document names.",
-)
-def test_tc02_displayed_price_matches_charged_price():
-    # The catalogue lives in Supabase, so this pins the mapped pair the frontend
-    # actually uses: TIER_MAP sends buyer_pro to tier 'pro'.
-    displayed_buyer_pro_rupees = 299
-    charged = SUBSCRIPTION_PRICES[SubscriptionTier.pro] // 100
-    assert charged == displayed_buyer_pro_rupees
+def test_tc02_the_documented_catalogue_and_the_charging_table_agree():
+    """
+    TC-02, and the highest-risk defect the QA document names.
+
+    The page displayed a Supabase price and the server charged from
+    SUBSCRIPTION_PRICES, with nothing reconciling them. They drifted: ₹299
+    shown, ₹999 charged — 3.3x, discovered by the customer at the card entry
+    screen.
+
+    The numbers below are the QA document's, which the Supabase catalogue also
+    matches. Two independent sources agreed and only the charging table
+    disagreed, so the charging table was corrected. This test is what makes a
+    future edit to one side fail rather than quietly overcharge.
+
+    GET /subscriptions/plans serves this same table, so the page can now show
+    the figure that will actually be charged instead of a second opinion.
+    """
+    documented_rupees = {
+        SubscriptionTier.pro: 299,
+        SubscriptionTier.seller_basic: 499,
+        SubscriptionTier.dealer: 2499,
+    }
+    for tier, rupees in documented_rupees.items():
+        assert SUBSCRIPTION_PRICES[tier] == rupees * 100, (
+            f"{tier.value}: charging ₹{SUBSCRIPTION_PRICES[tier] / 100} "
+            f"against a documented ₹{rupees}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_the_plans_endpoint_serves_the_same_prices_it_charges(client):
+    """
+    The endpoint exists to remove the second source of truth, so it must not
+    become one. This drives it and compares against the table the charge uses.
+    """
+    r = await client.get("/subscriptions/plans")
+    assert r.status_code == 200, r.text
+    served = {p["tier"]: p["amount_paise"] for p in r.json()["plans"]}
+
+    for tier, paise in SUBSCRIPTION_PRICES.items():
+        assert served[tier.value] == paise, (
+            f"{tier.value}: /plans says {served[tier.value]}, charge uses {paise}"
+        )
+    assert served["free"] == 0
+
+
+@pytest.mark.asyncio
+async def test_the_plans_endpoint_is_reachable_without_a_token(client):
+    """The pricing page is the front door; prospects have no token."""
+    assert (await client.get("/subscriptions/plans")).status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_seller_basic_can_actually_be_purchased(client):
+    """
+    End to end for the plan that could not be bought: upgrade, and the charge is
+    the ₹499 the page advertises.
+    """
+    token = await _token(client, f"sb_{uuid.uuid4().hex[:8]}@test.com")
+    r = await client.post(
+        "/subscriptions/upgrade", json={"tier": "seller_basic"}, headers=_auth(token)
+    )
+    assert r.status_code in (200, 201), r.text
+    assert r.json()["amount_paise"] == 49900
+
+    me = await client.get("/subscriptions/me", headers=_auth(token))
+    assert me.json()["tier"] == "seller_basic"

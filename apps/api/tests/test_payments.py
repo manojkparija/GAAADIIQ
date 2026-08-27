@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from db.session import get_db
 from main import app
+from models.subscription import SubscriptionTier
+from routers.payments import SUBSCRIPTION_PRICES
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -144,7 +146,10 @@ async def test_upgrade_to_pro(client):
     assert r.status_code == 200
     data = r.json()
     assert data["dev_mode"] is True
-    assert data["amount_paise"] == 99900
+    # Against the table, not a literal. These two lines held 99900 and 299900
+    # and went on passing while the pricing page advertised ₹299 and ₹2,499 —
+    # the tests agreed with the charge and neither agreed with the customer.
+    assert data["amount_paise"] == SUBSCRIPTION_PRICES[SubscriptionTier.pro]
 
     # Subscription should now be pro
     r = await client.get("/subscriptions/me", headers={"Authorization": f"Bearer {token}"})
@@ -158,7 +163,7 @@ async def test_upgrade_to_dealer_tier(client):
     r = await client.post("/subscriptions/upgrade", json={"tier": "dealer"},
                           headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
-    assert r.json()["amount_paise"] == 299900
+    assert r.json()["amount_paise"] == SUBSCRIPTION_PRICES[SubscriptionTier.dealer]
 
     r = await client.get("/subscriptions/me", headers={"Authorization": f"Bearer {token}"})
     assert r.json()["tier"] == "dealer"
