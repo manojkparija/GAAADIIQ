@@ -427,6 +427,114 @@ class TestCatalogueEntrySuite:
         )
 
     @pytest.mark.asyncio
+    async def test_a_price_reaches_a_known_but_unpriced_model(self, client):
+        """
+        Reported from production: the upload form makes the price *required*
+        when the catalogue knows the model but has no price for it, and says
+        "give it a price here to list it" — and then the figure went nowhere.
+
+        The fix above refused every price on an existing row, which covered
+        the repricing fault but also this case, where there is no price to
+        overwrite and the form has just insisted on one. The car stayed
+        unpriced, stayed off New Cars, and the response reported that it had
+        no price — immediately after the admin supplied one.
+        """
+        # A row the catalogue knows and has no price for: a used-cars upload
+        # creates one without asking for a figure.
+        first = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Grand Vitara",
+                  "model_year": "2026", "category": "SUV", "media_bucket": "used"},
+            files=[("files", ("gv-a.png", io.BytesIO(_png((3, 1, 4))), "image/png"))],
+        )
+        assert first.status_code == 201
+        car_id = first.json()["catalogue_car_id"]
+
+        resp = await client.get(f"/cars/{car_id}")
+        assert resp.json()["ex_showroom_price"] is None, "precondition: unpriced"
+
+        # Now the admin does what the form tells them to.
+        second = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Grand Vitara",
+                  "model_year": "2026", "category": "SUV", "media_bucket": "new",
+                  "ex_showroom_price": "1099000"},
+            files=[("files", ("gv-b.png", io.BytesIO(_png((1, 5, 9))), "image/png"))],
+        )
+        assert second.status_code == 201
+        assert second.json()["catalogue_car_id"] == car_id
+
+        resp = await client.get(f"/cars/{car_id}")
+        assert float(resp.json()["ex_showroom_price"]) == 1099000.0, (
+            "the price the form demanded was discarded"
+        )
+        # And having applied it, the response must not claim otherwise.
+        assert not any(
+            "no ex-showroom price" in w for w in second.json()["catalogue_warnings"]
+        )
+
+    @pytest.mark.asyncio
+    async def test_a_trims_price_is_not_written_onto_the_model_row(self, client):
+        """
+        The other half of the case above. The match is variant-blind, so a
+        price typed alongside a named trim must not land on the model row even
+        when that row is empty — that is the original misattribution, just
+        into a null field instead of over a figure.
+        """
+        first = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Jimny",
+                  "model_year": "2026", "category": "SUV", "media_bucket": "used"},
+            files=[("files", ("jimny-a.png", io.BytesIO(_png((2, 7, 1))), "image/png"))],
+        )
+        car_id = first.json()["catalogue_car_id"]
+
+        second = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Jimny",
+                  "model_year": "2026", "category": "SUV", "media_bucket": "new",
+                  "variant": "Alpha", "ex_showroom_price": "1490000"},
+            files=[("files", ("jimny-b.png", io.BytesIO(_png((8, 2, 8))), "image/png"))],
+        )
+        assert second.status_code == 201
+
+        resp = await client.get(f"/cars/{car_id}")
+        assert resp.json()["ex_showroom_price"] is None, (
+            "a named trim's price was written onto the model row"
+        )
+        # Silence is what made this look like the feature had been removed.
+        assert any("Alpha" in w for w in second.json()["catalogue_warnings"]), (
+            "the admin was not told the price went nowhere"
+        )
+
+    @pytest.mark.asyncio
+    async def test_an_ignored_price_on_a_priced_model_is_reported(self, client):
+        """A discarded price must never be silent, whatever the reason."""
+        first = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Ignis",
+                  "model_year": "2026", "media_bucket": "new",
+                  "ex_showroom_price": "600000"},
+            files=[("files", ("ignis-a.png", io.BytesIO(_png((4, 4, 4))), "image/png"))],
+        )
+        car_id = first.json()["catalogue_car_id"]
+
+        second = await client.post(
+            "/media-admin/upload",
+            data={**VEHICLE, "make": "Maruti Suzuki", "model": "Ignis",
+                  "model_year": "2026", "media_bucket": "new",
+                  "ex_showroom_price": "750000"},
+            files=[("files", ("ignis-b.png", io.BytesIO(_png((6, 6, 6))), "image/png"))],
+        )
+        assert second.status_code == 201
+
+        resp = await client.get(f"/cars/{car_id}")
+        assert float(resp.json()["ex_showroom_price"]) == 600000.0, "repriced"
+        assert any(
+            "pricing screen" in w for w in second.json()["catalogue_warnings"]
+        ), "the admin was not told the price was ignored"
+
+    @pytest.mark.asyncio
     async def test_the_created_model_reaches_the_new_cars_catalogue(self, client):
         await client.post(
             "/media-admin/upload",
