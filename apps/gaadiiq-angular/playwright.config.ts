@@ -65,7 +65,9 @@ export default defineConfig({
       // typography is safe to run here: it reads rendered type only and needs
       // no API. Verified by running the whole 26-route sweep locally with no
       // backend started at all — every route rendered its text.
-      testMatch: /(smoke|contrast|voice-diagnosis|typography)\.spec\.ts/,
+      // listing-columns is safe to run here: it reads source files only, starts
+      // no browser and needs no API.
+      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {
