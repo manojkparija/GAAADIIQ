@@ -339,6 +339,15 @@
     <h2>Listing Submitted!</h2>
     <p>Your <strong>{{ form.year }} {{ form.make }} {{ form.model }}</strong> has been listed successfully.</p>
     <p class="success-sub">Our team will verify and publish it within 2 hours. You'll receive confirmation on {{ form.phone }}.</p>
+
+    <!--
+      On the success screen on purpose. The listing did save, so this is not an
+      error — but a seller whose photographs did not attach needs to know here,
+      not when they look at their own advert days later and find it empty.
+    -->
+    @if (submitWarning(); as warning) {
+      <div class="submit-warning" role="status">⚠️ {{ warning }}</div>
+    }
     <div class="success-details">
       <div class="detail-chip">📍 {{ form.city }}</div>
       <div class="detail-chip">💰 ₹{{ (+form.price / 100000).toFixed(1) }}L</div>

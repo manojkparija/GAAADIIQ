@@ -388,3 +388,15 @@
   color: var(--warning-ink);
   font-weight: 700;
 }
+
+/* The listing saved but something attached to it did not. Warning, not error —
+   uses --warning-ink because this is small text on a tint of its own hue. */
+.submit-warning {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--warning-ink) 12%, transparent);
+  color: var(--warning-ink);
+  font-size: 0.9rem;
+  text-align: left;
+}
