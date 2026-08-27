@@ -137,6 +137,86 @@
             </ul>
           </div>
         }
+
+        <!--
+          STEP 3: REVIEW THE TRIM PRICES
+
+          Shown after a New Cars upload, against the model just photographed.
+          Every figure here is a draft until the admin publishes it, and New
+          Cars renders published trims only — so nothing on this panel is
+          visible to a buyer while it is being reviewed.
+        -->
+        @if (inPricingStep()) {
+          <div class="aci-pricing-step">
+            <h2 class="aci-section-title">
+              Step 3: Review Trim Prices — {{ pricingVehicle() }}
+            </h2>
+
+            @if (researchingPrices()) {
+              <p class="aci-hint">🔎 Researching this model's trims and prices…</p>
+            } @else {
+              <p class="aci-hint">
+                Prices drafted by AI are a starting point, not a source. A
+                language model states a wrong price as confidently as a right
+                one, so check each figure — nothing here is shown to a buyer
+                until you publish it.
+              </p>
+            }
+
+            @if (pricingError()) {
+              <div class="aci-error">{{ pricingError() }}</div>
+            }
+
+            @if (!researchingPrices() && !pricingTrims().length) {
+              <p class="aci-hint">
+                No trims recorded for this model. You can add them under
+                <a routerLink="/admin/variants">Variants</a>.
+              </p>
+            }
+
+            @for (t of pricingTrims(); track t.id) {
+              <div class="aci-trim-row">
+                <div class="aci-trim-name">
+                  {{ t.name }}
+                  @if (t.status === 'draft') { <span class="aci-badge-draft">Draft</span> }
+                  @if (t.status === 'published') { <span class="aci-badge-live">Published</span> }
+                  @if (t.source === 'ai') { <span class="aci-badge-ai">AI</span> }
+                </div>
+                <input
+                  type="number"
+                  class="aci-input aci-trim-price"
+                  min="0"
+                  step="1000"
+                  placeholder="Ex-showroom ₹"
+                  [ngModel]="t.price"
+                  (ngModelChange)="setTrimPrice(t.id, $event)" />
+                <button type="button" class="btn-secondary"
+                        [disabled]="savingTrim() === t.id || !t.dirty"
+                        (click)="saveTrim(t)">
+                  {{ savingTrim() === t.id ? 'Saving…' : 'Save' }}
+                </button>
+                <button type="button" class="btn-primary"
+                        [disabled]="savingTrim() === t.id || t.price == null"
+                        (click)="publishTrim(t)">
+                  Publish
+                </button>
+              </div>
+            }
+
+            <div class="aci-pricing-actions">
+              <button type="button" class="btn-secondary" (click)="finishPricing()">
+                @if (unsavedTrims()) {
+                  Done — discard {{ unsavedTrims() }} unsaved change(s)
+                } @else {
+                  Done
+                }
+              </button>
+              <a class="btn-secondary" routerLink="/admin/variants">
+                Open full Variants editor
+              </a>
+            </div>
+          </div>
+        }
       </div>
     }
 
