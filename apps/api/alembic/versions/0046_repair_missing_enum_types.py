@@ -50,6 +50,8 @@ added after an unguarded ALTER TYPE took production's deploys down.
 Revision ID: 0046
 Revises: 0045
 """
+import re
+
 import sqlalchemy as sa
 
 from alembic import op
@@ -126,6 +128,40 @@ def upgrade() -> None:
             # failure. But there is no column to convert yet.
             continue
 
+        # A server-side DEFAULT has to come off first.
+        #
+        # PostgreSQL will not cast a column default when the column's type
+        # changes, even when the values themselves convert cleanly:
+        #
+        #   DatatypeMismatchError: default for column "status" cannot be cast
+        #   automatically to type booking_status
+        #   [SQL: ALTER TABLE test_drive_bookings ALTER COLUMN status TYPE
+        #    booking_status USING status::text::booking_status]
+        #
+        # The first version of this migration did not drop the default, and
+        # failed in production exactly there. It was not caught beforehand
+        # because the rehearsal built its tables from the ORM, where
+        # `default=PaymentStatus.pending` is a *Python*-side default and no
+        # DEFAULT reaches the database. Production's tables came from the
+        # hand-run SQL, which wrote real ones.
+        #
+        # The default is read back rather than assumed, and restored afterwards
+        # cast to the new type — dropping it silently would change what a row
+        # gets when the column is omitted, which is a behaviour change this
+        # migration has no business making.
+        default_expr = bind.execute(
+            sa.text(
+                "SELECT column_default FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND table_name = :t "
+                "  AND column_name = :c"
+            ), {"t": table, "c": column}
+        ).scalar()
+
+        if default_expr is not None:
+            op.execute(sa.text(
+                f"ALTER TABLE {table} ALTER COLUMN {column} DROP DEFAULT"
+            ))
+
         # Explicit USING, and explicit about the current type, so a value that
         # is not a valid label raises here rather than being coerced.
         op.execute(sa.text(
@@ -133,6 +169,24 @@ def upgrade() -> None:
             f"ALTER COLUMN {column} TYPE {type_name} "
             f"USING {column}::text::{type_name}"
         ))
+
+        if default_expr is not None:
+            # Postgres renders a literal default as e.g. `'pending'::character
+            # varying`. Take the literal and re-apply it against the new type.
+            literal = re.match(r"^'((?:[^']|'')*)'", default_expr)
+            if not literal:
+                # Anything else — a function call, a sequence — is not
+                # something to guess at. Fail loudly: a wrong default is worse
+                # than a stopped migration, because it is silent afterwards.
+                raise RuntimeError(
+                    f"{table}.{column} has a default this migration cannot "
+                    f"restore safely: {default_expr!r}. Convert it by hand."
+                )
+            value = literal.group(1)
+            op.execute(sa.text(
+                f"ALTER TABLE {table} ALTER COLUMN {column} "
+                f"SET DEFAULT '{value}'::{type_name}"
+            ))
 
 
 def downgrade() -> None:
