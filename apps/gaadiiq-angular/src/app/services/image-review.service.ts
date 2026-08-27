@@ -87,16 +87,51 @@ export class ImageReviewService {
     // reviewed_by and reviewed_at are deliberately not sent: the database
     // stamps them from the caller's own token, so the record of who decided
     // cannot be written by whoever is asking.
+    //
+    // `status` is read back, not just `id`. Selecting the key alone answers
+    // "did a row come back", which is not the question — it is possible for
+    // the statement to return a row whose status is not what was asked for,
+    // and that reads as success. Production showed exactly that shape: both
+    // images carried reviewed_by and reviewed_at (so the write path and the
+    // admin check were working) while status had never once been 'rejected'.
     const { data, error } = await this.sb.client
       .from('car_images')
       .update(change)
       .eq('id', id)
-      .select('id');
+      .select('id, status, rejection_reason');
 
     // Row-level security refuses by returning nothing rather than raising, so
     // a check on `error` alone would report success for a refused write.
-    if (error || !data?.length) {
-      this.error.set('That decision could not be saved.');
+    if (error) {
+      // Say what the database said.
+      //
+      // This used to read 'That decision could not be saved.' and discard
+      // `error` entirely — the same defect the listing form had, where a
+      // fixed string turned a one-line fix into a support conversation.
+      // Postgres names the constraint, the policy or the column; showing it
+      // costs nothing.
+      const code = error.code ? ` [${error.code}]` : '';
+      this.error.set(
+        `That decision could not be saved${code}: ${error.message || error}`);
+      return false;
+    }
+
+    if (!data?.length) {
+      // No error and no row is what row-level security looks like: the
+      // statement ran and matched nothing the caller is allowed to change.
+      this.error.set(
+        'That decision was refused — the row was not updated. This is a '
+        + 'permissions problem, not something retrying will fix.');
+      return false;
+    }
+
+    const saved = data[0] as { status: ImageReviewStatus };
+    if (saved.status !== change.status) {
+      // The write returned a row, but not the one asked for. Silence here is
+      // how a rejection that never happened looked like one that did.
+      this.error.set(
+        `The database kept this image as "${saved.status}" instead of `
+        + `"${change.status}". The decision was not applied.`);
       return false;
     }
 

@@ -61,6 +61,37 @@ export class ListCarComponent {
 
   makes = ['Maruti Suzuki','Hyundai','Tata','Mahindra','Honda','Toyota','Kia','MG Motor','Ford','Volkswagen','Skoda','Renault','Nissan','BMW','Mercedes-Benz','Audi','Other'];
   fuelTypes = ['Petrol','Diesel','CNG','Electric','Hybrid'];
+
+  /**
+   * Display label -> `fuel_type` enum label.
+   *
+   * `cars` carries the fuel twice, and the two halves of the app disagree
+   * about which one is real:
+   *
+   *   fuel       text        written by this form
+   *   fuel_type  enum        what the API filters on (routers/cars.py:57)
+   *
+   * So a car listed here was invisible under Electric no matter what the
+   * seller chose — measured in production: both `e Vitara 2026` rows had
+   * fuel 'Electric'/'Petrol' and fuel_type NULL, while a row created by the
+   * image-upload path (which does set fuel_type) had it the other way round.
+   *
+   * Writing both keeps the filters working without changing what this form
+   * has always stored. Unlike body_type, `fuel` itself stays exactly as the
+   * seller picked it — it is text, and rewriting it would alter stored data.
+   */
+  private readonly FUEL_TYPE_LABELS: Record<string, string> = {
+    'Petrol':   'petrol',
+    'Diesel':   'diesel',
+    'CNG':      'cng',
+    'Electric': 'electric',
+    'Hybrid':   'hybrid',
+  };
+
+  /** The enum label for the chosen fuel, or null. See bodyTypeForDb. */
+  fuelTypeForDb(): string | null {
+    return this.FUEL_TYPE_LABELS[this.form.fuel] ?? null;
+  }
   transmissions = ['Manual','Automatic','AMT','CVT','DCT'];
 
   /**
@@ -707,6 +738,10 @@ export class ListCarComponent {
         year: this.form.year,
         km: this.isNew() ? 0 : +this.form.km,
         fuel: this.form.fuel,
+        // Written alongside `fuel`, not instead of it: this is the column the
+        // API filters on, and leaving it NULL is why a listed EV never
+        // appeared under Electric. See FUEL_TYPE_LABELS.
+        fuel_type: this.fuelTypeForDb(),
         // The enum label, not the display text. See TRANSMISSION_LABELS.
         transmission: this.transmissionForDb(),
         owners: this.isNew() ? null : (this.form.owners || null),
