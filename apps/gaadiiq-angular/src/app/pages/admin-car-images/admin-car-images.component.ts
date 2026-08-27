@@ -121,18 +121,34 @@ export class AdminCarImagesComponent implements OnInit {
   researchingPrices = signal(false);
   pricingError = signal('');
   savingTrim = signal<string>('');
-  inPricingStep = computed(() => this.pricingCarId() !== '');
   /**
-   * Offer the pricing step before the upload, not after.
+   * In the step. Not keyed on the car id any more — a vehicle the catalogue
+   * has no row for still gets a panel, holding drafts that are created once
+   * the upload makes the row.
+   */
+  inPricingStep = signal(false);
+  /**
+   * Offer the pricing step for every New Cars upload.
    *
-   * Only when the catalogue already holds this model: trim research is
-   * addressed by car id, and a model the catalogue has never seen has no row
-   * to research against until the upload creates one. For that case — a new
-   * launch — the step still runs, just after the upload instead, which is the
-   * only order physically available.
+   * THIS USED TO REQUIRE modelIsKnown(), AND THAT WAS THE BUG.
+   *
+   * modelIsKnown() matches make + model + *year* against the catalogue, while
+   * the year picker deliberately offers this year and next whether or not the
+   * catalogue has reached them — it exists so a new launch can be photographed
+   * before it is listed. So Grand Vitara 2026, on a catalogue holding 2024 and
+   * 2025, failed the check and fell straight through to Upload with no pricing
+   * step at all.
+   *
+   * That skipped exactly the case researched prices are most wanted for, and
+   * it was indistinguishable on screen from the feature not being deployed.
+   *
+   * Research does not actually need a catalogue row — variant_research works
+   * from make, model and year. Only *persisting* the result needs one, and
+   * that can wait until the upload has created it.
    */
   canPriceBeforeUpload = computed(() =>
-    ['new', 'both'].includes(this.mediaBucket()) && this.modelIsKnown()
+    ['new', 'both'].includes(this.mediaBucket())
+    && !!this.make() && !!this.model() && !!this.modelYear()
   );
   /** True once the admin has been through (or skipped) the pricing step. */
   pricingReviewed = signal(false);
@@ -538,6 +554,10 @@ export class AdminCarImagesComponent implements OnInit {
     // were, re-running research after the upload would reopen a panel the
     // admin has just finished with.
     const pricedBefore = this.inPricingStep() || this.pricingReviewed();
+    // Captured before resetForm clears the panel. These were researched for a
+    // vehicle with no catalogue row, so they have nowhere to live until this
+    // upload creates one.
+    const pendingTrims = this.pricingTrims().filter(t => t.pending);
 
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
@@ -608,8 +628,14 @@ export class AdminCarImagesComponent implements OnInit {
       //
       // Read the vehicle from the result rather than the form — the reset
       // above has already cleared the form fields.
-      if (result.catalogue_car_id && ['new', 'both'].includes(bucket) && !pricedBefore) {
-        await this.startPricingStep(result.catalogue_car_id, vehicleLabel);
+      if (result.catalogue_car_id && ['new', 'both'].includes(bucket)) {
+        if (pendingTrims.length) {
+          // Trims the admin priced before the upload, for a vehicle that had
+          // no catalogue row to hold them. The row exists now.
+          await this.createPendingTrims(result.catalogue_car_id, pendingTrims);
+        } else if (!pricedBefore) {
+          await this.startPricingStep(result.catalogue_car_id, vehicleLabel);
+        }
       }
     } catch (err) {
       this.uploadError.set(String(err));
@@ -656,14 +682,34 @@ export class AdminCarImagesComponent implements OnInit {
       const resp = await fetch(`${this.apiUrl}/cars/catalogue/resolve?${params}`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const carId: string | null = (await resp.json()).car_id;
-      if (!carId) {
-        // A model the catalogue has never seen. There is nothing to research
-        // against yet, so the step runs after the upload creates the row.
-        this.pricingReviewed.set(true);
-        this.toast('New model — trim prices can be set once the images are uploaded');
-        return;
+      this.pricingVehicle.set(`${make} ${model} ${year}`);
+
+      if (carId) {
+        // The catalogue has this vehicle: research against the row, so drafts
+        // are stored and existing trims are shown alongside them.
+        await this.startPricingStep(carId, `${make} ${model} ${year}`);
+      } else {
+        // No row yet. Research by identity and hold the result in memory —
+        // these are created after the upload has made a row to hang them on.
+        const params2 = new URLSearchParams({ make, model, year: String(year) });
+        const r = await fetch(
+          `${this.apiUrl}/cars/catalogue/research-trims?${params2}`,
+          { method: 'POST', headers: await this.authHeaders() },
+        );
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const drafts: any[] = await r.json();
+        this.pricingCarId.set('');
+        this.pricingTrims.set(drafts.map((d, i) => ({
+          id: `pending-${i}`,
+          name: d.name,
+          price: d.ex_showroom_price == null ? null : Number(d.ex_showroom_price),
+          status: 'draft',
+          source: 'ai',
+          dirty: false,
+          pending: true,
+        })));
+        this.inPricingStep.set(true);
       }
-      await this.startPricingStep(carId, `${make} ${model} ${year}`);
       this.pricingReviewed.set(true);
     } catch (err) {
       this.pricingError.set(`Could not load trims: ${err}`);
@@ -678,6 +724,7 @@ export class AdminCarImagesComponent implements OnInit {
   private async startPricingStep(carId: string, vehicle: string) {
     this.pricingCarId.set(carId);
     this.pricingVehicle.set(vehicle);
+    this.inPricingStep.set(true);
     this.pricingTrims.set([]);
     this.pricingError.set('');
     this.researchingPrices.set(true);
@@ -700,6 +747,49 @@ export class AdminCarImagesComponent implements OnInit {
       await this.loadPricingTrims().catch(() => {});
     } finally {
       this.researchingPrices.set(false);
+    }
+  }
+
+  /**
+   * Write the pre-upload drafts to the row this upload just created.
+   *
+   * As drafts, with the admin's prices. Draft rather than published because
+   * publishing is a separate act of vouching, and pressing Upload is not that
+   * — it says "these photographs are right", not "these prices are correct to
+   * show a buyer". They are one click away under Variants.
+   *
+   * Failures are reported, never silent: the admin priced these deliberately,
+   * and losing them without a word is worse than the step not existing.
+   */
+  private async createPendingTrims(carId: string, rows: TrimRow[]) {
+    const failed: string[] = [];
+    for (const [index, row] of rows.entries()) {
+      try {
+        const resp = await fetch(`${this.apiUrl}/cars/${carId}/variants`, {
+          method: 'POST',
+          headers: { ...(await this.authHeaders()), 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: row.name,
+            ex_showroom_price: row.price == null ? null : String(row.price),
+            sort_order: index,
+          }),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      } catch {
+        failed.push(row.name);
+      }
+    }
+
+    this.pricingCarId.set(carId);
+    this.inPricingStep.set(true);
+    await this.loadPricingTrims().catch(() => {});
+
+    if (failed.length) {
+      this.pricingError.set(
+        `These trims could not be saved: ${failed.join(', ')}. Add them under Variants.`
+      );
+    } else {
+      this.toast(`✅ ${rows.length} trim(s) saved as drafts — publish when you are ready`);
     }
   }
 
@@ -789,6 +879,7 @@ export class AdminCarImagesComponent implements OnInit {
   }
 
   finishPricing() {
+    this.inPricingStep.set(false);
     this.pricingCarId.set('');
     this.pricingVehicle.set('');
     this.pricingTrims.set([]);
@@ -1105,6 +1196,11 @@ interface TrimRow {
   status: string;
   source: string;
   dirty: boolean;
+  /**
+   * Researched but not yet in the database, because the vehicle had no
+   * catalogue row when the step ran. Created after the upload makes one.
+   */
+  pending?: boolean;
 }
 
 interface UploadResult {

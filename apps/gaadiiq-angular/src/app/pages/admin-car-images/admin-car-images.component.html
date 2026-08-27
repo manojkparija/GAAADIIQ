@@ -593,16 +593,24 @@
                   placeholder="Ex-showroom ₹"
                   [ngModel]="t.price"
                   (ngModelChange)="setTrimPrice(t.id, $event)" />
-                <button type="button" class="btn-secondary"
-                        [disabled]="savingTrim() === t.id || !t.dirty"
-                        (click)="saveTrim(t)">
-                  {{ savingTrim() === t.id ? 'Saving…' : 'Save' }}
-                </button>
-                <button type="button" class="btn-primary"
-                        [disabled]="savingTrim() === t.id || t.price == null"
-                        (click)="publishTrim(t)">
-                  Publish
-                </button>
+                @if (t.pending) {
+                  <!--
+                    Nothing to save against yet: this vehicle has no catalogue
+                    row. Saying so beats two buttons that cannot work.
+                  -->
+                  <span class="aci-hint aci-trim-note">Saved when you upload</span>
+                } @else {
+                  <button type="button" class="btn-secondary"
+                          [disabled]="savingTrim() === t.id || !t.dirty"
+                          (click)="saveTrim(t)">
+                    {{ savingTrim() === t.id ? 'Saving…' : 'Save' }}
+                  </button>
+                  <button type="button" class="btn-primary"
+                          [disabled]="savingTrim() === t.id || t.price == null"
+                          (click)="publishTrim(t)">
+                    Publish
+                  </button>
+                }
               </div>
             }
 
