@@ -371,3 +371,20 @@
   color: var(--muted);
   text-align: center;
 }
+
+/* Why Continue is disabled. Uses --warning-ink rather than --warning: this is
+   small text on a tint of its own hue, which measures several points lower
+   than the same colour on white. */
+.lt-blocker {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--warning-ink) 12%, transparent);
+  color: var(--warning-ink);
+  font-size: 0.9rem;
+}
+
+.lt-req {
+  color: var(--warning-ink);
+  font-weight: 700;
+}

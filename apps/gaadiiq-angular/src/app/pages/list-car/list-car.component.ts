@@ -268,6 +268,47 @@ export class ListCarComponent {
       : !!(this.form.km && this.form.owners && this.form.condition);
   }
 
+  /**
+   * Which fields are keeping Continue disabled, or null when nothing is.
+   *
+   * Reported from production: "this page is not moving forward". The rule
+   * above is right — a new listing needs an ex-showroom price — but nothing
+   * on screen said so. The field carried no required marker and the button
+   * simply sat there greyed out, so the only way to discover the requirement
+   * was to guess which of nine inputs it wanted.
+   *
+   * This changes no rule. It reads the same conditions canLeaveStepOne()
+   * reads and names them.
+   *
+   * A METHOD, NOT A computed(). These are plain properties on `form` bound
+   * with ngModel, and computed() tracks signal reads only — over a plain
+   * field it evaluates once and then reports a stale answer forever. That has
+   * shipped twice in this repo.
+   */
+  stepOneBlocker(): string | null {
+    // The button already reads "Getting AI estimate…" while this is true, so
+    // repeating it underneath would be noise.
+    if (this.valuationLoading()) return null;
+
+    const missing: string[] = [];
+    if (!this.form.make) missing.push('Make');
+    if (!this.form.model) missing.push('Model');
+    if (!this.form.fuel) missing.push('Fuel Type');
+
+    if (this.isNew()) {
+      if (!this.form.exShowroomPrice) missing.push('Ex-showroom price');
+    } else {
+      if (!this.form.km) missing.push('Kilometres driven');
+      if (!this.form.owners) missing.push('Owners');
+      if (!this.form.condition) missing.push('Condition');
+    }
+
+    if (!missing.length) return null;
+    return missing.length === 1
+      ? `${missing[0]} is needed before you can continue.`
+      : `These are still needed: ${missing.join(', ')}.`;
+  }
+
   form = {
     make: '', model: '', variant: '', year: 2020, km: '',
     fuel: '', transmission: '', owners: '', color: '', city: '',

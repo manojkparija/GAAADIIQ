@@ -124,7 +124,7 @@
             </div>
           } @else {
             <div class="form-group">
-              <label>{{ 'Ex-showroom price (₹)' | t }}</label>
+              <label>{{ 'Ex-showroom price (₹)' | t }} <span class="lt-req">*</span></label>
               <input type="number" [(ngModel)]="form.exShowroomPrice" name="exShowroomPrice"
                      [placeholder]="'e.g. 850000' | t" min="0">
               <small class="lt-hint">
@@ -157,6 +157,14 @@
           <div class="val-trend">{{ valuation()!.marketTrend }}</div>
           <div class="val-tip" *ngIf="valuation()!.tips?.length">💡 {{ valuation()!.tips[0] }}</div>
         </div>
+
+        <!--
+          Why Continue is disabled. Above the button rather than beside it, so
+          it is read before the button is clicked at rather than after.
+        -->
+        @if (stepOneBlocker(); as why) {
+          <div class="lt-blocker" role="status">{{ why }}</div>
+        }
 
         <div class="btn-row">
           <a routerLink="/" class="btn-outline">{{ 'Cancel' | t }}</a>
