@@ -1,0 +1,139 @@
+# Catalogue model names, one per line: make,model
+#
+# READ BEFORE RUNNING seed_catalogue_models.py AGAINST ANYTHING REAL.
+#
+# This list was written from the assistant's own knowledge, not from a
+# manufacturer feed, so it needs checking by someone who knows the market.
+# Two specific reasons it matters more than a typo usually would:
+#
+#   1. Images resolve onto catalogue cars by make + model + year, ALL THREE
+#      EXACT (services/media_library.py). A model spelled differently here
+#      than on the upload form silently detaches its whole gallery, with no
+#      error anywhere. "Grand Vitara" vs "Grand vitara" is enough.
+#
+#   2. The assistant's knowledge ends in May 2026, so the 2026 line-ups are
+#      exactly where it is least reliable — a model launched or discontinued
+#      after that will be wrong here.
+#
+# Nothing in this file carries a price. New Cars renders priced models only
+# (priced_only=true), so an imported row is invisible to buyers until someone
+# prices it deliberately. That is the property that makes importing a list
+# like this safe to do before it has been fully verified.
+#
+# Spellings follow how the manufacturer writes them in India.
+make,model
+Maruti Suzuki,Alto K10
+Maruti Suzuki,S-Presso
+Maruti Suzuki,Celerio
+Maruti Suzuki,Wagon R
+Maruti Suzuki,Swift
+Maruti Suzuki,Dzire
+Maruti Suzuki,Baleno
+Maruti Suzuki,Ignis
+Maruti Suzuki,Fronx
+Maruti Suzuki,Brezza
+Maruti Suzuki,Ertiga
+Maruti Suzuki,XL6
+Maruti Suzuki,Ciaz
+Maruti Suzuki,Grand Vitara
+Maruti Suzuki,Jimny
+Maruti Suzuki,Invicto
+Maruti Suzuki,eVitara
+Hyundai,Grand i10 Nios
+Hyundai,i20
+Hyundai,i20 N Line
+Hyundai,Aura
+Hyundai,Exter
+Hyundai,Venue
+Hyundai,Venue N Line
+Hyundai,Verna
+Hyundai,Creta
+Hyundai,Creta N Line
+Hyundai,Creta Electric
+Hyundai,Alcazar
+Hyundai,Tucson
+Hyundai,Ioniq 5
+Tata,Tiago
+Tata,Tiago EV
+Tata,Tigor
+Tata,Tigor EV
+Tata,Altroz
+Tata,Punch
+Tata,Punch EV
+Tata,Nexon
+Tata,Nexon EV
+Tata,Curvv
+Tata,Curvv EV
+Tata,Harrier
+Tata,Harrier EV
+Tata,Safari
+Mahindra,Bolero
+Mahindra,Bolero Neo
+Mahindra,XUV 3XO
+Mahindra,Thar
+Mahindra,Thar Roxx
+Mahindra,Scorpio Classic
+Mahindra,Scorpio N
+Mahindra,XUV700
+Mahindra,XEV 9e
+Mahindra,BE 6
+Mahindra,XUV400 EV
+Toyota,Glanza
+Toyota,Taisor
+Toyota,Rumion
+Toyota,Urban Cruiser Hyryder
+Toyota,Innova Crysta
+Toyota,Innova Hycross
+Toyota,Fortuner
+Toyota,Hilux
+Toyota,Camry
+Toyota,Vellfire
+Toyota,Land Cruiser 300
+Kia,Sonet
+Kia,Syros
+Kia,Seltos
+Kia,Carens
+Kia,Carnival
+Kia,EV6
+Kia,EV9
+Honda,Amaze
+Honda,City
+Honda,City Hybrid
+Honda,Elevate
+MG,Comet EV
+MG,Astor
+MG,ZS EV
+MG,Hector
+MG,Hector Plus
+MG,Windsor EV
+MG,Gloster
+Skoda,Kylaq
+Skoda,Slavia
+Skoda,Kushaq
+Skoda,Superb
+Skoda,Kodiaq
+Volkswagen,Virtus
+Volkswagen,Taigun
+Volkswagen,Tiguan
+Renault,Kwid
+Renault,Triber
+Renault,Kiger
+Nissan,Magnite
+Jeep,Compass
+Jeep,Meridian
+Jeep,Wrangler
+Jeep,Grand Cherokee
+Citroen,C3
+Citroen,eC3
+Citroen,C3 Aircross
+Citroen,Basalt
+BYD,Atto 3
+BYD,Seal
+BYD,eMAX 7
+BYD,Sealion 7
+Force Motors,Gurkha
+Force Motors,Urbania
+Isuzu,D-Max
+Isuzu,MU-X
+VinFast,VF6
+VinFast,VF7
