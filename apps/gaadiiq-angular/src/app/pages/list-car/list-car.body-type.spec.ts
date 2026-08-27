@@ -85,6 +85,47 @@ describe('ListCarComponent — body type as an enum label', () => {
     expect(c.bodyTypeForDb()).toBeNull();
   });
 
+  /**
+   * `transmission` is a native enum too, and failed identically the moment
+   * body_type stopped failing:
+   *   22P02: invalid input value for enum transmission: "Manual"
+   */
+  describe('transmission', () => {
+    const TRANSMISSION_ENUM = ['manual', 'automatic', 'amt', 'cvt', 'dct'];
+
+    it('sends the enum label, not the display text', () => {
+      c.form.transmission = 'Manual';
+      expect(c.transmissionForDb()).toBe('manual');
+    });
+
+    it('maps every option the dropdown offers to a real enum label', () => {
+      for (const shown of c.transmissions) {
+        c.form.transmission = shown;
+        const label = c.transmissionForDb();
+        expect(TRANSMISSION_ENUM)
+          .withContext(`"${shown}" is offered but maps to ${label}, which is not a transmission label`)
+          .toContain(label as string);
+      }
+    });
+
+    it('keeps the acronyms lower-cased, not title-cased', () => {
+      // 'AMT' -> 'Amt' is the mistake a naive toLowerCase-then-capitalise
+      // would make, and Postgres would reject it just as readily.
+      c.form.transmission = 'AMT';
+      expect(c.transmissionForDb()).toBe('amt');
+    });
+
+    it('sends null rather than passing an unknown value to Postgres', () => {
+      c.form.transmission = 'Tiptronic';
+      expect(c.transmissionForDb()).toBeNull();
+    });
+
+    it('sends null when nothing is chosen', () => {
+      c.form.transmission = '';
+      expect(c.transmissionForDb()).toBeNull();
+    });
+  });
+
   it('does not normalise the columns that are plain text', () => {
     // badge, badge_type, city, color and fuel are text in the same table.
     // Lower-casing them would change stored data for no reason.

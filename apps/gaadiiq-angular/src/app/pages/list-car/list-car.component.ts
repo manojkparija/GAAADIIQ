@@ -62,6 +62,33 @@ export class ListCarComponent {
   makes = ['Maruti Suzuki','Hyundai','Tata','Mahindra','Honda','Toyota','Kia','MG Motor','Ford','Volkswagen','Skoda','Renault','Nissan','BMW','Mercedes-Benz','Audi','Other'];
   fuelTypes = ['Petrol','Diesel','CNG','Electric','Hybrid'];
   transmissions = ['Manual','Automatic','AMT','CVT','DCT'];
+
+  /**
+   * Display label -> `transmission` enum label.
+   *
+   * `cars.transmission` is a native enum, the same as body_type below, so
+   * 'Manual' was rejected exactly as 'SUV' was:
+   *   22P02: invalid input value for enum transmission: "Manual"
+   *
+   * Unlike body_type, every option the dropdown offers has a matching label,
+   * so nothing is removed here — this is purely a casing fix.
+   *
+   * `fuel` deliberately has no equivalent: it is plain `text` in the same
+   * table (confirmed by querying information_schema), so 'Petrol' is stored
+   * as written and normalising it would change stored data for no reason.
+   */
+  private readonly TRANSMISSION_LABELS: Record<string, string> = {
+    'Manual':    'manual',
+    'Automatic': 'automatic',
+    'AMT':       'amt',
+    'CVT':       'cvt',
+    'DCT':       'dct',
+  };
+
+  /** The enum label for the chosen gearbox, or null. See bodyTypeForDb. */
+  transmissionForDb(): string | null {
+    return this.TRANSMISSION_LABELS[this.form.transmission] ?? null;
+  }
   ownerOptions = ['1st Owner','2nd Owner','3rd Owner','4th+ Owner'];
   /**
    * Body types a seller can choose.
@@ -680,7 +707,8 @@ export class ListCarComponent {
         year: this.form.year,
         km: this.isNew() ? 0 : +this.form.km,
         fuel: this.form.fuel,
-        transmission: this.form.transmission,
+        // The enum label, not the display text. See TRANSMISSION_LABELS.
+        transmission: this.transmissionForDb(),
         owners: this.isNew() ? null : (this.form.owners || null),
         color: this.form.color || null,
         city: this.form.city || null,
