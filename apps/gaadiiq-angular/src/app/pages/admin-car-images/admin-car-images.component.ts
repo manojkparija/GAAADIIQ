@@ -103,6 +103,28 @@ export class AdminCarImagesComponent implements OnInit {
   // while deciding what to do next.
   catalogueWarnings = signal<string[]>([]);
 
+  // ---- Step 3: review the model's trim prices -------------------------------
+  //
+  // The upload establishes which vehicle the photographs are of. That is the
+  // moment the catalogue knows a model is in play, and the moment an admin is
+  // already thinking about it — so it is where the trim prices get checked,
+  // rather than on a screen they have to remember to visit afterwards.
+  //
+  // Nothing here reaches a buyer unreviewed. Researched trims are created as
+  // drafts and New Cars renders published ones only, so the figures on this
+  // step are invisible until the admin publishes them. That is what makes it
+  // safe to ask a language model for a price at all: it will state a wrong one
+  // with complete confidence, and a person sees it first.
+  pricingCarId = signal<string>('');
+  pricingVehicle = signal<string>('');
+  pricingTrims = signal<TrimRow[]>([]);
+  researchingPrices = signal(false);
+  pricingError = signal('');
+  savingTrim = signal<string>('');
+  inPricingStep = computed(() => this.pricingCarId() !== '');
+  /** Trims whose price the admin has changed and not yet saved. */
+  unsavedTrims = computed(() => this.pricingTrims().filter(t => t.dirty).length);
+
   // Form state - shared across all files in batch
   make = signal('');
   model = signal('');
@@ -494,6 +516,11 @@ export class AdminCarImagesComponent implements OnInit {
     this.isUploading.set(true);
     this.uploadError.set('');
 
+    // Captured before the upload, because a successful one resets the form and
+    // step 3 still needs to know which vehicle it is pricing.
+    const bucket = this.mediaBucket();
+    const vehicleLabel = `${this.make()} ${this.model()} ${this.modelYear()}`;
+
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
 
@@ -556,12 +583,153 @@ export class AdminCarImagesComponent implements OnInit {
       if (result.errors.length > 0) {
         this.uploadError.set(`Errors: ${result.errors.join('; ')}`);
       }
+
+      // Step 3. Read the vehicle from the result rather than the form: the
+      // reset above has already cleared the form fields, and this needs the
+      // model that was actually uploaded.
+      if (result.catalogue_car_id && ['new', 'both'].includes(bucket)) {
+        await this.startPricingStep(result.catalogue_car_id, vehicleLabel);
+      }
     } catch (err) {
       this.uploadError.set(String(err));
       this.toast(`❌ Upload failed: ${err}`);
     } finally {
       this.isUploading.set(false);
     }
+  }
+
+  /**
+   * Step 3 — ask the model for this vehicle's trims, then let the admin price
+   * them.
+   *
+   * Runs after the images are stored, not before, for a plain reason: the
+   * research endpoint drafts trims against a catalogue row, and until the
+   * upload has run there may be no row to draft against. Uploading first also
+   * means a failure here costs the admin nothing — the photographs are already
+   * safe, and this step can be skipped or retried.
+   *
+   * Only for New Cars uploads. Used Cars is built from adverts, and a
+   * catalogue model has no asking price, so trim pricing has nothing to say
+   * there.
+   */
+  private async startPricingStep(carId: string, vehicle: string) {
+    this.pricingCarId.set(carId);
+    this.pricingVehicle.set(vehicle);
+    this.pricingTrims.set([]);
+    this.pricingError.set('');
+    this.researchingPrices.set(true);
+    try {
+      // Fills gaps only: a trim already recorded is left exactly as it is, so
+      // this never overwrites a price an admin has already vouched for.
+      const resp = await fetch(`${this.apiUrl}/cars/${carId}/variants/research`, {
+        method: 'POST',
+        headers: await this.authHeaders(),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      await this.loadPricingTrims();
+    } catch (err) {
+      this.pricingError.set(
+        `Could not draft trims automatically (${err}). You can still price ` +
+        `this model under Variants.`
+      );
+      // Show whatever is already recorded rather than an empty panel — the
+      // research failing does not mean there is nothing to review.
+      await this.loadPricingTrims().catch(() => {});
+    } finally {
+      this.researchingPrices.set(false);
+    }
+  }
+
+  private async loadPricingTrims() {
+    const carId = this.pricingCarId();
+    if (!carId) return;
+    const resp = await fetch(`${this.apiUrl}/cars/${carId}/variants`, {
+      headers: await this.authHeaders(),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const variants: any[] = await resp.json();
+    this.pricingTrims.set(variants.map(v => ({
+      id: v.id,
+      name: v.name,
+      price: v.ex_showroom_price == null ? null : Number(v.ex_showroom_price),
+      status: v.status,
+      source: v.source,
+      dirty: false,
+    })));
+  }
+
+  /**
+   * A method, not a computed over the row object.
+   *
+   * These rows are bound with ngModel, and a computed() tracks signal reads
+   * only — over a plain field it evaluates once and then reports a stale
+   * answer forever. That has shipped here twice.
+   */
+  setTrimPrice(id: string, value: unknown) {
+    const parsed = value === '' || value === null || value === undefined
+      ? null
+      : Number(value);
+    this.pricingTrims.update(rows => rows.map(r =>
+      r.id === id
+        ? { ...r, price: Number.isFinite(parsed as number) ? parsed : null, dirty: true }
+        : r
+    ));
+  }
+
+  /** Save a corrected price without publishing it. */
+  async saveTrim(row: TrimRow) {
+    await this.patchTrim(row, { ex_showroom_price: row.price == null ? null : String(row.price) });
+  }
+
+  /**
+   * Publish is the act of vouching for the figure, so it saves the price the
+   * admin is looking at in the same request. Publishing a row while an edited
+   * price sat unsaved would put the *researched* number in front of buyers —
+   * exactly the outcome this step exists to prevent.
+   */
+  async publishTrim(row: TrimRow) {
+    if (row.price == null) {
+      this.pricingError.set(`${row.name} has no price. Give it one before publishing.`);
+      return;
+    }
+    await this.patchTrim(row, {
+      ex_showroom_price: String(row.price),
+      status: 'published',
+    });
+  }
+
+  private async patchTrim(row: TrimRow, body: Record<string, unknown>) {
+    const carId = this.pricingCarId();
+    if (!carId) return;
+    this.savingTrim.set(row.id);
+    this.pricingError.set('');
+    try {
+      const resp = await fetch(`${this.apiUrl}/cars/${carId}/variants/${row.id}`, {
+        method: 'PATCH',
+        headers: { ...(await this.authHeaders()), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const updated = await resp.json();
+      this.pricingTrims.update(rows => rows.map(r => r.id === row.id ? {
+        ...r,
+        price: updated.ex_showroom_price == null ? null : Number(updated.ex_showroom_price),
+        status: updated.status,
+        dirty: false,
+      } : r));
+      this.toast(`✅ ${row.name} saved`);
+    } catch (err) {
+      this.pricingError.set(`Could not save ${row.name}: ${err}`);
+    } finally {
+      this.savingTrim.set('');
+    }
+  }
+
+  finishPricing() {
+    this.pricingCarId.set('');
+    this.pricingVehicle.set('');
+    this.pricingTrims.set([]);
+    this.pricingError.set('');
   }
 
   cancelUpload() {
@@ -852,6 +1020,23 @@ interface SuggestedMetadata {
   model_year?: number;
   image_category?: string;
   colour?: string;
+}
+
+/**
+ * One trim on the pricing step.
+ *
+ * `price` is held as a plain number for the input to bind to, separate from
+ * the string the API returns, and `dirty` records that the admin changed it —
+ * so a save sends only what they actually touched rather than writing every
+ * researched figure back as though a person had vouched for it.
+ */
+interface TrimRow {
+  id: string;
+  name: string;
+  price: number | null;
+  status: string;
+  source: string;
+  dirty: boolean;
 }
 
 interface UploadResult {
