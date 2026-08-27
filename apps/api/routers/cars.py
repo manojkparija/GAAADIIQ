@@ -210,6 +210,50 @@ async def catalogue_options(db: AsyncSession = Depends(get_db)):
     )
 
 
+class CatalogueResolved(BaseModel):
+    """The catalogue row an upload of this vehicle would attach to."""
+
+    car_id: uuid.UUID | None = None
+
+
+@router.get("/catalogue/resolve", response_model=CatalogueResolved)
+async def resolve_catalogue_car(
+    make: str,
+    model: str,
+    year: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Which catalogue row a photograph of this vehicle belongs to, if any.
+
+    The upload screen prices a model's trims *before* committing the images,
+    and trim research is addressed by car id — so the screen needs the id of
+    the row the upload is going to land on, before the upload has run.
+
+    The ordering here is deliberately identical to _ensure_catalogue_car in
+    routers/media_admin.py: match on make, model and year, dropping the
+    variant, and prefer the row that has no variant. If the two ever disagree
+    the admin would price one row and the photographs would attach to another,
+    which is the failure this is most worth guarding against — hence the note
+    on both sides.
+
+    Returns null rather than 404 when the catalogue has never heard of the
+    vehicle: that is an ordinary answer here (a new launch), not an error, and
+    a 404 would make the caller treat a normal case as a failure.
+
+    Unauthenticated for the same reason as catalogue/options: it exposes
+    nothing a buyer cannot already read from /cars.
+    """
+    row = await db.execute(
+        select(Car.id).where(
+            func.lower(func.trim(Car.make)) == make.strip().lower(),
+            func.lower(func.trim(Car.model)) == model.strip().lower(),
+            Car.year == year,
+        ).order_by(Car.variant.is_(None).desc(), Car.created_at).limit(1)
+    )
+    return CatalogueResolved(car_id=row.scalar_one_or_none())
+
+
 @router.get("/{car_id}", response_model=CarOut)
 async def get_car(car_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Car).where(Car.id == car_id))

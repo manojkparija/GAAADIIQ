@@ -152,9 +152,112 @@ describe('admin-car-images — step 3 trim pricing', () => {
     expect(comp.pricingTrims()[0].dirty).toBe(false);
   });
 
-  it('is not shown at all before an upload has happened', () => {
+  it('is not shown at all before the admin reaches the metadata step', () => {
     fixture.detectChanges();
     expect(comp.inPricingStep()).toBe(false);
     expect(fixture.nativeElement.textContent).not.toContain('Step 3');
+  });
+
+  /**
+   * The ordering. First built the other way round — panel after the upload —
+   * which is not what was asked for: the prices are to be reviewed *before*
+   * the images are committed. These pin the order so it cannot quietly revert.
+   */
+  describe('runs before the upload, not after', () => {
+    beforeEach(() => {
+      comp.catalogue.set([
+        { make: 'Maruti Suzuki', model: 'Grand Vitara', variant: null, year: 2026, ex_showroom_price: 1099000 },
+      ] as any);
+      comp.make.set('Maruti Suzuki');
+      comp.model.set('Grand Vitara');
+      comp.modelYear.set(2026);
+      comp.mediaBucket.set('new');
+      comp.selectedFiles.set([new File(['x'], 'gv.jpg')]);
+      comp.showMetadataGrid.set(true);
+    });
+
+    it('offers Review Trim Prices instead of Upload while unreviewed', () => {
+      fixture.detectChanges();
+      const labels = Array.from(fixture.nativeElement.querySelectorAll('button'))
+        .map((b: any) => b.textContent?.trim());
+      expect(labels).toContain('→ Review Trim Prices');
+      expect(labels.some((l: string) => l?.startsWith('✓ Upload'))).toBe(false);
+    });
+
+    it('resolves the catalogue row and researches it, before any upload', async () => {
+      const urls: string[] = [];
+      spyOn(window, 'fetch').and.callFake(async (url: any) => {
+        urls.push(String(url));
+        const u = String(url);
+        if (u.includes('/catalogue/resolve')) {
+          return new Response(JSON.stringify({ car_id: 'car-gv' }), { status: 200 }) as any;
+        }
+        if (u.includes('/variants/research')) {
+          return new Response(JSON.stringify([]), { status: 200 }) as any;
+        }
+        return new Response(JSON.stringify(trims), { status: 200 }) as any;
+      });
+
+      await comp.reviewPricesBeforeUpload();
+
+      expect(urls.some(u => u.includes('/catalogue/resolve'))).toBe(true);
+      expect(urls.some(u => u.includes('/variants/research'))).toBe(true);
+      // The images must not have been sent yet — that is the whole point.
+      expect(urls.some(u => u.includes('/media-admin/upload'))).toBe(false);
+      expect(comp.pricingCarId()).toBe('car-gv');
+      expect(comp.pricingTrims().length).toBe(2);
+    });
+
+    it('shows Upload once the prices have been reviewed', async () => {
+      spyOn(window, 'fetch').and.callFake(async (url: any) => {
+        const u = String(url);
+        if (u.includes('/catalogue/resolve')) {
+          return new Response(JSON.stringify({ car_id: 'car-gv' }), { status: 200 }) as any;
+        }
+        if (u.includes('/variants/research')) {
+          return new Response(JSON.stringify([]), { status: 200 }) as any;
+        }
+        return new Response(JSON.stringify(trims), { status: 200 }) as any;
+      });
+
+      await comp.reviewPricesBeforeUpload();
+      fixture.detectChanges();
+
+      const labels = Array.from(fixture.nativeElement.querySelectorAll('button'))
+        .map((b: any) => b.textContent?.trim());
+      expect(labels.some((l: string) => l?.startsWith('✓ Upload'))).toBe(true);
+    });
+
+    it('does not trap the admin when the lookup fails', async () => {
+      spyOn(window, 'fetch').and.returnValue(Promise.reject(new Error('offline')));
+
+      await comp.reviewPricesBeforeUpload();
+      fixture.detectChanges();
+
+      // The images are the job. A pricing lookup failing must still let them
+      // be uploaded, with the reason on screen.
+      expect(comp.pricingError()).toContain('Could not load trims');
+      const labels = Array.from(fixture.nativeElement.querySelectorAll('button'))
+        .map((b: any) => b.textContent?.trim());
+      expect(labels.some((l: string) => l?.startsWith('✓ Upload'))).toBe(true);
+    });
+
+    it('goes straight to Upload for a model the catalogue does not know', () => {
+      // A new launch: no row to research against until the upload makes one.
+      comp.model.set('Brand New Model');
+      fixture.detectChanges();
+
+      expect(comp.canPriceBeforeUpload()).toBe(false);
+      const labels = Array.from(fixture.nativeElement.querySelectorAll('button'))
+        .map((b: any) => b.textContent?.trim());
+      expect(labels.some((l: string) => l?.startsWith('✓ Upload'))).toBe(true);
+      expect(labels).not.toContain('→ Review Trim Prices');
+    });
+
+    it('does not offer the step for a Used Cars upload', () => {
+      comp.mediaBucket.set('used');
+      fixture.detectChanges();
+      expect(comp.canPriceBeforeUpload()).toBe(false);
+    });
   });
 });
