@@ -31,6 +31,24 @@
 -- Idempotent: re-running matches nothing, because every row it touched now
 -- has a fuel_type.
 
+-- Declared before it is used, even though production already has it.
+--
+-- The listing form now writes this column, and listing-columns.spec.ts holds
+-- every column that insert names to the same standard: accounted for by a
+-- migration, not by someone having seen it in a query once. That guard failed
+-- this PR's first CI run for exactly this reason, which is the guard working.
+--
+-- The column and its enum type both exist in production (measured: Grand
+-- Vitara 2026 carries fuel_type 'electric'), so this is a no-op there. It
+-- matters for any environment rebuilt from these files, where the backfill
+-- below would otherwise fail on a column that does not exist.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'fuel_type') THEN
+    ALTER TABLE public.cars ADD COLUMN IF NOT EXISTS fuel_type fuel_type;
+  END IF;
+END $$;
+
 UPDATE public.cars
    SET fuel_type = lower(btrim(fuel))::fuel_type
  WHERE fuel_type IS NULL
