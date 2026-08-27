@@ -13,11 +13,22 @@
  *
  * This is a *static* check: it reads source, starts no browser and needs no
  * API. It cannot see the live database (nothing in CI can), so it does not
- * claim the columns exist in Supabase. What it does claim is narrower and
- * still worth having: every inserted column is accounted for by something in
- * this repository — either a select that runs against production and works, or
- * a migration that adds it. A column that appears in the insert and nowhere
- * else is the exact shape of this bug, and that is what fails here.
+ * claim the columns exist in Supabase. What it claims is narrower: every
+ * inserted column is added by a migration in supabase/migrations. A column
+ * named by the insert and by no migration is the exact shape of this bug.
+ *
+ * AN EARLIER VERSION OF THIS FILE CERTIFIED A BROKEN FIX.
+ *
+ * It also counted a column as accounted for if my-listings.service.ts selected
+ * it, reasoning that the screen works so those columns must exist. The select's
+ * result is discarded unless it succeeds — `if (!error && data && data.length)`,
+ * wrapped in a catch that keeps local data, behind a 5s timeout that resolves
+ * to an error object. A select that fails on a missing column takes the same
+ * path as one returning nothing: the screen falls back to localStorage and
+ * looks entirely normal. `image_url` was in that select and did not exist.
+ *
+ * A screen that cannot tell success from failure is evidence of neither, so
+ * migrations are now the only thing counted.
  *
  * It lives in e2e/ because Karma specs run in a browser and have no `fs`.
  * It is added to desktop-chrome's testMatch, so CI runs it.
@@ -30,7 +41,6 @@ const APP = join(__dirname, '..');
 const REPO = join(APP, '..', '..');
 
 const LIST_CAR = join(APP, 'src/app/pages/list-car/list-car.component.ts');
-const MY_LISTINGS = join(APP, 'src/app/services/my-listings.service.ts');
 const SUPABASE_MIGRATIONS = join(REPO, 'supabase/migrations');
 
 /** The column names in the `.from('cars').insert({...})` object literal. */
@@ -69,19 +79,6 @@ function insertedColumns(): string[] {
   return cols;
 }
 
-/**
- * Columns proven to exist, because my-listings.service.ts selects them from
- * production and that screen works. This is the only evidence in the
- * repository about the live table's shape — public.cars was created directly
- * in Supabase before supabase/migrations existed, so no file here defines it.
- */
-function provenBySelect(): string[] {
-  const src = readFileSync(MY_LISTINGS, 'utf8');
-  const m = src.match(/\.select\(\s*'([^']+)'\s*\)/);
-  expect(m, 'no select found in my-listings.service.ts').not.toBeNull();
-  return m![1].split(',').map((s) => s.trim()).filter(Boolean);
-}
-
 /** Columns any hand-run Supabase migration adds to cars. */
 function addedByMigrations(): string[] {
   const cols: string[] = [];
@@ -109,15 +106,15 @@ test.describe('the list-car insert against public.cars', () => {
     expect(inserted).toContain('make');
     expect(inserted).toContain('description');
 
-    const accounted = new Set([...provenBySelect(), ...addedByMigrations()]);
+    const accounted = new Set(addedByMigrations());
     const unaccounted = inserted.filter((c) => !accounted.has(c));
 
     expect(
       unaccounted,
-      `These columns are inserted into public.cars but no select proves they ` +
-      `exist and no migration adds them. That is how PGRST204 reached ` +
-      `production. Either add them in a supabase/migrations file, or stop ` +
-      `inserting them: ${unaccounted.join(', ')}`,
+      `These columns are inserted into public.cars but no migration adds ` +
+      `them. That is how PGRST204 reached production. Add them in a ` +
+      `supabase/migrations file, or stop inserting them: ` +
+      `${unaccounted.join(', ')}`,
     ).toEqual([]);
   });
 
