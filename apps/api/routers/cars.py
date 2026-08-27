@@ -1,12 +1,13 @@
 import uuid
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependencies import get_admin_user, get_current_user
+from core.limiter import limiter
 from db.session import get_db
 from models.car import Car
 from models.car_variant import CarVariant, VariantSource, VariantStatus
@@ -252,6 +253,50 @@ async def resolve_catalogue_car(
         ).order_by(Car.variant.is_(None).desc(), Car.created_at).limit(1)
     )
     return CatalogueResolved(car_id=row.scalar_one_or_none())
+
+
+class TrimDraft(BaseModel):
+    """A researched trim that has not been written to the database."""
+
+    name: str
+    ex_showroom_price: Decimal | None = None
+    fuel_type: str | None = None
+    transmission: str | None = None
+    engine_cc: int | None = None
+    seating_capacity: int | None = None
+    mileage: str | None = None
+    features: list[str] = []
+
+
+@router.post("/catalogue/research-trims", response_model=list[TrimDraft])
+@limiter.limit("10/minute")
+async def research_trims_by_identity(
+    request: Request,
+    make: str,
+    model: str,
+    year: int,
+    _: User = Depends(get_admin_user),
+):
+    """
+    Draft a model's trims without writing anything.
+
+    The sibling endpoint, /{car_id}/variants/research, needs a catalogue row to
+    attach its drafts to. The upload screen prices trims *before* committing
+    the images, and the vehicle being photographed may have no row at all — a
+    model year the catalogue has not reached, or a launch it has never seen.
+    That is the case where researched prices are most useful, and the one the
+    car-id route cannot serve.
+
+    So this returns the drafts and stores nothing. The caller shows them, the
+    admin corrects them, and they are created against the row once the upload
+    has made one.
+
+    Rate limited harder than the rest: every call is a language-model request,
+    and this one is reachable before anything has been uploaded, so there is no
+    natural ceiling on how often a screen could ask.
+    """
+    drafts = await variant_research.research_variants(make, model, year)
+    return [TrimDraft(**d) for d in drafts]
 
 
 @router.get("/{car_id}", response_model=CarOut)

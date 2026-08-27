@@ -845,3 +845,11 @@
 
   .aci-trim-name { grid-column: 1 / -1; }
 }
+
+/* Occupies the space the two buttons would, so pending rows line up with
+   saved ones instead of the price input stretching across the gap. */
+.aci-trim-note {
+  grid-column: span 2;
+  font-style: italic;
+  white-space: nowrap;
+}

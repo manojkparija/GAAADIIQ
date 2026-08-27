@@ -43,6 +43,7 @@ describe('admin-car-images — step 3 trim pricing', () => {
 
   it('renders each researched trim with its price', async () => {
     comp.pricingCarId.set('c1');
+    comp.inPricingStep.set(true);
     comp.pricingVehicle.set('Maruti Suzuki Fronx 2026');
     comp.pricingTrims.set(trims.map(t => ({
       id: t.id, name: t.name, price: t.ex_showroom_price,
@@ -68,6 +69,7 @@ describe('admin-car-images — step 3 trim pricing', () => {
 
   it('marks a trim dirty when its price is edited, and only then offers Save', async () => {
     comp.pricingCarId.set('c1');
+    comp.inPricingStep.set(true);
     comp.pricingTrims.set([{
       id: 'v1', name: 'Sigma', price: 650000,
       status: 'draft', source: 'ai', dirty: false,
@@ -242,16 +244,80 @@ describe('admin-car-images — step 3 trim pricing', () => {
       expect(labels.some((l: string) => l?.startsWith('✓ Upload'))).toBe(true);
     });
 
-    it('goes straight to Upload for a model the catalogue does not know', () => {
-      // A new launch: no row to research against until the upload makes one.
+    /**
+     * Reported from production: the button read "✓ Upload" with no pricing
+     * step at all.
+     *
+     * canPriceBeforeUpload() required modelIsKnown(), which matches make +
+     * model + *year*. The year picker deliberately offers this year and next
+     * whether or not the catalogue has reached them — that is how a new launch
+     * gets photographed before it is listed. So a 2026 upload against a
+     * catalogue holding 2024 and 2025 skipped the step entirely, which is
+     * exactly the case researched prices are most wanted for.
+     */
+    it('offers the step for a model year the catalogue has not reached', () => {
+      comp.catalogue.set([
+        { make: 'Maruti Suzuki', model: 'Grand Vitara', variant: null, year: 2024, ex_showroom_price: 1050000 },
+      ] as any);
+      comp.modelYear.set(2026);
+      fixture.detectChanges();
+
+      expect(comp.canPriceBeforeUpload())
+        .withContext('a year the catalogue lacks must still offer pricing').toBe(true);
+      const labels = Array.from(fixture.nativeElement.querySelectorAll('button'))
+        .map((b: any) => b.textContent?.trim());
+      expect(labels).toContain('→ Review Trim Prices');
+    });
+
+    it('offers the step for a model the catalogue has never seen', () => {
+      comp.catalogue.set([] as any);
       comp.model.set('Brand New Model');
       fixture.detectChanges();
 
-      expect(comp.canPriceBeforeUpload()).toBe(false);
+      expect(comp.canPriceBeforeUpload()).toBe(true);
       const labels = Array.from(fixture.nativeElement.querySelectorAll('button'))
         .map((b: any) => b.textContent?.trim());
-      expect(labels.some((l: string) => l?.startsWith('✓ Upload'))).toBe(true);
-      expect(labels).not.toContain('→ Review Trim Prices');
+      expect(labels).toContain('→ Review Trim Prices');
+    });
+
+    it('researches by identity when there is no catalogue row, and saves nothing yet', async () => {
+      const calls: { url: string; method: string }[] = [];
+      spyOn(window, 'fetch').and.callFake(async (url: any, init: any) => {
+        calls.push({ url: String(url), method: init?.method ?? 'GET' });
+        if (String(url).includes('/catalogue/resolve')) {
+          return new Response(JSON.stringify({ car_id: null }), { status: 200 }) as any;
+        }
+        return new Response(JSON.stringify([
+          { name: 'Sigma', ex_showroom_price: 1099000, features: [] },
+        ]), { status: 200 }) as any;
+      });
+
+      comp.catalogue.set([] as any);
+      comp.model.set('Brand New Model');
+      await comp.reviewPricesBeforeUpload();
+
+      expect(calls.some(c => c.url.includes('/catalogue/research-trims'))).toBe(true);
+      // Nothing may be written before the upload — there is no row to write to.
+      expect(calls.some(c => c.url.includes('/variants') && c.method === 'POST')).toBe(false);
+      expect(comp.inPricingStep()).toBe(true);
+      expect(comp.pricingTrims().length).toBe(1);
+      expect(comp.pricingTrims()[0].pending).toBe(true);
+      expect(comp.pricingTrims()[0].price).toBe(1099000);
+    });
+
+    it('does not offer Save or Publish on a trim that has nowhere to be saved', async () => {
+      comp.pricingTrims.set([{
+        id: 'pending-0', name: 'Sigma', price: 1099000,
+        status: 'draft', source: 'ai', dirty: false, pending: true,
+      }]);
+      comp.inPricingStep.set(true);
+      fixture.detectChanges();
+
+      const labels = Array.from(fixture.nativeElement.querySelectorAll('button'))
+        .map((b: any) => b.textContent?.trim());
+      expect(labels).not.toContain('Save');
+      expect(labels).not.toContain('Publish');
+      expect(fixture.nativeElement.textContent).toContain('Saved when you upload');
     });
 
     it('does not offer the step for a Used Cars upload', () => {
