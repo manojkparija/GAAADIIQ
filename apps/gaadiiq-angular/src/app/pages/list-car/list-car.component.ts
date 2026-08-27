@@ -44,6 +44,14 @@ export class ListCarComponent {
   submitted = signal(false);
   loading = signal(false);
   submitError = signal('');
+  /**
+   * The listing saved, but something attached to it did not.
+   *
+   * Separate from submitError because the outcomes differ: an error means
+   * nothing was created, a warning means the advert exists but is incomplete.
+   * Collapsing them would either hide a real listing or invent a failed one.
+   */
+  submitWarning = signal('');
 
   valuation = signal<ValuationResult | null>(null);
   valuationLoading = signal(false);
@@ -525,6 +533,39 @@ export class ListCarComponent {
 
   imageThumb(url: string) { return url; }
 
+  /**
+   * Turn a Supabase insert error into something worth reading.
+   *
+   * Two audiences, one string. The seller needs to know whether trying again
+   * is worth it; whoever fixes it needs the code and the message, and asking
+   * a seller to open a browser console is not a support process.
+   *
+   * 42703 (undefined column) and 42P01 (undefined table) are called out
+   * because they are the ones this screen actually hits: it inserts column
+   * names straight into Supabase, bypassing the API and the ORM, so nothing
+   * checks them against the live schema until Postgres refuses the row.
+   */
+  private describeSubmitFailure(err: any): string {
+    if (!err) {
+      return 'The listing could not be saved and the database gave no reason. '
+           + 'Please report this.';
+    }
+    const code = err.code ? ` [${err.code}]` : '';
+    const detail = err.message || String(err);
+
+    if (err.code === '42703' || err.code === '42P01') {
+      return `This listing form does not match the database${code}: ${detail}. `
+           + `Trying again will not help — please report it.`;
+    }
+    if (err.code === '23502') {
+      return `Something required is missing${code}: ${detail}.`;
+    }
+    if (err.code === '23505') {
+      return `This looks like a duplicate${code}: ${detail}.`;
+    }
+    return `Could not save the listing${code}: ${detail}`;
+  }
+
   async onSubmit() {
     if (!this.validatePhone()) return;
     this.loading.set(true);
@@ -571,7 +612,19 @@ export class ListCarComponent {
       .single();
 
     if (insertError || !inserted) {
-      this.submitError.set('Failed to submit listing. Please try again.');
+      // Say what actually went wrong.
+      //
+      // This used to read "Failed to submit listing. Please try again." and
+      // discard `insertError` entirely. Trying again cannot help with the
+      // reason it usually fails: this insert names columns directly against
+      // Supabase, bypassing the API and the ORM, so a column the live schema
+      // does not have rejects the whole row — every time, identically. The
+      // advice was not just unhelpful, it was wrong.
+      //
+      // Postgres says exactly what is wrong ('column "km" of relation "cars"
+      // does not exist', code 42703). Showing it costs nothing and turns a
+      // support conversation into a one-line fix.
+      this.submitError.set(this.describeSubmitFailure(insertError));
       this.loading.set(false);
       return;
     }
@@ -579,17 +632,34 @@ export class ListCarComponent {
     const carId = inserted.id;
 
     // 2. Save all uploaded images to car_images table
+    //
+    // These two inserts had their results discarded entirely — not even
+    // checked. A listing whose photographs never attached looked identical to
+    // one that worked, and the seller found out by looking at their own advert
+    // later and seeing no pictures.
+    //
+    // Reported, but NOT treated as a failure of the submission: the car row is
+    // already committed at this point, and refusing the listing now would
+    // leave the row orphaned and tell the seller their listing failed when it
+    // did not. The listing succeeds; the gap is named.
+    const followUpProblems: string[] = [];
+
     const images = this.uploadedImages();
     if (images.length > 0) {
-      await this.sb.client.from('car_images').insert(
+      const { error: imgError } = await this.sb.client.from('car_images').insert(
         images.map((img, i) => ({ car_id: carId, url: img.url, sort_order: i }))
       );
+      if (imgError) {
+        followUpProblems.push(
+          `photographs (${imgError.message || 'unknown error'})`
+        );
+      }
     }
 
     // 3. Save AI valuation result if available
     const val = this.valuation();
     if (val) {
-      await this.sb.client.from('ai_valuation').insert({
+      const { error: valError } = await this.sb.client.from('ai_valuation').insert({
         car_id: carId,
         fair_price: val.mid,
         market_min: val.low,
@@ -597,6 +667,18 @@ export class ListCarComponent {
         verdict: val.marketTrend,
         confidence: val.confidence,
       });
+      if (valError) {
+        followUpProblems.push(
+          `the AI valuation (${valError.message || 'unknown error'})`
+        );
+      }
+    }
+
+    if (followUpProblems.length) {
+      this.submitWarning.set(
+        `Your listing was created, but ${followUpProblems.join(' and ')} could ` +
+        `not be saved with it.`
+      );
     }
 
     // 4. Mirror to My Listings (localStorage) so seller sees it immediately
