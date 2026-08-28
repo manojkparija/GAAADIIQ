@@ -312,7 +312,20 @@ export class NewCarsComponent implements OnInit {
       if (params['fuel']) {
         this.selectedFuels.set([String(params['fuel'])]);
       }
-      if (params['make'] || params['minPrice'] || params['maxPrice'] || params['bodyType']) {
+      // Every param that narrows the list scrolls to it, `fuel` included.
+      //
+      // `fuel` was missing here, so the Electric Cars entry in the navbar
+      // (routerLink="/new-cars" queryParams="{ fuel: 'Electric' }") filtered
+      // correctly and then left the reader at the top of the page, looking at
+      // the "Explore New Cars" hero. Reported as "it is taking me to Explore
+      // New Cars" — the filter had in fact been applied, several screens
+      // further down where nobody had reason to look.
+      //
+      // Listed explicitly rather than testing for any param at all: `keys`
+      // and the compare selection also arrive this way and must not yank the
+      // page around.
+      const narrows = ['make', 'minPrice', 'maxPrice', 'bodyType', 'fuel'];
+      if (narrows.some(k => params[k])) {
         setTimeout(() => this.scrollToModels(), 100);
       }
     });
