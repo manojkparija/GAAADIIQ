@@ -1159,6 +1159,18 @@ interface VehicleImage {
   colour: string | null;
   media_bucket: string | null;
   created_at: string;
+  /**
+   * Which table the photograph came from.
+   *
+   * Optional because an older API build does not send it. Absent is treated
+   * as 'media_library', which is what every row was before listing images
+   * were included here.
+   */
+  origin?: 'media_library' | 'listing';
+  /** False for listing photographs: removal belongs in the review queue. */
+  removable?: boolean;
+  /** Where removal does belong, when it is not here. */
+  manage_at?: string | null;
 }
 
 /** One vehicle identity the catalogue already holds. */

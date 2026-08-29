@@ -290,15 +290,32 @@
                 <div class="aci-existing-meta">
                   <span class="aci-existing-name" [title]="img.filename">{{ img.filename }}</span>
                   <span class="aci-existing-tags">
-                    {{ img.image_category || 'uncategorised' }}
-                    @if (img.variant) { · {{ img.variant }} }
+                    @if (img.origin === 'listing') {
+                      From a listing
+                    } @else {
+                      {{ img.image_category || 'uncategorised' }}
+                      @if (img.variant) { · {{ img.variant }} }
+                    }
                   </span>
                 </div>
-                <button type="button" class="aci-remove-image"
-                        [disabled]="removingId() === img.id"
-                        (click)="removeImage(img)">
-                  {{ removingId() === img.id ? 'Removing…' : '🗑 Remove' }}
-                </button>
+                <!--
+                  A listing photograph is shown but not removable here.
+                  Taking one down is a reviewed decision: the review queue
+                  requires a reason the dealer reads and records who decided.
+                  A delete button here would bypass that record, so it sends
+                  the admin to where the decision belongs instead.
+                -->
+                @if (img.removable === false) {
+                  <a class="aci-existing-elsewhere" [routerLink]="img.manage_at || '/admin/image-review'">
+                    Remove in the review queue →
+                  </a>
+                } @else {
+                  <button type="button" class="aci-remove-image"
+                          [disabled]="removingId() === img.id"
+                          (click)="removeImage(img)">
+                    {{ removingId() === img.id ? 'Removing…' : '🗑 Remove' }}
+                  </button>
+                }
               </div>
             }
           </div>
