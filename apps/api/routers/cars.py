@@ -90,6 +90,14 @@ class _VariantSummary(BaseModel):
     count: int = 0
     price_min: Decimal | None = None
     price_max: Decimal | None = None
+    #: The gearboxes and fuels the trims are actually sold with.
+    #:
+    #: A catalogue row carries one transmission and one fuel, but a model is
+    #: sold with several — an S-Presso is listed as Manual while also having an
+    #: automatic trim. The New Cars grid filtered on the row's single value, so
+    #: ticking Automatic hid a model that does offer one.
+    transmissions: list[str] = []
+    fuels: list[str] = []
 
 
 async def _variant_summaries(
@@ -132,10 +140,31 @@ async def _variant_summaries(
         )
         .group_by(CarVariant.car_id)
     )
-    return {
+    summaries = {
         car_id: _VariantSummary(count=count, price_min=lo, price_max=hi)
         for car_id, count, lo, hi in rows.all()
     }
+
+    # The distinct gearboxes and fuels, gathered separately.
+    #
+    # Not an aggregate on the query above: string_agg and array_agg spell
+    # differently across Postgres and SQLite, and the tests run on both. This
+    # is one extra round trip for the page, not one per car.
+    detail = await db.execute(
+        select(CarVariant.car_id, CarVariant.transmission, CarVariant.fuel_type)
+        .where(
+            CarVariant.car_id.in_(car_ids),
+            CarVariant.status == VariantStatus.published,
+        )
+    )
+    for car_id, transmission, fuel in detail.all():
+        summary = summaries.setdefault(car_id, _VariantSummary())
+        if transmission and transmission.strip() not in summary.transmissions:
+            summary.transmissions.append(transmission.strip())
+        if fuel and fuel.strip() not in summary.fuels:
+            summary.fuels.append(fuel.strip())
+
+    return summaries
 
 
 def _apply_variant_summary(out: CarOut, summary: _VariantSummary | None) -> CarOut:
@@ -145,6 +174,8 @@ def _apply_variant_summary(out: CarOut, summary: _VariantSummary | None) -> CarO
     out.variant_count = summary.count
     out.variant_price_min = summary.price_min
     out.variant_price_max = summary.price_max
+    out.variant_transmissions = summary.transmissions
+    out.variant_fuels = summary.fuels
     return out
 
 

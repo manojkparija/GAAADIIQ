@@ -74,6 +74,16 @@ class CarOut(BaseModel):
     # one price on the card and a different one on its own detail page.
     variant_price_min: Decimal | None = None
     variant_price_max: Decimal | None = None
+    # The gearboxes and fuels the published trims are sold with.
+    #
+    # A catalogue row carries one `transmission` and one `fuel_type`, but a
+    # model is sold with several. The New Cars grid filtered on the row's
+    # single value, so ticking Automatic hid an S-Presso — listed as Manual on
+    # its row while having an automatic trim. Filtering a model out of a grid
+    # is indistinguishable from the model not existing, so the filter has to
+    # see every gearbox the model actually offers.
+    variant_transmissions: list[str] = []
+    variant_fuels: list[str] = []
     specs: list | None = None
     features: list | None = None
 
