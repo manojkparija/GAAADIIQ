@@ -2,11 +2,10 @@ import { Component, signal, computed, OnInit, ElementRef, ViewChild, inject } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
-import { CarsDataService } from '../../services/cars-data.service';
+import { CarsDataService, PLACEHOLDER } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 
-const PLACEHOLDER = 'assets/cars/placeholder.svg';
 const COMPARE_KEY = 'gaadiiq_compare_keys';
 const NOTIFY_KEY = 'gaadiiq_upcoming_notify';
 const LUXURY_MIN = 3000000;
@@ -223,7 +222,24 @@ export class NewCarsComponent implements OnInit {
       if (inBand.length === 0) return;
 
       const prices = inBand.map(c => c.price);
-      const rep = inBand.find(c => c.image && !c.image.includes('aeplcdn')) ?? inBand.find(c => c.image) ?? inBand[0];
+      // Which catalogue row this one card stands for.
+      //
+      // One card covers every model year in the band — a Fronx card can stand
+      // for 2024, 2025 and 2026 at once — so it has to choose whose photograph
+      // to show. The rule has always been "prefer a row that has one", but the
+      // test was `c.image`, and mapCatalogueCar fills `image` with a
+      // placeholder for a car that has none. Every row passed, so the first in
+      // the band won: a Fronx card showed "No Image Available" from the 2024
+      // row while seven photographs sat on the 2026 one.
+      //
+      // hasPhoto is that same rule, asked properly: an image the card can
+      // actually render. Both exclusions match resolveImage below, which
+      // discards an aeplcdn URL and returns the placeholder — so preferring
+      // such a row would move "View Details" to a car whose photograph is not
+      // going to appear either way.
+      const hasPhoto = (c: { image?: string | null }) =>
+        !!c.image && c.image !== PLACEHOLDER && !c.image.includes('aeplcdn');
+      const rep = inBand.find(hasPhoto) ?? inBand[0];
       const fuels = [...new Set(inBand.map(c => c.fuel))];
       const bodyType = rep.bodyType ?? '';
       const isElectric = fuels.some(f => f.toLowerCase() === 'electric');
@@ -331,10 +347,24 @@ export class NewCarsComponent implements OnInit {
     });
   }
 
-  private resolveImage(make: string, model: string, raw?: string): string {
-    const key = `${make} ${model}`;
-    if (key === 'Maruti Suzuki Swift' || model === 'Swift') return 'assets/cars/maruti-swift/front.svg';
-    if (raw && !raw.includes('aeplcdn') && raw.trim()) return raw;
+  /**
+   * The photograph a model card shows.
+   *
+   * An uploaded photograph wins over anything bundled with the app. This used
+   * to return the bundled Swift illustration for every Swift before it looked
+   * at `raw` at all, so photographs uploaded through the admin screens could
+   * never reach the grid — and deleting them from the database changed nothing
+   * on screen, which is the opposite of what a delete is for.
+   *
+   * The bundled Swift drawing is gone entirely rather than demoted to a
+   * fallback: the database is the only source of a car's photographs, so a
+   * Swift with none shows the placeholder like every other model.
+   *
+   * aeplcdn URLs are still discarded: they are a third party's and frequently
+   * dead, and a broken image tag is worse than an honest placeholder.
+   */
+  private resolveImage(_make: string, _model: string, raw?: string): string {
+    if (raw && raw !== PLACEHOLDER && !raw.includes('aeplcdn') && raw.trim()) return raw;
     return PLACEHOLDER;
   }
 
