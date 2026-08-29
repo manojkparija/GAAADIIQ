@@ -89,12 +89,13 @@ describe('NewCarsComponent — which photograph a model card shows', () => {
     expect(model.maxPrice).toBe(930000);
   });
 
-  it('falls back to the placeholder when no year has one', () => {
-    // A model genuinely without photographs must still render, and still say
-    // so — the placeholder is the honest answer there.
+  it('shows nothing at all when no year has one', () => {
+    // A model genuinely without photographs is kept off the grid rather than
+    // rendered as a blank card.
     const c = mountWith([car({ year: 2024, price: 899000 }), car({ year: 2026 })]);
 
-    expect(c.newCarModels()[0].image).toBe(PLACEHOLDER);
+    expect(c.newCarModels()).toEqual([]);
+    expect(c.hiddenForNoPhoto()).toBe(1);
   });
 
   it('prefers a first-party photograph over an aeplcdn one', () => {
@@ -119,9 +120,10 @@ describe('NewCarsComponent — which photograph a model card shows', () => {
       car({ year: 2026, price: 930000, image: aepl, images: [aepl] }),
     ]);
 
-    const [model] = c.newCarModels();
-    expect(model.image).toBe(PLACEHOLDER);
-    expect(model.representativeId).toBe('id-2024');
+    // Nothing renderable, so nothing is shown — an aeplcdn URL must not count
+    // as a photograph and put a broken card back on the grid.
+    expect(c.newCarModels()).toEqual([]);
+    expect(c.hiddenForNoPhoto()).toBe(1);
   });
 
   it('shows an uploaded photograph for a Swift, not the bundled drawing', () => {
@@ -135,6 +137,36 @@ describe('NewCarsComponent — which photograph a model card shows', () => {
     ]);
 
     expect(c.newCarModels()[0].image).toBe(swift);
+  });
+
+  it('keeps a model with no photograph off the grid', () => {
+    // "No Image Available" on a grid of cars reads as a broken page rather
+    // than a catalogue gap. Reported against the e Vitara and Grand Vitara
+    // cards, which sat there as blanks.
+    const c = mountWith([
+      car({ model: 'e Vitara', year: 2026, price: 1600000 }),
+      car({ year: 2026, price: 930000, image: REAL, images: [REAL] }),
+    ]);
+
+    const shown = c.newCarModels().map((m: any) => m.model);
+    expect(shown).toEqual(['Fronx']);
+  });
+
+  it('counts what it hid, so the empty state can explain itself', () => {
+    // An empty grid has two causes needing opposite responses: no model
+    // matched the filters (change them) or none has a photograph (upload
+    // one). One message for both sends the reader the wrong way.
+    const c = mountWith([car({ model: 'e Vitara', year: 2026, price: 1600000 })]);
+
+    expect(c.newCarModels().length).toBe(0);
+    expect(c.hiddenForNoPhoto()).toBe(1);
+  });
+
+  it('reports nothing hidden when every model has a photograph', () => {
+    const c = mountWith([car({ year: 2026, price: 930000, image: REAL, images: [REAL] })]);
+
+    expect(c.newCarModels().length).toBe(1);
+    expect(c.hiddenForNoPhoto()).toBe(0);
   });
 
   it('points View Details at the row it took the photograph from', () => {

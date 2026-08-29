@@ -234,6 +234,17 @@
               {{ retrying() ? ('Retrying…' | t) : ('Try again' | t) }}
             </button>
           </div>
+        } @else if (newCarModels().length === 0 && hiddenForNoPhoto() > 0) {
+          <!--
+            Models matched, but none has a photograph yet, so none is shown.
+            Clearing the filters would not bring any back, and offering that
+            button sends the reader round a loop that cannot end.
+          -->
+          <div class="empty-state glass-card">
+            <div class="empty-icon">📷</div>
+            <h3>{{ 'No photographs yet' | t }}</h3>
+            <p>{{ 'These models are in the catalogue but have no pictures, so they are not shown. They appear once photographs are uploaded.' | t }}</p>
+          </div>
         } @else if (newCarModels().length === 0) {
           <div class="empty-state glass-card">
             <div class="empty-icon">🚗</div>

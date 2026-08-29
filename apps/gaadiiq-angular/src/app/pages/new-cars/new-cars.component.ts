@@ -199,7 +199,14 @@ export class NewCarsComponent implements OnInit {
       .sort((a, b) => b.launchAt.getTime() - a.launchAt.getTime());
   });
 
-  newCarModels = computed<NewCarModel[]>(() => {
+  /**
+   * Every model matching the filters, photograph or not.
+   *
+   * Split from newCarModels so the grid and the "how many did we hide" count
+   * come from one computation. The count started life as a signal written
+   * from inside the computed, which Angular rejects (NG0600).
+   */
+  private allModels = computed<NewCarModel[]>(() => {
     const newCars = this.carsData.cars().filter(c => c.km === 0 && c.year >= 2024);
     const map = new Map<string, typeof newCars>();
     for (const c of newCars) {
@@ -275,11 +282,34 @@ export class NewCarsComponent implements OnInit {
       });
     });
 
-    const sort = this.selectedSort();
-    if (sort === 'Price: Low to High') return models.sort((a, b) => a.minPrice - b.minPrice);
-    if (sort === 'Price: High to Low') return models.sort((a, b) => b.minPrice - a.minPrice);
-    return models.sort((a, b) => b.reviews - a.reviews);
+    return models;
   });
+
+  /**
+   * The models the grid shows: those with a photograph.
+   *
+   * "No Image Available" on a grid of cars reads as a broken page rather than
+   * as a catalogue gap, so a model waits until it has a photograph.
+   */
+  newCarModels = computed<NewCarModel[]>(() => {
+    const shown = this.allModels().filter(m => m.image !== PLACEHOLDER);
+
+    const sort = this.selectedSort();
+    if (sort === 'Price: Low to High') return shown.sort((a, b) => a.minPrice - b.minPrice);
+    if (sort === 'Price: High to Low') return shown.sort((a, b) => b.minPrice - a.minPrice);
+    return shown.sort((a, b) => b.reviews - a.reviews);
+  });
+
+  /**
+   * Models kept off the grid because they have no photograph.
+   *
+   * An empty grid has two causes needing opposite responses — no model matched
+   * the filters (change them) or none has a picture yet (upload one) — and one
+   * message for both sends the reader the wrong way.
+   */
+  hiddenForNoPhoto = computed(
+    () => this.allModels().filter(m => m.image === PLACEHOLDER).length,
+  );
 
   activeFiltersCount = computed(() => {
     return this.selectedBodyTypes().length
