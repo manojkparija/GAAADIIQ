@@ -32,7 +32,7 @@ const listingImage = {
   filename: 'rear-quarter.jpg', url: 'https://cdn/y/rear-quarter.jpg',
   thumbnail_url: null, image_category: null, variant: null, colour: null,
   media_bucket: null, created_at: '2026-08-27T21:13:18Z',
-  origin: 'listing' as const, removable: false, manage_at: '/admin/image-review',
+  origin: 'listing' as const, removable: true, manage_at: '/admin/image-review',
 };
 
 describe('AdminCarImagesComponent — photographs from a listing', () => {
@@ -82,22 +82,23 @@ describe('AdminCarImagesComponent — photographs from a listing', () => {
     expect(text).toContain('rear-quarter.jpg');
   });
 
-  it('offers no Remove button for it', () => {
+  it('offers a Remove button for it', () => {
     c.existingImages.set([listingImage]);
     render();
 
-    const remove = fixture.nativeElement.querySelector('.aci-remove-image');
-    expect(remove)
-      .withContext('a delete here bypasses the reason and the reviewed-by record')
-      .toBeNull();
+    expect(fixture.nativeElement.querySelector('.aci-remove-image'))
+      .withContext('an admin asked to remove listing images from this panel')
+      .toBeTruthy();
   });
 
-  it('points at the review queue instead', () => {
+  it('still says where the removal can be undone', () => {
+    // Removal is a rejection, not a delete, so it is reversible — but only
+    // for an admin who knows the Rejected tab is where that happens.
     c.existingImages.set([listingImage]);
     render();
 
     const link = fixture.nativeElement.querySelector('.aci-existing-elsewhere');
-    expect(link).withContext('no route out: the admin is told no, and nothing else').toBeTruthy();
+    expect(link).toBeTruthy();
     expect(link.getAttribute('href')).toContain('/admin/image-review');
   });
 
@@ -113,6 +114,7 @@ describe('AdminCarImagesComponent — photographs from a listing', () => {
     render();
 
     expect(fixture.nativeElement.querySelector('.aci-remove-image')).toBeTruthy();
+    // A media-library image has no review queue to go back to.
     expect(fixture.nativeElement.querySelector('.aci-existing-elsewhere')).toBeNull();
   });
 
@@ -120,7 +122,8 @@ describe('AdminCarImagesComponent — photographs from a listing', () => {
     c.existingImages.set([libraryImage, listingImage]);
     render();
 
-    expect(fixture.nativeElement.querySelectorAll('.aci-remove-image').length).toBe(1);
+    // Both removable now; only the listing one carries the undo link.
+    expect(fixture.nativeElement.querySelectorAll('.aci-remove-image').length).toBe(2);
     expect(fixture.nativeElement.querySelectorAll('.aci-existing-elsewhere').length).toBe(1);
   });
 

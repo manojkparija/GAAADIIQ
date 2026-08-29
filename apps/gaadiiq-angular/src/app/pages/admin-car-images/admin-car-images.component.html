@@ -299,22 +299,22 @@
                   </span>
                 </div>
                 <!--
-                  A listing photograph is shown but not removable here.
-                  Taking one down is a reviewed decision: the review queue
-                  requires a reason the dealer reads and records who decided.
-                  A delete button here would bypass that record, so it sends
-                  the admin to where the decision belongs instead.
+                  Removable here, whichever table it came from. A listing
+                  photograph is taken down as a rejection rather than a
+                  delete, so it keeps its reason and its reviewed-by stamp and
+                  can be approved back; the link says where that happens.
                 -->
-                @if (img.removable === false) {
-                  <a class="aci-existing-elsewhere" [routerLink]="img.manage_at || '/admin/image-review'">
-                    Remove in the review queue →
-                  </a>
-                } @else {
+                @if (img.removable !== false) {
                   <button type="button" class="aci-remove-image"
                           [disabled]="removingId() === img.id"
                           (click)="removeImage(img)">
                     {{ removingId() === img.id ? 'Removing…' : '🗑 Remove' }}
                   </button>
+                }
+                @if (img.origin === 'listing') {
+                  <a class="aci-existing-elsewhere" [routerLink]="img.manage_at || '/admin/image-review'">
+                    Undo in the review queue →
+                  </a>
                 }
               </div>
             }

@@ -17,6 +17,7 @@ so a photograph offered by both is stored once.
 NOTE: deliberately NOT using `from __future__ import annotations` — see the note
 in routers/brochures.py about PEP 563 and slowapi's wrapper.
 """
+import json
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -825,9 +826,10 @@ async def _listing_images(
             created_at=r["created_at"].isoformat() if r["created_at"] else "",
             uploaded_by=r["submitted_by"],
             origin="listing",
-            # Removal belongs in the review queue, which requires a reason and
-            # records who decided. A delete here would bypass that trail.
-            removable=False,
+            # Removable here now. It is carried out as a rejection rather than
+            # a delete, so buyers stop seeing it, the review queue's Rejected
+            # tab still holds it, and approving it there puts it back.
+            removable=True,
             manage_at="/admin/image-review",
         )
         for r in rows
@@ -1281,3 +1283,80 @@ async def get_safety_results(
         "license_plate_bbox": media.license_plate_bbox,
         "safety_metadata": media.safety_metadata or {},
     }
+
+
+@router.delete("/listing-image/{image_id}", status_code=status.HTTP_200_OK)
+@limiter.limit("60/minute")
+async def remove_listing_image(
+    request: Request,
+    image_id: int,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Take a photograph that arrived through a listing off the site.
+
+    Rejected, not deleted. The row stays, buyers stop seeing it (their read
+    policy matches `status = 'approved'`), it appears in the review queue's
+    Rejected tab, and approving it there puts it back — which is what makes
+    the panel's promise that "removals can be undone" true for these too.
+
+    WHY THE JWT CLAIM IS SET HERE
+
+    car_images carries a BEFORE UPDATE trigger that refuses any change to the
+    review fields unless auth.jwt() names an admin:
+
+        IF NOT caller_is_admin THEN
+          RAISE EXCEPTION 'Only an admin can review a photograph.'
+
+    auth.jwt() reads current_setting('request.jwt.claim'), which PostgREST
+    sets per request from the caller's token. This service connects straight
+    to Postgres and never goes through PostgREST, so that setting is empty and
+    every such update raised — verified against the live database, where the
+    same statement run without a session failed with 42501.
+
+    So the claim is set for this transaction, from the admin FastAPI has
+    already authenticated through get_admin_user. `is_local=True` scopes it to
+    the transaction, so it cannot leak into the next request on a pooled
+    connection. Both spellings are set because auth.jwt() coalesces over them.
+
+    This is not a way around the check — it is how the check is meant to be
+    fed. The trigger then stamps reviewed_by itself, from the same claim, so
+    the record of who decided still cannot be written by the caller directly.
+
+    A reason is required by a CHECK constraint and read by the dealer, so it
+    names the admin and the screen rather than being a placeholder.
+    """
+    claims = json.dumps({"email": admin.email})
+    for setting in ("request.jwt.claim", "request.jwt.claims"):
+        await db.execute(
+            text("SELECT set_config(:k, :v, true)"), {"k": setting, "v": claims},
+        )
+
+    reason = f"Removed from Manage images by {admin.email}"
+    rows = (await db.execute(text("""
+        UPDATE public.car_images
+           SET status = 'rejected', rejection_reason = :reason
+         WHERE id = :id
+        RETURNING id, status
+    """), {"id": image_id, "reason": reason})).mappings().all()
+
+    if not rows:
+        # No row and no error is what a refusal looks like when the statement
+        # matched nothing the caller may change.
+        raise HTTPException(status_code=404, detail="Listing image not found")
+
+    # Read the status back rather than trusting that a row came back. A
+    # returned row says the statement matched something; it says nothing about
+    # what the row now holds, and that distinction is the whole reason the
+    # review screen spent a week reporting rejections that never happened.
+    if rows[0]["status"] != "rejected":
+        raise HTTPException(
+            status_code=500,
+            detail=(f"The database kept this image as {rows[0]['status']!r}. "
+                    f"The removal was not applied."),
+        )
+
+    await db.commit()
+    return {"id": str(image_id), "deleted": True, "status": "rejected",
+            "undo_at": "/admin/image-review"}

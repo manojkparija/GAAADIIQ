@@ -1059,15 +1059,28 @@ export class AdminCarImagesComponent implements OnInit {
   async removeImage(image: VehicleImage) {
     // Removal is undoable and the confirmation says so, which is what keeps it
     // a question rather than a warning.
+    const fromListing = image.origin === 'listing';
     const ok = confirm(
       `Remove "${image.filename}" from the site?\n\n` +
-      'It stops appearing for buyers immediately. You can put it back.'
+      (fromListing
+        // Say what actually happens to it, and where it goes. A dealer's
+        // photograph is rejected rather than deleted, so "you can put it
+        // back" is true — but only if the admin knows where.
+        ? 'It stops appearing for buyers immediately. It moves to the '
+          + 'Rejected tab of the review queue, where approving it puts it back.'
+        : 'It stops appearing for buyers immediately. You can put it back.')
     );
     if (!ok) return;
 
     this.removingId.set(image.id);
     try {
-      const resp = await fetch(`${this.apiUrl}/media-admin/${image.id}`, {
+      // Two tables, two endpoints. A listing photograph is keyed by an
+      // integer in car_images and removed by rejecting it; a media-library
+      // one is a UUID in vehicle_media and is marked deleted.
+      const path = fromListing
+        ? `${this.apiUrl}/media-admin/listing-image/${image.id}`
+        : `${this.apiUrl}/media-admin/${image.id}`;
+      const resp = await fetch(path, {
         method: 'DELETE',
         headers: await this.authHeaders(),
       });
