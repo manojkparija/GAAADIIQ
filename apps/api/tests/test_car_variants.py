@@ -211,6 +211,85 @@ class TestResearchSuite:
         assert resp.json() == []
 
 
+class TestResearchAvailabilitySuite:
+    """
+    The screen can ask whether AI drafting is switched off.
+
+    Reported: "Draft trims with AI" appeared to do nothing, and the screen
+    said "Nothing new found. Trims already recorded are left alone."
+
+    The research endpoint answers 200 with an empty list when drafting is
+    unavailable, and that is deliberate — test_research_being_unavailable_is
+    _not_an_error above holds it in place, because a shortcut that cannot run
+    must leave the manual form working rather than replace it with an error.
+
+    The cost is that an empty list means two things, and the screen reported
+    both as a fact about the car. Asking separately lets the screen tell them
+    apart without the research endpoint changing what it returns to anyone.
+    """
+
+    @pytest.mark.asyncio
+    async def test_reports_available_when_a_key_is_configured(self, client):
+        with patch("services.variant_research.available", return_value=True):
+            resp = await client.get("/cars/variants/research-availability")
+
+        assert resp.status_code == 200
+        assert resp.json() == {"available": True, "reason": None}
+
+    @pytest.mark.asyncio
+    async def test_names_the_missing_key_when_it_is_not(self, client):
+        with patch("services.variant_research.available", return_value=False):
+            resp = await client.get("/cars/variants/research-availability")
+
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["available"] is False
+        # The admin needs to know it is a deployment setting, not the car.
+        assert "GEMINI_API_KEY" in body["reason"]
+        # And that the manual route still works, so they are not simply stuck.
+        assert "by hand" in body["reason"]
+
+    @pytest.mark.asyncio
+    async def test_the_path_is_not_swallowed_by_the_car_id_route(self, client):
+        """
+        /cars/variants/... must not be read as /cars/{car_id} with car_id
+        "variants".
+
+        It resolves because car_id is typed uuid.UUID, which compiles to a
+        UUID-shaped path regex that "variants" cannot match — so the request
+        falls through to this route even though GET /{car_id} is declared
+        first. Declaration order is NOT what saves it, which is worth stating
+        because the obvious assumption is the opposite: moving this route
+        after the car-id ones changes nothing, and I checked.
+
+        What this does catch is car_id being loosened to str, or the literal
+        segment being renamed to something a UUID could match. Either would
+        turn the request into a 422 that reads as a broken endpoint.
+        """
+        with patch("services.variant_research.available", return_value=True):
+            resp = await client.get("/cars/variants/research-availability")
+
+        assert resp.status_code != 422, (
+            "the literal path lost to /cars/{car_id}: move the route above it"
+        )
+        assert "available" in resp.json()
+
+    @pytest.mark.asyncio
+    async def test_the_research_endpoint_still_answers_200_when_unavailable(self, client, car):
+        """
+        The contract this endpoint exists to preserve.
+
+        Adding a way to ask about availability must not have turned the
+        shortcut itself into an error, which is what a first attempt at this
+        did — it raised 503 and broke five existing tests.
+        """
+        with patch("services.variant_research.available", return_value=False):
+            resp = await client.post(f"/cars/{car['id']}/variants/research")
+
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+
 class TestResearchCleaningSuite:
     """
     What comes back from a language model is not yet data.

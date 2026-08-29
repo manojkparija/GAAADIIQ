@@ -18,6 +18,7 @@ were, with an empty draft list and a manual form, not an error page.
 """
 import json
 import logging
+from dataclasses import dataclass
 
 from services import gemini_gateway
 
@@ -171,17 +172,46 @@ def _clean(raw: object) -> list[dict]:
     return cleaned
 
 
-async def research_variants(make: str, model: str, year: int) -> list[dict]:
+@dataclass(frozen=True)
+class ResearchOutcome:
     """
-    Draft trims for a model, or [] if research is unavailable or fruitless.
+    What happened, not just what came back.
 
-    Never raises: the caller is an admin screen offering a shortcut, and a
-    shortcut that fails should leave the manual form working rather than
-    replace it with an error.
+    Three states used to arrive as the same empty list, and the admin screen
+    reported all of them as "Nothing new found. Trims already recorded are
+    left alone." — which is true of exactly one of them:
+
+      - no API key: the model was never asked
+      - the call failed: quota, a revoked key, a network error
+      - the model answered and had nothing to add
+
+    Reported as "nothing found", the first two look like a settled fact about
+    the car rather than a broken shortcut, and an admin waits for a feature
+    that is never coming.
+    """
+
+    drafts: list[dict]
+    #: Set when research could not be attempted at all — no key configured.
+    unavailable: bool = False
+    #: Set when it was attempted and failed. Carries the provider's own words.
+    error: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return not self.unavailable and self.error is None
+
+
+async def research_variants_detailed(make: str, model: str, year: int) -> ResearchOutcome:
+    """
+    Draft trims for a model, saying which of the three outcomes occurred.
+
+    Still never raises. The caller decides what to tell the reader; a shortcut
+    that fails must leave the manual form working rather than replace it with
+    an error page.
     """
     if not available():
         logger.info("Variant research skipped: no Gemini API key configured")
-        return []
+        return ResearchOutcome(drafts=[], unavailable=True)
 
     prompt = PROMPT.format(make=make, model=model, year=year, limit=MAX_VARIANTS)
 
@@ -192,10 +222,22 @@ async def research_variants(make: str, model: str, year: int) -> list[dict]:
             # These are facts with right answers, so sampling is not wanted.
             temperature=0.0,
         )
-        return _clean(json.loads(text))
+        return ResearchOutcome(drafts=_clean(json.loads(text)))
     except Exception as exc:
         logger.warning("Variant research failed for %s %s %s: %s", make, model, year, exc)
-        return []
+        # The provider's message, not a summary of it: "API key not valid" and
+        # "quota exceeded" need different actions from whoever reads this.
+        return ResearchOutcome(drafts=[], error=f"{type(exc).__name__}: {exc}")
+
+
+async def research_variants(make: str, model: str, year: int) -> list[dict]:
+    """
+    Drafts alone, for callers that have nothing useful to say about failure.
+
+    Kept so the three existing call sites are unchanged. Anything that shows a
+    human the result should use research_variants_detailed instead.
+    """
+    return (await research_variants_detailed(make, model, year)).drafts
 
 
 MODEL_PROMPT = """\

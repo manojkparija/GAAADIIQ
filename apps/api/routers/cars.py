@@ -598,6 +598,47 @@ async def delete_variant(
     await db.commit()
 
 
+class ResearchAvailability(BaseModel):
+    """Whether the AI drafting shortcut can run at all."""
+
+    available: bool
+    #: Why not, in words for the admin who pressed the button. None when it is
+    #: available.
+    reason: str | None = None
+
+
+@router.get("/variants/research-availability", response_model=ResearchAvailability)
+async def variants_research_availability(
+    _: User = Depends(get_admin_user),
+) -> ResearchAvailability:
+    """
+    Can AI drafting run here?
+
+    Asked separately, and deliberately so. The research endpoint answers 200
+    with an empty list when drafting is switched off, because a shortcut that
+    cannot run must leave the manual form working rather than replace it with
+    an error — see TestResearchSuite::test_research_being_unavailable_is_not_an_error,
+    which exists to hold that decision in place.
+
+    The cost of that is an empty list meaning two different things, and the
+    screen reporting both as "Nothing new found. Trims already recorded are
+    left alone." — which tells an admin the car has no other trims when in
+    fact nobody asked. This lets the screen tell those apart without the
+    research endpoint changing what it returns to anyone.
+
+    Declared before /{car_id}/... so "variants" is not read as a car id.
+    """
+    if variant_research.available():
+        return ResearchAvailability(available=True)
+    return ResearchAvailability(
+        available=False,
+        reason=(
+            "AI drafting is switched off: no GEMINI_API_KEY is configured for "
+            "this deployment. Trims and specifications can still be entered by hand."
+        ),
+    )
+
+
 @router.post("/{car_id}/variants/research", response_model=list[VariantOut])
 async def research_car_variants(
     car_id: uuid.UUID,

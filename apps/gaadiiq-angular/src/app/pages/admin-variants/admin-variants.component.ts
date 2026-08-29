@@ -212,6 +212,50 @@ export class AdminVariantsComponent {
     }
   }
 
+  /**
+   * What the API said went wrong, in the reader's words.
+   *
+   * FastAPI puts the message in `detail`. Falling back to the status line
+   * matters: a proxy timeout or a 502 from the platform never reaches the
+   * handler, so there is no `detail` to read and "HTTP 502" is genuinely all
+   * that is known.
+   */
+  private async describeFailure(resp: Response): Promise<string> {
+    try {
+      const body = await resp.json();
+      if (body?.detail) return String(body.detail);
+    } catch {
+      // Not JSON — a gateway error page, most likely.
+    }
+    return `HTTP ${resp.status} ${resp.statusText}`.trim();
+  }
+
+  /**
+   * Why AI drafting could not run, or null if it could.
+   *
+   * Asked only when the research call came back with nothing, because that is
+   * the one answer that means two different things. The research endpoint
+   * deliberately answers 200 with an empty list when drafting is switched off
+   * — a shortcut that cannot run must leave the manual form working — so this
+   * is where the difference is recovered.
+   *
+   * A failure here is swallowed on purpose: it is a second opinion about a
+   * call that already succeeded, and reporting it would replace a mild message
+   * with a confusing one.
+   */
+  private async researchUnavailableReason(): Promise<string | null> {
+    try {
+      const resp = await fetch(`${this.apiUrl}/cars/variants/research-availability`, {
+        headers: await this.authHeaders(),
+      });
+      if (!resp.ok) return null;
+      const body = await resp.json();
+      return body?.available === false ? String(body.reason ?? '') : null;
+    } catch {
+      return null;
+    }
+  }
+
   async research() {
     const carId = this.selectedCarId();
     if (!carId) return;
@@ -222,16 +266,38 @@ export class AdminVariantsComponent {
         method: 'POST',
         headers: await this.authHeaders(),
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      // Read what the API said, rather than reporting the status code alone.
+      //
+      // `HTTP 503` told the admin nothing: the body carries the reason — no
+      // API key configured, or the provider's own message about a revoked key
+      // or exhausted quota — and each needs a different action. This is the
+      // same defect the listing form and the review queue both had.
+      if (!resp.ok) throw new Error(await this.describeFailure(resp));
       const drafted: CarVariant[] = await resp.json();
       await this.loadVariants();
+      if (drafted.length) {
+        this.toast(`📝 ${drafted.length} trim(s) drafted — check each price before publishing`);
+        return;
+      }
+      // Nothing came back. Three things produce that — drafting switched off,
+      // the call to the provider failing, and the model genuinely having
+      // nothing to add — and the screen used to report all three as "Nothing
+      // new found", which tells the admin a fact about the car that nobody
+      // checked. The first is recoverable here; the other two are not told
+      // apart without changing what the research endpoint returns, so say so
+      // rather than picking one.
+      const off = await this.researchUnavailableReason();
+      if (off !== null) {
+        this.error.set(off || 'AI drafting is switched off for this deployment.');
+        return;
+      }
       this.toast(
-        drafted.length
-          ? `📝 ${drafted.length} trim(s) drafted — check each price before publishing`
-          : 'Nothing new found. Trims already recorded are left alone.'
+        'The AI returned no trims. Nothing was changed. If the model does have '
+        + 'other trims, the call itself failed — check the API log for '
+        + '"Variant research failed".'
       );
     } catch (err) {
-      this.error.set(`Research failed: ${err}`);
+      this.error.set(`${err}`.replace(/^Error:\s*/, ''));
     } finally {
       this.researching.set(false);
     }
@@ -256,7 +322,7 @@ export class AdminVariantsComponent {
         method: 'POST',
         headers: await this.authHeaders(),
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) throw new Error(await this.describeFailure(resp));
       const car = await resp.json();
       const specs = car.specs?.length ?? 0;
       const features = car.features?.length ?? 0;
@@ -270,7 +336,7 @@ export class AdminVariantsComponent {
           : 'The AI returned no specification for this model. Nothing was saved.'
       );
     } catch (err) {
-      this.error.set(`Specification research failed: ${err}`);
+      this.error.set(`${err}`.replace(/^Error:\s*/, ''));
     } finally {
       this.researchingDetails.set(false);
     }
