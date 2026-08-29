@@ -110,7 +110,17 @@ interface ApiListResponse { items: ApiListing[]; total: number; page: number; pa
 interface ApiCarListResponse { items: ApiCar[]; total: number; page: number; page_size: number; }
 
 // ── Local assets ───────────────────────────────────────────────────────────────
-const PLACEHOLDER = 'assets/cars/placeholder.svg';
+/**
+ * Stands in for a car with no photograph.
+ *
+ * Exported because callers have to be able to tell it apart from a real
+ * image. mapCatalogueCar substitutes it rather than leaving `image` empty, so
+ * "does this car have a picture?" cannot be answered by a truthiness check —
+ * every car passes one. The New Cars grid asked that question and picked a
+ * placeholder over a car with seven photographs; it had its own copy of this
+ * literal at the time, which is why the two could not be compared.
+ */
+export const PLACEHOLDER = 'assets/cars/placeholder.svg';
 
 /**
  * Local images keyed by "Make Model" (lower-case).
@@ -228,10 +238,14 @@ function mapListing(lst: ApiListing): Car {
   // picsum URLs are seed placeholders rather than real vehicle photos.
   const apiImgs = (lst.image_urls ?? []).filter(u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'));
 
-  // Prefer real API images; otherwise use a local illustration for this
-  // model, and only fall back to the generic placeholder when we have neither.
-  const images = apiImgs.length ? apiImgs
-               : (localImagesFor(car.make, car.model) ?? [PLACEHOLDER]);
+  // The database is the only source of a car's photographs.
+  //
+  // This used to substitute a bundled illustration for six models, so
+  // deleting every image for a Swift still left a picture on its card. An
+  // image is uploaded through the app and removed through it; the screen has
+  // to agree with the database, and a drawing that appears when there is
+  // nothing to show hides the fact that there is nothing to show.
+  const images = apiImgs.length ? apiImgs : [PLACEHOLDER];
   const image = images[0];
 
   const badge = lst.is_featured ? 'Featured'
@@ -313,8 +327,8 @@ function mapCatalogueCar(car: ApiCar): Car {
   const apiImgs = (car.image_urls ?? []).filter(
     u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'),
   );
-  const images = apiImgs.length ? apiImgs
-               : (localImagesFor(car.make, car.model) ?? [PLACEHOLDER]);
+  // As in mapListing: the database is the only source. See the note there.
+  const images = apiImgs.length ? apiImgs : [PLACEHOLDER];
 
   const badge = car.fuel_type === 'electric' ? 'EV'
               : car.fuel_type === 'hybrid' ? 'Eco'

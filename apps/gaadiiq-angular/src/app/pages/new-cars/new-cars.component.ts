@@ -2,11 +2,10 @@ import { Component, signal, computed, OnInit, ElementRef, ViewChild, inject } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
-import { CarsDataService } from '../../services/cars-data.service';
+import { CarsDataService, PLACEHOLDER } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 
-const PLACEHOLDER = 'assets/cars/placeholder.svg';
 const COMPARE_KEY = 'gaadiiq_compare_keys';
 const NOTIFY_KEY = 'gaadiiq_upcoming_notify';
 const LUXURY_MIN = 3000000;
@@ -200,7 +199,14 @@ export class NewCarsComponent implements OnInit {
       .sort((a, b) => b.launchAt.getTime() - a.launchAt.getTime());
   });
 
-  newCarModels = computed<NewCarModel[]>(() => {
+  /**
+   * Every model matching the filters, photograph or not.
+   *
+   * Split from newCarModels so the grid and the "how many did we hide" count
+   * come from one computation. The count started life as a signal written
+   * from inside the computed, which Angular rejects (NG0600).
+   */
+  private allModels = computed<NewCarModel[]>(() => {
     const newCars = this.carsData.cars().filter(c => c.km === 0 && c.year >= 2024);
     const map = new Map<string, typeof newCars>();
     for (const c of newCars) {
@@ -223,7 +229,24 @@ export class NewCarsComponent implements OnInit {
       if (inBand.length === 0) return;
 
       const prices = inBand.map(c => c.price);
-      const rep = inBand.find(c => c.image && !c.image.includes('aeplcdn')) ?? inBand.find(c => c.image) ?? inBand[0];
+      // Which catalogue row this one card stands for.
+      //
+      // One card covers every model year in the band — a Fronx card can stand
+      // for 2024, 2025 and 2026 at once — so it has to choose whose photograph
+      // to show. The rule has always been "prefer a row that has one", but the
+      // test was `c.image`, and mapCatalogueCar fills `image` with a
+      // placeholder for a car that has none. Every row passed, so the first in
+      // the band won: a Fronx card showed "No Image Available" from the 2024
+      // row while seven photographs sat on the 2026 one.
+      //
+      // hasPhoto is that same rule, asked properly: an image the card can
+      // actually render. Both exclusions match resolveImage below, which
+      // discards an aeplcdn URL and returns the placeholder — so preferring
+      // such a row would move "View Details" to a car whose photograph is not
+      // going to appear either way.
+      const hasPhoto = (c: { image?: string | null }) =>
+        !!c.image && c.image !== PLACEHOLDER && !c.image.includes('aeplcdn');
+      const rep = inBand.find(hasPhoto) ?? inBand[0];
       const fuels = [...new Set(inBand.map(c => c.fuel))];
       const bodyType = rep.bodyType ?? '';
       const isElectric = fuels.some(f => f.toLowerCase() === 'electric');
@@ -259,11 +282,34 @@ export class NewCarsComponent implements OnInit {
       });
     });
 
-    const sort = this.selectedSort();
-    if (sort === 'Price: Low to High') return models.sort((a, b) => a.minPrice - b.minPrice);
-    if (sort === 'Price: High to Low') return models.sort((a, b) => b.minPrice - a.minPrice);
-    return models.sort((a, b) => b.reviews - a.reviews);
+    return models;
   });
+
+  /**
+   * The models the grid shows: those with a photograph.
+   *
+   * "No Image Available" on a grid of cars reads as a broken page rather than
+   * as a catalogue gap, so a model waits until it has a photograph.
+   */
+  newCarModels = computed<NewCarModel[]>(() => {
+    const shown = this.allModels().filter(m => m.image !== PLACEHOLDER);
+
+    const sort = this.selectedSort();
+    if (sort === 'Price: Low to High') return shown.sort((a, b) => a.minPrice - b.minPrice);
+    if (sort === 'Price: High to Low') return shown.sort((a, b) => b.minPrice - a.minPrice);
+    return shown.sort((a, b) => b.reviews - a.reviews);
+  });
+
+  /**
+   * Models kept off the grid because they have no photograph.
+   *
+   * An empty grid has two causes needing opposite responses — no model matched
+   * the filters (change them) or none has a picture yet (upload one) — and one
+   * message for both sends the reader the wrong way.
+   */
+  hiddenForNoPhoto = computed(
+    () => this.allModels().filter(m => m.image === PLACEHOLDER).length,
+  );
 
   activeFiltersCount = computed(() => {
     return this.selectedBodyTypes().length
@@ -331,10 +377,24 @@ export class NewCarsComponent implements OnInit {
     });
   }
 
-  private resolveImage(make: string, model: string, raw?: string): string {
-    const key = `${make} ${model}`;
-    if (key === 'Maruti Suzuki Swift' || model === 'Swift') return 'assets/cars/maruti-swift/front.svg';
-    if (raw && !raw.includes('aeplcdn') && raw.trim()) return raw;
+  /**
+   * The photograph a model card shows.
+   *
+   * An uploaded photograph wins over anything bundled with the app. This used
+   * to return the bundled Swift illustration for every Swift before it looked
+   * at `raw` at all, so photographs uploaded through the admin screens could
+   * never reach the grid — and deleting them from the database changed nothing
+   * on screen, which is the opposite of what a delete is for.
+   *
+   * The bundled Swift drawing is gone entirely rather than demoted to a
+   * fallback: the database is the only source of a car's photographs, so a
+   * Swift with none shows the placeholder like every other model.
+   *
+   * aeplcdn URLs are still discarded: they are a third party's and frequently
+   * dead, and a broken image tag is worse than an honest placeholder.
+   */
+  private resolveImage(_make: string, _model: string, raw?: string): string {
+    if (raw && raw !== PLACEHOLDER && !raw.includes('aeplcdn') && raw.trim()) return raw;
     return PLACEHOLDER;
   }
 
