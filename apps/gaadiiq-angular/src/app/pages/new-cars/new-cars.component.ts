@@ -247,7 +247,24 @@ export class NewCarsComponent implements OnInit {
       const hasPhoto = (c: { image?: string | null }) =>
         !!c.image && c.image !== PLACEHOLDER && !c.image.includes('aeplcdn');
       const rep = inBand.find(hasPhoto) ?? inBand[0];
-      const fuels = [...new Set(inBand.map(c => c.fuel))];
+      // Everything the model is actually sold with, trims included.
+      //
+      // A catalogue row carries one fuel and one gearbox, and the filters read
+      // only those. The S-Presso row says Petrol/Manual while its published
+      // trims include Automatic and CNG, so ticking Automatic hid a model that
+      // has three automatics — and a model filtered out of a grid looks
+      // exactly like one that does not exist.
+      //
+      // The row's own value stays in the set: it is what a model with no trims
+      // entered yet has, and dropping it would hide those models instead.
+      const fuels = [...new Set([
+        ...inBand.map(c => c.fuel),
+        ...inBand.flatMap(c => c.variantFuels ?? []),
+      ].filter(Boolean))];
+      const gearboxes = [...new Set([
+        ...inBand.map(c => c.transmission),
+        ...inBand.flatMap(c => c.variantTransmissions ?? []),
+      ].filter(Boolean))];
       const bodyType = rep.bodyType ?? '';
       const isElectric = fuels.some(f => f.toLowerCase() === 'electric');
       const isLuxury = Math.min(...prices) >= LUXURY_MIN;
@@ -261,7 +278,7 @@ export class NewCarsComponent implements OnInit {
         if (!matchBt) return;
       }
       if (selFuels.length > 0 && !fuels.some(f => selFuels.includes(f))) return;
-      if (selTxs.length > 0 && !inBand.some(c => selTxs.some(t => c.transmission.includes(t)))) return;
+      if (selTxs.length > 0 && !gearboxes.some(g => selTxs.some(t => g.includes(t)))) return;
 
       const image = this.resolveImage(make, model, rep.image);
 

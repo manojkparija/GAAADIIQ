@@ -27,6 +27,17 @@ export interface Car {
    */
   variantPriceMin?: number;
   variantPriceMax?: number;
+  /**
+   * Every gearbox and fuel the published trims are sold with.
+   *
+   * A catalogue row carries one `transmission` and one `fuel`, but a model is
+   * sold with several: the S-Presso row says Manual while three published
+   * trims are Automatic. Filtering on the row's single value hid the model
+   * from anyone ticking Automatic, and a model filtered out of a grid looks
+   * exactly like a model that does not exist.
+   */
+  variantTransmissions?: string[];
+  variantFuels?: string[];
   sellerEmail?: string;
   specs?: { label: string; value: string }[];
   features?: string[];
@@ -66,6 +77,9 @@ interface ApiCar {
    * for the same reason ex_showroom_price is. Null when no trim is priced.
    */
   variant_price_min?: string | null;
+  /** Gearboxes and fuels across the published trims, each named once. */
+  variant_transmissions?: string[];
+  variant_fuels?: string[];
   variant_price_max?: string | null;
   specs?: { label: string; value: string }[] | null;
   features?: string[] | null;
@@ -357,6 +371,8 @@ function mapCatalogueCar(car: ApiCar): Car {
     variantCount: car.variant_count ?? 0,
     variantPriceMin: rupeesOrUndefined(car.variant_price_min),
     variantPriceMax: rupeesOrUndefined(car.variant_price_max),
+    variantTransmissions: car.variant_transmissions ?? [],
+    variantFuels: car.variant_fuels ?? [],
     // A curated specification wins; the engine/seating pair is the fallback
     // for a model nobody has researched yet.
     specs: car.specs?.length ? car.specs : (car.engine_cc ? [
