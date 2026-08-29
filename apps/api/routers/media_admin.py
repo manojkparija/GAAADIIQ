@@ -830,7 +830,11 @@ async def _listing_images(
             # a delete, so buyers stop seeing it, the review queue's Rejected
             # tab still holds it, and approving it there puts it back.
             removable=True,
-            manage_at="/admin/image-review",
+            # The Rejected tab specifically. A removal makes the photograph
+            # rejected, so a link to the queue's default Pending tab showed
+            # "Nothing waiting for review" and left the admin unable to tell
+            # a working undo from a broken link.
+            manage_at="/admin/image-review?status=rejected",
         )
         for r in rows
     ]
@@ -1359,4 +1363,4 @@ async def remove_listing_image(
 
     await db.commit()
     return {"id": str(image_id), "deleted": True, "status": "rejected",
-            "undo_at": "/admin/image-review"}
+            "undo_at": "/admin/image-review?status=rejected"}

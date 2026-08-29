@@ -312,7 +312,14 @@
                   </button>
                 }
                 @if (img.origin === 'listing') {
-                  <a class="aci-existing-elsewhere" [routerLink]="img.manage_at || '/admin/image-review'">
+                  <!--
+                    Opens the Rejected tab, not the queue's default Pending
+                    one: a removed photograph is rejected, and a link that
+                    lands where the image is not reads as a broken link.
+                  -->
+                  <a class="aci-existing-elsewhere"
+                     routerLink="/admin/image-review"
+                     [queryParams]="{ status: 'rejected' }">
                     Undo in the review queue →
                   </a>
                 }

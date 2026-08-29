@@ -114,7 +114,10 @@ async def test_listing_photographs_are_removable_and_undoable():
     # photograph can be approved back — a removal with no way back would
     # break the panel's own promise that removals can be undone.
     assert out[0].removable is True
-    assert out[0].manage_at == "/admin/image-review"
+    # The Rejected tab specifically. A removal makes the photograph rejected,
+    # so a link to the queue's default Pending tab showed "Nothing waiting for
+    # review" and read as a broken link.
+    assert out[0].manage_at == "/admin/image-review?status=rejected"
 
 
 @pytest.mark.asyncio
@@ -332,4 +335,4 @@ async def test_a_successful_removal_commits_and_says_where_to_undo():
 
     assert db.committed
     assert out["status"] == "rejected"
-    assert out["undo_at"] == "/admin/image-review"
+    assert out["undo_at"] == "/admin/image-review?status=rejected"
