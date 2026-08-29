@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { ImageReviewService, ReviewableImage } from '../../services/image-review.service';
 import { ImageReviewStatus } from '../../services/dealer-car-images.service';
@@ -39,9 +40,26 @@ export class AdminImageReviewComponent {
   reason = signal('');
   busy = signal<number | null>(null);
 
-  constructor(private review: ImageReviewService, seo: SeoService) {
+  constructor(
+    private review: ImageReviewService,
+    seo: SeoService,
+    route: ActivatedRoute,
+  ) {
     seo.setPage('Image Review', 'Approve or reject dealer-submitted vehicle photographs.');
-    void this.review.load('pending');
+
+    // Open on the tab the caller asked for.
+    //
+    // The manage panel links here to undo a removal, and a removal makes the
+    // photograph *rejected* — so landing on Pending showed "Nothing waiting
+    // for review" and the admin had no way to tell whether the image was
+    // gone, misplaced, or the link simply broken. A link that opens where the
+    // thing is not is worse than no link.
+    const asked = route.snapshot.queryParamMap.get('status');
+    const start: ImageReviewStatus =
+      asked === 'approved' || asked === 'rejected' ? asked : 'pending';
+
+    this.filter.set(start);
+    void this.review.load(start);
   }
 
   show(status: ImageReviewStatus) {
