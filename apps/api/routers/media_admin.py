@@ -20,11 +20,13 @@ in routers/brochures.py about PEP 563 and slowapi's wrapper.
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
@@ -668,7 +670,10 @@ def _client_ip(request: Request) -> str | None:
 class VehicleImageOut(BaseModel):
     """One stored photograph, as the admin screen lists it."""
 
-    id: UUID
+    # A string rather than a UUID, because photographs live in two tables and
+    # only one of them keys on a UUID. car_images is a Supabase-era table with
+    # an integer id and no ORM model. The client already typed this `string`.
+    id: str
     filename: str
     url: str
     thumbnail_url: str | None = None
@@ -678,6 +683,23 @@ class VehicleImageOut(BaseModel):
     media_bucket: str | None = None
     created_at: str
     uploaded_by: str | None = None
+
+    # Which table this came from.
+    #
+    # "Manage images already on the site" listed vehicle_media alone while
+    # telling the admin it showed "exactly what buyers see". It did not: an
+    # e Vitara with two approved photographs in car_images showed nothing at
+    # all, because the listing and dealer flows write to the other table.
+    #
+    # 'listing' rows are shown so the claim becomes true, and are NOT
+    # removable here. Taking a dealer's photograph down is a reviewed
+    # decision that belongs in the review queue, which requires a reason and
+    # stamps who decided; a second delete path here would bypass that record.
+    origin: Literal["media_library", "listing"] = "media_library"
+    removable: bool = True
+    # Where to go instead, when it is not removable here. Carried in the
+    # response rather than hardcoded in the UI so the two cannot drift.
+    manage_at: str | None = None
 
 
 @router.get("/vehicle-images", response_model=list[VehicleImageOut])
@@ -717,9 +739,9 @@ async def list_vehicle_images(
     )
 
     storage = get_storage()
-    return [
+    out = [
         VehicleImageOut(
-            id=m.id,
+            id=str(m.id),
             filename=m.source_pdf_name,
             url=storage.url_for(m.webp_key or m.storage_key),
             thumbnail_url=storage.url_for(m.thumbnail_key) if m.thumbnail_key else None,
@@ -731,6 +753,84 @@ async def list_vehicle_images(
             uploaded_by=str(m.uploaded_by) if m.uploaded_by else None,
         )
         for m in (await db.execute(q)).scalars().all()
+    ]
+
+    out.extend(await _listing_images(db, make=make, model=model, model_year=model_year))
+    return out
+
+
+async def _listing_images(
+    db: AsyncSession, *, make: str, model: str, model_year: int | None,
+) -> list[VehicleImageOut]:
+    """
+    Photographs attached to a car through the listing and dealer flows.
+
+    These live in `car_images`, a Supabase-era table with an integer id, no
+    ORM model and no place in the migration chain — so it is read with SQL
+    rather than through the mapper.
+
+    They are included because the screen above says it shows "exactly what
+    buyers see", and without them that was untrue in a way nobody could
+    detect from the screen: an e Vitara with two approved photographs listed
+    as "No images on the site for this vehicle", because the two halves of
+    the app write to different tables and the panel read only one.
+
+    Only approved rows. Pending and rejected ones are not on the site, so
+    listing them here would restate the same falsehood in the other
+    direction.
+
+    A missing table is not an error. car_images exists only where the
+    hand-run Supabase migrations have been applied, and an environment
+    without it has no listing photographs to show — which is exactly what an
+    empty list says.
+
+    The existence check goes through SQLAlchemy's inspector rather than
+    to_regclass, which is Postgres-only: the first version of this used it
+    and took the whole endpoint down under SQLite with "no such function:
+    to_regclass", failing four existing tests in TestRemoveImageSuite. The
+    tests run on SQLite and production is Postgres, so a Postgres-only
+    builtin here is invisible until CI.
+    """
+    def _has_table(sync_conn: object) -> bool:
+        return sa_inspect(sync_conn).has_table("car_images", schema=None)
+
+    conn = await db.connection()
+    if not await conn.run_sync(_has_table):
+        return []
+
+    sql = """
+        SELECT i.id, i.url, i.created_at, i.submitted_by
+          FROM public.car_images i
+          JOIN public.cars c ON c.id = i.car_id
+         WHERE lower(btrim(c.make)) = :make
+           AND lower(btrim(c.model)) = :model
+           AND i.status = 'approved'
+    """
+    params: dict[str, object] = {
+        "make": make.strip().lower(), "model": model.strip().lower(),
+    }
+    if model_year is not None:
+        sql += " AND c.year = :year"
+        params["year"] = model_year
+    sql += " ORDER BY i.sort_order NULLS LAST, i.created_at"
+
+    rows = (await db.execute(text(sql), params)).mappings().all()
+    return [
+        VehicleImageOut(
+            id=str(r["id"]),
+            # car_images stores a URL, not a stored-object key, and carries no
+            # filename. The last path segment is what an admin recognises.
+            filename=str(r["url"]).rstrip("/").rsplit("/", 1)[-1] or "listing image",
+            url=r["url"],
+            created_at=r["created_at"].isoformat() if r["created_at"] else "",
+            uploaded_by=r["submitted_by"],
+            origin="listing",
+            # Removal belongs in the review queue, which requires a reason and
+            # records who decided. A delete here would bypass that trail.
+            removable=False,
+            manage_at="/admin/image-review",
+        )
+        for r in rows
     ]
 
 
