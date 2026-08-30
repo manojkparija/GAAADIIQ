@@ -1,0 +1,122 @@
+<div class="au-page">
+  <h1 class="au-title">Upcoming Cars</h1>
+  <p class="au-sub">
+    What the New Cars page shows under “Upcoming”. A car drops off on its own
+    once the expected date passes — mark it <strong>On sale</strong> the day it
+    launches, which is usually sooner.
+  </p>
+
+  @if (error()) { <div class="au-error">{{ error() }}</div> }
+  @if (toastMsg()) { <div class="au-toast">{{ toastMsg() }}</div> }
+
+  @if (editingId()) {
+    <div class="au-form">
+      <div class="au-form-grid">
+        <div class="au-field">
+          <label for="au-make">Manufacturer</label>
+          <input id="au-make" [ngModel]="form().make"
+                 (ngModelChange)="setField('make', $event)" />
+        </div>
+        <div class="au-field">
+          <label for="au-model">Model</label>
+          <input id="au-model" [ngModel]="form().model"
+                 (ngModelChange)="setField('model', $event)" />
+        </div>
+        <div class="au-field">
+          <label for="au-date">Expected by</label>
+          <input id="au-date" type="date" [ngModel]="form().expected_on"
+                 (ngModelChange)="setField('expected_on', $event)" />
+          <!-- The last day of the announced window, so "Q3 2026" is entered as
+               30 September 2026. The page shows the quarter; the date is what
+               lets a car retire itself. -->
+          <span class="au-hint">Last day of the announced window — for “Q3 2026”, 30 Sep 2026.</span>
+        </div>
+        <div class="au-field">
+          <label for="au-body">Body type</label>
+          <input id="au-body" [ngModel]="form().body_type"
+                 (ngModelChange)="setField('body_type', $event)" />
+        </div>
+        <div class="au-field">
+          <label for="au-fuel">Fuel</label>
+          <input id="au-fuel" [ngModel]="form().fuel_type"
+                 (ngModelChange)="setField('fuel_type', $event)" />
+        </div>
+        <div class="au-field">
+          <label for="au-min">Expected price from (₹)</label>
+          <input id="au-min" type="number" [ngModel]="form().expected_price_min"
+                 (ngModelChange)="setField('expected_price_min', $event)" />
+          <span class="au-hint">Leave blank if none was announced.</span>
+        </div>
+        <div class="au-field">
+          <label for="au-max">Expected price to (₹)</label>
+          <input id="au-max" type="number" [ngModel]="form().expected_price_max"
+                 (ngModelChange)="setField('expected_price_max', $event)" />
+        </div>
+        <div class="au-field">
+          <label for="au-img">Image URL</label>
+          <input id="au-img" [ngModel]="form().image_url"
+                 (ngModelChange)="setField('image_url', $event)" />
+          <span class="au-hint">A press image. Nobody has photographed this car yet.</span>
+        </div>
+      </div>
+      <div class="au-row-actions">
+        <button class="btn-gradient" (click)="save()">Save</button>
+        <button class="btn-outline" (click)="cancelEdit()">Cancel</button>
+      </div>
+    </div>
+  } @else {
+    <button class="btn-gradient" (click)="startAdd()">Add an upcoming car</button>
+  }
+
+  <h2 class="au-section-title">On the site ({{ live().length }})</h2>
+  @if (loading()) {
+    <p class="au-empty">Loading…</p>
+  } @else if (live().length === 0) {
+    <p class="au-empty">Nothing is showing under Upcoming. Add a car, or check the list below.</p>
+  }
+  @for (car of live(); track car.id) {
+    <div class="au-row">
+      <div class="au-row-main">
+        <div class="au-row-name">{{ car.make }} {{ car.model }}</div>
+        <div class="au-row-meta">
+          <span class="au-badge">{{ car.expected_quarter }}</span>
+          {{ car.body_type }}{{ car.body_type && car.fuel_type ? ' · ' : '' }}{{ car.fuel_type }}
+        </div>
+      </div>
+      <div class="au-row-actions">
+        <button class="btn-gradient" (click)="markLaunched(car)">On sale</button>
+        <button class="btn-outline" (click)="startEdit(car)">Edit</button>
+        <button class="btn-outline" (click)="setActive(car, false)">Hide</button>
+        <button class="btn-outline" (click)="remove(car)">Delete</button>
+      </div>
+    </div>
+  }
+
+  <!-- Retired rows stay visible: a launch marked by mistake is otherwise
+       invisible to the person who has to undo it. -->
+  <h2 class="au-section-title">Off the site ({{ retired().length }})</h2>
+  @if (retired().length === 0) {
+    <p class="au-empty">Nothing retired yet.</p>
+  }
+  @for (car of retired(); track car.id) {
+    <div class="au-row">
+      <div class="au-row-main">
+        <div class="au-row-name">{{ car.make }} {{ car.model }}</div>
+        <div class="au-row-meta">
+          <span class="au-badge">{{ retiredReason(car) }}</span>
+          {{ car.expected_quarter }}
+        </div>
+      </div>
+      <div class="au-row-actions">
+        @if (car.launched_at) {
+          <button class="btn-outline" (click)="undoLaunched(car)">Not on sale after all</button>
+        }
+        @if (!car.is_active) {
+          <button class="btn-outline" (click)="setActive(car, true)">Show again</button>
+        }
+        <button class="btn-outline" (click)="startEdit(car)">Edit</button>
+        <button class="btn-outline" (click)="remove(car)">Delete</button>
+      </div>
+    </div>
+  }
+</div>

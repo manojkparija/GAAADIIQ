@@ -5,6 +5,7 @@ import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService, PLACEHOLDER } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
+import { UpcomingCarsService } from '../../services/upcoming-cars.service';
 
 const COMPARE_KEY = 'gaadiiq_compare_keys';
 const NOTIFY_KEY = 'gaadiiq_upcoming_notify';
@@ -51,15 +52,6 @@ interface NewLaunch {
   isNew: boolean;
 }
 
-interface UpcomingCar {
-  make: string;
-  model: string;
-  expectedPrice: string;
-  expectedDate: string;
-  bodyType: string;
-  fuel: string;
-  image: string;
-}
 
 import { BodyTypeIconComponent } from '../../components/body-type-icon/body-type-icon.component';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
@@ -103,6 +95,7 @@ export class NewCarsComponent implements OnInit {
     private route: ActivatedRoute,
     public brandsService: BrandsService,
     private auth: AuthService,
+    private upcomingService: UpcomingCarsService,
   ) {}
 
   get loading() { return this.carsData.loading; }
@@ -190,13 +183,33 @@ export class NewCarsComponent implements OnInit {
     { make: 'Kia', model: 'Syros', price: '₹8.99L onwards', launchDate: 'Jan 2025', launchAt: new Date('2025-01-20'), bodyType: 'SUV', fuel: 'Petrol / Diesel', image: PLACEHOLDER, isNew: true },
   ];
 
-  upcomingCars: UpcomingCar[] = [
-    { make: 'Tata', model: 'Sierra EV', expectedPrice: '₹25 – 30L', expectedDate: 'Q3 2026', bodyType: 'SUV', fuel: 'Electric', image: PLACEHOLDER },
-    { make: 'Mahindra', model: 'XEV 7e', expectedPrice: '₹30 – 40L', expectedDate: 'Q4 2026', bodyType: 'SUV', fuel: 'Electric', image: PLACEHOLDER },
-    { make: 'Toyota', model: 'Urban Cruiser', expectedPrice: '₹12 – 18L', expectedDate: 'Q2 2026', bodyType: 'SUV', fuel: 'Hybrid', image: PLACEHOLDER },
-    { make: 'Honda', model: 'Elevate Sport', expectedPrice: '₹16 – 22L', expectedDate: 'Q3 2026', bodyType: 'SUV', fuel: 'Petrol', image: PLACEHOLDER },
-    { make: 'MG', model: 'Windsor EV Pro', expectedPrice: '₹22 – 28L', expectedDate: 'Q1 2027', bodyType: 'SUV', fuel: 'Electric', image: PLACEHOLDER },
-  ];
+  /**
+   * Cars announced but not yet on sale, from the API.
+   *
+   * This was a hardcoded array of five entries with the expected date as free
+   * text ("Q3 2026") and nothing that ever removed one, so a car stayed under
+   * "Upcoming" after it launched and correcting that took a deploy. Four of
+   * the five were on sale by the time it was reported.
+   *
+   * Which cars are still upcoming is the API's decision, not this page's.
+   */
+  get upcomingCars() { return this.upcomingService.cars(); }
+  get upcomingFailed() { return this.upcomingService.failed(); }
+
+  /**
+   * The announced price band, or '' when none was announced.
+   *
+   * Empty rather than "₹0": an announcement routinely names a car and a
+   * quarter and no price, and a zero would read as a fact about the car.
+   */
+  upcomingPriceLabel(car: { expected_price_min: string | number | null;
+                            expected_price_max: string | number | null }): string {
+    const lo = car.expected_price_min == null ? null : Number(car.expected_price_min);
+    const hi = car.expected_price_max == null ? null : Number(car.expected_price_max);
+    if (lo != null && hi != null && lo !== hi) return `${this.formatLakh(lo)} – ${this.formatLakh(hi)}`;
+    const only = lo ?? hi;
+    return only == null ? '' : `${this.formatLakh(only)} onwards`;
+  }
 
   expertPicks = [
     { category: 'Best Value', icon: '💰', make: 'Maruti Suzuki', model: 'Fronx', price: '₹7.51L', reason: 'Stellar mileage, feature-rich at this price point', badge: 'Value Pick' },
@@ -364,6 +377,7 @@ export class NewCarsComponent implements OnInit {
   ngOnInit() {
     this.loadCompare();
     this.loadNotify();
+    void this.upcomingService.load();
 
     this.route.queryParams.subscribe(params => {
       if (params['minPrice'] != null && params['minPrice'] !== '') {

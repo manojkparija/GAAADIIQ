@@ -351,16 +351,31 @@
       <h2 class="section-title">{{ '⏳ Upcoming' | t }} <span class="gradient-text">{{ 'Cars' | t }}</span></h2>
       <span class="section-sub">{{ 'Get notified when they launch' | t }}</span>
     </div>
+    <!--
+      Three states, kept apart on purpose. An empty strip because nothing has
+      been announced and an empty strip because the request failed look
+      identical and mean opposite things — the same confusion the catalogue
+      grid had before `outage` existed.
+    -->
+    @if (upcomingFailed) {
+      <p class="upcoming-empty">{{ 'Could not load upcoming cars just now.' | t }}</p>
+    } @else if (upcomingCars.length === 0) {
+      <p class="upcoming-empty">{{ 'No launches announced at the moment. This fills up as manufacturers confirm dates.' | t }}</p>
+    } @else {
     <div class="upcoming-list">
-      @for (car of upcomingCars; track car.make + car.model) {
+      @for (car of upcomingCars; track car.id) {
         <div class="upcoming-card glass-card">
-          <img [src]="imageFor(car)" [alt]="car.make + ' ' + car.model"
+          <img [src]="car.image_url || placeholder" [alt]="car.make + ' ' + car.model"
             class="upcoming-img" (error)="onImgError($event)" loading="lazy" />
           <div class="upcoming-info">
-            <span class="upcoming-expected">Expected: {{ car.expectedDate }}</span>
+            <span class="upcoming-expected">Expected: {{ car.expected_quarter }}</span>
             <h4 class="upcoming-name">{{ car.make }} {{ car.model }}</h4>
-            <div class="upcoming-meta">{{ car.bodyType }} · {{ car.fuel }}</div>
-            <div class="upcoming-price">{{ car.expectedPrice }}</div>
+            <div class="upcoming-meta">{{ car.body_type }}@if (car.body_type && car.fuel_type) { · }{{ car.fuel_type }}</div>
+            <!-- Blank when no price was announced, rather than "₹0": an
+                 announcement often names a car and a quarter and nothing else. -->
+            @if (upcomingPriceLabel(car)) {
+              <div class="upcoming-price">{{ upcomingPriceLabel(car) }}</div>
+            }
           </div>
           <button class="notify-btn" [class.notified]="notifiedCars().has(car.make + '||' + car.model)"
             (click)="toggleNotify(car.make + '||' + car.model)">
@@ -369,6 +384,7 @@
         </div>
       }
     </div>
+    }
   </div>
 </section>
 

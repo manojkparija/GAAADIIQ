@@ -131,4 +131,5 @@ from .ev_charging import (  # noqa: E402,F401
     StationStatus,
     VehicleChargingProfile,
 )
+from .upcoming_car import UpcomingCar  # noqa: E402,F401
 from .video_review import VideoReview, VideoReviewStatus  # noqa: E402,F401
