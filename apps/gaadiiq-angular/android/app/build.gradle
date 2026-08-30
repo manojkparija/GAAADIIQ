@@ -20,6 +20,25 @@ def keyPasswordEnv   = System.getenv('ANDROID_KEY_PASSWORD')
 // anyone who has never set this up — every contributor, and the debug-APK job.
 def hasSigning = keystorePath && keystorePassword && keyAliasEnv && keyPasswordEnv
 
+// The build number Play orders submissions by.
+//
+// It was the literal 1. Play rejects a re-upload at a versionCode it has
+// already seen, so the second submission would have been refused with a
+// message about the number rather than about anything a developer changed —
+// and the fix is a hand edit somebody has to remember on every release.
+//
+// CI passes the workflow run number, which only ever increases. Locally, and
+// for anyone who has never set this up, it falls back to 1 so `assembleDebug`
+// keeps working unchanged.
+//
+// Deliberately not derived from versionName: the two answer different
+// questions. versionName is what a person reads ("1.4.2"); versionCode is an
+// ordering Play enforces, and a scheme that computes one from the other breaks
+// the day a hotfix has to go out ahead of a version that was already uploaded.
+def versionCodeEnv = System.getenv('ANDROID_VERSION_CODE')
+def resolvedVersionCode = versionCodeEnv ? versionCodeEnv.toInteger() : 1
+def resolvedVersionName = System.getenv('ANDROID_VERSION_NAME') ?: '1.0'
+
 android {
     namespace = "com.gaadiiq.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -27,8 +46,8 @@ android {
         applicationId "com.gaadiiq.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode resolvedVersionCode
+        versionName resolvedVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
