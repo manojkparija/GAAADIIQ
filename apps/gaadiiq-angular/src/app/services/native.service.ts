@@ -280,4 +280,50 @@ export class NativeService {
       PushNotifications.addListener('registrationError', () => resolve(null));
     });
   }
+
+  // ── Speech output ─────────────────────────────────────────────────────────
+  //
+  // Android's WebView does not expose a working window.speechSynthesis: the
+  // object may exist, speak() resolves, and no sound is produced. The reported
+  // symptom was simply that the diagnosis never spoke in the APK while it
+  // spoke fine on the website. These route to the TTS engine the phone already
+  // has, so Hindi and the other Indian languages use whatever voices the user
+  // has installed — no vendor key, no per-character cost, works offline.
+
+  /**
+   * Speak `text` through the device engine. Resolves false when this is not a
+   * native platform or the engine refused, so the caller can fall back to
+   * speechSynthesis rather than going silent.
+   */
+  async speak(text: string, lang: string, rate = 0.88): Promise<boolean> {
+    if (!this.isNative) return false;
+    try {
+      const { TextToSpeech } = await import('@capacitor-community/text-to-speech');
+      await TextToSpeech.stop().catch(() => { /* nothing was playing */ });
+      await TextToSpeech.speak({
+        text,
+        lang,
+        // The plugin takes a multiplier around 1.0, not the 0.1–10 scale
+        // SpeechSynthesisUtterance uses.
+        rate,
+        pitch: 1.0,
+        volume: 1.0,
+        category: 'ambient',
+      });
+      return true;
+    } catch {
+      // No engine, no voice for this locale, or the user has never installed
+      // TTS data. The browser path is still worth a try.
+      return false;
+    }
+  }
+
+  /** Stop any device speech. Safe to call when nothing is playing. */
+  async stopSpeaking(): Promise<void> {
+    if (!this.isNative) return;
+    try {
+      const { TextToSpeech } = await import('@capacitor-community/text-to-speech');
+      await TextToSpeech.stop();
+    } catch { /* nothing was playing */ }
+  }
 }

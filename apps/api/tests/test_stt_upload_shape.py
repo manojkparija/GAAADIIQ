@@ -115,3 +115,61 @@ class TestBareMimeSuite:
 
     def test_survives_an_empty_content_type(self):
         assert _bare_mime("") == ""
+
+
+class TestUnsupportedLanguageSuite:
+    """
+    Odia. Measured on Render:
+
+        400 {"error":{"message":"Language 'or' is not supported.",
+             "type":"invalid_request_error","param":"language",
+             "code":"unsupported_language"}}
+
+    Naming a language Whisper does not have is not a worse transcription, it is
+    a refusal of the whole request -- so the field is omitted and Whisper
+    detects instead. The language list the UI offers is unchanged.
+    """
+
+    @pytest.mark.asyncio
+    async def test_odia_is_sent_without_a_language_field(self, openai_provider):
+        cm, post = _capturing_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "or-IN")
+
+        assert "language" not in post.call_args.kwargs["data"], (
+            "Whisper has no Odia model; naming it returns 400 for the whole request."
+        )
+
+    @pytest.mark.asyncio
+    async def test_odia_still_transcribes(self, openai_provider):
+        cm, _ = _capturing_client({"text": "ମୋ ଗାଡ଼ିରୁ ଶବ୍ଦ ଆସୁଛି"})
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "or-IN")
+
+        assert r["text"] == "ମୋ ଗାଡ଼ିରୁ ଶବ୍ଦ ଆସୁଛି"
+        assert r["language"] == "or-IN", "the caller's language is still reported back"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "locale,iso",
+        [("hi-IN", "hi"), ("bn-IN", "bn"), ("ta-IN", "ta"), ("te-IN", "te"),
+         ("kn-IN", "kn"), ("ml-IN", "ml"), ("mr-IN", "mr"), ("gu-IN", "gu"),
+         ("pa-IN", "pa"), ("en-IN", "en")],
+    )
+    async def test_supported_languages_are_still_named(self, openai_provider, locale, iso):
+        # Detection is worse than being told, so the ten that work must keep
+        # sending the field. Dropping it for everything would be a regression
+        # nobody would notice until accuracy fell.
+        cm, post = _capturing_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", locale)
+
+        assert post.call_args.kwargs["data"]["language"] == iso
+
+    @pytest.mark.asyncio
+    async def test_an_unknown_locale_falls_back_to_english(self, openai_provider):
+        cm, post = _capturing_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "xx-YY")
+
+        assert post.call_args.kwargs["data"]["language"] == "en"
