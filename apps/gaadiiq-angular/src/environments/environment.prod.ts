@@ -23,6 +23,21 @@ export const environment = {
   // RefererNotAllowedMapError, a new deployment URL needs adding there — the
   // code is not the problem.
   googleMapsApiKey: 'AIzaSyDKQwqMc8DGIHoia5QYmAnHaPBc8q0FOeI',
+  // Whether the app may ask Android for a push token.
+  //
+  // Off until google-services.json exists in the Android project. Without it
+  // Firebase is not initialised, and PushNotifications.register() throws
+  // IllegalStateException on Android's own Handler thread — which kills the
+  // process before any promise can reject. The .catch() at the call site could
+  // never have caught it.
+  //
+  // Measured: the installed debug APK died on launch with
+  //   java.lang.IllegalStateException: Default FirebaseApp is not initialized
+  //   in this process com.gaadiiq.app
+  //   at com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin.register
+  //
+  // Turn this on in the same change that adds google-services.json, not before.
+  pushEnabled: false,
   supabase: {
     url: 'https://gnhixykdvnuoxeccntjo.supabase.co',
     key: 'sb_publishable_K-cu3EbiH3uDIsonlonRmw_tqsKfp_K'
