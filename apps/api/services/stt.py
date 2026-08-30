@@ -49,6 +49,26 @@ _ISO_639_1 = {
 }
 
 
+#: Container extension per mime, for the multipart filename. OpenAI reads the
+#: format from the extension; anything not listed here falls back to .webm,
+#: which is what every Android WebView MediaRecorder produces.
+_EXTENSIONS = {
+    "audio/webm": ".webm", "audio/ogg": ".ogg", "audio/mpeg": ".mp3",
+    "audio/mp4": ".mp4", "audio/wav": ".wav", "audio/x-wav": ".wav",
+    "audio/aac": ".m4a", "audio/3gpp": ".mp4",
+}
+
+
+def _bare_mime(content_type: str) -> str:
+    """
+    Drop codec parameters: "audio/webm;codecs=opus" → "audio/webm".
+
+    MediaRecorder reports the codec it chose, and the vendors do not accept the
+    parameterised form even where they accept the container.
+    """
+    return (content_type or "").split(";")[0].strip().lower()
+
+
 def stt_enabled() -> bool:
     return (settings.stt_provider or "none").lower() != "none"
 
@@ -126,7 +146,19 @@ async def _transcribe_whisper(
     if settings.stt_api_key:
         headers["Authorization"] = f"Bearer {settings.stt_api_key}"
 
-    files = {"file": ("audio", audio, content_type or "application/octet-stream")}
+    # The upload MUST carry a filename with a recognised extension. OpenAI
+    # decides the container from the extension, not from the part's
+    # Content-Type, and answers a bare "audio" with
+    #
+    #   400 Bad Request — Invalid file format. Supported formats: flac, m4a,
+    #   mp3, mp4, mpeg, mpga, oga, ogg, wav, webm
+    #
+    # which reached the phone as "No speech was recognised", blaming the
+    # speaker for a request that was never decodable.
+    mime = _bare_mime(content_type)
+    files = {
+        "file": (f"audio{_EXTENSIONS.get(mime, '.webm')}", audio, mime or "application/octet-stream")
+    }
     data = {"model": settings.stt_model, "language": _ISO_639_1.get(language, "en")}
 
     async with httpx.AsyncClient(timeout=settings.stt_timeout_seconds) as client:
@@ -134,6 +166,13 @@ async def _transcribe_whisper(
             f"{base.rstrip('/')}/audio/transcriptions",
             headers=headers, files=files, data=data,
         )
+        if resp.status_code >= 400:
+            # The vendor says why in the body; without it the log shows only
+            # the status and every 400 looks alike.
+            logger.warning(
+                "STT provider %s rejected the upload: %s %s",
+                provider, resp.status_code, resp.text[:500],
+            )
         resp.raise_for_status()
         body = resp.json()
 
