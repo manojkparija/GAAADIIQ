@@ -1,6 +1,7 @@
 import { Injectable, signal, NgZone, EventEmitter } from '@angular/core';
 import { detectLanguageFromText } from '../utils/vehicle-info-extractor';
 import { NativeService } from './native.service';
+import { ServerTtsService } from './server-tts.service';
 
 export interface VoiceLanguage {
   code: string;
@@ -112,7 +113,11 @@ export class VoiceDiagnosisService {
   // Constructor-injected rather than inject(): the existing spec builds this
   // service with `new` outside an injection context, and a field initializer
   // would throw NG0203 there.
-  constructor(private zone: NgZone, private native: NativeService) {
+  constructor(
+    private zone: NgZone,
+    private native: NativeService,
+    private serverTts: ServerTtsService,
+  ) {
     if (typeof window !== 'undefined') {
       this.muted.set(localStorage.getItem(MUTE_KEY) === 'true');
       const saved = localStorage.getItem(LANG_KEY);
@@ -487,40 +492,59 @@ export class VoiceDiagnosisService {
   // ── TTS ──────────────────────────────────────────────────────────────────
 
   speak(text: string) {
-    // Deliberately not gated on synthSupported: on Android the check is
-    // useless in both directions. `speechSynthesis` is usually present in the
-    // WebView and produces no sound, and where it is absent the device engine
-    // can still speak. _doSpeak decides.
-    if (!this.synthSupported && !this.native.isNative) return;
+    // Not gated on synthSupported: the check is useless on Android in both
+    // directions, and the server can speak where neither engine can.
+    // _doSpeak decides.
     this.pendingSpeakText = text;
     if (this.muted()) return;
     this._doSpeak(text);
   }
 
   private _doSpeak(text: string) {
-    // Android first. The WebView's speechSynthesis accepts an utterance and
-    // stays silent, so trying it first would look like success and the report
-    // would never be read aloud — which is exactly what was reported from the
-    // installed APK while the website spoke normally.
+    // Order: device engine, then server, then browser.
+    //
+    // The device engine is free, instant and offline, so it goes first. It can
+    // only speak languages the phone has voice data for, though, and Android
+    // ships very little for Indian languages — so when it cannot, the server
+    // synthesises instead. Nobody is asked to install anything.
+    //
+    // The WebView's speechSynthesis is last because it is the one that lies:
+    // it accepts an utterance, reports success and makes no sound.
     if (this.native.isNative) {
       this.speakingState.set('speaking');
-      this.native.speak(text, this.selectedLanguage().code).then((spoken) => {
-        this.zone.run(() => {
-          this.speakingState.set('idle');
-          if (!spoken) {
-            // Say why, on screen. The device engine failing used to produce
-            // exactly nothing — no sound and no message — which reads as the
-            // feature being broken rather than the phone lacking a voice.
-            this.errorMessage.set(this._speechErrorMessage());
-            // The browser path is still worth a try rather than saying
-            // nothing at all, even though it is usually mute in a WebView.
-            if (this.synthSupported) this._doSpeakInBrowser(text);
-          }
-        });
-      });
+      void this._speakNativeThenServer(text);
       return;
     }
-    this._doSpeakInBrowser(text);
+    if (this.synthSupported) {
+      this._doSpeakInBrowser(text);
+      return;
+    }
+    // A browser with no speechSynthesis at all (some Safari and Firefox
+    // builds) — the reason the server endpoint was written in the first place.
+    this.speakingState.set('speaking');
+    void this._speakOnServer(text);
+  }
+
+  private async _speakNativeThenServer(text: string) {
+    const spoken = await this.native.speak(text, this.selectedLanguage().code);
+    if (spoken) {
+      this.zone.run(() => this.speakingState.set('idle'));
+      return;
+    }
+    await this._speakOnServer(text);
+  }
+
+  /** Last resort before giving up: synthesise on the server and play it. */
+  private async _speakOnServer(text: string) {
+    const played = await this.serverTts.speak(text, this.selectedLanguage().code);
+    this.zone.run(() => {
+      this.speakingState.set('idle');
+      if (played) return;
+      // Both paths failed. Try the browser anyway — it costs nothing and
+      // occasionally works — and only then say something.
+      if (this.synthSupported) this._doSpeakInBrowser(text);
+      this.errorMessage.set(this._speechErrorMessage());
+    });
   }
 
   /**
@@ -532,12 +556,17 @@ export class VoiceDiagnosisService {
    * investigating will have.
    */
   private _speechErrorMessage(): string {
-    const lang = this.selectedLanguage().label;
-    const reason = this.native.lastSpeakError;
+    // Reached only when the device engine AND the server both failed, which
+    // for a released build means the server has no TTS provider configured.
+    // No instruction to the user here: there is nothing they can reasonably
+    // do about it, and telling them to install voice data is a debugging step
+    // dressed up as guidance.
+    const reasons = [this.native.lastSpeakError, this.serverTts.lastError]
+      .filter(Boolean)
+      .join('; ');
     return (
-      `Your phone has no ${lang} voice installed. Add one under ` +
-      `Settings → Accessibility → Text-to-speech output` +
-      (reason ? ` (${reason})` : '')
+      `Could not read this report aloud on this device.` +
+      (reasons ? ` (${reasons})` : '')
     );
   }
 
@@ -575,10 +604,11 @@ export class VoiceDiagnosisService {
     if (this.synthSupported) {
       window.speechSynthesis.cancel();
     }
-    // Both engines: whichever spoke, this is what closing the overlay calls,
-    // and a report still being read aloud after it is dismissed is worse than
-    // one that never started.
+    // All three paths: whichever spoke, this is what closing the overlay
+    // calls, and a report still being read aloud after it is dismissed is
+    // worse than one that never started.
     void this.native.stopSpeaking();
+    this.serverTts.stop();
     this.speakingState.set('idle');
     this.currentUtterance = null;
   }

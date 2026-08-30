@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   VoiceDiagnosisService, VOICE_LANGUAGES, CONSENT_VERSION,
 } from './voice-diagnosis.service';
@@ -8,7 +10,9 @@ describe('VoiceDiagnosisService', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     svc = TestBed.inject(VoiceDiagnosisService);
   });
 
@@ -37,7 +41,7 @@ describe('VoiceDiagnosisService', () => {
 
     it('persists consent across service instances', () => {
       svc.recordConsent(true);
-      const fresh = new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any, { isNative: false } as any);
+      const fresh = new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any, { isNative: false } as any, { speak: () => Promise.resolve(false), stop: () => {}, lastError: "" } as any);
       expect(fresh.hasConsent()).toBeTrue();
     });
 
@@ -56,13 +60,13 @@ describe('VoiceDiagnosisService', () => {
         granted: true, version: CONSENT_VERSION - 1,
         at: new Date().toISOString(), language: 'en-IN',
       }));
-      const fresh = new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any, { isNative: false } as any);
+      const fresh = new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any, { isNative: false } as any, { speak: () => Promise.resolve(false), stop: () => {}, lastError: "" } as any);
       expect(fresh.hasConsent()).toBeFalse();
     });
 
     it('survives a corrupt stored consent entry', () => {
       localStorage.setItem('gq_voice_consent', 'not-json');
-      expect(() => new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any, { isNative: false } as any)).not.toThrow();
+      expect(() => new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any, { isNative: false } as any, { speak: () => Promise.resolve(false), stop: () => {}, lastError: "" } as any)).not.toThrow();
     });
 
     it('revokes consent', () => {
@@ -177,7 +181,9 @@ describe('VoiceDiagnosisService transcript assembly', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     svc = TestBed.inject(VoiceDiagnosisService);
   });
 
