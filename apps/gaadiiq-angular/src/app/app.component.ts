@@ -6,6 +6,7 @@ import { InstallPwaComponent } from './components/install-pwa/install-pwa.compon
 import { ChatWidgetComponent } from './components/chat-widget/chat-widget.component';
 import { NativeService } from './services/native.service';
 import { SwUpdate } from '@angular/service-worker';
+import { environment } from '../environments/environment';
 import { TranslatePipe } from './pipes/translate.pipe';
 
 @Component({
@@ -64,8 +65,24 @@ export class AppComponent implements OnInit {
     this.watchForNewVersions();
 
     if (this.native.isNative) {
-      // Register for push notifications (MOB-015)
-      this.native.registerPush().catch(() => { /* non-fatal */ });
+      // Register for push notifications (MOB-015), when there is a Firebase
+      // configuration to register against.
+      //
+      // The .catch() below is not the guard it looks like. Without
+      // google-services.json, PushNotifications.register() throws
+      // IllegalStateException inside the native plugin, on Android's own
+      // Handler thread — the process dies before the promise can reject. The
+      // installed debug APK crashed on every launch, before drawing a frame:
+      //
+      //   java.lang.IllegalStateException: Default FirebaseApp is not
+      //   initialized in this process com.gaadiiq.app
+      //   at com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin.register
+      //
+      // So the call has to be avoided rather than caught. The flag goes on in
+      // the same change that adds google-services.json.
+      if (environment.pushEnabled) {
+        this.native.registerPush().catch(() => { /* non-fatal once configured */ });
+      }
 
       // Root/jailbreak detection (MOB-037)
       this.native.isRootedOrJailbroken().then(rooted => {
