@@ -1,0 +1,52 @@
+/* LAY-007: page content clears the fixed navbar. Both admin screens shipped
+   without this and rendered their own titles under the nav — unnoticed because
+   they sit behind adminGuard and nobody had opened them in a browser. */
+.au-page {
+  padding-top: max(7rem, var(--nav-offset));
+  padding-bottom: 4rem;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding-inline: 1rem;
+}
+
+.au-title { font-size: 1.6rem; margin-bottom: .25rem; }
+.au-sub { color: var(--text-muted); margin-bottom: 1.5rem; }
+
+.au-error {
+  background: color-mix(in srgb, #dc2626 12%, transparent);
+  color: var(--danger-ink, #b91c1c);
+  border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem;
+}
+.au-toast {
+  background: color-mix(in srgb, var(--teal) 14%, transparent);
+  color: var(--teal-ink); border-radius: .5rem;
+  padding: .75rem 1rem; margin-bottom: 1rem;
+}
+
+.au-section-title { font-size: 1.05rem; margin: 2rem 0 .75rem; }
+
+.au-row {
+  display: flex; align-items: center; gap: 1rem;
+  padding: .85rem 1rem; border: 1px solid var(--divider);
+  border-radius: .6rem; margin-bottom: .6rem; background: var(--fill-dim);
+}
+.au-row-main { flex: 1; min-width: 0; }
+.au-row-name { font-weight: 600; }
+.au-row-meta { color: var(--text-muted); font-size: .85rem; }
+.au-badge {
+  font-size: .75rem; padding: .15rem .5rem; border-radius: 1rem;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--info-ink);
+}
+.au-row-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+.au-form { display: grid; gap: .75rem; margin: 1rem 0; }
+.au-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .75rem; }
+.au-field { display: flex; flex-direction: column; gap: .25rem; }
+.au-field label { font-size: .8rem; color: var(--text-muted); }
+.au-field input {
+  padding: .5rem .6rem; border: 1px solid var(--divider);
+  border-radius: .4rem; background: var(--surface, #fff); color: inherit;
+}
+.au-hint { font-size: .78rem; color: var(--text-muted); }
+.au-empty { color: var(--text-muted); }

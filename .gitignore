@@ -64,3 +64,7 @@ media_store/
 # Redis snapshot — written into whatever directory redis-server is started from.
 # It is a local dev artifact and was committed once by accident.
 dump.rdb
+
+# YOLOv8 weights, downloaded by the safety-detection tests at run time.
+# 6.3 MB of binary that regenerates itself; it landed in a commit once.
+*.pt

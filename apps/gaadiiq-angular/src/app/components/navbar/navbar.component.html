@@ -334,6 +334,9 @@
                 <a routerLink="/admin/variants" (click)="userMenuOpen.set(false)" class="dropdown-item">
                   <app-icon name="settings" [size]="14"></app-icon> {{ 'Variants' | t }}
                 </a>
+                <a routerLink="/admin/upcoming" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                  <app-icon name="settings" [size]="14"></app-icon> {{ 'Upcoming Cars' | t }}
+                </a>
                 <a routerLink="/admin/mechanics" (click)="userMenuOpen.set(false)" class="dropdown-item">
                   <app-icon name="wrench" [size]="14"></app-icon> Mechanics
                 </a>
@@ -533,6 +536,7 @@
         <a routerLink="/admin/image-review" (click)="closeMenu()" class="mm-item">Image Review</a>
         <a routerLink="/admin/brands" (click)="closeMenu()" class="mm-item">Brand Logos</a>
         <a routerLink="/admin/variants" (click)="closeMenu()" class="mm-item">{{ 'Variants' | t }}</a>
+        <a routerLink="/admin/upcoming" (click)="closeMenu()" class="mm-item">{{ 'Upcoming Cars' | t }}</a>
         <a routerLink="/admin/mechanics" (click)="closeMenu()" class="mm-item">Mechanics</a>
         <a routerLink="/admin/pdf-ingestion" (click)="closeMenu()" class="mm-item">File Ingestion</a>
       </ng-container>
