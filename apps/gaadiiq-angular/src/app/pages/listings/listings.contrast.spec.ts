@@ -71,7 +71,10 @@ function car(over: Partial<Car>): Car {
   return {
     id: 'c1', make: 'Maruti Suzuki', model: 'Fronx', year: 2026,
     price: 930000, km: 0, fuel: 'Petrol', transmission: 'Manual',
-    image: 'assets/cars/placeholder.svg', images: [],
+    // A real photograph: the model grid hides a model without one, and this
+    // spec needs the card rendered in order to measure its contrast.
+    image: 'https://cdn.gaadiiq.test/fronx/front.webp',
+    images: ['https://cdn.gaadiiq.test/fronx/front.webp'],
     rating: 4, reviews: 10, verified: true, bodyType: 'SUV',
     variantCount: 12, variantPriceMin: 684000, variantPriceMax: 1198000,
     features: ['Head-Up Display', '360-Degree Camera', '9-inch SmartPlay Pro+'],
