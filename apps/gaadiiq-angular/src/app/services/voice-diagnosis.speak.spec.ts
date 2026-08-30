@@ -28,6 +28,7 @@ function mount(isNative: boolean, spoken = true) {
   const native = {
     isNative,
     speak: jasmine.createSpy('speak').and.resolveTo(spoken),
+    lastSpeakError: '',
     stopSpeaking: jasmine.createSpy('stopSpeaking').and.resolveTo(undefined),
   };
   TestBed.configureTestingModule({
@@ -163,5 +164,59 @@ describe('VoiceDiagnosisService — whether the UI offers speech at all', () => 
     const { svc } = mount(false);
 
     expect(svc.canPause).toBe(svc.synthSupported);
+  });
+});
+
+describe('VoiceDiagnosisService — when the device cannot speak', () => {
+  // Silence with no explanation is what made this take several rounds to
+  // diagnose: the plugin's reason was caught and discarded, so the phone
+  // showed a report, no sound, and nothing to act on.
+  beforeEach(() => {
+    spyOn(window.speechSynthesis, 'speak').and.stub();
+    spyOn(window.speechSynthesis, 'cancel').and.stub();
+    localStorage.removeItem('gq_voice_muted');
+  });
+
+  it('says so on screen rather than failing silently', async () => {
+    const { svc } = mount(true, /* spoken */ false);
+
+    svc.speak('Brake pads worn.');
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(svc.errorMessage()).toContain('voice installed');
+  });
+
+  it('names the language the user chose', async () => {
+    const { svc } = mount(true, /* spoken */ false);
+    svc.selectedLanguage.set(VOICE_LANGUAGES.find(l => l.code === 'or-IN')!);
+
+    svc.speak('ପରୀକ୍ଷା');
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(svc.errorMessage()).toContain('Odia');
+  });
+
+  it('carries the underlying reason through', async () => {
+    // The only evidence anyone investigating will have.
+    const { svc, native } = mount(true, /* spoken */ false);
+    (native as any).lastSpeakError = 'not installed';
+
+    svc.speak('Brake pads worn.');
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(svc.errorMessage()).toContain('not installed');
+  });
+
+  it('says nothing when the device speaks fine', async () => {
+    const { svc } = mount(true, /* spoken */ true);
+
+    svc.speak('Brake pads worn.');
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(svc.errorMessage()).toBe('');
   });
 });
