@@ -22,8 +22,9 @@ import { TestBed } from '@angular/core/testing';
 
 import { VoiceDiagnosisService, VOICE_LANGUAGES } from './voice-diagnosis.service';
 import { NativeService } from './native.service';
+import { ServerTtsService } from './server-tts.service';
 
-function mount(isNative: boolean, spoken = true) {
+function mount(isNative: boolean, spoken = true, serverPlayed = false) {
   TestBed.resetTestingModule();
   const native = {
     isNative,
@@ -31,12 +32,20 @@ function mount(isNative: boolean, spoken = true) {
     lastSpeakError: '',
     stopSpeaking: jasmine.createSpy('stopSpeaking').and.resolveTo(undefined),
   };
+  const serverTts = {
+    speak: jasmine.createSpy('serverSpeak').and.resolveTo(serverPlayed),
+    stop: jasmine.createSpy('serverStop'),
+    lastError: '',
+  };
   TestBed.configureTestingModule({
-    providers: [{ provide: NativeService, useValue: native }],
+    providers: [
+      { provide: NativeService, useValue: native },
+      { provide: ServerTtsService, useValue: serverTts },
+    ],
   });
   const svc = TestBed.inject(VoiceDiagnosisService);
   svc.muted.set(false);
-  return { svc, native };
+  return { svc, native, serverTts };
 }
 
 describe('VoiceDiagnosisService — speaking the report', () => {
@@ -183,19 +192,9 @@ describe('VoiceDiagnosisService — when the device cannot speak', () => {
     svc.speak('Brake pads worn.');
     await Promise.resolve();
     await Promise.resolve();
-
-    expect(svc.errorMessage()).toContain('voice installed');
-  });
-
-  it('names the language the user chose', async () => {
-    const { svc } = mount(true, /* spoken */ false);
-    svc.selectedLanguage.set(VOICE_LANGUAGES.find(l => l.code === 'or-IN')!);
-
-    svc.speak('ପରୀକ୍ଷା');
-    await Promise.resolve();
     await Promise.resolve();
 
-    expect(svc.errorMessage()).toContain('Odia');
+    expect(svc.errorMessage()).toContain('Could not read this report aloud');
   });
 
   it('carries the underlying reason through', async () => {
@@ -218,5 +217,106 @@ describe('VoiceDiagnosisService — when the device cannot speak', () => {
     await Promise.resolve();
 
     expect(svc.errorMessage()).toBe('');
+  });
+});
+
+describe('VoiceDiagnosisService — server speech as the fallback', () => {
+  /*
+   * Telling a Play Store user to open Settings → Accessibility → Text-to-speech
+   * and install voice data is a debugging step, not a product: almost nobody
+   * will do it, and the report is silent for everyone who does not. Android
+   * ships very little Indian-language voice data, so that is not a rare case.
+   *
+   * So when the device engine cannot speak, the audio is synthesised on the
+   * server (/diagnosis/tts, which existed and had never been called) and
+   * played here. The user is never asked to configure anything and never
+   * learns which path ran.
+   *
+   * The device engine stays first: it is free, instant and offline, and the
+   * server bills per character.
+   */
+  beforeEach(() => {
+    spyOn(window.speechSynthesis, 'speak').and.stub();
+    spyOn(window.speechSynthesis, 'cancel').and.stub();
+    localStorage.removeItem('gq_voice_muted');
+  });
+
+  it('does not call the server when the device speaks', async () => {
+    // The common case, and the one that must stay free.
+    const { svc, serverTts } = mount(true, /* deviceSpoke */ true);
+
+    svc.speak('Brake pads worn.');
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(serverTts.speak).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the server when the phone has no voice', async () => {
+    const { svc, serverTts } = mount(true, /* deviceSpoke */ false, /* served */ true);
+
+    svc.speak('Brake pads worn.');
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(serverTts.speak).toHaveBeenCalled();
+    expect(serverTts.speak.calls.mostRecent().args[0]).toBe('Brake pads worn.');
+  });
+
+  it('sends the chosen language to the server', async () => {
+    const { svc, serverTts } = mount(true, false, true);
+    svc.selectedLanguage.set(VOICE_LANGUAGES.find(l => l.code === 'or-IN')!);
+
+    svc.speak('ପରୀକ୍ଷା');
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(serverTts.speak.calls.mostRecent().args[1]).toBe('or-IN');
+  });
+
+  it('says nothing when the server rescues it', async () => {
+    // The whole point: the user hears the report and sees no error.
+    const { svc } = mount(true, false, /* served */ true);
+
+    svc.speak('Brake pads worn.');
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(svc.errorMessage()).toBe('');
+  });
+
+  it('reports only when device and server have both failed', async () => {
+    const { svc } = mount(true, false, /* served */ false);
+
+    svc.speak('Brake pads worn.');
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(svc.errorMessage()).toContain('Could not read this report aloud');
+  });
+
+  it('no longer tells the user to install voice data', async () => {
+    // The instruction this change exists to remove.
+    const { svc } = mount(true, false, false);
+
+    svc.speak('Brake pads worn.');
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(svc.errorMessage()).not.toContain('Settings');
+    expect(svc.errorMessage()).not.toContain('Text-to-speech');
+  });
+
+  it('stops server audio when speech is cancelled', async () => {
+    const { svc, serverTts } = mount(true, false, true);
+
+    svc.stopSpeaking();
+
+    expect(serverTts.stop).toHaveBeenCalled();
   });
 });
