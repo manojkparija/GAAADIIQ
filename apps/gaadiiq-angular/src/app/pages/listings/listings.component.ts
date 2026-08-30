@@ -125,7 +125,19 @@ export class ListingsComponent implements OnInit {
       const matchRange = type !== 'Used' || range === 'All' ? true :
         range === '< 50k km' ? c.km <= 50000 : c.km > 50000;
 
-      return matchQ && matchMake && matchModel && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchType && matchRange;
+      // A catalogue row with no photograph is not shown, matching the model
+      // grid above it and /new-cars. Without this the same page reported
+      // "1 models available" beside eight cards for the same catalogue, seven
+      // of them reading "No Image Available".
+      //
+      // Adverts are exempt: a listing is a real car someone is trying to sell,
+      // and hiding it for want of a photograph removes them from the
+      // marketplace. isSellerListing cannot make that distinction — it is
+      // `listing_type === 'used'`, so a dealer's advert for a new car reads
+      // false there too.
+      const matchPhoto = this.visible(c);
+
+      return matchQ && matchMake && matchModel && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchType && matchRange && matchPhoto;
     });
 
     const sort = this.selectedSort();
@@ -136,16 +148,30 @@ export class ListingsComponent implements OnInit {
     return cars;
   });
 
+  /**
+   * Shown on the New/Used chips, and counting only what the grid will show.
+   *
+   * These counted every catalogue row, photograph or not, so the page read
+   * "New Cars 8" beside a single card — the chip and the grid disagreeing
+   * about the same catalogue in the reader's field of view. A count is a
+   * promise about what clicking will produce.
+   */
+  private visible = (c: Car) =>
+    c.fromCatalogue === false
+    || (!!c.image && c.image !== PLACEHOLDER && !String(c.image).includes('aeplcdn'));
+
   newCount  = computed(() => {
     const make = this.selectedMake();
     return this.carsData.cars().filter(c =>
       c.km === 0 && c.year >= 2024 && (make === 'All' || c.make === make)
+      && this.visible(c)
     ).length;
   });
   usedCount = computed(() => {
     const make = this.selectedMake();
     return this.carsData.cars().filter(c =>
       (c.km > 0 || c.year < 2024) && (make === 'All' || c.make === make)
+      && this.visible(c)
     ).length;
   });
 

@@ -17,6 +17,16 @@ export interface Car {
   /** Seller-stated condition, as the listing records it ('excellent' | 'good' | …). */
   condition?: string;
   isSellerListing?: boolean;
+  /**
+   * True for a row of the manufacturer catalogue, false for someone's advert.
+   *
+   * isSellerListing does not answer this: it is `listing_type === 'used'`, so
+   * a dealer's advert for a brand-new car reads false there too. The
+   * photograph rule applies to catalogue rows only — an advert is a real car
+   * someone is trying to sell, and hiding it removes them from the
+   * marketplace — so the distinction needs a field of its own.
+   */
+  fromCatalogue?: boolean;
   /** Published trims for this model, 0 when none have been entered. */
   variantCount?: number;
   /**
@@ -305,6 +315,7 @@ function mapListing(lst: ApiListing): Car {
     owners,
     condition: lst.condition ?? undefined,
     isSellerListing: lst.listing_type === 'used',
+    fromCatalogue: false,
     sellerEmail: lst.seller?.email,
     ...(() => {
       const enrichFn = MODEL_SPECS[makeModel];
@@ -368,6 +379,7 @@ function mapCatalogueCar(car: ApiCar): Car {
     verified: true,
     bodyType: BODY_LABEL[car.body_type ?? ''] ?? car.body_type ?? '',
     isSellerListing: false,
+    fromCatalogue: true,
     variantCount: car.variant_count ?? 0,
     variantPriceMin: rupeesOrUndefined(car.variant_price_min),
     variantPriceMax: rupeesOrUndefined(car.variant_price_max),
