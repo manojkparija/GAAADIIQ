@@ -295,8 +295,19 @@ export class NativeService {
    * native platform or the engine refused, so the caller can fall back to
    * speechSynthesis rather than going silent.
    */
+  /**
+   * Why the last speak() attempt failed, for the caller to show.
+   *
+   * Swallowing this was a mistake: the report was silent on the phone and the
+   * reason — no engine, no voice for the locale, a plugin error — existed only
+   * inside a catch block that discarded it, which cost several rounds of
+   * guessing to not diagnose.
+   */
+  lastSpeakError = '';
+
   async speak(text: string, lang: string, rate = 0.88): Promise<boolean> {
     if (!this.isNative) return false;
+    this.lastSpeakError = '';
     try {
       const { TextToSpeech } = await import('@capacitor-community/text-to-speech');
       await TextToSpeech.stop().catch(() => { /* nothing was playing */ });
@@ -311,9 +322,14 @@ export class NativeService {
         category: 'ambient',
       });
       return true;
-    } catch {
+    } catch (err: any) {
       // No engine, no voice for this locale, or the user has never installed
-      // TTS data. The browser path is still worth a try.
+      // TTS data. The browser path is still worth a try, but the reason must
+      // survive: a silent failure here is indistinguishable from a working
+      // feature nobody pressed.
+      this.lastSpeakError =
+        err?.message || err?.errorMessage || String(err) || 'unknown error';
+      console.warn('[GAADIIQ] device speech failed:', lang, this.lastSpeakError);
       return false;
     }
   }

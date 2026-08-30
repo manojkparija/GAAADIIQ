@@ -507,14 +507,38 @@ export class VoiceDiagnosisService {
       this.native.speak(text, this.selectedLanguage().code).then((spoken) => {
         this.zone.run(() => {
           this.speakingState.set('idle');
-          // No engine or no voice for this locale — the browser path is still
-          // worth a try rather than saying nothing at all.
-          if (!spoken && this.synthSupported) this._doSpeakInBrowser(text);
+          if (!spoken) {
+            // Say why, on screen. The device engine failing used to produce
+            // exactly nothing — no sound and no message — which reads as the
+            // feature being broken rather than the phone lacking a voice.
+            this.errorMessage.set(this._speechErrorMessage());
+            // The browser path is still worth a try rather than saying
+            // nothing at all, even though it is usually mute in a WebView.
+            if (this.synthSupported) this._doSpeakInBrowser(text);
+          }
         });
       });
       return;
     }
     this._doSpeakInBrowser(text);
+  }
+
+  /**
+   * Actionable text for a failed device speech attempt.
+   *
+   * The overwhelmingly common cause is that Android has no voice data
+   * installed for the chosen language — which the user can fix, but only if
+   * told. The raw reason is appended because it is the only evidence anyone
+   * investigating will have.
+   */
+  private _speechErrorMessage(): string {
+    const lang = this.selectedLanguage().label;
+    const reason = this.native.lastSpeakError;
+    return (
+      `Your phone has no ${lang} voice installed. Add one under ` +
+      `Settings → Accessibility → Text-to-speech output` +
+      (reason ? ` (${reason})` : '')
+    );
   }
 
   private _doSpeakInBrowser(text: string) {
