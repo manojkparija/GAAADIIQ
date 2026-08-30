@@ -88,6 +88,27 @@ export class VoiceDiagnosisService {
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private pendingSpeakText = '';
 
+  /**
+   * Whether anything can read text aloud here — the gate the UI must use.
+   *
+   * `synthSupported` is feature detection, and on Android it answers the wrong
+   * question in both directions: some WebViews do not expose speechSynthesis
+   * at all (so the controls vanished and the report was text-only, which is
+   * how this was reported), and those that do expose it produce no sound. The
+   * device engine works in both cases.
+   */
+  get canSpeak(): boolean {
+    return this.synthSupported || this.native.isNative;
+  }
+
+  /**
+   * Pause/resume exist only on the browser engine — the device plugin can
+   * stop but not pause, so offering the control natively is a dead button.
+   */
+  get canPause(): boolean {
+    return this.synthSupported && !this.native.isNative;
+  }
+
   // Constructor-injected rather than inject(): the existing spec builds this
   // service with `new` outside an injection context, and a field initializer
   // would throw NG0203 there.
