@@ -28,6 +28,8 @@ import { CarsDataService, PLACEHOLDER } from '../../services/cars-data.service';
 
 const PHOTO = 'https://cdn.gaadiiq.test/s-presso/front.webp';
 
+let fixture: any;
+
 function car(over: Partial<any> = {}): any {
   return {
     id: `id-${over['model'] ?? 'x'}`, make: 'Maruti Suzuki', model: 'S-Presso',
@@ -51,7 +53,8 @@ function mount(cars: any[], params: Record<string, string> = {}) {
       { provide: CarsDataService, useValue: { cars: signal(cars), loading: signal(false), failedSources: signal([]) } },
     ],
   });
-  const c = TestBed.createComponent(CompareComponent).componentInstance as any;
+  fixture = TestBed.createComponent(CompareComponent);
+  const c = fixture.componentInstance as any;
   // The saved/deep-linked keys are resolved in ngOnInit, not the constructor.
   // Without this the two key tests pass without ever exercising the lookup —
   // one of them was green for exactly that reason before this line existed.
@@ -113,6 +116,27 @@ describe('CompareComponent — which cars can be compared', () => {
     const c = mount([car({ model: 'S-Presso' })], { keys: 'Maruti Suzuki||S-Presso' });
 
     expect(c.activeCars().length).toBe(1);
+  });
+
+  it('leaves the table corner blank and unshaded', () => {
+    // The corner cell above the row labels. Emptying its text left the shaded
+    // background behind, which read as a stray grey column — worst on a phone,
+    // where it is 120px wide and as tall as the car images beside it.
+    //
+    // The element itself has to stay: without it every car column shifts one
+    // place left and the header stops lining up with the rows underneath.
+    const c = mount([car({ model: 'S-Presso' }), car({ model: 'Alto', id: 'id-Alto' })]);
+    c.selected.set([c.carsData.cars()[0], c.carsData.cars()[1], null]);
+    fixture.detectChanges();
+
+    const corner = fixture.nativeElement.querySelector('.comp-label-col');
+    expect(corner).withContext('the grid placeholder must remain').toBeTruthy();
+    expect(corner.textContent.trim()).toBe('');
+
+    const bg = getComputedStyle(corner).backgroundColor;
+    expect(['rgba(0, 0, 0, 0)', 'transparent'])
+      .withContext(`corner cell painted ${bg}`)
+      .toContain(bg);
   });
 
   it('searches within what it offers', () => {
