@@ -134,3 +134,34 @@ describe('VoiceDiagnosisService — speaking the report', () => {
     expect(svc.speakingState()).toBe('idle');
   });
 });
+
+describe('VoiceDiagnosisService — whether the UI offers speech at all', () => {
+  // The report came back as text with no Listen control on the phone. The
+  // service had been taught to speak natively, but the template still gated
+  // the whole TTS bar on `synthSupported` — feature detection, which is
+  // exactly the check that does not answer this question on Android.
+  it('offers speech on a native platform', () => {
+    const { svc } = mount(true);
+
+    expect(svc.canSpeak).withContext('the Listen bar must be reachable').toBeTrue();
+  });
+
+  it('offers speech in a browser that has speechSynthesis', () => {
+    const { svc } = mount(false);
+
+    expect(svc.canSpeak).toBe(svc.synthSupported);
+  });
+
+  it('does not offer pause on a native platform', () => {
+    // The device plugin can stop but not pause, so the control would be dead.
+    const { svc } = mount(true);
+
+    expect(svc.canPause).toBeFalse();
+  });
+
+  it('offers pause in a browser', () => {
+    const { svc } = mount(false);
+
+    expect(svc.canPause).toBe(svc.synthSupported);
+  });
+});

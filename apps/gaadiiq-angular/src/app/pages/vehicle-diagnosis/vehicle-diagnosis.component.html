@@ -75,7 +75,7 @@
             }
 
             <div class="hd-actions">
-              <button class="btn-ghost" (click)="speakHistoryDetail()" *ngIf="voice.synthSupported">
+              <button class="btn-ghost" (click)="speakHistoryDetail()" *ngIf="voice.canSpeak">
                 <app-icon name="volume-2" [size]="16"></app-icon> {{ 'Read aloud' | t }}
               </button>
               <button class="btn-ghost" (click)="voice.stopSpeaking()" *ngIf="voice.speakingState() !== 'idle'">
@@ -653,7 +653,7 @@
             <li *ngFor="let q of report.follow_up_questions">{{ q }}</li>
           </ul>
           <div class="followup-actions">
-            <button class="btn-ghost" (click)="speakFollowUps()" *ngIf="voice.synthSupported">
+            <button class="btn-ghost" (click)="speakFollowUps()" *ngIf="voice.canSpeak">
               <app-icon name="volume-2" [size]="16"></app-icon> Read questions aloud
             </button>
             <button class="btn-primary" (click)="answerFollowUps()">
@@ -766,7 +766,7 @@
         </div>
 
         <!-- TTS playback controls -->
-        <div class="tts-bar" *ngIf="voice.synthSupported">
+        <div class="tts-bar" *ngIf="voice.canSpeak">
           <div class="tts-status">
             <span class="tts-icon" [class.active]="voice.speakingState() === 'speaking'"><app-icon name="volume-2" [size]="16"></app-icon></span>
             <span class="tts-label">
@@ -784,10 +784,10 @@
               (click)="playReport()"><app-icon name="play" [size]="16"></app-icon> Listen</button>
             <!-- Pause / Resume -->
             <button type="button" class="tts-btn" title="Pause"
-              *ngIf="voice.speakingState() === 'speaking'"
+              *ngIf="voice.canPause && voice.speakingState() === 'speaking'"
               (click)="voice.pauseSpeaking()">⏸</button>
             <button type="button" class="tts-btn" title="Resume"
-              *ngIf="voice.speakingState() === 'paused'"
+              *ngIf="voice.canPause && voice.speakingState() === 'paused'"
               (click)="voice.resumeSpeaking()"><app-icon name="play" [size]="16"></app-icon></button>
             <!-- Stop -->
             <button type="button" class="tts-btn" title="Stop"
