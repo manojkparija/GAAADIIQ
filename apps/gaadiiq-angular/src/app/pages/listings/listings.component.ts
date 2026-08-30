@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { CarCardComponent } from '../../components/car-card/car-card.component';
 import { IconComponent } from '../../components/icon/icon.component';
-import { CarsDataService, Car, PLACEHOLDER } from '../../services/cars-data.service';
+import { CarsDataService, Car, PLACEHOLDER, hasPhotograph, isShowable } from '../../services/cars-data.service';
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -156,9 +156,7 @@ export class ListingsComponent implements OnInit {
    * about the same catalogue in the reader's field of view. A count is a
    * promise about what clicking will produce.
    */
-  private visible = (c: Car) =>
-    c.fromCatalogue === false
-    || (!!c.image && c.image !== PLACEHOLDER && !String(c.image).includes('aeplcdn'));
+  private visible = isShowable;
 
   newCount  = computed(() => {
     const make = this.selectedMake();
@@ -224,10 +222,8 @@ export class ListingsComponent implements OnInit {
       // The bundled Swift drawing is gone with it: the database is the only
       // source of a car's photographs, so a Swift with none reads the same as
       // any other model rather than keeping a picture after a deletion.
-      const hasPhoto = (c: Car) =>
-        !!c.image && c.image !== PLACEHOLDER && !String(c.image).includes('aeplcdn');
-      const rep = affordable.find(hasPhoto) ?? affordable[0];
-      const image = hasPhoto(rep) ? rep.image : PLACEHOLDER;
+      const rep = affordable.find(hasPhotograph) ?? affordable[0];
+      const image = hasPhotograph(rep) ? rep.image : PLACEHOLDER;
       return {
         make, model,
         image,

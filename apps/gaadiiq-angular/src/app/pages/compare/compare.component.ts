@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CarsDataService, Car } from '../../services/cars-data.service';
+import { CarsDataService, Car, isShowable } from '../../services/cars-data.service';
 import { TcoService, TcoBreakdown } from '../../services/tco.service';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -62,9 +62,13 @@ export class CompareComponent implements OnInit {
       for (const key of keys) {
         if (slot >= 3) break;
         const [make, model] = key.split('||');
-        const car = cars.find(c =>
-          c.make === make && c.model === model && c.km === 0 && c.year >= 2024
-        ) ?? cars.find(c => c.make === make && c.model === model);
+        // Prefer a row with a photograph. A key saved before the model's
+        // images were removed would otherwise reopen a blank card, and the
+        // compare page would keep showing what the rest of the site stopped.
+        const matches = cars.filter(c => c.make === make && c.model === model);
+        const car = matches.find(c => c.km === 0 && c.year >= 2024 && isShowable(c))
+          ?? matches.find(isShowable)
+          ?? null;
         if (car) {
           picked[slot] = car;
           slot++;
@@ -81,16 +85,24 @@ export class CompareComponent implements OnInit {
   popularPicks = computed(() => {
     const seen = new Set<string>();
     const picks: Car[] = [];
-    for (const c of this.carsData.cars()) {
+    for (const c of this.carsData.cars().filter(isShowable)) {
       if (!seen.has(c.make)) { seen.add(c.make); picks.push(c); }
       if (picks.length === 6) break;
     }
     return picks;
   });
 
+  /**
+   * What the picker offers.
+   *
+   * Catalogue rows with no photograph are left out, as they are on the New
+   * Cars and Browse grids. Comparing two blank cards is not a comparison, and
+   * offering a car the rest of the site has stopped showing contradicts it.
+   * Adverts stay: see isShowable.
+   */
   filtered(slot: number) {
     const q = this.search(slot).toLowerCase();
-    const all = this.carsData.cars();
+    const all = this.carsData.cars().filter(isShowable);
     if (!q) return all.slice(0, 10);
     return all.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q)).slice(0, 8);
   }

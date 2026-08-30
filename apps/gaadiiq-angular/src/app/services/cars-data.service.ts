@@ -147,6 +147,42 @@ interface ApiCarListResponse { items: ApiCar[]; total: number; page: number; pag
 export const PLACEHOLDER = 'assets/cars/placeholder.svg';
 
 /**
+ * Whether a car has a photograph the site can actually render.
+ *
+ * Exported because four screens now ask it — the New Cars grid, the Browse
+ * model grid, the Browse card grid and the compare picker — and a copy per
+ * screen is how they came to disagree in the first place: one hid a model with
+ * no picture while its neighbour drew it as a blank card.
+ *
+ * Two exclusions, both deliberate:
+ *
+ * - the placeholder, because mapCatalogueCar substitutes it rather than
+ *   leaving `image` empty, so a truthiness check passes for every car;
+ * - aeplcdn, a third party's URLs that are frequently dead. A broken image
+ *   tag is worse than an honest absence.
+ */
+export function hasPhotograph(car: { image?: string | null }): boolean {
+  return !!car.image
+    && car.image !== PLACEHOLDER
+    && !String(car.image).includes('aeplcdn');
+}
+
+/**
+ * Whether a car belongs on a buyer-facing list at all.
+ *
+ * An advert is exempt from the photograph rule: it is a real car someone is
+ * trying to sell, and hiding it removes them from the marketplace. A catalogue
+ * row with no picture is only an absence of data.
+ *
+ * A row from an older API build carries no `fromCatalogue` and is treated as
+ * catalogue — the safe direction, since an advert wrongly hidden costs a
+ * seller more than a blank catalogue card costs a browser.
+ */
+export function isShowable(car: { image?: string | null; fromCatalogue?: boolean }): boolean {
+  return car.fromCatalogue === false || hasPhotograph(car);
+}
+
+/**
  * Local images keyed by "Make Model" (lower-case).
  *
  * Used for both API listings and the demo fallback, so cars render the same
