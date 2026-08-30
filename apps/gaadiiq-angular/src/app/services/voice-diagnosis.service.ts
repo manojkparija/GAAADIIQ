@@ -548,12 +548,11 @@ export class VoiceDiagnosisService {
   }
 
   /**
-   * Actionable text for a failed device speech attempt.
+   * What to say when nothing could read the report aloud.
    *
-   * The overwhelmingly common cause is that Android has no voice data
-   * installed for the chosen language — which the user can fix, but only if
-   * told. The raw reason is appended because it is the only evidence anyone
-   * investigating will have.
+   * Reached only after the device engine and the server have both failed, so
+   * it is rare and not the user's to fix. The raw reasons are appended
+   * because they are the only evidence anyone investigating will have.
    */
   private _speechErrorMessage(): string {
     // Reached only when the device engine AND the server both failed, which
