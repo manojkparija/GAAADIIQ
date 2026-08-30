@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android app
 
 on:
   push:
@@ -9,9 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: 'Also build a signed release APK (needs keystore secrets)'
+        description: 'Also build a signed release bundle + APK (needs keystore secrets)'
         type: boolean
         default: false
+      version_name:
+        description: 'Version shown to users, e.g. 1.0.0. versionCode is the run number.'
+        type: string
+        default: '1.0.0'
 
 jobs:
   build-apk:
@@ -71,7 +75,7 @@ jobs:
   # secrets. The keystore is written to a temp file outside the workspace and
   # deleted afterwards, so it can never be picked up by an artifact upload.
   release-apk:
-    name: Build signed release APK
+    name: Build signed release bundle
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && inputs.release
 
@@ -84,7 +88,7 @@ jobs:
         run: |
           if [ -z "$KEYSTORE" ]; then
             echo "::error::ANDROID_KEYSTORE_BASE64 is not set. See docs/ANDROID_RELEASE.md."
-            echo "Refusing to build: an unsigned release APK cannot be uploaded to Play,"
+            echo "Refusing to build: an unsigned release cannot be uploaded to Play,"
             echo "and producing one silently would look like success."
             exit 1
           fi
@@ -122,37 +126,60 @@ jobs:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.jks"
 
-      - name: Build signed release APK
+      # Both artifacts, because they are for different things.
+      #
+      # Play has required an AAB for new apps since August 2021 and rejects an
+      # APK upload outright — this job built only an APK, so it could not have
+      # completed a first submission however well it ran.
+      #
+      # The APK stays: it is what goes on a phone directly, for a tester or a
+      # demo, and Play cannot produce one for you before the app is listed.
+      - name: Build signed release bundle and APK
         working-directory: apps/gaadiiq-angular/android
         env:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          # Monotonic, and never reused: Play orders submissions by this and
+          # refuses one it has seen before.
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          ANDROID_VERSION_NAME: ${{ inputs.version_name }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew bundleRelease assembleRelease --no-daemon
 
       # always(): a failed build must not leave the keystore on the runner.
       - name: Shred keystore
         if: always()
         run: shred -u "$RUNNER_TEMP/release.jks" 2>/dev/null || rm -f "$RUNNER_TEMP/release.jks"
 
-      - name: Confirm the APK is actually signed
+      - name: Confirm both artifacts exist and are signed
         working-directory: apps/gaadiiq-angular/android
         run: |
           APK=app/build/outputs/apk/release/app-release.apk
-          ls -la "$APK"
-          # Gradle emits app-release-unsigned.apk when no signing config applied.
-          # Catching that here is the difference between "built" and "shippable".
+          AAB=app/build/outputs/bundle/release/app-release.aab
+
+          # Gradle emits app-release-unsigned.apk when no signing config
+          # applied. Catching that here is the difference between "built" and
+          # "shippable" — an unsigned artifact is a build that looks like a
+          # success and cannot be uploaded.
           if [ ! -f "$APK" ]; then
             echo "::error::No signed APK at $APK — the signing config did not apply."
             exit 1
           fi
+          if [ ! -f "$AAB" ]; then
+            echo "::error::No bundle at $AAB — Play will not accept the APK alone."
+            exit 1
+          fi
+          ls -la "$APK" "$AAB"
+          echo "versionCode: ${{ github.run_number }}"
 
-      - name: Upload release APK
+      - name: Upload release bundle and APK
         uses: actions/upload-artifact@v4
         with:
-          name: gaadiiq-release-apk
-          path: apps/gaadiiq-angular/android/app/build/outputs/apk/release/app-release.apk
+          name: gaadiiq-release
+          path: |
+            apps/gaadiiq-angular/android/app/build/outputs/bundle/release/app-release.aab
+            apps/gaadiiq-angular/android/app/build/outputs/apk/release/app-release.apk
           retention-days: 7

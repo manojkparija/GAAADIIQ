@@ -68,19 +68,44 @@ to Play. An obviously unsigned artifact is the better failure.
 `assembleDebug` is untouched by all of this and keeps working with no setup,
 which is what every contributor and the debug job rely on.
 
+## What the release build produces
+
+Two artifacts, in the `gaadiiq-release` run artifact:
+
+| file | for |
+|---|---|
+| `app-release.aab` | the Play upload. Play has required a bundle for new apps since August 2021 and rejects an APK outright. |
+| `app-release.apk` | putting the app on a phone directly — a tester, a demo. Play cannot make you one before the app is listed. |
+
+`versionCode` comes from the workflow **run number**, which only ever
+increases, so no submission repeats one. `versionName` is the `version_name`
+input on the manual run (default `1.0.0`) — that is the string a user reads,
+and it is a decision rather than something derived, because a hotfix sometimes
+has to ship ahead of a version already uploaded.
+
+Both default to `1` / `1.0` when the environment variables are absent, so
+`assembleDebug` and a local build keep working untouched.
+
 ## Before the first Play upload
 
-- **`versionCode` is still `1`** in `build.gradle`. Play rejects a re-upload of
-  the same code, so it must increase on every submission. Currently manual.
-- **`minifyEnabled false`** — fine to ship, but the APK is larger than it needs
-  to be and the code is not obfuscated.
-- Play now wants an **AAB** (`bundleRelease`) rather than an APK for new apps.
-  The signing config above applies to both; only the Gradle task differs.
+- **`minifyEnabled false`** — fine to ship, but the artifact is larger than it
+  needs to be and the code is not obfuscated.
+- **`google-services.json` is absent**, so push notifications are not wired up.
+  Gradle logs that and carries on, which means the build passes and the feature
+  silently does not exist.
+- Play also needs a privacy policy URL, a Data Safety declaration and a content
+  rating before a first submission. None of those live in this repo.
 
 ## Not verified
 
-The Gradle change could not be built in the environment it was written in — the
-sandbox proxy blocks `dl.google.com`, so no Android dependency resolves and
-Gradle cannot run at all. CI's debug job is the check that it did not break the
-existing build; **the release path itself has never been executed** and will not
-be until someone supplies the four secrets.
+The Gradle changes could not be built in the environment they were written in —
+the sandbox proxy blocks `dl.google.com`, so no Android dependency resolves and
+Gradle cannot run at all. CI's debug job is the check that they did not break
+the existing build; **the release path itself has never been executed** and will
+not be until someone supplies the four secrets.
+
+That applies to the bundle task and the versionCode wiring as much as to the
+signing config: `bundleRelease` is the documented Gradle task and the env-var
+read is ordinary Groovy, but neither has been run here. The first manual run
+with secrets is the first real test, and the artifact check at the end of the
+job is there so a miss shows up as a failure rather than an empty upload.
