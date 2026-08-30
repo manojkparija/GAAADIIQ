@@ -98,6 +98,17 @@ class Settings(BaseSettings):
         "https://localhost:4200",
         "http://127.0.0.1:4200",
         "https://127.0.0.1:4200",
+        # The Android app. capacitor.config.ts sets androidScheme: 'https', so
+        # the WebView serves the bundle from exactly this origin — not from
+        # capacitor://localhost, which is the iOS one.
+        #
+        # Without it every request the APK makes is refused by CORS, and the
+        # app cannot tell that from being offline: the catalogue arrives empty
+        # ("0 listings found", all three chips 0) and the speech upload falls
+        # to its default message, "Could not reach the speech service. Check
+        # your connection and try again." The website is unaffected, which is
+        # why this looked like an APK-only fault and not a CORS one.
+        "https://localhost",
         "capacitor://localhost",
         "ionic://localhost",
         "https://gaadiiq.com",
