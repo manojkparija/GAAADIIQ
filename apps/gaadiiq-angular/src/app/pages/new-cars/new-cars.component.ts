@@ -10,6 +10,20 @@ const COMPARE_KEY = 'gaadiiq_compare_keys';
 const NOTIFY_KEY = 'gaadiiq_upcoming_notify';
 const LUXURY_MIN = 3000000;
 
+/**
+ * The top of the budget slider: ₹2 Cr.
+ *
+ * Also the "no upper bound asked for" value — at the ceiling the filter is
+ * treated as unset, which is why it appears in the reset, the chip count and
+ * the URL sync as well as on the slider.
+ *
+ * It was ₹1 Cr here while the Browse page's slider went to ₹2 Cr, so the same
+ * site offered two different maximums for the same catalogue. Named rather
+ * than repeated: the literal 10000000 also means "one crore" in the two
+ * formatters below, and those must not move with this.
+ */
+const MAX_BUDGET = 20000000;
+
 interface NewCarModel {
   make: string;
   model: string;
@@ -68,6 +82,8 @@ export class NewCarsComponent implements OnInit {
   @ViewChild('modelsSection') modelsSection?: ElementRef<HTMLElement>;
 
   readonly placeholder = PLACEHOLDER;
+  /** The slider's top, for the template. See MAX_BUDGET. */
+  readonly maxBudgetCeiling = MAX_BUDGET;
 
 
   /**
@@ -128,7 +144,7 @@ export class NewCarsComponent implements OnInit {
   selectedFuels = signal<string[]>([]);
   selectedTransmissions = signal<string[]>([]);
   minBudget = signal(0);
-  maxBudget = signal(10000000);
+  maxBudget = signal(MAX_BUDGET);
   selectedSort = signal('Popularity');
 
   bodyTypeOptions = ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Electric', 'Luxury'];
@@ -333,15 +349,15 @@ export class NewCarsComponent implements OnInit {
       + this.selectedFuels().length
       + this.selectedTransmissions().length
       + (this.minBudget() > 0 ? 1 : 0)
-      + (this.maxBudget() < 10000000 ? 1 : 0);
+      + (this.maxBudget() < MAX_BUDGET ? 1 : 0);
   });
 
   budgetFilterLabel = computed(() => {
     const min = this.minBudget();
     const max = this.maxBudget();
-    if (min > 0 && max >= 10000000) return `Above ${this.formatBudgetLabel(min)}`;
-    if (min > 0 && max < 10000000) return `${this.formatBudgetLabel(min)} – ${this.formatBudgetLabel(max)}`;
-    if (max < 10000000) return `Max ${this.formatBudgetLabel(max)}`;
+    if (min > 0 && max >= MAX_BUDGET) return `Above ${this.formatBudgetLabel(min)}`;
+    if (min > 0 && max < MAX_BUDGET) return `${this.formatBudgetLabel(min)} – ${this.formatBudgetLabel(max)}`;
+    if (max < MAX_BUDGET) return `Max ${this.formatBudgetLabel(max)}`;
     return 'Max Budget: ₹1 Cr';
   });
 
@@ -446,7 +462,7 @@ export class NewCarsComponent implements OnInit {
   private syncUrl() {
     const qp: Record<string, string | number> = {};
     if (this.minBudget() > 0) qp['minPrice'] = this.minBudget();
-    if (this.maxBudget() < 10000000) qp['maxPrice'] = this.maxBudget();
+    if (this.maxBudget() < MAX_BUDGET) qp['maxPrice'] = this.maxBudget();
     const bts = this.selectedBodyTypes();
     if (bts.length === 1 && bts[0] !== 'Electric' && bts[0] !== 'Luxury') qp['bodyType'] = bts[0];
     if (bts.includes('Luxury')) qp['bodyType'] = 'Luxury';
@@ -463,7 +479,7 @@ export class NewCarsComponent implements OnInit {
 
   clearBudgetUrl() {
     this.minBudget.set(0);
-    this.maxBudget.set(10000000);
+    this.maxBudget.set(MAX_BUDGET);
     this.syncUrl();
   }
 
@@ -518,7 +534,7 @@ export class NewCarsComponent implements OnInit {
     this.selectedFuels.set([]);
     this.selectedTransmissions.set([]);
     this.minBudget.set(0);
-    this.maxBudget.set(10000000);
+    this.maxBudget.set(MAX_BUDGET);
     this.selectedSort.set('Popularity');
     this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
   }
