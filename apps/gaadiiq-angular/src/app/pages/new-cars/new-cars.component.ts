@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, ElementRef, ViewChild, inject } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
-import { CarsDataService, PLACEHOLDER } from '../../services/cars-data.service';
+import { CarsDataService, PLACEHOLDER, hasPhotograph } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 import { UpcomingCarsService } from '../../services/upcoming-cars.service';
@@ -273,9 +273,7 @@ export class NewCarsComponent implements OnInit {
       // discards an aeplcdn URL and returns the placeholder — so preferring
       // such a row would move "View Details" to a car whose photograph is not
       // going to appear either way.
-      const hasPhoto = (c: { image?: string | null }) =>
-        !!c.image && c.image !== PLACEHOLDER && !c.image.includes('aeplcdn');
-      const rep = inBand.find(hasPhoto) ?? inBand[0];
+      const rep = inBand.find(hasPhotograph) ?? inBand[0];
       // Everything the model is actually sold with, trims included.
       //
       // A catalogue row carries one fuel and one gearbox, and the filters read
