@@ -890,6 +890,25 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     if (report.safe_to_drive === false) {
       parts.push('Warning: Do not drive. Immediate professional inspection required.');
     }
+    // The causes are the reasoning behind the headline, and they were on the
+    // screen but not in the audio — so a driver listening hands-free heard
+    // what the fault might be and nothing about why, which is most of what
+    // makes the report worth anything.
+    //
+    // Confidence is spoken with each one, as it is shown. A cause read out
+    // without it sounds like a finding rather than a possibility.
+    //
+    // Capped at three: the display shows three, and the server rejects a
+    // synthesis request over 3000 characters (routers/diagnosis.py TtsRequest),
+    // which a long list plus the steps could reach.
+    if (report.possible_causes?.length) {
+      const causes = report.possible_causes
+        .slice(0, 3)
+        .map((c: any) =>
+          c.confidence == null ? `${c.cause}` : `${c.cause}, ${c.confidence} percent confidence`
+        );
+      parts.push('Possible causes: ' + causes.join('. '));
+    }
     if (report.recommended_steps?.length) {
       parts.push('Recommended next steps: ' + report.recommended_steps.join('. '));
     }
