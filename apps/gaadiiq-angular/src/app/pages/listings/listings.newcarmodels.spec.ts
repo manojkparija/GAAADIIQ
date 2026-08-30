@@ -21,7 +21,12 @@ function car(over: Partial<Car>): Car {
   return {
     id: 'c1', make: 'Maruti Suzuki', model: 'Fronx', year: 2026,
     price: 930000, km: 0, fuel: 'Petrol', transmission: 'Manual',
-    image: 'assets/cars/placeholder.svg', images: [],
+    // A real photograph, not the placeholder: the grid now hides a model
+    // that has none, and these tests are about the price band and the trim
+    // count. With a placeholder they would pass or fail on the photograph
+    // rule instead of on their own subject.
+    image: 'https://cdn.gaadiiq.test/fronx/front.webp',
+    images: ['https://cdn.gaadiiq.test/fronx/front.webp'],
     rating: 4, reviews: 10, verified: true, bodyType: 'SUV',
     ...over,
   } as Car;

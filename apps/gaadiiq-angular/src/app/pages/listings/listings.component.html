@@ -159,6 +159,16 @@
             </div>
           </div>
         </div>
+        <!--
+          Models matched but none has a photograph, so none is shown. Without
+          this the grid renders as blank space and reads as a broken page —
+          the same falsehood the placeholder cards told, just quieter.
+        -->
+        <div class="empty-state glass-card" *ngIf="newCarModels().length === 0">
+          <div class="empty-icon">📷</div>
+          <h3>{{ 'No photographs yet' | t }}</h3>
+          <p>{{ 'These models are in the catalogue but have no pictures, so they are not shown. They appear once photographs are uploaded.' | t }}</p>
+        </div>
       </div>
     </div>
 

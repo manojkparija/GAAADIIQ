@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { CarCardComponent } from '../../components/car-card/car-card.component';
 import { IconComponent } from '../../components/icon/icon.component';
-import { CarsDataService, Car } from '../../services/cars-data.service';
+import { CarsDataService, Car, PLACEHOLDER } from '../../services/cars-data.service';
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -188,11 +188,20 @@ export class ListingsComponent implements OnInit {
         const hi = c.variantPriceMax;
         return lo != null && hi != null ? [lo, hi] : [c.price];
       });
-      const rep = affordable.find(c => c.image && !String(c.image).includes('aeplcdn'))
-        ?? affordable.find(c => c.image) ?? affordable[0];
-      const image = (rep.image && !String(rep.image).includes('aeplcdn'))
-        ? rep.image
-        : (model === 'Swift' ? 'assets/cars/maruti-swift/front.svg' : 'assets/cars/placeholder.svg');
+      // Which row's photograph the card shows.
+      //
+      // The old test was `c.image`, and mapCatalogueCar fills `image` with a
+      // placeholder for a car that has none — so every row passed and the
+      // first won, showing a blank while a later model year had photographs.
+      // Same defect the New Cars grid had.
+      //
+      // The bundled Swift drawing is gone with it: the database is the only
+      // source of a car's photographs, so a Swift with none reads the same as
+      // any other model rather than keeping a picture after a deletion.
+      const hasPhoto = (c: Car) =>
+        !!c.image && c.image !== PLACEHOLDER && !String(c.image).includes('aeplcdn');
+      const rep = affordable.find(hasPhoto) ?? affordable[0];
+      const image = hasPhoto(rep) ? rep.image : PLACEHOLDER;
       return {
         make, model,
         image,
@@ -214,7 +223,11 @@ export class ListingsComponent implements OnInit {
     })
     .filter((m): m is NewCarModel => m !== null &&
       (bt === 'All' || m.bodyType === bt) &&
-      (fuel === 'All' || m.fuel.includes(fuel))
+      (fuel === 'All' || m.fuel.includes(fuel)) &&
+      // A card with no photograph is not shown, as on the New Cars grid.
+      // "No Image Available" on a row of cars reads as a broken page rather
+      // than as a catalogue gap; a model waits until it has a picture.
+      m.image !== PLACEHOLDER
     )
     .sort((a, b) => b.reviews - a.reviews);
   });
