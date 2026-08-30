@@ -37,7 +37,7 @@ describe('VoiceDiagnosisService', () => {
 
     it('persists consent across service instances', () => {
       svc.recordConsent(true);
-      const fresh = new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any);
+      const fresh = new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any, { isNative: false } as any);
       expect(fresh.hasConsent()).toBeTrue();
     });
 
@@ -56,13 +56,13 @@ describe('VoiceDiagnosisService', () => {
         granted: true, version: CONSENT_VERSION - 1,
         at: new Date().toISOString(), language: 'en-IN',
       }));
-      const fresh = new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any);
+      const fresh = new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any, { isNative: false } as any);
       expect(fresh.hasConsent()).toBeFalse();
     });
 
     it('survives a corrupt stored consent entry', () => {
       localStorage.setItem('gq_voice_consent', 'not-json');
-      expect(() => new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any)).not.toThrow();
+      expect(() => new VoiceDiagnosisService(TestBed.inject(TestBed as any) as any, { isNative: false } as any)).not.toThrow();
     });
 
     it('revokes consent', () => {

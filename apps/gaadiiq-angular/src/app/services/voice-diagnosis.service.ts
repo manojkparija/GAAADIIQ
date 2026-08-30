@@ -1,5 +1,6 @@
 import { Injectable, signal, NgZone, EventEmitter } from '@angular/core';
 import { detectLanguageFromText } from '../utils/vehicle-info-extractor';
+import { NativeService } from './native.service';
 
 export interface VoiceLanguage {
   code: string;
@@ -87,7 +88,10 @@ export class VoiceDiagnosisService {
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private pendingSpeakText = '';
 
-  constructor(private zone: NgZone) {
+  // Constructor-injected rather than inject(): the existing spec builds this
+  // service with `new` outside an injection context, and a field initializer
+  // would throw NG0203 there.
+  constructor(private zone: NgZone, private native: NativeService) {
     if (typeof window !== 'undefined') {
       this.muted.set(localStorage.getItem(MUTE_KEY) === 'true');
       const saved = localStorage.getItem(LANG_KEY);
@@ -462,13 +466,37 @@ export class VoiceDiagnosisService {
   // ── TTS ──────────────────────────────────────────────────────────────────
 
   speak(text: string) {
-    if (!this.synthSupported) return;
+    // Deliberately not gated on synthSupported: on Android the check is
+    // useless in both directions. `speechSynthesis` is usually present in the
+    // WebView and produces no sound, and where it is absent the device engine
+    // can still speak. _doSpeak decides.
+    if (!this.synthSupported && !this.native.isNative) return;
     this.pendingSpeakText = text;
     if (this.muted()) return;
     this._doSpeak(text);
   }
 
   private _doSpeak(text: string) {
+    // Android first. The WebView's speechSynthesis accepts an utterance and
+    // stays silent, so trying it first would look like success and the report
+    // would never be read aloud — which is exactly what was reported from the
+    // installed APK while the website spoke normally.
+    if (this.native.isNative) {
+      this.speakingState.set('speaking');
+      this.native.speak(text, this.selectedLanguage().code).then((spoken) => {
+        this.zone.run(() => {
+          this.speakingState.set('idle');
+          // No engine or no voice for this locale — the browser path is still
+          // worth a try rather than saying nothing at all.
+          if (!spoken && this.synthSupported) this._doSpeakInBrowser(text);
+        });
+      });
+      return;
+    }
+    this._doSpeakInBrowser(text);
+  }
+
+  private _doSpeakInBrowser(text: string) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = this.selectedLanguage().code;
@@ -502,6 +530,10 @@ export class VoiceDiagnosisService {
     if (this.synthSupported) {
       window.speechSynthesis.cancel();
     }
+    // Both engines: whichever spoke, this is what closing the overlay calls,
+    // and a report still being read aloud after it is dismissed is worse than
+    // one that never started.
+    void this.native.stopSpeaking();
     this.speakingState.set('idle');
     this.currentUtterance = null;
   }

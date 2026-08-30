@@ -48,6 +48,20 @@ _ISO_639_1 = {
     "or-IN": "or",
 }
 
+#: The subset of the above that Whisper was actually trained on. Odia is not
+#: among them, and naming it is not a degraded result but a hard refusal of the
+#: whole request, measured on Render:
+#:
+#:   400 {"error":{"message":"Language 'or' is not supported.",
+#:        "code":"unsupported_language"}}
+#:
+#: So an unsupported language is sent with no `language` field at all, letting
+#: Whisper detect it. Detection is less accurate than being told, but it
+#: transcribes; the alternative is that Odia speakers get nothing. The offered
+#: language list is not narrowed — the UI still records in Odia, and the
+#: browser path (which does support it) is unaffected.
+_WHISPER_LANGUAGES = {"en", "hi", "bn", "ta", "te", "kn", "ml", "mr", "gu", "pa"}
+
 
 #: Container extension per mime, for the multipart filename. OpenAI reads the
 #: format from the extension; anything not listed here falls back to .webm,
@@ -159,7 +173,10 @@ async def _transcribe_whisper(
     files = {
         "file": (f"audio{_EXTENSIONS.get(mime, '.webm')}", audio, mime or "application/octet-stream")
     }
-    data = {"model": settings.stt_model, "language": _ISO_639_1.get(language, "en")}
+    data: dict[str, str] = {"model": settings.stt_model}
+    iso = _ISO_639_1.get(language, "en")
+    if iso in _WHISPER_LANGUAGES:
+        data["language"] = iso
 
     async with httpx.AsyncClient(timeout=settings.stt_timeout_seconds) as client:
         resp = await client.post(
