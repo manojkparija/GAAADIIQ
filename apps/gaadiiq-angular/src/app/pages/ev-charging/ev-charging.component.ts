@@ -5,6 +5,7 @@ import { CustomSelectComponent, SelectOption } from '../../components/custom-sel
 import { IconComponent } from '../../components/icon/icon.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { GoogleMapsLoader } from '../../services/google-maps-loader.service';
+import { NativeService } from '../../services/native.service';
 import { SeoService } from '../../services/seo.service';
 import {
   ChargerOut,
@@ -48,6 +49,7 @@ const MANUAL = '__manual__';
 export class EvChargingComponent {
   private readonly api = inject(EvChargingService);
   private readonly maps = inject(GoogleMapsLoader);
+  private readonly native = inject(NativeService);
 
   profiles = signal<ChargingProfile[]>([]);
   selectedProfileId = signal<string>('');
@@ -197,15 +199,38 @@ export class EvChargingComponent {
    * takes noticeably longer than reading a cached network position.
    */
   async useMyLocation() {
+    this.locating.set(true);
+    this.error.set(null);
+    this.accuracyM.set(null);
+
+    // On the phone, ask Android for the permission first. Calling
+    // navigator.geolocation straight from a WebView never prompts, so this
+    // branch failed with "Location is blocked for this site. Allow it in your
+    // browser settings" — advice with no browser settings screen behind it.
+    if (this.native.isNative) {
+      try {
+        const pos = await this.native.getCurrentPosition();
+        if (!pos) throw new Error('no fix');
+        this.locating.set(false);
+        this.accuracyM.set(Math.round(pos.coords.accuracy));
+        this.searchedCity.set(null);
+        this.search(pos.coords.latitude, pos.coords.longitude);
+      } catch {
+        this.locating.set(false);
+        this.error.set(
+          'Could not get your location. Check that location is on for GAADIIQ, or enter your city below.',
+        );
+      }
+      return;
+    }
+
     if (!navigator.geolocation) {
+      this.locating.set(false);
       this.error.set(
         'This browser cannot share your location. Enter your city instead.',
       );
       return;
     }
-    this.locating.set(true);
-    this.error.set(null);
-    this.accuracyM.set(null);
 
     navigator.geolocation.getCurrentPosition(
       pos => {
