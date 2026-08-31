@@ -133,3 +133,48 @@ describe('VehicleDiagnosisComponent — the spoken report', () => {
       .toBeLessThan(spoken.indexOf('Does the noise change with speed?'));
   });
 });
+
+describe('VehicleDiagnosisComponent — the model\'s own spoken summary', () => {
+  /*
+   * The scaffolding around the values — "Preliminary diagnosis:", "Possible
+   * causes:", "Recommended next steps:" — was hardcoded English, so a Hindi or
+   * Tamil report was read out wrapped in English. Hand-writing labels for
+   * eleven languages would mean translations nobody here can verify.
+   *
+   * Instead the model that already writes every value in the driver's language
+   * writes the spoken text too. Nothing is invented and nothing is translated
+   * twice. The assembly below stays for the heuristic engine, which returns no
+   * summary and speaks only English anyway.
+   */
+  it('speaks what the model wrote for listening', () => {
+    const spoken = build({ ...REPORT, spoken_summary: 'Your brake pads are worn.' });
+
+    expect(spoken).toBe('Your brake pads are worn.');
+  });
+
+  it('does not wrap it in English labels', () => {
+    // The whole point: no "Preliminary diagnosis:" in front of Hindi prose.
+    const spoken = build({
+      ...REPORT,
+      spoken_summary: 'आपके ब्रेक पैड घिस गए हैं।',
+    });
+
+    expect(spoken).not.toContain('Preliminary diagnosis');
+    expect(spoken).not.toContain('Possible causes');
+  });
+
+  it('falls back to assembling the report when there is no summary', () => {
+    // The heuristic engine. English labels are honest there.
+    const spoken = build({ ...REPORT, spoken_summary: '' });
+
+    expect(spoken).toContain('Preliminary diagnosis');
+    expect(spoken).toContain('Worn brake pads');
+  });
+
+  it('falls back when the field is missing entirely', () => {
+    // An older report read back from history, saved before this field existed.
+    const spoken = build(REPORT);
+
+    expect(spoken).toContain('Preliminary diagnosis');
+  });
+});

@@ -88,6 +88,8 @@ export class VoiceDiagnosisService {
   private deliverTimer: ReturnType<typeof setTimeout> | null = null;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private pendingSpeakText = '';
+  /** Language for the utterance in flight; see speak(). */
+  private pendingSpeakLang = '';
 
   /**
    * Whether anything can read text aloud here — the gate the UI must use.
@@ -491,11 +493,22 @@ export class VoiceDiagnosisService {
 
   // ── TTS ──────────────────────────────────────────────────────────────────
 
-  speak(text: string) {
+  /**
+   * Read `text` aloud.
+   *
+   * `langCode` overrides the voice for this utterance only, without touching
+   * the user's stored voice preference. The report's language and the voice
+   * flow's language are not the same thing: someone who types the form with
+   * the interface set to Hindi gets a Hindi report, while selectedLanguage --
+   * which only the voice conversation ever sets -- is still en-IN. Without
+   * this, that report was read out by an English voice.
+   */
+  speak(text: string, langCode?: string) {
     // Not gated on synthSupported: the check is useless on Android in both
     // directions, and the server can speak where neither engine can.
     // _doSpeak decides.
     this.pendingSpeakText = text;
+    this.pendingSpeakLang = langCode || this.selectedLanguage().code;
     if (this.muted()) return;
     this._doSpeak(text);
   }
@@ -526,7 +539,7 @@ export class VoiceDiagnosisService {
   }
 
   private async _speakNativeThenServer(text: string) {
-    const spoken = await this.native.speak(text, this.selectedLanguage().code);
+    const spoken = await this.native.speak(text, this._speakLang());
     if (spoken) {
       this.zone.run(() => this.speakingState.set('idle'));
       return;
@@ -536,7 +549,7 @@ export class VoiceDiagnosisService {
 
   /** Last resort before giving up: synthesise on the server and play it. */
   private async _speakOnServer(text: string) {
-    const played = await this.serverTts.speak(text, this.selectedLanguage().code);
+    const played = await this.serverTts.speak(text, this._speakLang());
     this.zone.run(() => {
       this.speakingState.set('idle');
       if (played) return;
@@ -569,10 +582,15 @@ export class VoiceDiagnosisService {
     );
   }
 
+  /** The language the utterance in flight should use. */
+  private _speakLang(): string {
+    return this.pendingSpeakLang || this.selectedLanguage().code;
+  }
+
   private _doSpeakInBrowser(text: string) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = this.selectedLanguage().code;
+    utterance.lang = this._speakLang();
     utterance.rate = 0.88;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;

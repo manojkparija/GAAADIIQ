@@ -125,6 +125,17 @@ class DiagnoseResponse(BaseModel):
     # BR-AI-10 — populated only when confidence is below the threshold.
     follow_up_questions: list[str] = []
     needs_more_info: bool = False
+    # The report written to be listened to, in the same language as the rest of
+    # the values. The client used to assemble spoken text itself by joining
+    # fields under English labels — "Preliminary diagnosis:", "Possible
+    # causes:" — which meant a Hindi report was read out with English
+    # scaffolding. The model that wrote the report writes this too, so no
+    # translation is invented anywhere.
+    #
+    # Empty when the heuristic engine answered: it has no language but English,
+    # and a fabricated summary would be indistinguishable from a real one. The
+    # client falls back to its own assembly in that case.
+    spoken_summary: str = ""
     # BR-ML-04 — true when a non-English response was requested but the text
     # is still English, so the client can say so instead of silently misleading.
     translation_failed: bool = False
@@ -444,6 +455,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
             vision_analysis=ai_result.get("vision_analysis"),
             warning_light_match=ai_result.get("warning_light_match"),
             follow_up_questions=ai_result.get("follow_up_questions", []),
+            spoken_summary=ai_result.get("spoken_summary", "") or "",
             needs_more_info=bool(ai_result.get("needs_more_info")),
             translation_failed=bool(ai_result.get("translation_failed")),
             engine=_engine_name(ai_result.get("engine")) or "heuristic",
@@ -477,6 +489,7 @@ async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
         vision_analysis=ai_result.get("vision_analysis"),
         warning_light_match=ai_result.get("warning_light_match"),
         follow_up_questions=ai_result.get("follow_up_questions", []),
+        spoken_summary=ai_result.get("spoken_summary", "") or "",
         needs_more_info=ai_result.get("needs_more_info", False),
         translation_failed=ai_result.get("translation_failed", False),
         engine=ai_result.get("engine", "heuristic"),
