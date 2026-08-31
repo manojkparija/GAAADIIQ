@@ -139,3 +139,90 @@ async def test_every_model_table_and_column_exists_after_migrating(migrated_data
         "outage in miniature — it applies fine and fails on the first SELECT:\n  "
         + "\n  ".join(sorted(missing_columns))
     )
+
+
+@pytest.mark.asyncio
+async def test_every_model_enum_label_exists_after_migrating(migrated_database):
+    """
+    A member added to a Python enum and not to the Postgres type.
+
+    Twice in production now, both in the same dispatch, both after the row had
+    already been written so the customer saw a failure against a job that
+    existed:
+
+        UndefinedObjectError: type "notification_type" does not exist
+        [parameters: (UUID(...), 'job_offer', 'New job 0.02 km away', ...)]
+
+        InvalidTextRepresentationError: invalid input value for enum
+        whatsapp_template: "job_offer"
+        [parameters: ('9199...', 'job_offer', '{"reference": "SR-92A19C", ...}')]
+
+    Migration 0036 fixed the first. Nothing checked the other enum in the same
+    INSERT, so the flow moved one step further and stopped again on the same
+    class of bug.
+
+    The table-and-column comparison above cannot see this: the column exists
+    and has the right type, and only the LABEL is missing. SQLite cannot see it
+    either — it stores these columns as text and accepts anything — which is
+    how a fully green run ships it.
+
+    Extra labels in the database are not failures. A migration may add one
+    ahead of the code, and removing a label from a PostgreSQL enum means
+    recreating the type, so they legitimately outlive the member that needed
+    them.
+    """
+    import models  # noqa: F401 — registers every model on Base.metadata
+    from db.base import Base
+
+    def _compare(sync_conn):
+        inspector = inspect(sync_conn)
+        # {type name: {labels}} as the migrated database actually has them.
+        in_db = {e["name"]: set(e["labels"]) for e in inspector.get_enums()}
+
+        missing = []
+        for table in Base.metadata.sorted_tables:
+            for column in table.columns:
+                enum_type = getattr(column.type, "enums", None)
+                name = getattr(column.type, "name", None)
+                # Native enums only: a plain string column has no type name to
+                # look up, and VARCHAR accepts every value anyway.
+                if not enum_type or not name or name not in in_db:
+                    continue
+                for label in enum_type:
+                    if label not in in_db[name]:
+                        missing.append(f"{name}.{label} ({table.name}.{column.name})")
+        return missing
+
+    async with migrated_database.connect() as conn:
+        missing = await conn.run_sync(_compare)
+
+    assert not missing, (
+        "The models can produce enum labels the migrated database does not "
+        "have. The insert applies right up to the cast and then fails with "
+        "InvalidTextRepresentation — after any row written earlier in the same "
+        "flow:\n  " + "\n  ".join(sorted(missing))
+    )
+
+
+@pytest.mark.asyncio
+async def test_the_enum_check_would_have_caught_job_offer(migrated_database):
+    """
+    The check above is only worth having if it fails on the real bug.
+
+    Asserting the property directly: whatsapp_template must carry every member
+    of the ORM's WhatsAppTemplate. Before migration 0049 this fails on
+    'job_offer' — the production error — and the general test above fails with
+    it.
+    """
+    from models.whatsapp_message import WhatsAppTemplate
+
+    def _labels(sync_conn):
+        return {
+            e["name"]: set(e["labels"]) for e in inspect(sync_conn).get_enums()
+        }.get("whatsapp_template", set())
+
+    async with migrated_database.connect() as conn:
+        labels = await conn.run_sync(_labels)
+
+    assert "job_offer" in labels, "the dispatch broadcast cannot be recorded without it"
+    assert {m.value for m in WhatsAppTemplate} <= labels
