@@ -680,3 +680,140 @@ class TestTheModelRenderActuallyRunsSuite:
         assert post2.call_args.kwargs["data"]["language"] == "bn", (
             "the language survives -- that is the whole point over detection"
         )
+
+
+class TestARefusalWearingADifferentCodeSuite:
+    """
+    Odia worked, then stopped working, and the regression was mine.
+
+    Measured on Render after the model-retry shipped:
+
+        [gaadiiq.stt] STT model whisper-1 does not accept 'or'
+        POST .../audio/transcriptions "HTTP/1.1 400 Bad Request"
+        {"error":{"message":"Language code 'or' is not recognized...",
+                  "param":"language","code":"invalid_value"}}
+        [gaadiiq.stt] STT provider openai failed: Client error '400 Bad Request'
+        "POST /diagnosis/stt HTTP/1.1" 422 Unprocessable Entity
+
+    whisper-1 refuses Odia as "unsupported_language", so the retry correctly
+    moved on. The next model refuses the SAME language as "invalid_value", and
+    the check only knew the first code — so the second refusal was read as a
+    broken request rather than a refused language, the fallback to detection
+    never ran, and Odia returned 422 for a language that had worked the day
+    before.
+
+    Enumerating vendor error codes is the same guess as the hand-written
+    language allow-list that started all of this. The API names the parameter
+    it rejected; that is what gets believed.
+    """
+
+    def setup_method(self):
+        from services import stt
+        stt._REFUSED.clear()
+
+    @staticmethod
+    def _client(*bodies):
+        """One response per body; a 200 body ends the sequence."""
+        responses = []
+        for body in bodies:
+            r = MagicMock()
+            r.status_code = 200 if "text" in body else 400
+            r.text = ""
+            r.json = MagicMock(return_value=body)
+            r.raise_for_status = MagicMock()
+            responses.append(r)
+        post = AsyncMock(side_effect=responses)
+        cm = AsyncMock()
+        cm.__aenter__.return_value.post = post
+        cm.__aexit__.return_value = False
+        return cm, post
+
+    UNSUPPORTED = {"error": {"code": "unsupported_language"}}
+    INVALID_VALUE = {
+        "error": {
+            "message": "Language code 'or' is not recognized.",
+            "param": "language",
+            "code": "invalid_value",
+        }
+    }
+    OK = {"text": "ମୋ ଗାଡ଼ିରୁ ଶବ୍ଦ ଆସୁଛି", "language": "odia"}
+
+    @pytest.mark.asyncio
+    async def test_invalid_value_on_the_language_is_a_refusal(self, openai_provider):
+        # The regression, in one assertion: the second model's refusal must be
+        # recognised so the run continues instead of 422-ing.
+        from services.stt import _is_unsupported_language
+
+        resp = MagicMock()
+        resp.status_code = 400
+        resp.json = MagicMock(return_value=self.INVALID_VALUE)
+
+        assert _is_unsupported_language(resp) is True
+
+    @pytest.mark.asyncio
+    async def test_odia_still_reaches_detection_and_transcribes(self, openai_provider):
+        # End to end: every model refuses, in two different dialects of "no",
+        # and the clip is still transcribed by detection.
+        cm, post = self._client(
+            self.UNSUPPORTED,      # whisper-1
+            self.INVALID_VALUE,    # gpt-4o-transcribe
+            self.INVALID_VALUE,    # gpt-4o-mini-transcribe
+            self.OK,               # detection, no language named
+        )
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "or-IN")
+
+        assert r["text"] == "ମୋ ଗାଡ଼ିରୁ ଶବ୍ଦ ଆସୁଛି"
+        assert "language" not in post.call_args_list[-1].kwargs["data"]
+
+    @pytest.mark.asyncio
+    async def test_a_broken_container_is_still_not_retried(self, openai_provider):
+        # The guard that keeps this from retrying everything: a 400 about the
+        # FILE is not about the language, and asking another model just fails
+        # again more slowly.
+        cm, post = self._client(
+            {"error": {"code": "invalid_value", "param": "file"}},
+            self.OK,
+        )
+        with patch("httpx.AsyncClient", return_value=cm):
+            with pytest.raises(STTError):
+                await transcribe(WEBM, "audio/webm", "or-IN")
+
+        assert post.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_a_400_with_no_error_body_is_not_a_language_refusal(self, openai_provider):
+        from services.stt import _is_unsupported_language
+
+        resp = MagicMock()
+        resp.status_code = 400
+        resp.json = MagicMock(return_value={})
+
+        assert _is_unsupported_language(resp) is False
+
+    @pytest.mark.asyncio
+    async def test_a_non_400_is_never_a_language_refusal(self, openai_provider):
+        # A 500 or a 429 says nothing about the language and must not consume
+        # a model from the candidate list.
+        from services.stt import _is_unsupported_language
+
+        resp = MagicMock()
+        resp.status_code = 500
+        resp.json = MagicMock(return_value={"error": {"param": "language"}})
+
+        assert _is_unsupported_language(resp) is False
+
+    @pytest.mark.asyncio
+    async def test_bengali_is_unaffected(self, openai_provider):
+        # The language this whole sequence was fixed for must keep working.
+        cm, post = self._client(
+            self.UNSUPPORTED,
+            {"text": "আমার গাড়িতে শব্দ হচ্ছে"},
+        )
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert r["text"] == "আমার গাড়িতে শব্দ হচ্ছে"
+        assert post.call_args_list[-1].kwargs["data"]["language"] == "bn", (
+            "the second model accepted it, so the language is still named"
+        )

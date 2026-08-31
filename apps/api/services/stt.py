@@ -118,16 +118,36 @@ def _is_unsupported_language(resp: httpx.Response) -> bool:
     """
     Did the provider refuse the language itself, rather than the audio?
 
-    Matched on the error code the API returns, not on the status: a 400 can
-    also mean an unreadable container, and retrying that without a language
-    would just fail twice.
+    Matched on what the API says was wrong, not on the status alone: a 400 can
+    also mean an unreadable container, and retrying that on another model would
+    just fail twice.
+
+    Two signals, because ONE WAS NOT ENOUGH and Odia proved it. This used to
+    match the error code "unsupported_language" only. whisper-1 refuses Odia
+    that way, so the retry moved to the next model — which refuses the same
+    language differently:
+
+        400 {"error":{"message":"Language code 'or' is not recognized...",
+             "param":"language","code":"invalid_value"}}
+
+    That is the identical situation wearing a different code, and not
+    recognising it meant the second refusal was treated as a broken request:
+    the driver got 422 "No speech was recognised" for a language that had
+    worked the day before. Enumerating vendor error codes is the same guess as
+    the language allow-list this all started with, so `param` is trusted too —
+    the API naming `language` as the offending parameter IS the answer,
+    whatever it calls the code.
     """
     if resp.status_code != 400:
         return False
     try:
-        return resp.json().get("error", {}).get("code") == "unsupported_language"
+        error = resp.json().get("error", {}) or {}
     except Exception:
         return False
+    return (
+        error.get("code") == "unsupported_language"
+        or error.get("param") == "language"
+    )
 
 
 def _bare_mime(content_type: str) -> str:
