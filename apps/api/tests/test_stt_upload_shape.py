@@ -55,8 +55,14 @@ def gpt4o_provider(openai_provider, monkeypatch):
 ALL_MODELS = 1 + len([m for m in _ALTERNATE_MODELS if m != "whisper-1"])
 
 
-def _rejecting_then_ok_client(reject_code="unsupported_language", rejections=1):
-    """`rejections` calls refuse the language; the next one succeeds."""
+def _rejecting_then_ok_client(
+    reject_code="unsupported_language", rejections=1, text="আমার গাড়িতে শব্দ হচ্ছে"
+):
+    """`rejections` calls refuse the language; the next one succeeds.
+
+    `text` matters: a transcript in the wrong script for the requested language
+    is refused by design, so an Odia test must hand back Odia.
+    """
     def _bad():
         bad = MagicMock()
         bad.status_code = 400
@@ -68,7 +74,7 @@ def _rejecting_then_ok_client(reject_code="unsupported_language", rejections=1):
     good = MagicMock()
     good.status_code = 200
     good.text = ""
-    good.json = MagicMock(return_value={"text": "আমার গাড়িতে শব্দ হচ্ছে"})
+    good.json = MagicMock(return_value={"text": text})
     good.raise_for_status = MagicMock()
 
     post = AsyncMock(side_effect=[_bad() for _ in range(rejections)] + [good])
@@ -181,7 +187,9 @@ class TestUnsupportedLanguageSuite:
         from services import stt
         stt._REFUSED.clear()
 
-        cm, post = _rejecting_then_ok_client(rejections=ALL_MODELS)
+        cm, post = _rejecting_then_ok_client(
+            rejections=ALL_MODELS, text="ମୋ ଗାଡ଼ିରୁ ଶବ୍ଦ ଆସୁଛି"
+        )
         with patch("httpx.AsyncClient", return_value=cm):
             await transcribe(WEBM, "audio/webm", "or-IN")
 
@@ -464,7 +472,9 @@ class TestARefusedLanguageTriesAnotherModelSuite:
         # Odia: whisper-1 IS the wide model and it has no Odia, so there is no
         # other model to ask and detection is all that is left. Still better
         # than telling the driver their speech was unclear.
-        cm, post = _rejecting_then_ok_client(rejections=ALL_MODELS)
+        cm, post = _rejecting_then_ok_client(
+            rejections=ALL_MODELS, text="ମୋ ଗାଡ଼ିରୁ ଶବ୍ଦ ଆସୁଛି"
+        )
         with patch("httpx.AsyncClient", return_value=cm):
             await transcribe(WEBM, "audio/webm", "or-IN")
 
@@ -538,24 +548,31 @@ class TestDetectedLanguageIsCheckedSuite:
         return cm, post
 
     @pytest.mark.asyncio
-    async def test_the_detection_request_asks_which_language_it_chose(
-        self, openai_provider
-    ):
-        cm, post = self._detecting_client("bengali")
+    async def test_the_detection_request_names_no_language(self, openai_provider):
+        # This used to assert response_format=verbose_json, so the DETECTED
+        # LANGUAGE came back and could be compared with what was asked for.
+        # Odia showed that comparison was the wrong one -- the detector called
+        # Odia speech "english" and a usable transcript was thrown away. The
+        # script of the returned text is checked instead, which needs nothing
+        # extra in the request.
+        cm, post = self._detecting_client("bengali", text="আমার গাড়িতে শব্দ হচ্ছে")
         with patch("httpx.AsyncClient", return_value=cm):
             await transcribe(WEBM, "audio/webm", "bn-IN")
 
-        assert post.call_args_list[-1].kwargs["data"]["response_format"] == "verbose_json"
+        last = post.call_args_list[-1].kwargs["data"]
+        assert "language" not in last
+        assert "response_format" not in last
 
     @pytest.mark.asyncio
-    async def test_telugu_for_a_bengali_request_is_refused(self, openai_provider):
-        # The reported bug, in one assertion.
-        cm, _ = self._detecting_client("telugu")
+    async def test_telugu_text_for_a_bengali_request_is_refused(self, openai_provider):
+        # The reported bug: Telugu characters are not Bengali ones, so the
+        # driver cannot read this back whatever the detector labelled it.
+        cm, _ = self._detecting_client("telugu", text="నా కారు శబ్దం చేస్తోంది")
         with patch("httpx.AsyncClient", return_value=cm):
             with pytest.raises(STTError) as exc:
                 await transcribe(WEBM, "audio/webm", "bn-IN")
 
-        assert "Telugu" in str(exc.value), "the driver is told what it heard"
+        assert "not available for this language" in str(exc.value)
 
     @pytest.mark.asyncio
     async def test_the_message_does_not_blame_the_speaker(self, openai_provider):
@@ -817,3 +834,152 @@ class TestARefusalWearingADifferentCodeSuite:
         assert post.call_args_list[-1].kwargs["data"]["language"] == "bn", (
             "the second model accepted it, so the language is still named"
         )
+
+
+class TestTheScriptIsWhatIsCheckedSuite:
+    """
+    Odia was refused outright, by a check I had just added.
+
+    Measured on Render:
+
+        [gaadiiq.stt] STT model whisper-1 does not accept 'or'
+        [gaadiiq.stt] STT model gpt-4o-transcribe does not accept 'or'
+        [gaadiiq.stt] STT model gpt-4o-mini-transcribe does not accept 'or'
+        [gaadiiq.stt] No STT model accepts 'or'; falling back to detection
+        POST .../audio/transcriptions "HTTP/1.1 200 OK"
+        [gaadiiq.stt] STT detected english for a or request; refusing the transcript
+        "POST /diagnosis/stt HTTP/1.1" 422 Unprocessable Entity
+
+    Every step worked. No OpenAI model has Odia, so detection is the ONLY path
+    Odia has -- and the previous check compared the detector's LABEL with the
+    requested language and threw the result away when they differed. For a
+    language whose only route is detection, that turns "sometimes mislabelled"
+    into "never works".
+
+    The label was the wrong thing to judge. What reaches the driver is text,
+    and the script it is written in is a fact about that text rather than the
+    detector's opinion of it:
+
+      * Odia characters, labelled "english"  -> keep it. Readable, correct.
+      * Telugu characters for a Bengali ask  -> refuse. Not their language.
+      * Latin characters for an Odia ask     -> refuse. A transliteration the
+                                                driver cannot read back.
+    """
+
+    def setup_method(self):
+        from services import stt
+        stt._REFUSED.clear()
+
+    @staticmethod
+    def _detected(text):
+        """Every model refuses the language; detection returns `text`."""
+        def _bad():
+            r = MagicMock()
+            r.status_code = 400
+            r.text = ""
+            r.json = MagicMock(return_value={"error": {"code": "unsupported_language"}})
+            r.raise_for_status = MagicMock()
+            return r
+
+        good = MagicMock()
+        good.status_code = 200
+        good.text = ""
+        # "english" is what Render actually reported for Odia speech. It must
+        # not matter any more.
+        good.json = MagicMock(return_value={"text": text, "language": "english"})
+        good.raise_for_status = MagicMock()
+
+        post = AsyncMock(side_effect=[_bad() for _ in range(ALL_MODELS)] + [good])
+        cm = AsyncMock()
+        cm.__aenter__.return_value.post = post
+        cm.__aexit__.return_value = False
+        return cm, post
+
+    @pytest.mark.asyncio
+    async def test_odia_text_is_kept_however_it_was_labelled(self, openai_provider):
+        # The reported bug. This is the only route Odia has.
+        cm, _ = self._detected("ମୋ ଗାଡ଼ିରୁ ଶବ୍ଦ ଆସୁଛି")
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "or-IN")
+
+        assert r["text"] == "ମୋ ଗାଡ଼ିରୁ ଶବ୍ଦ ଆସୁଛି"
+        assert r["language"] == "or-IN"
+
+    @pytest.mark.asyncio
+    async def test_a_latin_transliteration_is_still_refused(self, openai_provider):
+        # The driver cannot read their own answer back, and the diagnosis would
+        # be produced from a transliteration. Saying so beats pretending.
+        cm, _ = self._detected("mo gadiru shabda asuchi")
+        with patch("httpx.AsyncClient", return_value=cm):
+            with pytest.raises(STTError) as exc:
+                await transcribe(WEBM, "audio/webm", "or-IN")
+
+        assert "not available for this language" in str(exc.value)
+        assert "clearly" not in str(exc.value).lower(), "never blame their diction"
+
+    @pytest.mark.asyncio
+    async def test_numbers_and_english_words_do_not_disqualify_a_transcript(
+        self, openai_provider
+    ):
+        # Real speech about cars is full of them: "AC", a model name, "2000 km".
+        # A proportion-based rule would reject this perfectly good sentence.
+        cm, _ = self._detected("ମୋ Swift AC 2000 km ପରେ ଶବ୍ଦ କରୁଛି")
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "or-IN")
+
+        assert "Swift" in r["text"]
+
+    @pytest.mark.asyncio
+    async def test_english_is_never_judged(self, openai_provider):
+        # Latin is what English is written in, so there is nothing to compare.
+        cm, _ = self._detected("my car is making a noise")
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "en-IN")
+
+        assert r["text"] == "my car is making a noise"
+
+    @pytest.mark.asyncio
+    async def test_hindi_and_marathi_share_a_script_without_fighting(
+        self, openai_provider
+    ):
+        # Both are Devanagari. Marathi returned for a Hindi request is a
+        # different language but the same letters, and the driver can read it —
+        # a script check cannot tell them apart and must not pretend to.
+        cm, _ = self._detected("माझ्या गाडीतून आवाज येत आहे")
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "hi-IN")
+
+        assert r["text"] == "माझ्या गाडीतून आवाज येत आहे"
+
+    @pytest.mark.asyncio
+    async def test_a_language_that_was_accepted_is_never_script_checked(
+        self, openai_provider
+    ):
+        # The provider was told the language and agreed to it. Second-guessing
+        # that would reject, say, a Hindi answer written in Latin by a model
+        # that was asked for Hindi and had its reasons.
+        cm, _ = _capturing_client({"text": "gaadi se awaaz aa rahi hai"})
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "hi-IN")
+
+        assert r["text"] == "gaadi se awaaz aa rahi hai"
+
+    @pytest.mark.asyncio
+    async def test_auto_detect_is_never_refused(self, openai_provider):
+        # "Detect my language" has no expectation to violate.
+        cm, _ = _capturing_client({"text": "whatever it heard"})
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "auto")
+
+        assert r["text"] == "whatever it heard"
+
+    def test_the_helper_answers_the_question_directly(self):
+        from services.stt import _is_wrong_script
+
+        assert _is_wrong_script("mo gadiru shabda", "or") is True
+        assert _is_wrong_script("ମୋ ଗାଡ଼ିରୁ", "or") is False
+        assert _is_wrong_script("আমার গাড়িতে", "bn") is False
+        assert _is_wrong_script("আমার গাড়িতে", "or") is True, "Bengali is not Odia"
+        # No script on record: never judged, in either direction.
+        assert _is_wrong_script("anything at all", "en") is False
+        assert _is_wrong_script("", "or") is False, "an empty transcript is handled above"
