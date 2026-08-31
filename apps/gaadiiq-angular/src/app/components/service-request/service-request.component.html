@@ -21,7 +21,7 @@
     <!-- The default at the roadside. Offered above the list because someone
          whose car has stopped should not be comparison-shopping, and whoever
          sorts first here is not whoever can arrive soonest. -->
-    <button type="button" class="sr-broadcast" (click)="broadcastInstead()">
+    <button type="button" class="sr-broadcast" *ngIf="canBroadcast()" (click)="broadcastInstead()">
       <span class="sr-broadcast-title">⚡ Send to the nearest available mechanic</span>
       <span class="sr-broadcast-sub">
         We alert every available mechanic within 1 km. The first to accept comes to you.
