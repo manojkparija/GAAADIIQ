@@ -25,7 +25,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from core.config import settings
-from services.stt import STTError, _bare_mime, transcribe
+from services.stt import _ALTERNATE_MODELS, STTError, _bare_mime, transcribe
 
 WEBM = b"\x1a\x45\xdf\xa3" + b"\x00" * 64
 
@@ -35,16 +35,35 @@ def openai_provider(monkeypatch):
     monkeypatch.setattr(settings, "stt_provider", "openai")
     monkeypatch.setattr(settings, "stt_api_key", "sk-test")
     monkeypatch.setattr(settings, "stt_api_url", "")
+    # Pinned, not inherited: STT_MODEL is an environment variable, and which
+    # model is answering decides which languages are accepted. Leaving it to
+    # the default would make these tests pass or fail on Render's config.
+    monkeypatch.setattr(settings, "stt_model", "whisper-1")
     yield
 
 
-def _rejecting_then_ok_client(reject_code="unsupported_language"):
-    """First call refuses the language; the second succeeds without it."""
-    bad = MagicMock()
-    bad.status_code = 400
-    bad.text = '{"error":{"code":"%s"}}' % reject_code
-    bad.json = MagicMock(return_value={"error": {"code": reject_code}})
-    bad.raise_for_status = MagicMock()
+@pytest.fixture
+def gpt4o_provider(openai_provider, monkeypatch):
+    """The narrow-coverage model Render is free to be configured with."""
+    monkeypatch.setattr(settings, "stt_model", "gpt-4o-transcribe")
+    yield
+
+
+#: How many models a refused language is offered to before detection: the
+#: configured one plus every alternate. A test that wants to reach detection
+#: has to exhaust all of them.
+ALL_MODELS = 1 + len([m for m in _ALTERNATE_MODELS if m != "whisper-1"])
+
+
+def _rejecting_then_ok_client(reject_code="unsupported_language", rejections=1):
+    """`rejections` calls refuse the language; the next one succeeds."""
+    def _bad():
+        bad = MagicMock()
+        bad.status_code = 400
+        bad.text = '{"error":{"code":"%s"}}' % reject_code
+        bad.json = MagicMock(return_value={"error": {"code": reject_code}})
+        bad.raise_for_status = MagicMock()
+        return bad
 
     good = MagicMock()
     good.status_code = 200
@@ -52,7 +71,7 @@ def _rejecting_then_ok_client(reject_code="unsupported_language"):
     good.json = MagicMock(return_value={"text": "আমার গাড়িতে শব্দ হচ্ছে"})
     good.raise_for_status = MagicMock()
 
-    post = AsyncMock(side_effect=[bad, good])
+    post = AsyncMock(side_effect=[_bad() for _ in range(rejections)] + [good])
     cm = AsyncMock()
     cm.__aenter__.return_value.post = post
     cm.__aexit__.return_value = False
@@ -160,14 +179,14 @@ class TestUnsupportedLanguageSuite:
         so Odia is offered once and dropped when refused.
         """
         from services import stt
-        stt._REFUSED_LANGUAGES.clear()
+        stt._REFUSED.clear()
 
-        cm, post = _rejecting_then_ok_client()
+        cm, post = _rejecting_then_ok_client(rejections=ALL_MODELS)
         with patch("httpx.AsyncClient", return_value=cm):
             await transcribe(WEBM, "audio/webm", "or-IN")
 
         assert post.call_args_list[0].kwargs["data"]["language"] == "or"
-        assert "language" not in post.call_args_list[1].kwargs["data"]
+        assert "language" not in post.call_args_list[-1].kwargs["data"]
 
     @pytest.mark.asyncio
     async def test_odia_still_transcribes(self, openai_provider):
@@ -292,23 +311,23 @@ class TestRefusedLanguageIsLearnedSuite:
 
     def setup_method(self):
         from services import stt
-        stt._REFUSED_LANGUAGES.clear()
+        stt._REFUSED.clear()
 
     @pytest.mark.asyncio
     async def test_a_refused_language_is_retried_without_one(self, openai_provider):
-        cm, post = _rejecting_then_ok_client()
+        cm, post = _rejecting_then_ok_client(rejections=ALL_MODELS)
         with patch("httpx.AsyncClient", return_value=cm):
             r = await transcribe(WEBM, "audio/webm", "bn-IN")
 
-        assert post.call_count == 2, "the refusal must be retried, not surfaced"
-        assert "language" not in post.call_args_list[1].kwargs["data"]
+        assert post.call_count == ALL_MODELS + 1, "the refusal must be retried"
+        assert "language" not in post.call_args_list[-1].kwargs["data"]
         assert r["text"] == "আমার গাড়িতে শব্দ হচ্ছে"
 
     @pytest.mark.asyncio
     async def test_the_first_attempt_still_names_the_language(self, openai_provider):
         # Being told is more accurate when the provider accepts it, so the
         # naming is not abandoned -- only recovered from.
-        cm, post = _rejecting_then_ok_client()
+        cm, post = _rejecting_then_ok_client(rejections=ALL_MODELS)
         with patch("httpx.AsyncClient", return_value=cm):
             await transcribe(WEBM, "audio/webm", "bn-IN")
 
@@ -317,7 +336,7 @@ class TestRefusedLanguageIsLearnedSuite:
     @pytest.mark.asyncio
     async def test_a_refusal_is_remembered(self, openai_provider):
         # Otherwise every Bengali utterance pays two round trips for ever.
-        cm, _ = _rejecting_then_ok_client()
+        cm, _ = _rejecting_then_ok_client(rejections=ALL_MODELS)
         with patch("httpx.AsyncClient", return_value=cm):
             await transcribe(WEBM, "audio/webm", "bn-IN")
 
@@ -348,3 +367,316 @@ class TestRefusedLanguageIsLearnedSuite:
 
         assert post.call_count == 1
         assert post.call_args.kwargs["data"]["language"] == "hi"
+
+
+class TestARefusedLanguageTriesAnotherModelSuite:
+    """
+    Bengali speech came back as TELUGU.
+
+    Reported after the refusal-learning fix shipped, and visible in the same
+    Render log that showed the fix working:
+
+        POST .../audio/transcriptions "HTTP/1.1 400 Bad Request"
+        [gaadiiq.stt] STT provider openai does not accept 'bn';
+                      retrying with detection
+        POST .../audio/transcriptions "HTTP/1.1 200 OK"
+
+    The retry succeeded, so nothing looked wrong anywhere -- and the transcript
+    was in the wrong language. Dropping the language hands the choice to
+    Whisper's detector, which has no "not sure" answer: a few seconds of
+    Bengali is confidently returned as Telugu, Assamese or Hindi, all
+    neighbours in its embedding space. A wrong language reported as success is
+    worse than the 422 it replaced, because the conversation then continues in
+    it.
+
+    The missed cause was that the refusal is not a property of the language.
+    whisper-1 accepts Bengali; the gpt-4o transcribe models take a much shorter
+    list. STT_MODEL is an environment variable, so which model answers is not
+    visible from the code -- the ALLOWED_ORIGINS trap again.
+
+    So a refused language now asks a WIDER MODEL before it stops naming a
+    language at all.
+    """
+
+    def setup_method(self):
+        from services import stt
+        stt._REFUSED.clear()
+
+    @pytest.mark.asyncio
+    async def test_a_refused_language_is_retried_on_a_wider_model(self, gpt4o_provider):
+        # The fix. The language survives the retry; only the model changes.
+        cm, post = _rejecting_then_ok_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        first, second = post.call_args_list
+        assert first.kwargs["data"]["model"] == "gpt-4o-transcribe"
+        assert second.kwargs["data"]["model"] == "whisper-1"
+        assert second.kwargs["data"]["language"] == "bn", (
+            "dropping the language here is what returned Telugu"
+        )
+        assert r["text"] == "আমার গাড়িতে শব্দ হচ্ছে"
+
+    @pytest.mark.asyncio
+    async def test_detection_is_not_reached_while_a_model_will_take_it(
+        self, gpt4o_provider
+    ):
+        cm, post = _rejecting_then_ok_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post.call_count == 2
+        assert all("language" in c.kwargs["data"] for c in post.call_args_list)
+
+    @pytest.mark.asyncio
+    async def test_the_narrow_model_is_not_asked_again_for_that_language(
+        self, gpt4o_provider
+    ):
+        # The refusal is remembered per (model, language), so Bengali goes
+        # straight to whisper-1 on the next utterance -- one call, not two.
+        cm, _ = _rejecting_then_ok_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        cm2, post2 = _capturing_client({"text": "আবার"})
+        with patch("httpx.AsyncClient", return_value=cm2):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post2.call_count == 1
+        assert post2.call_args.kwargs["data"]["model"] == "whisper-1"
+        assert post2.call_args.kwargs["data"]["language"] == "bn"
+
+    @pytest.mark.asyncio
+    async def test_other_languages_still_use_the_configured_model(self, gpt4o_provider):
+        # Only the refused pair moves. Hindi must not lose the faster model
+        # because Bengali needed the slower one.
+        from services import stt
+        stt._REFUSED.add(("gpt-4o-transcribe", "bn"))
+
+        cm, post = _capturing_client({"text": "ठीक है"})
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "hi-IN")
+
+        assert post.call_args.kwargs["data"]["model"] == "gpt-4o-transcribe"
+
+    @pytest.mark.asyncio
+    async def test_detection_remains_the_last_resort(self, openai_provider):
+        # Odia: whisper-1 IS the wide model and it has no Odia, so there is no
+        # other model to ask and detection is all that is left. Still better
+        # than telling the driver their speech was unclear.
+        cm, post = _rejecting_then_ok_client(rejections=ALL_MODELS)
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "or-IN")
+
+        assert post.call_count == ALL_MODELS + 1
+        assert post.call_args_list[0].kwargs["data"]["language"] == "or"
+        assert "language" not in post.call_args_list[-1].kwargs["data"]
+
+    @pytest.mark.asyncio
+    async def test_an_unreadable_file_never_reaches_the_model_retry(self, gpt4o_provider):
+        # A 400 about the container is not about the language. Retrying it on
+        # another model just fails twice and doubles the latency of a failure.
+        cm, post = _rejecting_then_ok_client(reject_code="invalid_file_format")
+        with patch("httpx.AsyncClient", return_value=cm):
+            with pytest.raises(STTError):
+                await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_auto_detect_is_untouched_by_any_of_this(self, gpt4o_provider):
+        # "detect my language" names no language, so there is nothing to refuse
+        # and nothing to retry.
+        cm, post = _capturing_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "auto")
+
+        assert post.call_count == 1
+        assert "language" not in post.call_args.kwargs["data"]
+
+
+class TestDetectedLanguageIsCheckedSuite:
+    """
+    Bengali speech was transcribed as Telugu and reported as a success.
+
+    When no model will take the language, the clip goes up with none named and
+    Whisper detects. Its detector has no "not sure" answer: given a few seconds
+    of Bengali it returns Telugu, in Telugu script, with no error anywhere. The
+    conversation then continued in Telugu.
+
+    The detector cannot be made right from here. It can be checked: the
+    detection request asks for verbose_json, which names the language it chose,
+    and a transcript in a language the driver did not ask for is refused rather
+    than passed off as theirs. A name we do not recognise is treated as unknown,
+    not as a mismatch -- guessing in the other direction is the same error.
+    """
+
+    def setup_method(self):
+        from services import stt
+        stt._REFUSED.clear()
+
+    @staticmethod
+    def _detecting_client(detected: str, text: str = "నా కారు"):
+        def _bad():
+            bad = MagicMock()
+            bad.status_code = 400
+            bad.text = ""
+            bad.json = MagicMock(return_value={"error": {"code": "unsupported_language"}})
+            bad.raise_for_status = MagicMock()
+            return bad
+
+        good = MagicMock()
+        good.status_code = 200
+        good.text = ""
+        good.json = MagicMock(return_value={"text": text, "language": detected})
+        good.raise_for_status = MagicMock()
+
+        post = AsyncMock(side_effect=[_bad() for _ in range(ALL_MODELS)] + [good])
+        cm = AsyncMock()
+        cm.__aenter__.return_value.post = post
+        cm.__aexit__.return_value = False
+        return cm, post
+
+    @pytest.mark.asyncio
+    async def test_the_detection_request_asks_which_language_it_chose(
+        self, openai_provider
+    ):
+        cm, post = self._detecting_client("bengali")
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post.call_args_list[-1].kwargs["data"]["response_format"] == "verbose_json"
+
+    @pytest.mark.asyncio
+    async def test_telugu_for_a_bengali_request_is_refused(self, openai_provider):
+        # The reported bug, in one assertion.
+        cm, _ = self._detecting_client("telugu")
+        with patch("httpx.AsyncClient", return_value=cm):
+            with pytest.raises(STTError) as exc:
+                await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert "Telugu" in str(exc.value), "the driver is told what it heard"
+
+    @pytest.mark.asyncio
+    async def test_the_message_does_not_blame_the_speaker(self, openai_provider):
+        # "Please speak clearly" for a language the provider cannot take is the
+        # failure this whole area keeps repeating.
+        cm, _ = self._detecting_client("telugu")
+        with patch("httpx.AsyncClient", return_value=cm):
+            with pytest.raises(STTError) as exc:
+                await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert "clearly" not in str(exc.value).lower()
+
+    @pytest.mark.asyncio
+    async def test_a_correct_detection_is_kept(self, openai_provider):
+        # Detection is not always wrong. When it agrees, the transcript stands.
+        cm, _ = self._detecting_client("bengali", text="আমার গাড়িতে শব্দ হচ্ছে")
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert r["text"] == "আমার গাড়িতে শব্দ হচ্ছে"
+
+    @pytest.mark.asyncio
+    async def test_an_unrecognised_name_is_not_treated_as_a_mismatch(
+        self, openai_provider
+    ):
+        # Whisper knows languages we do not list. Not knowing is not evidence.
+        cm, _ = self._detecting_client("assamese", text="কিবা এটা")
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert r["text"] == "কিবা এটা"
+
+    @pytest.mark.asyncio
+    async def test_a_model_that_accepts_the_language_is_never_second_guessed(
+        self, openai_provider
+    ):
+        # No detection happened, so there is nothing to check and no
+        # verbose_json to ask for.
+        cm, post = _capturing_client({"text": "ठीक है"})
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "hi-IN")
+
+        assert "response_format" not in post.call_args.kwargs["data"]
+
+    @pytest.mark.asyncio
+    async def test_auto_detect_is_never_refused(self, openai_provider):
+        # "Detect my language" means whatever it detects IS the answer. There
+        # is nothing to compare it against.
+        cm, post = _capturing_client({"text": "আমার গাড়িতে শব্দ হচ্ছে"})
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "auto")
+
+        assert r["text"] == "আমার গাড়িতে শব্দ হচ্ছে"
+        assert "response_format" not in post.call_args.kwargs["data"]
+
+
+class TestTheModelRenderActuallyRunsSuite:
+    """
+    STT_MODEL is unset on Render, so the whisper-1 default is what answers --
+    and whisper-1 is the model that refused Bengali.
+
+    The first version of the model retry fell back to "the widest-coverage
+    model", hardcoded to whisper-1 because the gpt-4o models are documented
+    with a shorter language list. On this deployment that fallback was a no-op:
+    it retried onto the model it was already using. The guess was not wrong
+    about the documentation, it was wrong about which model was in play, which
+    is exactly what an environment variable hides.
+
+    So no model is designated the wide one. A refusal is offered to the others
+    and whichever accepts it is used.
+    """
+
+    def setup_method(self):
+        from services import stt
+        stt._REFUSED.clear()
+
+    @pytest.mark.asyncio
+    async def test_the_default_is_still_whisper_1(self):
+        # If this changes, the reasoning above stops describing production.
+        from core.config import Settings
+
+        assert Settings.model_fields["stt_model"].default == "whisper-1"
+
+    @pytest.mark.asyncio
+    async def test_whisper_refusing_bengali_reaches_another_model(self, openai_provider):
+        # The case on Render today, which the previous fix could not help.
+        cm, post = _rejecting_then_ok_client(rejections=1)
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        first, second = post.call_args_list
+        assert first.kwargs["data"]["model"] == "whisper-1"
+        assert second.kwargs["data"]["model"] != "whisper-1", (
+            "falling back to the model already in use cannot do anything"
+        )
+        assert second.kwargs["data"]["language"] == "bn"
+        assert r["text"] == "আমার গাড়িতে শব্দ হচ্ছে"
+
+    @pytest.mark.asyncio
+    async def test_no_model_is_assumed_to_be_the_widest(self, openai_provider):
+        # Every alternate is offered before detection is reached. Which vendor
+        # model covers which language is not ours to predict.
+        cm, post = _rejecting_then_ok_client(rejections=ALL_MODELS)
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        tried = [c.kwargs["data"]["model"] for c in post.call_args_list[:ALL_MODELS]]
+        assert len(set(tried)) == ALL_MODELS, "each model is asked once, not repeated"
+
+    @pytest.mark.asyncio
+    async def test_the_extra_round_trips_are_paid_once(self, openai_provider):
+        # Otherwise every Bengali utterance walks the whole model list again.
+        cm, _ = _rejecting_then_ok_client(rejections=1)
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        cm2, post2 = _capturing_client({"text": "আবার"})
+        with patch("httpx.AsyncClient", return_value=cm2):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post2.call_count == 1
+        assert post2.call_args.kwargs["data"]["language"] == "bn", (
+            "the language survives -- that is the whole point over detection"
+        )

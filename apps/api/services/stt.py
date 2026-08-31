@@ -57,27 +57,51 @@ _ISO_639_1 = {
 #: English every time. Auto-detect could never leave English on Android.
 AUTO_LANGUAGE = "auto"
 
-#: Languages the provider has REFUSED, learned from its own error rather than
-#: assumed.
+#: (model, language) pairs the provider has REFUSED, learned from its own
+#: error rather than assumed.
 #:
-#: This was a hand-written allow-list of what Whisper "supports". It was wrong:
-#: it contained "bn", and OpenAI rejects Bengali outright —
+#: This was a hand-written allow-list of what Whisper "supports", keyed on the
+#: language alone. Both parts were wrong.
+#:
+#: The list was wrong because it contained "bn" while the API answered
 #:
 #:   400 {"error":{"message":"Language 'bn' is not supported.",
 #:        "code":"unsupported_language"}}
 #:
-#: — exactly as it rejects Odia. Naming a language the provider does not accept
-#: is not a degraded transcription, it is a refusal of the whole request, which
-#: reached the driver as "No speech was recognised. Please speak clearly" — the
-#: app blaming them for a language the vendor will not take.
+#: The key was wrong because that refusal is not a property of the language.
+#: It is a property of the MODEL: the gpt-4o transcribe models take a far
+#: shorter language list than whisper-1, which does accept Bengali. STT_MODEL
+#: is an environment variable, so which model is answering is not visible in
+#: this file — see ALLOWED_ORIGINS in the backlog for the same trap.
 #:
-#: A guessed list cannot be right for long: the vendor's set is theirs to
-#: change, and every wrong entry silently costs one language its voice input.
-#: So the language is offered, and if the provider says it cannot take it, the
-#: clip is sent again with no language at all and the provider detects instead.
-#: The refusal is remembered for the process lifetime so the retry is paid
-#: once, not on every utterance.
-_REFUSED_LANGUAGES: set[str] = set()
+#: Remembering the pair is what lets the retry below try a DIFFERENT model
+#: rather than giving up on the language.
+_REFUSED: set[tuple[str, str]] = set()
+
+#: What Whisper calls each of our languages in a verbose_json response. It
+#: reports a detected language by its English NAME ("bengali"), not by its ISO
+#: code, so the detection fallback below needs this to tell whether what came
+#: back is what the driver asked for.
+_WHISPER_LANGUAGE_NAMES = {
+    "en": "english", "hi": "hindi", "bn": "bengali", "ta": "tamil",
+    "te": "telugu", "kn": "kannada", "ml": "malayalam", "mr": "marathi",
+    "gu": "gujarati", "pa": "punjabi", "or": "odia",
+}
+
+#: Other transcription models to offer a refused language to, in order.
+#:
+#: This was a single "widest-coverage model", set to whisper-1 because the
+#: gpt-4o models are documented as taking a shorter language list. That was
+#: another guess of the same kind as the allow-list before it, and Render
+#: showed it wrong from the other side: STT_MODEL is unset there, so whisper-1
+#: is ALREADY the model in use, and whisper-1 is what refused Bengali. A
+#: fallback to the model you are on cannot do anything.
+#:
+#: Which model has the wider list for a given language is the vendor's to know,
+#: not ours to assume. So a refusal simply asks the other models we have,
+#: keeps whichever accepts it, and remembers the rest. Nothing here claims to
+#: know the answer in advance.
+_ALTERNATE_MODELS = ("whisper-1", "gpt-4o-transcribe", "gpt-4o-mini-transcribe")
 
 
 #: Container extension per mime, for the multipart filename. OpenAI reads the
@@ -208,30 +232,60 @@ async def _transcribe_whisper(
     }
     iso = "" if language == AUTO_LANGUAGE else _ISO_639_1.get(language, "en")
 
-    async def _post(with_language: bool) -> httpx.Response:
-        data: dict[str, str] = {"model": settings.stt_model}
-        if with_language and iso:
-            data["language"] = iso
+    detecting = False
+
+    async def _post(model: str, language: str) -> httpx.Response:
+        data: dict[str, str] = {"model": model}
+        if language:
+            data["language"] = language
+        elif iso:
+            # Detecting on behalf of a driver who DID name a language: ask for
+            # the verbose form so the detected language comes back with the
+            # text and can be checked against what they asked for. Not needed
+            # when they chose "detect my language" — there is nothing to check
+            # it against.
+            data["response_format"] = "verbose_json"
         async with httpx.AsyncClient(timeout=settings.stt_timeout_seconds) as client:
             return await client.post(
                 f"{base.rstrip('/')}/audio/transcriptions",
                 headers=headers, files=files, data=data,
             )
 
-    name_it = bool(iso) and iso not in _REFUSED_LANGUAGES
-    resp = await _post(with_language=name_it)
+    # Models worth asking for this language, in order: the configured one
+    # first, then the wide-coverage one. A pair already refused is skipped
+    # BEFORE the request, not merely recovered from after it — otherwise the
+    # first Bengali utterance retries onto whisper-1 correctly and every one
+    # after it goes back to the narrow model, loses the language, and lands in
+    # detection again.
+    candidates = [settings.stt_model]
+    candidates += [m for m in _ALTERNATE_MODELS if m != settings.stt_model]
+    attempts = [m for m in candidates if not iso or (m, iso) not in _REFUSED]
 
-    # The provider refusing the language is not a failed transcription — the
-    # audio was never looked at. Ask again without naming one and let it
-    # detect: a worse transcript than being told, and immeasurably better than
-    # telling the driver their speech was unclear.
-    if name_it and _is_unsupported_language(resp):
-        logger.info(
-            "STT provider %s does not accept %r; retrying with detection",
-            provider, iso,
+    for model in attempts:
+        resp = await _post(model, iso)
+        # A refused language is not a failed transcription — the audio was
+        # never looked at — and the refusal belongs to the MODEL, not the
+        # language. Any other 400 (an unreadable container, say) is about the
+        # clip, and asking a second model would just fail twice.
+        if not _is_unsupported_language(resp):
+            break
+        logger.info("STT model %s does not accept %r", model, iso)
+        _REFUSED.add((model, iso))
+    else:
+        # No model will take it. Only now do we stop naming a language, and it
+        # is a poor last resort: Whisper's detector has no "not sure" answer,
+        # so a few seconds of Bengali came back confidently transcribed as
+        # Telugu — the wrong language, reported as a success, with the rest of
+        # the conversation then conducted in it. Still better than telling the
+        # driver their own speech was unclear, which is what the alternative
+        # sounds like to them.
+        logger.warning(
+            "No STT model accepts %r; falling back to detection, which may "
+            "return the wrong language",
+            iso,
         )
-        _REFUSED_LANGUAGES.add(iso)
-        resp = await _post(with_language=False)
+        detecting = True
+        resp = await _post(candidates[0], "")
 
     if resp.status_code >= 400:
         # The vendor says why in the body; without it the log shows only
@@ -246,6 +300,31 @@ async def _transcribe_whisper(
     text = body.get("text") or ""
     if not text:
         raise STTError("No speech detected in the recording.")
+
+    # Bengali speech came back as Telugu. The detector had guessed a
+    # neighbouring Indic language and transcribed confidently in it, so a wrong
+    # language arrived as a successful transcription and the rest of the
+    # conversation was conducted in it. Nothing anywhere reported a problem.
+    #
+    # We cannot make the detector right, but we can refuse to pass its answer
+    # off as the driver's. Only a POSITIVE mismatch counts — a name we do not
+    # recognise means we do not know, and guessing here would be the same
+    # mistake in the other direction.
+    if detecting:
+        detected = str(body.get("language") or "").strip().lower()
+        expected = _WHISPER_LANGUAGE_NAMES.get(iso)
+        known = detected in _WHISPER_LANGUAGE_NAMES.values()
+        if known and expected and detected != expected:
+            logger.warning(
+                "STT detected %s for a %s request; refusing the transcript",
+                detected, iso,
+            )
+            raise STTError(
+                f"Speech recognition is not available for this language on "
+                f"this device — it heard {detected.title()}. Please type your "
+                f"answer instead."
+            )
+
     return text, None  # Whisper does not return a usable confidence
 
 
