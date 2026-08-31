@@ -78,14 +78,34 @@ AUTO_LANGUAGE = "auto"
 #: rather than giving up on the language.
 _REFUSED: set[tuple[str, str]] = set()
 
-#: What Whisper calls each of our languages in a verbose_json response. It
-#: reports a detected language by its English NAME ("bengali"), not by its ISO
-#: code, so the detection fallback below needs this to tell whether what came
-#: back is what the driver asked for.
-_WHISPER_LANGUAGE_NAMES = {
-    "en": "english", "hi": "hindi", "bn": "bengali", "ta": "tamil",
-    "te": "telugu", "kn": "kannada", "ml": "malayalam", "mr": "marathi",
-    "gu": "gujarati", "pa": "punjabi", "or": "odia",
+#: The Unicode block each language is written in, as (first, last) codepoints.
+#:
+#: This replaced a check on the language NAME Whisper reports, and Odia is why.
+#: No OpenAI model accepts Odia, so detection is the only path it has — and the
+#: detector labelled Odia speech "english", which the name check treated as a
+#: mismatch and refused. That made the one working path for Odia fail outright:
+#:
+#:   [gaadiiq.stt] No STT model accepts 'or'; falling back to detection
+#:   POST .../audio/transcriptions "HTTP/1.1 200 OK"
+#:   [gaadiiq.stt] STT detected english for a or request; refusing the transcript
+#:   "POST /diagnosis/stt HTTP/1.1" 422 Unprocessable Entity
+#:
+#: The label was never the right thing to judge. What the driver gets back is
+#: TEXT, and the script it is written in is a fact about that text rather than
+#: the detector's opinion of it. Bengali returned in Bengali script is usable
+#: whatever the detector called it; Odia speech returned as Latin letters is
+#: not, whatever it called that either.
+_SCRIPTS = {
+    "hi": (0x0900, 0x097F),  # Devanagari, shared with Marathi
+    "mr": (0x0900, 0x097F),
+    "bn": (0x0980, 0x09FF),  # Bengali
+    "pa": (0x0A00, 0x0A7F),  # Gurmukhi
+    "gu": (0x0A80, 0x0AFF),  # Gujarati
+    "or": (0x0B00, 0x0B7F),  # Odia
+    "ta": (0x0B80, 0x0BFF),  # Tamil
+    "te": (0x0C00, 0x0C7F),  # Telugu
+    "kn": (0x0C80, 0x0CFF),  # Kannada
+    "ml": (0x0D00, 0x0D7F),  # Malayalam
 }
 
 #: Other transcription models to offer a refused language to, in order.
@@ -148,6 +168,27 @@ def _is_unsupported_language(resp: httpx.Response) -> bool:
         error.get("code") == "unsupported_language"
         or error.get("param") == "language"
     )
+
+
+def _is_wrong_script(text: str, iso: str) -> bool:
+    """
+    Did detection return text the driver cannot read back?
+
+    True only when we KNOW the answer is wrong: the language has a script of
+    its own, and not one character of the transcript is in it. A language with
+    no entry in _SCRIPTS (English, or anything added to the picker later
+    without one) can never be judged here, and is left alone.
+
+    Deliberately "any character", not a proportion. Real speech carries digits,
+    units and English loan words — "AC", "2000 km", a model name — and a
+    threshold would reject a perfectly good Odia sentence about a Swift for
+    having too much Latin in it.
+    """
+    block = _SCRIPTS.get(iso)
+    if not block or not text:
+        return False
+    first, last = block
+    return not any(first <= ord(ch) <= last for ch in text)
 
 
 def _bare_mime(content_type: str) -> str:
@@ -258,13 +299,6 @@ async def _transcribe_whisper(
         data: dict[str, str] = {"model": model}
         if language:
             data["language"] = language
-        elif iso:
-            # Detecting on behalf of a driver who DID name a language: ask for
-            # the verbose form so the detected language comes back with the
-            # text and can be checked against what they asked for. Not needed
-            # when they chose "detect my language" — there is nothing to check
-            # it against.
-            data["response_format"] = "verbose_json"
         async with httpx.AsyncClient(timeout=settings.stt_timeout_seconds) as client:
             return await client.post(
                 f"{base.rstrip('/')}/audio/transcriptions",
@@ -321,29 +355,41 @@ async def _transcribe_whisper(
     if not text:
         raise STTError("No speech detected in the recording.")
 
-    # Bengali speech came back as Telugu. The detector had guessed a
+    # Bengali speech came back as Telugu: the detector had guessed a
     # neighbouring Indic language and transcribed confidently in it, so a wrong
     # language arrived as a successful transcription and the rest of the
     # conversation was conducted in it. Nothing anywhere reported a problem.
     #
-    # We cannot make the detector right, but we can refuse to pass its answer
-    # off as the driver's. Only a POSITIVE mismatch counts — a name we do not
-    # recognise means we do not know, and guessing here would be the same
-    # mistake in the other direction.
-    if detecting:
-        detected = str(body.get("language") or "").strip().lower()
-        expected = _WHISPER_LANGUAGE_NAMES.get(iso)
-        known = detected in _WHISPER_LANGUAGE_NAMES.values()
-        if known and expected and detected != expected:
-            logger.warning(
-                "STT detected %s for a %s request; refusing the transcript",
-                detected, iso,
-            )
-            raise STTError(
-                f"Speech recognition is not available for this language on "
-                f"this device — it heard {detected.title()}. Please type your "
-                f"answer instead."
-            )
+    # We cannot make the detector right, but we can check its output against
+    # something that is not an opinion. The script the text is WRITTEN IN is a
+    # fact about the text: Odia speech that comes back in Odia letters is
+    # usable however the detector labelled it, and speech that comes back as
+    # Latin letters is a transliteration the driver cannot read back, whatever
+    # it was labelled.
+    #
+    # Only checked when detecting, and only for a language with a script of its
+    # own. Somebody who asked for detection has no expectation to violate, and
+    # for en-IN there is nothing to distinguish.
+    if detecting and _is_wrong_script(text, iso):
+        # LOGGED, NOT REFUSED, and that distinction is the whole lesson here.
+        #
+        # This began as a refusal, on the reasoning that a transcript in the
+        # wrong script is not the driver's answer. But detection is the ONLY
+        # route a language like Odia has, and Odia worked perfectly well before
+        # any of this: the transcript came back and the conversation continued.
+        # Turning that into a 422 removed a working feature to protect against
+        # a transcript that might have been fine.
+        #
+        # A wrong-script transcript is visible to the driver, who can see the
+        # answer is wrong and try again. A 422 is not recoverable by them at
+        # all. So the observation goes to the log, where it can be acted on
+        # with evidence, and the driver keeps what they had.
+        logger.warning(
+            "STT returned no %s characters for a %s request; the detector "
+            "likely guessed wrong. Transcript kept: the driver can see it and "
+            "retry, and detection is the only route this language has.",
+            iso, iso,
+        )
 
     return text, None  # Whisper does not return a usable confidence
 
