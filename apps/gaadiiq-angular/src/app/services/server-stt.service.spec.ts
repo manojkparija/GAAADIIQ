@@ -225,6 +225,41 @@ describe('ServerSttService — failures the user can act on', () => {
     discardPeriodicTasks();
   }));
 
+  it('shows the reason a 422 gives instead of blaming the speaker', fakeAsync(() => {
+    // Bengali came back as Telugu because no model would take the language and
+    // the detector guessed a neighbour. The server now refuses that transcript
+    // and says what it heard; printing "speak clearly" over the top would tell
+    // the driver their diction was the problem when it never was.
+    void svc.start();
+    tick();
+    void svc.stopAndTranscribe('bn-IN');
+    tick();
+
+    http.expectOne(`${environment.apiUrl}/diagnosis/stt`).flush(
+      { detail: 'Speech recognition is not available for this language on this device — it heard Telugu. Please type your answer instead.' },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+    tick();
+
+    expect(svc.errorMessage()).toContain('Telugu');
+    expect(svc.errorMessage()).not.toContain('clearly');
+    discardPeriodicTasks();
+  }));
+
+  it('keeps the fixed message when a 422 carries no reason', fakeAsync(() => {
+    void svc.start();
+    tick();
+    void svc.stopAndTranscribe('en-IN');
+    tick();
+
+    http.expectOne(`${environment.apiUrl}/diagnosis/stt`)
+      .flush(null, { status: 422, statusText: 'Unprocessable Entity' });
+    tick();
+
+    expect(svc.errorMessage()).toContain('No speech was recognised');
+    discardPeriodicTasks();
+  }));
+
   it('clears a previous error when a new recording starts', fakeAsync(() => {
     svc.errorMessage.set('something old');
 

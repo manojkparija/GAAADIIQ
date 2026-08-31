@@ -177,7 +177,14 @@ export class ServerSttService {
       }
       return result;
     } catch (err: any) {
-      this.errorMessage.set(this._httpErrorMessage(err?.status));
+      // A 422 is the one status where the API's `detail` is written to be
+      // read by the driver, and this used to throw it away and print "speak
+      // clearly" over all of them alike — including the language the provider
+      // could not recognise, which blamed them for a vendor limitation. Every
+      // other status carries internal text ("not configured") and keeps the
+      // fixed message.
+      const detail = err?.status === 422 ? err?.error?.detail : '';
+      this.errorMessage.set(detail || this._httpErrorMessage(err?.status));
       return null;
     } finally {
       this.uploading.set(false);
