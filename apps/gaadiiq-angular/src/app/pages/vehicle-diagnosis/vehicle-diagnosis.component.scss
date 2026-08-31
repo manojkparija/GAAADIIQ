@@ -488,7 +488,9 @@
   display: flex; align-items: center; justify-content: center; padding: 16px;
 }
 .sc-modal {
-  background: var(--card-bg, #fff); border-radius: 20px; width: 100%; max-width: 560px;
+  // --bg, not --card-bg: the latter is 4% opaque under [data-theme="dark"],
+  // and this sheet showed the page straight through it.
+  background: var(--bg); border-radius: 20px; width: 100%; max-width: 560px;
   max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
 }
 .sc-modal-header {
@@ -568,8 +570,13 @@
   &:hover { text-decoration: underline; }
 }
 
+// .sc-modal, .history-panel and .voice-lang-dropdown are deliberately absent
+// from both blocks below: they take var(--bg), which is defined in all four
+// theme blocks, so they are right in app-chosen dark with no rule of their
+// own. That is the fix for the sheet that showed the page through it — these
+// overrides only ever ran for OS dark, so anything that depended on them was
+// broken for the in-app choice.
 @media (prefers-color-scheme: dark) {
-  .sc-modal { background: #1e293b; }
   .sc-card { border-color: rgba(255,255,255,0.08); &:hover { border-color: #2563EB; } }
   .sc-close { background: #0f172a; }
   .sc-btn-call, .sc-btn-map { background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%); }
@@ -585,12 +592,15 @@
   input, select, textarea { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
 }
 :root[data-theme="dark"] {
+  // These three were in the media block only, so they never applied when dark
+  // was chosen in the app rather than in the OS.
+  .sc-card { border-color: rgba(255,255,255,0.08); &:hover { border-color: #2563EB; } }
+  .sc-close { background: #0f172a; }
+  .sc-btn-call, .sc-btn-map { background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%); }
   .step-card, .report-card, .report-header, .loading-card, .error-card {
     background: #1e293b; border-color: rgba(255,255,255,0.08);
   }
   .review-desc { background: #0f172a; }
-  // :not(.selected) matters — this selector outranks `.chip.selected`, so
-  // without it a selected chip lost its blue-to-teal gradient in dark mode.
   .chip:not(.selected) { background: #1e293b; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
   .severity-btn { background: #1e293b; border-color: rgba(255,255,255,0.1); }
   .source-tag { background: #0f172a; }
@@ -610,7 +620,8 @@
 }
 
 .history-panel {
-  background: var(--card-bg, #1e293b); border-radius: 16px;
+  // --bg: see .sc-modal. Sits over a full page of text.
+  background: var(--bg); border-radius: 16px;
   border: 1px solid var(--border-soft); width: 100%; max-width: 640px;
   padding: 1.5rem;
 }
@@ -657,8 +668,9 @@
   &.open, &:hover { border-color: #00D4A8; }
 }
 .voice-lang-dropdown {
+  // --bg: floats over the form, so it must not be see-through.
   position: absolute; top: calc(100% + 6px); left: 0; z-index: 500;
-  background: var(--card-bg); border: 1px solid var(--border);
+  background: var(--bg); border: 1px solid var(--border);
   border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); min-width: 180px; overflow: hidden;
 }
 .lang-option {

@@ -67,7 +67,9 @@ export default defineConfig({
       // backend started at all — every route rendered its text.
       // listing-columns is safe to run here: it reads source files only, starts
       // no browser and needs no API.
-      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns)\.spec\.ts/,
+      // theme-tokens joins listing-columns as a source-only check: no browser,
+      // no API, and it catches a CSS variable nobody ever defined.
+      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {
