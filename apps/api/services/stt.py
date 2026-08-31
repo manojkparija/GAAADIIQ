@@ -371,14 +371,24 @@ async def _transcribe_whisper(
     # own. Somebody who asked for detection has no expectation to violate, and
     # for en-IN there is nothing to distinguish.
     if detecting and _is_wrong_script(text, iso):
+        # LOGGED, NOT REFUSED, and that distinction is the whole lesson here.
+        #
+        # This began as a refusal, on the reasoning that a transcript in the
+        # wrong script is not the driver's answer. But detection is the ONLY
+        # route a language like Odia has, and Odia worked perfectly well before
+        # any of this: the transcript came back and the conversation continued.
+        # Turning that into a 422 removed a working feature to protect against
+        # a transcript that might have been fine.
+        #
+        # A wrong-script transcript is visible to the driver, who can see the
+        # answer is wrong and try again. A 422 is not recoverable by them at
+        # all. So the observation goes to the log, where it can be acted on
+        # with evidence, and the driver keeps what they had.
         logger.warning(
-            "STT returned no %s characters for a %s request; refusing the "
-            "transcript",
+            "STT returned no %s characters for a %s request; the detector "
+            "likely guessed wrong. Transcript kept: the driver can see it and "
+            "retry, and detection is the only route this language has.",
             iso, iso,
-        )
-        raise STTError(
-            "Voice input is not available for this language yet — the "
-            "recogniser has no model for it. Please type your answer instead."
         )
 
     return text, None  # Whisper does not return a usable confidence

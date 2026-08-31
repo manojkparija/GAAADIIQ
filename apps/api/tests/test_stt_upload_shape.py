@@ -564,26 +564,36 @@ class TestDetectedLanguageIsCheckedSuite:
         assert "response_format" not in last
 
     @pytest.mark.asyncio
-    async def test_telugu_text_for_a_bengali_request_is_refused(self, openai_provider):
-        # The reported bug: Telugu characters are not Bengali ones, so the
-        # driver cannot read this back whatever the detector labelled it.
-        cm, _ = self._detecting_client("telugu", text="నా కారు శబ్దం చేస్తోంది")
-        with patch("httpx.AsyncClient", return_value=cm):
-            with pytest.raises(STTError) as exc:
-                await transcribe(WEBM, "audio/webm", "bn-IN")
+    async def test_a_wrong_script_transcript_is_returned_not_refused(
+        self, openai_provider, caplog
+    ):
+        """
+        This asserted a refusal, and the refusal was wrong.
 
-        assert "not available for this language" in str(exc.value)
+        Detection is the only route some languages have -- Odia among them, and
+        Odia worked before any of this was written. Turning a suspect
+        transcript into a 422 removed a working feature to guard against a
+        result that might have been fine. The driver can SEE a wrong answer and
+        try again; they can do nothing at all with a 422. So it is logged for
+        us and kept for them.
+        """
+        cm, _ = self._detecting_client("telugu", text="నా కారు శబ్దం చేస్తోంది")
+        with caplog.at_level("WARNING", logger="gaadiiq.stt"):
+            with patch("httpx.AsyncClient", return_value=cm):
+                r = await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert r["text"] == "నా కారు శబ్దం చేస్తోంది"
+        assert "detector likely guessed wrong" in caplog.text
 
     @pytest.mark.asyncio
-    async def test_the_message_does_not_blame_the_speaker(self, openai_provider):
-        # "Please speak clearly" for a language the provider cannot take is the
-        # failure this whole area keeps repeating.
-        cm, _ = self._detecting_client("telugu")
+    async def test_a_suspect_transcript_costs_the_driver_nothing(self, openai_provider):
+        # No error at all on this path now: whatever came back is handed over,
+        # exactly as it was before any of these checks existed.
+        cm, _ = self._detecting_client("telugu", text="నా కారు")
         with patch("httpx.AsyncClient", return_value=cm):
-            with pytest.raises(STTError) as exc:
-                await transcribe(WEBM, "audio/webm", "bn-IN")
+            r = await transcribe(WEBM, "audio/webm", "bn-IN")
 
-        assert "clearly" not in str(exc.value).lower()
+        assert r["text"] == "నా కారు"
 
     @pytest.mark.asyncio
     async def test_a_correct_detection_is_kept(self, openai_provider):
@@ -906,16 +916,22 @@ class TestTheScriptIsWhatIsCheckedSuite:
         assert r["language"] == "or-IN"
 
     @pytest.mark.asyncio
-    async def test_a_latin_transliteration_is_still_refused(self, openai_provider):
-        # The driver cannot read their own answer back, and the diagnosis would
-        # be produced from a transliteration. Saying so beats pretending.
+    async def test_a_latin_transliteration_is_kept_and_logged(
+        self, openai_provider, caplog
+    ):
+        """
+        Odia in Latin letters is what detection often returns, and this is the
+        exact case that must not become an error: Odia WORKED this way before
+        any of these checks were added. A transliteration the driver can read
+        and correct beats a 422 they cannot do anything with.
+        """
         cm, _ = self._detected("mo gadiru shabda asuchi")
-        with patch("httpx.AsyncClient", return_value=cm):
-            with pytest.raises(STTError) as exc:
-                await transcribe(WEBM, "audio/webm", "or-IN")
+        with caplog.at_level("WARNING", logger="gaadiiq.stt"):
+            with patch("httpx.AsyncClient", return_value=cm):
+                r = await transcribe(WEBM, "audio/webm", "or-IN")
 
-        assert "not available for this language" in str(exc.value)
-        assert "clearly" not in str(exc.value).lower(), "never blame their diction"
+        assert r["text"] == "mo gadiru shabda asuchi"
+        assert "no or characters" in caplog.text, "still visible to us in the log"
 
     @pytest.mark.asyncio
     async def test_numbers_and_english_words_do_not_disqualify_a_transcript(
