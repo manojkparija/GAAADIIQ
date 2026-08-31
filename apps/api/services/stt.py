@@ -57,19 +57,27 @@ _ISO_639_1 = {
 #: English every time. Auto-detect could never leave English on Android.
 AUTO_LANGUAGE = "auto"
 
-#: The subset of the above that Whisper was actually trained on. Odia is not
-#: among them, and naming it is not a degraded result but a hard refusal of the
-#: whole request, measured on Render:
+#: Languages the provider has REFUSED, learned from its own error rather than
+#: assumed.
 #:
-#:   400 {"error":{"message":"Language 'or' is not supported.",
+#: This was a hand-written allow-list of what Whisper "supports". It was wrong:
+#: it contained "bn", and OpenAI rejects Bengali outright —
+#:
+#:   400 {"error":{"message":"Language 'bn' is not supported.",
 #:        "code":"unsupported_language"}}
 #:
-#: So an unsupported language is sent with no `language` field at all, letting
-#: Whisper detect it. Detection is less accurate than being told, but it
-#: transcribes; the alternative is that Odia speakers get nothing. The offered
-#: language list is not narrowed — the UI still records in Odia, and the
-#: browser path (which does support it) is unaffected.
-_WHISPER_LANGUAGES = {"en", "hi", "bn", "ta", "te", "kn", "ml", "mr", "gu", "pa"}
+#: — exactly as it rejects Odia. Naming a language the provider does not accept
+#: is not a degraded transcription, it is a refusal of the whole request, which
+#: reached the driver as "No speech was recognised. Please speak clearly" — the
+#: app blaming them for a language the vendor will not take.
+#:
+#: A guessed list cannot be right for long: the vendor's set is theirs to
+#: change, and every wrong entry silently costs one language its voice input.
+#: So the language is offered, and if the provider says it cannot take it, the
+#: clip is sent again with no language at all and the provider detects instead.
+#: The refusal is remembered for the process lifetime so the retry is paid
+#: once, not on every utterance.
+_REFUSED_LANGUAGES: set[str] = set()
 
 
 #: Container extension per mime, for the multipart filename. OpenAI reads the
@@ -80,6 +88,22 @@ _EXTENSIONS = {
     "audio/mp4": ".mp4", "audio/wav": ".wav", "audio/x-wav": ".wav",
     "audio/aac": ".m4a", "audio/3gpp": ".mp4",
 }
+
+
+def _is_unsupported_language(resp: httpx.Response) -> bool:
+    """
+    Did the provider refuse the language itself, rather than the audio?
+
+    Matched on the error code the API returns, not on the status: a 400 can
+    also mean an unreadable container, and retrying that without a language
+    would just fail twice.
+    """
+    if resp.status_code != 400:
+        return False
+    try:
+        return resp.json().get("error", {}).get("code") == "unsupported_language"
+    except Exception:
+        return False
 
 
 def _bare_mime(content_type: str) -> str:
@@ -182,26 +206,42 @@ async def _transcribe_whisper(
     files = {
         "file": (f"audio{_EXTENSIONS.get(mime, '.webm')}", audio, mime or "application/octet-stream")
     }
-    data: dict[str, str] = {"model": settings.stt_model}
-    if language != AUTO_LANGUAGE:
-        iso = _ISO_639_1.get(language, "en")
-        if iso in _WHISPER_LANGUAGES:
-            data["language"] = iso
+    iso = "" if language == AUTO_LANGUAGE else _ISO_639_1.get(language, "en")
 
-    async with httpx.AsyncClient(timeout=settings.stt_timeout_seconds) as client:
-        resp = await client.post(
-            f"{base.rstrip('/')}/audio/transcriptions",
-            headers=headers, files=files, data=data,
-        )
-        if resp.status_code >= 400:
-            # The vendor says why in the body; without it the log shows only
-            # the status and every 400 looks alike.
-            logger.warning(
-                "STT provider %s rejected the upload: %s %s",
-                provider, resp.status_code, resp.text[:500],
+    async def _post(with_language: bool) -> httpx.Response:
+        data: dict[str, str] = {"model": settings.stt_model}
+        if with_language and iso:
+            data["language"] = iso
+        async with httpx.AsyncClient(timeout=settings.stt_timeout_seconds) as client:
+            return await client.post(
+                f"{base.rstrip('/')}/audio/transcriptions",
+                headers=headers, files=files, data=data,
             )
-        resp.raise_for_status()
-        body = resp.json()
+
+    name_it = bool(iso) and iso not in _REFUSED_LANGUAGES
+    resp = await _post(with_language=name_it)
+
+    # The provider refusing the language is not a failed transcription — the
+    # audio was never looked at. Ask again without naming one and let it
+    # detect: a worse transcript than being told, and immeasurably better than
+    # telling the driver their speech was unclear.
+    if name_it and _is_unsupported_language(resp):
+        logger.info(
+            "STT provider %s does not accept %r; retrying with detection",
+            provider, iso,
+        )
+        _REFUSED_LANGUAGES.add(iso)
+        resp = await _post(with_language=False)
+
+    if resp.status_code >= 400:
+        # The vendor says why in the body; without it the log shows only
+        # the status and every 400 looks alike.
+        logger.warning(
+            "STT provider %s rejected the upload: %s %s",
+            provider, resp.status_code, resp.text[:500],
+        )
+    resp.raise_for_status()
+    body = resp.json()
 
     text = body.get("text") or ""
     if not text:

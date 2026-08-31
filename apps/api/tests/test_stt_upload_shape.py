@@ -25,7 +25,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from core.config import settings
-from services.stt import _bare_mime, transcribe
+from services.stt import STTError, _bare_mime, transcribe
 
 WEBM = b"\x1a\x45\xdf\xa3" + b"\x00" * 64
 
@@ -36,6 +36,27 @@ def openai_provider(monkeypatch):
     monkeypatch.setattr(settings, "stt_api_key", "sk-test")
     monkeypatch.setattr(settings, "stt_api_url", "")
     yield
+
+
+def _rejecting_then_ok_client(reject_code="unsupported_language"):
+    """First call refuses the language; the second succeeds without it."""
+    bad = MagicMock()
+    bad.status_code = 400
+    bad.text = '{"error":{"code":"%s"}}' % reject_code
+    bad.json = MagicMock(return_value={"error": {"code": reject_code}})
+    bad.raise_for_status = MagicMock()
+
+    good = MagicMock()
+    good.status_code = 200
+    good.text = ""
+    good.json = MagicMock(return_value={"text": "আমার গাড়িতে শব্দ হচ্ছে"})
+    good.raise_for_status = MagicMock()
+
+    post = AsyncMock(side_effect=[bad, good])
+    cm = AsyncMock()
+    cm.__aenter__.return_value.post = post
+    cm.__aexit__.return_value = False
+    return cm, post
 
 
 def _capturing_client(json_body=None):
@@ -131,14 +152,22 @@ class TestUnsupportedLanguageSuite:
     """
 
     @pytest.mark.asyncio
-    async def test_odia_is_sent_without_a_language_field(self, openai_provider):
-        cm, post = _capturing_client()
+    async def test_odia_is_offered_then_dropped_when_refused(self, openai_provider):
+        """
+        This used to assert Odia was never named, from a hand-written list of
+        what Whisper supports. That list was the bug -- it also claimed Bengali,
+        which OpenAI refuses. The provider is now asked and its answer believed,
+        so Odia is offered once and dropped when refused.
+        """
+        from services import stt
+        stt._REFUSED_LANGUAGES.clear()
+
+        cm, post = _rejecting_then_ok_client()
         with patch("httpx.AsyncClient", return_value=cm):
             await transcribe(WEBM, "audio/webm", "or-IN")
 
-        assert "language" not in post.call_args.kwargs["data"], (
-            "Whisper has no Odia model; naming it returns 400 for the whole request."
-        )
+        assert post.call_args_list[0].kwargs["data"]["language"] == "or"
+        assert "language" not in post.call_args_list[1].kwargs["data"]
 
     @pytest.mark.asyncio
     async def test_odia_still_transcribes(self, openai_provider):
@@ -235,3 +264,87 @@ class TestAutoDetectedLanguageSuite:
             await transcribe(WEBM, "audio/webm", "auto")
 
         assert post.call_args.kwargs["data"].get("language") != "en"
+
+
+class TestRefusedLanguageIsLearnedSuite:
+    """
+    Bengali speech input never worked, and the app blamed the driver for it.
+
+    Measured on Render, with bn-IN chosen from the picker:
+
+        400 {"error":{"message":"Language 'bn' is not supported.",
+             "code":"unsupported_language"}}
+        POST /diagnosis/stt HTTP/1.1" 422 Unprocessable Entity
+
+    which the app renders as "No speech was recognised. Please speak clearly
+    and try again." The audio was never examined; the provider refused the
+    language before listening.
+
+    The cause was a hand-written list of languages Whisper "supports", written
+    from assumption rather than from the vendor. It contained "bn". A guessed
+    list cannot stay right -- the set belongs to the provider and can change --
+    and every wrong entry silently costs one language its voice input.
+
+    So the provider is asked, and its refusal is believed: the clip goes again
+    with no language named, and detection takes over. The refusal is remembered
+    so the extra round trip is paid once per language per process.
+    """
+
+    def setup_method(self):
+        from services import stt
+        stt._REFUSED_LANGUAGES.clear()
+
+    @pytest.mark.asyncio
+    async def test_a_refused_language_is_retried_without_one(self, openai_provider):
+        cm, post = _rejecting_then_ok_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post.call_count == 2, "the refusal must be retried, not surfaced"
+        assert "language" not in post.call_args_list[1].kwargs["data"]
+        assert r["text"] == "আমার গাড়িতে শব্দ হচ্ছে"
+
+    @pytest.mark.asyncio
+    async def test_the_first_attempt_still_names_the_language(self, openai_provider):
+        # Being told is more accurate when the provider accepts it, so the
+        # naming is not abandoned -- only recovered from.
+        cm, post = _rejecting_then_ok_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post.call_args_list[0].kwargs["data"]["language"] == "bn"
+
+    @pytest.mark.asyncio
+    async def test_a_refusal_is_remembered(self, openai_provider):
+        # Otherwise every Bengali utterance pays two round trips for ever.
+        cm, _ = _rejecting_then_ok_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        cm2, post2 = _capturing_client({"text": "আবার"})
+        with patch("httpx.AsyncClient", return_value=cm2):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post2.call_count == 1
+        assert "language" not in post2.call_args.kwargs["data"]
+
+    @pytest.mark.asyncio
+    async def test_an_unreadable_file_is_not_retried(self, openai_provider):
+        # A 400 that is not about the language means the audio itself was
+        # rejected. Sending it again without a language just fails twice.
+        cm, post = _rejecting_then_ok_client(reject_code="invalid_file_format")
+        with patch("httpx.AsyncClient", return_value=cm):
+            with pytest.raises(STTError):
+                await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_an_accepted_language_costs_one_call(self, openai_provider):
+        # Hindi is accepted, so nothing about this path gets slower.
+        cm, post = _capturing_client({"text": "ठीक है"})
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "hi-IN")
+
+        assert post.call_count == 1
+        assert post.call_args.kwargs["data"]["language"] == "hi"
