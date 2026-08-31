@@ -48,6 +48,15 @@ _ISO_639_1 = {
     "or-IN": "or",
 }
 
+#: Ask the provider to identify the language itself, rather than being told.
+#:
+#: The voice conversation offers "detect my language", and its first pass used
+#: to be sent as English. Whisper obeys a language it is given: told "en", it
+#: transliterates Bengali or Tamil speech into Latin script, so the script
+#: detection that decides the language saw no Indian codepoints and answered
+#: English every time. Auto-detect could never leave English on Android.
+AUTO_LANGUAGE = "auto"
+
 #: The subset of the above that Whisper was actually trained on. Odia is not
 #: among them, and naming it is not a degraded result but a hard refusal of the
 #: whole request, measured on Render:
@@ -174,9 +183,10 @@ async def _transcribe_whisper(
         "file": (f"audio{_EXTENSIONS.get(mime, '.webm')}", audio, mime or "application/octet-stream")
     }
     data: dict[str, str] = {"model": settings.stt_model}
-    iso = _ISO_639_1.get(language, "en")
-    if iso in _WHISPER_LANGUAGES:
-        data["language"] = iso
+    if language != AUTO_LANGUAGE:
+        iso = _ISO_639_1.get(language, "en")
+        if iso in _WHISPER_LANGUAGES:
+            data["language"] = iso
 
     async with httpx.AsyncClient(timeout=settings.stt_timeout_seconds) as client:
         resp = await client.post(
@@ -200,6 +210,11 @@ async def _transcribe_whisper(
 
 
 async def _transcribe_google(audio: bytes, language: str) -> tuple[str, float | None]:
+    # Neither Google's nor Azure's short-audio call detects the language for
+    # us in this shape, so "auto" falls back to the default locale there
+    # rather than pretending. Whisper is the provider this feature relies on.
+    if language == AUTO_LANGUAGE:
+        language = "en-IN"
     if not settings.stt_api_key:
         raise STTUnavailable("Google STT requires STT_API_KEY.")
 
@@ -235,7 +250,7 @@ async def _transcribe_azure(
     if not settings.stt_api_key or not settings.stt_api_url:
         raise STTUnavailable("Azure STT requires STT_API_KEY and STT_API_URL.")
 
-    locale = language if language in _AZURE_LOCALES else "en-IN"
+    locale = language if language in _AZURE_LOCALES else "en-IN"  # includes "auto"
     headers = {
         "Ocp-Apim-Subscription-Key": settings.stt_api_key,
         "Content-Type": content_type or "audio/wav",

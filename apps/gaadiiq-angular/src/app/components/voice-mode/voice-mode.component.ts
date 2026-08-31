@@ -418,7 +418,13 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
   async finishRecording() {
     const cb = this._sttCallback;
     this._sttCallback = null;
-    const result = await this.serverStt.stopAndTranscribe(this.detectedLanguage());
+    // While detecting, ask the provider to identify the language rather than
+    // naming one. Sending "en-IN" made Whisper transliterate Bengali or Tamil
+    // into Latin script, and the script check that picks the language then saw
+    // no Indian codepoints and answered English -- so auto-detect could never
+    // leave English on Android, whatever the driver said.
+    const lang = this.autoDetect ? 'auto' : this.detectedLanguage();
+    const result = await this.serverStt.stopAndTranscribe(lang);
     if (result?.text && cb) {
       this.zone.run(() => cb(result.text));
     }

@@ -17,6 +17,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { signal } from '@angular/core';
+import { ServerSttService } from '../../services/server-stt.service';
 import { VoiceModeComponent } from './voice-mode.component';
 
 describe('VoiceModeComponent echo stripping', () => {
@@ -93,5 +95,74 @@ describe('VoiceModeComponent echo stripping', () => {
     const prompt = 'Got it, Maruti Swift. Now, describe the problem:';
     const heard = 'got it maruti swift now describe the problem the engine is overheating';
     expect(strip(prompt, heard)).toBe('the engine is overheating');
+  });
+});
+
+describe('VoiceModeComponent — detecting the language on Android', () => {
+  /*
+   * Bengali was never recognised — nor any other Indian language — whenever
+   * the driver chose "detect my language" on Android.
+   *
+   * The detecting pass sent the language as en-IN, because that is what the
+   * signal holds before anything has been detected. Whisper obeys: told
+   * English, it transliterates Bengali speech into Latin script instead of
+   * refusing. detectLanguageFromText then looks for Indian codepoints, finds
+   * none, and answers English. Nothing failed; the language was just always
+   * wrong.
+   *
+   * Sending "auto" asks the provider to identify it, which returns the
+   * driver's own script and lets the existing detection work.
+   */
+  function mountVoice(autoDetect: boolean) {
+    TestBed.resetTestingModule();
+    const serverStt = {
+      recording: signal(false),
+      uploading: signal(false),
+      errorMessage: signal(''),
+      elapsed: signal(0),
+      start: jasmine.createSpy('start').and.resolveTo(true),
+      cancel: jasmine.createSpy('cancel'),
+      stopAndTranscribe: jasmine.createSpy('stopAndTranscribe').and.resolveTo(null),
+    };
+    TestBed.configureTestingModule({
+      imports: [VoiceModeComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ServerSttService, useValue: serverStt },
+      ],
+    });
+    const c = TestBed.createComponent(VoiceModeComponent).componentInstance as any;
+    c.autoDetect = autoDetect;
+    return { c, serverStt };
+  }
+
+  it('asks the provider to detect, rather than naming English', async () => {
+    const { c, serverStt } = mountVoice(true);
+
+    await c.finishRecording();
+
+    expect(serverStt.stopAndTranscribe).toHaveBeenCalledWith('auto');
+  });
+
+  it('names the language once the driver has chosen one', async () => {
+    // Being told is more accurate than detecting again, and bn is a language
+    // Whisper has.
+    const { c, serverStt } = mountVoice(false);
+    c.detectedLanguage.set('bn-IN');
+
+    await c.finishRecording();
+
+    expect(serverStt.stopAndTranscribe).toHaveBeenCalledWith('bn-IN');
+  });
+
+  it('never sends en-IN while detecting', async () => {
+    // The exact value that caused this.
+    const { c, serverStt } = mountVoice(true);
+    c.detectedLanguage.set('en-IN');
+
+    await c.finishRecording();
+
+    expect(serverStt.stopAndTranscribe).not.toHaveBeenCalledWith('en-IN');
   });
 });

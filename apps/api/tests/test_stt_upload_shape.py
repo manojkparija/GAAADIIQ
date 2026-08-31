@@ -173,3 +173,65 @@ class TestUnsupportedLanguageSuite:
             await transcribe(WEBM, "audio/webm", "xx-YY")
 
         assert post.call_args.kwargs["data"]["language"] == "en"
+
+
+class TestAutoDetectedLanguageSuite:
+    """
+    Bengali was never recognised, and neither was any other Indian language,
+    whenever the driver chose "detect my language" on Android.
+
+    The conversation's first pass named the language as en-IN, because that is
+    what the language signal holds before anything has been detected. Whisper
+    obeys a language it is given: told English, it TRANSLITERATES Bengali or
+    Tamil speech into Latin script rather than refusing. The client then decides
+    the language by looking for Indian codepoints in the transcript
+    (detectLanguageFromText), finds none, and concludes English. Auto-detect
+    could not escape English no matter what was said into it.
+
+    Nothing failed anywhere. The transcript came back, the conversation
+    continued, and the language was simply always wrong.
+
+    So the detecting pass asks for no language at all and lets Whisper identify
+    it, which returns the driver's own script and lets the existing detection
+    work as designed.
+    """
+
+    @pytest.mark.asyncio
+    async def test_auto_sends_no_language_at_all(self, openai_provider):
+        cm, post = _capturing_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "auto")
+
+        assert "language" not in post.call_args.kwargs["data"], (
+            "naming a language makes Whisper transliterate instead of detect"
+        )
+
+    @pytest.mark.asyncio
+    async def test_auto_returns_the_script_the_speaker_used(self, openai_provider):
+        # The whole point: Bengali audio comes back as Bengali characters, so
+        # the client's script check can identify it.
+        cm, _ = _capturing_client({"text": "আমার গাড়িতে শব্দ হচ্ছে"})
+        with patch("httpx.AsyncClient", return_value=cm):
+            r = await transcribe(WEBM, "audio/webm", "auto")
+
+        assert r["text"] == "আমার গাড়িতে শব্দ হচ্ছে"
+
+    @pytest.mark.asyncio
+    async def test_bengali_named_explicitly_is_still_named(self, openai_provider):
+        # Once the language IS known, telling Whisper is more accurate than
+        # making it guess again. bn is a language Whisper has.
+        cm, post = _capturing_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "bn-IN")
+
+        assert post.call_args.kwargs["data"]["language"] == "bn"
+
+    @pytest.mark.asyncio
+    async def test_auto_is_not_mistaken_for_an_unknown_locale(self, openai_provider):
+        # "auto" must not fall through the unknown-locale branch to English --
+        # that is exactly the bug, reintroduced by a different route.
+        cm, post = _capturing_client()
+        with patch("httpx.AsyncClient", return_value=cm):
+            await transcribe(WEBM, "audio/webm", "auto")
+
+        assert post.call_args.kwargs["data"].get("language") != "en"
