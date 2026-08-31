@@ -36,6 +36,16 @@ export interface DiagnosisReport {
   analysis_confidence: number;
   disclaimer: string;
   created_at: string;
+  /**
+   * The report written to be listened to, in the same language as the rest of
+   * the values — produced by the model that wrote them, so no translation is
+   * invented anywhere.
+   *
+   * Empty when the heuristic engine answered: it has no language but English
+   * and cannot compose prose. The client falls back to assembling its own
+   * text in that case.
+   */
+  spoken_summary?: string;
   /** BR-AI-10 — present only when confidence is below the threshold. */
   follow_up_questions?: string[];
   needs_more_info?: boolean;

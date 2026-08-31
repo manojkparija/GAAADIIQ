@@ -1,9 +1,9 @@
-import { Component, signal, OnDestroy, effect, inject } from '@angular/core';
+import { Component, signal, OnDestroy, OnInit, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
-import { DiagnosisService, DiagnoseRequest } from '../../services/diagnosis.service';
+import { DiagnosisService, DiagnoseRequest, DiagnosisReport } from '../../services/diagnosis.service';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { CityService } from '../../services/city.service';
@@ -12,7 +12,7 @@ import { OfflineQueueService } from '../../services/offline-queue.service';
 import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../services/voice-diagnosis.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { VoiceModeComponent, VoiceSessionResult } from '../../components/voice-mode/voice-mode.component';
-import { firstValueFrom } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { ServiceRequestComponent } from '../../components/service-request/service-request.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -219,7 +219,7 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
   templateUrl: './vehicle-diagnosis.component.html',
   styleUrl: './vehicle-diagnosis.component.scss',
 })
-export class VehicleDiagnosisComponent implements OnDestroy {
+export class VehicleDiagnosisComponent implements OnInit, OnDestroy {
   private readonly lang = inject(LanguageService);
   step = signal(1);
   totalSteps = 4;
@@ -913,6 +913,15 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   }
 
   private _buildTtsText(report: any): string {
+    // Prefer what the model wrote for listening. It is already in the driver's
+    // language, headings and all, and it reads as prose rather than as JSON
+    // fields joined with full stops.
+    //
+    // The fallback below stays for the heuristic engine, which returns no
+    // summary — its labels are English, which is honest, because so is
+    // everything else it produces.
+    if (report.spoken_summary) return report.spoken_summary;
+
     const parts: string[] = [
       `Preliminary diagnosis: ${report.preliminary_diagnosis}`,
     ];
@@ -951,7 +960,42 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     return parts.join('. ');
   }
 
+  /**
+   * Show a diagnosis that was submitted offline and answered while the app was
+   * elsewhere.
+   *
+   * The queue used to discard the response, so a driver who submitted in a
+   * tunnel had their report computed, billed and stored — and never shown.
+   * Signed in it could be dug out of Past Diagnoses; signed out it could not be
+   * reached at all.
+   */
+  ngOnInit() {
+    // Landed while this page was not mounted.
+    const pending = this.offline.takeLastCompleted('/diagnosis/analyse');
+    if (pending) this._showQueuedReport(pending.response);
+
+    // Landing now, while the user is watching.
+    this._queueSub = this.offline.completed.subscribe(r => {
+      if (r.url.endsWith('/diagnosis/analyse')) this._showQueuedReport(r.response);
+    });
+  }
+
+  private _queueSub?: Subscription;
+
+  private _showQueuedReport(response: unknown) {
+    const report = response as DiagnosisReport | null;
+    if (!report?.preliminary_diagnosis) return;
+    this.queuedOffline.set(false);
+    this.diagSvc.report.set(report);
+    this.step.set(4);
+    // Deliberately not spoken. It arrives whenever the network returns, which
+    // may be minutes later with the phone in a pocket — a report that starts
+    // talking unprompted is startling rather than helpful. The Listen control
+    // is right there.
+  }
+
   ngOnDestroy() {
+    this._queueSub?.unsubscribe();
     this.voice.destroy();
   }
 

@@ -446,6 +446,7 @@ Based on the vehicle details and retrieved cases above, provide a JSON response 
   "preventive_maintenance": ["Tip 1", "Tip 2"],
   "analysis_confidence": 72,
   "follow_up_questions": ["A specific question that would raise your confidence"],
+  "spoken_summary": "The same findings, written to be listened to rather than read.",
   "fix_solutions": [
     {{"title": "Short name for the approach", "difficulty": "DIY", "steps": ["Step 1", "Step 2"]}},
     {{"title": "A workshop-level repair", "difficulty": "Mechanic", "steps": ["Step 1", "Step 2"]}},
@@ -464,6 +465,13 @@ Rules:
   specific questions whose answers would most narrow the diagnosis (e.g. "Does
   the noise change when you turn the steering?"). Ask only what the user can
   observe without tools. Return an empty list when confidence is 70 or above.
+- spoken_summary: the report as it should be READ ALOUD, in 3-5 sentences of
+  plain prose. Someone is listening while driving and cannot see the screen,
+  so: lead with the likely diagnosis; if safe_to_drive is false say so
+  immediately and plainly; then the leading causes with how sure you are about
+  each; then what to do next. No headings, no bullet points, no field names, no
+  numbers read as digits where a word is clearer. This is not a shorter
+  diagnosis — the findings must match the rest of the JSON exactly.
 - fix_solutions: 2-3 ways to address this, ordered cheapest and most
   reversible first. difficulty is exactly "DIY", "Mechanic" or "Specialist".
   A "DIY" entry must be genuinely safe for someone with no tools and no
@@ -489,7 +497,8 @@ Rules:
             f"\n\nIMPORTANT — LANGUAGE: Write every human-readable VALUE in "
             f"{lang_name}: preliminary_diagnosis, each cause and explanation, "
             f"recommended_steps, diy_fixes, preventive_maintenance, "
-            f"follow_up_questions, repair_time_estimate, and the title and "
+            f"follow_up_questions, repair_time_estimate, spoken_summary, and "
+            f"the title and "
             f"steps of every fix_solutions entry. Keep the JSON KEYS in "
             f"English exactly as shown, and keep the fixed values "
             f"(repair_complexity, risk_level, and the difficulty of each "
@@ -723,6 +732,10 @@ async def _translate_diagnosis(result: dict, target_lang: str) -> dict:
         ],
         # Free text like "2-4 hours", shown twice on the report.
         "repair_time_estimate": result.get("repair_time_estimate", ""),
+        # The text read aloud. Leaving it out of the translation would put a
+        # Hindi reader back in front of an English voice, which is the whole
+        # fault this field exists to remove.
+        "spoken_summary": result.get("spoken_summary", ""),
     }
 
     prompt = (

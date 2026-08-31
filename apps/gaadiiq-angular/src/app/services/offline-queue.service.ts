@@ -7,7 +7,14 @@
  */
 import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { Subject, firstValueFrom } from 'rxjs';
+
+/** A queued request that eventually reached the server, and what came back. */
+export interface QueuedResult {
+  url: string;
+  body: unknown;
+  response: unknown;
+}
 
 export interface QueuedRequest {
   id: string;
@@ -31,6 +38,33 @@ export class OfflineQueueService implements OnDestroy {
   readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
   readonly pending = signal(0);
   readonly draining = signal(false);
+
+  /**
+   * Emits when a queued request finally succeeds, carrying the response.
+   *
+   * The drain used to throw the response away — "Success — don't re-add" — so
+   * a driver who submitted a diagnosis in a tunnel got their answer computed
+   * and stored, and never saw it. Signed in, it was findable in Past
+   * Diagnoses; signed out it was not findable at all.
+   *
+   * Additive: nothing that already used this service has to subscribe.
+   */
+  readonly completed = new Subject<QueuedResult>();
+
+  /**
+   * The most recent result, kept for a subscriber that was not mounted when it
+   * landed. A drain that finishes while the user is on another page must not
+   * be lost — the page reads this on init and clears it.
+   */
+  readonly lastCompleted = signal<QueuedResult | null>(null);
+
+  /** Take the pending result, if any, and forget it. */
+  takeLastCompleted(urlEndsWith: string): QueuedResult | null {
+    const last = this.lastCompleted();
+    if (!last || !last.url.endsWith(urlEndsWith)) return null;
+    this.lastCompleted.set(null);
+    return last;
+  }
 
   private _onlineHandler = () => {
     this.online.set(true);
@@ -76,13 +110,17 @@ export class OfflineQueueService implements OnDestroy {
     for (const req of toRetry) {
       req.attempts++;
       try {
-        await firstValueFrom(
+        const response = await firstValueFrom(
           this.http.request(req.method, req.url, {
             body: req.body,
             headers: req.headers,
           })
         );
-        // Success — don't re-add
+        // Success. The response is the point of the request, so hand it on:
+        // the caller decides whether anything should be shown.
+        const result: QueuedResult = { url: req.url, body: req.body, response };
+        this.lastCompleted.set(result);
+        this.completed.next(result);
       } catch {
         if (req.attempts < MAX_ATTEMPTS) {
           this.queue.push(req);
