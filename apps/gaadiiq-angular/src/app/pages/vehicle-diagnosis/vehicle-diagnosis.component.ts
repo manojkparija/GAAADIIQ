@@ -7,6 +7,7 @@ import { DiagnosisService, DiagnoseRequest, DiagnosisReport } from '../../servic
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { CityService } from '../../services/city.service';
+import { NativeService } from '../../services/native.service';
 import { ApiService } from '../../services/api.service';
 import { OfflineQueueService } from '../../services/offline-queue.service';
 import { VoiceDiagnosisService, VOICE_LANGUAGES, VoiceLanguage } from '../../services/voice-diagnosis.service';
@@ -221,6 +222,7 @@ const MAKES = Object.keys(MODELS_BY_MAKE);
 })
 export class VehicleDiagnosisComponent implements OnInit, OnDestroy {
   private readonly lang = inject(LanguageService);
+  private readonly native = inject(NativeService);
   step = signal(1);
   totalSteps = 4;
 
@@ -722,37 +724,45 @@ export class VehicleDiagnosisComponent implements OnInit, OnDestroy {
     this.diagSvc.error.set(null);
   }
 
-  bookService() {
+  /**
+   * Show the nearest authorised service centres.
+   *
+   * The position comes from NativeService, which asks Android for the runtime
+   * permission first. This called navigator.geolocation directly, and in a
+   * WebView that never prompts — so on the phone it always took the failure
+   * branch and listed centres for the SELECTED city instead of the real one,
+   * with nothing on screen saying the distances were not measured from where
+   * the car actually is.
+   */
+  async bookService() {
     const make = this.form.manufacturer || 'Maruti Suzuki';
     this.serviceCenterModal.set(true);
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const { latitude, longitude } = pos.coords;
-          // Search all cities, pick nearest 3
-          const all = getAllServiceCenters(make);
-          const withDist = all
-            .map(c => ({ ...c, distance: Math.round(haversineKm(latitude, longitude, c.lat, c.lng) * 10) / 10 }))
-            // Reachable first, then nearest. Taking the nearest three
-            // unconditionally is what put Hyderabad and Delhi in front of a
-            // driver in Kolkata — the sort was right, the list just had
-            // nothing else in it.
-            .filter(c => (c.distance ?? Infinity) <= SERVICE_AREA_KM)
-            .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999))
-            .slice(0, 3);
-          this.nearbyServiceCenters.set(withDist);
-        },
-        () => {
-          // Geolocation denied — fall back to selected/default city
-          const centers = getServiceCenters(make, this.city.selectedCity());
-          this.nearbyServiceCenters.set(centers);
-        },
-      );
-    } else {
-      const centers = getServiceCenters(make, this.city.selectedCity());
-      this.nearbyServiceCenters.set(centers);
+    try {
+      const pos = await this.native.getCurrentPosition();
+      if (pos) {
+        const { latitude, longitude } = pos.coords;
+        // Search all cities, pick nearest 3
+        const all = getAllServiceCenters(make);
+        const withDist = all
+          .map(c => ({ ...c, distance: Math.round(haversineKm(latitude, longitude, c.lat, c.lng) * 10) / 10 }))
+          // Reachable first, then nearest. Taking the nearest three
+          // unconditionally is what put Hyderabad and Delhi in front of a
+          // driver in Kolkata — the sort was right, the list just had
+          // nothing else in it.
+          .filter(c => (c.distance ?? Infinity) <= SERVICE_AREA_KM)
+          .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999))
+          .slice(0, 3);
+        this.nearbyServiceCenters.set(withDist);
+        return;
+      }
+    } catch {
+      /* Fall through to the city list below. */
     }
+
+    // No usable fix: the centres for the chosen city, which is the honest
+    // answer when we do not know where the car is.
+    this.nearbyServiceCenters.set(getServiceCenters(make, this.city.selectedCity()));
   }
 
   closeServiceModal() {
