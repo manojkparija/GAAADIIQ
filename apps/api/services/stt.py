@@ -88,12 +88,20 @@ _WHISPER_LANGUAGE_NAMES = {
     "gu": "gujarati", "pa": "punjabi", "or": "odia",
 }
 
-#: Asked when the configured model refuses a language.
+#: Other transcription models to offer a refused language to, in order.
 #:
-#: whisper-1 is OpenAI's widest-coverage transcription model — it takes every
-#: language in _ISO_639_1 except Odia. It is slower than the gpt-4o models,
-#: which is why it is the fallback and not the default.
-_WIDE_COVERAGE_MODEL = "whisper-1"
+#: This was a single "widest-coverage model", set to whisper-1 because the
+#: gpt-4o models are documented as taking a shorter language list. That was
+#: another guess of the same kind as the allow-list before it, and Render
+#: showed it wrong from the other side: STT_MODEL is unset there, so whisper-1
+#: is ALREADY the model in use, and whisper-1 is what refused Bengali. A
+#: fallback to the model you are on cannot do anything.
+#:
+#: Which model has the wider list for a given language is the vendor's to know,
+#: not ours to assume. So a refusal simply asks the other models we have,
+#: keeps whichever accepts it, and remembers the rest. Nothing here claims to
+#: know the answer in advance.
+_ALTERNATE_MODELS = ("whisper-1", "gpt-4o-transcribe", "gpt-4o-mini-transcribe")
 
 
 #: Container extension per mime, for the multipart filename. OpenAI reads the
@@ -250,8 +258,7 @@ async def _transcribe_whisper(
     # after it goes back to the narrow model, loses the language, and lands in
     # detection again.
     candidates = [settings.stt_model]
-    if _WIDE_COVERAGE_MODEL not in candidates:
-        candidates.append(_WIDE_COVERAGE_MODEL)
+    candidates += [m for m in _ALTERNATE_MODELS if m != settings.stt_model]
     attempts = [m for m in candidates if not iso or (m, iso) not in _REFUSED]
 
     for model in attempts:
