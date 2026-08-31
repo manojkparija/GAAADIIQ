@@ -455,7 +455,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
       // it aloud at them is intrusive. They can still tap play on the TTS bar.
       if (this.inputMode() !== 'voice') return;
 
-      this.voice.speak(this._buildTtsText(report));
+      this.voice.speak(this._buildTtsText(report), this._reportSpeechLang());
     });
   }
 
@@ -578,7 +578,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
   /** Read a past report aloud, reusing the report TTS text builder. */
   speakHistoryDetail() {
     const report = this.historyDetail();
-    if (report) this.voice.speak(this._buildTtsText(report));
+    if (report) this.voice.speak(this._buildTtsText(report), this._reportSpeechLang());
   }
 
   toggleWarningLight(light: string) {
@@ -676,6 +676,7 @@ export class VehicleDiagnosisComponent implements OnDestroy {
         `${this.api.baseUrl}/diagnosis/analyse`, 'POST', request
       );
       this.queuedOffline.set(true);
+      this.queuedIsRetrievable.set(!!userId);
       return;
     }
     this.queuedOffline.set(false);
@@ -685,6 +686,21 @@ export class VehicleDiagnosisComponent implements OnDestroy {
 
   /** True when the last submission was queued instead of sent (BR-UX-06). */
   queuedOffline = signal(false);
+
+  /**
+   * Whether a queued submission will actually be retrievable afterwards.
+   *
+   * Past Diagnoses is owner-scoped: GET /diagnosis/history requires a signed-in
+   * caller and filters on `user_id == current_user.id`. A guest's queued
+   * request is sent on reconnect and stored with a null user, so it can never
+   * be listed — and the offline queue discards the response, so it is not shown
+   * at the time either.
+   *
+   * The card used to promise "your report will appear in Past Diagnoses" to
+   * everyone. For a signed-out driver that was simply untrue, and it pointed
+   * them at a screen that would stay empty forever.
+   */
+  queuedIsRetrievable = signal(false);
 
   reset() {
     this.step.set(1);
@@ -880,7 +896,20 @@ export class VehicleDiagnosisComponent implements OnDestroy {
     // An explicit tap on Listen overrides a stale mute preference; leaving it
     // muted would make the button appear broken.
     if (this.voice.muted()) this.voice.toggleMute();
-    this.voice.speak(this._buildTtsText(report));
+    this.voice.speak(this._buildTtsText(report), this._reportSpeechLang());
+  }
+
+  /**
+   * The language a report should be READ in.
+   *
+   * The backend answers in `detected_language`, so that is the language the
+   * text is actually written in. voice.selectedLanguage is a different thing —
+   * it is only ever set by the voice conversation, so someone who typed the
+   * form with the interface in Hindi received a Hindi report and had it read
+   * out by an English voice.
+   */
+  private _reportSpeechLang(): string {
+    return this.diagnosisLanguage() ?? 'en-IN';
   }
 
   private _buildTtsText(report: any): string {

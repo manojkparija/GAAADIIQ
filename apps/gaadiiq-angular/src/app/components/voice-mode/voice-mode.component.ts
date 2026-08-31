@@ -388,7 +388,11 @@ export class VoiceModeComponent implements OnInit, OnDestroy {
       return;
     }
     this._sttCallback = onResult;
-    void this.serverStt.start().then((ok) => {
+    // The 60-second cap is transcribed through finishRecording like any other
+    // stop, so it uses the language actually chosen and the answer reaches the
+    // conversation. Handing that to the service meant an English transcript
+    // delivered to nobody.
+    void this.serverStt.start(() => { void this.finishRecording(); }).then((ok) => {
       if (!ok) {
         this.zone.run(() => this._sttCallback = null);
       }

@@ -555,10 +555,22 @@
       <div class="queued-card" *ngIf="queuedOffline()" role="status" aria-live="polite">
         <div class="queued-icon" aria-hidden="true"><app-icon name="inbox" [size]="40"></app-icon></div>
         <h3>Saved — we'll send this when you're back online</h3>
-        <p>
+        <p *ngIf="queuedIsRetrievable()">
           You're offline right now, so your diagnosis request is stored on this device.
           It will be sent automatically as soon as you reconnect, and your report will
           appear in Past Diagnoses.
+        </p>
+        <!--
+          Signed out, so Past Diagnoses cannot show it: that list is owner-scoped
+          server-side. Promising it anyway sent people to a screen that would stay
+          empty for good.
+        -->
+        <p *ngIf="!queuedIsRetrievable()">
+          You're offline right now, so your diagnosis request is stored on this device
+          and will be sent automatically as soon as you reconnect.
+          <strong>Sign in first if you want to read the report afterwards</strong> —
+          Past Diagnoses only keeps reports for a signed-in account, and this one is
+          not attached to yours.
         </p>
         <button class="btn-ghost" (click)="reset()">Start another</button>
       </div>

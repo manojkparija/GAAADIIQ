@@ -74,8 +74,19 @@ export class ServerSttService {
     return '';
   }
 
-  /** Begin recording. Resolves once capture has actually started. */
-  async start(): Promise<boolean> {
+  /**
+   * Begin recording. Resolves once capture has actually started.
+   *
+   * `onMaxDuration` is called if the recording reaches the 60-second cap. The
+   * caller must own what happens next: it knows which language was chosen and
+   * which question the answer belongs to, and this service knows neither.
+   *
+   * It used to do the work itself — `stopAndTranscribe('en-IN')` — which
+   * transcribed a Hindi speaker's clip as English AND resolved to nobody, so
+   * the transcript was uploaded, billed and discarded while the conversation
+   * sat waiting for an answer that had already arrived.
+   */
+  async start(onMaxDuration?: () => void): Promise<boolean> {
     if (!this.supported) {
       this.errorMessage.set('Audio recording is not supported in this browser.');
       return false;
@@ -104,9 +115,21 @@ export class ServerSttService {
     this.elapsed.set(0);
 
     this.tickTimer = setInterval(() => this.elapsed.update(s => s + 1), 1000);
-    // Hard stop at the server's duration cap so a forgotten recording cannot
-    // produce a clip the API will reject.
-    this.stopTimer = setTimeout(() => { void this.stopAndTranscribe('en-IN'); }, MAX_RECORDING_MS);
+    // Hard stop at the server's duration cap (BR-IR-04) so a forgotten
+    // recording cannot produce a clip the API will reject.
+    this.stopTimer = setTimeout(() => {
+      if (onMaxDuration) {
+        onMaxDuration();
+        return;
+      }
+      // No caller to hand back to. Stop rather than transcribe in a language
+      // nobody chose, and say so — a recording that just ends is
+      // indistinguishable from one that never started.
+      this.cancel();
+      this.errorMessage.set(
+        'That recording reached the 60 seconds limit. Please try again, more briefly.'
+      );
+    }, MAX_RECORDING_MS);
     return true;
   }
 
