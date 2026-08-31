@@ -65,7 +65,13 @@ import { CommonModule } from '@angular/common';
     </svg>
   `,
   styles: [`
-    .brand-logo { display: block; }
+    /* max-width/height:auto so the mark can shrink when the bar is tight.
+       Without them the width="196" attribute is a hard floor, and a flex
+       container has no way to compress it — which is why navbar's own
+       its own @media (max-width: 360px) svg rule had never once
+       applied: that rule targets the navbar's own template, and this SVG
+       belongs to this component. */
+    .brand-logo { display: block; max-width: 100%; height: auto; }
 
     /* Navy in light mode. The token would go near-black, which loses the brand
        tie; this is deliberately a fixed brand colour, not --text. */

@@ -283,11 +283,25 @@ describe('navbar — two-row links', () => {
     expect(hrefs).toEqual(['/ai-advisor', '/vehicle-diagnosis', '/ai-valuation', '/find-mechanic']);
   });
 
-  it('keeps the desktop rows hidden on mobile', () => {
-    // The .hide-mobile class moved from the <ul> to the wrapper when the rows
-    // were split; losing it would leave both rows on a phone behind the
-    // hamburger.
-    expect(fixture.nativeElement.querySelector('.nav-links.hide-mobile')).toBeTruthy();
+  it('no longer hides the nav row on a phone', () => {
+    /*
+     * This asserted the opposite: that .nav-links carried .hide-mobile.
+     *
+     * That class is what produced the reported screenshot — the Android app
+     * showing only "AI Advisor | AI Diagnosis | More", with nine destinations
+     * present in the DOM and none reachable without opening the hamburger.
+     * styles.scss carries a global `.hide-mobile { display: none !important }`,
+     * so no component rule could bring the row back while the class was there.
+     *
+     * The row now scrolls sideways at phone width instead of vanishing. The
+     * utilities beside it (search, sign-in) keep .hide-mobile — those really do
+     * belong to the hamburger.
+     */
+    const nav = fixture.nativeElement.querySelector('.nav-links');
+
+    expect(nav).toBeTruthy();
+    expect(nav.classList.contains('hide-mobile')).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.nav-utils.hide-mobile')).toBeTruthy();
   });
 });
 
