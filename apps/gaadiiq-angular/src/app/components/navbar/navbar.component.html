@@ -14,9 +14,9 @@
         <app-logo [width]="196" [height]="42"></app-logo>
       </a>
 
-      <ul class="nav-links hide-mobile">
+      <ul class="nav-links">
         <li><a routerLink="/" routerLinkActive="active"
-               [routerLinkActiveOptions]="{exact:true}">{{ lang.t('navHome') }}</a></li>
+               [routerLinkActiveOptions]="{exact:true}"><app-icon name="home" [size]="20" class="nav-ic"></app-icon><span>{{ lang.t('navHome') }}</span></a></li>
 
         <!-- New Cars: a mega-menu in columns rather than one long list. Nine
              destinations in a single column is a scan; three headed columns is
@@ -25,7 +25,7 @@
           <button type="button" class="nav-dropdown-trigger"
                   [class.open]="newCarsOpen()" (click)="toggleNewCars()"
                   [attr.aria-expanded]="newCarsOpen()" aria-haspopup="true">
-            {{ lang.t('navNewCars') }}
+            <app-icon name="car" [size]="20" class="nav-ic"></app-icon><span>{{ lang.t('navNewCars') }}</span>
             <app-icon name="chevron-down" [size]="13" class="nav-caret"></app-icon>
           </button>
 
@@ -84,7 +84,7 @@
           <button type="button" class="nav-dropdown-trigger"
                   [class.open]="usedCarsOpen()" (click)="toggleUsedCars()"
                   [attr.aria-expanded]="usedCarsOpen()" aria-haspopup="true">
-            {{ lang.t('navUsedCars') }}
+            <app-icon name="tag" [size]="20" class="nav-ic"></app-icon><span>{{ lang.t('navUsedCars') }}</span>
             <app-icon name="chevron-down" [size]="13" class="nav-caret"></app-icon>
           </button>
 
@@ -161,7 +161,7 @@
           </div>
         </li>
 
-        <li><a routerLink="/compare" routerLinkActive="active">{{ lang.t('navCompare') }}</a></li>
+        <li><a routerLink="/compare" routerLinkActive="active"><app-icon name="scale" [size]="20" class="nav-ic"></app-icon><span>{{ lang.t('navCompare') }}</span></a></li>
 
         <!-- EMI and Car Loan were two separate items for one question: what
              will this cost me a month, and who will lend it. One trigger, two
@@ -170,7 +170,7 @@
           <button type="button" class="nav-dropdown-trigger"
                   [class.open]="financeOpen()" (click)="toggleFinance()"
                   [attr.aria-expanded]="financeOpen()" aria-haspopup="true">
-            {{ 'EMI & Loan' | t }}
+            <app-icon name="indian-rupee" [size]="20" class="nav-ic"></app-icon><span>{{ 'EMI & Loan' | t }}</span>
             <app-icon name="chevron-down" [size]="13" class="nav-caret"></app-icon>
           </button>
           <div class="nav-mega nav-mega-sm" *ngIf="financeOpen()" role="menu">
@@ -183,7 +183,7 @@
           </div>
         </li>
 
-        <li><a routerLink="/tco" routerLinkActive="active">{{ lang.t('navTco') }}</a></li>
+        <li><a routerLink="/tco" routerLinkActive="active"><app-icon name="bar-chart" [size]="20" class="nav-ic"></app-icon><span>{{ lang.t('navTco') }}</span></a></li>
 
         <!-- Insurance. The BRD suggests eight entries here — Compare
              Insurance, Check IDV, My Policies, Renewal Reminder and the rest.
@@ -196,7 +196,7 @@
           <button type="button" class="nav-dropdown-trigger"
                   [class.open]="insuranceOpen()" (click)="toggleInsurance()"
                   [attr.aria-expanded]="insuranceOpen()" aria-haspopup="true">
-            {{ 'Insurance' | t }}
+            <app-icon name="shield" [size]="20" class="nav-ic"></app-icon><span>{{ 'Insurance' | t }}</span>
             <app-icon name="chevron-down" [size]="13" class="nav-caret"></app-icon>
           </button>
           <div class="nav-mega nav-mega-sm" *ngIf="insuranceOpen()" role="menu">
@@ -215,8 +215,8 @@
             </a>
           </div>
         </li>
-        <li><a routerLink="/reviews-news" routerLinkActive="active">{{ lang.t('navNews') }}</a></li>
-        <li><a routerLink="/buyer-journey" routerLinkActive="active">{{ lang.t('navJourney') }}</a></li>
+        <li><a routerLink="/reviews-news" routerLinkActive="active"><app-icon name="newspaper" [size]="20" class="nav-ic"></app-icon><span>{{ lang.t('navNews') }}</span></a></li>
+        <li><a routerLink="/buyer-journey" routerLinkActive="active"><app-icon name="road" [size]="20" class="nav-ic"></app-icon><span>{{ lang.t('navJourney') }}</span></a></li>
       </ul>
 
       <!-- Utility controls: compact pills, one visual family. -->

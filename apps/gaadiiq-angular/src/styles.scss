@@ -66,6 +66,17 @@
   --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #FFFFFF;
   --card-bg:        #FFFFFF;
+  // The surface behind inputs, dropdown panels and modals.
+  //
+  // NEW, and 29 places were already asking for it: `var(--bg, #fff)` appears
+  // across the app and --bg was never defined, so every one of them silently
+  // took the white fallback. In dark mode that is a white box holding --text
+  // at #F1F5F9 -- near-white letters on white, which is why the AI Advisor's
+  // one-line field looked empty while you typed into it.
+  //
+  // Opaque on purpose: a translucent value here shows the page through
+  // dropdowns and modals, which is the other half of the same report.
+  --bg:             #FFFFFF;
   --glass:          rgba(255,255,255,0.85);
   --glass-border:   rgba(47,107,255,0.10);
   --text:           #0F172A;
@@ -88,6 +99,10 @@
   --divider:        rgba(15,23,42,0.07);
   --border-soft:    rgba(15,23,42,0.09);
   --border-strong:  rgba(15,23,42,0.16);
+  // Alias of --border-soft. 15 component files ask for `--border`, none of
+  // them ever got it: 37 of those uses have no fallback at all, so the
+  // declaration was invalid and the border-colour fell back to inherited.
+  --border:         rgba(15,23,42,0.09);
   --fill-dim:       rgba(15,23,42,0.02);
   --fill-soft:      rgba(15,23,42,0.035);
   --fill-medium:    rgba(15,23,42,0.065);
@@ -161,6 +176,9 @@
     --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
     --dark:           #111827;
     --card-bg:        rgba(255,255,255,0.04);
+    // See the note in the light block. Opaque, and lighter than --navy so an
+    // input or panel reads as sitting above the page rather than cut into it.
+    --bg:             #131C2F;
     --glass:          rgba(255,255,255,0.06);
     --glass-border:   rgba(255,255,255,0.10);
     --text:           #F1F5F9;
@@ -174,6 +192,8 @@
     --divider:        rgba(255,255,255,0.08);
     --border-soft:    rgba(255,255,255,0.10);
     --border-strong:  rgba(255,255,255,0.18);
+    // See the light block. Alias of --border-soft.
+    --border:         rgba(255,255,255,0.10);
     --fill-dim:       rgba(255,255,255,0.03);
     --fill-soft:      rgba(255,255,255,0.06);
     --fill-medium:    rgba(255,255,255,0.09);
@@ -216,6 +236,9 @@
   --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #111827;
   --card-bg:        rgba(255,255,255,0.04);
+  // See the note in the light block. Opaque, and lighter than --navy so an
+  // input or panel reads as sitting above the page rather than cut into it.
+  --bg:             #131C2F;
   --glass:          rgba(255,255,255,0.06);
   --glass-border:   rgba(255,255,255,0.10);
   --text:           #F1F5F9;
@@ -227,6 +250,8 @@
   --divider:        rgba(255,255,255,0.08);
   --border-soft:    rgba(255,255,255,0.10);
   --border-strong:  rgba(255,255,255,0.18);
+  // See the light block. Alias of --border-soft.
+  --border:         rgba(255,255,255,0.10);
   --fill-dim:       rgba(255,255,255,0.03);
   --fill-soft:      rgba(255,255,255,0.06);
   --fill-medium:    rgba(255,255,255,0.09);
@@ -263,6 +288,17 @@
   --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #FFFFFF;
   --card-bg:        #FFFFFF;
+  // The surface behind inputs, dropdown panels and modals.
+  //
+  // NEW, and 29 places were already asking for it: `var(--bg, #fff)` appears
+  // across the app and --bg was never defined, so every one of them silently
+  // took the white fallback. In dark mode that is a white box holding --text
+  // at #F1F5F9 -- near-white letters on white, which is why the AI Advisor's
+  // one-line field looked empty while you typed into it.
+  //
+  // Opaque on purpose: a translucent value here shows the page through
+  // dropdowns and modals, which is the other half of the same report.
+  --bg:             #FFFFFF;
   --glass:          rgba(255,255,255,0.85);
   --glass-border:   rgba(47,107,255,0.10);
   --text:           #0F172A;
@@ -274,6 +310,10 @@
   --divider:        rgba(15,23,42,0.07);
   --border-soft:    rgba(15,23,42,0.09);
   --border-strong:  rgba(15,23,42,0.16);
+  // Alias of --border-soft. 15 component files ask for `--border`, none of
+  // them ever got it: 37 of those uses have no fallback at all, so the
+  // declaration was invalid and the border-colour fell back to inherited.
+  --border:         rgba(15,23,42,0.09);
   --fill-dim:       rgba(15,23,42,0.02);
   --fill-soft:      rgba(15,23,42,0.035);
   --fill-medium:    rgba(15,23,42,0.065);

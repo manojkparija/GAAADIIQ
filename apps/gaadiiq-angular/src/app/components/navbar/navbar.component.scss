@@ -437,11 +437,109 @@
    those widths the bar showed pills and no navigation. One rule now moves both.
 
    The AI row stays at every width: four chips that scroll. */
+/* The icons exist only for the phone strip below. Desktop is unchanged — it has
+   never had them, and adding them there would be a look-and-feel change nobody
+   asked for. */
+@media (min-width: 1181px) {
+  .nav-ic { display: none; }
+}
+
 @media (max-width: 1180px) {
-  .nav-links.hide-mobile, .nav-utils.hide-mobile { display: none !important; }
+  .nav-utils.hide-mobile { display: none !important; }
   .hamburger.hide-desktop { display: flex !important; }
   .city-btn-nav.hide-desktop { display: inline-flex !important; }
-  .nav-inner { justify-content: space-between; }
+  /* Wrap, so .nav-links can claim a row of its own below. The gap drops to a
+     floor because space-between does the distributing: at 16px the top row
+     measured 409px inside a 390px bar (logo 196 + city 117 + burger 36 + gaps
+     + padding) and the hamburger wrapped onto a line by itself. */
+  .nav-inner { justify-content: space-between; flex-wrap: wrap; gap: 0.4rem; }
+
+  /* The logo gives way before the hamburger does.
+     Measured at 390px: logo 196 + city 117 + burger 36 + gaps + padding = 409
+     in a 390px bar, so the hamburger wrapped onto a row of its own and cost a
+     whole line of height. The logo may now compress — by about 19px here, ~10%
+     — instead. It shrinks only when the row would otherwise break, so wider
+     phones show it at full size. There is precedent: this file already steps
+     the logo down at 360px. */
+  .logo { min-width: 0; flex-shrink: 1; }
+  .logo svg { max-width: 100%; height: auto; }
+
+  /* app-logo is a component, so its <svg> carries that component's style
+     scoping and nothing written here can select it. The logo shrinks by being
+     allowed to: min-width:0 on both the link and the host lets flex compress
+     them, and the mark follows via max-width:100% in logo.component.ts. */
+  /* app-logo is a component, so its <svg> carries that component's style
+     scoping and no selector written here can reach it — which is also why the
+     navbar's own 360px logo rule above has never applied.
+
+     An explicit width on the host is the lever that works: the mark now sets
+     max-width:100%/height:auto (logo.component.ts), so it follows. flex-shrink
+     cannot do this job — with flex-wrap on, the browser moves an item to a new
+     line instead of compressing it, which is exactly how the hamburger ended
+     up alone on a row costing a whole line of height. */
+  app-logo { display: block; min-width: 0; }
+  @media (max-width: 430px) {
+    app-logo { width: 150px; }
+  }
+
+  /* THE NAV ROW ON A PHONE.
+     This rule used to be `.nav-links { display: none }`, which is why the app
+     showed only the AI row and a hamburger: nine destinations existed and none
+     of them were reachable without opening the menu. They do not fit across
+     390px, so the row scrolls sideways rather than wrapping or shrinking the
+     text to the point of illegibility. */
+  .nav-links {
+    order: 3;
+    flex: 1 0 100%;
+    margin: 0 -1rem;                 // bleed to the screen edges
+    padding: 0.35rem 0.75rem 0;
+    gap: 0;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-top: 1px solid var(--divider);
+    &::-webkit-scrollbar { display: none; }
+
+    > li { flex: 0 0 auto; }
+
+    a, .nav-dropdown-trigger {
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.4rem 0.7rem 0.55rem;
+      font-size: 0.69rem;
+      white-space: nowrap;
+      border-bottom: 2.5px solid transparent;
+      border-radius: 0;
+    }
+    a.active, .nav-dropdown-trigger.open { border-bottom-color: var(--primary); }
+    .nav-caret { display: none; }    // no room, and the panel opens on tap
+  }
+
+  /* Option A: the mega-menu becomes a panel under the strip rather than a
+     floating card. As a desktop card it would hang off a 390px screen —
+     .nav-mega-cols is three columns of 11rem minimum, so 33rem wide.
+     
+     The <li> drops to `static` so the panel's absolute positioning resolves
+     against .navbar (which is `position: fixed`, and therefore already a
+     containing block) instead of against a list item inside a horizontally
+     scrolling row. Anchored to the <li>, the panel would scroll sideways with
+     the strip and be clipped by its overflow. */
+  .nav-links .nav-dropdown { position: static; }
+  .nav-links .nav-mega {
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    max-height: 60vh;
+  }
+  .nav-mega-cols { grid-template-columns: 1fr; gap: 0; }
+  .nav-mega-sm { min-width: 0; }
 }
 @media (min-width: 1181px) {
   .city-btn-nav.hide-desktop { display: none !important; }

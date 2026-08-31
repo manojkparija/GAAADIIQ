@@ -117,7 +117,13 @@
     border-radius: 2.75rem;
     border: 0;
     transition: background 0.3s ease;
-    font-family: var(--inter-font);
+    /* Was `var(--inter-font)`, a leftover from the Angular starter template
+       (as are the --electric-violet and --vivid-pink names in this file). The
+       app never defined it, so with no fallback the declaration was invalid
+       and the family inherited regardless. It now says so, which is also the
+       app's rule for form controls — see styles.scss on why `font-family:
+       inherit` is set for button/input/select/textarea. */
+    font-family: inherit;
     font-size: 0.875rem;
     font-style: normal;
     font-weight: 500;

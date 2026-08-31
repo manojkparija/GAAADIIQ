@@ -32,29 +32,36 @@ describe('VehicleDiagnosisComponent authorised centres', () => {
     component = TestBed.createComponent(VehicleDiagnosisComponent).componentInstance;
   });
 
-  /** Run bookService() as if the browser reported `coords`. */
-  const at = (coords: { latitude: number; longitude: number }) => {
+  /**
+   * Run bookService() as if the browser reported `coords`.
+   *
+   * Awaited: bookService() now goes through NativeService, which asks Android
+   * for the location permission before reading a fix and is therefore async.
+   * On the web that still ends at navigator.geolocation, so these stubs are
+   * unchanged -- but the result no longer exists by the next statement.
+   */
+  const at = async (coords: { latitude: number; longitude: number }) => {
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
       value: { getCurrentPosition: (ok: any) => ok({ coords }) },
     });
-    component.bookService();
+    await component.bookService();
     return component.nearbyServiceCenters();
   };
 
   /** Run bookService() as if the user refused the location prompt. */
-  const denied = () => {
+  const denied = async () => {
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
       value: { getCurrentPosition: (_ok: any, fail: any) => fail({ code: 1 }) },
     });
-    component.bookService();
+    await component.bookService();
     return component.nearbyServiceCenters();
   };
 
-  it('never offers a centre in another city', () => {
+  it('never offers a centre in another city', async () => {
     component.form.manufacturer = 'Maruti Suzuki';
-    const centres = at(NEW_TOWN);
+    const centres = await at(NEW_TOWN);
 
     // The exact rows from the report.
     const names = centres.map((c: any) => c.name);
@@ -68,24 +75,24 @@ describe('VehicleDiagnosisComponent authorised centres', () => {
     }
   });
 
-  it('still offers the centre that really is nearby', () => {
+  it('still offers the centre that really is nearby', async () => {
     // Suppressing the far ones must not empty the list of the good one.
     component.form.manufacturer = 'Maruti Suzuki';
-    const names = at(NEW_TOWN).map((c: any) => c.name);
+    const names = (await at(NEW_TOWN)).map((c: any) => c.name);
     expect(names).toContain('Mandve Motors Kolkata');
   });
 
-  it('shows nothing rather than Mumbai when the city is unlisted', () => {
+  it('shows nothing rather than Mumbai when the city is unlisted', async () => {
     // The fallback used to return the first city in the table — Mumbai — for
     // anywhere not listed, which is a wrong answer dressed as a right one.
     component.form.manufacturer = 'Maruti Suzuki';
     component.city.selectedCity.set('Guwahati');
-    expect(denied()).toEqual([]);
+    expect(await denied()).toEqual([]);
   });
 
-  it('lists the local centre when the city is known and location is refused', () => {
+  it('lists the local centre when the city is known and location is refused', async () => {
     component.form.manufacturer = 'Maruti Suzuki';
     component.city.selectedCity.set('New Town');
-    expect(denied().map((c: any) => c.name)).toContain('Mandve Motors Kolkata');
+    expect((await denied()).map((c: any) => c.name)).toContain('Mandve Motors Kolkata');
   });
 });
