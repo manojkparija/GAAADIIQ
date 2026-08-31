@@ -153,7 +153,16 @@ export class ServiceRequestComponent {
       if (mechanic) {
         this.request.set(await this.market.assignMechanic(created.id, mechanic.id));
       } else {
-        this.dispatch.set(await this.market.dispatch(created.id));
+        // The broadcast can find nobody, and until now that failed AFTER the
+        // request was written: the customer saw an error, and an open job they
+        // never knowingly raised sat in their history with no mechanic ever
+        // told about it. Withdraw it, so a failed send leaves nothing behind.
+        try {
+          this.dispatch.set(await this.market.dispatch(created.id));
+        } catch (e) {
+          await this.withdrawQuietly(created.id);
+          throw e;
+        }
         this.request.set(created);
       }
       // Fetched here, once, while the customer is looking at the screen — not
@@ -165,6 +174,37 @@ export class ServiceRequestComponent {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /**
+   * Withdraw a request whose dispatch failed, without masking why it failed.
+   *
+   * The cancel itself is best-effort on purpose: if it too fails, the customer
+   * must still be told about the original problem, not about the cleanup.
+   */
+  private async withdrawQuietly(requestId: string): Promise<void> {
+    try {
+      await this.market.cancelRequest(requestId, 'No mechanic could be reached');
+    } catch {
+      /* The dispatch error below is the one worth showing. */
+    }
+  }
+
+  /**
+   * Can the broadcast do anything?
+   *
+   * It was offered as the primary action above the list, unconditionally — so
+   * where no partner mechanic is registered the screen said "No GAADIIQ partner
+   * mechanics are registered near you yet" and, directly above it, invited the
+   * driver to send the job to those same nonexistent mechanics. Pressing it
+   * created a request and then failed with a 503.
+   *
+   * A search that succeeded and found nobody is the one case where we know
+   * there is nothing to broadcast to. A search that FAILED tells us nothing, so
+   * the button stays: the server may still find someone.
+   */
+  canBroadcast(): boolean {
+    return this.mechanics().length > 0 || this.error() !== null;
   }
 
   /** Fetch the arrival code once. Safe to call again only on explicit request. */

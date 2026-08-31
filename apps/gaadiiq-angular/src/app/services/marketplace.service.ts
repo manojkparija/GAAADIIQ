@@ -353,6 +353,26 @@ export class MarketplaceService {
     );
   }
 
+  /**
+   * Withdraw a request the customer raised.
+   *
+   * The API has had this endpoint all along; nothing on the client called it.
+   * That mattered because a broadcast that finds nobody fails AFTER the request
+   * row is written, leaving an open job in the customer's history that no
+   * mechanic was ever told about and that they never knowingly created.
+   */
+  async cancelRequest(requestId: string, reason: string): Promise<ServiceRequest> {
+    return firstValueFrom(
+      // `reason` is a QUERY parameter on this endpoint, not a body field —
+      // posting it in the body records a cancellation with no reason at all.
+      this.http.post<ServiceRequest>(
+        `${this.apiUrl}/service-requests/${requestId}/cancel`,
+        {},
+        { params: { reason } },
+      ),
+    );
+  }
+
   /** Live job offers for the signed-in mechanic, nearest first. */
   async myOffers(): Promise<JobOffer[]> {
     return firstValueFrom(
