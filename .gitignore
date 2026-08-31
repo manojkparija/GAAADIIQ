@@ -68,3 +68,9 @@ dump.rdb
 # YOLOv8 weights, downloaded by the safety-detection tests at run time.
 # 6.3 MB of binary that regenerates itself; it landed in a commit once.
 *.pt
+
+# Local SQLite databases — a dev server or test run drops these in apps/api.
+# Nothing tracked has ever been a .db, and committing one would put a snapshot
+# of local data into the repo (the same trap as the 6.3MB model weights).
+*.db
+!Thumbs.db
