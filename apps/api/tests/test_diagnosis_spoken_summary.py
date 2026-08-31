@@ -88,3 +88,25 @@ class TestSpokenSummaryIsTranslatedSuite:
         # "Write every human-readable VALUE in Tamil", not "in ta-IN".
         assert "Tamil" in _prompt("ta-IN")
         assert "Odia" in _prompt("or-IN")
+
+
+class TestSttAutoLanguageIsAcceptedSuite:
+    """
+    The endpoint must let "auto" through.
+
+    It used to coerce anything outside the known locale list to en-IN, which
+    would have quietly undone the detecting pass at the router instead of the
+    service — the same bug one layer up.
+    """
+
+    def test_auto_is_a_real_value_not_a_typo(self):
+        from services.stt import AUTO_LANGUAGE
+
+        assert AUTO_LANGUAGE == "auto"
+
+    def test_auto_is_not_one_of_the_named_locales(self):
+        # If it were, the "did the caller name a language" test would be wrong.
+        from routers.diagnosis import _LANG_NAMES
+        from services.stt import AUTO_LANGUAGE
+
+        assert AUTO_LANGUAGE not in _LANG_NAMES

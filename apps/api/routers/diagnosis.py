@@ -29,6 +29,7 @@ from models.vehicle_diagnosis import VehicleDiagnosis
 from services.diagnosis import _LANG_NAMES, extract_vehicle_info_from_transcript, run_diagnosis
 from services.llm_tier import resolve_tier, verify_caller
 from services.stt import (
+    AUTO_LANGUAGE,
     STTError,
     STTUnavailable,
     estimate_duration_seconds,
@@ -645,7 +646,11 @@ async def speech_to_text(
             f"Audio must be under {settings.stt_max_audio_seconds} seconds.",
         )
 
-    if language not in _LANG_NAMES:
+    # "auto" means: do not tell the provider what to expect. The voice
+    # conversation's detect-my-language pass needs the transcript in its own
+    # script to identify it, and a named language produces a transliteration
+    # instead.
+    if language != AUTO_LANGUAGE and language not in _LANG_NAMES:
         language = "en-IN"
 
     try:
