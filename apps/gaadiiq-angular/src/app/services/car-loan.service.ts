@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -69,6 +69,27 @@ export interface LoanApplication {
   offers: LoanOffer[];
 }
 
+export type LoanApplicationStatus =
+  | 'draft' | 'submitted' | 'offers_ready' | 'partner_selected'
+  | 'forwarded' | 'approved' | 'rejected' | 'withdrawn' | 'disbursed';
+
+/**
+ * An application as the admin queue returns it.
+ *
+ * Adds the contact details the applicant-facing shape deliberately omits.
+ * The PAN stays masked here too — an admin who needs the full number for a
+ * lender hand-off gets it from that hand-off, not from a list of everyone.
+ */
+export interface LoanApplicationAdmin extends LoanApplication {
+  email: string | null;
+  city: string | null;
+  pincode: string | null;
+  /** The lender they pressed "Continue with", already resolved to a name. */
+  selected_partner_name: string | null;
+  /** When they agreed to a credit check — the record that a call is expected. */
+  credit_consent_at: string | null;
+}
+
 export interface LoanApplicationCreate {
   car_id?: string;
   listing_id?: string;
@@ -124,6 +145,23 @@ export class CarLoanService {
 
   async myApplications(): Promise<LoanApplication[]> {
     return firstValueFrom(this.http.get<LoanApplication[]>(`${this.apiUrl}/loans/applications`));
+  }
+
+  /**
+   * The admin queue: every application, with the details needed to ring the
+   * applicant.
+   *
+   * Selecting a lender records the choice and nothing else — no application is
+   * forwarded to the bank — so working the queue by phone is currently the only
+   * way an applicant hears back at all.
+   */
+  async adminApplications(status?: LoanApplicationStatus, limit = 100):
+      Promise<LoanApplicationAdmin[]> {
+    let params = new HttpParams().set('limit', limit);
+    if (status) params = params.set('status_filter', status);
+    return firstValueFrom(
+      this.http.get<LoanApplicationAdmin[]>(`${this.apiUrl}/loans/admin/applications`, { params }),
+    );
   }
 
   async selectOffer(applicationId: string, offerId: string): Promise<LoanApplication> {

@@ -1,0 +1,223 @@
+// Clears the fixed navbar (LAY-007). Admin screens sit behind adminGuard, so a
+// title rendered under the nav goes unnoticed — which is exactly how the other
+// two admin pages shipped broken.
+.al-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: max(7rem, var(--nav-offset)) 1rem 4rem;
+}
+
+.al-head h1 {
+  margin: 0 0 .35rem;
+  font-size: 1.75rem;
+}
+
+.al-sub {
+  margin: 0 0 1.5rem;
+  color: var(--text-muted);
+  max-width: 60ch;
+  line-height: 1.5;
+}
+
+.al-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+
+.al-tab {
+  padding: .5rem .9rem;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: .9rem;
+  cursor: pointer;
+
+  &.is-active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+}
+
+.al-toolbar {
+  display: flex;
+  gap: .75rem;
+  margin-bottom: 1.25rem;
+}
+
+.al-search {
+  flex: 1;
+  min-width: 0;
+  padding: .6rem .8rem;
+  border: 1px solid var(--divider);
+  border-radius: .5rem;
+  background: var(--fill-dim);
+  color: inherit;
+  font: inherit;
+}
+
+.al-refresh {
+  padding: .6rem 1rem;
+  border: 1px solid var(--divider);
+  border-radius: .5rem;
+  background: var(--fill-dim);
+  color: inherit;
+  cursor: pointer;
+}
+
+.al-error {
+  padding: .75rem 1rem;
+  border-radius: .5rem;
+  background: rgba(239, 68, 68, 0.10);
+  color: var(--danger-ink);
+}
+
+.al-empty {
+  color: var(--text-muted);
+}
+
+.al-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.al-card {
+  border: 1px solid var(--divider);
+  border-radius: .75rem;
+  padding: 1.1rem;
+  background: var(--fill-dim);
+}
+
+.al-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: .9rem;
+}
+
+.al-name {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.al-ref {
+  color: var(--text-muted);
+  font-size: .85rem;
+  margin-top: .2rem;
+}
+
+.al-status {
+  flex-shrink: 0;
+  padding: .25rem .6rem;
+  border-radius: 999px;
+  font-size: .8rem;
+  background: var(--fill-dim);
+  border: 1px solid var(--divider);
+  color: var(--text-muted);
+
+  // Text on a tint uses the -ink tokens, not the brand colour: the same hue is
+  // several points darker in contrast terms once it sits in a small badge.
+  &[data-status='partner_selected'] {
+    background: rgba(20, 184, 166, 0.12);
+    border-color: transparent;
+    color: var(--teal-ink);
+  }
+  &[data-status='approved'],
+  &[data-status='disbursed'] {
+    background: rgba(16, 185, 129, 0.10);
+    border-color: transparent;
+    color: var(--success-ink);
+  }
+  &[data-status='withdrawn'],
+  &[data-status='rejected'] {
+    background: rgba(239, 68, 68, 0.10);
+    border-color: transparent;
+    color: var(--danger-ink);
+  }
+}
+
+// The reason this screen exists.
+.al-contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  padding-bottom: .9rem;
+  margin-bottom: .9rem;
+  border-bottom: 1px solid var(--divider);
+}
+
+.al-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem .8rem;
+  border-radius: .5rem;
+  border: 1px solid var(--divider);
+  text-decoration: none;
+  color: inherit;
+  font-size: .9rem;
+
+  &:hover { border-color: var(--primary); }
+}
+
+.al-btn-call {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+
+  &:hover { border-color: var(--primary); }
+}
+
+.al-place {
+  color: var(--text-muted);
+  font-size: .9rem;
+}
+
+.al-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: .8rem 1.2rem;
+}
+
+.al-field {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+
+.al-label {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+}
+
+.al-value {
+  font-size: .95rem;
+}
+
+.al-muted {
+  color: var(--text-muted);
+  font-size: .85rem;
+}
+
+.al-chosen {
+  margin-top: .9rem;
+  padding-top: .8rem;
+  border-top: 1px solid var(--divider);
+  font-size: .95rem;
+}
+
+.al-chosen-none {
+  color: var(--text-muted);
+}
+
+@media (max-width: 560px) {
+  .al-card-head { flex-direction: column; }
+  .al-toolbar { flex-direction: column; }
+}
