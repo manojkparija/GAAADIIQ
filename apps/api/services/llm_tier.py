@@ -52,14 +52,30 @@ class VerifiedCaller:
 _JWKS: dict | None = None
 _JWKS_FETCHED_AT: float = 0.0
 _JWKS_TTL = 3600.0
+# How soon to try again after a failed refresh, while serving the stale set.
+_JWKS_RETRY_AFTER = 60.0
 
 
 def _jwks() -> dict | None:
     """
-    Supabase's public signing keys, cached for an hour.
+    Supabase's public signing keys, refreshed hourly, kept on failure.
 
-    Returns None when no project URL is configured or the fetch fails; callers
-    then fall back to the shared-secret path.
+    A stale key set is served when the refresh fails, and that is the whole
+    point of this function's shape. It used to return None instead, which
+    signed the entire application out an hour after boot: the cache expires,
+    one refresh fails for any transient reason, and from that moment every
+    authenticated request is 401 until a later fetch happens to succeed. The
+    docstring claimed callers "fall back to the shared-secret path", but that
+    path needs SUPABASE_JWT_SECRET, which this deployment does not set — so
+    there was no fallback, only failure.
+
+    Serving stale keys is not a weakening of verification. A token is still
+    checked against a key whose `kid` it names, and its signature still has to
+    verify; a rotated-away key simply stops matching. What the old behaviour
+    did was throw away keys that were still perfectly good because the network
+    hiccuped.
+
+    Returns None only when nothing is cached and no key set can be fetched.
     """
     global _JWKS, _JWKS_FETCHED_AT
 
@@ -68,7 +84,7 @@ def _jwks() -> dict | None:
     if _JWKS is not None and (time.time() - _JWKS_FETCHED_AT) < _JWKS_TTL:
         return _JWKS
     if not settings.supabase_url:
-        return None
+        return _JWKS
 
     url = settings.supabase_url.rstrip("/") + "/auth/v1/.well-known/jwks.json"
     try:
@@ -80,6 +96,21 @@ def _jwks() -> dict | None:
         _JWKS_FETCHED_AT = time.time()
         return _JWKS
     except Exception as exc:
+        if _JWKS is not None:
+            # Back off for a fraction of the TTL rather than retrying on every
+            # request while Supabase is unreachable, and keep serving what we
+            # have. Logged at warning because a refresh that keeps failing is
+            # a real problem — it is just not one worth signing everyone out
+            # over.
+            _JWKS_FETCHED_AT = time.time() - (_JWKS_TTL - _JWKS_RETRY_AFTER)
+            logger.warning(
+                "Could not refresh Supabase JWKS from %s (%s); continuing with "
+                "the key set already held and retrying in %.0fs",
+                url,
+                exc,
+                _JWKS_RETRY_AFTER,
+            )
+            return _JWKS
         logger.warning("Could not fetch Supabase JWKS from %s: %s", url, exc)
         return None
 
