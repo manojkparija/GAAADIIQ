@@ -190,3 +190,72 @@ describe('NavbarComponent account menu', () => {
     expect(missing).withContext(`unreachable on a phone: ${missing.join(', ')}`).toEqual([]);
   });
 });
+
+/**
+ * The city picker opens.
+ *
+ * Reported: "Select City is not working". Tapping it did nothing at all, on
+ * every page and at every width.
+ *
+ * The cause was an absent element, not a broken one. CitySelectorComponent was
+ * in this component's `imports` array and openCityModal() set a cityModalOpen
+ * signal — but <app-city-selector> was never in the template, so the signal was
+ * written and read by nothing. It compiled cleanly: an unused import is not an
+ * error, and neither is a signal nobody consumes.
+ *
+ * These assert on the rendered DOM for that reason. A test of openCityModal()
+ * alone would have passed throughout: the signal always flipped correctly, and
+ * that was never the problem.
+ */
+describe('NavbarComponent city picker', () => {
+  let fixture: any;
+  let component: any;
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      imports: [NavbarComponent],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    fixture = TestBed.createComponent(NavbarComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  afterEach(() => localStorage.clear());
+
+  it('is not in the DOM until it is asked for', () => {
+    expect(fixture.nativeElement.querySelector('app-city-selector')).toBeNull();
+  });
+
+  it('renders when the button opens it', () => {
+    component.openCityModal();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-city-selector'))
+      .withContext('the signal flipped but nothing rendered — the reported bug')
+      .toBeTruthy();
+  });
+
+  it('a Select City button actually opens it', () => {
+    // Through the button rather than the method, because the method was never
+    // the broken part.
+    const button: HTMLButtonElement = fixture.nativeElement.querySelector('.city-btn-nav');
+    expect(button).withContext('no Select City button rendered').toBeTruthy();
+
+    button.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-city-selector')).toBeTruthy();
+  });
+
+  it('closes again', () => {
+    component.openCityModal();
+    fixture.detectChanges();
+
+    component.closeCityModal();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-city-selector')).toBeNull();
+  });
+});

@@ -544,3 +544,11 @@
     </ng-container>
   </div>
 </div>
+
+<!-- The city picker.
+     CitySelectorComponent was in this component's `imports` array and the
+     button set cityModalOpen(true), but the tag itself was never in the
+     template — so the signal was written and read by nothing, and tapping
+     "Select City" did nothing at all. It compiled cleanly because an unused
+     import is not an error. -->
+<app-city-selector *ngIf="cityModalOpen()" (closed)="closeCityModal()"></app-city-selector>
