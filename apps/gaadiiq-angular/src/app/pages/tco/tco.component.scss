@@ -11,7 +11,10 @@
 .tco-hero {
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
   border-bottom: 1px solid var(--divider);
-  padding: 5rem 0 2.5rem;
+  /* LAY-007: the navbar is fixed and its height changes with the bar's contents
+     (176px on a phone since the nav strip). max() keeps the designed spacing
+     wherever it is the larger, and clears the bar when it is not. */
+  padding: max(5rem, var(--nav-offset)) 0 2.5rem;
   text-align: center;
 
   .eyebrow {

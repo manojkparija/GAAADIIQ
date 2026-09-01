@@ -7,7 +7,10 @@
 
 .ms-hero {
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
-  padding: 104px 0 2.25rem;
+  /* LAY-007: the navbar is fixed and its height changes with the bar's contents
+     (176px on a phone since the nav strip). max() keeps the designed spacing
+     wherever it is the larger, and clears the bar when it is not. */
+  padding: max(104px, var(--nav-offset)) 0 2.25rem;
   text-align: center;
   border-bottom: 1px solid var(--divider);
 

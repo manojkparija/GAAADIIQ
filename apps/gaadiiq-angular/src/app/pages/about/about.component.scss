@@ -1,4 +1,7 @@
-.about-page { min-height: 100vh; padding: 6rem 0 4rem; position: relative; overflow: hidden; }
+.about-page { min-height: 100vh; /* LAY-007: the navbar is fixed and its height changes with the bar's contents
+     (176px on a phone since the nav strip). max() keeps the designed spacing
+     wherever it is the larger, and clears the bar when it is not. */
+  padding: max(6rem, var(--nav-offset)) 0 4rem; position: relative; overflow: hidden; }
 .orb-1 { position:absolute; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,var(--primary)18,transparent); top:-150px; left:-100px; pointer-events:none; }
 .orb-2 { position:absolute; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,var(--danger)18,transparent); bottom:0; right:-100px; pointer-events:none; }
 

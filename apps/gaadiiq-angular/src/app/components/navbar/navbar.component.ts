@@ -1,4 +1,13 @@
-import { Component, HostListener, signal, computed } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { LogoComponent } from '../logo/logo.component';
@@ -18,11 +27,14 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })
-export class NavbarComponent {
+export class NavbarComponent implements AfterViewInit, OnDestroy {
   private static readonly DARK_HERO_ROUTES = ['/new-cars', '/used-cars'];
 
   /** Routes reachable from the More menu. Keep in step with the panel's links. */
   private static readonly MORE_ROUTES = ['/track-challan', '/video-review', '/ev-charging'];
+  private readonly host = inject(ElementRef);
+  private resizeObserver?: ResizeObserver;
+
   private _scrolled = signal(false);
   private _darkHero = signal(false);
   scrolled = computed(() => this._scrolled() || this._darkHero());
@@ -232,6 +244,48 @@ export class NavbarComponent {
 
   @HostListener('window:scroll')
   onScroll() { this._scrolled.set(window.scrollY > 12); }
+
+  /**
+   * Publish the bar's real height as --nav-height (LAY-007).
+   *
+   * styles.scss carried this as a hand-measured literal, with a comment saying
+   * it had already gone stale twice — 34px out after the two-row change, 23px
+   * after the redesign. Adding the phone nav strip made it stale a third time,
+   * by 65px: the bar became 176px while the token still said 111, so every
+   * page's own <h1> rendered underneath it and the headings simply vanished.
+   *
+   * A literal that must be re-measured by hand whenever the bar's contents or
+   * type change will keep going stale. The bar now measures itself, so the
+   * next row added here needs no second edit anywhere.
+   *
+   * The literal stays in styles.scss as the first-paint value, before this
+   * runs, and is set to the taller of the measured widths — over-padding by a
+   * few pixels for one frame is invisible, under-padding hides text.
+   */
+  private publishNavHeight(): void {
+    // The bar COMPACTS on scroll (176 -> smaller). Publishing that shorter
+    // height would let content slide up under the resting bar the moment the
+    // user scrolls back to the top, so only the resting height is written.
+    if (this.scrolled()) return;
+    const h = this.host.nativeElement.querySelector('.navbar')?.getBoundingClientRect().height;
+    if (h && h > 0) {
+      document.documentElement.style.setProperty('--nav-height', `${Math.ceil(h)}px`);
+    }
+  }
+
+  ngAfterViewInit(): void {
+    this.publishNavHeight();
+    // Catches rotation, a font finishing loading, and the row wrapping at a
+    // width nobody thought to test — none of which fire a scroll or resize in
+    // every browser.
+    this.resizeObserver = new ResizeObserver(() => this.publishNavHeight());
+    const bar = this.host.nativeElement.querySelector('.navbar');
+    if (bar) this.resizeObserver.observe(bar);
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(e: MouseEvent) {
