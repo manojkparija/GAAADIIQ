@@ -63,6 +63,20 @@
       </div>
     </div>
 
+    <!-- Sign-in gate.
+         Raising a request needs an account. Without this the driver filled in
+         registration, phone and landmark, pressed send, and got 401 back — the
+         requirement announced only after all the work. The mechanic list above
+         stays public deliberately; it is only the sending that needs a login. -->
+    <div class="sr-gate" *ngIf="!canSubmit()">
+      <h3>{{ 'Sign in to send this request' | t }}</h3>
+      <p>
+        {{ 'A mechanic is being asked to drive to you, so the job is raised against a real account. You keep the diagnosis and the mechanic you picked.' | t }}
+      </p>
+      <button type="button" class="sr-primary" (click)="signIn()">{{ 'Sign in' | t }}</button>
+    </div>
+
+    <ng-container *ngIf="canSubmit()">
     <label class="sr-field">
       <span class="sr-label">{{ 'Car registration number' | t }}</span>
       <input type="text" [(ngModel)]="carNumber" name="carNumber"
@@ -87,6 +101,7 @@
     <button type="button" class="sr-primary" [disabled]="busy()" (click)="submit()">
       {{ busy() ? 'Sending…' : 'Send request to this mechanic' }}
     </button>
+    </ng-container>
   </ng-container>
 
   <!-- Raised; waiting for the mechanic to quote -->

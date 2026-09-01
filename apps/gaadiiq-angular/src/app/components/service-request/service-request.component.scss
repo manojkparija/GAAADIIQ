@@ -432,3 +432,27 @@
 .sr-otp-new {
   font-size: 0.8rem;
 }
+
+/* The sign-in gate on the details step.
+   Quiet rather than alarming: nothing has gone wrong, the driver simply has
+   one step to do first, and they keep the mechanic they chose. */
+.sr-gate {
+  margin: 0 0 1rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--fill-dim);
+
+  h3 {
+    margin: 0 0 .4rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  p {
+    margin: 0 0 .9rem;
+    font-size: .875rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+}

@@ -1,7 +1,9 @@
 import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { AuthService } from '../../services/auth.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import {
   CommissionPreview,
@@ -37,6 +39,8 @@ type Stage = 'locating' | 'choose' | 'details' | 'awaiting' | 'paying' | 'done';
 export class ServiceRequestComponent {
   private readonly market = inject(MarketplaceService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
 
   /** Prefilled from the diagnosis so the user retypes as little as possible. */
   @Input() manufacturer = '';
@@ -174,6 +178,35 @@ export class ServiceRequestComponent {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /**
+   * Can this request actually be sent?
+   *
+   * Measured on Render, after a diagnosis and a successful mechanic search:
+   *
+   *     POST /diagnosis/analyse   201 Created
+   *     GET  /mechanics/nearby    200 OK
+   *     POST /service-requests    401 Unauthorized
+   *
+   * Raising a request needs an account, and this component had no idea: it
+   * discovered the requirement from the 401, after the driver had typed a
+   * registration number, a phone number and a landmark. The mechanic LIST
+   * stays public on purpose — someone stranded should not have to sign up to
+   * see who is nearby — but the form should not invite work that cannot be
+   * sent.
+   *
+   * isLocalOnly matters as much as isLoggedIn: the dev sign-in produces a
+   * session with no Supabase token behind it, so the app looks signed in and
+   * the API still answers 401.
+   */
+  canSubmit(): boolean {
+    return this.auth.isLoggedIn() && !this.auth.isLocalOnly();
+  }
+
+  /** Send them to sign in, and back to the diagnosis they came from. */
+  signIn(): void {
+    this.router.navigate(['/login'], { queryParams: { redirect: '/vehicle-diagnosis' } });
   }
 
   /**
