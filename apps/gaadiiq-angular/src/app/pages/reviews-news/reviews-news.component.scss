@@ -1,5 +1,8 @@
 .rn-hero {
-  padding: 7rem 0 3rem;
+  /* LAY-007: the navbar is fixed and its height changes with the bar's contents
+     (176px on a phone since the nav strip). max() keeps the designed spacing
+     wherever it is the larger, and clears the bar when it is not. */
+  padding: max(7rem, var(--nav-offset)) 0 3rem;
   text-align: center;
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
 
@@ -516,7 +519,10 @@
 
 @media (max-width: 768px) {
   .featured-grid, .articles-grid, .hub-grid { grid-template-columns: 1fr; }
-  .rn-hero { padding: 5.5rem 0 2rem; }
+  // max() here too: this override is inside @media (max-width: 768px),
+  // which is exactly where the bar is TALLEST, so a bare value undoes the
+  // clearance set on .rn-hero above.
+  .rn-hero { padding: max(5.5rem, var(--nav-offset)) 0 2rem; }
 }
 
 /* The publisher credit on a live card.

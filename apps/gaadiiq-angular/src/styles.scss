@@ -11,7 +11,11 @@
   // every width — primary controls above, AI tabs below — and renders 109px
   // where it shows the hamburger. This is the RESTING height: the bar compacts
   // to 101px on scroll, and page content has to clear the taller state.
-  --nav-height:  111px;
+  // 176px on a phone and 182px at 768px once the nav strip is in the bar. The
+  // larger is used because this is only the FIRST-PAINT value: NavbarComponent
+  // measures the rendered bar and republishes --nav-height, so a few pixels of
+  // over-padding lasts one frame while under-padding hides a heading.
+  --nav-height:  182px;
   --nav-offset:  calc(var(--nav-height) + var(--safe-top));
 }
 
@@ -20,9 +24,11 @@
 // breakpoint is the navbar's own; both numbers were read off the rendered bar
 // at 1181, 1280, 1440 and 1920px.
 //
-// Nothing recomputes this literal. It has to be re-measured whenever the bar's
-// contents or type change, and it has been stale twice already: 34px out after
-// the two-row change, 23px out after this redesign.
+// This literal went stale three times — 34px after the two-row change, 23px
+// after the redesign, and 65px when the phone nav strip was added, which hid
+// every page heading behind the bar. NavbarComponent now measures the rendered
+// bar and republishes --nav-height, so these values are only what the first
+// frame uses before that runs.
 @media (min-width: 1181px) {
   :root { --nav-height: 119px; }
 }

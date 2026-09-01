@@ -158,3 +158,67 @@ test.describe('the nav strip at phone width', () => {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 });
+
+/**
+ * Every page's own heading clears the fixed navbar.
+ *
+ * Reported from the phone: "headings are missing in all the android pages".
+ * They were not missing — they were rendering UNDERNEATH the bar. Measured at
+ * 390px: the navbar is 176px tall and the diagnosis page's <h1> sat at 113px.
+ *
+ * Two causes, and the second is why this is a test rather than a one-line fix.
+ *
+ *   1. --nav-height in styles.scss was a hand-measured literal, 111px, and
+ *      adding the nav strip made the bar 176px. Its own comment recorded that
+ *      it had gone stale twice before (34px, then 23px); this was the third
+ *      time, at 65px. NavbarComponent now measures the rendered bar and
+ *      publishes the value, so the literal is only the first-frame default.
+ *
+ *   2. Eleven pages never used the token at all. They set a hardcoded top
+ *      padding — 6rem, 7rem, 104px, 64px — every one shorter than the bar, so
+ *      their headings were partly hidden even before the strip and completely
+ *      hidden after it.
+ *
+ * A stylesheet cannot tell you this: each rule looks reasonable on its own.
+ * Only the rendered page can, so this walks the routes and compares the first
+ * visible heading against the bar's real height.
+ */
+const HEADING_PAGES = [
+  '/', '/listings', '/new-cars', '/used-cars', '/ai-advisor', '/compare',
+  '/emi-calculator', '/car-loan', '/ev-charging', '/reviews-news',
+  '/price-alerts', '/test-drive', '/buyer-journey', '/pricing-plans',
+  '/ai-valuation', '/mechanic-signup', '/vehicle-diagnosis', '/about',
+  '/profile', '/ev-calculator', '/tco', '/login', '/register', '/list-car',
+  '/my-listings', '/find-mechanic', '/notifications',
+];
+
+for (const route of HEADING_PAGES) {
+  test(`the heading on ${route} is not hidden behind the navbar`, async ({ page }) => {
+    await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    // The bar settles once fonts have loaded and the strip has laid out.
+    await page.waitForTimeout(300);
+
+    const measured = await page.evaluate(() => {
+      const nav = document.querySelector('.navbar');
+      if (!nav) return null;
+      const heading = [...document.querySelectorAll('h1, h2')].find(
+        el => el.getBoundingClientRect().height > 0 && (el as HTMLElement).offsetParent !== null,
+      );
+      if (!heading) return null;
+      return {
+        navBottom: Math.round(nav.getBoundingClientRect().bottom),
+        headingTop: Math.round(heading.getBoundingClientRect().top),
+        text: (heading.textContent ?? '').trim().slice(0, 40),
+      };
+    });
+
+    // A page with no heading has nothing to hide; not this test's business.
+    test.skip(!measured, 'no visible heading on this page');
+
+    expect(
+      measured!.headingTop,
+      `"${measured!.text}" starts at ${measured!.headingTop}px, above the ` +
+        `navbar's bottom edge at ${measured!.navBottom}px — it is behind the bar.`,
+    ).toBeGreaterThanOrEqual(measured!.navBottom);
+  });
+}

@@ -24,8 +24,11 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { ServiceRequestComponent } from './service-request.component';
 import { MarketplaceService } from '../../services/marketplace.service';
+import { AuthService } from '../../services/auth.service';
 
 const FIX = { latitude: 22.58, longitude: 88.47, accuracy_m: 20 };
 
@@ -36,14 +39,20 @@ const MECHANIC: any = {
 
 const CREATED: any = { id: 'sr-1', status: 'open', reference: 'GQ-1' };
 
-function build(market: Partial<MarketplaceService>) {
+/** Signed in with a real Supabase session unless a test says otherwise. */
+function authStub(over: Partial<Record<string, any>> = {}) {
+  return { isLoggedIn: () => true, isLocalOnly: () => false, ...over } as any;
+}
+
+function build(market: Partial<MarketplaceService>, auth = authStub()) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    imports: [ServiceRequestComponent],
+    imports: [ServiceRequestComponent, RouterTestingModule],
     providers: [
       provideHttpClient(),
       provideHttpClientTesting(),
       { provide: MarketplaceService, useValue: market },
+      { provide: AuthService, useValue: auth },
     ],
   });
   return TestBed.createComponent(ServiceRequestComponent).componentInstance as any;
@@ -206,5 +215,70 @@ describe('ServiceRequestComponent — the paths that already worked', () => {
 
     expect(market.createRequest).not.toHaveBeenCalled();
     expect(c.error()).toContain('registration number');
+  });
+});
+
+describe('ServiceRequestComponent — sending needs an account', () => {
+  /*
+   * Measured on Render, after a diagnosis and a successful mechanic search:
+   *
+   *     POST /diagnosis/analyse   201 Created
+   *     GET  /mechanics/nearby    200 OK
+   *     POST /service-requests    401 Unauthorized
+   *
+   * Everything before the send worked. The component had no idea an account
+   * was required and found out from the 401 — after the driver had typed a
+   * registration number, a phone number and a landmark. Same shape as the
+   * broadcast button that could not reach anyone: an action offered that
+   * cannot succeed.
+   */
+  const market = () => marketWith({ nearby: () => Promise.resolve([MECHANIC]) });
+
+  it('will not send when nobody is signed in', async () => {
+    const c = build(market(), authStub({ isLoggedIn: () => false }));
+    await c.locate();
+    c.choose(MECHANIC);
+
+    expect(c.canSubmit()).toBeFalse();
+  });
+
+  it('will not send on a browser-only session either', async () => {
+    // The dev sign-in produces a session with no Supabase token behind it. The
+    // app looks signed in and the API still answers 401, so isLoggedIn() alone
+    // would have let this through and reproduced the reported failure.
+    const c = build(market(), authStub({ isLocalOnly: () => true }));
+    await c.locate();
+    c.choose(MECHANIC);
+
+    expect(c.canSubmit()).toBeFalse();
+  });
+
+  it('sends normally with a real session', async () => {
+    const c = build(market());
+    await c.locate();
+    c.choose(MECHANIC);
+
+    expect(c.canSubmit()).toBeTrue();
+  });
+
+  it('keeps the mechanic list public', async () => {
+    // Deliberate: someone stranded should not have to sign up to see who is
+    // nearby. Only the sending is gated.
+    const c = build(market(), authStub({ isLoggedIn: () => false }));
+    await c.locate();
+
+    expect(c.stage()).toBe('choose');
+    expect(c.mechanics().length).toBe(1);
+  });
+
+  it('does not lose the chosen mechanic behind the gate', async () => {
+    // They are told to sign in; the mechanic they picked must still be the one
+    // the request goes to afterwards.
+    const c = build(market(), authStub({ isLoggedIn: () => false }));
+    await c.locate();
+    c.choose(MECHANIC);
+
+    expect(c.chosen()).toEqual(MECHANIC);
+    expect(c.stage()).toBe('details');
   });
 });
