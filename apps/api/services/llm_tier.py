@@ -104,12 +104,17 @@ def _verify_supabase_token(token: str) -> VerifiedCaller | None:
     try:
         header = jwt.get_unverified_header(token)
     except JWTError:
+        logger.warning("Bearer token rejected: not a readable JWT")
         return None
 
     alg = (header.get("alg") or "").upper()
 
     if alg.startswith("HS"):
         if not settings.supabase_jwt_secret:
+            logger.warning(
+                "Bearer token rejected: HS256 token but SUPABASE_JWT_SECRET is "
+                "not set on this service, so no Supabase session can be verified"
+            )
             return None
         try:
             payload = jwt.decode(
@@ -119,11 +124,17 @@ def _verify_supabase_token(token: str) -> VerifiedCaller | None:
                 # Supabase sets aud="authenticated" on user tokens.
                 options={"verify_aud": False},
             )
-        except JWTError:
+        except JWTError as exc:
+            logger.warning("Bearer token rejected: HS256 verification failed (%s)", exc)
             return None
     else:
         jwks = _jwks()
         if not jwks:
+            logger.warning(
+                "Bearer token rejected: %s token but no JWKS could be fetched "
+                "for this Supabase project",
+                alg or "asymmetric",
+            )
             return None
         kid = header.get("kid")
         key = next(
@@ -131,6 +142,11 @@ def _verify_supabase_token(token: str) -> VerifiedCaller | None:
             None,
         )
         if key is None:
+            logger.warning(
+                "Bearer token rejected: no JWKS key matches kid %r. A rotated "
+                "Supabase signing key looks exactly like this.",
+                kid,
+            )
             return None
         try:
             payload = jwt.decode(
@@ -139,7 +155,8 @@ def _verify_supabase_token(token: str) -> VerifiedCaller | None:
                 algorithms=[alg] if alg else ["ES256", "RS256"],
                 options={"verify_aud": False},
             )
-        except JWTError:
+        except JWTError as exc:
+            logger.warning("Bearer token rejected: %s verification failed (%s)", alg, exc)
             return None
 
     if not payload:

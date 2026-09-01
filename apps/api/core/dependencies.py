@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from fastapi import Cookie, Depends, HTTPException, status
@@ -9,6 +10,8 @@ from core.config import settings
 from core.security import ACCESS_TOKEN_COOKIE, decode_access_token
 from db.session import get_db
 from models.user import User, UserRole
+
+logger = logging.getLogger("gaadiiq.auth")
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -32,6 +35,11 @@ async def get_current_user(
         raw_token = cookie_token
 
     if raw_token is None:
+        # Worth a line of its own: "the client sent no token" and "the token
+        # was refused" are the same 401 in the access log, and they need
+        # completely different fixes — one is a signed-out app, the other a
+        # verification problem on this service.
+        logger.info("401: request carried no Authorization header and no session cookie")
         raise _unauthorized
 
     credentials_exception = HTTPException(
@@ -84,7 +92,12 @@ async def _user_from_supabase_token(
     from services.llm_tier import verify_caller
 
     caller = verify_caller(token)
-    if caller is None or not caller.email:
+    if caller is None:
+        # verify_caller has already logged the specific reason.
+        logger.info("401: bearer token present but did not verify")
+        raise credentials_exception
+    if not caller.email:
+        logger.info("401: token verified but carries no email to match a user on")
         raise credentials_exception
 
     result = await db.execute(select(User).where(User.email == caller.email))
@@ -92,6 +105,7 @@ async def _user_from_supabase_token(
 
     if user is not None:
         if not user.is_active:
+            logger.info("401: verified caller %s is deactivated", caller.email)
             raise credentials_exception
         return user
 
