@@ -133,6 +133,31 @@ class LoanApplicationOut(BaseModel):
     offers: list[LoanOfferOut] = []
 
 
+class LoanApplicationAdminOut(LoanApplicationOut):
+    """An application as the admin queue shows it.
+
+    Adds the fields needed to actually reach the applicant — email, city,
+    pincode, and which lender they chose — to the shape everyone else gets.
+    They are on this schema rather than on `LoanApplicationOut` so that the
+    contact details of an applicant are returned to staff working the queue,
+    not on every read of the applicant's own record.
+
+    PAN stays masked here exactly as everywhere else. An admin who needs the
+    full number for a lender hand-off gets it from that hand-off, not from a
+    list endpoint that would put every applicant's PAN in one response.
+    """
+
+    email: str | None
+    city: str | None
+    pincode: str | None
+    #: The lender they pressed "Continue with", resolved to a name so the queue
+    #: does not have to cross-reference selected_offer_id against the offers.
+    selected_partner_name: str | None
+    #: When they consented to a credit check, which is the record that a call
+    #: about their application is one they asked for.
+    credit_consent_at: datetime | None
+
+
 class SelectOfferRequest(BaseModel):
     offer_id: uuid.UUID
 

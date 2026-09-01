@@ -37,6 +37,7 @@ from schemas.loan_application import (
     CreditCheckOut,
     CreditCheckRequest,
     LendingPartnerOut,
+    LoanApplicationAdminOut,
     LoanApplicationCreate,
     LoanApplicationOut,
     LoanOfferOut,
@@ -126,6 +127,20 @@ def _application_out(app: LoanApplication) -> LoanApplicationOut:
         selected_offer_id=app.selected_offer_id,
         created_at=app.created_at,
         offers=[_offer_out(o) for o in ordered],
+    )
+
+
+def _admin_application_out(app: LoanApplication) -> LoanApplicationAdminOut:
+    """The same application, plus what an admin needs to phone the applicant."""
+    base = _application_out(app)
+    selected = next((o for o in app.offers if o.id == app.selected_offer_id), None)
+    return LoanApplicationAdminOut(
+        **base.model_dump(),
+        email=app.email,
+        city=app.city,
+        pincode=app.pincode,
+        selected_partner_name=selected.partner.name if selected else None,
+        credit_consent_at=app.credit_consent_at,
     )
 
 
@@ -496,13 +511,13 @@ async def withdraw_application(
 
 # ── Admin ────────────────────────────────────────────────────────────────────
 
-@router.get("/admin/applications", response_model=list[LoanApplicationOut])
+@router.get("/admin/applications", response_model=list[LoanApplicationAdminOut])
 async def admin_list_applications(
     db: DbDep,
     admin: AdminUser,
     status_filter: LoanApplicationStatus | None = None,
     limit: int = 50,
-) -> list[LoanApplicationOut]:
+) -> list[LoanApplicationAdminOut]:
     """The queue, for working applications and forwarding them to lenders.
 
     Returns the same masked PAN as everywhere else. An admin who needs the full
@@ -522,4 +537,4 @@ async def admin_list_applications(
     if status_filter is not None:
         stmt = stmt.where(LoanApplication.status == status_filter)
     rows = await db.execute(stmt)
-    return [_application_out(a) for a in rows.scalars().all()]
+    return [_admin_application_out(a) for a in rows.scalars().all()]

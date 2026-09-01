@@ -340,6 +340,9 @@
                 <a routerLink="/admin/mechanics" (click)="userMenuOpen.set(false)" class="dropdown-item">
                   <app-icon name="wrench" [size]="14"></app-icon> Mechanics
                 </a>
+                <a routerLink="/admin/loans" (click)="userMenuOpen.set(false)" class="dropdown-item">
+                  <app-icon name="indian-rupee" [size]="14"></app-icon> Loan Applications
+                </a>
                 <a routerLink="/admin/pdf-ingestion" (click)="userMenuOpen.set(false)" class="dropdown-item">
                   <app-icon name="upload" [size]="14"></app-icon> File Ingestion
                 </a>
@@ -538,6 +541,7 @@
         <a routerLink="/admin/variants" (click)="closeMenu()" class="mm-item">{{ 'Variants' | t }}</a>
         <a routerLink="/admin/upcoming" (click)="closeMenu()" class="mm-item">{{ 'Upcoming Cars' | t }}</a>
         <a routerLink="/admin/mechanics" (click)="closeMenu()" class="mm-item">Mechanics</a>
+        <a routerLink="/admin/loans" (click)="closeMenu()" class="mm-item">Loan Applications</a>
         <a routerLink="/admin/pdf-ingestion" (click)="closeMenu()" class="mm-item">File Ingestion</a>
       </ng-container>
       <button class="btn-outline mm-cta" (click)="logout(); closeMenu()">{{ 'Sign Out' | t }}</button>

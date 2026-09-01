@@ -1,0 +1,112 @@
+<div class="al-page">
+  <header class="al-head">
+    <h1>Loan applications</h1>
+    <p class="al-sub">
+      Everyone who has applied, with the details to reach them. Choosing a lender
+      records the choice only — nothing is sent to the bank — so these calls are
+      how an applicant hears back.
+    </p>
+  </header>
+
+  <div class="al-tabs">
+    <button type="button" *ngFor="let t of TABS"
+            class="al-tab" [class.is-active]="tab() === t.key"
+            (click)="selectTab(t.key)">{{ t.label }}</button>
+  </div>
+
+  <div class="al-toolbar">
+    <input type="search" class="al-search" [(ngModel)]="search" name="search"
+           placeholder="Search name, phone, email, city or reference" />
+    <button type="button" class="al-refresh" [disabled]="loading()" (click)="load()">
+      {{ loading() ? 'Loading…' : 'Refresh' }}
+    </button>
+  </div>
+
+  <p class="al-error" *ngIf="error()">{{ error() }}</p>
+
+  <p class="al-empty" *ngIf="!loading() && !error() && !visible().length">
+    No applications match.
+  </p>
+
+  <div class="al-list">
+    <article class="al-card" *ngFor="let a of visible()">
+
+      <div class="al-card-head">
+        <div>
+          <h2 class="al-name">{{ a.applicant_name }}</h2>
+          <div class="al-ref">{{ a.reference }} · {{ a.created_at | date:'d MMM y, h:mm a' }}</div>
+        </div>
+        <span class="al-status" [attr.data-status]="a.status">{{ statusLabel(a.status) }}</span>
+      </div>
+
+      <!-- The point of the screen: reaching this person. -->
+      <div class="al-contact">
+        <a class="al-btn al-btn-call" [href]="telHref(a.mobile)">
+          <app-icon name="phone" [size]="16"></app-icon> {{ a.mobile }}
+        </a>
+        <a class="al-btn" [href]="waHref(a.mobile)" target="_blank" rel="noopener">
+          WhatsApp
+        </a>
+        <a class="al-btn" *ngIf="a.email" [href]="mailHref(a)">
+          <app-icon name="mail" [size]="16"></app-icon> {{ a.email }}
+        </a>
+        <span class="al-place" *ngIf="a.city || a.pincode">
+          {{ a.city }}<span *ngIf="a.pincode"> {{ a.pincode }}</span>
+        </span>
+      </div>
+
+      <div class="al-grid">
+        <div class="al-field">
+          <span class="al-label">Loan wanted</span>
+          <span class="al-value">{{ money(a.loan_amount) }} over {{ a.tenure_months }} months</span>
+        </div>
+        <div class="al-field">
+          <span class="al-label">Vehicle</span>
+          <span class="al-value">
+            {{ a.vehicle_description || (a.vehicle_condition === 'new' ? 'New car' : 'Used car') }}
+            · {{ money(a.vehicle_price) }}
+          </span>
+        </div>
+        <div class="al-field">
+          <span class="al-label">Monthly income</span>
+          <span class="al-value">{{ money(a.monthly_income) }}</span>
+        </div>
+        <div class="al-field">
+          <span class="al-label">Existing EMI</span>
+          <span class="al-value">{{ money(a.existing_emi) }}</span>
+        </div>
+        <div class="al-field">
+          <span class="al-label">Down payment</span>
+          <span class="al-value">{{ money(a.down_payment) }}</span>
+        </div>
+        <div class="al-field">
+          <span class="al-label">PAN</span>
+          <span class="al-value">{{ a.pan_masked }}</span>
+        </div>
+        <div class="al-field">
+          <span class="al-label">Credit profile</span>
+          <!-- The label already says "Not checked" for an unavailable source;
+               repeating it read "Not checked · not checked" on screen. Only the
+               self-declared case adds anything the label does not carry. -->
+          <span class="al-value">
+            {{ a.credit_band_label }}
+            <span class="al-muted" *ngIf="a.credit_source === 'self_declared'">· self-declared</span>
+          </span>
+        </div>
+        <div class="al-field">
+          <span class="al-label">Employment</span>
+          <span class="al-value">{{ employmentLabel(a.employment_type) }}</span>
+        </div>
+      </div>
+
+      <div class="al-chosen" *ngIf="a.selected_partner_name as bank">
+        Chose <strong>{{ bank }}</strong>
+        <span class="al-muted" *ngIf="!a.credit_consent_at"> · no credit-check consent on file</span>
+      </div>
+      <div class="al-chosen al-chosen-none" *ngIf="!a.selected_partner_name">
+        Has not picked a lender yet.
+      </div>
+
+    </article>
+  </div>
+</div>
