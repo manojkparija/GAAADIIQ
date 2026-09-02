@@ -16,7 +16,7 @@
                style="opacity:0;transition:opacity 0.25s ease"
                (load)="onImgLoad($event)" (error)="onImgError($event)">
           <h4>{{ car.make }} {{ car.model }}</h4>
-          <div class="slot-price gradient-text">{{ formatPrice(car.price) }}</div>
+          <div class="slot-price gradient-text">{{ formatPrice(startsAt(car)) }}</div>
           <div class="slot-sub">{{ car.year }} · {{ car.fuel }}</div>
         </div>
 
@@ -31,7 +31,7 @@
             <div class="search-dropdown" *ngIf="showDropdown() === slot && search(slot)">
               <div class="drop-item" *ngFor="let c of filtered(slot)" (click)="selectCar(slot, c)">
                 <span>{{ c.year }} {{ c.make }} {{ c.model }}</span>
-                <span class="drop-price">{{ formatPrice(c.price) }}</span>
+                <span class="drop-price">{{ formatPrice(startsAt(c)) }}</span>
               </div>
               <div class="drop-empty" *ngIf="filtered(slot).length === 0">{{ 'No results' | t }}</div>
             </div>
@@ -64,7 +64,7 @@
                style="opacity:0;transition:opacity 0.25s ease"
                (load)="onImgLoad($event)" (error)="onImgError($event)">
           <div class="comp-car-name">{{ car.make }} {{ car.model }}</div>
-          <div class="comp-car-price gradient-text">{{ formatPrice(car.price) }}</div>
+          <div class="comp-car-price gradient-text">{{ formatPrice(startsAt(car)) }}</div>
           <a [routerLink]="['/cars', car.id]" class="btn-outline btn-sm">{{ 'View Details' | t }}</a>
         </div>
       </div>
