@@ -16,9 +16,9 @@
 }
 
 .aci-header {
-  background: white;
+  background: var(--card-bg);
   padding: 2rem;
-  border-bottom: 1px solid #e0e7ff;
+  border-bottom: 1px solid var(--divider);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -38,12 +38,12 @@
 .aci-brand-name {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text);
 }
 
 .aci-brand-sub {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .aci-reset {
@@ -60,7 +60,7 @@
 }
 
 .aci-section {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
@@ -71,26 +71,26 @@
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0 0 0.5rem 0;
-  color: #1f2937;
+  color: var(--text);
 }
 
 .aci-section-sub {
-  color: #6b7280;
+  color: var(--text-muted);
   margin: 0 0 1.5rem 0;
   font-size: 0.95rem;
 }
 
 .drop-zone {
-  border: 2px dashed #d1d5db;
+  border: 2px dashed var(--border-soft);
   border-radius: 8px;
   padding: 2rem;
   text-align: center;
   transition: all 0.2s;
-  background: #f9fafb;
+  background: var(--fill-dim);
 
   &.drag-over {
-    border-color: #3b82f6;
-    background: #eff6ff;
+    border-color: var(--primary);
+    background: rgba(41, 94, 224, 0.10);
   }
 }
 
@@ -108,25 +108,25 @@
 .drop-heading {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text);
 }
 
 .drop-sub {
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
 .drop-limits {
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .btn-upload {
   padding: 0.75rem 1.5rem;
   // The brand ramp the primary buttons and tabs use, rather than the flat
-  // #3b82f6 this had — that blue predates the tokens and was the last thing
+  // var(--primary) this had — that blue predates the tokens and was the last thing
   // on this screen still using it.
-  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  background: linear-gradient(90deg, var(--primary) 0%, #06B6D4 55%, #14B8A6 100%);
   color: white;
   border: none;
   border-radius: 6px;
@@ -144,7 +144,7 @@
 
 .btn-primary {
   padding: 0.75rem 1.5rem;
-  background: #10b981;
+  background: var(--teal);
   color: white;
   border: none;
   border-radius: 6px;
@@ -153,7 +153,7 @@
   transition: all 0.2s;
 
   &:hover:not(:disabled) {
-    background: #059669;
+    background: var(--success-ink);
   }
 
   &:disabled {
@@ -165,16 +165,16 @@
 .btn-ghost {
   padding: 0.75rem 1.5rem;
   background: transparent;
-  color: #6b7280;
-  border: 1px solid #d1d5db;
+  color: var(--text-muted);
+  border: 1px solid var(--border-soft);
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s;
 
   &:hover:not(:disabled) {
-    background: #f3f4f6;
-    color: #1f2937;
+    background: var(--fill-dim);
+    color: var(--text);
   }
 
   &:disabled {
@@ -185,8 +185,8 @@
 
 .btn-secondary {
   padding: 0.75rem 1.5rem;
-  background: #6b7280;
-  color: white;
+  background: rgba(41, 94, 224, 0.12);
+  color: var(--info-ink);
   border: none;
   border-radius: 6px;
   font-weight: 600;
@@ -196,13 +196,13 @@
   transition: all 0.2s;
 
   &:hover {
-    background: #4b5563;
+    background: var(--fill-medium);
   }
 }
 
 .aci-selected-files {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--fill-dim);
+  border: 1px solid var(--divider);
   border-radius: 8px;
   padding: 1.5rem;
   margin-top: 1.5rem;
@@ -210,7 +210,7 @@
 
 .aci-files-title {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text);
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
@@ -236,12 +236,12 @@
   font-weight: 600;
   padding: 0.6rem 1.1rem;
   border-radius: 8px;
-  border: 1px dashed #2563eb;
-  background: #eff6ff;
-  color: #1d4ed8;
+  border: 1px dashed var(--primary);
+  background: rgba(41, 94, 224, 0.10);
+  color: var(--info-ink);
   cursor: pointer;
   white-space: nowrap;
-  &:hover { background: #dbeafe; border-style: solid; }
+  &:hover { background: rgba(41, 94, 224, 0.16); border-style: solid; }
 }
 
 .aci-files-title .btn-add-more {
@@ -252,12 +252,12 @@
 .aci-file-clear {
   font: inherit;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-muted);
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
-  &:hover { color: #dc2626; text-decoration: underline; }
+  &:hover { color: var(--danger-ink); text-decoration: underline; }
 }
 
 .aci-file-remove {
@@ -266,12 +266,12 @@
   height: 24px;
   flex: 0 0 auto;
   border-radius: 50%;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  color: #6b7280;
+  border: 1px solid var(--divider);
+  background: var(--fill-dim);
+  color: var(--text-muted);
   cursor: pointer;
   line-height: 1;
-  &:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+  &:hover { background: rgba(239, 68, 68, 0.10); color: var(--danger-ink); border-color: rgba(239, 68, 68, 0.35); }
 }
 
 .aci-files-list {
@@ -285,20 +285,20 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
-  background: white;
+  background: var(--card-bg);
   border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--divider);
   font-size: 0.9rem;
 }
 
 .aci-file-name {
-  color: #1f2937;
+  color: var(--text);
   font-weight: 500;
   word-break: break-word;
 }
 
 .aci-file-size {
-  color: #9ca3af;
+  color: var(--text-muted);
   white-space: nowrap;
   margin-left: 1rem;
 }
@@ -306,7 +306,7 @@
 .aci-upload-info {
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: #f3f4f6;
+  background: var(--fill-dim);
   border-radius: 6px;
 }
 
@@ -316,7 +316,7 @@
 
 .size-bar-track {
   height: 8px;
-  background: #e5e7eb;
+  background: var(--divider);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -324,27 +324,27 @@
 
 .size-bar-fill {
   height: 100%;
-  background: #10b981;
+  background: var(--teal);
   transition: all 0.2s ease;
 
   &.warning {
-    background: #f59e0b;
+    background: var(--warning);
   }
 
   &.danger {
-    background: #ef4444;
+    background: var(--danger);
   }
 }
 
 .size-label {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .size-warning {
   font-size: 0.875rem;
-  color: #f59e0b;
+  color: var(--warning);
   padding: 0.5rem 0;
 }
 
@@ -358,7 +358,7 @@
 .aci-form-section {
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: #f9fafb;
+  background: var(--fill-dim);
   border-radius: 8px;
 }
 
@@ -366,7 +366,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0 0 1rem 0;
-  color: #1f2937;
+  color: var(--text);
 }
 
 .aci-form-grid {
@@ -390,7 +390,7 @@
 .aci-label {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text);
 }
 
 // Sits under a field to explain a choice whose consequence is not obvious from
@@ -398,13 +398,13 @@
 // reaches, which is worth stating.
 .aci-hint {
   font-size: 0.78rem;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-top: 0.25rem;
 }
 
 .aci-input {
   padding: 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-soft);
   border-radius: 6px;
   font-size: 0.95rem;
   font-family: inherit;
@@ -412,7 +412,7 @@
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 }
@@ -424,15 +424,15 @@
 }
 
 .aci-hint-card {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--card-bg);
+  border: 1px solid var(--divider);
   border-radius: 6px;
   padding: 1rem;
 }
 
 .aci-hint-filename {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text);
   font-size: 0.9rem;
   margin-bottom: 0.75rem;
   word-break: break-word;
@@ -445,8 +445,8 @@
 }
 
 .aci-hint-badge {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(41, 94, 224, 0.16);
+  color: var(--info-ink);
   padding: 0.25rem 0.75rem;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -464,12 +464,12 @@
 // Amber, not red: the upload succeeded. This says the image is stored but has
 // nowhere to appear yet, which is a thing to act on rather than a failure.
 .aci-warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warning-ink);
   padding: 1rem;
   border-radius: 6px;
   margin-top: 1rem;
-  border-left: 4px solid #d97706;
+  border-left: 4px solid var(--warning);
 
   ul {
     margin: 0.5rem 0 0;
@@ -482,12 +482,12 @@
 }
 
 .aci-error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(239, 68, 68, 0.10);
+  color: var(--danger-ink);
   padding: 1rem;
   border-radius: 6px;
   margin-top: 1rem;
-  border-left: 4px solid #dc2626;
+  border-left: 4px solid var(--danger-ink);
 }
 
 .aci-result-summary {
@@ -498,21 +498,21 @@
 }
 
 .aci-result-item {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border: 1px solid #86efac;
+  background: rgba(16, 185, 129, 0.10);
+  border: 1px solid rgba(16, 185, 129, 0.35);
   border-radius: 8px;
   padding: 1.5rem;
   text-align: center;
 
   &.aci-result-rejected {
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    border-color: #fca5a5;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.10) 0%, rgba(239, 68, 68, 0.35) 100%);
+    border-color: rgba(239, 68, 68, 0.45);
   }
 }
 
 .aci-result-label {
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--text-muted);
   font-weight: 600;
   text-transform: uppercase;
   margin-bottom: 0.5rem;
@@ -521,29 +521,29 @@
 .aci-result-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #059669;
+  color: var(--success-ink);
   margin-bottom: 0.5rem;
 
   .aci-result-rejected & {
-    color: #dc2626;
+    color: var(--danger-ink);
   }
 }
 
 .aci-result-desc {
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .aci-errors {
-  background: #fee2e2;
-  border: 1px solid #fecaca;
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 2rem;
 
   h4 {
     margin: 0 0 0.75rem 0;
-    color: #991b1b;
+    color: var(--danger-ink);
   }
 
   ul {
@@ -552,7 +552,7 @@
     margin: 0;
 
     li {
-      color: #7f1d1d;
+      color: var(--danger-ink);
       font-size: 0.9rem;
       padding: 0.25rem 0;
     }
@@ -564,7 +564,7 @@
 
   h3 {
     margin: 0 0 1rem 0;
-    color: #1f2937;
+    color: var(--text);
   }
 }
 
@@ -575,14 +575,14 @@
 }
 
 .aci-image-card {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--card-bg);
+  border: 1px solid var(--divider);
   border-radius: 8px;
   overflow: hidden;
   transition: all 0.2s;
 
   &:hover {
-    border-color: #3b82f6;
+    border-color: var(--primary);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
   }
 }
@@ -591,7 +591,7 @@
   width: 100%;
   height: 150px;
   object-fit: cover;
-  background: #f3f4f6;
+  background: var(--fill-dim);
 }
 
 .aci-image-info {
@@ -600,21 +600,21 @@
 
 .aci-image-name {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text);
   font-size: 0.85rem;
   word-break: break-word;
 }
 
 .aci-image-meta {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-top: 0.25rem;
 }
 
 .aci-dedup-badge {
   display: inline-block;
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warning-ink);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
@@ -626,7 +626,7 @@
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  background: #1f2937;
+  background: var(--ink);
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 8px;
@@ -651,7 +651,7 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--divider);
   font-size: 0.75rem;
 }
 
@@ -664,17 +664,17 @@
 
 .aci-ml-label {
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-muted);
   min-width: 3rem;
 }
 
 .aci-ml-value {
-  color: #1f2937;
+  color: var(--text);
   font-weight: 500;
 
   &.ml-flagged {
-    color: #dc2626;
-    background: #fee2e2;
+    color: var(--danger-ink);
+    background: rgba(239, 68, 68, 0.10);
     padding: 0.125rem 0.25rem;
     border-radius: 2px;
   }
@@ -682,7 +682,7 @@
 
 .aci-ml-confidence {
   display: block;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 0.7rem;
   margin-left: 3rem;
 }
@@ -718,10 +718,10 @@
 }
 
 .aci-existing-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--divider);
   border-radius: 10px;
   overflow: hidden;
-  background: #fff;
+  background: var(--card-bg);
   display: flex;
   flex-direction: column;
 
@@ -729,7 +729,7 @@
     width: 100%;
     height: 110px;
     object-fit: cover;
-    background: #f3f4f6;
+    background: var(--fill-dim);
   }
 }
 
@@ -744,7 +744,7 @@
 .aci-existing-name {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -752,7 +752,7 @@
 
 .aci-existing-tags {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .aci-remove-image {
@@ -762,11 +762,11 @@
   font-size: 0.82rem;
   font-weight: 600;
   border-radius: 7px;
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger-ink);
   cursor: pointer;
-  &:hover:not(:disabled) { background: #fee2e2; }
+  &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.10); }
   &:disabled { opacity: 0.6; cursor: default; }
 }
 
