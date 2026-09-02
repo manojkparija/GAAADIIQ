@@ -125,7 +125,13 @@
   // car column shifts one place left and the header stops lining up with the
   // rows underneath.
   .comp-label-col { padding:0; background:none; border:0; }
-  .comp-car-col { padding:1.25rem; text-align:center; img{width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:0.75rem;background:#0B1220;color:transparent;font-size:0;} }
+  .comp-car-col {
+    padding: 1.25rem;
+    text-align: center;
+    // Every millimetre of padding here comes off the button's width on a phone.
+    @media (max-width: 768px) { padding: 0.6rem 0.4rem; }
+    img { width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:0.75rem; background:#0B1220; color:transparent; font-size:0; }
+  }
   .comp-car-name { font-weight:700; font-size:0.95rem; margin-bottom:0.25rem; }
   .comp-car-price { font-size:1.1rem; font-weight:900; margin-bottom:0.75rem; }
 }
@@ -135,20 +141,43 @@
 // value ("₹11,98,000" beside a crown) widened its own column and pushed the
 // row out of step with the others.
 //
-// On a phone the car columns take a floor of 120px and the table scrolls
-// sideways instead of compressing: at 360px, three 1fr columns beside a 120px
-// label are 80px each, which is narrower than the "View Details" button inside
-// them.
+// On a phone the car columns take a floor and the table scrolls sideways
+// instead of compressing: at 360px, three 1fr columns beside the label column
+// would be 80px each, narrower than the "View Details" button inside them.
 .comp-header, .comp-row, .feat-row {
   display: grid;
   grid-template-columns: 180px repeat(var(--cols, 3), minmax(0, 1fr));
 
+  // On a phone the label column is the thing competing with the cars for
+  // width, and its widest label is "KM Driven". 96px holds that at the reduced
+  // type below and hands the ~24px back to the cars — which also moves the
+  // photographs left, since the empty corner cell above the labels is what was
+  // pushing the first one inward.
+  //
+  // The car columns take a 132px floor rather than 120px because "View
+  // Details" has to fit inside one: at 120px the column had 111px of content
+  // after padding and the button was cut off mid-word.
   @media (max-width: 768px) {
-    grid-template-columns: 120px repeat(var(--cols, 3), minmax(120px, 1fr));
+    grid-template-columns: 96px repeat(var(--cols, 3), minmax(132px, 1fr));
   }
 }
 .comp-row { border-bottom:1px solid rgba(255,255,255,0.05); &.alt{background:rgba(255,255,255,0.02);} }
-.comp-label, .feat-label { padding:0.85rem 1.25rem; font-size:0.85rem; color:var(--muted); font-weight:600; }
+.comp-label, .feat-label {
+  padding:0.85rem 1.25rem; font-size:0.85rem; color:var(--muted); font-weight:600;
+  @media (max-width: 768px) { padding:0.75rem 0.5rem; font-size:0.72rem; }
+}
+
+// The button names a whole action and must not be cut to "View Deta". It takes
+// the column it is in rather than sizing to its own text, and holds one line.
+.comp-car-col .btn-outline {
+  @media (max-width: 768px) {
+    display: block;
+    width: 100%;
+    padding: 0.45rem 0.2rem;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+}
 .comp-val, .feat-val { padding:0.85rem 1rem; text-align:center; font-size:0.875rem; display:flex; align-items:center; justify-content:center; gap:0.4rem;
   &.winner { color:var(--success-ink); font-weight:700; background:rgba(67,233,123,0.06); }
 }
