@@ -4,16 +4,17 @@ import { computeOnRoadPrice } from './on-road-price';
  * The on-road price is what a buyer budgets against, so an error here is money
  * rather than presentation.
  *
- * GST was added to the ex-showroom price, which already contains it: an
- * ex-showroom figure is the ex-factory price plus GST plus the dealer's
- * margin. A ₹5,25,000 S-Presso was therefore taxed twice and quoted at ₹7.4L
- * on the road — ₹1.5L more than it costs.
+ * GST was once added to the ex-showroom price, which already contains it: an
+ * ex-showroom figure is the ex-factory price plus GST and cess plus the
+ * dealer's margin. A ₹5,25,000 S-Presso was therefore taxed twice and quoted
+ * at ₹7.4L on the road — ₹1.5L more than it costs. The first test below is
+ * that regression.
  *
- * The rates themselves were the pre-reform ones: a 28% slab plus a
- * compensation cess of 1% to 22%. The 56th GST Council meeting replaced that
- * from 22 September 2025 with 18% on small cars, 40% on everything larger, and
- * no cess at all — so the breakdown shown to a buyer no longer matched any
- * invoice they would be handed in a showroom.
+ * The breakdown then reported GST as an indented "included" line rather than
+ * adding it. That is gone too: it read as another charge, and keeping the slab
+ * right meant knowing a car's length, which the catalogue does not record — a
+ * sub-4m SUV was showing 40% where 18% applies. What this computes now is only
+ * what a buyer pays ON TOP of the ex-showroom price.
  */
 describe('computeOnRoadPrice', () => {
   // The car from the report: S-Presso VXI+ CNG, ₹5.25L, West Bengal at 7%.
@@ -28,20 +29,6 @@ describe('computeOnRoadPrice', () => {
     expect(orp.total).toBeLessThan(700000);
   });
 
-  it('reports the tax that is inside the ex-showroom price', () => {
-    const orp = spresso();
-
-    // Recovered from the price, so ex-factory plus its taxes comes back to it.
-    const exFactory = 525000 - orp.gst - orp.cess;
-    expect(exFactory + orp.gst + orp.cess).toBe(525000);
-    // A share of the taxable value, not of the ex-showroom price.
-    expect(orp.gst).toBeLessThan(Math.round(525000 * 0.18));
-    expect(orp.gstRate).toBe(18);
-    // Compensation cess was abolished for cars; the line stays, the rate does not.
-    expect(orp.cessRate).toBe(0);
-    expect(orp.cess).toBe(0);
-  });
-
   it('adds road tax, insurance and handling, which no published price includes', () => {
     const orp = spresso();
 
@@ -50,14 +37,26 @@ describe('computeOnRoadPrice', () => {
     expect(orp.handling).toBe(10000);
   });
 
-  it('charges an electric car 5% GST and half the road tax', () => {
+  it('charges an electric car half the state road tax', () => {
+    // Most states levy half or nothing on an EV. This was asserted inside a
+    // test that also checked the 5% GST line; that line is gone, this rule is
+    // not, so it keeps a test of its own.
     const ev = computeOnRoadPrice(1500000, 'Electric', 'SUV', 0.08);
+    const petrol = computeOnRoadPrice(1500000, 'Petrol', 'SUV', 0.08);
 
-    expect(ev.gstRate).toBe(5);
-    expect(ev.cessRate).toBe(0);
+    expect(ev.registration).toBe(Math.round(1500000 * 0.04));
+    expect(petrol.registration).toBe(Math.round(1500000 * 0.08));
     expect(ev.regRate).toBe(4);
-    // Still not added on top, whatever the rate.
-    expect(ev.total).toBe(1500000 + ev.registration + ev.insurance + ev.handling);
+  });
+
+  it('reports no tax field a caller could put back on the total', () => {
+    // The shape is the guard: with no gst/cess on the result, a template
+    // cannot render a tax line and a sum cannot include one by accident.
+    const orp = spresso() as unknown as Record<string, unknown>;
+
+    expect('gst' in orp).toBeFalse();
+    expect('gstRate' in orp).toBeFalse();
+    expect('cess' in orp).toBeFalse();
   });
 
   it('follows the state road tax rate', () => {
@@ -65,26 +64,5 @@ describe('computeOnRoadPrice', () => {
     const dear = computeOnRoadPrice(525000, 'Petrol', 'Hatchback', 0.12);
 
     expect(dear.total - cheap.total).toBe(Math.round(525000 * 0.07));
-  });
-
-  it('charges an SUV the large-car rate whatever it costs', () => {
-    // Outside the small-car definition by length and ground clearance, so an
-    // inexpensive one is still a large car for GST.
-    const dear = computeOnRoadPrice(2500000, 'Diesel', 'SUV', 0.1);
-    const cheap = computeOnRoadPrice(800000, 'Petrol', 'SUV', 0.1);
-
-    expect(dear.gstRate).toBe(40);
-    expect(cheap.gstRate).toBe(40);
-    expect(dear.cessRate).toBe(0);
-  });
-
-  it('charges a small hatchback the small-car rate', () => {
-    const small = computeOnRoadPrice(600000, 'Petrol', 'Hatchback', 0.07);
-    expect(small.gstRate).toBe(18);
-  });
-
-  it('charges a large saloon the large-car rate', () => {
-    const large = computeOnRoadPrice(2200000, 'Petrol', 'Sedan', 0.1);
-    expect(large.gstRate).toBe(40);
   });
 });

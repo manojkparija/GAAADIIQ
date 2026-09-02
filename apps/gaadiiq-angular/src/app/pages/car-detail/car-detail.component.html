@@ -695,13 +695,18 @@
           </div>
           <div class="orp-row"><span>{{ 'Ex-Showroom' | t }}</span><span>{{ formatPrice(orp.base) }}</span></div>
           <!--
-            Indented and greyed: GST and cess are part of the ex-showroom price
-            above, not additions to it, so they must not read as another line
-            a buyer pays. Shown at all because a buyer wants to know what tax
-            is in the price.
+            No GST line. It is inside the ex-showroom figure above — that price
+            is factory cost plus dealer margin plus GST and cess — so what this
+            panel adds is only what is NOT in it: road tax, registration and
+            insurance.
+
+            It used to be shown as an indented "included" line, on the reasoning
+            that a buyer wants to know what tax is in the price. In practice it
+            read as another charge, and it also had to be right: the slab was
+            being picked from body type, so a sub-4m SUV like the Fronx showed
+            40% where 18% applies. A number that is not part of the sum and is
+            hard to keep true is better not shown.
           -->
-          <div class="orp-row orp-row--included"><span>↳ GST ({{ orp.gstRate }}%) — included</span><span>{{ formatPrice(orp.gst) }}</span></div>
-          <div class="orp-row orp-row--included" *ngIf="orp.cess > 0"><span>↳ Cess ({{ orp.cessRate }}%) — included</span><span>{{ formatPrice(orp.cess) }}</span></div>
           <div class="orp-row"><span>Road Tax ({{ orp.regRate }}%)</span><span>{{ formatPrice(orp.registration) }}</span></div>
           <div class="orp-row"><span>Insurance (TP + OD)</span><span>{{ formatPrice(orp.insurance) }}</span></div>
           <div class="orp-row"><span>{{ 'Handling Charges' | t }}</span><span>{{ formatPrice(orp.handling) }}</span></div>
