@@ -46,7 +46,12 @@
     </div>
 
     <!-- Comparison table -->
-    <div class="comparison-table glass-card" *ngIf="activeCars().length >= 2">
+    <!-- --cols is the number of cars actually being compared. The grid used to
+         hardcode three, so comparing two cars laid every row out in four
+         columns and left an empty one on the right: the header, the spec rows
+         and the feature rows all stopped lining up with the cars above them. -->
+    <div class="comparison-table glass-card" *ngIf="activeCars().length >= 2"
+         [style.--cols]="activeCars().length">
       <!-- Header -->
       <div class="comp-header">
         <!-- The corner cell of a comparison table names nothing: the rows

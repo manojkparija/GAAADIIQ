@@ -51,106 +51,16 @@
   p { font-size: 0.8rem; color: var(--muted); }
 }
 
-// LAY-002: comparison table wraps in a horizontal scroll container on mobile
-.comparison-table-wrap {
-  margin-top: 2rem;
-  border-radius: 20px;
-  overflow: hidden;
-  border: 1px solid var(--border-soft);
-
-  @media (max-width: 768px) {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: 12px;
-  }
-}
-
-// LAY-002/003: sticky header respects notch; columns have readable min-widths on mobile
-.sticky-header {
-  display: grid;
-  grid-template-columns: 200px repeat(3, 1fr);
-  background: rgba(30,64,175,0.15);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-soft);
-  position: sticky;
-  top: var(--nav-offset, 64px); // LAY-007
-  z-index: 10;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 110px repeat(3, minmax(130px, 1fr));
-    top: var(--nav-offset, 56px);
-  }
-
-  .spec-label-col {
-    padding: 1.5rem;
-    color: var(--muted);
-    font-size: 0.85rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    // LAY-003: first column sticky within horizontal scroll
-    position: sticky;
-    left: 0;
-    background: rgba(14, 20, 40, 0.95);
-    backdrop-filter: blur(12px);
-    z-index: 5;
-
-    @media (max-width: 768px) { padding: 1rem 0.75rem; font-size: 0.78rem; }
-  }
-
-  .car-col {
-    padding: 1.25rem;
-    text-align: center;
-    min-width: 130px;
-
-    img { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 0.75rem; }
-    h3 { font-size: 0.95rem; font-weight: 700; }
-    .car-price { font-size: 0.85rem; color: #1e40af; font-weight: 600; }
-
-    @media (max-width: 768px) {
-      padding: 0.75rem;
-      img { height: 70px; }
-      h3 { font-size: 0.82rem; }
-    }
-  }
-}
-
-.spec-rows { background: rgba(255,255,255,0.03); }
-
-.spec-row {
-  display: grid;
-  grid-template-columns: 200px repeat(3, 1fr);
-  border-bottom: 1px solid var(--divider);
-  &:last-child { border-bottom: none; }
-  &.price-row .spec-val { font-weight: 700; color: #1e40af; }
-
-  @media (max-width: 768px) {
-    grid-template-columns: 110px repeat(3, minmax(130px, 1fr));
-  }
-}
-
-.spec-label {
-  padding: 1rem 1.5rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  // LAY-003: sticky label column in scroll region
-  position: sticky;
-  left: 0;
-  background: var(--navy);
-  z-index: 4;
-
-  @media (max-width: 768px) { padding: 0.75rem; font-size: 0.78rem; }
-}
-
-.spec-val {
-  padding: 1rem; text-align: center; font-size: 0.9rem;
-  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-  transition: background 0.2s;
-  &.winner { background: rgba(67,233,123,0.12); color: var(--success-ink); font-weight: 600; }
-}
-.win-badge { font-size: 0.75rem; }
+// Removed here: .comparison-table-wrap, .sticky-header, .spec-rows, .spec-row,
+// .spec-label and .spec-val — about ninety lines carrying the LAY-002/003
+// mobile rules (a scroll container, 130px column floors, a sticky label
+// column). The template was rewritten to .comp-header/.comp-row/.feat-row and
+// none of these selectors has matched anything since. Styles here are
+// component-scoped, so they could only ever apply to this template.
+//
+// They are worth a note rather than a silent deletion: the mobile handling
+// this page needs was written once and then orphaned, which is why the live
+// table had none of it. The rules above now carry it.
 
 .empty-state {
   margin: 3rem auto; max-width: 400px;
@@ -196,7 +106,14 @@
   &:hover { filter: brightness(1.08); transform: translateY(-1px); }
   &:active { transform: translateY(0); }
 }
+// overflow:hidden keeps the glass card's rounded corners on the table inside
+// it. On a phone that clipped the comparison instead of letting it scroll —
+// the far column was cut off at the screen edge with no way to reach it.
 .comparison-table { padding:0; overflow:hidden;
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   .comp-header { display:grid; gap:0; border-bottom:2px solid rgba(30,64,175,0.3); }
   // The corner cell of the comparison table, above the row labels. It holds
   // no text — a comparison table's corner names nothing — so it carries no
@@ -212,7 +129,24 @@
   .comp-car-name { font-weight:700; font-size:0.95rem; margin-bottom:0.25rem; }
   .comp-car-price { font-size:1.1rem; font-weight:900; margin-bottom:0.75rem; }
 }
-.comp-header, .comp-row, .feat-row { display:grid; grid-template-columns:180px repeat(3, 1fr); @media(max-width:768px){grid-template-columns:120px repeat(3,1fr);} }
+// One column per car actually being compared, not three regardless.
+//
+// minmax(0, 1fr) rather than 1fr: a bare 1fr is min-content-floored, so a long
+// value ("₹11,98,000" beside a crown) widened its own column and pushed the
+// row out of step with the others.
+//
+// On a phone the car columns take a floor of 120px and the table scrolls
+// sideways instead of compressing: at 360px, three 1fr columns beside a 120px
+// label are 80px each, which is narrower than the "View Details" button inside
+// them.
+.comp-header, .comp-row, .feat-row {
+  display: grid;
+  grid-template-columns: 180px repeat(var(--cols, 3), minmax(0, 1fr));
+
+  @media (max-width: 768px) {
+    grid-template-columns: 120px repeat(var(--cols, 3), minmax(120px, 1fr));
+  }
+}
 .comp-row { border-bottom:1px solid rgba(255,255,255,0.05); &.alt{background:rgba(255,255,255,0.02);} }
 .comp-label, .feat-label { padding:0.85rem 1.25rem; font-size:0.85rem; color:var(--muted); font-weight:600; }
 .comp-val, .feat-val { padding:0.85rem 1rem; text-align:center; font-size:0.875rem; display:flex; align-items:center; justify-content:center; gap:0.4rem;
