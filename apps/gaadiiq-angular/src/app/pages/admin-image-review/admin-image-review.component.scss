@@ -115,3 +115,13 @@
     resize: vertical;
   }
 }
+
+/* Which uploads reach this queue — see the note in the template. */
+.review-scope {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+
+  a { color: var(--primary); }
+}

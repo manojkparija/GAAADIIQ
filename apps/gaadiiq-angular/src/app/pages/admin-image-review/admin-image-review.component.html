@@ -6,6 +6,21 @@
         Photographs submitted by dealers. Nothing here is visible to a buyer
         until it is approved.
       </p>
+      <!--
+        Which uploads reach this queue, and which do not.
+
+        Photographs live in two tables (routers/media_admin.py): dealer
+        submissions in car_images, which this screen reads, and admin uploads
+        in vehicle_media, which go live without review because the person
+        uploading is already the approver. Nothing said so, so an admin who had
+        just uploaded through Car Images came here, read "Nothing waiting for
+        review", and reasonably concluded the upload had failed.
+      -->
+      <p class="review-scope">
+        Only dealer submissions appear here. Photographs you upload yourself
+        through <a routerLink="/admin/car-images">Car Images</a> are published
+        straight away and never enter this queue.
+      </p>
     </header>
 
     <div class="review-tabs">
@@ -20,7 +35,9 @@
 
     <div class="rv-state" *ngIf="!loading() && images().length === 0">
       <ng-container [ngSwitch]="filter()">
-        <span *ngSwitchCase="'pending'">Nothing waiting for review.</span>
+        <span *ngSwitchCase="'pending'">
+          Nothing waiting for review — no dealer has submitted a photograph.
+        </span>
         <span *ngSwitchCase="'approved'">Nothing approved yet.</span>
         <span *ngSwitchDefault>Nothing rejected.</span>
       </ng-container>
