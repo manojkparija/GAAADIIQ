@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { CarsDataService, Car } from '../../services/cars-data.service';
+import { CarsDataService, Car, startingPrice } from '../../services/cars-data.service';
 import { SeoService } from '../../services/seo.service';
 import { AnalyticsService } from '../../services/analytics.service';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -57,6 +57,14 @@ interface AdvisorStep {
 }
 
 export interface RecommendedCar extends Car {
+  /**
+   * The price this recommendation was made on: the cheapest published trim.
+   *
+   * Separate from `price`, which is the catalogue row's own figure and is not
+   * what the car starts at — ₹9.3L on a Fronx whose entry trim is ₹6.84L.
+   * Every derived cost on the card is worked out from this one.
+   */
+  startPrice: number;
   matchScore: number; confidence: string;
   reasons: string[]; pros: string[]; cons: string[];
   monthlyFuel: number; monthlyEmi: number;
@@ -490,14 +498,20 @@ export class AiAdvisorComponent {
       const cons: string[] = [];
 
       // ── 1. Budget (25 pts) ─────────────────────────────────────────────
-      if (car.price >= budMin && car.price <= budMax) {
+      //
+      // What the car costs to get into, not the catalogue row's figure. The
+      // row reads ₹9.3L for a Fronx whose entry trim is ₹6.84L, so the advisor
+      // was telling a buyer "₹9.3L — fits your budget exactly" about a price
+      // no trim is sold at, and pricing the EMI and the five-year cost off it.
+      const price = startingPrice(car);
+      if (price >= budMin && price <= budMax) {
         score += 25; reasons.push('Within your budget');
-        pros.push(`${this.fmtP(car.price)} — fits your budget exactly`);
-      } else if (car.price < budMin && car.price >= budMin * 0.75) {
-        score += 18; pros.push(`${this.fmtP(car.price)} — below budget, great savings`);
-      } else if (car.price > budMax && car.price <= budMax * 1.12) {
-        score += 10; cons.push(`${this.fmtP(car.price - budMax)} above your budget`);
-      } else if (car.price < budMin * 0.75) {
+        pros.push(`${this.fmtP(price)} — fits your budget exactly`);
+      } else if (price < budMin && price >= budMin * 0.75) {
+        score += 18; pros.push(`${this.fmtP(price)} — below budget, great savings`);
+      } else if (price > budMax && price <= budMax * 1.12) {
+        score += 10; cons.push(`${this.fmtP(price - budMax)} above your budget`);
+      } else if (price < budMin * 0.75) {
         score += 12;
       } else {
         score -= 20; cons.push('Significantly over your stated budget');
@@ -627,13 +641,17 @@ export class AiAdvisorComponent {
 
       // ── Cost calculations ──────────────────────────────────────────────
       const monthlyFuel = this.calcFuel(dailyKm, parseFloat(mileageSpec?.value || '18'), car.fuel);
-      const monthlyEmi  = this.calcEmi(car.price * 0.8, 8.5, 60);
+      // Every derived figure follows the same price, so the EMI, the insurance,
+      // the resale and the five-year total all describe the trim the card
+      // quotes. Mixing them — a headline from one trim and an EMI from another
+      // — is how the card came to disagree with itself.
+      const monthlyEmi  = this.calcEmi(price * 0.8, 8.5, 60);
       const baseMaint   = MAINT[car.make] || 12000;
       const annualMaint = car.fuel === 'Electric' ? Math.round(baseMaint * 0.55) : car.fuel === 'Hybrid' ? Math.round(baseMaint * 0.80) : baseMaint;
-      const insurance   = car.price * 0.04;
+      const insurance   = price * 0.04;
       const resalePct   = RESALE[car.make] || 0.52;
-      const resale5yr   = car.price * resalePct;
-      const fiveYearTco = car.price + monthlyFuel * 60 + annualMaint * 5 + insurance * 5 - resale5yr;
+      const resale5yr   = price * resalePct;
+      const fiveYearTco = price + monthlyFuel * 60 + annualMaint * 5 + insurance * 5 - resale5yr;
       const costPerKm   = monthlyFuel / (dailyKm * 30);
 
       // Fill empty pros/cons
@@ -646,6 +664,9 @@ export class AiAdvisorComponent {
 
       return {
         ...car,
+        // The price this recommendation was actually made on, so the card, the
+        // comparison table and the EMI beside them cannot drift apart.
+        startPrice: price,
         matchScore: norm,
         confidence: norm >= 80 ? 'High' : norm >= 65 ? 'Medium' : 'Moderate',
         reasons: reasons.slice(0, 4),

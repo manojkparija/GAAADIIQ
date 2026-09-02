@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CarsDataService, Car, isShowable } from '../../services/cars-data.service';
+import { CarsDataService, Car, isShowable, startingPrice } from '../../services/cars-data.service';
 import { TcoService, TcoBreakdown } from '../../services/tco.service';
 import { SeoService } from '../../services/seo.service';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -117,14 +117,25 @@ export class CompareComponent implements OnInit {
     this.selected.update(arr => { const n = [...arr]; n[slot] = null; return n; });
   }
 
-  getVal(car: Car, key: string): any { return (car as any)[key]; }
+  /**
+   * The value a spec row compares.
+   *
+   * `price` is redirected to the entry trim, because the row's own figure is
+   * not a price the car is sold at — and this row awards a crown, so comparing
+   * on it declares a winner between two numbers that do not exist.
+   */
+  getVal(car: Car, key: string): any {
+    return key === 'price' ? this.startsAt(car) : (car as any)[key];
+  }
 
   isWinner(key: string, car: Car, higher: boolean | null): boolean {
     if (higher === null) return false;
     const sel = this.selected().filter(Boolean) as Car[];
     if (sel.length < 2) return false;
-    const vals = sel.map(c => parseFloat(String((c as any)[key])));
-    const myVal = parseFloat(String((car as any)[key]));
+    // Through getVal, so the crown is decided on the same number the row
+    // displays rather than on the raw field beside it.
+    const vals = sel.map(c => parseFloat(String(this.getVal(c, key))));
+    const myVal = parseFloat(String(this.getVal(car, key)));
     if (isNaN(myVal)) return false;
     return higher ? myVal === Math.max(...vals) : myVal === Math.min(...vals);
   }
@@ -137,6 +148,16 @@ export class CompareComponent implements OnInit {
   }
 
   formatPrice(p: number) { return `₹${(p/100000).toFixed(1)}L`; }
+
+  /**
+   * What a car on this page costs from.
+   *
+   * Comparing two cars on the catalogue row's figure compares two numbers
+   * neither is sold at — the Fronx row reads ₹9.3L against an entry trim of
+   * ₹6.84L. An advert has no trims, so this is its own price, which is right:
+   * a used car is one car at one price.
+   */
+  startsAt(car: Car) { return startingPrice(car); }
 
 
   /**
@@ -168,7 +189,16 @@ export class CompareComponent implements OnInit {
     img.style.opacity = '1';
   }
 
-  getTco(car: Car): TcoBreakdown { return this.tco.calculateTco(car); }
+  /**
+   * Five-year cost, priced from the trim the page is quoting.
+   *
+   * Registration, insurance and resale are all percentages of the purchase
+   * price, so an error there is multiplied through the whole table rather than
+   * carried.
+   */
+  getTco(car: Car): TcoBreakdown {
+    return this.tco.calculateTco({ ...car, price: this.startsAt(car) });
+  }
   tcoRows: { label: string; key: keyof TcoBreakdown }[] = [
     { label: 'Purchase Price', key: 'purchasePrice' },
     { label: 'Registration (9%)', key: 'registration' },
