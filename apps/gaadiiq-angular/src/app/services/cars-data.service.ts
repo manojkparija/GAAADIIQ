@@ -183,6 +183,41 @@ export function isShowable(car: { image?: string | null; fromCatalogue?: boolean
 }
 
 /**
+ * What a model costs *from*: the cheapest published trim.
+ *
+ * `car.price` is one hand-maintained figure on the catalogue row, and it is
+ * not the entry price — the Fronx row reads ₹9.3L against trims running
+ * ₹6.84L to ₹11.98L. Any surface that says "onwards", "starts at" or "from"
+ * and reads `car.price` is therefore promising that nothing is cheaper while
+ * ₹2.46L of the range sits below it.
+ *
+ * This has now been found and fixed three times on three different screens —
+ * the listings grid, the New Cars grid, and the similar-cars table on the car
+ * detail page — because each one did the arithmetic itself. It lives here so
+ * the fourth surface inherits it instead of repeating it.
+ *
+ * Falls back to the row's figure for a model whose trims are unpriced or not
+ * entered yet: that is the only price such a car has.
+ */
+export function startingPrice(car: { price: number; variantPriceMin?: number }): number {
+  return car.variantPriceMin ?? car.price;
+}
+
+/**
+ * The band a model is sold across, as [cheapest, dearest] published trims.
+ *
+ * Null when the trims carry no prices, so a caller can tell "one price" from
+ * "a range that happens to be a point" and render "onwards" only when it is
+ * true.
+ */
+export function priceBand(
+  car: { price: number; variantPriceMin?: number; variantPriceMax?: number },
+): [number, number] | null {
+  const { variantPriceMin: lo, variantPriceMax: hi } = car;
+  return lo != null && hi != null ? [lo, hi] : null;
+}
+
+/**
  * Local images keyed by "Make Model" (lower-case).
  *
  * Used for both API listings and the demo fallback, so cars render the same

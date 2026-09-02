@@ -574,7 +574,10 @@
                 <tr>
                   <th>{{ 'Car' | t }}</th>
                   <th>{{ 'Image' | t }}</th>
-                  <th>Avg. Ex-Showroom Price</th>
+                  <!-- Not an average: the figure beside it is the cheapest trim, and
+                       the cell says "onwards". Labelling a from-price as an average
+                       made the one number disagree with its own column heading. -->
+                  <th>Ex-Showroom Price</th>
                   <th>{{ 'User Rating' | t }}</th>
                   <th>Mileage (ARAI)</th>
                 </tr>
@@ -588,7 +591,7 @@
                          referrerpolicy="no-referrer" imgFallback>
                   </td>
                   <td>
-                    <span class="similar-price">{{ formatPrice(car.price) }}</span>
+                    <span class="similar-price">{{ formatPrice(startsAt(car)) }}</span>
                     <span class="similar-onwards"> {{ 'onwards' | t }}</span>
                   </td>
                   <td>
@@ -610,7 +613,7 @@
                     </a>
                   </td>
                   <td>
-                    <span class="similar-price">{{ formatPrice(s.price) }}</span>
+                    <span class="similar-price">{{ formatPrice(startsAt(s)) }}</span>
                     <span class="similar-onwards"> {{ 'onwards' | t }}</span>
                   </td>
                   <td>

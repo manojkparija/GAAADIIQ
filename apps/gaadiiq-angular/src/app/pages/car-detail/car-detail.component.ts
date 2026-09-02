@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, OnDestroy, effect, HostListener } 
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CarsDataService, Car, CarVariant } from '../../services/cars-data.service';
+import { CarsDataService, Car, CarVariant, startingPrice } from '../../services/cars-data.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { MarketPositionComponent } from '../../components/market-position/market-position.component';
 import { VehicleScorecardComponent } from '../../components/vehicle-scorecard/vehicle-scorecard.component';
@@ -961,6 +961,15 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   waLink(phone: string) { return 'https://wa.me/' + phone.replace(/[^0-9]/g, ''); }
 
   formatPrice(p: number) { return p >= 100000 ? `₹${(p / 100000).toFixed(1)}L` : `₹${p.toLocaleString()}`; }
+
+  /**
+   * The "from" price for the similar-cars table.
+   *
+   * A method, not a computed: `computed()` tracks signal reads, and these rows
+   * come from a plain array, so a computed over them would evaluate once and
+   * then report a stale answer forever.
+   */
+  startsAt(car: Car) { return startingPrice(car); }
   stars(n: number) { return Array.from({length: 5}, (_, i) => i < n ? '★' : '☆'); }
 
   // ── Variants ──────────────────────────────────────────────────────────────
