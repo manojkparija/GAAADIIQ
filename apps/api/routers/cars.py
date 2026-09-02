@@ -11,6 +11,7 @@ from core.limiter import limiter
 from db.session import get_db
 from models.car import Car
 from models.car_variant import CarVariant, VariantSource, VariantStatus
+from models.listing import Listing
 from models.user import User
 from schemas.car import CarCreate, CarListOut, CarOut, CarUpdate, PriceCheckOut
 from services import media_library, price_reference, variant_research, vehicle_identity
@@ -626,6 +627,56 @@ async def delete_variant(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
 
     await db.delete(variant)
+    await db.commit()
+
+
+@router.delete("/{car_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_car(
+    car_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """
+    Remove a catalogue row that should never have existed.
+
+    The upload flow creates a catalogue row from whatever make/model it is
+    given, so a trim name typed into the model box becomes its own car: a
+    "Sigma" sitting in New Cars beside the Fronx it is a trim of. Nothing could
+    remove it — this router could create a car, edit one and delete a *variant*,
+    but never delete the car — so a mistake made in one click was permanent and
+    visible to buyers.
+
+    Refused while any seller has advertised against it. `listings.car_id` has no
+    ON DELETE, so the database would refuse anyway, but with an integrity error
+    rather than a sentence: an admin tidying the catalogue must not be able to
+    destroy somebody's advert, and must be told that is why.
+
+    Trims go with it (`Car.variants` cascades) because a trim has no meaning
+    without its model. Leads, insurance quotes and loan applications hold
+    ON DELETE SET NULL and survive — a loan application carries its own
+    vehicle description, and losing an applicant's record to a catalogue
+    correction would be much worse than the wrong row.
+
+    Photographs are not touched. The media library keys on make/model/year
+    rather than a car id, so they stay uploaded and simply stop resolving —
+    recoverable, which deleting them would not be.
+    """
+    car = await _get_car_or_404(db, car_id)
+
+    listing_count = (await db.execute(
+        select(func.count()).select_from(Listing).where(Listing.car_id == car_id)
+    )).scalar_one()
+    if listing_count:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"{listing_count} listing(s) still point at this car. "
+                "Remove those listings first — deleting this row would destroy "
+                "a seller's advert."
+            ),
+        )
+
+    await db.delete(car)
     await db.commit()
 
 

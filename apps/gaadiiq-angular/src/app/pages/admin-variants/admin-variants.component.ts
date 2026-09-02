@@ -494,6 +494,63 @@ export class AdminVariantsComponent {
     }
   }
 
+  // ---- Removing the catalogue row itself -----------------------------------
+
+  /** In the confirm step. Two presses, because this one cannot be undone. */
+  confirmingDelete = signal(false);
+  deletingCar = signal(false);
+  /**
+   * Why the removal was refused.
+   *
+   * Kept apart from `error()` because the important case is not a failure at
+   * all: the API returns 409 while any seller has advertised against the row,
+   * and that sentence names how many listings and what to do about them. A
+   * message that reads "HTTP 409" would leave the admin no better off than the
+   * screen that had no delete button in the first place.
+   */
+  deleteError = signal('');
+
+  askDeleteCar() {
+    this.deleteError.set('');
+    this.confirmingDelete.set(true);
+  }
+
+  cancelDeleteCar() {
+    this.confirmingDelete.set(false);
+  }
+
+  async deleteCar() {
+    const car = this.selectedCar();
+    if (!car) return;
+
+    this.deletingCar.set(true);
+    this.deleteError.set('');
+    try {
+      const resp = await fetch(`${this.apiUrl}/cars/${car.id}`, {
+        method: 'DELETE',
+        headers: await this.authHeaders(),
+      });
+
+      if (resp.status === 409) {
+        // The seller-advert refusal. Its detail is the whole point.
+        const body = await resp.json().catch(() => null);
+        this.deleteError.set(body?.detail ?? 'This car still has listings against it.');
+        return;
+      }
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+      this.confirmingDelete.set(false);
+      this.variants.set([]);
+      this.selectedCarId.set('');
+      await this.loadCars();
+      this.toast(`🗑 ${car.make} ${car.model} ${car.year} removed from the catalogue`);
+    } catch (err) {
+      this.deleteError.set(String(err));
+    } finally {
+      this.deletingCar.set(false);
+    }
+  }
+
   // Takes a number too: the API sends this Decimal column as a JSON number,
   // whatever the interface used to claim.
   formatPrice(value: string | number | null): string {
