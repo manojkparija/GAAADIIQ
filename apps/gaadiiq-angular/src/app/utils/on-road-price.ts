@@ -54,24 +54,60 @@ const HANDLING = 10000;
  * engine capacity, fuel and ground clearance. Carrying the old numbers meant
  * quoting a tax breakdown no buyer would recognise from a showroom invoice.
  *
- * Segment is inferred from the price band, because length and engine capacity
- * are not recorded against every catalogue model. That is a heuristic and it
- * will misjudge a cheap large car or an expensive small one; the ex-showroom
- * figure it explains is unaffected either way, since these rates describe what
- * is already inside that price rather than anything added to it.
+ * The slab is decided by engine capacity where it is known, and only guessed
+ * from body type or price where it is not — see `rates`.
  */
 const SMALL_CAR_GST = 0.18;
 const LARGE_CAR_GST = 0.40;
 const EV_GST = 0.05;
 
-/** Above this, a car is priced like something outside the small-car limits. */
+/** The small-car engine limits the 18% slab is defined by. */
+const SMALL_PETROL_CC = 1200;
+const SMALL_DIESEL_CC = 1500;
+
+/** Above this, a car with no recorded engine is priced like a large one. */
 const SMALL_CAR_PRICE_CEILING = 1000000;
 
-function rates(base: number, fuel: string, bodyType: string) {
+const DIESEL = /diesel/i;
+
+/**
+ * Which GST slab this car sits in.
+ *
+ * Body type is NOT the test, and treating it as one was wrong in a way that
+ * mattered. The rule was "an SUV is outside the small-car definition by length
+ * and ground clearance whatever it costs" — ground clearance belonged to the
+ * OLD compensation cess, which the September 2025 reform abolished, and the
+ * 18% slab is defined purely by fuel, engine capacity and a 4000mm length.
+ *
+ * India's best-selling "SUVs" are sub-4m cars with sub-1200cc petrol engines —
+ * Fronx, Nexon, Venue, Brezza, Punch, Exter, Magnite, Sonet. Every one of them
+ * qualifies for 18% and every one of them was being shown 40%. On a ₹6.84L
+ * Fronx that is ₹1.95L of GST reported where the real figure is ₹1.04L.
+ *
+ * Engine capacity is the half of the legal test that is recorded, so it decides
+ * where it is known. The half that is not recorded is length, which leaves one
+ * case still wrong: a car OVER 4m with a small engine — a 1.0 TSI Slavia or
+ * Virtus — is 40% in law and will read 18% here. Fixing that needs a length on
+ * the catalogue row; guessing it from price would trade one wrong answer for
+ * another.
+ *
+ * None of this moves the on-road total. These rates describe tax already inside
+ * the ex-showroom price, not anything added to it.
+ */
+function rates(base: number, fuel: string, bodyType: string, engineCc?: number | null) {
   if (fuel === 'Electric') return { gstRate: EV_GST, cessRate: 0 };
 
-  // An SUV is outside the small-car definition by length and ground clearance
-  // whatever it costs, so body type decides before price does.
+  if (engineCc && engineCc > 0) {
+    const limit = DIESEL.test(fuel) ? SMALL_DIESEL_CC : SMALL_PETROL_CC;
+    return {
+      gstRate: engineCc <= limit ? SMALL_CAR_GST : LARGE_CAR_GST,
+      cessRate: 0,
+    };
+  }
+
+  // No engine on the row. Body type and price are the only signals left, and
+  // both are guesses — but a car with no capacity recorded is more often a
+  // large one, and an SUV badge is weak evidence rather than none.
   if (/suv/i.test(bodyType)) return { gstRate: LARGE_CAR_GST, cessRate: 0 };
 
   return {
@@ -95,8 +131,10 @@ export function computeOnRoadPrice(
   fuel: string,
   bodyType: string,
   stateRegRate: number,
+  /** Decides the GST slab where it is known. See `rates`. */
+  engineCc?: number | null,
 ): OnRoadPrice {
-  const { gstRate, cessRate } = rates(base, fuel, bodyType);
+  const { gstRate, cessRate } = rates(base, fuel, bodyType, engineCc);
 
   // ex-showroom = taxable × (1 + gst + cess), so the taxable value is the
   // quotient and each tax is its share — recovered from the price, not added.

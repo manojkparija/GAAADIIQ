@@ -753,8 +753,31 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       trim?.fuel_type || this.car.fuel || 'Petrol',
       (this.car as any).body_type ?? (this.car as any).bodyType ?? '',
       this.STATE_REG[this.selectedState()] ?? 0.08,
+      // Engine capacity decides the GST slab. Body type was deciding it, and a
+      // sub-4m "SUV" like this one is a small car in the tax code: the Fronx
+      // was reading 40% where 18% applies.
+      trim?.engine_cc ?? this.engineCcFromSpecs(),
     );
   });
+
+  /**
+   * The model's engine capacity, from the spec list.
+   *
+   * Only needed with no trim selected — a trim carries `engine_cc` as a number.
+   * The spec value is free text an admin or a language model wrote, so the
+   * first run of digits is taken and anything unparseable returns null rather
+   * than a wrong number: no capacity falls back to the body-type guess, which
+   * is honest, while a mis-read one would quietly pick the wrong slab.
+   */
+  private engineCcFromSpecs(): number | null {
+    const spec = this.car?.specs?.find(s => /engine/i.test(s.label));
+    if (!spec) return null;
+    const digits = String(spec.value).replace(/,/g, '').match(/\d+/);
+    if (!digits) return null;
+    const cc = Number(digits[0]);
+    // "1.0L Turbo" parses as 1, and "308 Litres" is not an engine at all.
+    return cc >= 500 && cc <= 8000 ? cc : null;
+  }
 
   /**
    * What the EMI card is allowed to finance.

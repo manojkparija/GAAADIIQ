@@ -67,15 +67,57 @@ describe('computeOnRoadPrice', () => {
     expect(dear.total - cheap.total).toBe(Math.round(525000 * 0.07));
   });
 
-  it('charges an SUV the large-car rate whatever it costs', () => {
-    // Outside the small-car definition by length and ground clearance, so an
-    // inexpensive one is still a large car for GST.
-    const dear = computeOnRoadPrice(2500000, 'Diesel', 'SUV', 0.1);
-    const cheap = computeOnRoadPrice(800000, 'Petrol', 'SUV', 0.1);
+  it('charges a sub-4m SUV the small-car rate', () => {
+    // This test used to assert the opposite — "an SUV is outside the small-car
+    // definition by length and ground clearance whatever it costs". Ground
+    // clearance belonged to the compensation cess the September 2025 reform
+    // abolished; the 18% slab is fuel, engine capacity and a 4000mm length.
+    //
+    // A Fronx is 3995mm with a 1197cc petrol engine, so it is a small car in
+    // the tax code however it is marketed — as are the Nexon, Venue, Brezza,
+    // Punch, Exter, Magnite and Sonet. Every one of them was reading 40%.
+    const fronx = computeOnRoadPrice(684000, 'Petrol', 'SUV', 0.11, 1197);
 
-    expect(dear.gstRate).toBe(40);
-    expect(cheap.gstRate).toBe(40);
-    expect(dear.cessRate).toBe(0);
+    expect(fronx.gstRate).toBe(18);
+    expect(fronx.gst).toBe(Math.round((684000 / 1.18) * 0.18));
+    expect(fronx.cessRate).toBe(0);
+  });
+
+  it('charges a large SUV the large-car rate', () => {
+    const big = computeOnRoadPrice(2500000, 'Diesel', 'SUV', 0.1, 2184);
+
+    expect(big.gstRate).toBe(40);
+  });
+
+  it('reads the diesel limit as 1500cc, not the petrol 1200', () => {
+    // The slab is defined per fuel. A 1498cc diesel is small; the same
+    // capacity in petrol is not.
+    expect(computeOnRoadPrice(900000, 'Diesel', 'Hatchback', 0.1, 1498).gstRate).toBe(18);
+    expect(computeOnRoadPrice(900000, 'Petrol', 'Hatchback', 0.1, 1498).gstRate).toBe(40);
+  });
+
+  it('falls back to the body-type guess when no engine is recorded', () => {
+    // Capacity is the half of the legal test we have. Without it there is
+    // nothing better than the old heuristic, and it stays.
+    const suv = computeOnRoadPrice(800000, 'Petrol', 'SUV', 0.1);
+    const hatch = computeOnRoadPrice(800000, 'Petrol', 'Hatchback', 0.1);
+
+    expect(suv.gstRate).toBe(40);
+    expect(hatch.gstRate).toBe(18);
+  });
+
+  it('keeps an EV at 5% whatever its engine field says', () => {
+    expect(computeOnRoadPrice(1500000, 'Electric', 'SUV', 0.08, 0).gstRate).toBe(5);
+  });
+
+  it('does not let the slab move the on-road total', () => {
+    // GST is inside the ex-showroom price, not added to it. Correcting the
+    // rate must change the breakdown line and nothing a buyer pays.
+    const asSmall = computeOnRoadPrice(684000, 'Petrol', 'SUV', 0.11, 1197);
+    const asLarge = computeOnRoadPrice(684000, 'Petrol', 'SUV', 0.11, 2000);
+
+    expect(asSmall.gstRate).not.toBe(asLarge.gstRate);
+    expect(asSmall.total).toBe(asLarge.total);
   });
 
   it('charges a small hatchback the small-car rate', () => {
