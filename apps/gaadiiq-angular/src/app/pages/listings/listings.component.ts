@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, HostListener } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
@@ -8,6 +8,10 @@ import { CarsDataService, Car, PLACEHOLDER, hasPhotograph, isShowable } from '..
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 interface NewCarModel {
   make: string; model: string; image: string;
@@ -26,6 +30,75 @@ interface NewCarModel {
 })
 export class ListingsComponent implements OnInit {
   constructor(private route: ActivatedRoute, private carsData: CarsDataService, private router: Router) {}
+
+  private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
+
+  // ---- Admin: removing a catalogue row from the page it is wrong on ---------
+  //
+  // The cards on this page are catalogue rows, not trims: the name is
+  // `variant || model`, so a Fronx row whose variant reads "Sigma" shows as a
+  // "Sigma" card beside the Fronx. Removing it from Admin → Variants meant
+  // finding it among two rows that both say "Fronx 2026" in the picker, and the
+  // obvious one takes the real Fronx and its fourteen trims with it.
+  //
+  // So the control lives here, on the card that is wrong, where an admin can
+  // see exactly which row they are removing.
+
+  /** Admin only. The API is the real gate; this decides whether to offer it. */
+  isAdmin(): boolean {
+    return this.auth.isAdmin() && !this.auth.isLocalOnly();
+  }
+
+  /** The card mid-confirm. Two presses, because this cannot be undone. */
+  readonly confirmRemoveId = signal<string | null>(null);
+  readonly removingId = signal<string | null>(null);
+  /** Why a removal was refused — the 409 names how many listings are in the way. */
+  readonly removeError = signal<string | null>(null);
+
+  askRemove(car: Car, event: Event): void {
+    // The card is a routerLink; without this the page navigates to the car.
+    event.stopPropagation();
+    event.preventDefault();
+    this.removeError.set(null);
+    this.confirmRemoveId.set(car.id);
+  }
+
+  cancelRemove(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.confirmRemoveId.set(null);
+  }
+
+  async removeCar(car: Car, event: Event): Promise<void> {
+    event.stopPropagation();
+    event.preventDefault();
+
+    this.removingId.set(car.id);
+    this.removeError.set(null);
+    try {
+      // No Authorization header by hand: the interceptor attaches the Supabase
+      // token to everything aimed at environment.apiUrl.
+      await firstValueFrom(this.http.delete(`${environment.apiUrl}/cars/${car.id}`));
+      this.confirmRemoveId.set(null);
+      await this.carsData.reload();
+    } catch (err: unknown) {
+      const e = err as { status?: number; error?: { detail?: string } };
+      this.removeError.set(
+        e?.error?.detail
+        ?? (e?.status === 401 || e?.status === 403
+              ? 'Sign in as an admin to remove a car.'
+              : 'Could not remove this car. Please try again.'),
+      );
+    } finally {
+      this.removingId.set(null);
+    }
+  }
+
+  /** The label on the card, so the confirm names the same thing the admin sees. */
+  cardName(car: Car): string {
+    return `${car.make} ${car.model}${car.variant ? ' ' + car.variant : ''} ${car.year}`;
+  }
 
   get loading() { return this.carsData.loading; }
 
