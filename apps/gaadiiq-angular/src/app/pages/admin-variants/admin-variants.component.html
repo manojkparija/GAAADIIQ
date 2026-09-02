@@ -199,6 +199,49 @@
           }
         </div>
       </section>
+
+      <!--
+        Removing the catalogue row itself.
+        
+        The upload flow creates a car from whatever make/model it is given, so a
+        trim name typed into the model box becomes its own car — a "Sigma" in
+        New Cars beside the Fronx it is a trim of. Nothing could remove it, so a
+        mistake made in one click was permanent and visible to buyers.
+
+        Kept at the bottom, behind a confirm, and phrased as what it destroys.
+        The API refuses while any seller has advertised against the row, so the
+        dangerous case is not reachable from here at all.
+      -->
+      <section class="av-card av-danger">
+        <div class="av-card-head">
+          <h2>Remove this car</h2>
+        </div>
+        <p class="av-sub">
+          Takes <strong>{{ car.make }} {{ car.model }} {{ car.year }}</strong> and its
+          {{ variants().length }} trim(s) out of the catalogue. For a row that should
+          never have existed — a trim name entered as a model, or a duplicate.
+          Photographs stay in the media library and are not deleted.
+        </p>
+
+        <p class="av-error" *ngIf="deleteError()">{{ deleteError() }}</p>
+
+        <div class="av-actions" *ngIf="!confirmingDelete()">
+          <button type="button" class="av-delete-car" (click)="askDeleteCar()">
+            Remove from catalogue
+          </button>
+        </div>
+
+        <div class="av-actions" *ngIf="confirmingDelete()">
+          <span class="av-confirm-q">
+            Remove {{ car.make }} {{ car.model }} {{ car.year }}? This cannot be undone.
+          </span>
+          <button type="button" class="av-delete-car" [disabled]="deletingCar()"
+                  (click)="deleteCar()">
+            {{ deletingCar() ? 'Removing…' : 'Yes, remove it' }}
+          </button>
+          <button type="button" (click)="cancelDeleteCar()">Cancel</button>
+        </div>
+      </section>
     }
   </main>
 </div>

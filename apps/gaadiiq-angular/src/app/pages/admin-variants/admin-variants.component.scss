@@ -220,3 +220,29 @@
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
   font-size: 0.9rem;
 }
+
+/* Removing the catalogue row. Set apart because it cannot be undone. */
+.av-danger {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.av-confirm-q {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--danger-ink);
+  align-self: center;
+}
+
+.av-delete-car {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.10);
+  color: var(--danger-ink);
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.18); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
