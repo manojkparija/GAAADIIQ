@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, ElementRef, ViewChild, inject } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
-import { CarsDataService, PLACEHOLDER, hasPhotograph } from '../../services/cars-data.service';
+import { CarsDataService, PLACEHOLDER, hasPhotograph, priceBand } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 import { UpcomingCarsService } from '../../services/upcoming-cars.service';
@@ -266,11 +266,7 @@ export class NewCarsComponent implements OnInit {
       //
       // The row's figure stays as the fallback for a model whose trims are
       // unpriced or not entered yet: that is the only price such a car has.
-      const prices = inBand.flatMap(c => {
-        const lo = c.variantPriceMin;
-        const hi = c.variantPriceMax;
-        return lo != null && hi != null ? [lo, hi] : [c.price];
-      });
+      const prices = inBand.flatMap(c => priceBand(c) ?? [c.price]);
       // Which catalogue row this one card stands for.
       //
       // One card covers every model year in the band — a Fronx card can stand

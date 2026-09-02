@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { CarCardComponent } from '../../components/car-card/car-card.component';
 import { IconComponent } from '../../components/icon/icon.component';
-import { CarsDataService, Car, PLACEHOLDER, hasPhotograph, isShowable } from '../../services/cars-data.service';
+import { CarsDataService, Car, PLACEHOLDER, hasPhotograph, isShowable, priceBand } from '../../services/cars-data.service';
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -280,11 +280,7 @@ export class ListingsComponent implements OnInit {
       //
       // The catalogue figure stays as the fallback for a model whose trims are
       // unpriced or absent — that is the only price such a car has.
-      const prices = affordable.flatMap(c => {
-        const lo = c.variantPriceMin;
-        const hi = c.variantPriceMax;
-        return lo != null && hi != null ? [lo, hi] : [c.price];
-      });
+      const prices = affordable.flatMap(c => priceBand(c) ?? [c.price]);
       // Which row's photograph the card shows.
       //
       // The old test was `c.image`, and mapCatalogueCar fills `image` with a
