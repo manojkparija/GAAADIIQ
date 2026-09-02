@@ -895,3 +895,19 @@
   color: var(--success-ink, #15803d);
   margin-bottom: 0.5rem;
 }
+
+/* EMI card: the slider's own end labels, and the honesty line under it. */
+.emi-range-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.emi-caveat {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--muted);
+}

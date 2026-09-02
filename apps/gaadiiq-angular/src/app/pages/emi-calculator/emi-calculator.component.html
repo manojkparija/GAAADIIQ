@@ -14,7 +14,13 @@
 
         <div class="slider-group">
           <div class="slider-label">
-            <span>{{ 'Loan Amount' | t }}</span>
+            <!--
+              The vehicle price, not the loan. The down payment below subtracts
+              from this and the result is the principal, so labelling it "Loan
+              Amount" made the next slider read as money taken off the loan
+              rather than money put towards the car.
+            -->
+            <span>{{ 'Vehicle Price' | t }}</span>
             <strong>{{ fmt(loanAmount()) }}</strong>
           </div>
           <input type="range" min="100000" max="10000000" step="50000"
@@ -24,7 +30,7 @@
 
         <div class="slider-group">
           <div class="slider-label">
-            <span>{{ 'Down Payment (optional)' | t }}</span>
+            <span>{{ 'Down Payment' | t }}</span>
             <strong>{{ fmt(downPayment()) }}</strong>
           </div>
           <input type="range" min="0" [max]="loanAmount()" step="10000"
@@ -54,7 +60,7 @@
 
         <div class="loan-summary">
           <div class="sum-row">
-            <span>{{ 'Principal' | t }}</span>
+            <span>{{ 'Loan Amount' | t }}</span>
             <strong>{{ fmt(principal()) }}</strong>
           </div>
           <div class="sum-row highlight">
@@ -102,10 +108,16 @@
         <!-- Bank Comparison -->
         <div class="banks-card glass-card">
           <h3>{{ 'Compare Bank Rates' | t }}</h3>
+          <!--
+            Every rate here is a lender's lowest slab, which they only give an
+            excellent credit record. Saying so is the difference between a
+            calculator and a promise.
+          -->
+          <p class="banks-note" *ngIf="rateNote() as note">{{ note }}</p>
           <div class="banks-list">
             @for (bank of banks; track bank.name) {
               <div class="bank-row"
-                [class.best]="bank.rate === 8.45"
+                [class.best]="bank.rate === lowestRate()"
                 [class.selected]="selectedBank() === bank.name"
                 (click)="selectBank(bank)"
                 style="cursor:pointer">
@@ -122,7 +134,7 @@
                 </div>
                 @if (selectedBank() === bank.name) {
                   <div class="selected-badge">{{ 'Selected ✓' | t }}</div>
-                } @else if (bank.rate === 8.45) {
+                } @else if (bank.rate === lowestRate()) {
                   <div class="best-badge">{{ 'Best Rate' | t }}</div>
                 }
               </div>

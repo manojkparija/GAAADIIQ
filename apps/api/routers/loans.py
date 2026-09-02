@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from core.dependencies import get_current_user
 from db.session import get_db
+from models.lending_partner import LendingPartner
 from models.listing import Listing
 from models.loan_inquiry import LoanInquiry
 from models.user import User
@@ -17,22 +18,69 @@ from services.notifications import notify_loan_inquiry_received
 router = APIRouter(prefix="/loans", tags=["loans"])
 
 
-# ── Bank rates (used by Angular EMI calculator to avoid hard-coded stubs) ────
+# ── Bank rates (used by the Angular EMI calculator) ──────────────────────────
 
-_BANK_RATES = [
-    {"name": "SBI",           "rate": 8.45, "logo": "🏦"},
-    {"name": "HDFC Bank",     "rate": 8.75, "logo": "🏛"},
-    {"name": "ICICI Bank",    "rate": 8.85, "logo": "💳"},
-    {"name": "Axis Bank",     "rate": 9.00, "logo": "🔵"},
-    {"name": "Kotak Mahindra","rate": 8.65, "logo": "🟠"},
-    {"name": "Bank of Baroda","rate": 8.55, "logo": "🏦"},
-    {"name": "PNB",           "rate": 8.70, "logo": "🔶"},
+#: Fallback only, for a database with no rate cards loaded — an empty rate
+#: table would otherwise leave the calculator with no rates at all. These are
+#: the same best-band figures the seeded cards carry.
+_FALLBACK_BANK_RATES = [
+    {"name": "State Bank of India", "rate": 8.45, "logo": "🏦"},
+    {"name": "HDFC Bank",           "rate": 8.75, "logo": "🏛"},
+    {"name": "ICICI Bank",          "rate": 8.85, "logo": "💳"},
+    {"name": "Axis Bank",           "rate": 9.00, "logo": "🔵"},
+    {"name": "Kotak Mahindra Bank", "rate": 8.65, "logo": "🟠"},
+    {"name": "Bank of Baroda",      "rate": 8.55, "logo": "🏦"},
+    {"name": "Punjab National Bank","rate": 8.70, "logo": "🔶"},
 ]
 
+#: What the advertised rate actually is. The lowest slab on a rate card is the
+#: excellent-band rate, and every lender markets that number — but an applicant
+#: who has not supplied a score is priced in `unknown`, which at SBI is 10.50%
+#: against the 8.45% headline. On a ₹3.4L/60-month loan that is ₹6,976 a month
+#: against ₹8,383. The calculator was quoting the first and the application
+#: returning the second, with nothing anywhere saying they were different
+#: questions.
+_RATE_BASIS = "excellent"
+
+_RATE_NOTE = (
+    "Lowest published rate, for applicants with an excellent credit record. "
+    "Your own rate depends on your credit profile and the lender's assessment "
+    "— compare real offers by applying."
+)
+
+
 @router.get("/bank-rates")
-async def get_bank_rates():
-    """Return indicative auto-loan interest rates by bank (MOB-031)."""
-    return {"banks": _BANK_RATES, "note": "Rates are indicative; contact bank for confirmed offer."}
+async def get_bank_rates(db: AsyncSession = Depends(get_db)):
+    """
+    Indicative auto-loan rates by bank, read from the lenders' rate cards.
+
+    Read from `lender_rate_slabs` rather than a list in this file, because a
+    second hand-maintained copy of the rates is a copy that drifts: the
+    calculator would keep quoting last quarter's figure while the offer engine
+    priced from the card, and nothing would fail to make that visible.
+    """
+    rows = await db.execute(
+        select(LendingPartner)
+        .options(selectinload(LendingPartner.rate_slabs))
+        .where(LendingPartner.is_active.is_(True))
+        .order_by(LendingPartner.sort_order, LendingPartner.name)
+    )
+    banks = []
+    for partner in rows.scalars().all():
+        rates = [float(s.annual_rate_pct) for s in partner.rate_slabs]
+        if not rates:
+            continue
+        banks.append({
+            "name": partner.name,
+            "rate": min(rates),
+            "logo": partner.logo_url or "🏦",
+        })
+
+    return {
+        "banks": banks or _FALLBACK_BANK_RATES,
+        "rate_basis": _RATE_BASIS,
+        "note": _RATE_NOTE,
+    }
 
 
 # ── EMI calculator ────────────────────────────────────────────────────────────

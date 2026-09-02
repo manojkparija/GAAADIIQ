@@ -743,8 +743,11 @@
           <h3><app-icon name="credit-card" [size]="16"></app-icon> {{ 'EMI Calculator' | t }}</h3>
           <div class="emi-row">
             <div class="emi-label-row"><label>{{ 'Loan Amount' | t }}</label><span class="emi-val">{{ formatPrice(loan.amount) }}</span></div>
-            <input type="range" min="100000" [max]="car.price" step="10000"
+            <input type="range" min="100000" [max]="financeableMax()" step="10000"
               [value]="loan.amount" (input)="loan.amount=+$any($event.target).value; calcEmi()">
+            <div class="emi-range-ends">
+              <span>₹1L</span><span>{{ formatPrice(financeableMax()) }} on-road</span>
+            </div>
           </div>
           <div class="emi-row">
             <div class="emi-label-row"><label>{{ 'Interest Rate' | t }}</label><span class="emi-val">{{ loan.rate }}% p.a.</span></div>
@@ -771,7 +774,19 @@
               <div class="emi-bd-row total-row"><span>{{ 'Total Payment' | t }}</span><span class="emi-bd-val gradient-text">₹{{ eb.total.toLocaleString('en-IN') }}</span></div>
             </div>
           </ng-container>
-          <button class="btn-gradient" style="width:100%;margin-top:1rem">{{ 'Apply for Loan →' | t }}</button>
+          <!--
+            The rate above is a starting figure, not a quote. The application
+            prices the same loan from the lender's rate card against a credit
+            band, and an applicant who has not given a score lands in "unknown"
+            — 10.5% at SBI against the 8.45% headline. Saying so here costs a
+            line; finding out after typing a PAN costs trust.
+          -->
+          <p class="emi-caveat">
+            Indicative only. Your actual rate depends on your credit profile —
+            compare real offers below.
+          </p>
+          <button class="btn-gradient" style="width:100%;margin-top:1rem"
+                  (click)="applyForLoan()">{{ 'Apply for Loan →' | t }}</button>
         </div>
 
         <!-- COMPARE CTA -->

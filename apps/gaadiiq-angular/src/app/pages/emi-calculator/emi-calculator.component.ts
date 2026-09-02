@@ -41,6 +41,18 @@ export class EmiCalculatorComponent implements OnInit {
 
   selectedBank = signal('SBI');
 
+  /**
+   * What the rates above actually are.
+   *
+   * Every figure here is a lender's lowest slab — the excellent-credit rate
+   * they advertise. An applicant with no credit score supplied is priced in
+   * the "unknown" band instead: 10.50% at SBI against the 8.45% shown, which
+   * on ₹3.4L over 60 months is ₹8,383 a month rather than ₹6,976. The
+   * calculator said one number and the application returned the other, with
+   * nothing on either screen admitting they answered different questions.
+   */
+  rateNote = signal<string | null>(null);
+
   ngOnInit() {
     this.http.get<any>(`${environment.apiUrl}/loans/bank-rates`).subscribe({
       next: res => {
@@ -50,6 +62,7 @@ export class EmiCalculatorComponent implements OnInit {
           this.interestRate.set(this.banks[0].rate);
           this.selectedBank.set(this.banks[0].name);
         }
+        if (res?.note) this.rateNote.set(res.note);
       },
       error: () => { /* keep stub rates on API failure */ },
     });
@@ -59,6 +72,25 @@ export class EmiCalculatorComponent implements OnInit {
   monthlyIncome = signal(80000);
   existingEmis = signal(0);
   monthlyExpenses = signal(25000);
+
+  /**
+   * The lowest rate on offer, for the "Best Rate" badge.
+   *
+   * Was the literal 8.45 in the template, matched by equality. The rates come
+   * from the lenders' own cards, so the moment one moved, the badge either sat
+   * on a bank that was no longer cheapest or vanished from the list entirely —
+   * and a hardcoded number cannot be wrong in a way anything would catch.
+   */
+  /*
+   * A method, not a computed(). `banks` is a plain array reassigned when
+   * /loans/bank-rates answers, and computed() tracks signal reads only — over
+   * a plain field it evaluates once and then reports that answer forever, so
+   * the badge would have been fixed to whatever the stub rates said and never
+   * moved when the real cards arrived.
+   */
+  lowestRate(): number {
+    return this.banks.length ? Math.min(...this.banks.map(b => b.rate)) : 0;
+  }
 
   selectBank(bank: { name: string; rate: number }) {
     this.selectedBank.set(bank.name);
