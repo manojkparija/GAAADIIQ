@@ -19,6 +19,12 @@
  */
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+// ListingsComponent injects HttpClient for the admin remove control. Without a
+// provider every test here dies in the injector before reaching its subject —
+// which is what happened, unnoticed, because CI runs Playwright but never
+// `ng test`.
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ListingsComponent } from './listings.component';
 import { CarsDataService, Car } from '../../services/cars-data.service';
@@ -92,6 +98,8 @@ describe('listings — green pill legibility', () => {
       imports: [ListingsComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: CarsDataService,
           useValue: { cars: signal([car({})]), loading: signal(false) },
@@ -164,6 +172,8 @@ describe('listings — New / Used tabs', () => {
       imports: [ListingsComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: CarsDataService, useValue: { cars: signal([car({})]), loading: signal(false) } },
       ],
     });
