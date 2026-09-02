@@ -257,7 +257,20 @@ export class NewCarsComponent implements OnInit {
       const inBand = cars.filter(c => c.price >= minB && c.price <= maxB);
       if (inBand.length === 0) return;
 
-      const prices = inBand.map(c => c.price);
+      // The band a card quotes is the band of its published trims, not the one
+      // hand-maintained figure on the catalogue row. Reading `c.price` put
+      // "₹9.3L onwards" on the Fronx card while the car's own page — which
+      // reads the trims — said "₹6.84 – 11.98 Lakh". The listings grid was
+      // corrected for this; this grid was not, and it is the one the home page
+      // links to.
+      //
+      // The row's figure stays as the fallback for a model whose trims are
+      // unpriced or not entered yet: that is the only price such a car has.
+      const prices = inBand.flatMap(c => {
+        const lo = c.variantPriceMin;
+        const hi = c.variantPriceMax;
+        return lo != null && hi != null ? [lo, hi] : [c.price];
+      });
       // Which catalogue row this one card stands for.
       //
       // One card covers every model year in the band — a Fronx card can stand

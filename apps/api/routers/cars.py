@@ -535,7 +535,17 @@ async def list_variants(
     q = select(CarVariant).where(CarVariant.car_id == car_id)
     if not include_drafts:
         q = q.where(CarVariant.status == VariantStatus.published)
-    q = q.order_by(CarVariant.sort_order, CarVariant.name)
+    # Cheapest trim first, which is the order a buyer reads a trim ladder in.
+    # sort_order is whatever the row happened to be inserted with — the
+    # research importer numbers them in the order it found them — so the Fronx
+    # listed 7.75, 6.84, 7.75, 8.25 … and the entry-level Sigma sat third.
+    # A trim with no price yet has no place on that ladder and goes last, then
+    # sort_order and name keep the result stable.
+    q = q.order_by(
+        CarVariant.ex_showroom_price.asc().nulls_last(),
+        CarVariant.sort_order,
+        CarVariant.name,
+    )
     return [_variant_out(v) for v in (await db.execute(q)).scalars().all()]
 
 
