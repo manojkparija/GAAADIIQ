@@ -136,7 +136,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>{{ 'Price' | t }}</td><td *ngFor="let c of results().slice(0,3)" class="gradient-text fw-bold">{{ fmtP(c.price) }}</td></tr>
+            <tr><td>{{ 'Price' | t }}</td><td *ngFor="let c of results().slice(0,3)" class="gradient-text fw-bold">{{ fmtP(c.startPrice) }}</td></tr>
             <tr><td>{{ 'Fuel Type' | t }}</td><td *ngFor="let c of results().slice(0,3)">{{ c.fuel }}</td></tr>
             <tr><td>{{ 'Body Type' | t }}</td><td *ngFor="let c of results().slice(0,3)">{{ c.bodyType }}</td></tr>
             <tr><td>{{ 'Year' | t }}</td><td *ngFor="let c of results().slice(0,3)">{{ c.year }}</td></tr>
@@ -180,7 +180,8 @@
           <div class="rec-car-meta">
             <h3>{{ car.make }} {{ car.model }}</h3>
             <div class="rec-sub">{{ car.variant }} · {{ car.year }} · {{ car.fuel }}</div>
-            <div class="big-price gradient-text">{{ fmtP(car.price) }}</div>
+            <div class="big-price gradient-text">{{ fmtP(car.startPrice) }}</div>
+            <div class="price-basis">{{ 'starting price' | t }}</div>
             <div class="rec-rating">★ {{ car.rating }} · {{ car.city }}</div>
           </div>
         </div>

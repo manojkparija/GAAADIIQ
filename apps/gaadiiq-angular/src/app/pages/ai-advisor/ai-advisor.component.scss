@@ -626,6 +626,15 @@
   .big-price {
     font-size: 1.6rem;
     font-weight: 900;
+    margin-bottom: 0.1rem;
+  }
+
+  // A bare figure under a car's name reads as "the price". This one is the
+  // cheapest trim, and the card's EMI and five-year cost are worked out from
+  // it, so it has to say which number it is.
+  .price-basis {
+    font-size: 0.72rem;
+    color: var(--text-muted);
     margin-bottom: 0.25rem;
   }
 
