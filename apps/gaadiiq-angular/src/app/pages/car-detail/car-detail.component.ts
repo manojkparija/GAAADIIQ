@@ -593,6 +593,25 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       const id = this.route.snapshot.paramMap.get('id') ?? '';
       this.resolveCar(id);
     }, { allowSignalWrites: true });
+
+    // Keep the EMI card on the car being priced.
+    //
+    // Picking a trim or changing the state moves the on-road price, and with it
+    // what can be financed. Without this the slider kept a value from the
+    // previous trim — above the new maximum, so the thumb sat past the end of
+    // its own track and the EMI was for a loan the panel said was too big.
+    //
+    // Only ever clamps downward, or fills in a slider that has no value yet: a
+    // buyer who deliberately dragged to 3L should not have it pushed back up to
+    // the full price because they switched state.
+    effect(() => {
+      const max = this.financeableMax();
+      if (!max) return;
+      if (!this.loan.amount || this.loan.amount > max) {
+        this.loan.amount = max;
+        this.calcEmi();
+      }
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit() {
@@ -671,7 +690,7 @@ export class CarDetailComponent implements OnInit, OnDestroy {
           if (urls.length) this.activeImg.set(0);
         });
       }
-      this.loan.amount = this.car.price;
+      this.loan.amount = this.financeableMax();
       this.calcEmi();
       if (this.car.color) this.selectedColour.set(this.car.color);
       this.loadReviews();
@@ -683,6 +702,25 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       else if (fuel === 'Electric') { this.fuelPriceUnit = '/kWh'; }
       else { this.fuelPrice.set(106); this.fuelPriceMin = 90; this.fuelPriceMax = 130; this.fuelPriceUnit = '/L'; }
     }
+  }
+
+  /**
+   * Carry the loan being modelled into the application.
+   *
+   * This button had no handler at all — the primary call to action on the EMI
+   * card did nothing when pressed. Prefilling matters as much as navigating:
+   * arriving at a blank form after setting three sliders is its own dead end.
+   */
+  applyForLoan(): void {
+    this.router.navigate(['/car-loan'], {
+      queryParams: {
+        price: this.financeableMax() || undefined,
+        amount: this.loan.amount || undefined,
+        tenure: this.loan.tenure || undefined,
+        car: this.car ? `${this.car.make} ${this.car.model}`.trim() : undefined,
+        condition: (this.car as any)?.condition === 'used' ? 'used' : 'new',
+      },
+    });
   }
 
   calcEmi() {
@@ -716,6 +754,25 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       (this.car as any).body_type ?? (this.car as any).bodyType ?? '',
       this.STATE_REG[this.selectedState()] ?? 0.08,
     );
+  });
+
+  /**
+   * What the EMI card is allowed to finance.
+   *
+   * The on-road price, because that is the cheque the buyer actually writes and
+   * what a lender lends against. The slider used to cap at `car.price` — the raw
+   * catalogue ex-showroom figure — while the panel directly above it quoted an
+   * on-road price built from the selected trim. On an S-Presso that read
+   * "On-Road Price 4.9L" beside a loan slider that would not go past 3.4L, so
+   * the car on the screen could not be modelled at all.
+   *
+   * Same reasoning as onRoadPrice() itself: the hero, the panel and this card
+   * must price one car, not three.
+   */
+  financeableMax = computed(() => {
+    const orp = this.onRoadPrice();
+    if (orp?.total) return Math.round(orp.total);
+    return this.displayPrice()?.amount ?? this.car?.price ?? 0;
   });
 
   // Ownership cost (annual)
@@ -1038,11 +1095,23 @@ export class CarDetailComponent implements OnInit, OnDestroy {
    * the buyer had just navigated away from. For a range, the low end, which is
    * what "EMI from" says.
    */
+  /**
+   * The "EMI from" line beside the headline price.
+   *
+   * Reads loanRate()/loanTenure(), the signals, and not loan.rate/loan.tenure,
+   * the plain fields they mirror. computed() tracks signal reads only, so with
+   * the fields this recomputed only when displayPrice() changed: dragging the
+   * tenure slider took the EMI card from ₹15,321 to ₹11,826 while this line
+   * stayed at ₹13,315 — two EMIs for the same car, a third of the way apart,
+   * one of them silently answering a question the user had stopped asking.
+   */
   displayEmi = computed(() => {
     const price = this.displayPrice()?.amount ?? 0;
     if (price <= 0) return 0;
-    const r = this.loan.rate / 100 / 12;
-    const n = this.loan.tenure;
+    const r = this.loanRate() / 100 / 12;
+    const n = this.loanTenure();
+    if (!n) return 0;
+    if (r === 0) return Math.round(price / n);
     return Math.round(price * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1));
   });
 

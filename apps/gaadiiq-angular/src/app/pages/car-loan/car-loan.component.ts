@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IconComponent } from '../../components/icon/icon.component';
 import { LenderMarkComponent } from '../../components/lender-mark/lender-mark.component';
 import {
@@ -24,6 +24,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 export class CarLoanComponent implements OnInit {
   private readonly loans = inject(CarLoanService);
   private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly partners = signal<LendingPartner[]>([]);
   readonly application = signal<LoanApplication | null>(null);
@@ -96,6 +97,7 @@ export class CarLoanComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    this.applyPrefill();
     try {
       this.partners.set(await this.loans.partners());
     } catch {
@@ -103,6 +105,44 @@ export class CarLoanComponent implements OnInit {
       // application itself is what the page is for.
       this.partners.set([]);
     }
+  }
+
+  /**
+   * Carry over a loan already modelled on a car's EMI card.
+   *
+   * Without this, "Apply for Loan" on a car page landed on a form defaulted to
+   * a ₹6L car and a ₹5L loan, throwing away the price, amount and tenure the
+   * buyer had just set — so the offers compared were for a different car than
+   * the one they were looking at.
+   *
+   * Every parameter is validated rather than trusted: these arrive in a URL a
+   * user can edit, and a NaN reaching the sliders leaves the form unusable with
+   * nothing on screen to say why. Anything unparseable keeps the default.
+   */
+  private applyPrefill(): void {
+    const q = this.route.snapshot.queryParamMap;
+
+    const price = this.positiveInt(q.get('price'));
+    if (price) this.vehiclePrice.set(price);
+
+    const amount = this.positiveInt(q.get('amount'));
+    // The form's own rule is that the loan cannot exceed the vehicle price;
+    // a hand-edited URL must not be able to seed a state the form rejects.
+    if (amount) this.loanAmount.set(Math.min(amount, this.vehiclePrice()));
+
+    const tenure = this.positiveInt(q.get('tenure'));
+    if (tenure && tenure >= 12 && tenure <= 84) this.tenureMonths.set(tenure);
+
+    const car = (q.get('car') ?? '').trim();
+    if (car) this.form.vehicle_description = car.slice(0, 200);
+
+    if (q.get('condition') === 'used') this.form.vehicle_condition = 'used';
+  }
+
+  private positiveInt(raw: string | null): number | null {
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
   }
 
   formatRupees(value: number | null | undefined): string {
