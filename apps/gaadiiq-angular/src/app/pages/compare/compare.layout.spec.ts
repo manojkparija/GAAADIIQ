@@ -50,9 +50,17 @@ function car(over: Partial<any> = {}): any {
 let host: HTMLElement | null = null;
 
 /**
- * Render at a real width. Karma's page is desktop-wide, so a media query at
- * 768px never applies unless the host is actually narrowed — a test that skips
- * this passes at every viewport and therefore tests nothing about mobile.
+ * Render into a host of the given width.
+ *
+ * Read the `width` argument as "how much room the table has", not "what the
+ * browser thinks the viewport is". Karma's own window here is 765px, and media
+ * queries answer to the window — so the `max-width: 768px` rules are live in
+ * every test in this file, including the ones passing 1200. Those still earn
+ * their keep: they pin the column arithmetic, which is width-driven rather than
+ * query-driven. But nothing here can tell you how the desktop branch renders.
+ *
+ * e2e/nav-overflow.spec.ts is the pattern for that: Playwright sets a real
+ * viewport, so the width under test is the width the CSS sees.
  */
 function mount(models: string[], width: number) {
   TestBed.resetTestingModule();
@@ -167,5 +175,64 @@ describe('CompareComponent — on a phone', () => {
 
     expect(columnEdges(el.querySelector('.comp-row')!))
       .toEqual(columnEdges(el.querySelector('.comp-header')!));
+  });
+});
+
+describe('CompareComponent — reported from the phone', () => {
+  it('does not cut the "View Details" button off mid-word', () => {
+    // Photographed on the APK reading "View Deta". At 390px the car columns
+    // were 135px wide, 111px after padding, and the button needs more than
+    // that — so it was clipped by its own column, not by the screen edge.
+    //
+    // Measured against the column's content box, not the button's own
+    // scrollWidth: an inline-flex anchor sizes itself to its text, so its
+    // scrollWidth never exceeds its clientWidth even while it hangs out of the
+    // column. That version of this test passed against the reported bug.
+    const { el } = mount(['Fronx', 'S-Presso'], 390);
+    const col = el.querySelectorAll('.comp-car-col')[0] as HTMLElement;
+    const btn = col.querySelector('.btn-outline') as HTMLElement;
+    const style = getComputedStyle(col);
+    const room = col.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+
+    expect(btn.scrollWidth).withContext('button needs more room than its column has')
+      .toBeLessThanOrEqual(Math.ceil(room));
+  });
+
+  it('keeps the button inside the column it belongs to', () => {
+    const { el } = mount(['Fronx', 'S-Presso'], 390);
+    const col = el.querySelectorAll('.comp-car-col')[0] as HTMLElement;
+    const btn = col.querySelector('.btn-outline') as HTMLElement;
+
+    expect(Math.round(btn.getBoundingClientRect().right))
+      .toBeLessThanOrEqual(Math.round(col.getBoundingClientRect().right) + 1);
+  });
+
+  it('does not spend a third of a phone screen on the empty corner cell', () => {
+    // The corner above the row labels holds nothing, and at 120px it was what
+    // pushed the first car photograph inward — the "shift image left" report.
+    const { el } = mount(['Fronx', 'S-Presso'], 390);
+    const corner = el.querySelector('.comp-label-col') as HTMLElement;
+
+    expect(corner.getBoundingClientRect().width).toBeLessThanOrEqual(100);
+  });
+
+  it('still fits the widest row label without wrapping it', () => {
+    // The corner cell cannot simply shrink to nothing: it sets the width of
+    // the label column under it, whose longest entry is "KM Driven".
+    const { el } = mount(['Fronx', 'S-Presso'], 390);
+    const label = Array.from(el.querySelectorAll('.comp-label'))
+      .find(l => l.textContent?.trim() === 'KM Driven') as HTMLElement;
+
+    expect(label).withContext('KM Driven row present').toBeDefined();
+    expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth + 1);
+  });
+
+  it('gives the cars more of the width than the labels', () => {
+    const { el } = mount(['Fronx', 'S-Presso'], 390);
+    const cells = Array.from(el.querySelector('.comp-header')!.children) as HTMLElement[];
+    const labelW = cells[0].getBoundingClientRect().width;
+    const carW = cells[1].getBoundingClientRect().width;
+
+    expect(carW).toBeGreaterThan(labelW);
   });
 });
