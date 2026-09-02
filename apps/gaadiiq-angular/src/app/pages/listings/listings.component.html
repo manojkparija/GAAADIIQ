@@ -244,6 +244,40 @@
                 <span class="nc-vc-emi">EMI from ₹{{ (variantEmiBase(v) * 0.008 / 1000).toFixed(0) }}k/mo</span>
                 <button class="btn-gradient btn-sm">{{ 'View Details →' | t }}</button>
               </div>
+
+              <!--
+                Admin only, and shown here because here is where the mistake is
+                visible. These cards are catalogue rows named `variant || model`,
+                so a Fronx row whose variant reads "Sigma" appears as its own
+                card. Removing it from Admin → Variants meant picking between two
+                rows that both read "Fronx 2026", and the obvious one takes the
+                real Fronx and its fourteen trims.
+
+                Every control stops propagation: the card is a routerLink, so a
+                bare click would navigate to the car instead of acting.
+              -->
+              <div class="nc-vc-admin" *ngIf="isAdmin()" (click)="$event.stopPropagation()">
+                <ng-container *ngIf="confirmRemoveId() !== v.id">
+                  <button type="button" class="nc-vc-remove" (click)="askRemove(v, $event)">
+                    Remove this entry
+                  </button>
+                </ng-container>
+
+                <ng-container *ngIf="confirmRemoveId() === v.id">
+                  <span class="nc-vc-confirm">Remove {{ cardName(v) }}?</span>
+                  <button type="button" class="nc-vc-remove" [disabled]="removingId() === v.id"
+                          (click)="removeCar(v, $event)">
+                    {{ removingId() === v.id ? 'Removing…' : 'Yes, remove' }}
+                  </button>
+                  <button type="button" class="nc-vc-cancel" (click)="cancelRemove($event)">
+                    Cancel
+                  </button>
+                </ng-container>
+
+                <p class="nc-vc-remove-error" *ngIf="removeError() && confirmRemoveId() === v.id">
+                  {{ removeError() }}
+                </p>
+              </div>
             </div>
           </div>
         </div>

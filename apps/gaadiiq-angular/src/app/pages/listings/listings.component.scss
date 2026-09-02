@@ -567,3 +567,53 @@
 
 .nc-vc-footer { display:flex;justify-content:space-between;align-items:center;padding-top:.75rem;border-top:1px solid var(--glass-border); }
 .nc-vc-emi { font-size:.8rem;color:var(--muted); }
+
+/* Admin-only removal on a variant card. See the note in the template. */
+.nc-vc-admin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--divider);
+}
+
+.nc-vc-confirm {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--danger-ink);
+}
+
+.nc-vc-remove,
+.nc-vc-cancel {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.nc-vc-remove {
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.10);
+  color: var(--danger-ink);
+
+  &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.18); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.nc-vc-cancel {
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.nc-vc-remove-error {
+  flex-basis: 100%;
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--danger-ink);
+}
