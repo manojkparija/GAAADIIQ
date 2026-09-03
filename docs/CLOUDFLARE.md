@@ -202,6 +202,56 @@ and switched to Block/Challenge after a day of real traffic. On a site with no
 traffic baseline, a limit set from a guess is as likely to catch you as an
 attacker.
 
+### If you only get one rule
+
+Pro's rate-limiting quota is shown in the rule builder; check it before writing
+both. If it turns out to be one, spend it on **b, the global rule**, not on the
+AI one — which is the opposite of what the threat model suggests and is worth
+the paragraph:
+
+`/diagnosis` is already bounded in code at `5/minute; 20/hour` per IP, so a
+flood there gets cheap 429s from Python. Everything else sits on the `300/minute`
+default, which is a great many Postgres queries. The global rule covers
+`/diagnosis` *and* the rest; the AI rule covers one path the application already
+guards well. More coverage per rule.
+
+---
+
+## What an edge rule cannot do
+
+It is tempting to reach for a WAF custom rule to keep the public out during
+testing — block everything whose `Origin` is not ours. **That does not work, and
+it is worth writing down why so nobody spends an afternoon on it.**
+
+The Android app's origin is `https://localhost`. `capacitor.config.ts` sets
+`androidScheme: 'https'` and no `hostname`, so the WebView serves the bundle
+from there; it is already in `allowed_origins` and pinned by
+`tests/test_cors_android_app.py`, which exists because getting it wrong once
+made the APK show "0 listings found" and "Could not reach the speech service" —
+a CORS refusal never reaches JavaScript, so neither message could name the
+cause.
+
+Two consequences:
+
+1. **A rule allowing only our origins must include `https://localhost`** — and
+   the moment it does, it admits anyone, because that is also the origin of
+   every developer's local page.
+2. **`Origin` is client-controlled anyway.** `curl -H "Origin: https://localhost"`
+   produces it. Any header a browser sends, an attacker can send. This is the
+   same reason `CF-Connecting-IP` is only trusted behind the shared secret in
+   step 4 — and the same reason CORS is not an access control: it stops a
+   *browser on another site* reading a response, and stops nothing else.
+
+There is no edge rule that gates access to a public client application, because
+anything the client can send, an attacker can copy. The gate is authentication.
+If the goal is "not open to the public yet", the controls that actually do it
+are **Supabase → disable public sign-ups**, and Vercel **Deployment
+Protection** on the frontend — neither of which is a Cloudflare rule.
+
+The one client-side proof that *does* hold is the one in step 4, and it holds
+only because the secret is injected by Cloudflare and never travels to a
+browser.
+
 ---
 
 ## What this does and does not fix
