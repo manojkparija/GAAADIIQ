@@ -1,6 +1,18 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://gaadiiq-api.onrender.com',
+  // The API on our own domain, so requests reach Render through Cloudflare
+  // rather than going straight at the origin. gaadiiq-api.onrender.com still
+  // works and still answers; the point is that nothing we ship addresses it,
+  // which is what lets the origin lock and the Render IP restriction close it
+  // to everyone else.
+  //
+  // ROLLBACK, if api.gaadiiq.com ever misbehaves: set that DNS record to
+  // grey-cloud (DNS only) in Cloudflare. It stays a CNAME to the same Render
+  // service, so the app keeps working and simply stops passing through the
+  // proxy — no code change, no APK rebuild, effective in a minute. That is
+  // why this is a plain constant rather than something switchable at runtime:
+  // the switch that matters is in DNS, not in the bundle.
+  apiUrl: 'https://api.gaadiiq.com',
   // Address the dev sign-in shortcut recognises. It only becomes a real,
   // API-capable login if a Supabase user exists with this exact email —
   // otherwise the session is browser-only and every API call is anonymous.

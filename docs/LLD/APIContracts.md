@@ -2,7 +2,11 @@
 
 **Version:** 2.0
 **Date:** 2026-08-14
-**Base URL (production):** `https://gaadiiq-api.onrender.com`
+**Base URL (production):** `https://api.gaadiiq.com`
+
+A proxied CNAME to `gaadiiq-api.onrender.com`. The Render hostname still answers
+and is what Render's own health check uses, but the app, the APK and the CSP all
+name the domain — which is what allows the origin lock to refuse everything else.
 
 > **Corrected 2026-08-14.** v1.0 documented 42 endpoints. Ten of them still
 > exist. The service now exposes **164 endpoints across 29 routers**, so 154

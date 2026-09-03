@@ -31,7 +31,9 @@
     {
       "name": "api-catalogue",
       "urls": [
+        "https://api.gaadiiq.com/cars/**",
         "https://gaadiiq-api.onrender.com/cars/**",
+        "https://api.gaadiiq.com/listings/**",
         "https://gaadiiq-api.onrender.com/listings/**"
       ],
       "cacheConfig": {
@@ -44,7 +46,9 @@
     {
       "name": "api-static",
       "urls": [
+        "https://api.gaadiiq.com/health",
         "https://gaadiiq-api.onrender.com/health",
+        "https://api.gaadiiq.com/loans/bank-rates",
         "https://gaadiiq-api.onrender.com/loans/bank-rates"
       ],
       "cacheConfig": {
