@@ -214,6 +214,18 @@
                   <span class="partial-flag" *ngIf="isPartial(pick)">partial</span>
                 </td>
               </tr>
+              <!-- Directly above Fuel / km, and not by accident. Fuel type is
+                   the single biggest driver of the running cost below it — a
+                   CNG car costs roughly half what a petrol one does per km —
+                   and without this row that gap looks like an error in the
+                   figures. Reported: a CNG S-Presso at ₹2.69/km beside a petrol
+                   Fronx at ₹5.30/km read as a miscalculation, because the only
+                   thing naming the fuel was the grey variant subtitle in the
+                   header, which is easy to miss. -->
+              <tr>
+                <th scope="row">{{ 'Fuel' | t }}</th>
+                <td *ngFor="let pick of res.items">{{ pick.variant?.fuel_type || '—' }}</td>
+              </tr>
               <tr>
                 <th scope="row">{{ 'Fuel / km' | t }}</th>
                 <td *ngFor="let pick of res.items">
