@@ -260,6 +260,42 @@ class TestSttEndpointSuite:
         assert r.status_code == 413
 
     @pytest.mark.asyncio
+    async def test_the_byte_cap_bounds_a_compressed_upload(self, client, whisper_provider):
+        """The only bound that applies to what browsers actually send.
+
+        estimate_duration_seconds measures WAV and returns None for everything
+        else, so for audio/webm;codecs=opus — what a browser and an Android
+        WebView produce — the byte cap is the sole limit on how much audio one
+        request carries. Whisper bills per minute and this endpoint needs no
+        credentials, so the cap is a cost control, not a hygiene check. At the
+        old 25 MB it admitted roughly two hours of Opus per request.
+        """
+        oversized = b"\x1a\x45\xdf\xa3" + b"\x00" * (settings.stt_max_bytes + 1)
+        r = await client.post(
+            "/diagnosis/stt",
+            files={"file": ("big.webm", oversized, "audio/webm")},
+        )
+        assert r.status_code == 413
+
+    @pytest.mark.asyncio
+    async def test_the_cap_sits_in_the_band_the_60_second_rule_implies(self, client, whisper_provider):
+        """Both ends matter, and the upper one is the cost control.
+
+        Lower bound: the cap must leave the documented 60-second allowance
+        usable in the most wasteful permitted format — WAV at 48 kHz, 16-bit
+        mono is ~96 KB/s, so a minute is ~5.76 MB. A cap below that would fix
+        the spend by breaking the feature.
+
+        Upper bound: past roughly twice that, the cap stops standing in for the
+        duration rule at all. This is the assertion that fails if the 25 MB
+        value ever comes back — the other tests in this class scale themselves
+        off settings.stt_max_bytes, so they prove the cap is enforced but say
+        nothing about how big it is.
+        """
+        assert settings.stt_max_bytes >= 96_000 * 60
+        assert settings.stt_max_bytes <= 2 * 96_000 * 60
+
+    @pytest.mark.asyncio
     async def test_accepts_audio_within_duration_cap(self, client, whisper_provider):
         short_wav = _wav(payload_bytes=32000 * 5)  # 5 seconds
         with patch("httpx.AsyncClient", return_value=_mock_http({"text": "short clip"})):

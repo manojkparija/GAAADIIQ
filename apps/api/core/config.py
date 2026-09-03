@@ -165,7 +165,20 @@ class Settings(BaseSettings):
     stt_model: str = "whisper-1"
     stt_timeout_seconds: int = 45
     stt_max_audio_seconds: int = 60     # BR-IR-04 duration cap
-    stt_max_bytes: int = 25 * 1024 * 1024
+    # Sized to the 60-second cap above, not to "a large file".
+    #
+    # The duration check only measures WAV — estimate_duration_seconds returns
+    # None for every compressed format, which is what a browser and an Android
+    # WebView actually send. So for audio/webm;codecs=opus this byte cap is the
+    # ONLY bound, and at 25 MB it admitted roughly two hours of Opus in one
+    # request. Whisper bills per minute of audio and /stt needs no credentials,
+    # so that was the app's largest per-request cost exposure.
+    #
+    # 6 MB holds 60 seconds in the most wasteful allowed format (WAV, 48 kHz
+    # 16-bit mono, ~96 KB/s = 5.76 MB) and is ~24x more than 60 seconds of
+    # Opus. It cannot bound compressed duration exactly — nothing can without
+    # decoding — but it removes the two-hour case.
+    stt_max_bytes: int = 6 * 1024 * 1024
 
     # Supabase JWT secret (HS256). The UI authenticates against Supabase, whose
     # tokens this backend cannot otherwise verify — its own tokens are RS256
