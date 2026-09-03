@@ -41,7 +41,7 @@ graph TB
     end
 
     subgraph RENDER["Render"]
-        API["FastAPI (Docker)<br/>uvicorn<br/>gaadiiq-api.onrender.com"]
+        API["FastAPI (Docker)<br/>uvicorn<br/>api.gaadiiq.com → Render"]
         MIG["alembic upgrade head<br/>runs on deploy"]
     end
 

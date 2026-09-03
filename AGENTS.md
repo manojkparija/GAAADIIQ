@@ -12,7 +12,9 @@ needed.
 
 Two targets, and only two:
 
-- **API** → Render (`gaadiiq-api.onrender.com`), a Docker service defined by `render.yaml`.
+- **API** → Render, a Docker service defined by `render.yaml`. Reached at
+  `api.gaadiiq.com`, a proxied CNAME through Cloudflare; `gaadiiq-api.onrender.com`
+  is the origin behind it and nothing we ship addresses it directly.
   That hostname is compiled into `environment.prod.ts`, so it is what the app actually calls.
 - **Web** → Vercel, from `apps/gaadiiq-angular`.
 
