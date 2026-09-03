@@ -111,11 +111,96 @@ or if the service becomes reachable by some other route.
 - **Security → WAF → Managed rules** — the free managed ruleset.
 - **Security → Settings → Security Level: High** during an incident, and know
   where **"I'm Under Attack"** is *before* you need it.
-- **Rate limiting rules** — Cloudflare's own, at the edge. Ours runs after the
-  request has already reached Python and been parsed; theirs runs before it
-  leaves their network. They are not redundant, they are different layers.
-- **Caching** — the brand grid and catalogue reads are the cheapest thing to
-  serve from cache and the most expensive to serve from Postgres.
+---
+
+## 7. Caching (point 3)
+
+**The code half is done.** Every response now carries a `Cache-Control` header —
+`core/cache_policy.py` decides which. Four catalogue prefixes (`/cars`,
+`/upcoming-cars`, `/news`, `/video-reviews`) get
+`public, max-age=60, s-maxage=300, stale-while-revalidate=600`; **everything
+else gets `no-store`**, deliberately, so a loan application or a mechanic's
+record can never be held by an intermediary.
+
+Cloudflare does not cache API responses by default even when they say they are
+cacheable, so one rule is needed to opt in:
+
+**Caching → Cache Rules → Create rule**
+
+- Name: `catalogue reads`
+- If: `Hostname` `equals` `api.gaadiiq.com` **and** URI Path `starts with` one
+  of `/cars` `/upcoming-cars` `/news` `/video-reviews`
+- Then: **Eligible for cache**
+- Edge TTL: **Use cache-control header if present** — not a fixed number. The
+  API is the thing that knows how long its own answers stay true, and hardcoding
+  a TTL here means two places to change and one of them will be missed.
+- Browser TTL: **Respect origin**
+
+> **Do not add a blanket "cache everything" rule.** The reason the origin sends
+> `no-store` on everything else is that most of this API's surface is
+> per-caller. A cache rule that ignores the origin's header would override that
+> and serve one user's data to another.
+
+**Purging.** There is no purge-on-write hook yet, so `s-maxage=300` is the only
+thing bounding how long an admin's catalogue edit stays invisible. After
+editing the catalogue, either wait five minutes or **Caching → Configuration →
+Purge Everything**. Raise the TTL in `cache_policy.py` only once a purge hook
+exists — not before.
+
+## 8. Rate limiting (point 4)
+
+**The application half is already done and is stricter than most people expect.**
+`core/limiter.py` applies `300/minute` to *every* route by default, and the
+expensive endpoints carry their own tighter limits:
+
+| Endpoint | Limit |
+|---|---|
+| `POST /diagnosis/analyse` | `5/minute; 20/hour` |
+| `POST /diagnosis/stt` | `15/minute; 30/hour` |
+| `POST /auth/login` | `5/minute` |
+| `POST /auth/otp/verify` | `3/minute` |
+| everything else | `300/minute` |
+
+So the "10,000 requests to `/api/ai/diagnosis`" scenario is already bounded at
+20/hour per IP — **but only in production** (`enabled=settings.is_production`),
+and only after the request has reached Python, been parsed, and consumed a
+worker. Cloudflare's rule refuses it before it leaves their network.
+
+**Security → WAF → Rate limiting rules → Create rule**
+
+Two rules, in this order:
+
+**a. AI endpoints**
+- If: `Hostname` equals `api.gaadiiq.com` and URI Path `starts with` `/diagnosis`
+- Characteristics: **IP**
+- Rate: **30 requests per 1 minute**
+- Action: **Block**, duration 1 minute
+
+Deliberately looser than the application's own `5/minute` — this rule is there
+to stop a flood costing us CPU, not to be the limit. The precise limit stays in
+the application, where it can distinguish endpoints and see the user. A tight
+edge rule that fires before the app's does takes over that decision from the
+place that reasons about it properly.
+
+**b. Everything else**
+- If: `Hostname` equals `api.gaadiiq.com`
+- Characteristics: **IP**
+- Rate: **600 requests per 1 minute**
+- Action: **Managed Challenge**, duration 1 minute
+
+Challenge rather than Block: at this rate the likeliest cause is a shared NAT or
+a misbehaving client, not an attack, and a challenge lets a real browser through
+while stopping a script.
+
+> **`/health` must stay reachable.** If either rule ever grows a path that
+> covers it, Render's liveness probe gets challenged and the platform restarts a
+> service that is working. The rules above scope to `/diagnosis` and to a rate
+> no probe approaches, so neither does today.
+
+**Watch before you tighten.** Both rules can be created in **Log** action first
+and switched to Block/Challenge after a day of real traffic. On a site with no
+traffic baseline, a limit set from a guess is as likely to catch you as an
+attacker.
 
 ---
 

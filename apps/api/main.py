@@ -14,6 +14,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+from core.cache_policy import apply_cache_policy
 from core.config import settings
 from core.limiter import came_through_trusted_proxy, limiter
 
@@ -526,6 +527,26 @@ async def _security_headers_middleware(request: Request, call_next):
         response.headers["Content-Security-Policy"] = (
             "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
         )
+    return response
+
+
+@app.middleware("http")
+async def _cache_policy_middleware(request: Request, call_next):
+    """Decide what a shared cache may keep. See core/cache_policy.py.
+
+    Registered here rather than inside _security_headers_middleware because the
+    two answer different questions and have different blast radii: the security
+    headers are the same on every response, while this one reads the request and
+    the status and can, if its allowlist is wrong, publish something private.
+    Keeping it separate is what lets test_cache_policy.py aim at it directly.
+
+    Position is not load-bearing the way the CORS/error pair is — every
+    middleware in this stack sees the response on the way out, so any of them
+    can set a header. What matters is only that apply_cache_policy defers to a
+    handler that already set Cache-Control, which it does.
+    """
+    response = await call_next(request)
+    apply_cache_policy(request, response)
     return response
 
 
