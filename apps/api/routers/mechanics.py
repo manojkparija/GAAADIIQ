@@ -54,7 +54,17 @@ def _to_out(m: Mechanic) -> MechanicOut:
         latitude=m.latitude,
         longitude=m.longitude,
         service_radius_km=m.service_radius_km,
-        pan_number=m.pan_number,
+        # Masked, like every other PAN this API emits. It was the stored number
+        # in full, to the mechanic and to every admin, including the listing
+        # endpoint that returns up to 200 of them in one response.
+        #
+        # Three things already said it should be masked and none of them was
+        # checked against this line: the rule in CLAUDE.md ("PAN is stored — but
+        # never returned"), loan_applications.py, which emits pan_masked, and
+        # this file's own schema docstring, which claims no response model here
+        # can emit a PAN. The frontend agreed too — admin-mechanics' test
+        # fixture is the literal string "ABCDE****F".
+        pan_number=kyc.mask_pan(m.pan_number),
         aadhaar_masked=kyc.mask_aadhaar(m.aadhaar_last4),
         upi_vpa=m.upi_vpa,
         specialisations=m.specialisations,
