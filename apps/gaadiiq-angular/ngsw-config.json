@@ -29,8 +29,11 @@
   ],
   "dataGroups": [
     {
-      "name": "api-listings",
-      "urls": ["/api/listings/**", "/api/cars/**", "/api/recommend/**"],
+      "name": "api-catalogue",
+      "urls": [
+        "https://gaadiiq-api.onrender.com/cars/**",
+        "https://gaadiiq-api.onrender.com/listings/**"
+      ],
       "cacheConfig": {
         "strategy": "freshness",
         "maxSize": 100,
@@ -40,7 +43,10 @@
     },
     {
       "name": "api-static",
-      "urls": ["/api/health", "/api/loans/bank-rates"],
+      "urls": [
+        "https://gaadiiq-api.onrender.com/health",
+        "https://gaadiiq-api.onrender.com/loans/bank-rates"
+      ],
       "cacheConfig": {
         "strategy": "performance",
         "maxSize": 20,

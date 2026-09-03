@@ -602,7 +602,12 @@ class SttResponse(BaseModel):
 
 
 @router.post("/stt", response_model=SttResponse)
-@limiter.limit("15/minute;100/hour")
+# 100/hour was generous for a fallback engine and expensive to be wrong about:
+# this endpoint needs no credentials and every call is billed per minute of
+# audio. A person using voice input does a handful of queries in a sitting, not
+# thirty; 30/hour leaves that untouched and cuts the worst hourly spend per
+# address by more than two thirds.
+@limiter.limit("15/minute;30/hour")
 async def speech_to_text(
     request: Request,
     file: UploadFile = File(...),
