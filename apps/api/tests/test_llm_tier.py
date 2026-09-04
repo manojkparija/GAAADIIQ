@@ -36,6 +36,7 @@ from services.llm_tier import (
     resolve_tier,
     verify_caller,
 )
+from tests.conftest import diagnosis_auth_headers
 from tests.test_diagnosis import OLLAMA_DIAGNOSIS, VALID_PAYLOAD, _mock_ollama
 
 
@@ -62,7 +63,12 @@ async def client(db_engine, session_factory):
                 raise
 
     app.dependency_overrides[get_db] = override_get_db
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        # /diagnosis/analyse is sign-in gated; see conftest.
+        headers=diagnosis_auth_headers(),
+    ) as c:
         yield c
     app.dependency_overrides.clear()
 
@@ -380,12 +386,28 @@ class TestAdminAllowlistSuite:
 
 class TestTierCannotBeSelfSelectedSuite:
     @pytest.mark.asyncio
-    async def test_anonymous_request_is_served_free(self, client, gemini_on):
+    async def test_anonymous_request_is_refused(self, client, gemini_on):
+        """Renamed from ..._is_served_free, because it no longer is.
+
+        An anonymous caller used to get a diagnosis on the free model. It now
+        gets a 401: a run costs a model call, and there is no stable identity
+        to ration an anonymous caller against. The old property this asserted —
+        that anonymity never buys the premium model — still holds, and more
+        strongly, since no model is reached at all.
+
+        The `Authorization: ""` is load-bearing. The shared client fixture
+        carries a token so the rest of this file can reach the endpoint, and
+        without clearing it this test would be measuring that token.
+        """
         with patch("services.diagnosis._call_openai") as gpt:
             with patch("httpx.AsyncClient", return_value=_gemini_response(OLLAMA_DIAGNOSIS)):
-                r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
-        assert r.status_code == 201
-        assert r.json()["model_tier"] == "free"
+                r = await client.post(
+                    "/diagnosis/analyse",
+                    json=VALID_PAYLOAD,
+                    headers={"Authorization": ""},
+                )
+        assert r.status_code == 401
+        assert r.json()["detail"]["code"] == "sign_in_required"
         gpt.assert_not_called()
 
     @pytest.mark.asyncio
@@ -464,5 +486,11 @@ class TestTierCannotBeSelfSelectedSuite:
                     "/diagnosis/analyse", json=VALID_PAYLOAD,
                     headers={"Authorization": f"Bearer {forged}"},
                 )
-        assert r.json()["model_tier"] == "free"
+        # Stronger than it used to be. This asserted `model_tier == "free"`:
+        # the forged token bought nothing, but the diagnosis still ran. Now
+        # that /analyse requires a verified caller, a token signed with the
+        # wrong secret resolves to no identity at all and the request is
+        # refused before a model is chosen. Both properties hold.
+        assert r.status_code == 401
+        assert r.json()["detail"]["code"] == "sign_in_required"
         gpt.assert_not_called()

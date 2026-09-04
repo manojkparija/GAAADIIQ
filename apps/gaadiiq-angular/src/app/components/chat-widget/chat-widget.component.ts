@@ -7,11 +7,12 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ChatService, ChatMessage, RichContent, CarCard, DiagnosisCard } from '../../services/chat.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { LogoComponent } from '../logo/logo.component';
 
 @Component({
   selector: 'app-chat-widget',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TranslatePipe],
+  imports: [CommonModule, FormsModule, RouterLink, TranslatePipe, LogoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './chat-widget.component.html',
   styleUrl: './chat-widget.component.scss',

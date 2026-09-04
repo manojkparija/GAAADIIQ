@@ -684,6 +684,11 @@ export class VehicleDiagnosisComponent implements OnInit, OnDestroy {
     this.queuedOffline.set(false);
 
     await this.diagSvc.analyse(request);
+
+    // Re-read the counter rather than decrementing it here. A run can be
+    // refused, cached, or served without spending anything, and a local
+    // "minus one" would drift from the server on every one of those.
+    void this.diagSvc.loadQuota();
   }
 
   /** True when the last submission was queued instead of sent (BR-UX-06). */
@@ -980,6 +985,13 @@ export class VehicleDiagnosisComponent implements OnInit, OnDestroy {
    * reached at all.
    */
   ngOnInit() {
+    // The allowance, so the page can say what a run will cost before the user
+    // fills in four steps and finds out. Fire-and-forget: the service leaves
+    // `quota` null on failure and the page simply says nothing, because the
+    // real gate is server-side and a status call that blipped must not hide
+    // the form.
+    void this.diagSvc.loadQuota();
+
     // Landed while this page was not mounted.
     const pending = this.offline.takeLastCompleted('/diagnosis/analyse');
     if (pending) this._showQueuedReport(pending.response);

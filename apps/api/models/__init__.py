@@ -30,6 +30,7 @@ from .diagnosis_kb import (
     VerificationStatus,
     WarrantyImpact,
 )
+from .diagnosis_usage import DiagnosisUsage
 from .insurance import (
     InsuranceLead,
     InsuranceLeadStatus,
@@ -106,7 +107,7 @@ __all__ = [
     "LoanApplication", "LoanApplicationStatus", "LoanOffer", "CreditCheck",
     "CreditSource", "VehicleCondition",
     "DiagnosisMaster", "DiagnosisSolution", "DiagnosisSymptomAlias", "DiagnosisImportRun",
-    "DiagnosisReviewEvent", "ReviewDecision",
+    "DiagnosisReviewEvent", "ReviewDecision", "DiagnosisUsage",
     "VerificationStatus", "RecordStatus", "SourceType", "Severity", "CanDrive",
     "SolutionType", "Difficulty", "WarrantyImpact",
     "ServiceOfferStatus",

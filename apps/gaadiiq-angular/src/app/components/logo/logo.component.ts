@@ -43,13 +43,19 @@ import { CommonModule } from '@angular/common';
            gap. Motion and intelligence without resorting to a car silhouette. -->
       <circle
         cx="18" cy="18" r="11"
-        stroke="#2F6BFF" stroke-width="4.5" fill="none"
+        [attr.stroke]="tone === 'inverse' ? '#fff' : '#2F6BFF'"
+        stroke-width="4.5" fill="none"
         stroke-dasharray="55.3 69.1" stroke-dashoffset="-7.5" stroke-linecap="round"
       />
-      <line x1="18" y1="18" x2="29" y2="18" stroke="#14B8A6" stroke-width="4.5" stroke-linecap="round" />
+      <line
+        x1="18" y1="18" x2="29" y2="18"
+        [attr.stroke]="tone === 'inverse' ? 'rgba(255,255,255,0.85)' : '#14B8A6'"
+        stroke-width="4.5" stroke-linecap="round"
+      />
       <polyline
         points="25.5,14.5 29,18 25.5,21.5"
-        stroke="#14B8A6" stroke-width="3"
+        [attr.stroke]="tone === 'inverse' ? 'rgba(255,255,255,0.85)' : '#14B8A6'"
+        stroke-width="3"
         stroke-linecap="round" stroke-linejoin="round" fill="none"
       />
 
@@ -58,6 +64,7 @@ import { CommonModule } from '@angular/common';
            on a cold load. -->
       <text
         class="brand-logo__word"
+        [class.brand-logo__word--inverse]="tone === 'inverse'"
         x="41" y="25"
         font-family="'Outfit','Manrope','Helvetica Neue',Arial,sans-serif"
         font-weight="600" font-size="21" letter-spacing="1.6"
@@ -84,9 +91,30 @@ import { CommonModule } from '@angular/common';
     @media (prefers-color-scheme: dark) {
       :host-context(:not([data-theme='light'])) .brand-logo__word { fill: #93B4FF; }
     }
+
+    /* On a brand-coloured surface the mark is white regardless of theme, and
+       must beat both theme rules above — hence the extra class rather than a
+       token. The chat widget header is a blue-to-teal gradient: navy #1E3A8A
+       on that is close to unreadable, and #93B4FF is barely better. */
+    .brand-logo__word--inverse,
+    :host-context([data-theme='dark']) .brand-logo__word--inverse { fill: #fff; }
+    @media (prefers-color-scheme: dark) {
+      :host-context(:not([data-theme='light'])) .brand-logo__word--inverse { fill: #fff; }
+    }
   `],
 })
 export class LogoComponent {
   @Input() width = 196;
   @Input() height = 42;
+  /**
+   * 'brand' on a page background, 'inverse' on a brand-coloured one.
+   *
+   * Added so the chat widget could stop carrying its own copy of the mark. It
+   * had an inlined SVG of the PREVIOUS logo — the one this component's notes
+   * describe replacing, with the double-I set as two rounded bars — so the
+   * header read "GAADI||Q" long after the wordmark changed everywhere else.
+   * Exactly the divergence this component exists to prevent, in the one place
+   * that could not use it because it needed white.
+   */
+  @Input() tone: 'brand' | 'inverse' = 'brand';
 }

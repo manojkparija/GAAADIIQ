@@ -46,8 +46,9 @@ from models.diagnosis_kb import (
     VerificationStatus,
 )
 from models.user import User
-from services import diagnosis_cache, diagnosis_kb_lookup
+from services import diagnosis_cache, diagnosis_kb_lookup, diagnosis_quota
 from services.diagnosis_kb_import import normalise_phrase
+from tests.conftest import diagnosis_auth_headers
 from tests.data import diagnosis_e2e_seed as seed
 
 pytestmark = pytest.mark.asyncio
@@ -133,6 +134,14 @@ async def client(db_session):
     limiter_was = app.state.limiter.enabled
     app.state.limiter.enabled = False
 
+    # This file is about what a diagnosis contains, not about who is allowed to
+    # ask for one — several cases deliberately run the same request four or
+    # five times to exercise the cache. The monthly cap is lifted for the
+    # duration and restored on the way out, exactly as the limiter above is.
+    # The cap itself is covered by tests/test_diagnosis_quota.py.
+    quota_was = dict(diagnosis_quota.MONTHLY_QUOTA)
+    diagnosis_quota.MONTHLY_QUOTA["free"] = None
+
     # invalidate_all() before _reset_for_tests(): the first clears the dx:* keys
     # in Redis, the second drops the client handle. Resetting only the
     # in-process dict leaves cached answers alive in Redis *between pytest
@@ -143,12 +152,17 @@ async def client(db_session):
     diagnosis_cache._reset_for_tests()
 
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        # POST /diagnosis/analyse is sign-in gated; see conftest.
+        headers=diagnosis_auth_headers(),
     ) as c:
         yield c
 
     app.dependency_overrides.clear()
     app.state.limiter.enabled = limiter_was
+    diagnosis_quota.MONTHLY_QUOTA.clear()
+    diagnosis_quota.MONTHLY_QUOTA.update(quota_was)
     await diagnosis_cache.invalidate_all()
     diagnosis_kb_lookup.reset_caches()
     diagnosis_cache._reset_for_tests()
@@ -588,7 +602,12 @@ async def test_DX_E2E_0501b_dev_admin_bypass_is_gated_on_environment(client, see
     from core.config import settings
 
     assert settings.environment != "production"
-    assert (await client.get(f"{KB}/stats")).status_code == 200
+    # Explicitly credential-free. The shared client now carries a bearer token
+    # so it can reach the sign-in-gated /diagnosis/analyse, and sending that
+    # here would test the token rather than the bypass.
+    assert (
+        await client.get(f"{KB}/stats", headers={"Authorization": ""})
+    ).status_code == 200
 
 
 async def test_DX_E2E_0502_stats_report_readiness(admin_client, seeded):

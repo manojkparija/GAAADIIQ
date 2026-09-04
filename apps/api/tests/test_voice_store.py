@@ -36,6 +36,7 @@ from services.voice_store import (
     save_transcript,
     start_conversation,
 )
+from tests.conftest import diagnosis_auth_headers
 from tests.test_diagnosis import OLLAMA_DIAGNOSIS, VALID_PAYLOAD, _mock_ollama
 
 
@@ -62,7 +63,12 @@ async def client(db_engine, session_factory):
                 raise
 
     app.dependency_overrides[get_db] = override_get_db
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        # /diagnosis/analyse is sign-in gated; see conftest.
+        headers=diagnosis_auth_headers(),
+    ) as c:
         yield c
     app.dependency_overrides.clear()
 

@@ -388,6 +388,51 @@
   p { color: var(--text-muted); margin: 0 0 24px; }
 }
 
+/*
+ * Allowance banner in the hero, and the refusal card at step 4.
+ *
+ * The hero sits on the dark gradient, so the banner uses its own translucent
+ * white rather than --card-bg: a card token here reads as a floating panel
+ * with the wrong contrast against the gradient behind it.
+ */
+.quota-note {
+  display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 14px; padding: 8px 14px; border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: #fff; font-size: 0.875rem; line-height: 1.4;
+
+  strong { font-weight: 700; }
+
+  /* Text on the hero gradient, not on a card — white is the readable choice
+     here and reverses nothing in dark mode, where the hero is unchanged. */
+  &__action {
+    color: #fff; font-weight: 600; text-decoration: underline;
+    text-underline-offset: 2px; white-space: nowrap;
+  }
+}
+
+.quota-note--signin {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.34);
+}
+
+.blocked-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 16px; padding: 40px; text-align: center;
+
+  .blocked-icon { color: var(--text-muted); margin-bottom: 16px; display: flex; justify-content: center; }
+  h3 { margin: 0 0 8px; }
+  p { color: var(--text-muted); margin: 0 0 12px; }
+  .blocked-meta { font-size: 0.875rem; margin-bottom: 24px; }
+
+  /* The primary action is an <a> here, not a <button> — it navigates. Given
+     the same box as .btn-primary so the two do not drift apart visually. */
+  .btn-primary { display: inline-block; text-decoration: none; }
+  .btn-ghost { margin-left: 12px; }
+}
+
 /* Report cards */
 .report-header {
   background: var(--card-bg, #fff); border: 1px solid var(--border, #e5e7eb);
@@ -583,7 +628,7 @@
   .sc-card { border-color: rgba(255,255,255,0.08); &:hover { border-color: #2563EB; } }
   .sc-close { background: #0f172a; }
   .sc-btn-call, .sc-btn-map { background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%); }
-  .step-card, .report-card, .report-header, .loading-card, .error-card {
+  .step-card, .report-card, .report-header, .loading-card, .error-card, .blocked-card {
     background: #1e293b; border-color: rgba(255,255,255,0.08);
   }
   .review-desc { background: #0f172a; }

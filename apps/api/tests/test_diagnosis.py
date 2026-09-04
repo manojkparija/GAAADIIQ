@@ -25,6 +25,7 @@ from services.diagnosis import (
     extract_vehicle_info_from_transcript,
     run_diagnosis,
 )
+from tests.conftest import diagnosis_auth_headers
 
 
 @pytest_asyncio.fixture
@@ -41,7 +42,12 @@ async def client(db_engine):
                 raise
 
     app.dependency_overrides[get_db] = override_get_db
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        # /diagnosis/analyse is sign-in gated; see conftest.
+        headers=diagnosis_auth_headers(),
+    ) as c:
         yield c
     app.dependency_overrides.clear()
 
@@ -701,7 +707,10 @@ class TestDiagnosisSurvivesAStorageFailureSuite:
         with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
             with patch(
                 "sqlalchemy.ext.asyncio.AsyncSession.commit",
-                new=AsyncMock(side_effect=[boom, None, None]),
+                # The leading None is the quota counter's own commit, which
+                # runs before the model call. Only the second commit — the
+                # diagnosis row — is the one this test wants to fail.
+                new=AsyncMock(side_effect=[None, boom, None, None]),
             ):
                 r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
 
@@ -724,7 +733,10 @@ class TestDiagnosisSurvivesAStorageFailureSuite:
         with patch("httpx.AsyncClient", return_value=_mock_ollama(OLLAMA_DIAGNOSIS)):
             with patch(
                 "sqlalchemy.ext.asyncio.AsyncSession.commit",
-                new=AsyncMock(side_effect=[boom, None, None]),
+                # The leading None is the quota counter's own commit, which
+                # runs before the model call. Only the second commit — the
+                # diagnosis row — is the one this test wants to fail.
+                new=AsyncMock(side_effect=[None, boom, None, None]),
             ):
                 r = await client.post("/diagnosis/analyse", json=VALID_PAYLOAD)
 

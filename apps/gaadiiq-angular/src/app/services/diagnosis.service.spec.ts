@@ -164,3 +164,138 @@ describe('DiagnosisService.analyse', () => {
     expect(report!.offline_fallback).toBeFalsy();
   });
 });
+
+/**
+ * The AI Diagnosis gate: signed in to run one, and rationed by plan.
+ *
+ * The property worth pinning is narrow and easy to lose: a refusal must NOT
+ * fall through to `clientFallback()`. Every other failure in this file ends
+ * with the offline estimate on screen, and that is right for an outage — but
+ * showing it here would hand over a diagnosis-shaped answer the server just
+ * declined to give, which makes the gate decorative. The enforcement itself is
+ * server-side (apps/api/tests/test_diagnosis_quota.py); this is about what the
+ * page does with the "no".
+ */
+describe('DiagnosisService — sign-in and quota refusals', () => {
+  let service: DiagnosisService;
+  let http: HttpTestingController;
+  const url = `${environment.apiUrl}/diagnosis/analyse`;
+  const quotaUrl = `${environment.apiUrl}/diagnosis/quota`;
+
+  const EXHAUSTED = {
+    detail: {
+      code: 'diagnosis_quota_exhausted',
+      message: 'You have used all 3 AI Diagnosis runs included with Free this month.',
+      plan: 'free',
+      plan_label: 'Free',
+      limit: 3,
+      used: 3,
+      remaining: 0,
+      unlimited: false,
+      allowed: false,
+      period: '2026-09',
+    },
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [DiagnosisService, provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(DiagnosisService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('shows no report at all when the caller is not signed in', async () => {
+    const pending = service.analyse(REQUEST);
+    http.expectOne(url).flush(
+      { detail: { code: 'sign_in_required', message: 'Sign in to run an AI diagnosis.' } },
+      { status: 401, statusText: 'Unauthorized' },
+    );
+    const report = await pending;
+
+    expect(report).toBeNull();
+    expect(service.report()).toBeNull();
+    expect(service.blocked()?.reason).toBe('sign_in_required');
+    // The whole point: no canned diagnosis stood in for the refusal.
+    expect(service.error()).toBeNull();
+  });
+
+  it('shows no report at all when the monthly allowance is spent', async () => {
+    const pending = service.analyse(REQUEST);
+    http.expectOne(url).flush(EXHAUSTED, { status: 403, statusText: 'Forbidden' });
+    const report = await pending;
+
+    expect(report).toBeNull();
+    expect(service.report()).toBeNull();
+    expect(service.blocked()?.reason).toBe('quota_exhausted');
+    expect(service.error()).toBeNull();
+  });
+
+  it('carries the plan and counts through, so the page can name them', async () => {
+    const pending = service.analyse(REQUEST);
+    http.expectOne(url).flush(EXHAUSTED, { status: 403, statusText: 'Forbidden' });
+    await pending;
+
+    const q = service.blocked()!.quota!;
+    expect(q.plan_label).toBe('Free');
+    expect([q.used, q.limit, q.remaining]).toEqual([3, 3, 0]);
+    // And the page's own banner is brought up to date by the same response,
+    // rather than continuing to advertise runs that no longer exist.
+    expect(service.quota()?.remaining).toBe(0);
+  });
+
+  it('still shows the offline estimate for a 500, which is an outage not a refusal', async () => {
+    // The dividing line. Both are non-2xx; only one of them means "you may not".
+    const pending = service.analyse(REQUEST);
+    http.expectOne(url).flush('boom', { status: 500, statusText: 'Server Error' });
+    const report = await pending;
+
+    expect(report!.offline_fallback).toBeTrue();
+    expect(service.blocked()).toBeNull();
+  });
+
+  it('does not read an ordinary 403 as an exhausted quota', async () => {
+    // A 403 without the code is some other authorisation problem, and telling
+    // that user to upgrade would point them at a purchase that fixes nothing.
+    const pending = service.analyse(REQUEST);
+    http.expectOne(url).flush({ detail: 'Forbidden' }, { status: 403, statusText: 'Forbidden' });
+    await pending;
+
+    expect(service.blocked()).toBeNull();
+    expect(service.error()).toContain('403');
+  });
+
+  it('clears a previous refusal when a later run succeeds', async () => {
+    const first = service.analyse(REQUEST);
+    http.expectOne(url).flush(EXHAUSTED, { status: 403, statusText: 'Forbidden' });
+    await first;
+    expect(service.blocked()).not.toBeNull();
+
+    const second = service.analyse(REQUEST);
+    http.expectOne(url).flush(SERVER_ANSWER);
+    await second;
+    expect(service.blocked()).toBeNull();
+  });
+
+  it('leaves the quota unknown rather than guessing when the status call fails', async () => {
+    // A guessed default is worse than none: "free, 3 left" is a lie to a Buyer
+    // Pro, and "unlimited" promises runs that will be refused.
+    const pending = service.loadQuota();
+    http.expectOne(quotaUrl).error(new ProgressEvent('network error'));
+    expect(await pending).toBeNull();
+    expect(service.quota()).toBeNull();
+  });
+
+  it('reads the allowance back for the page to render', async () => {
+    const pending = service.loadQuota();
+    http.expectOne(quotaUrl).flush({
+      plan: 'seller_basic', plan_label: 'Seller Basic', limit: 10, used: 4,
+      remaining: 6, unlimited: false, allowed: true, period: '2026-09', signed_in: true,
+    });
+    await pending;
+    expect(service.quota()?.remaining).toBe(6);
+    expect(service.quota()?.unlimited).toBeFalse();
+  });
+});
