@@ -77,9 +77,23 @@
         <span>{{ 'Seller' | t }}</span>
         <span>{{ 'Dealer Pro' | t }}</span>
       </div>
+      <!--
+        Hardcoded here, unlike the cards above, which read
+        `subscription_plans.features` from Supabase. That difference is why the
+        AI Diagnosis row was missed when the feature shipped: updating the plan
+        data in the database does nothing to this table.
+
+        The AI Diagnosis figures mirror MONTHLY_QUOTA in
+        apps/api/services/diagnosis_quota.py, which is what the server actually
+        enforces. Three copies of those numbers exist — that file, the Supabase
+        rows, and this table — and only the first is authoritative.
+        pricing-plans.feature-table.spec.ts pins this row; nothing can pin it
+        against the other two, so they move together by hand.
+      -->
       <div class="ct-row" *ngFor="let row of [
         ['Browse listings',           '✅','✅','✅','✅'],
         ['AI Car Advisor',            '5/day','Unlimited','5/day','Unlimited'],
+        ['AI Diagnosis',              '3/month','Unlimited','10/month','Unlimited'],
         ['Price Alerts',              '3','Unlimited','3','Unlimited'],
         ['Car Comparison',            '2 cars','5 cars','2 cars','5 cars'],
         ['AI Valuation',              '❌','✅','✅','✅'],
