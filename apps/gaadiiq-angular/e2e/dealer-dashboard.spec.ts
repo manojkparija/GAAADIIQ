@@ -48,6 +48,25 @@ function sessionFor(email: string) {
   };
 }
 
+/**
+ * Is this a call to our API, whichever host it happens to be on?
+ *
+ * BOTH have to be here, and that is not defensive padding. `ng build` defaults
+ * to production, where apiUrl is https://api.gaadiiq.com — but ci-web.yml runs
+ * `ng build --configuration development`, where it is http://localhost:8000.
+ *
+ * Matching only the production host meant the stub could never fire in CI. The
+ * app called localhost:8000, nothing answered, the lead calls failed, and nine
+ * tests reported missing rows with nothing pointing at the cause. Locally every
+ * one of them passed, because a local `ng build` produces the production URL.
+ *
+ * The lasting fix is not this function, it is running the suite against the
+ * same build CI does. This function is what makes the suite correct under
+ * either.
+ */
+const isApiRequest = (url: URL) =>
+  url.hostname === 'api.gaadiiq.com' || url.port === '8000';
+
 type Fixtures = {
   /** What user_profiles returns — this is what decides the guard's answer. */
   profile?: { role: string; seller_id: number | null; name: string } | null;
@@ -163,12 +182,10 @@ async function arrive(page: Page, path: string, f: Fixtures = {}) {
   /*
    * One handler for the whole API host, switching on the exact pathname.
    *
-   * A URL PREDICATE, not a glob, and that is the point. The glob this replaces
-   * matched locally and did not match on the CI runner, so every /leads and
-   * /sentiment request escaped to the real API there — 10 tests red, with
-   * failure messages about missing lead rows and nothing pointing at the
-   * network. A predicate over url.hostname has no pattern semantics to get
-   * wrong.
+   * Matched by isApiRequest, which covers BOTH hosts the app can be built
+   * against — see its definition. Hard-coding api.gaadiiq.com here is what
+   * made this suite red in CI twice: CI builds --configuration development,
+   * where apiUrl is http://localhost:8000.
    *
    * Switching on the exact pathname rather than registering several globs is
    * also deliberate: a glob ending in "leads" matches the sentiment feed's own
@@ -176,7 +193,7 @@ async function arrive(page: Page, path: string, f: Fixtures = {}) {
    * shape, no intent_score — and stopped the dashboard rendering at all while
    * the lead fixtures looked perfectly correct.
    */
-  await page.route(url => url.hostname === 'api.gaadiiq.com', route => {
+  await page.route(isApiRequest, route => {
     const path = new URL(route.request().url()).pathname;
     const json = (body: unknown, status = 200) =>
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
