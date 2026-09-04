@@ -245,16 +245,25 @@ export class DealerDashboardComponent {
   async removeDealerImage(imageId: number) {
     await this.dealerImages.remove(imageId);
   }
-  sellerInitials = computed(() => {
-    const s = this.currentSeller();
-    if (!s) return '??';
-    return s.business_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  });
-  authInitials = computed(() => {
-    const u = this.auth.currentUser();
-    if (!u) return '?';
-    return u.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  });
+  /*
+   * Both of these guard the object AND the field, and the second half is the
+   * part that was missing.
+   *
+   * `Seller.business_name` and `AuthUser.name` are both typed as plain strings,
+   * so TypeScript is satisfied — but they arrive from Supabase at runtime,
+   * where a column that is nullable in the database says nothing to the
+   * compiler. One NULL and `.split` throws.
+   *
+   * Throwing HERE is worse than throwing almost anywhere else: this is inside a
+   * computed(), which Angular re-evaluates on change detection, so a single bad
+   * row does not produce one error — it produces one per cycle, and the page
+   * degrades rather than showing the '??' this function already had ready.
+   * Observed while building e2e coverage: a seller record with no
+   * business_name filled the console with "Cannot read properties of undefined
+   * (reading 'split')" and kept going.
+   */
+  sellerInitials = computed(() => this.initials(this.currentSeller()?.business_name, '??'));
+  authInitials = computed(() => this.initials(this.auth.currentUser()?.name, '?'));
 
 
   constructor(seo: SeoService, private testDriveSvc: TestDriveService,
@@ -394,8 +403,22 @@ export class DealerDashboardComponent {
     return 'var(--muted)';
   }
 
-  initials(name: string): string {
-    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  /**
+   * Initials from a name that may not be there.
+   *
+   * The template calls this directly for lead and enquiry rows, where the name
+   * is genuinely optional — a buyer can leave it blank, and the lead table
+   * already renders "Not given" for that case. This used to take `name: string`
+   * and split it unguarded, so the one place the data model says is optional
+   * was the one place that could not survive it.
+   *
+   * Also filters empty segments: "  R   Kumar  " has words that are the empty
+   * string, and w[0] on those is undefined, which join() renders as "undefined".
+   */
+  initials(name: string | null | undefined, fallback = '?'): string {
+    const words = (name ?? '').split(' ').filter(Boolean);
+    if (!words.length) return fallback;
+    return words.map(w => w[0]).join('').slice(0, 2).toUpperCase();
   }
 
   timeAgoFromDate(d: string | null): string {

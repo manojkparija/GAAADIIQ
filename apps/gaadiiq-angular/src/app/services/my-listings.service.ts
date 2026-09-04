@@ -29,11 +29,24 @@ export class MyListingsService {
     // Load from localStorage immediately on service creation
     this.loadFromStorage();
 
-    // When user logs in, also try to sync from Supabase
+    // When user logs in, also try to sync from Supabase.
+    //
+    // allowSignalWrites is load-bearing, not a lint appeasement. syncFromSupabase
+    // opens with `this.loading.set(true)`, which runs synchronously inside this
+    // effect — and Angular throws NG0600 ("writing to signals is not allowed")
+    // for that by default. The throw happened before the query was ever issued,
+    // so the sync did not merely warn: it never ran. A dealer's listings came
+    // from localStorage alone, and the Inventory tab silently showed a stale or
+    // empty inventory on any device that had not created them locally.
+    //
+    // Nothing surfaced it because the error goes to the console and the page
+    // still renders — the listings just are not there, which is
+    // indistinguishable from having none. Found by an e2e test watching the
+    // console; e2e/dealer-dashboard.spec.ts now asserts NG0600 stays absent.
     effect(() => {
       const user = auth.currentUser();
       if (user?.email) this.syncFromSupabase(user.email);
-    });
+    }, { allowSignalWrites: true });
   }
 
   private loadFromStorage(): void {
