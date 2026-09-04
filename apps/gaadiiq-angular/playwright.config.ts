@@ -69,7 +69,7 @@ export default defineConfig({
       // no browser and needs no API.
       // theme-tokens joins listing-columns as a source-only check: no browser,
       // no API, and it catches a CSS variable nobody ever defined.
-      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|api-origin)\.spec\.ts/,
+      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|api-origin|dealer-dashboard)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {
