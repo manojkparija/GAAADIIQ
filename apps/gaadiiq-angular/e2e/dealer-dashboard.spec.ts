@@ -89,10 +89,27 @@ async function arrive(page: Page, path: string, f: Fixtures = {}) {
     );
   }
 
-  // Supabase auth endpoints — the client may still probe these on boot.
-  await page.route('**/auth/v1/**', route =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sessionFor(SELLER_EMAIL)) }),
-  );
+  /*
+   * Supabase auth. The SHAPE per endpoint matters, and getting it wrong is why
+   * this suite passed locally and failed in CI on its first push.
+   *
+   * /auth/v1/user returns a User; /auth/v1/token returns a Session (a User
+   * wrapped in tokens). Answering both with a Session made supabase-js reject
+   * the /user response and drop the session, so currentUser went null and the
+   * guard sent every affected test somewhere else.
+   *
+   * It only showed up in CI because this sandbox blocks outbound requests: the
+   * call failed at the network layer, supabase-js kept the stored session, and
+   * the wrong stub was never reached. A CI runner has real egress, reaches the
+   * route, and gets the wrong body. "Passes locally" was evidence about the
+   * sandbox, not about the test.
+   */
+  await page.route('**/auth/v1/**', route => {
+    const session = sessionFor(SELLER_EMAIL);
+    const path = new URL(route.request().url()).pathname;
+    const body = path.endsWith('/user') ? session.user : session;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+  });
 
   // PostgREST. maybeSingle() asks for a single object, so tables read that way
   // return an object; the rest return arrays.
@@ -136,7 +153,23 @@ async function arrive(page: Page, path: string, f: Fixtures = {}) {
     return json({ items: [], total: 0, page: 1, page_size: 100 });
   });
 
+  /*
+   * Straight to the route under test.
+   *
+   * Visiting a public page first to "warm up" the auth state was tried and
+   * removed: page.goto is a full document navigation, so the second goto reboots
+   * the Angular app and re-runs the same hydration race from scratch. It bought
+   * nothing and cost every test an extra page load. The guard's own redirect,
+   * asserted below, is what tells us whether hydration won.
+   */
   await page.goto(path);
+}
+
+/** Wait for the leads panel to have decided what it is showing. */
+async function leadsSettled(page: Page) {
+  // All three branches — rows, empty state, error — are gated on this being
+  // false. Asserting before it clears means asserting against a spinner.
+  await expect(page.getByText('Loading leads…')).toHaveCount(0, { timeout: 20_000 });
 }
 
 // ── The guard ────────────────────────────────────────────────────────────────
@@ -207,6 +240,7 @@ test.describe('the dashboard a seller sees', () => {
 test.describe('an empty lead inbox versus a broken one', () => {
   async function openCarLeads(page: Page) {
     await page.locator('.dd-tab', { hasText: /🚗/ }).first().click();
+    await leadsSettled(page);
   }
 
   test('no leads says so, and says it is not an error', async ({ page }) => {
@@ -317,6 +351,7 @@ test.describe('a seller record with fields the database left null', () => {
       }],
     });
     await page.locator('.dd-tab', { hasText: /🚗/ }).first().click();
+    await leadsSettled(page);
 
     await expect(page.getByText('Not given')).toBeVisible();
     await expect(page.locator('a[href="tel:9800000000"]')).toBeVisible();
