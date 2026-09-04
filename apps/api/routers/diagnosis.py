@@ -26,6 +26,7 @@ from core.limiter import limiter
 from db.session import get_db
 from models.user import User
 from models.vehicle_diagnosis import VehicleDiagnosis
+from services import diagnosis_quota as quota
 from services.diagnosis import _LANG_NAMES, extract_vehicle_info_from_transcript, run_diagnosis
 from services.llm_tier import resolve_tier, verify_caller
 from services.stt import (
@@ -183,6 +184,26 @@ class DiagnosisHistoryItem(BaseModel):
     repair_complexity: str | None = None
 
 
+class QuotaResponse(BaseModel):
+    """
+    The AI Diagnosis allowance, as the page renders it.
+
+    `limit` and `remaining` are null when the plan is unlimited — not a large
+    number, which the UI would have to guess about and would eventually print.
+    Check `unlimited` first.
+    """
+
+    plan: str
+    plan_label: str
+    limit: int | None
+    used: int
+    remaining: int | None
+    unlimited: bool
+    allowed: bool
+    period: str
+    signed_in: bool
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 def _as_text(value: object) -> str | None:
@@ -328,14 +349,46 @@ def _fix_solutions(result: dict) -> list[dict]:
 async def analyse_vehicle(request: Request, body: DiagnoseRequest, db: DB):
     """
     Submit vehicle symptoms and receive an AI-powered preliminary diagnosis.
-    No authentication required — open to all users.
+
+    Sign-in required, and rationed by plan — see `services/diagnosis_quota`.
+    The gate is here rather than in the Angular app because a hidden button is
+    still reachable with curl, and each run costs a model call.
     """
-    # Tier comes from a cryptographically verified token, never from the body.
-    # body.user_id is client-supplied: using it here would let a free user send
-    # a paid user's UUID and be upgraded.
+    # Identity comes from a cryptographically verified token, never from the
+    # body. body.user_id is client-supplied: using it here would let a free
+    # user send a paid user's UUID and be upgraded.
     auth_header = request.headers.get("authorization") or ""
     bearer = auth_header[7:] if auth_header.lower().startswith("bearer ") else None
-    tier = await resolve_tier(db, verify_caller(bearer))
+    caller = verify_caller(bearer)
+
+    if caller is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": quota.CODE_SIGN_IN_REQUIRED,
+                "message": "Sign in to run an AI diagnosis.",
+            },
+        )
+
+    # Spent before the model call, not after: the whole point is to stop the
+    # spend, and a counter incremented on success is one a caller can exhaust
+    # for free by cancelling.
+    allowance = await quota.consume(db, caller)
+    if not allowance.allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": quota.CODE_QUOTA_EXHAUSTED,
+                "message": (
+                    f"You have used all {allowance.limit} AI Diagnosis runs "
+                    f"included with {allowance.label} this month. "
+                    "Upgrade for more."
+                ),
+                **allowance.as_dict(),
+            },
+        )
+
+    tier = await resolve_tier(db, caller)
 
     ai_result = await run_diagnosis(
         manufacturer=body.manufacturer,
@@ -717,6 +770,28 @@ async def voice_extract(request: Request, body: VoiceExtractRequest):
     """Extract structured vehicle info from a spoken transcript using Ollama."""
     extracted = await extract_vehicle_info_from_transcript(body.transcript)
     return extracted
+
+
+@router.get("/quota", response_model=QuotaResponse)
+async def get_quota(request: Request, db: DB):
+    """
+    How many AI Diagnosis runs this caller has left this month.
+
+    Registered above `GET /{diagnosis_id}` on purpose: FastAPI matches in
+    declaration order, and below it "quota" would be read as a diagnosis id
+    and 404 — the same trap `/history` is already sitting above.
+
+    Deliberately not `Depends(get_current_user)`. An anonymous caller is a
+    valid question here, and the honest answer is "sign in first" with the
+    plan numbers attached, not a 401 the page has to interpret.
+    """
+    auth_header = request.headers.get("authorization") or ""
+    bearer = auth_header[7:] if auth_header.lower().startswith("bearer ") else None
+    allowance = await quota.peek(db, verify_caller(bearer))
+    return QuotaResponse(
+        **allowance.as_dict(),
+        signed_in=allowance.plan != "anonymous",
+    )
 
 
 @router.get("/history", response_model=list[DiagnosisHistoryItem])

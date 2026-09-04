@@ -325,6 +325,33 @@ function clientFallback(req: DiagnoseRequest): DiagnosisReport {
   };
 }
 
+/** Mirrors `QuotaResponse` in `apps/api/routers/diagnosis.py`. */
+export interface DiagnosisQuota {
+  plan: string;
+  plan_label: string;
+  /** Null when the plan is unlimited — check `unlimited`, do not guess a number. */
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  unlimited: boolean;
+  allowed: boolean;
+  /** UTC "YYYY-MM". The allowance resets when this changes. */
+  period: string;
+  signed_in: boolean;
+}
+
+/** Why a run was refused, in the two cases where no diagnosis is shown at all. */
+export interface DiagnosisBlock {
+  reason: 'sign_in_required' | 'quota_exhausted';
+  message: string;
+  /** Present on a quota refusal: the plan and counts at the moment of refusal. */
+  quota?: DiagnosisQuota;
+}
+
+/** The codes the API sends. Kept in step with `services/diagnosis_quota.py`. */
+const CODE_SIGN_IN_REQUIRED = 'sign_in_required';
+const CODE_QUOTA_EXHAUSTED = 'diagnosis_quota_exhausted';
+
 @Injectable({ providedIn: 'root' })
 export class DiagnosisService {
   private readonly api = `${environment.apiUrl}/diagnosis`;
@@ -332,6 +359,26 @@ export class DiagnosisService {
   loading = signal(false);
   error = signal<string | null>(null);
   report = signal<DiagnosisReport | null>(null);
+
+  /**
+   * The caller's AI Diagnosis allowance, as the API reports it.
+   *
+   * Null until `loadQuota()` has answered. The page must not invent a default
+   * while it is null: guessing "free, 3 left" would tell a Buyer Pro they are
+   * rationed, and guessing "unlimited" would promise runs that will 403.
+   */
+  quota = signal<DiagnosisQuota | null>(null);
+
+  /**
+   * Set when the API refused the run outright — not signed in, or out of runs.
+   *
+   * Separate from `error` because these are the two cases that must NOT show
+   * the offline estimate. Every other failure is "we could not reach the
+   * service, here is something conservative"; these two are "you may not run
+   * this", and answering them with a canned diagnosis would hand over exactly
+   * the thing being withheld.
+   */
+  blocked = signal<DiagnosisBlock | null>(null);
 
   constructor(private http: HttpClient) {}
 
@@ -363,6 +410,7 @@ export class DiagnosisService {
     this.loading.set(true);
     this.error.set(null);
     this.report.set(null);
+    this.blocked.set(null);
 
     try {
       const result = await firstValueFrom(
@@ -385,6 +433,21 @@ export class DiagnosisService {
       // completely different fixes. Naming the status turns a screenshot into
       // a diagnosis instead of a guess.
       const status = (err as HttpErrorResponse)?.status;
+
+      // A refusal is not an outage, and must not be answered with the offline
+      // table. 401 means "sign in"; 403 with the quota code means "you have
+      // used this month's runs". Showing the canned estimate for either would
+      // hand over a diagnosis-shaped thing the server just declined to give,
+      // which makes the gate decorative.
+      const block = this._blockFrom(err as HttpErrorResponse, status);
+      if (block) {
+        this.blocked.set(block);
+        if (block.quota) this.quota.set(block.quota);
+        this.error.set(null);
+        this.report.set(null);
+        return null;
+      }
+
       const offline = { ...clientFallback(request), offline_fallback: true };
       this.report.set(offline);
       this.error.set(this._failureMessage(status));
@@ -394,6 +457,64 @@ export class DiagnosisService {
     }
   }
 
+
+  /**
+   * Read a refusal out of an error response, or null if it is not one.
+   *
+   * Matched on the `code` the API puts in `detail`, not on the status alone:
+   * 403 is also what an ordinary authorisation failure looks like, and
+   * treating every 403 as "out of runs" would tell a user to upgrade over a
+   * problem no payment fixes.
+   */
+  private _blockFrom(err: HttpErrorResponse, status: number | undefined): DiagnosisBlock | null {
+    const detail = err?.error?.detail;
+    const code = typeof detail === 'object' && detail ? detail.code : undefined;
+
+    if (code === CODE_SIGN_IN_REQUIRED || status === 401) {
+      return {
+        reason: 'sign_in_required',
+        message: 'Sign in to run an AI diagnosis.',
+      };
+    }
+    if (code === CODE_QUOTA_EXHAUSTED) {
+      return {
+        reason: 'quota_exhausted',
+        message: detail.message ?? 'You have used this month\'s AI Diagnosis runs.',
+        quota: {
+          plan: detail.plan,
+          plan_label: detail.plan_label,
+          limit: detail.limit,
+          used: detail.used,
+          remaining: detail.remaining,
+          unlimited: detail.unlimited,
+          allowed: false,
+          period: detail.period,
+          signed_in: true,
+        },
+      };
+    }
+    return null;
+  }
+
+  /**
+   * Load the caller's allowance so the page can show it before they type.
+   *
+   * Deliberately swallows failures and leaves `quota` null. This is a nicety
+   * on top of a server-side gate, not the gate itself — a page that hid the
+   * form because a status call failed would be broken by a blip, and one that
+   * assumed a default would state a wrong number confidently.
+   */
+  async loadQuota(): Promise<DiagnosisQuota | null> {
+    try {
+      const q = await firstValueFrom(
+        this.http.get<DiagnosisQuota>(`${this.api}/quota`).pipe(timeout(10_000)),
+      );
+      this.quota.set(q ?? null);
+      return q ?? null;
+    } catch {
+      return null;
+    }
+  }
 
   /**
    * Say what actually went wrong, in words that point at the fix.

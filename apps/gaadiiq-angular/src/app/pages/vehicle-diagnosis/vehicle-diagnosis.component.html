@@ -7,6 +7,34 @@
       @if (auth.currentUser()) {
         <button class="btn btn-ghost btn-sm history-btn" (click)="openHistory()"><app-icon name="list" [size]="16"></app-icon> {{ 'My Diagnosis History' | t }}</button>
       }
+
+      <!--
+        The allowance, stated before the user fills in four steps.
+
+        Rendered only once the API has answered — `quota()` is null until then,
+        and a guessed default would tell a Buyer Pro they are rationed or
+        promise a free user runs that will be refused. Unlimited plans get
+        nothing at all: there is no number worth showing.
+      -->
+      @if (diagSvc.quota(); as q) {
+        @if (!q.signed_in) {
+          <div class="quota-note quota-note--signin" role="status">
+            <app-icon name="lock" [size]="16"></app-icon>
+            <span>{{ 'Sign in to run an AI diagnosis.' | t }}</span>
+            <a routerLink="/login" class="quota-note__action">{{ 'Sign in' | t }}</a>
+          </div>
+        } @else if (!q.unlimited) {
+          <div class="quota-note" role="status">
+            <app-icon name="info" [size]="16"></app-icon>
+            <span>
+              {{ 'AI Diagnosis is limited on your plan' | t }} ({{ q.plan_label }}):
+              <strong>{{ q.remaining }}</strong> {{ 'of' | t }} {{ q.limit }}
+              {{ 'runs left this month' | t }}.
+            </span>
+            <a routerLink="/pricing-plans" class="quota-note__action">{{ 'See plans' | t }}</a>
+          </div>
+        }
+      }
     </div>
   </div>
 
@@ -542,6 +570,38 @@
           <div class="ls-item"><app-icon name="list" [size]="16"></app-icon> Generating repair report</div>
         </div>
       </div>
+
+      <!--
+        Refused, not broken.
+
+        Kept separate from the error card on purpose: that one shows an offline
+        estimate alongside the message, and doing the same here would hand over
+        a diagnosis-shaped answer the server just declined to give. Nothing but
+        the reason and the way out is shown.
+      -->
+      @if (diagSvc.blocked(); as block) {
+        @if (!diagSvc.loading()) {
+          <div class="blocked-card" role="status" aria-live="polite">
+            <div class="blocked-icon" aria-hidden="true"><app-icon name="lock" [size]="40"></app-icon></div>
+            @if (block.reason === 'sign_in_required') {
+              <h3>{{ 'Sign in to run a diagnosis' | t }}</h3>
+              <p>{{ 'AI Diagnosis is available to signed-in users. Your answers are kept — sign in and submit again.' | t }}</p>
+              <a class="btn-primary" routerLink="/login">{{ 'Sign in' | t }}</a>
+            } @else {
+              <h3>{{ 'You have used this month\'s AI Diagnosis runs' | t }}</h3>
+              <p>{{ block.message }}</p>
+              @if (block.quota; as q) {
+                <p class="blocked-meta">
+                  {{ q.plan_label }} — {{ q.used }} {{ 'of' | t }} {{ q.limit }}
+                  {{ 'used. Your allowance resets at the start of next month.' | t }}
+                </p>
+              }
+              <a class="btn-primary" routerLink="/pricing-plans">{{ 'See plans' | t }}</a>
+            }
+            <button class="btn btn-ghost" (click)="step.set(3)">← {{ 'Back' | t }}</button>
+          </div>
+        }
+      }
 
       <!-- Error -->
       <div class="error-card" *ngIf="diagSvc.error() && !diagSvc.loading()">

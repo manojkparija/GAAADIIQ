@@ -153,3 +153,27 @@ def clear_dependency_overrides():
     """
     yield
     app.dependency_overrides.pop(get_db, None)
+
+
+# ── AI Diagnosis auth ─────────────────────────────────────────────────────────
+#
+# POST /diagnosis/analyse requires a signed-in caller and rations runs by plan
+# (services/diagnosis_quota). Anonymous is a 401, which is the product decision
+# — a diagnosis costs a model call — and it means every test that exercises the
+# endpoint has to present a token.
+#
+# The token carries no local `users` row on purpose, so the plan resolves to
+# "free": three runs a calendar month. Each test gets its own database, so the
+# counter starts at zero for each; a test needing a fourth run in one test must
+# say so by raising the cap itself rather than by quietly relying on it.
+
+DIAGNOSIS_TEST_EMAIL = "diagnosis-tests@gaadiiq.test"
+
+
+def diagnosis_auth_headers(email: str = DIAGNOSIS_TEST_EMAIL) -> dict[str, str]:
+    """An Authorization header for a verifiable, signed-in, free-plan caller."""
+    import uuid as _uuid
+
+    from core.security import create_access_token
+
+    return {"Authorization": f"Bearer {create_access_token(_uuid.uuid4(), email)}"}

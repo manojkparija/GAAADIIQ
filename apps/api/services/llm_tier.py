@@ -259,7 +259,7 @@ async def resolve_tier(db: AsyncSession, caller: VerifiedCaller | None) -> Model
         if caller.email and caller.email in settings.admin_email_set:
             return ModelTier.premium
 
-        user = await _load_user(db, caller)
+        user = await load_user(db, caller)
         if user is None:
             return ModelTier.free
 
@@ -287,7 +287,7 @@ async def resolve_tier(db: AsyncSession, caller: VerifiedCaller | None) -> Model
         return ModelTier.free
 
 
-async def _load_user(db: AsyncSession, caller: VerifiedCaller) -> User | None:
+async def load_user(db: AsyncSession, caller: VerifiedCaller) -> User | None:
     """
     Find this backend's User row for a verified caller.
 
