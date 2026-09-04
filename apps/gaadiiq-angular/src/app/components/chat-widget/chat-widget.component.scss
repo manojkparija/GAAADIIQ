@@ -61,7 +61,16 @@
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.12);
-  background: var(--surface, #fff);
+  /* --dropdown-bg, not --surface. --surface resolves to --card-bg, which in
+     dark mode is rgba(255,255,255,0.04) — 4% white. That is correct for a card
+     sitting on the page background, and catastrophic for a panel floating over
+     it: the whole page showed through the chatbot, so the conversation and the
+     navigation underneath it rendered on top of one another. Reported from the
+     Android app, where the dark theme is the default.
+
+     --dropdown-bg is the app's opaque overlay token (#FFFFFF / #131D2E) and is
+     what every other floating surface here already uses. */
+  background: var(--dropdown-bg, #fff);
   border: 1px solid var(--border, rgba(0,0,0,0.1));
   transform: scale(0.9) translateY(20px);
   opacity: 0;
@@ -78,9 +87,15 @@
     bottom: 0;
     right: 0;
     left: 0;
+    top: 0;
     width: 100%;
     max-width: 100%;
     height: 100dvh;
+    /* The base rule caps this at calc(100vh - 7rem) for the floating desktop
+       panel. Full screen means full screen; without clearing it the panel is
+       112px shorter than it claims to be and the composer can sit off the
+       bottom of a short screen. */
+    max-height: 100dvh;
     border-radius: 0;
     border: none;
   }

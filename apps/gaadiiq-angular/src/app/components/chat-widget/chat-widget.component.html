@@ -23,15 +23,10 @@
   <div class="chat-header">
     <div class="chat-header-info">
       <div class="chat-header-logo">
-        <svg width="130" height="30" viewBox="0 0 148 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="GAADIIQ">
-          <circle cx="18" cy="18" r="11" stroke="#fff" stroke-width="4.5" fill="none" stroke-dasharray="55.3 69.1" stroke-dashoffset="-7.5" stroke-linecap="round"/>
-          <line x1="18" y1="18" x2="29" y2="18" stroke="rgba(255,255,255,0.8)" stroke-width="4.5" stroke-linecap="round"/>
-          <polyline points="25.5,14.5 29,18 25.5,21.5" stroke="rgba(255,255,255,0.8)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <text x="37" y="24" font-family="'Arial Black','Arial','Helvetica Neue',sans-serif" font-weight="900" font-size="20" letter-spacing="-0.5" fill="#fff">GAADI</text>
-          <rect fill="rgba(255,255,255,0.9)" x="109" y="6" width="5" height="24" rx="2.5"/>
-          <rect fill="rgba(255,255,255,0.6)" x="117" y="6" width="5" height="24" rx="2.5"/>
-          <text x="125" y="24" font-family="'Arial Black','Arial','Helvetica Neue',sans-serif" font-weight="900" font-size="20" letter-spacing="-0.5" fill="rgba(255,255,255,0.85)">Q</text>
-        </svg>
+        <!-- The shared mark, not a copy. This was an inlined SVG of the previous
+             logo — double-I as two rounded bars — so the header still read
+             "GAADI||Q" after the wordmark changed everywhere else. -->
+        <app-logo [width]="118" [height]="27" tone="inverse"></app-logo>
         <div class="chat-status">
           <span class="status-dot"></span>
           {{ chat.isTyping() ? 'ARIA is typing…' : ('ARIA · Auto Recommendation & Intelligent Assistant' | t) }}
