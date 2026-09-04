@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, OnDestroy, effect, HostListener } 
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CarsDataService, Car, CarVariant, startingPrice } from '../../services/cars-data.service';
+import { CarsDataService, Car, CarVariant, isShowable, startingPrice } from '../../services/cars-data.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { MarketPositionComponent } from '../../components/market-position/market-position.component';
 import { VehicleScorecardComponent } from '../../components/vehicle-scorecard/vehicle-scorecard.component';
@@ -200,6 +200,24 @@ import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { NativeService } from '../../services/native.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+
+/**
+ * How far from this car's entry price another model may sit and still be
+ * offered as a comparison.
+ *
+ * Proportional rather than a flat rupee figure, because a flat one is the wrong
+ * shape at both ends: the ₹5L window this replaces was 73% of a ₹6.84L Fronx —
+ * wide enough to suggest a car at nearly twice the money — and 10% of a ₹50L
+ * car, tight enough to return nothing at all.
+ *
+ * 35% is deliberately generous. A buyer looking at a ₹6.84L Fronx will stretch
+ * to ₹9.2L; they will not cross-shop a ₹16.2L Grand Vitara, which is what
+ * prompted this. The floor keeps the cheapest end from collapsing to a window
+ * so narrow that a real alternative is excluded on a ₹20,000 difference.
+ */
+function similarPriceWindow(anchor: number): number {
+  return Math.max(anchor * 0.35, 150000);
+}
 
 @Component({
   selector: 'app-car-detail',
@@ -1318,25 +1336,70 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     return `₹${(min / 100000).toFixed(2)} - ${(max / 100000).toFixed(2)} Lakh`;
   }
 
-  similarCars = computed(() => {
+  /**
+   * Models a buyer would actually cross-shop against this one.
+   *
+   * Reported against the Fronx (₹6.84L onwards): the table offered the e Vitara
+   * at ₹16.0L and the Grand Vitara at ₹16.2L, both drawn with the placeholder
+   * image, no mileage and no ratings. Three separate faults, all of which had
+   * to be wrong at once to produce that row:
+   *
+   * 1. NOTHING CHECKED THE ROW WAS SHOWABLE. isShowable() has existed for a
+   *    while and is documented as "whether a car belongs on a buyer-facing list
+   *    at all" — four other screens call it. This one never did, so catalogue
+   *    stubs with no photograph were offered as comparisons. A row with a
+   *    placeholder, a dash for mileage and 0 ratings does not read as "we hold
+   *    no data"; it reads as a car that is somehow worse than the others.
+   *
+   * 2. THE BODY-TYPE CLAUSE HAD NO PRICE CEILING. The condition was
+   *    `bodyType matches OR price within ₹5L`, so *any* SUV qualified at *any*
+   *    price. That is how a ₹16.2L Grand Vitara came to sit beside a ₹6.84L
+   *    Fronx. Both clauses now have to hold: the same kind of car, and near
+   *    enough in price to be an alternative rather than an aspiration.
+   *
+   * 3. IT RANKED ON ONE PRICE AND DISPLAYED ANOTHER. Selection and sorting read
+   *    `car.price`, the hand-maintained figure on the catalogue row; the table
+   *    renders startsAt(), the cheapest published trim. For the Fronx those are
+   *    ₹9.3L and ₹6.84L — so the list was ordered by closeness to a number the
+   *    page never showed. Both now use startingPrice().
+   */
+  /*
+   * A METHOD, NOT A computed(). It was a computed(), and it reads `this.car` —
+   * a plain field assigned from the route subscription, not a signal.
+   * computed() tracks signal reads only, so its memo is invalidated by
+   * carsData.cars() changing and by nothing else. The catalogue is fetched once,
+   * so on a route change from one car to another — same component instance,
+   * Angular reuses it across param changes — `this.car` becomes a different car
+   * while the memo keeps serving the previous car's rivals.
+   *
+   * CLAUDE.md names this exact trap and says it has shipped twice. This was the
+   * third; it survived because it needs two car pages in one session to see,
+   * and every test mounts one.
+   */
+  similarCars(): Car[] {
     if (!this.car || !this.isNewCar) return [];
     const all = this.carsData.cars();
+    const anchor = startingPrice(this.car);
     const seen = new Set<string>();
     const result: Car[] = [];
     const candidates = all
       .filter(c =>
         c.km === 0 && c.year >= 2024 &&
         !(c.make === this.car.make && c.model === this.car.model) &&
-        (c.bodyType === this.car.bodyType || Math.abs(c.price - this.car.price) < 500000)
+        isShowable(c) &&
+        c.bodyType === this.car.bodyType &&
+        Math.abs(startingPrice(c) - anchor) <= similarPriceWindow(anchor)
       )
-      .sort((a, b) => Math.abs(a.price - this.car.price) - Math.abs(b.price - this.car.price));
+      .sort((a, b) =>
+        Math.abs(startingPrice(a) - anchor) - Math.abs(startingPrice(b) - anchor),
+      );
     for (const c of candidates) {
       const key = `${c.make}||${c.model}`;
       if (!seen.has(key)) { seen.add(key); result.push(c); }
       if (result.length >= 5) break;
     }
     return result;
-  });
+  }
 
   getHex(colourName: string): string { return COLOUR_HEX[colourName] ?? '#888888'; }
   isLightColour(name: string): boolean {
