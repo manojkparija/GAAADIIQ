@@ -55,7 +55,10 @@ type Fixtures = {
   seller?: Record<string, unknown> | null;
   leadsStatus?: number;
   leads?: unknown[];
+  /** Status returned by PATCH /leads/{id} — 500 exercises the rollback path. */
+  leadPatchStatus?: number;
   testDrives?: unknown[];
+  enquiries?: unknown[];
   sentimentLeads?: unknown[];
 };
 
@@ -76,7 +79,9 @@ async function arrive(page: Page, path: string, f: Fixtures = {}) {
     },
     leadsStatus = 200,
     leads = [],
+    leadPatchStatus = 200,
     testDrives = [],
+    enquiries = [],
     sentimentLeads = [],
   } = f;
 
@@ -120,6 +125,11 @@ async function arrive(page: Page, path: string, f: Fixtures = {}) {
 
     if (url.includes('/user_profiles')) return json(profile);
     if (url.includes('/sellers')) return json(seller);
+    if (url.includes('/test_drive_requests')) return json(testDrives);
+    if (url.includes('/car_enquiries')) return json(enquiries);
+    // The dashboard scopes enquiries to this seller's listings; one row is
+    // enough for the `ids.length === 0` early return not to fire.
+    if (url.includes('/car_listings')) return json([{ id: 'listing-1' }]);
     // Everything else the dashboard reads: test_drive_requests, car_listings,
     // car_seller_map, cars. Answered as empty rather than left to escape —
     // an unrouted request goes to the real Supabase, which is slow and wrong.
@@ -145,7 +155,9 @@ async function arrive(page: Page, path: string, f: Fixtures = {}) {
     if (path === '/leads') {
       return json(leadsStatus === 200 ? leads : { detail: 'Not a dealer' }, leadsStatus);
     }
-    if (path.startsWith('/leads/')) return json({ ok: true });          // status PATCH
+    if (path.startsWith('/leads/')) {
+      return json(leadPatchStatus === 200 ? { ok: true } : { detail: 'nope' }, leadPatchStatus);
+    }
     if (path === '/sentiment/leads') return json(sentimentLeads);
     if (path === '/sentiment/summary') return json({});
     // The catalogue calls the shell makes on every page. Answered so they do
@@ -355,5 +367,172 @@ test.describe('a seller record with fields the database left null', () => {
 
     await expect(page.getByText('Not given')).toBeVisible();
     await expect(page.locator('a[href="tel:9800000000"]')).toBeVisible();
+  });
+});
+
+// ── Writing a lead status, and putting it back when the write fails ──────────
+
+test.describe('changing a lead status', () => {
+  const lead = (over: Record<string, unknown> = {}) => ({
+    id: 'l1', name: 'Priya Sen', phone: '9876543210',
+    make: 'Maruti Suzuki', model: 'Fronx', variant: null,
+    city: 'Kolkata', locality: null, pincode: null, phone_verified: true,
+    email: null, consented_at: null, source: 'web',
+    status: 'new', created_at: new Date().toISOString(),
+    ...over,
+  });
+
+  async function openCarLeads(page: Page) {
+    await page.locator('.dd-tab', { hasText: /🚗/ }).first().click();
+    await leadsSettled(page);
+  }
+
+  test('a successful write keeps the new status', async ({ page }) => {
+    await arrive(page, '/dealer-dashboard', { leads: [lead()] });
+    await openCarLeads(page);
+
+    const select = page.locator('select.lead-status').first();
+    await expect(select).toHaveValue('new');
+    await select.selectOption('contacted');
+
+    await expect(select).toHaveValue('contacted');
+    await expect(page.getByText(/Could not save that status/i)).toHaveCount(0);
+  });
+
+  test('a failed write puts the old status back and says so', async ({ page }) => {
+    /*
+     * The rollback is the half worth testing. The optimistic update is visible
+     * the moment you click; the revert only happens when something else has
+     * already gone wrong, which is exactly when nobody is looking.
+     *
+     * The comment in setLeadStatus says why it matters: "a status that silently
+     * reverts on the next load is how a dealer loses track of who they have
+     * called." Without the message, the row would flick back with no
+     * explanation and the dealer would believe the save worked.
+     */
+    await arrive(page, '/dealer-dashboard', { leads: [lead()], leadPatchStatus: 500 });
+    await openCarLeads(page);
+
+    const select = page.locator('select.lead-status').first();
+    await select.selectOption('contacted');
+
+    await expect(select).toHaveValue('new');
+    await expect(page.getByText(/Could not save that status. It has been put back/i)).toBeVisible();
+  });
+
+  test('re-selecting the status already set does not write at all', async ({ page }) => {
+    // setLeadStatus returns early when the status has not changed. Asserted by
+    // failing every write: if one were issued, the error banner would appear.
+    await arrive(page, '/dealer-dashboard', { leads: [lead()], leadPatchStatus: 500 });
+    await openCarLeads(page);
+
+    await page.locator('select.lead-status').first().selectOption('new');
+
+    await expect(page.getByText(/Could not save that status/i)).toHaveCount(0);
+  });
+});
+
+// ── Test drive conversion: null is not zero ──────────────────────────────────
+
+test.describe('test drive conversion rate', () => {
+  const drive = (over: Record<string, unknown> = {}) => ({
+    id: 1, car_id: 'c1', car_make: 'Maruti Suzuki', car_model: 'Fronx', car_year: 2026,
+    buyer_name: 'A Buyer', buyer_phone: '9800000000',
+    preferred_date: '2026-09-10', preferred_time: '11:00',
+    seller_id: 1, status: 'Pending', outcome: null,
+    created_at: new Date().toISOString(),
+    ...over,
+  });
+
+  async function openTestDrives(page: Page) {
+    await page.locator('.dd-tab', { hasText: /Test Drive/ }).first().click();
+  }
+
+  test('says there is nothing to measure rather than showing 0%', async ({ page }) => {
+    /*
+     * testDriveConversion returns null when no drive is Completed, and the
+     * template renders a sentence instead of a percentage. 0% would be a claim
+     * — that every completed drive was lost — about drives that have not
+     * happened. A dealer with three pending bookings has not lost anything.
+     */
+    await arrive(page, '/dealer-dashboard', { testDrives: [drive(), drive({ id: 2 })] });
+    await openTestDrives(page);
+
+    await expect(page.getByText(/No completed test drives yet/i)).toBeVisible();
+    await expect(page.locator('.td-conversion')).not.toContainText('0%');
+  });
+
+  test('measures over completed drives only, not over every request', async ({ page }) => {
+    // One Won, one Lost, one still Pending. The pending request must not count
+    // against the rate — 50%, not 33%.
+    await arrive(page, '/dealer-dashboard', {
+      testDrives: [
+        drive({ id: 1, status: 'Completed', outcome: 'Won' }),
+        drive({ id: 2, status: 'Completed', outcome: 'Lost' }),
+        drive({ id: 3, status: 'Pending' }),
+      ],
+    });
+    await openTestDrives(page);
+
+    await expect(page.locator('.td-conversion')).toContainText('50%');
+    await expect(page.locator('.td-conversion')).toContainText('1 of 2');
+  });
+});
+
+// ── AI Leads grade filters ───────────────────────────────────────────────────
+
+test.describe('filtering AI leads by grade', () => {
+  const scored = (id: string, grade: string, score: number, name: string) => ({
+    id, lead_id: id, lead_grade: grade, intent_score: score,
+    // The template renders customer_name; buyer_name is a different feed's
+    // field and rendered nothing at all when used here.
+    customer_name: name, phone: '9800000000',
+    car_make: 'Maruti Suzuki', car_model: 'Fronx',
+    total_enquiries: 1, created_at: new Date().toISOString(),
+    summary: '', signals: [],
+  });
+
+  const FIXTURE = [
+    scored('a1', 'A', 92, 'Hot Buyer'),
+    scored('b1', 'B', 70, 'Warm Buyer'),
+    scored('d1', 'D', 12, 'Cold Buyer'),
+  ];
+
+  test('All shows every grade; picking a grade narrows to it', async ({ page }) => {
+    await arrive(page, '/dealer-dashboard', { sentimentLeads: FIXTURE });
+    await page.locator('.dd-tab', { hasText: /AI Leads/ }).first().click();
+
+    await expect(page.getByText('Hot Buyer')).toBeVisible();
+    await expect(page.getByText('Cold Buyer')).toBeVisible();
+
+    await page.locator('.gf-btn.gf-a').click();
+    await expect(page.getByText('Hot Buyer')).toBeVisible();
+    await expect(page.getByText('Cold Buyer')).toHaveCount(0);
+
+    await page.locator('.gf-btn', { hasText: /^All$/ }).first().click();
+    await expect(page.getByText('Cold Buyer')).toBeVisible();
+  });
+
+  test('an overview chip jumps to the tab already filtered', async ({ page }) => {
+    // The chip does two things in one click — switch tab AND set the filter.
+    // Landing on an unfiltered list would look like the chip did nothing.
+    await arrive(page, '/dealer-dashboard', { sentimentLeads: FIXTURE });
+
+    await page.locator('.ai-sum-chip.hot').click();
+
+    await expect(page.locator('.gf-btn.gf-a')).toHaveClass(/active/);
+    await expect(page.getByText('Hot Buyer')).toBeVisible();
+    await expect(page.getByText('Cold Buyer')).toHaveCount(0);
+  });
+});
+
+// ── Buyer enquiries ──────────────────────────────────────────────────────────
+
+test.describe('buyer enquiries', () => {
+  test('an empty inbox says so plainly', async ({ page }) => {
+    await arrive(page, '/dealer-dashboard', { enquiries: [] });
+    await page.locator('.dd-tab', { hasText: /Enquiries/ }).first().click();
+
+    await expect(page.getByText(/No enquiries yet/i)).toBeVisible();
   });
 });
