@@ -95,6 +95,30 @@ async function arrive(page: Page, path: string, f: Fixtures = {}) {
   }
 
   /*
+   * FIRST, a deny-all for anything external.
+   *
+   * Playwright matches routes in reverse registration order, so every specific
+   * route below overrides this one. Anything that still reaches here is a
+   * request this harness did not plan for, and aborting it makes that loud.
+   *
+   * This exists because the opposite — letting an unmatched request through —
+   * cost two red CI runs. A URL glob that failed to match sent /leads and
+   * /sentiment to the REAL api.gaadiiq.com, which answered 401 for the fake
+   * token; the tests then failed on assertions about lead rows with nothing in
+   * the output to suggest the network was the cause. Locally the same escape
+   * was silent because the sandbox blocks egress, so the request died and the
+   * stub appeared to have worked.
+   *
+   * Fonts are collateral and deliberately so: a test that cannot reach
+   * fonts.gstatic.com renders in a fallback face and asserts exactly the same
+   * things.
+   */
+  await page.route(
+    url => !['localhost', '127.0.0.1'].includes(url.hostname),
+    route => route.abort(),
+  );
+
+  /*
    * Supabase auth. The SHAPE per endpoint matters, and getting it wrong is why
    * this suite passed locally and failed in CI on its first push.
    *
@@ -139,15 +163,20 @@ async function arrive(page: Page, path: string, f: Fixtures = {}) {
   /*
    * One handler for the whole API host, switching on the exact pathname.
    *
-   * Separate page.route globs were a trap: a glob ending in "leads" also
-   * matches the sentiment feed's own leads path, so the sentiment panel was
-   * handed car-lead objects —
-   * wrong shape, no intent_score — and the dashboard failed to render at all
-   * while the lead fixtures looked perfectly correct. Which glob wins depends
-   * on registration order, which is not something a reader of this file should
-   * have to reason about.
+   * A URL PREDICATE, not a glob, and that is the point. The glob this replaces
+   * matched locally and did not match on the CI runner, so every /leads and
+   * /sentiment request escaped to the real API there — 10 tests red, with
+   * failure messages about missing lead rows and nothing pointing at the
+   * network. A predicate over url.hostname has no pattern semantics to get
+   * wrong.
+   *
+   * Switching on the exact pathname rather than registering several globs is
+   * also deliberate: a glob ending in "leads" matches the sentiment feed's own
+   * leads path too, which handed the sentiment panel car-lead objects — wrong
+   * shape, no intent_score — and stopped the dashboard rendering at all while
+   * the lead fixtures looked perfectly correct.
    */
-  await page.route('**://api.gaadiiq.com/**', route => {
+  await page.route(url => url.hostname === 'api.gaadiiq.com', route => {
     const path = new URL(route.request().url()).pathname;
     const json = (body: unknown, status = 200) =>
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
@@ -205,8 +234,12 @@ test.describe('reaching the dashboard', () => {
       profile: { role: 'user', seller_id: null, name: 'A Buyer' },
     });
 
-    await page.waitForURL(url => !url.pathname.includes('dealer-dashboard'), { timeout: 15_000 });
-    expect(page.url()).toContain('accessDenied');
+    // Wait for the END state, not merely for the URL to change. Reading
+    // page.url() after "any navigation away" caught an intermediate step and
+    // saw no accessDenied — the app does land on /?accessDenied=1, a moment
+    // later. Asserting on the destination is both stricter and stable.
+    await page.waitForURL(/accessDenied/, { timeout: 20_000 });
+    expect(new URL(page.url()).pathname).toBe('/');
   });
 
   test('a seller is let through', async ({ page }) => {
