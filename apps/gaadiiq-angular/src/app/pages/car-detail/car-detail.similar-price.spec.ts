@@ -108,3 +108,138 @@ describe('car detail — the similar-cars table', () => {
     expect(typeof c.startsAt).toBe('function');
   });
 });
+
+describe('car detail — which cars the similar table offers', () => {
+  /**
+   * Reported on the same Fronx page, a screenshot later: the table offered the
+   * e Vitara at ₹16.0L and the Grand Vitara at ₹16.2L against a car that starts
+   * at ₹6.84L, both drawn with the placeholder image, a dash for mileage and no
+   * ratings.
+   *
+   * Three faults had to coincide. The tests below pin each separately, because
+   * fixing one and calling it done is how two of them survived the first pass.
+   */
+
+  const stub = (over: Partial<any> = {}) => car({
+    // What a catalogue row looks like before anyone has entered its trims: the
+    // placeholder standing in for a photograph, no priced variants.
+    image: 'assets/cars/placeholder.svg', images: [],
+    variantCount: 0, variantPriceMin: undefined, variantPriceMax: undefined,
+    ...over,
+  });
+
+  /**
+   * mount() alone is not enough here. `car` is a plain field set from the route
+   * subscription, which does not run in these tests, so similarCars() saw an
+   * undefined subject and returned [] for every case — and the three exclusion
+   * tests below passed against an empty list without exercising a single filter.
+   * Caught by writing the inclusion cases: they failed identically.
+   */
+  function offered(cars: any[], subjectId = 'fronx'): string[] {
+    const c = mount(cars, subjectId);
+    c.car = cars.find(x => x.id === subjectId);
+    return c.similarCars().map((s: any) => s.model);
+  }
+
+  it('no longer offers the ₹16L Vitaras against a ₹6.84L Fronx', () => {
+    expect(offered([
+      car(),
+      stub({ id: 'ev', model: 'e Vitara', price: 1600000 }),
+      stub({ id: 'gv', model: 'Grand Vitara', price: 1620000 }),
+    ])).toEqual([]);
+  });
+
+  it('excludes a catalogue row with no photograph even when the price fits', () => {
+    // isShowable() has existed for a while and four other screens call it.
+    // This one did not, which is the whole of fault 1.
+    expect(offered([
+      car(),
+      stub({ id: 'x', model: 'Nobody Photographed This', price: 700000,
+             variantPriceMin: 700000, variantPriceMax: 800000 }),
+    ])).toEqual([]);
+  });
+
+  it('still offers a private advert with no photograph', () => {
+    // isShowable's deliberate exemption: an advert is a real car someone is
+    // trying to sell, and hiding it removes them from the marketplace. Only a
+    // catalogue row with no picture is merely an absence of data.
+    expect(offered([
+      car(),
+      stub({ id: 'ad', model: 'Baleno', price: 700000, fromCatalogue: false,
+             variantPriceMin: 700000, variantPriceMax: 800000 }),
+    ])).toEqual(['Baleno']);
+  });
+
+  it('requires the body type to match, not merely the price', () => {
+    // The old condition was `bodyType matches OR price is close`, so an SUV of
+    // any price qualified. Both halves must now hold.
+    expect(offered([
+      car(),
+      car({ id: 'h', model: 'Swift', bodyType: 'Hatchback',
+            variantPriceMin: 700000, variantPriceMax: 900000 }),
+    ])).toEqual([]);
+  });
+
+  it('keeps a genuine rival at a nearby entry price', () => {
+    // The fix must not empty the table. An ₹8L SUV against a ₹6.84L one is
+    // exactly what this feature is for.
+    expect(offered([
+      car(),
+      car({ id: 'v', make: 'Tata', model: 'Nexon',
+            variantPriceMin: 800000, variantPriceMax: 1400000 }),
+    ])).toEqual(['Nexon']);
+  });
+
+  it('ranks on the entry price it displays, not the catalogue row figure', () => {
+    // Fault 3: selection read car.price (₹9.3L for the Fronx) while the table
+    // rendered startsAt() (₹6.84L), so the ordering was by closeness to a
+    // number the page never showed. Nearer-to-₹6.84L must come first.
+    expect(offered([
+      car(),
+      // Row price puts this one closest to ₹9.3L; entry price does not.
+      car({ id: 'far', make: 'Hyundai', model: 'Creta', price: 930000,
+            variantPriceMin: 1100000, variantPriceMax: 1600000 }),
+      car({ id: 'near', make: 'Tata', model: 'Punch', price: 1500000,
+            variantPriceMin: 700000, variantPriceMax: 950000 }),
+    ])[0]).toBe('Punch');
+  });
+
+  it('follows the car when the route changes to a different one', () => {
+    /**
+     * This was a computed() reading `this.car`, a plain field. computed() tracks
+     * signal reads only, so its memo was invalidated by carsData.cars() and
+     * nothing else — and the catalogue is fetched once. Angular reuses this
+     * component across route param changes, so viewing a second car left the
+     * first car's rivals on screen.
+     *
+     * CLAUDE.md names this trap and says it has shipped twice. Every other test
+     * here mounts a single car, which is exactly why none of them saw it.
+     */
+    const fronx = car();
+    const alto = car({ id: 'alto', model: 'Alto', bodyType: 'Hatchback',
+                       variantPriceMin: 400000, variantPriceMax: 500000 });
+    const nexon = car({ id: 'nexon', make: 'Tata', model: 'Nexon',
+                        variantPriceMin: 800000, variantPriceMax: 1400000 });
+    const kwid = car({ id: 'kwid', make: 'Renault', model: 'Kwid', bodyType: 'Hatchback',
+                       variantPriceMin: 480000, variantPriceMax: 600000 });
+
+    const c = mount([fronx, alto, nexon, kwid], 'fronx');
+    c.car = fronx;
+    expect(c.similarCars().map((s: any) => s.model)).toEqual(['Nexon']);
+
+    // Same component instance, new route param — the catalogue has not changed.
+    c.car = alto;
+    expect(c.similarCars().map((s: any) => s.model)).toEqual(['Kwid']);
+  });
+
+  it('does not narrow to nothing at the cheap end', () => {
+    // The window is proportional, so without a floor a ₹4L car would admit
+    // only ±₹1.4L. The floor is what keeps a real alternative from being
+    // dropped over a small absolute difference.
+    expect(offered([
+      car({ id: 'cheap', model: 'Alto', variantPriceMin: 400000, variantPriceMax: 500000 }),
+      car({ id: 'rival', make: 'Renault', model: 'Kwid',
+            variantPriceMin: 480000, variantPriceMax: 600000 }),
+    ], 'cheap')).toEqual(['Kwid']);
+  });
+});
