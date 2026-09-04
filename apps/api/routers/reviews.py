@@ -1,8 +1,8 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -15,6 +15,21 @@ from models.user import User
 from schemas.review import ReviewCreate, ReviewOut, SellerRatingSummary
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
+
+#: How many reviews a list endpoint returns when the caller does not say.
+#:
+#: These two endpoints returned every matching row, with no bound of any kind:
+#: a seller with ten thousand reviews meant ten thousand rows serialised on
+#: every view of their profile. Nothing in the product needs that — the page
+#: shows a scrolling list and the true count comes from the summary endpoint,
+#: which no longer reads the rows at all.
+#:
+#: 50 is above anything the current data reaches, so this changes no response
+#: today; it is a ceiling for later, not a paging scheme. If a screen ever needs
+#: to walk the whole history, add an offset rather than raising this.
+REVIEW_PAGE_LIMIT = 50
+#: The most a caller may ask for in one request.
+REVIEW_MAX_LIMIT = 200
 
 DbDep = Annotated[AsyncSession, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
@@ -116,12 +131,18 @@ async def delete_review(review_id: uuid.UUID, db: DbDep, current_user: CurrentUs
 # ── Listing reviews ───────────────────────────────────────────────────────────
 
 @router.get("/listing/{listing_id}", response_model=list[ReviewOut])
-async def listing_reviews(listing_id: uuid.UUID, db: DbDep):
+async def listing_reviews(
+    listing_id: uuid.UUID,
+    db: DbDep,
+    limit: int = Query(default=REVIEW_PAGE_LIMIT, ge=1, le=REVIEW_MAX_LIMIT),
+):
+    """Newest first, bounded. See REVIEW_PAGE_LIMIT for why the cap exists."""
     result = await db.execute(
         select(Review)
         .where(Review.listing_id == listing_id)
         .options(selectinload(Review.reviewer))
         .order_by(Review.created_at.desc())
+        .limit(limit)
     )
     return [_review_out(r) for r in result.scalars().all()]
 
@@ -130,38 +151,67 @@ async def listing_reviews(listing_id: uuid.UUID, db: DbDep):
 
 @router.get("/seller/{seller_id}/summary", response_model=SellerRatingSummary)
 async def seller_rating_summary(seller_id: uuid.UUID, db: DbDep):
-    result = await db.execute(
-        select(Review).where(Review.seller_id == seller_id)
-    )
-    reviews = result.scalars().all()
+    """A seller's rating, as seven numbers the database computes.
 
-    if not reviews:
+    This used to `SELECT *` every review the seller had ever received, hydrate
+    each one into a Review object, and then count them in Python — transferring
+    and instantiating N rows to produce a count, a mean and five buckets. The
+    cost grew with the seller's review history on every page view of their
+    profile, and none of that data was ever returned to the caller.
+    """
+    counts = (
+        await db.execute(
+            select(Review.rating, func.count())
+            .where(Review.seller_id == seller_id)
+            .group_by(Review.rating)
+        )
+    ).all()
+
+    dist = {i: 0 for i in range(1, 6)}
+    total_rating = 0
+    total_count = 0
+    for rating, count in counts:
+        # Defensive against a rating outside 1–5: it stays out of the
+        # distribution the schema promises, but must still count toward the
+        # average, or the mean would disagree with the number beside it.
+        if rating in dist:
+            dist[rating] = count
+        total_rating += rating * count
+        total_count += count
+
+    if total_count == 0:
         return SellerRatingSummary(
             seller_id=seller_id,
             average_rating=None,
             review_count=0,
-            rating_distribution={1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
+            rating_distribution=dist,
         )
 
-    total = sum(r.rating for r in reviews)
-    dist = {i: 0 for i in range(1, 6)}
-    for r in reviews:
-        dist[r.rating] = dist.get(r.rating, 0) + 1
-
+    # Averaged here rather than with SQL AVG(): AVG returns a float whose
+    # rounding differs subtly between SQLite and Postgres, and this figure is
+    # rendered to two decimal places on a seller's profile. Summing integer
+    # counts keeps the arithmetic exact and identical on both.
     return SellerRatingSummary(
         seller_id=seller_id,
-        average_rating=round(total / len(reviews), 2),
-        review_count=len(reviews),
+        average_rating=round(total_rating / total_count, 2),
+        review_count=total_count,
         rating_distribution=dist,
     )
 
 
 @router.get("/seller/{seller_id}", response_model=list[ReviewOut])
-async def seller_reviews(seller_id: uuid.UUID, db: DbDep):
+async def seller_reviews(
+    seller_id: uuid.UUID,
+    db: DbDep,
+    limit: int = Query(default=REVIEW_PAGE_LIMIT, ge=1, le=REVIEW_MAX_LIMIT),
+):
+    """Newest first, bounded. The summary endpoint above carries the true count,
+    so a caller that needs "how many" never has to fetch the rows to find out."""
     result = await db.execute(
         select(Review)
         .where(Review.seller_id == seller_id)
         .options(selectinload(Review.reviewer))
         .order_by(Review.created_at.desc())
+        .limit(limit)
     )
     return [_review_out(r) for r in result.scalars().all()]

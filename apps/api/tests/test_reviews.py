@@ -262,3 +262,138 @@ async def test_seller_reviews_list(client):
     reviews = r.json()
     assert len(reviews) == 1
     assert reviews[0]["body"] == "Nice"
+
+
+# ── How the summary is computed, not just what it returns ────────────────────
+#
+# The correctness tests above passed both before and after the rewrite, because
+# the numbers never changed. What changed is the work done to produce them: the
+# summary used to SELECT every review row the seller had, hydrate each into an
+# ORM object, and count them in Python — cost growing with the seller's history,
+# on every view of their profile, for seven numbers.
+#
+# A performance property that nothing asserts is one that gets undone by the
+# next person who finds the aggregate harder to read than a loop. These tests
+# watch the SQL the endpoint actually emits.
+
+from sqlalchemy import event  # noqa: E402
+
+
+class _SqlSpy:
+    """Records the SQL a block of work emits, so a test can assert on shape."""
+
+    def __init__(self, engine):
+        self.engine = engine.sync_engine
+        self.statements: list[str] = []
+
+    def _record(self, conn, cursor, statement, params, context, executemany):
+        self.statements.append(" ".join(statement.split()).lower())
+
+    def __enter__(self):
+        event.listen(self.engine, "before_cursor_execute", self._record)
+        return self
+
+    def __exit__(self, *exc):
+        event.remove(self.engine, "before_cursor_execute", self._record)
+
+    def selecting_review_rows(self) -> list[str]:
+        """Statements that pull whole review rows rather than an aggregate."""
+        return [
+            s for s in self.statements
+            if s.startswith("select") and "from reviews" in s
+            and "count(" not in s
+        ]
+
+
+@pytest.mark.asyncio
+async def test_the_summary_aggregates_in_sql_rather_than_reading_the_rows(client, db_engine):
+    seller_token = await _register_token(client, "spy_seller@test.com")
+    me = await client.get("/auth/me", headers={"Authorization": f"Bearer {seller_token}"})
+    seller_id = me.json()["id"]
+
+    for i, rating in enumerate([5, 4, 4]):
+        listing = await _make_listing(client, seller_token)
+        buyer_token = await _register_token(client, f"spy_buyer{i}@test.com")
+        await client.post("/reviews", json={"listing_id": listing["id"], "rating": rating},
+                          headers={"Authorization": f"Bearer {buyer_token}"})
+
+    with _SqlSpy(db_engine) as spy:
+        r = await client.get(f"/reviews/seller/{seller_id}/summary")
+
+    assert r.status_code == 200
+    assert r.json()["review_count"] == 3
+
+    assert any("count(" in s and "group by" in s for s in spy.statements), (
+        "the summary should ask the database to count and group; "
+        f"statements were: {spy.statements}"
+    )
+    assert spy.selecting_review_rows() == [], (
+        "the summary fetched whole review rows — the work it exists to avoid"
+    )
+
+
+@pytest.mark.asyncio
+async def test_the_summary_cost_does_not_grow_with_the_review_count(client, db_engine):
+    """One query whatever the history length.
+
+    Row-reading would still be one statement, so this is not sufficient on its
+    own — it pairs with the test above, which is the one that catches a reader.
+    What this adds is that nobody has replaced the aggregate with a per-rating
+    query, which would be five.
+    """
+    seller_token = await _register_token(client, "spyn_seller@test.com")
+    me = await client.get("/auth/me", headers={"Authorization": f"Bearer {seller_token}"})
+    seller_id = me.json()["id"]
+
+    for i, rating in enumerate([5, 4, 3, 2, 1, 5, 4]):
+        listing = await _make_listing(client, seller_token)
+        buyer_token = await _register_token(client, f"spyn_buyer{i}@test.com")
+        await client.post("/reviews", json={"listing_id": listing["id"], "rating": rating},
+                          headers={"Authorization": f"Bearer {buyer_token}"})
+
+    with _SqlSpy(db_engine) as spy:
+        await client.get(f"/reviews/seller/{seller_id}/summary")
+
+    review_queries = [s for s in spy.statements if "from reviews" in s]
+    assert len(review_queries) == 1, f"expected one aggregate, got {review_queries}"
+
+
+# ── The list endpoints are bounded ───────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_seller_reviews_are_capped(client):
+    """Both list endpoints returned every matching row, with no bound at all.
+
+    The default is above anything the current data reaches, so this changed no
+    response on the day it landed — it is a ceiling for later.
+    """
+    seller_token = await _register_token(client, "cap_seller@test.com")
+    me = await client.get("/auth/me", headers={"Authorization": f"Bearer {seller_token}"})
+    seller_id = me.json()["id"]
+
+    for i in range(4):
+        listing = await _make_listing(client, seller_token)
+        buyer_token = await _register_token(client, f"cap_buyer{i}@test.com")
+        await client.post("/reviews", json={"listing_id": listing["id"], "rating": 4},
+                          headers={"Authorization": f"Bearer {buyer_token}"})
+
+    assert len((await client.get(f"/reviews/seller/{seller_id}")).json()) == 4
+    assert len((await client.get(f"/reviews/seller/{seller_id}?limit=2")).json()) == 2
+
+    # The summary still reports the true total, so a caller that needs "how
+    # many" never has to fetch rows to find out — which is what makes capping
+    # the list safe rather than lossy.
+    summary = (await client.get(f"/reviews/seller/{seller_id}/summary")).json()
+    assert summary["review_count"] == 4
+
+
+@pytest.mark.asyncio
+async def test_the_cap_cannot_be_raised_without_bound(client):
+    seller_token = await _register_token(client, "capmax_seller@test.com")
+    me = await client.get("/auth/me", headers={"Authorization": f"Bearer {seller_token}"})
+    seller_id = me.json()["id"]
+
+    # 422 rather than silently serving everything: an unbounded request is the
+    # thing the cap exists to refuse.
+    assert (await client.get(f"/reviews/seller/{seller_id}?limit=100000")).status_code == 422
+    assert (await client.get(f"/reviews/seller/{seller_id}?limit=0")).status_code == 422
