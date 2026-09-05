@@ -166,8 +166,46 @@ def test_the_public_directive_separates_browser_and_edge_lifetimes():
     collapse to a single max-age, that distinction is gone.
     """
     assert "s-maxage=" in PUBLIC_CACHE_CONTROL
-    assert "max-age=60" in PUBLIC_CACHE_CONTROL
-    assert "stale-while-revalidate=" in PUBLIC_CACHE_CONTROL
+    assert "max-age=0" in PUBLIC_CACHE_CONTROL
+
+
+def test_the_reader_is_never_served_a_knowingly_stale_catalogue():
+    """No directive here may hand over content already known to be out of date.
+
+    THE BUG THIS ENCODES
+
+    The public directive was `max-age=60, s-maxage=300,
+    stale-while-revalidate=600`. A normal reload could therefore be answered
+    with a copy up to fifteen minutes old, and stale-while-revalidate is the
+    part that does it deliberately: it serves the expired copy and refreshes
+    behind the reader, so the fresh data lands on the NEXT visit.
+
+    Reported from the live site over and over: uploaded photographs did not
+    appear, real models read "0 models available", and a hard refresh fixed it
+    every single time — because a hard refresh sends `Cache-Control: no-cache`
+    and skips the caches this directive fills.
+
+    There is still no purge-on-write hook, so this string is the only thing
+    bounding how long an admin's edit stays invisible. Anything that lets a
+    reader be served known-stale catalogue data belongs behind that hook, not
+    here.
+    """
+    assert "stale-while-revalidate" not in PUBLIC_CACHE_CONTROL
+
+    # must-revalidate is the other half: without it a browser is permitted to
+    # reuse an expired response when it thinks it is offline or under load.
+    assert "must-revalidate" in PUBLIC_CACHE_CONTROL
+
+
+def test_the_edge_window_is_short_enough_that_an_edit_shows_up():
+    """s-maxage bounds how long an admin edit stays invisible.
+
+    Not an arbitrary number: with no purge hook, this is the wait between
+    saving a car and seeing it. Thirty seconds is short enough to look
+    immediate. If someone raises it, purge-on-write should exist first.
+    """
+    edge = int(PUBLIC_CACHE_CONTROL.split("s-maxage=")[1].split(",")[0].strip())
+    assert edge <= 60, f"s-maxage={edge}s is long enough to read as a broken page"
 
 
 def test_private_is_no_store_not_no_cache():
