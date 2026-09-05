@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -161,6 +161,12 @@ export const PLACEHOLDER = 'assets/cars/placeholder.svg';
  * - aeplcdn, a third party's URLs that are frequently dead. A broken image
  *   tag is worse than an honest absence.
  */
+/** Attempts per catalogue source when nothing answers at all. */
+const FETCH_ATTEMPTS = 3;
+
+/** Gap between those attempts. */
+const FETCH_RETRY_MS = 250;
+
 export function hasPhotograph(car: { image?: string | null }): boolean {
   return !!car.image
     && car.image !== PLACEHOLDER
@@ -523,12 +529,39 @@ export class CarsDataService {
    * catalogue apart from an outage.
    */
   private async fetchOrNull<T>(url: string): Promise<T | null> {
-    try {
-      return await firstValueFrom(this.http.get<T>(url));
-    } catch (err) {
-      console.error(`Catalogue source failed (${url}):`, err);
-      return null;
+    // Retried only when nothing answered at all.
+    //
+    // A response — even a 500 — is a real answer from a reachable API, and
+    // asking again three times just makes a broken endpoint slower to report.
+    // What is worth retrying is the case where the request produced no response
+    // whatsoever: status 0, which Angular reports for a network failure, a
+    // CORS rejection, or a request that never left the browser.
+    //
+    // That last one is what this is for. This load runs from the constructor,
+    // the earliest and raciest moment in the app's life, and a single attempt
+    // there turned one unlucky millisecond into a page reading "0 models
+    // available" until the reader hard-refreshed.
+    //
+    // Two extra attempts, a quarter-second apart. Short enough that a genuine
+    // outage still fails fast and the page says so rather than hanging.
+    for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
+      try {
+        return await firstValueFrom(this.http.get<T>(url));
+      } catch (err) {
+        const noAnswer = err instanceof HttpErrorResponse && err.status === 0;
+        const last = attempt === FETCH_ATTEMPTS;
+        // Logged on every attempt: "failed once then succeeded" and "failed
+        // three times" are different faults, and a log that records only the
+        // last one cannot tell them apart.
+        console.error(
+          `Catalogue source failed (${url}) [attempt ${attempt}/${FETCH_ATTEMPTS}]:`,
+          err,
+        );
+        if (!noAnswer || last) return null;
+        await new Promise(resolve => setTimeout(resolve, FETCH_RETRY_MS));
+      }
     }
+    return null;
   }
 
   /**
