@@ -69,7 +69,9 @@ export default defineConfig({
       // no browser and needs no API.
       // theme-tokens joins listing-columns as a source-only check: no browser,
       // no API, and it catches a CSS variable nobody ever defined.
-      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|api-origin|dealer-dashboard|pwa-icons)\.spec\.ts/,
+      // brand-logos joins them: reads src/app/data/brands.ts and the files it
+      // names, no browser, no API.
+      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|api-origin|dealer-dashboard|pwa-icons|brand-logos)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {
