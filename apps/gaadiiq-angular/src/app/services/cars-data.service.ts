@@ -161,6 +161,32 @@ export const PLACEHOLDER = 'assets/cars/placeholder.svg';
  * - aeplcdn, a third party's URLs that are frequently dead. A broken image
  *   tag is worse than an honest absence.
  */
+/**
+ * One readable line describing why a request failed.
+ *
+ * status 0 is the interesting one and the least self-explanatory: Angular
+ * reports it whenever no response arrived at all, which covers a network
+ * failure, a CORS rejection and a request that never left the browser. Those
+ * are indistinguishable from JavaScript by design — the browser withholds the
+ * detail — so the text says so rather than guessing, because guessing at this
+ * exact point is what cost a day.
+ */
+export function describeFailure(url: string, err: unknown): string {
+  const path = url.replace(/^https?:\/\/[^/]+/, '').split('&_=')[0];
+
+  if (err instanceof HttpErrorResponse) {
+    if (err.status === 0) {
+      return `${path} — no response (network, CORS, or blocked before sending)`;
+    }
+    const detail =
+      typeof err.error === 'string'
+        ? err.error.slice(0, 120)
+        : (err.error?.detail ?? err.statusText ?? '');
+    return `${path} — HTTP ${err.status}${detail ? ` ${detail}` : ''}`;
+  }
+  return `${path} — ${(err as Error)?.message ?? String(err)}`;
+}
+
 /** Attempts per catalogue source when nothing answers at all. */
 const FETCH_ATTEMPTS = 3;
 
@@ -509,6 +535,28 @@ export class CarsDataService {
    */
   readonly failedSources = signal<readonly ('new' | 'used' | 'catalogue')[]>([]);
 
+  /**
+   * Why the last failure happened, in one line, for a person to read.
+   *
+   * WHY THIS IS ON SCREEN AND NOT ONLY IN THE CONSOLE
+   *
+   * This fault is intermittent — the same build served the catalogue on one
+   * load and nothing on the next. Catching it in the console therefore means
+   * having DevTools already open at the moment it happens, which is not
+   * something to ask of somebody reporting a bug from a phone.
+   *
+   * The failure panel is already on their screen when it goes wrong, so the
+   * screenshot they would send anyway can carry the answer. That turns every
+   * future report into a diagnosis instead of a guess — six attempts at this
+   * symptom were built on inference about which layer was at fault, and every
+   * one of them was wrong because nobody had the actual error.
+   *
+   * Deliberately terse and factual: a status code, the path, and the message
+   * the browser gave. Enough to name the layer, and nothing a reader could
+   * mistake for something they did.
+   */
+  readonly lastFailure = signal<string>('');
+
   readonly usedListingsFailed = computed(() => this.failedSources().includes('used'));
   readonly newListingsFailed = computed(
     () => this.failedSources().includes('new') || this.failedSources().includes('catalogue'),
@@ -584,6 +632,7 @@ export class CarsDataService {
           `Catalogue source failed (${url}) [attempt ${attempt}/${FETCH_ATTEMPTS}]:`,
           err,
         );
+        if (last) this.lastFailure.set(describeFailure(url, err));
         if (!noAnswer || last) return null;
         await new Promise(resolve => setTimeout(resolve, FETCH_RETRY_MS));
       }
@@ -629,6 +678,7 @@ export class CarsDataService {
   private async load() {
     this.loading.set(true);
     this.failedSources.set([]);
+    this.lastFailure.set('');
     try {
       // Three independent sources, fetched independently. Promise.all would
       // reject the whole load when any one of them failed, so a broken

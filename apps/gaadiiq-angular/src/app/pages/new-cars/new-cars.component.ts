@@ -101,6 +101,14 @@ export class NewCarsComponent implements OnInit {
   get loading() { return this.carsData.loading; }
 
   /**
+   * Why the catalogue load failed, shown under the outage panel.
+   *
+   * Exposed through a getter like the rest of this component's reads, rather
+   * than making carsData public for one string.
+   */
+  get failureDetail() { return this.carsData.lastFailure(); }
+
+  /**
    * True when the catalogue could not be fetched, as distinct from a catalogue
    * that answered with nothing.
    *

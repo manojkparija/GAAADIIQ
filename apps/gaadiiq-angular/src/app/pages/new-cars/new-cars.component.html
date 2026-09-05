@@ -235,6 +235,18 @@
             <button class="btn-gradient" (click)="retry()" [disabled]="retrying()">
               {{ retrying() ? ('Retrying…' | t) : ('Try again' | t) }}
             </button>
+            <!--
+              The reason, for whoever is looking into it.
+              Deliberately below the button and quiet: it is not advice to the
+              reader and there is nothing they can do with it. It is here
+              because this fault is intermittent, so a screenshot of this panel
+              is the only realistic way to see the actual error — six attempts
+              at fixing it were built on inference instead.
+              Not translated: it is a diagnostic string, not prose.
+            -->
+            @if (failureDetail) {
+              <p class="nc-failure-detail">{{ failureDetail }}</p>
+            }
           </div>
         } @else if (newCarModels().length === 0 && hiddenForNoPhoto() > 0) {
           <!--
