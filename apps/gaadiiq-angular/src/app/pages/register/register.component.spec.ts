@@ -42,6 +42,10 @@ describe('RegisterComponent account types', () => {
             // when Supabase is holding it for email confirmation.
             register: () => Promise.resolve(confirmedImmediately),
             currentUser: () => null,
+            // Signed out. The constructor's effect calls this on every render;
+            // without it the effect threw a TypeError that Karma did not fail
+            // on, which is a silent trap rather than a passing test.
+            isLoggedIn: () => false,
           },
         },
       ],

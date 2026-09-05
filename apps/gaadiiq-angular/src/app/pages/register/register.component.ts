@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, effect } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { LogoComponent } from '../../components/logo/logo.component';
@@ -61,7 +61,25 @@ export class RegisterComponent {
 
   checkingEmail = signal(false);
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router) {
+    // Someone already signed in has nothing to do here, and this page offered
+    // them "Create your account" while the navbar showed their own name.
+    // Reported from the live site.
+    //
+    // The same effect already sits in login.component; register never got it.
+    // It has to be an effect rather than a one-off check in the constructor or
+    // a route guard, because `auth.currentUser()` starts null and is filled
+    // asynchronously — `getSession()` in AuthService's own constructor resolves
+    // a tick or two later. Anything synchronous runs while the user still
+    // looks signed out, lets them through, and never reconsiders. That is
+    // precisely the case this page hits: arriving by a typed URL or a hard
+    // refresh rather than by in-app navigation.
+    //
+    // No allowSignalWrites needed: navigating is not a signal write.
+    effect(() => {
+      if (this.auth.isLoggedIn()) this.router.navigateByUrl('/');
+    });
+  }
 
   async nextStep() {
     this.error.set('');
