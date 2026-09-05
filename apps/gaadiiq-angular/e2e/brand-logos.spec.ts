@@ -85,3 +85,28 @@ test('the placeholder is still what a failed logo falls back to', () => {
   expect(existsSync(placeholder), 'assets/cars/placeholder.svg is gone').toBe(true);
   expect(readFileSync(placeholder, 'utf8')).toContain('No Image Available');
 });
+
+test('a brand with a real mark available is not left on a hand-drawn one', () => {
+  // WHAT THIS CATCHES, AND WHY IT EXISTS
+  //
+  // The first fix for the CDN outage pointed 35 brands at SVGs already in this
+  // directory. Every test above passed: no external host, every file present.
+  // The grid still looked wrong, because those files are sketches rather than
+  // logos — kia.svg was the word "KIA" in Arial Black, hyundai.svg a navy
+  // ellipse with a literal letter H. Reported as "except mahindra all the
+  // logos are wrong".
+  //
+  // "Is this the right artwork" is a judgement no test can make. What it CAN
+  // hold is the mistake actually made: a brand pointed at <slug>.svg when a
+  // real <slug>.png sits beside it. That is always the wrong choice, and it is
+  // how the sketches shipped.
+  //
+  // Mahindra, Force Motors and OLA Electric have no .png and so cannot trip
+  // this — Mahindra's SVG is properly drawn, which is why it was the one tile
+  // that looked right.
+  const wrong = logoPaths()
+    .filter(p => p.endsWith('.svg'))
+    .filter(p => existsSync(join(SRC, p.replace(/\.svg$/, '.png'))));
+  expect(wrong, 'a brand uses a drawn .svg while the real .png is right there')
+    .toEqual([]);
+});
