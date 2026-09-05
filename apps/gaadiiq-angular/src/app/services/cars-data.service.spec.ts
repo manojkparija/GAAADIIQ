@@ -4,6 +4,18 @@ import { CarsDataService } from './cars-data.service';
 import { environment } from '../../environments/environment';
 
 /**
+ * Match a catalogue request by its URL apart from the cache-busting parameter.
+ *
+ * fetchOrNull appends `&_=<timestamp>` to every request so no cache between the
+ * page and the origin can hold a copy — see the comment there. That makes the
+ * exact URL unpredictable, so these specs match on the part that is stable.
+ */
+function expectCall(http: HttpTestingController, url: string) {
+  return http.expectOne(req => req.url.split('&_=')[0].split('?_=')[0] === url);
+}
+
+
+/**
  * The catalogue is assembled from three independent sources: new listings,
  * used listings, and the manufacturer catalogue that admin-uploaded
  * photography lands in.
@@ -52,9 +64,9 @@ describe('CarsDataService — one failing source', () => {
     const failed = { status: 500, statusText: 'Internal Server Error' };
     const error = { detail: 'column listings.price does not exist' };
 
-    http.expectOne(urls.new).flush(error, failed);
-    http.expectOne(urls.used).flush(error, failed);
-    http.expectOne(urls.catalogue).flush({
+    expectCall(http, urls.new).flush(error, failed);
+    expectCall(http, urls.used).flush(error, failed);
+    expectCall(http, urls.catalogue).flush({
       items: [CATALOGUE_CAR],
       total: 1,
       page: 1,
@@ -123,9 +135,9 @@ describe('CarsDataService — an advert that is not shown must not hide a model'
 
   function answerRound(newListings: unknown[]): void {
     const page = (items: unknown[]) => ({ items, total: items.length, page: 1, page_size: 100 });
-    http.expectOne(urls.new).flush(page(newListings));
-    http.expectOne(urls.used).flush(page([]));
-    http.expectOne(urls.catalogue).flush(page([CATALOGUE_CAR]));
+    expectCall(http, urls.new).flush(page(newListings));
+    expectCall(http, urls.used).flush(page([]));
+    expectCall(http, urls.catalogue).flush(page([CATALOGUE_CAR]));
   }
 
   async function loadWith(newListings: unknown[]): Promise<CarsDataService> {
@@ -152,5 +164,67 @@ describe('CarsDataService — an advert that is not shown must not hide a model'
     const dzires = svc.getAll().filter(c => c.model === 'Dzire');
     expect(dzires.length).withContext('the same car must not appear twice').toBe(1);
     expect(dzires[0].price).withContext('the advert wins, at its own price').toBe(850000);
+  });
+});
+
+/**
+ * Every catalogue request carries a key no cache can already hold.
+ *
+ * REPORTED ALL DAY, AND STILL AFTER FOUR OTHER FIXES
+ *
+ * "0 models available" on a normal reload; the full catalogue after a hard
+ * refresh; every time. A hard refresh differs from a normal one in exactly one
+ * way — it sends `Cache-Control: no-cache` and so skips every cache between
+ * the page and the origin.
+ *
+ * Each cache was examined and cleared of blame by reading the code: the API
+ * stamps no-store on any request carrying Authorization and the reporter is
+ * signed in; the service worker's compiled patterns never match `/cars?...`;
+ * Vary: Origin is set on everything cacheable. The symptom outlived all of it.
+ *
+ * The busting parameter stops that argument: a URL unique per request cannot
+ * be answered from a stored copy by anything. It is blunt and it costs the
+ * edge cache on catalogue reads, which is why it needs a test saying so — a
+ * future reader tidying away a stray `_=` timestamp would restore the bug
+ * without ever seeing it.
+ */
+describe('CarsDataService — cache busting', () => {
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  it('appends a unique parameter to every catalogue request', () => {
+    TestBed.inject(CarsDataService);
+
+    const requests = http.match(() => true);
+    expect(requests.length).withContext('the constructor should have started a load').toBeGreaterThan(0);
+
+    for (const req of requests) {
+      expect(req.request.url)
+        .withContext('a request without a busting parameter can be served from a cache')
+        .toMatch(/[?&]_=\d+/);
+      req.flush({ items: [], total: 0, page: 1, page_size: 100 });
+    }
+  });
+
+  it('does not lose the query the caller asked for', () => {
+    // The parameter is appended, never substituted. bucket and priced_only are
+    // what keep unpriced rows and used-car photography off the New Cars pages,
+    // so dropping them would be a far worse bug than the one being fixed.
+    TestBed.inject(CarsDataService);
+
+    const catalogue = http.match(req => req.url.includes('/cars?'));
+    expect(catalogue.length).toBe(1);
+    expect(catalogue[0].request.url).toContain('bucket=new');
+    expect(catalogue[0].request.url).toContain('priced_only=true');
+    expect(catalogue[0].request.url).toContain('page_size=100');
+
+    for (const req of http.match(() => true)) {
+      req.flush({ items: [], total: 0, page: 1, page_size: 100 });
+    }
   });
 });
