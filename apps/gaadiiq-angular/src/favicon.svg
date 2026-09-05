@@ -1,6 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GAADIIQ">
   <!--
-    Browser-tab mark: the arc-and-arrow from the logo, alone.
+    Browser-tab mark, AND the master for the manifest's `purpose: "any"` icon
+    set (assets/icons/icon-any-<size>.png).
+
+    Those PNGs are rendered from this file rather than drawn again, because a
+    mark kept in two places is a mark that quietly diverges — logo.component.ts
+    documents that at length, and this repo has already shipped it once, in the
+    chat widget's hand-inlined wordmark.
+
+    Regenerate them rather than hand-editing:
+
+        npm run icons            # tools/render-icons.mjs
+
+    The companion set, assets/icons/icon-master.svg, is the MASKABLE one:
+    full-bleed square, smaller mark, drawn to survive a launcher crop. This one
+    is what every surface that does not crop should use. Read that file's
+    comment before touching either.
+
+    The mark: the arc-and-arrow from the logo, alone.
 
     The wordmark is dropped entirely. At 16px a seven-letter word is a grey
     smudge, so the icon has to carry the brand on the shape alone.
