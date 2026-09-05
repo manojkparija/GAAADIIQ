@@ -544,9 +544,36 @@ export class CarsDataService {
     //
     // Two extra attempts, a quarter-second apart. Short enough that a genuine
     // outage still fails fast and the page says so rather than hanging.
+    // A key no cache can already hold.
+    //
+    // WHY THIS IS HERE, AND WHY IT IS BLUNT
+    //
+    // Reported all day, and still after four other fixes: "0 models available"
+    // on a normal reload, the full catalogue after a hard refresh, every time.
+    // A hard refresh differs from a normal one in exactly one way — it sends
+    // `Cache-Control: no-cache`, so it skips every cache between the page and
+    // the origin. Nothing else about the two loads differs.
+    //
+    // Each individual cache was examined and cleared of blame: the API stamps
+    // no-store on any request carrying Authorization (and the reporter is
+    // signed in), the service worker's patterns never match `/cars?...`, and
+    // Vary: Origin is set on everything cacheable. Every one of those was
+    // reasoned from the code, and the symptom outlived all of them.
+    //
+    // So this stops reasoning. A timestamp makes the URL unique per request,
+    // which no browser cache, edge cache or service worker can have a stored
+    // copy of. If the page still reads zero after this, caching is not the
+    // cause and never was — which is worth knowing for certain, and cannot be
+    // established by reading configuration.
+    //
+    // The cost is real and accepted: catalogue reads no longer collapse onto
+    // the edge cache, so they reach the origin. Remove this once the cause is
+    // confirmed and fixed at its root.
+    const bust = url.includes('?') ? '&' : '?';
+
     for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
       try {
-        return await firstValueFrom(this.http.get<T>(url));
+        return await firstValueFrom(this.http.get<T>(`${url}${bust}_=${Date.now()}`));
       } catch (err) {
         const noAnswer = err instanceof HttpErrorResponse && err.status === 0;
         const last = attempt === FETCH_ATTEMPTS;
