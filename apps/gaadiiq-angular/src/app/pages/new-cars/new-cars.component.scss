@@ -1075,13 +1075,21 @@
   is intermittent, so catching it in the console means having DevTools open at
   the exact moment, which is not reasonable to ask of someone on a phone.
 
-  Monospace because it is a status code and a path, and word-break because a
-  long URL must not push the card wider than its column on a narrow screen.
+  NOT monospace, though a status code and a path would read better in one.
+  styles.scss declares exactly two families, Outfit and Manrope, and
+  e2e/typography.spec.ts fails any text rendered in a third — the first version
+  of this rule set ui-monospace and CI caught it. That guard exists because a
+  foreign family usually means a rule missed its target or a name failed to
+  resolve, and weakening it to admit one diagnostic line would cost more than
+  the legibility gained.
+
+  word-break because a long URL must not push the card wider than its column
+  on a narrow screen; 0.75rem because typography.spec rejects body text under
+  11px and this needs to stay clear of that floor.
 */
 .nc-failure-detail {
   margin: 0.75rem 0 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   line-height: 1.4;
   color: var(--muted);
   word-break: break-word;
