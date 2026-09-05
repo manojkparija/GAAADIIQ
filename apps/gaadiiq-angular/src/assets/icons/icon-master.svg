@@ -1,10 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GAADIIQ">
   <!--
-    Master for the PWA icon set. Rendered to PNG at every size the manifest
-    declares; do not hand-edit the PNGs, regenerate them from here.
+    Master for the MASKABLE PWA icon set (icon-<size>.png).
 
-    Differs from favicon.svg in two ways, both because these are declared
-    `purpose: "maskable any"`:
+    There are two sets, and this is only one of them. The manifest declares:
+
+      icon-any-<size>.png   purpose "any"       ← src/favicon.svg is its master
+      icon-<size>.png       purpose "maskable"  ← this file
+
+    They used to be one set declared `purpose: "maskable any"`, which was the
+    bug: a maskable icon is drawn with heavy padding and no corner radius so a
+    launcher can crop it, and any surface that does NOT crop shows that raw
+    padded square. Chrome's "Open in app" chip is such a surface, so the
+    installed app appeared with a hard-edged tile and a small mark floating in
+    it, next to a browser tab showing the properly filled favicon. Reported
+    from the live site as "logo symbol is not correct".
+
+    Do not merge the two sets back together, and do not hand-edit the PNGs —
+    regenerate them from their masters.
+
+    This file differs from src/favicon.svg in exactly the two ways a maskable
+    icon must:
 
       * The ground is a full-bleed square with no corner radius. Android crops
         maskable icons to its own shape — a circle, a squircle, a rounded

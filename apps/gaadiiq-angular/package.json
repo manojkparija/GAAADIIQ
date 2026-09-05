@@ -9,7 +9,8 @@
     "test": "ng test",
     "test:mobile": "playwright test --config=playwright.config.ts",
     "serve:dist": "node e2e/static-server.mjs dist/gaadiiq-angular/browser 4200",
-    "test:smoke": "npx playwright test --project=desktop-chrome"
+    "test:smoke": "npx playwright test --project=desktop-chrome",
+    "icons": "node tools/render-icons.mjs"
   },
   "private": true,
   "dependencies": {
