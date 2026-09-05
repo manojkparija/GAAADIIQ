@@ -51,20 +51,45 @@ CACHEABLE_PREFIXES: tuple[str, ...] = (
     "/video-reviews",
 )
 
-#: max-age is what a browser keeps; s-maxage is what Cloudflare keeps.
+#: The browser revalidates every time; the edge absorbs the load.
 #:
-#: They differ on purpose. A browser holding a stale price for five minutes is a
-#: user seeing a wrong number with no way to know it; the edge holding one is
-#: invisible and purgeable. So the browser gets a minute and the edge gets five,
-#: and stale-while-revalidate lets the edge serve the old copy while it fetches
-#: a new one — which is what turns a cache into protection against a flood
-#: rather than just a latency win.
+#: WHY THIS CHANGED
 #:
-#: These are low on purpose. The catalogue changes when an admin edits it, and
-#: there is no purge hook wired to that yet, so the TTL is the only thing
-#: bounding how long an edit stays invisible. Raise it after a purge-on-write
-#: exists, not before.
-PUBLIC_CACHE_CONTROL = "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
+#: This was `public, max-age=60, s-maxage=300, stale-while-revalidate=600`, and
+#: that combination is why the catalogue had to be hard-refreshed to show a
+#: change. A normal reload could be served a copy up to fifteen minutes old —
+#: sixty seconds from the browser's own cache, five minutes from the edge, and
+#: ten more from stale-while-revalidate handing over the old copy while it
+#: fetched a new one behind the reader. A hard refresh sends
+#: `Cache-Control: no-cache`, which skips both, which is why THAT always worked
+#: and nothing else did.
+#:
+#: Reported repeatedly from the live site: photographs uploaded against a car
+#: did not appear, models that existed read "0 models available", and a hard
+#: refresh fixed it every time. The note below already predicted this — there
+#: is still no purge hook, so the TTL was the only thing bounding how long an
+#: edit stayed invisible. The TTL was simply too long to live with.
+#:
+#: WHAT IT DOES NOW
+#:
+#: `max-age=0, must-revalidate` means the browser may keep the response but has
+#: to ask before reusing it. That ask is conditional: unchanged content comes
+#: back as a 304 with no body, so this is much cheaper than it looks and the
+#: reader never sees a stale catalogue.
+#:
+#: `s-maxage=30` keeps the edge in front of the origin, which is the half that
+#: actually protects the API — a flood still collapses onto one upstream
+#: request per half-minute. Thirty seconds is short enough that an admin edit
+#: appears while they are still looking at the page.
+#:
+#: stale-while-revalidate is gone entirely. It is the one directive that serves
+#: content already known to be out of date, and correctness of what a buyer
+#: sees is worth more here than the latency it saved.
+#:
+#: The browser/edge distinction the old comment defended is intact, and in the
+#: same direction: the browser holds nothing, the edge holds longer. Raise
+#: s-maxage once purge-on-write exists, not before.
+PUBLIC_CACHE_CONTROL = "public, max-age=0, must-revalidate, s-maxage=30"
 
 #: Everything else. no-store rather than no-cache: no-cache permits storing the
 #: response and revalidating it, which still means a copy of a loan application

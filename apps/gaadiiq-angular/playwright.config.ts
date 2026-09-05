@@ -71,7 +71,9 @@ export default defineConfig({
       // no API, and it catches a CSS variable nobody ever defined.
       // brand-logos joins them: reads src/app/data/brands.ts and the files it
       // names, no browser, no API.
-      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|api-origin|dealer-dashboard|pwa-icons|brand-logos)\.spec\.ts/,
+      // cache-freshness likewise: reads ngsw-config.json and the API's
+      // cache_policy.py, no browser, no API.
+      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|api-origin|dealer-dashboard|pwa-icons|brand-logos|cache-freshness)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {
