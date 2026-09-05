@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { CarsDataService } from './cars-data.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { CarsDataService, describeFailure } from './cars-data.service';
 import { environment } from '../../environments/environment';
 
 /**
@@ -226,5 +227,57 @@ describe('CarsDataService — cache busting', () => {
     for (const req of http.match(() => true)) {
       req.flush({ items: [], total: 0, page: 1, page_size: 100 });
     }
+  });
+});
+
+/**
+ * The failure reason shown on screen.
+ *
+ * WHY THIS IS WORTH TESTING
+ *
+ * This string is the diagnostic instrument for a fault that six attempts
+ * failed to fix — every one of them reasoned about which layer was at fault
+ * because nobody had the actual error. If the text is wrong or empty, the next
+ * report is another guess.
+ *
+ * It is also the one place where "no response at all" must not be described as
+ * something more specific. Angular reports status 0 for a network failure, a
+ * CORS rejection and a request that never left the browser, and the browser
+ * withholds which — so the text has to say that honestly rather than pick one.
+ */
+describe('describeFailure', () => {
+  const URL_UNDER_TEST = 'https://api.gaadiiq.com/cars?bucket=new&page=1&_=1735689600000';
+
+  it('names the path without the host or the cache-busting parameter', () => {
+    // The timestamp is noise in a bug report and would differ on every line.
+    const text = describeFailure(URL_UNDER_TEST, new HttpErrorResponse({ status: 500 }));
+    expect(text).toContain('/cars?bucket=new&page=1');
+    expect(text).not.toContain('_=');
+    expect(text).not.toContain('api.gaadiiq.com');
+  });
+
+  it('says plainly that a status 0 could be several things', () => {
+    // The whole point. Naming one of them would be a guess presented as a
+    // finding, which is exactly the failure mode this exists to end.
+    const text = describeFailure(URL_UNDER_TEST, new HttpErrorResponse({ status: 0 }));
+    expect(text).toContain('no response');
+    expect(text).toContain('CORS');
+  });
+
+  it('carries the status and the API detail when the server answered', () => {
+    const text = describeFailure(
+      URL_UNDER_TEST,
+      new HttpErrorResponse({ status: 503, error: { detail: 'database is starting up' } }),
+    );
+    expect(text).toContain('503');
+    expect(text).toContain('database is starting up');
+  });
+
+  it('survives an error that is not an HttpErrorResponse', () => {
+    // getSession() rejecting produced a plain Error, not an HTTP one, and a
+    // describer that assumed otherwise would print "undefined" for the case
+    // most likely to matter.
+    expect(describeFailure(URL_UNDER_TEST, new Error('Auth session missing')))
+      .toContain('Auth session missing');
   });
 });

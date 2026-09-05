@@ -1065,3 +1065,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+/*
+  The failure reason under the outage panel.
+
+  Quiet on purpose: it sits below the retry button because it is not advice to
+  the reader and there is nothing they can do with it. It is here so that a
+  screenshot of this panel carries the actual error — the fault it exists for
+  is intermittent, so catching it in the console means having DevTools open at
+  the exact moment, which is not reasonable to ask of someone on a phone.
+
+  Monospace because it is a status code and a path, and word-break because a
+  long URL must not push the card wider than its column on a narrow screen.
+*/
+.nc-failure-detail {
+  margin: 0.75rem 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--muted);
+  word-break: break-word;
+  max-width: 46ch;
+}
