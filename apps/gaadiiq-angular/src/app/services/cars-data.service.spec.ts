@@ -281,3 +281,62 @@ describe('describeFailure', () => {
       .toContain('Auth session missing');
   });
 });
+
+/**
+ * The outage panel always says something.
+ *
+ * REPORTED FROM THE LIVE SITE, IMMEDIATELY AFTER THE REASON SHIPPED
+ *
+ * "Could not load the car catalogue" rendered with the reason line blank. The
+ * first version only recorded failures inside fetchOrNull, and load()'s catch
+ * marks all three sources failed without touching it.
+ *
+ * That blank line was itself a finding. The catch runs for ANY error raised in
+ * load(), not only the deliberate "every catalogue source failed" throw — an
+ * exception while MAPPING a response lands there too, long after the requests
+ * came back healthy. Render's logs showed every request returning 200 OK
+ * during the failures, so a load really can fail with nothing wrong on the
+ * wire, and the panel has to be able to say so.
+ */
+describe('CarsDataService — the outage panel always has a reason', () => {
+  let http: HttpTestingController;
+  let svc: CarsDataService;
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
+    http = TestBed.inject(HttpTestingController);
+    svc = TestBed.inject(CarsDataService);
+  });
+
+  /** Answer every in-flight request with `body`. */
+  function answerAll(body: unknown) {
+    for (const req of http.match(() => true)) req.flush(body as object);
+  }
+
+  it('reports a reason when every source fails', async () => {
+    const reloaded = svc.reload();
+    for (const req of http.match(() => true)) {
+      req.flush({ detail: 'boom' }, { status: 503, statusText: 'Service Unavailable' });
+    }
+    await reloaded;
+
+    expect(svc.failedSources().length).withContext('this is the outage state').toBeGreaterThan(0);
+    expect(svc.lastFailure()).withContext('the panel would render blank').not.toBe('');
+    expect(svc.lastFailure()).toContain('503');
+  });
+
+  it('reports a reason when the requests succeed but the load throws', async () => {
+    // The case the first version missed, and the one the evidence points at:
+    // 200 OK on the wire, and the failure afterwards. `items` as a non-array
+    // makes the mapping throw the way malformed data would.
+    const reloaded = svc.reload();
+    answerAll({ items: 'not-an-array', total: 1, page: 1, page_size: 100 });
+    await reloaded;
+
+    expect(svc.failedSources().length).toBeGreaterThan(0);
+    expect(svc.lastFailure())
+      .withContext('a load that fails after a 200 must still name itself')
+      .not.toBe('');
+  });
+});

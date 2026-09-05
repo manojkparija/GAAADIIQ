@@ -187,6 +187,15 @@ export function describeFailure(url: string, err: unknown): string {
   return `${path} — ${(err as Error)?.message ?? String(err)}`;
 }
 
+/**
+ * Thrown when all three sources returned nothing.
+ *
+ * Named rather than inline so the catch can tell it apart from an exception
+ * raised while mapping a response that arrived perfectly well — those are
+ * different faults and were previously reported identically.
+ */
+const EVERY_SOURCE_FAILED = 'every catalogue source failed';
+
 /** Attempts per catalogue source when nothing answers at all. */
 const FETCH_ATTEMPTS = 3;
 
@@ -632,8 +641,18 @@ export class CarsDataService {
           `Catalogue source failed (${url}) [attempt ${attempt}/${FETCH_ATTEMPTS}]:`,
           err,
         );
-        if (last) this.lastFailure.set(describeFailure(url, err));
-        if (!noAnswer || last) return null;
+        // Record it on the attempt we actually give up on, whichever that is.
+        //
+        // This read `if (last)` and was wrong: `last` only becomes true on the
+        // third attempt, but anything other than a status 0 gives up on the
+        // FIRST one — so a 503 or a 404 returned null having described nothing,
+        // and the outage panel rendered blank for every failure except the one
+        // kind that retries. Caught by the spec below, not by reading it back.
+        const givingUp = !noAnswer || last;
+        if (givingUp) {
+          this.lastFailure.set(describeFailure(url, err));
+          return null;
+        }
         await new Promise(resolve => setTimeout(resolve, FETCH_RETRY_MS));
       }
     }
@@ -715,7 +734,7 @@ export class CarsDataService {
       // Every source down is an outage rather than an empty catalogue, and the
       // two deserve different treatment — see the fallback below.
       if (newResp === null && usedResp === null && catalogueResp === null) {
-        throw new Error('every catalogue source failed');
+        throw new Error(EVERY_SOURCE_FAILED);
       }
 
       const newCars = (newResp?.items ?? []).map(mapListing);
@@ -767,6 +786,35 @@ export class CarsDataService {
     } catch (err) {
       console.error('API fetch error — falling back to demo data:', err);
       this.failedSources.set(['new', 'used', 'catalogue']);
+
+      // Say why, if fetchOrNull has not already.
+      //
+      // THE HOLE THIS CLOSES, AND WHAT IT REVEALS
+      //
+      // The first version of the on-screen reason only recorded failures
+      // inside fetchOrNull. This catch marks all three sources failed without
+      // touching it, so the outage panel appeared with the reason blank —
+      // reported from the live site immediately after that change shipped.
+      //
+      // The blank line is itself the finding. This block runs for ANY error
+      // raised in load(), not only the deliberate "every catalogue source
+      // failed" throw: an exception while MAPPING the response lands here too,
+      // long after the requests came back. And Render's logs show every
+      // request returning 200 OK during the failures.
+      //
+      // So a load can fail with nothing wrong on the wire at all. That is a
+      // different fault from the one six previous changes were aimed at, and
+      // it is consistent with every observation: 200s in the server log, an
+      // outage on screen, no failed fetch to describe, and intermittency that
+      // tracks the data rather than the network.
+      if (!this.lastFailure()) {
+        const detail = (err as Error)?.message ?? String(err);
+        this.lastFailure.set(
+          detail === EVERY_SOURCE_FAILED
+            ? 'every catalogue source failed'
+            : `catalogue load — ${detail}`,
+        );
+      }
       // Same rule as above: demo cars are a development aid, never something a
       // real buyer sees. In production an outage shows an empty catalogue.
       this._cars.set(environment.production ? [] : [...DEMO_NEW_CARS, ...DEMO_USED_CARS]);
