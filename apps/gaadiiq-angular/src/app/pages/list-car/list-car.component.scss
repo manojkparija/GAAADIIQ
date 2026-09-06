@@ -317,6 +317,18 @@
   background: var(--bg, #fff);
   cursor: pointer;
   font-family: inherit;
+  // REPORTED WITH A SCREENSHOT: "letters not visible in dark mode".
+  //
+  // The unselected option was near-black text on the dark navy --bg. The
+  // background was themed and the text was not: a <button> does not inherit
+  // colour from its parent the way a <div> does — with no rule of its own it
+  // falls back to the user agent's `buttontext`, which is near-black in both
+  // themes. `font-family: inherit` on the line above is the same problem
+  // already solved once for type, which is the hint that colour needed it too.
+  //
+  // .lt-sub was legible throughout because it names a token; only the title,
+  // which set no colour at all, disappeared.
+  color: var(--text);
   transition: border-color 0.15s, box-shadow 0.15s;
 
   &:hover { border-color: rgba(20,184,166,0.5); }
