@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, OnDestroy, effect, HostListener } 
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CarsDataService, Car, CarVariant, isShowable, startingPrice } from '../../services/cars-data.service';
+import { CarsDataService, Car, CarVariant, isShowable, startingPrice, capacityLabel, economyLabel } from '../../services/cars-data.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { MarketPositionComponent } from '../../components/market-position/market-position.component';
 import { VehicleScorecardComponent } from '../../components/vehicle-scorecard/vehicle-scorecard.component';
@@ -432,6 +432,23 @@ export class CarDetailComponent implements OnInit, OnDestroy {
    * unable to reach its data.
    */
   loadFailed = signal(false);
+
+  /**
+   * The trim's capacity figure with the right unit behind it.
+   *
+   * A method rather than a computed(): it takes the row being rendered, and
+   * the fuel is read from the trim first because a model can publish petrol
+   * and electric trims side by side — the e Vitara does. The car's own fuel is
+   * the fallback for a trim that does not state one.
+   */
+  variantCapacity(v: CarVariant): string {
+    return capacityLabel(v.engine_cc, v.fuel_type ?? this.car?.fuel ?? null) ?? '';
+  }
+
+  /** The trim's range or economy figure, with a unit when it can be known. */
+  variantEconomy(v: CarVariant): string {
+    return economyLabel(v.mileage, v.fuel_type ?? this.car?.fuel ?? null) ?? '';
+  }
 
   /**
    * Why the last catalogue request failed — the same string /new-cars prints
