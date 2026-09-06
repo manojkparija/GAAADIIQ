@@ -70,6 +70,17 @@ export class UsedCarsComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   readonly listingsFailed = this.carsData.usedListingsFailed;
 
+  /**
+   * The reason the last catalogue request failed, for whoever is looking into
+   * it — the same string /new-cars prints below its outage panel.
+   *
+   * This page failed on the same morning /new-cars did and carried no reason,
+   * so what it hit is still unknown. That gap is the point: the fault is
+   * intermittent, and a screenshot of this panel is the only realistic way to
+   * see the actual error rather than infer one.
+   */
+  get failureDetail() { return this.carsData.lastFailure(); }
+
   retryLoad(): void {
     void this.carsData.reload();
   }

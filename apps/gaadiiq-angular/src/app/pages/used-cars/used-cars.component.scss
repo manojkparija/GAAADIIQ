@@ -1157,3 +1157,19 @@
    reported from UAT. Measured, not guessed. */
 .year-select,
 .sort-select { --cs-min-h: 41px; }
+
+/* The failure reason under the outage panel.
+
+   Same shape as .nc-failure-detail on /new-cars, and deliberately not
+   monospace: e2e/typography.spec.ts allows Outfit and Manrope only, and a
+   third family here would fail CI. 0.75rem because the same spec rejects body
+   text under 11px, and word-break because a long URL must not push the card
+   wider than its column on a narrow screen. */
+.uc-failure-detail {
+  margin: 0.75rem auto 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted);
+  word-break: break-word;
+  max-width: 46ch;
+}

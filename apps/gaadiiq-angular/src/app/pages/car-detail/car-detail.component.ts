@@ -433,6 +433,16 @@ export class CarDetailComponent implements OnInit, OnDestroy {
    */
   loadFailed = signal(false);
 
+  /**
+   * Why the last catalogue request failed — the same string /new-cars prints
+   * below its outage panel.
+   *
+   * A method, not a computed(): it is read from a template that is not itself
+   * inside a reactive context, and a computed() over a service signal read
+   * this way has been shipped stale twice in this codebase.
+   */
+  get failureDetail() { return this.carsData.lastFailure(); }
+
   // On-road price
   // Colour picker
   selectedColour = signal('');
