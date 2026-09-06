@@ -162,6 +162,47 @@ export const PLACEHOLDER = 'assets/cars/placeholder.svg';
  *   tag is worse than an honest absence.
  */
 /**
+ * Statuses where asking again is likely to get a different answer.
+ *
+ * WHY THIS EXISTS
+ *
+ * The retry loop originally retried `status === 0` only, on the reasoning that
+ * "a response — even a 500 — is a real answer from a reachable API". That
+ * holds for a 500, a 404 or a 422: the server considered the request and the
+ * answer will be the same next time.
+ *
+ * It does not hold for the gateway statuses, and this is the one the live site
+ * actually produced:
+ *
+ *     /cars?bucket=new&priced_only=true&page=1&page_size=100
+ *       — HTTP 504 Gateway Timeout
+ *
+ * A 504 is not the API answering. It is the gateway giving up on the API and
+ * answering on its behalf, so it says nothing about what the next request will
+ * do — and this fault is intermittent, so the next one often succeeds. The
+ * page gave up on the first attempt and showed an outage panel for a service
+ * that was about to answer.
+ *
+ * 502 and 503 are the same kind of statement: no upstream right now, try again.
+ * 503 is also what the API itself now returns when a database call exceeds its
+ * timeout (main.py::_database_timeout_handler), so this is the client half of
+ * that pair.
+ *
+ * Everything else still gives up immediately. Retrying a 404 three times only
+ * makes a broken endpoint slower to report.
+ */
+const RETRYABLE_STATUSES = new Set([502, 503, 504]);
+
+export function isWorthRetrying(err: unknown): boolean {
+  if (!(err instanceof HttpErrorResponse)) return false;
+  // status 0: nothing answered at all — a network failure, a CORS rejection,
+  // or a request that never left the browser. This load runs from the
+  // service's constructor, the raciest moment in the app's life.
+  if (err.status === 0) return true;
+  return RETRYABLE_STATUSES.has(err.status);
+}
+
+/**
  * One readable line describing why a request failed.
  *
  * status 0 is the interesting one and the least self-explanatory: Angular
@@ -197,7 +238,7 @@ export function describeFailure(url: string, err: unknown): string {
 const EVERY_SOURCE_FAILED = 'every catalogue source failed';
 
 /** Attempts per catalogue source when nothing answers at all. */
-const FETCH_ATTEMPTS = 3;
+export const FETCH_ATTEMPTS = 3;
 
 /** Gap between those attempts. */
 const FETCH_RETRY_MS = 250;
@@ -632,7 +673,7 @@ export class CarsDataService {
       try {
         return await firstValueFrom(this.http.get<T>(`${url}${bust}_=${Date.now()}`));
       } catch (err) {
-        const noAnswer = err instanceof HttpErrorResponse && err.status === 0;
+        const worthRetrying = isWorthRetrying(err);
         const last = attempt === FETCH_ATTEMPTS;
         // Logged on every attempt: "failed once then succeeded" and "failed
         // three times" are different faults, and a log that records only the
@@ -648,7 +689,7 @@ export class CarsDataService {
         // FIRST one — so a 503 or a 404 returned null having described nothing,
         // and the outage panel rendered blank for every failure except the one
         // kind that retries. Caught by the spec below, not by reading it back.
-        const givingUp = !noAnswer || last;
+        const givingUp = !worthRetrying || last;
         if (givingUp) {
           this.lastFailure.set(describeFailure(url, err));
           return null;

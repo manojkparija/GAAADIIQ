@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { HttpErrorResponse } from '@angular/common/http';
-import { CarsDataService, describeFailure } from './cars-data.service';
+import { CarsDataService, describeFailure, isWorthRetrying, FETCH_ATTEMPTS } from './cars-data.service';
 import { environment } from '../../environments/environment';
 
 /**
@@ -315,15 +315,21 @@ describe('CarsDataService — the outage panel always has a reason', () => {
   }
 
   it('reports a reason when every source fails', async () => {
+    // 500, not 503, and the distinction is now load-bearing. This test is
+    // about a source that has definitively failed, so it needs a status the
+    // service treats as a final answer. 503 became retryable when the 504 on
+    // the live site showed that gateway statuses say nothing about the next
+    // attempt — so flushing one here now leaves two retries in flight and this
+    // test hung rather than failing, which is a worse way to find out.
     const reloaded = svc.reload();
     for (const req of http.match(() => true)) {
-      req.flush({ detail: 'boom' }, { status: 503, statusText: 'Service Unavailable' });
+      req.flush({ detail: 'boom' }, { status: 500, statusText: 'Internal Server Error' });
     }
     await reloaded;
 
     expect(svc.failedSources().length).withContext('this is the outage state').toBeGreaterThan(0);
     expect(svc.lastFailure()).withContext('the panel would render blank').not.toBe('');
-    expect(svc.lastFailure()).toContain('503');
+    expect(svc.lastFailure()).toContain('500');
   });
 
   it('reports a reason when the requests succeed but the load throws', async () => {
@@ -338,5 +344,157 @@ describe('CarsDataService — the outage panel always has a reason', () => {
     expect(svc.lastFailure())
       .withContext('a load that fails after a 200 must still name itself')
       .not.toBe('');
+  });
+});
+
+/**
+ * A gateway timeout is retried; a real answer is not.
+ *
+ * WHAT THIS PREVENTS COMING BACK
+ *
+ * The catalogue failed on the live site with the panel reading:
+ *
+ *     /cars?bucket=new&priced_only=true&page=1&page_size=100
+ *       — HTTP 504 Gateway Timeout
+ *
+ * The retry loop was there, and it did not fire. It retried `status === 0`
+ * only, on the reasoning that a response — even a 500 — is a real answer from
+ * a reachable API and asking again just makes a broken endpoint slower to
+ * report. That reasoning is right for a 500 and wrong for a 504: a 504 is the
+ * gateway giving up on the API and answering in its place, so it says nothing
+ * about what the next attempt will do. The fault is intermittent and the next
+ * attempt usually succeeds — but the page had already given up and drawn an
+ * outage panel for a service that was about to answer.
+ *
+ * These tests hold both halves. Widening the retry set is only safe while the
+ * second one passes.
+ */
+describe('CarsDataService — which failures are worth asking again', () => {
+  it('retries a 504 rather than showing an outage panel for it', () => {
+    expect(isWorthRetrying(new HttpErrorResponse({ status: 504 })))
+      .withContext('the exact status the live site returned')
+      .toBeTrue();
+  });
+
+  it('retries the other gateway statuses, which mean the same thing', () => {
+    expect(isWorthRetrying(new HttpErrorResponse({ status: 502 }))).toBeTrue();
+    // 503 is also what the API itself returns when a database call exceeds
+    // its timeout, so this is the client half of that pair.
+    expect(isWorthRetrying(new HttpErrorResponse({ status: 503 }))).toBeTrue();
+  });
+
+  it('still retries when nothing answered at all', () => {
+    expect(isWorthRetrying(new HttpErrorResponse({ status: 0 }))).toBeTrue();
+  });
+
+  it('does not retry a considered answer from the API', () => {
+    // The half that keeps the widening honest. A 500, a 404 and a 422 are the
+    // server having looked at the request; asking twice more only delays the
+    // report and hides a real bug behind three identical failures.
+    for (const status of [400, 404, 422, 500]) {
+      expect(isWorthRetrying(new HttpErrorResponse({ status })))
+        .withContext(`HTTP ${status} is the API answering, not a gateway giving up`)
+        .toBeFalse();
+    }
+  });
+
+  it('does not retry something that is not an HTTP failure at all', () => {
+    expect(isWorthRetrying(new Error('Auth session missing'))).toBeFalse();
+  });
+});
+
+/**
+ * The predicate above, actually wired into the fetch loop.
+ *
+ * Worth testing separately from `isWorthRetrying`: a correct predicate that
+ * nothing calls looks exactly like a working retry. The original bug was not a
+ * wrong predicate, it was a retry loop that ran for one status and not the one
+ * the live site produced.
+ */
+describe('CarsDataService — a gateway timeout end to end', () => {
+  let http: HttpTestingController;
+  let svc: CarsDataService;
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
+    http = TestBed.inject(HttpTestingController);
+    svc = TestBed.inject(CarsDataService);
+  });
+
+  /**
+   * Answer every request currently in flight, across all three sources.
+   *
+   * The service loads /cars and both /listings buckets together, so a test
+   * that answers only the one it cares about leaves the others hanging — which
+   * surfaces as a five-second Jasmine timeout rather than a failed assertion,
+   * and is a much worse way to find out.
+   */
+  function answerAll(body: unknown, opts?: { status: number; statusText: string }) {
+    for (const req of http.match(() => true)) {
+      opts ? req.flush(body as string, opts) : req.flush(body as object);
+    }
+  }
+
+  const TIMED_OUT = { status: 504, statusText: 'Gateway Timeout' };
+
+  it('recovers the catalogue when the first attempt times out at the gateway', async () => {
+    // The whole point of the change: one 504 must not become an outage panel
+    // for a service that answers on the very next attempt.
+    const reloaded = svc.reload();
+
+    answerAll('gateway timeout', TIMED_OUT);
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Each source answered in its own shape. Flushing one catalogue body to
+    // all three makes the listings mapper read `make` off an undefined row and
+    // throw, which the panel then reports as a failure — a green retry that
+    // still ends in an error message, for reasons that have nothing to do with
+    // retrying.
+    const page = { total: 0, page: 1, page_size: 100 };
+    for (const req of http.match(() => true)) {
+      req.flush(
+        req.request.url.includes('/cars')
+          ? {
+              ...page,
+              total: 1,
+              items: [
+                {
+                  id: '1',
+                  make: 'Maruti Suzuki',
+                  model: 'Swift',
+                  year: 2025,
+                  ex_showroom_price: 899000,
+                },
+              ],
+            }
+          : { ...page, items: [] },
+      );
+    }
+    await reloaded;
+
+    expect(svc.cars().length)
+      .withContext('the retry succeeded, so the reader should have cars')
+      .toBeGreaterThan(0);
+    expect(svc.lastFailure())
+      .withContext('a retry that succeeded must not leave a failure on screen')
+      .toBe('');
+  });
+
+  it('still names the failure when every retry times out too', async () => {
+    // The other side of it. A 504 that persists must end in a panel that says
+    // 504 — retrying must not swallow the reason, which is the single thing
+    // that made this fault diagnosable after six wrong guesses.
+    const reloaded = svc.reload();
+
+    for (let round = 0; round < FETCH_ATTEMPTS; round++) {
+      answerAll('gateway timeout', TIMED_OUT);
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    await reloaded;
+
+    expect(svc.lastFailure())
+      .withContext('three timeouts and the panel would render blank')
+      .toContain('504');
   });
 });

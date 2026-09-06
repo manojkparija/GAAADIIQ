@@ -18,6 +18,7 @@ status for one. It reports what is live so the answer is one request away
 instead of a grep through startup logs that have long since rotated.
 """
 
+import os
 from datetime import datetime, timezone
 
 from fastapi import APIRouter
@@ -27,6 +28,32 @@ from core.config import settings
 router = APIRouter(prefix="/health", tags=["health"])
 
 
+def deployed_commit() -> str:
+    """The git commit this process was built from, or "unknown".
+
+    Render sets RENDER_GIT_COMMIT in every service it builds; the others are
+    the equivalents elsewhere, so this keeps working if the API moves.
+
+    WHY THIS IS HERE
+
+    "Is the fix deployed?" was unanswerable. `version` below is a string in
+    core/config.py that nobody bumps, so it says the same thing before and
+    after a deploy. During a live 504 investigation the first question — does
+    the running process even contain the change — cost a round-trip through
+    the Render dashboard, and the honest answer from outside was "I cannot
+    tell". A commit SHA in the health response makes it one request, for
+    anyone, forever.
+
+    Safe to expose: this repository's history is not a secret, and the SHA
+    reveals nothing an attacker could not read from the deployed bundle.
+    """
+    for var in ("RENDER_GIT_COMMIT", "GIT_COMMIT", "SOURCE_VERSION", "VERCEL_GIT_COMMIT_SHA"):
+        value = os.environ.get(var)
+        if value:
+            return value
+    return "unknown"
+
+
 @router.get("")
 async def health_check():
     return {
@@ -34,6 +61,7 @@ async def health_check():
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "service": "gaadiiq-api",
         "version": settings.app_version,
+        "commit": deployed_commit(),
     }
 
 

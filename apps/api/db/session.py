@@ -65,7 +65,45 @@ else:
     # Trade-off: traffic is encrypted, but an active MITM on the database link
     # would not be detected. To restore full verification, fetch Supabase's CA
     # certificate and pass an ssl.SSLContext built with it instead.
-    engine_kwargs["connect_args"] = {"ssl": "require"}
+    # Fail fast instead of hanging past the gateway's patience.
+    #
+    # WHY, AFTER pre_ping ALREADY SHIPPED
+    #
+    # pre_ping and recycle went out in #223 and the 504 came back:
+    #
+    #   /cars?bucket=new&priced_only=true&page=1&page_size=100
+    #     — HTTP 504 Gateway Timeout
+    #
+    # So a dead pooled socket was not the whole story, and the shape of the
+    # failure is what matters here rather than its cause. Whatever stalls —
+    # a hung connect, a query waiting on a lock, a network path that black-
+    # holes — the request currently waits with no bound of its own until the
+    # gateway gives up at ~100s and answers the browser itself. The worker is
+    # still held all that time, and this service runs WEB_CONCURRENCY=1, so one
+    # stuck request is the whole API.
+    #
+    # These three bound each stage:
+    #
+    #   timeout           how long to wait for a NEW connection to open
+    #   command_timeout   how long any single statement may run, client-side
+    #   statement_timeout the same bound applied by Postgres itself, so the
+    #                     server stops working on it too rather than finishing
+    #                     a query nobody is waiting for any more
+    #
+    # 15s is far above what this catalogue needs — the /cars page is four
+    # indexed queries — and far below the ~100s the gateway allows. Anything
+    # slower than this is not going to arrive in time to be useful, and
+    # failing at 15s turns a dead tab into a retry that usually works.
+    #
+    # A timeout surfaces as an error, not a hang, which is the point: the
+    # browser gets a real status it can retry (see the 502/503/504 retry in
+    # CarsDataService) instead of a gateway page it cannot interpret.
+    engine_kwargs["connect_args"] = {
+        "ssl": "require",
+        "timeout": 10.0,
+        "command_timeout": 15.0,
+        "server_settings": {"statement_timeout": "15000"},
+    }
 
 engine = create_async_engine(settings.async_database_url, **engine_kwargs)
 
