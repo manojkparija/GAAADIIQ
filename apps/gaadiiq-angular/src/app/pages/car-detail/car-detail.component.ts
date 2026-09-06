@@ -219,6 +219,43 @@ function similarPriceWindow(anchor: number): number {
   return Math.max(anchor * 0.35, 150000);
 }
 
+/**
+ * Why an enquiry could not be saved, in words a reader can act on.
+ *
+ * REPORTED FROM THE LIVE SITE: "send enquiry form is not getting submitted".
+ *
+ * The form said "Could not send enquiry. Please try again." — advice that
+ * cannot work, because the failure is identical on every attempt. It also
+ * discarded the only thing that says which layer broke. The catalogue outage
+ * cost a day for exactly that reason, and the fix there was the same as here:
+ * show the error rather than a reassurance.
+ *
+ * Two failures get a plain sentence because a buyer can do something about
+ * them; everything else keeps the database's own words, because the person who
+ * needs those is whoever is fixing it, and a screenshot of this panel is the
+ * cheapest way to get them.
+ */
+export function describeEnquiryFailure(error: unknown): string {
+  const err = (error ?? {}) as { code?: string; message?: string; details?: string };
+  const code = err.code ?? '';
+
+  // 22P02 invalid_text_representation — what a UUID sent to an int column
+  // produces. 42703 undefined_column, 42P01 undefined_table: the schema the
+  // code expects is not the schema that is deployed. None of these are the
+  // buyer's doing and none improve on a retry, so say so plainly.
+  if (code === '22P02' || code === '42703' || code === '42P01') {
+    return `This form is misconfigured at our end — your details were not sent. (${code}: ${err.message ?? 'schema mismatch'})`;
+  }
+
+  // 42501 insufficient_privilege — a row-level security policy refused it.
+  if (code === '42501') {
+    return `We are not permitted to record this enquiry right now. (${code})`;
+  }
+
+  const detail = err.message || err.details || String(error);
+  return `Could not send enquiry: ${detail}`;
+}
+
 @Component({
   selector: 'app-car-detail',
   standalone: true,
@@ -594,7 +631,12 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     });
     this.enquirySubmitting.set(false);
     if (error) {
-      this.enquiryError.set('Could not send enquiry. Please try again.');
+      // "Please try again" was advice that could not work: the failure is the
+      // same on every attempt, and the message threw away the one thing that
+      // said why. The catalogue outage cost a day for exactly this reason —
+      // six fixes aimed at the wrong layer because nobody had the real error.
+      console.error('Enquiry insert failed:', error);
+      this.enquiryError.set(describeEnquiryFailure(error));
     } else {
       this.enquirySent.set(true);
       this.enquiryForm = { name: '', phone: '', email: '', notes: '' };
