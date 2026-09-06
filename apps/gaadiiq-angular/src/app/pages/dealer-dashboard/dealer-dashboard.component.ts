@@ -23,6 +23,15 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 interface CarEnquiry {
   id: string; car_id: string; buyer_name: string; buyer_phone: string;
   buyer_email: string | null; notes: string | null; created_at: string;
+  /**
+   * Where this enquiry has got to. Same five values car_leads uses, so the
+   * two inboxes read the same way (025).
+   *
+   * Optional because a row written before 025 has no status until the column
+   * default fills it in, and a dashboard that renders `undefined` in a select
+   * is worse than one that shows 'new'.
+   */
+  status?: LeadStatus;
 }
 
 interface DealerMetric { label: string; value: string; change: string; up: boolean; icon: string; }
@@ -117,6 +126,10 @@ export class DealerDashboardComponent {
    * and no SELECT policy went unnoticed.
    */
   enquiriesError = signal('');
+  /** The enquiry whose status is being written, so its select can disable. */
+  savingEnquiryId = signal<string | null>(null);
+  /** The enquiry whose last status write failed. */
+  enquiryStatusError = signal<string | null>(null);
 
   testDriveRequests = this.testDriveSvc.requests;
   testDriveCount = computed(() => this.testDriveRequests().length);
@@ -376,6 +389,46 @@ export class DealerDashboardComponent {
    * refused read into an empty list, which looks exactly like "no enquiries
    * yet" — and that indistinguishability is what let this sit unnoticed.
    */
+  /**
+   * Move an enquiry along.
+   *
+   * Optimistic, then reverted on failure — the same shape as the car-leads
+   * status write above, because these are two views of the same job and a
+   * dealer should not have to learn that one of them lies about having saved.
+   *
+   * The write is allowed by the UPDATE policy in 025, which reuses 024's read
+   * rule verbatim: whoever may see an enquiry may move it. Anyone else is
+   * refused by the database, not merely by this component — the anon key ships
+   * in the browser bundle, so a check here alone would be advisory.
+   */
+  async setEnquiryStatus(enquiry: CarEnquiry, status: LeadStatus): Promise<void> {
+    const previous = enquiry.status;
+    if (previous === status) return;
+
+    this.savingEnquiryId.set(enquiry.id);
+    this.enquiryStatusError.set(null);
+    this.enquiries.update(rows =>
+      rows.map(r => (r.id === enquiry.id ? { ...r, status } : r)),
+    );
+
+    try {
+      const { error } = await this.sb.client
+        .from('car_enquiries')
+        .update({ status })
+        .eq('id', enquiry.id);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Could not save enquiry status:', err);
+      this.enquiries.update(rows =>
+        rows.map(r => (r.id === enquiry.id ? { ...r, status: previous } : r)),
+      );
+      this.enquiryStatusError.set(enquiry.id);
+    } finally {
+      this.savingEnquiryId.set(null);
+    }
+  }
+
   private async loadEnquiries() {
     this.enquiriesLoading.set(true);
     try {

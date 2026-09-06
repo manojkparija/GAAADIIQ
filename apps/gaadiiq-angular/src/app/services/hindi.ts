@@ -523,11 +523,11 @@ export const HINDI: Record<string, string> = {
     'तुलना टूल खोलें',
   'Send Enquiry':
     'पूछताछ भेजें',
-  'Our team will connect you with the seller within 2 hours.':
-    'हमारी टीम 2 घंटे के भीतर आपको सेलर से जोड़ेगी।',
+  'Our team will get back to you — usually the same day. Your details go to us, not to other buyers.':
+    'हमारी टीम आपसे संपर्क करेगी — आमतौर पर उसी दिन। आपकी जानकारी हमारे पास रहती है, अन्य खरीदारों के पास नहीं।',
   'Enquiry Sent!':
     'पूछताछ भेज दी गई!',
-  'Our team will contact you within 2 hours to arrange a callback with the seller.':
+  'We have your details and will get back to you — usually the same day.':
     'हमारी टीम 2 घंटे के भीतर आपसे संपर्क करके सेलर से बात कराएगी।',
   'Close':
     'बंद करें',
