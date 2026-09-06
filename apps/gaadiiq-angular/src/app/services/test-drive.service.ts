@@ -20,6 +20,19 @@ export interface TestDriveRequest {
   outcome_notes?: string | null;
   completed_at?: string | null;
   created_at?: string;
+  /**
+   * The sales executive handling this drive, and how to reach them (026).
+   *
+   * Free text rather than a link to a staff record, because no such record
+   * exists — the role enum is buyer | seller | dealer | admin, and `sellers`
+   * is a business rather than a person on the floor. The migration explains
+   * why inventing one to satisfy a two-field request was the wrong order of
+   * work, and how this upgrades later without losing what is typed now.
+   */
+  executive_name?: string | null;
+  executive_phone?: string | null;
+  /** When somebody first took it on. Not reset by a later reassignment. */
+  assigned_at?: string | null;
 }
 
 /** Did the appointment happen? */
@@ -81,7 +94,13 @@ export class TestDriveService {
    */
   async update(
     id: number,
-    changes: { status?: string; outcome?: string | null; outcome_notes?: string | null },
+    changes: {
+      status?: string;
+      outcome?: string | null;
+      outcome_notes?: string | null;
+      executive_name?: string | null;
+      executive_phone?: string | null;
+    },
   ): Promise<boolean> {
     const patch: Record<string, unknown> = { ...changes, updated_at: new Date().toISOString() };
 
@@ -95,6 +114,16 @@ export class TestDriveService {
     // hanging off an appointment that did not take place.
     if (changes.status && changes.status !== 'Completed') {
       patch['outcome'] = null;
+    }
+
+    // Stamped the first time a name is written, and never again. It answers
+    // "how long did this sit unassigned", so a later handover to a different
+    // executive must not restart the clock on how long the buyer waited for
+    // anybody at all. Clearing the name does not clear the stamp either: it
+    // did get picked up once, and that happened.
+    if (changes.executive_name) {
+      const existing = this.requests().find(r => r.id === id);
+      if (!existing?.assigned_at) patch['assigned_at'] = new Date().toISOString();
     }
 
     const { data, error } = await this.sb.client
