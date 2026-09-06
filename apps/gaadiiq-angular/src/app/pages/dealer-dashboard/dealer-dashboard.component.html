@@ -511,6 +511,7 @@
           <span>Phone</span>
           <span>Status</span>
           <span>Deal</span>
+          <span>{{ 'Handled by' | t }}</span>
           <span>Received</span>
         </div>
         <!--
@@ -549,6 +550,27 @@
                                (ngModelChange)="setTestDriveOutcome(r, $event)"
                                [name]="'td_outcome_' + r.id" />
             <span class="td-outcome-na" *ngIf="r.status !== 'Completed'">—</span>
+          </span>
+
+          <!-- Who is handling this drive. Two free-text fields rather than a
+               picker because there is no staff record to pick from: the role
+               enum is buyer | seller | dealer | admin, and `sellers` is a
+               business, not a person on the floor. 026 explains why building
+               that first was the wrong order, and how this upgrades later.
+
+               Written on blur, not on each keystroke: a save per character
+               would be a write per character, and the row already reverts
+               visibly when one fails. -->
+          <span class="td-exec-cell">
+            <input class="td-exec-input" type="text" [attr.aria-label]="'Sales executive name'"
+                   placeholder="Name"
+                   [value]="r.executive_name || ''"
+                   (blur)="setTestDriveExecutive(r, $any($event.target).value, r.executive_phone || '')">
+            <input class="td-exec-input" type="tel" [attr.aria-label]="'Sales executive phone'"
+                   placeholder="Phone"
+                   [value]="r.executive_phone || ''"
+                   (blur)="setTestDriveExecutive(r, r.executive_name || '', $any($event.target).value)">
+            <small class="td-sub" *ngIf="r.assigned_at">Assigned {{ timeAgo(r.assigned_at) }}</small>
           </span>
 
           <span class="td-time">

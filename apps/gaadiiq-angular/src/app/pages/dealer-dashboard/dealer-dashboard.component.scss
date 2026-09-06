@@ -232,7 +232,10 @@
 
 .td-header, .td-row {
   display: grid;
-  grid-template-columns: 1.2fr 1.5fr 1.2fr 1fr 1fr 0.8fr 0.8fr;
+  // Eight columns since 026 added "Handled by". That cell holds two inputs
+  // stacked, so it is given more room than the single-control ones either
+  // side of it.
+  grid-template-columns: 1.2fr 1.5fr 1.2fr 1fr 1fr 0.8fr 1.3fr 0.8fr;
   gap: 0.5rem; padding: 0.75rem 1rem; align-items: center;
   font-size: 0.85rem;
 }
@@ -520,4 +523,31 @@
   font-size: 0.75rem;
   line-height: 1.4;
   color: var(--danger-ink, #b91c1c);
+}
+
+
+/* Who is handling a test drive (026). Two fields stacked: a name and a number
+   somebody can ring, which is how this business reaches people. */
+.td-exec-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.td-exec-input {
+  width: 100%;
+  padding: 0.3rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-soft, rgba(0,0,0,0.12));
+  background: var(--bg, #fff);
+  /* Explicit, because a bare <input> does not inherit colour from its parent
+     and falls back to the user agent's near-black in both themes — the same
+     way the listing-type buttons vanished in dark mode (#229). */
+  color: var(--text);
+  font-family: inherit;
+  /* 0.75rem, not smaller: e2e/typography.spec.ts rejects text under 11px. */
+  font-size: 0.75rem;
+
+  &::placeholder { color: var(--text-muted); }
+  &:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
 }

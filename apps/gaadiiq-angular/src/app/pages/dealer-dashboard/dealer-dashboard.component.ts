@@ -168,9 +168,36 @@ export class DealerDashboardComponent {
     await this.writeTestDrive(r, { outcome: outcome || null });
   }
 
+  /**
+   * Record which sales executive is handling this drive (026).
+   *
+   * Both fields are written together because the two inputs describe one
+   * person: saving a name without the number that arrived with it would leave
+   * a colleague with somebody to blame and nobody to ring.
+   *
+   * Trimmed, and an emptied field becomes null rather than "". A row where
+   * nobody is assigned and a row assigned to the empty string are the same
+   * thing to a reader and different things to a query, and the index that
+   * finds unassigned requests looks for NULL.
+   */
+  async setTestDriveExecutive(r: TestDriveRequest, name: string, phone: string) {
+    if (!r.id) return;
+    const nextName = name.trim() || null;
+    const nextPhone = phone.trim() || null;
+    if (nextName === (r.executive_name ?? null) && nextPhone === (r.executive_phone ?? null)) {
+      return;
+    }
+    await this.writeTestDrive(r, { executive_name: nextName, executive_phone: nextPhone });
+  }
+
   private async writeTestDrive(
     r: TestDriveRequest,
-    changes: { status?: string; outcome?: string | null },
+    changes: {
+      status?: string;
+      outcome?: string | null;
+      executive_name?: string | null;
+      executive_phone?: string | null;
+    },
   ) {
     this.savingTestDrive.set(r.id!);
     this.testDriveError.set(null);
