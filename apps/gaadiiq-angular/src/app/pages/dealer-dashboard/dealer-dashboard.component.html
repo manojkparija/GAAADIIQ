@@ -598,16 +598,26 @@
       <div *ngIf="!enquiriesLoading() && !enquiriesError() && enquiries().length === 0" class="glass-card" style="padding:2rem;text-align:center;color:var(--muted)">
         No enquiries yet. They'll appear here once buyers contact you through a listing.
       </div>
-      <div *ngIf="enquiries().length > 0" class="leads-table glass-card">
+      <div *ngIf="enquiries().length > 0" class="leads-table enq-table glass-card">
         <div class="lt-row lt-header">
-          <span>Buyer</span><span>Phone</span><span>{{ 'Email' | t }}</span><span>{{ 'Notes' | t }}</span><span>Received</span><span>{{ 'Status' | t }}</span>
+          <span>Buyer</span><span>Phone</span><span>{{ 'Email' | t }}</span><span>{{ 'Notes' | t }}</span><span>Received</span><span>{{ 'Status' | t }}</span><span>{{ 'Dealer' | t }}</span>
         </div>
         <div class="lt-row" *ngFor="let e of enquiries()">
           <span class="lt-name">{{ e.buyer_name }}</span>
           <span><a [href]="'tel:' + e.buyer_phone" style="color:var(--primary)">{{ e.buyer_phone }}</a></span>
           <span style="font-size:.8rem;color:var(--muted)">{{ e.buyer_email || '—' }}</span>
           <span style="font-size:.78rem;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="e.notes">{{ e.notes || '—' }}</span>
-          <span class="lt-time">{{ timeAgo(e.created_at) }}</span>
+          <!-- Age is shown, not just "3 days ago", because a handover is a
+               transfer of a live lead rather than a queue being drained. A car
+               enquiry has a shelf life of weeks; one flagged stale here is one
+               an admin should think twice about passing on, since the buyer
+               has most likely already bought. -->
+          <span class="lt-time">
+            {{ timeAgo(e.created_at) }}
+            <small class="enq-stale" *ngIf="isStaleEnquiry(e.created_at)">
+              {{ enquiryAgeDays(e.created_at) }}d — likely cold
+            </small>
+          </span>
           <!-- The raw car UUID used to occupy this column. It told a dealer
                nothing they could act on; knowing whether they have rung this
                person back is the thing they actually need from a list. -->
@@ -620,6 +630,32 @@
             <small *ngIf="enquiryStatusError() === e.id" style="display:block;color:#FF6B6B;font-size:.7rem">
               {{ 'Not saved' | t }}
             </small>
+          </span>
+
+          <!-- Who this lead was handed to (027). Admin-only: assignment is an
+               act of giving a buyer's phone number to a third party, so a
+               dealer can work a lead they were given but not take one they
+               were not. -->
+          <span>
+            <ng-container *ngIf="isAdmin(); else assignedReadonly">
+              <select class="enq-status" *ngIf="assignableSellers().length > 0"
+                      [ngModel]="e.assigned_seller_id ?? ''" name="enq-dealer-{{ e.id }}"
+                      [disabled]="savingEnquiryId() === e.id"
+                      (ngModelChange)="assignEnquiry(e, $event)">
+                <option value="">{{ 'Unassigned' | t }}</option>
+                <option *ngFor="let s of assignableSellers()" [value]="s.id">
+                  {{ s.business_name }} · {{ s.city }}
+                </option>
+              </select>
+              <!-- The go-live case, said plainly rather than shown as an empty
+                   dropdown that looks broken. -->
+              <small *ngIf="assignableSellers().length === 0" style="color:var(--text-muted);font-size:.7rem">
+                {{ 'No dealers onboarded yet' | t }}
+              </small>
+            </ng-container>
+            <ng-template #assignedReadonly>
+              <span style="font-size:.78rem">{{ sellerName(e.assigned_seller_id) || '—' }}</span>
+            </ng-template>
           </span>
         </div>
       </div>

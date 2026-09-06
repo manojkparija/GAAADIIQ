@@ -523,8 +523,8 @@ export const HINDI: Record<string, string> = {
     'तुलना टूल खोलें',
   'Send Enquiry':
     'पूछताछ भेजें',
-  'Our team will get back to you — usually the same day. Your details go to us, not to other buyers.':
-    'हमारी टीम आपसे संपर्क करेगी — आमतौर पर उसी दिन। आपकी जानकारी हमारे पास रहती है, अन्य खरीदारों के पास नहीं।',
+  'Our team will get back to you — usually the same day. Your details go to us, and to the dealer we pass your enquiry to.':
+    'हमारी टीम आपसे संपर्क करेगी — आमतौर पर उसी दिन। आपकी जानकारी हमारे पास और उस डीलर के पास जाती है जिसे हम आपकी पूछताछ भेजते हैं।',
   'Enquiry Sent!':
     'पूछताछ भेज दी गई!',
   'We have your details and will get back to you — usually the same day.':

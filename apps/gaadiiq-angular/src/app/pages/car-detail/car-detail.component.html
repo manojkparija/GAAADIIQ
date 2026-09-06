@@ -828,9 +828,15 @@
            terms for a catalogue car, which has no seller behind it at all.
            An alert now reaches the team (services/enquiry_alerts.py), so the
            commitment made here is one that is kept: somebody is told, and they
-           get back to you. No stated deadline, because none is enforced. -->
+           get back to you. No stated deadline, because none is enforced.
+
+           Updated again with 027, which lets an admin hand an enquiry to a
+           dealer. Passing a phone number to a third party is a different thing
+           from holding it, and "your details go to us, not to other buyers"
+           implied a containment that would no longer be true. The wording
+           changes in the same release as the behaviour rather than after it. -->
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem">
-        {{ 'Our team will get back to you — usually the same day. Your details go to us, not to other buyers.' | t }}
+        {{ 'Our team will get back to you — usually the same day. Your details go to us, and to the dealer we pass your enquiry to.' | t }}
       </p>
       <div style="display:flex;flex-direction:column;gap:0.75rem">
         <input class="enq-input" type="text" placeholder="Your Name *" [(ngModel)]="enquiryForm.name">

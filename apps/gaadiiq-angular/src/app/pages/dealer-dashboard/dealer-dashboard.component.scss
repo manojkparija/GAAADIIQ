@@ -551,3 +551,23 @@
   &::placeholder { color: var(--text-muted); }
   &:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
 }
+
+
+/* An enquiry old enough that handing it to a dealer needs a second thought
+   (027). A car enquiry has a shelf life of weeks; passing on a three-month-old
+   one is asking a new dealer to cold-call somebody who has already bought. */
+.enq-stale {
+  display: block;
+  color: var(--warning-ink, #92400e);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+
+/* The enquiries table is not the Recent Leads preview, though it borrows its
+   styling. It carries seven columns — buyer, phone, email, notes, received,
+   status, dealer — where that one carries six, so it needs its own track list
+   rather than inheriting one that leaves the last column with no room. */
+.leads-table.enq-table .lt-row {
+  grid-template-columns: 1.2fr 1.1fr 1.3fr 1.4fr 1fr 1fr 1.2fr;
+}

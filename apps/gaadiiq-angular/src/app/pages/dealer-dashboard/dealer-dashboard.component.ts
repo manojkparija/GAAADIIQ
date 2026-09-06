@@ -32,6 +32,9 @@ interface CarEnquiry {
    * is worse than one that shows 'new'.
    */
   status?: LeadStatus;
+  /** The dealer this lead was handed to, if any (027). */
+  assigned_seller_id?: number | null;
+  assigned_to_dealer_at?: string | null;
 }
 
 interface DealerMetric { label: string; value: string; change: string; up: boolean; icon: string; }
@@ -130,6 +133,84 @@ export class DealerDashboardComponent {
   savingEnquiryId = signal<string | null>(null);
   /** The enquiry whose last status write failed. */
   enquiryStatusError = signal<string | null>(null);
+
+  /**
+   * Dealers an admin can hand an enquiry to (027). Empty before anyone is
+   * onboarded, which is the go-live case and why the control says so rather
+   * than offering an empty dropdown.
+   */
+  assignableSellers = signal<Seller[]>([]);
+
+  /**
+   * How long an enquiry has been waiting, in days.
+   *
+   * Shown because a handover is a transfer of a live lead, not a queue being
+   * drained. A car enquiry has a shelf life of weeks: passing a dealer
+   * something from three months ago is asking them to cold-call someone who
+   * has already bought, and it starts the relationship with dead numbers.
+   * Making the age visible is what lets an admin decline to hand one over.
+   */
+  enquiryAgeDays(createdAt: string): number {
+    return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86_400_000);
+  }
+
+  /** Old enough that handing it to a dealer needs a second thought. */
+  isStaleEnquiry(createdAt: string): boolean {
+    return this.enquiryAgeDays(createdAt) >= 30;
+  }
+
+  /**
+   * Hand an enquiry to a dealer, or take it back.
+   *
+   * Deliberately an explicit act on one row rather than a bulk "assign all
+   * unassigned". An enquiry against catalogue stock has no dealer by
+   * construction — it is manufacturer inventory, not somebody's advert — and
+   * a bulk action would sweep those into a handover along with the rest.
+   */
+  async assignEnquiry(enquiry: CarEnquiry, sellerId: string): Promise<void> {
+    const next = sellerId ? Number(sellerId) : null;
+    if (next === (enquiry.assigned_seller_id ?? null)) return;
+
+    const previousId = enquiry.assigned_seller_id ?? null;
+    const previousAt = enquiry.assigned_to_dealer_at ?? null;
+    const assignedAt = next ? new Date().toISOString() : null;
+
+    this.savingEnquiryId.set(enquiry.id);
+    this.enquiryStatusError.set(null);
+    this.enquiries.update(rows =>
+      rows.map(r =>
+        r.id === enquiry.id
+          ? { ...r, assigned_seller_id: next, assigned_to_dealer_at: assignedAt }
+          : r,
+      ),
+    );
+
+    try {
+      const { error } = await this.sb.client
+        .from('car_enquiries')
+        .update({ assigned_seller_id: next, assigned_to_dealer_at: assignedAt })
+        .eq('id', enquiry.id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Could not assign enquiry:', err);
+      this.enquiries.update(rows =>
+        rows.map(r =>
+          r.id === enquiry.id
+            ? { ...r, assigned_seller_id: previousId, assigned_to_dealer_at: previousAt }
+            : r,
+        ),
+      );
+      this.enquiryStatusError.set(enquiry.id);
+    } finally {
+      this.savingEnquiryId.set(null);
+    }
+  }
+
+  /** The dealer's name for a row, for display. */
+  sellerName(id: number | null | undefined): string {
+    if (!id) return '';
+    return this.assignableSellers().find(s => s.id === id)?.business_name ?? `#${id}`;
+  }
 
   testDriveRequests = this.testDriveSvc.requests;
   testDriveCount = computed(() => this.testDriveRequests().length);
@@ -351,6 +432,11 @@ export class DealerDashboardComponent {
 
     // Load buyer enquiries for this seller's car listings
     this.loadEnquiries();
+    // Only an admin assigns, so only an admin needs the list. A dealer
+    // fetching every other dealer's business details serves nothing.
+    if (this.auth.isAdmin()) {
+      this.sellersSvc.listAll().then(rows => this.assignableSellers.set(rows));
+    }
     this.loadLeads();
   }
 
