@@ -270,8 +270,12 @@
                   <span class="variant-spec-line">
                     <ng-container *ngIf="v.fuel_type">{{ v.fuel_type }}</ng-container>
                     <ng-container *ngIf="v.transmission"> · {{ v.transmission }}</ng-container>
-                    <ng-container *ngIf="v.engine_cc"> · {{ v.engine_cc }} cc</ng-container>
-                    <ng-container *ngIf="v.mileage"> · {{ v.mileage }}</ng-container>
+                    <!-- Units come from the fuel, not from the column name.
+                         "49 cc" on an electric car is a moped; the figure is
+                         49 kWh, and the description below this line said so
+                         while this line contradicted it. -->
+                    <ng-container *ngIf="v.engine_cc"> · {{ variantCapacity(v) }}</ng-container>
+                    <ng-container *ngIf="v.mileage"> · {{ variantEconomy(v) }}</ng-container>
                   </span>
                   <span class="variant-features" *ngIf="v.features?.length">
                     {{ featureList(v.features!) }}

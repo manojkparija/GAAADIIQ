@@ -161,6 +161,67 @@ export const PLACEHOLDER = 'assets/cars/placeholder.svg';
  * - aeplcdn, a third party's URLs that are frequently dead. A broken image
  *   tag is worse than an honest absence.
  */
+/** Whether a fuel string names a battery-electric car. */
+export function isElectricFuel(fuel: string | null | undefined): boolean {
+  // The API sends "electric" and the UI sometimes carries "Electric"; a
+  // startsWith also catches "Electric (BEV)" without needing a list.
+  return (fuel ?? '').trim().toLowerCase().startsWith('electric');
+}
+
+/**
+ * The engine/battery figure with the unit it is actually measured in.
+ *
+ * REPORTED WITH A SCREENSHOT
+ *
+ *     e Vitara Delta — Electric · Automatic · 49 cc · 440
+ *
+ * 49cc is a moped. The column is `engine_cc` and the renderer appended "cc"
+ * unconditionally, so for an EV it stamped a petrol unit on a battery figure —
+ * the value is 49 **kWh**, and the car's own description two lines below said
+ * "Battery Capacity: 49 kWh" while the summary line contradicted it.
+ *
+ * The storage is not the problem and is deliberately left alone: one numeric
+ * column holds "engine size" for whatever the car burns or stores. What was
+ * wrong is that the unit was hardcoded where the number was displayed, in
+ * three separate places, none of which asked what kind of car it was.
+ */
+export function capacityLabel(
+  engineCc: number | null | undefined,
+  fuel: string | null | undefined,
+): string | null {
+  if (engineCc == null) return null;
+  return isElectricFuel(fuel) ? `${engineCc} kWh` : `${engineCc} cc`;
+}
+
+/** "Battery" or "Engine" — what that figure is a measurement of. */
+export function capacitySpecLabel(fuel: string | null | undefined): string {
+  return isElectricFuel(fuel) ? 'Battery' : 'Engine';
+}
+
+/**
+ * The economy figure with a unit, when we can tell what it is.
+ *
+ * The same screenshot ended "· 440" with nothing after it. For a petrol trim
+ * this field arrives already carrying its unit ("21.79 km/l"); for the EVs it
+ * is a bare number, and a bare 440 beside a bare 49 reads as two figures of
+ * the same kind, which is exactly the confusion being fixed.
+ *
+ * Only the electric case is inferred, because it is the only one where the
+ * meaning is unambiguous: a bare number on a battery car is range in km.
+ * A bare number on a petrol car could be kmpl or km per tank, so it is left
+ * exactly as stored rather than guessed at — inventing a unit is how a figure
+ * becomes wrong instead of merely incomplete.
+ */
+export function economyLabel(
+  mileage: string | null | undefined,
+  fuel: string | null | undefined,
+): string | null {
+  const raw = (mileage ?? '').trim();
+  if (!raw) return null;
+  const bareNumber = /^\d+(\.\d+)?$/.test(raw);
+  return isElectricFuel(fuel) && bareNumber ? `${raw} km range` : raw;
+}
+
 /**
  * Statuses where asking again is likely to get a different answer.
  *
@@ -475,7 +536,7 @@ function mapListing(lst: ApiListing): Car {
       if (enrichFn) return enrichFn(car.variant ?? '', FUEL_LABEL[car.fuel_type ?? ''] ?? '');
       return {
         specs: car.engine_cc ? [
-          { label: 'Engine', value: `${car.engine_cc} cc` },
+          { label: capacitySpecLabel(car.fuel_type), value: capacityLabel(car.engine_cc, car.fuel_type)! },
           ...(car.seating_capacity ? [{ label: 'Seating', value: `${car.seating_capacity} seats` }] : []),
         ] : [],
         features: [] as string[],
@@ -541,7 +602,7 @@ function mapCatalogueCar(car: ApiCar): Car {
     // A curated specification wins; the engine/seating pair is the fallback
     // for a model nobody has researched yet.
     specs: car.specs?.length ? car.specs : (car.engine_cc ? [
-      { label: 'Engine', value: `${car.engine_cc} cc` },
+      { label: capacitySpecLabel(car.fuel_type), value: capacityLabel(car.engine_cc, car.fuel_type)! },
       ...(car.seating_capacity ? [{ label: 'Seating', value: `${car.seating_capacity} seats` }] : []),
     ] : []),
     features: car.features ?? [],
