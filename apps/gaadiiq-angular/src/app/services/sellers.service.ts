@@ -46,6 +46,26 @@ export class SellersService {
     return seller;
   }
 
+  /**
+   * Every dealer, for an admin choosing who to hand an enquiry to (027).
+   *
+   * Not cached: the whole point of this list is that it grows as dealers are
+   * onboarded, and a cached copy would leave an admin unable to assign to the
+   * dealer who joined this morning.
+   *
+   * Returns [] rather than the dummy on failure. A fabricated dealer in an
+   * assignment dropdown is a lead sent to a business that does not exist —
+   * far worse than an empty list, which at least says "nobody yet".
+   */
+  async listAll(): Promise<Seller[]> {
+    const { data, error } = await this.sb.client
+      .from('sellers')
+      .select('*')
+      .order('business_name');
+    if (error || !data) return [];
+    return data as Seller[];
+  }
+
   async getByEmail(email: string): Promise<Seller | null> {
     const { data, error } = await this.sb.client
       .from('sellers')
