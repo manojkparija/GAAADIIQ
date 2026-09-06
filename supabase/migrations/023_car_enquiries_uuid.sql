@@ -31,17 +31,29 @@
 -- abort this transaction and take the column change down with it — which is
 -- exactly what happened.
 --
--- Nor can it simply be pointed at the right table here. The names in 009 —
--- car_listings, sellers — do not exist; the real ones are `listings`
--- (uuid id, uuid car_id, uuid seller_id -> users.id) and `users`. Rewriting
--- the policy against those is a change to who can read buyer contact details,
--- which is a decision about access to personal data and not something to
--- smuggle into a column-type fix. dealer-dashboard.component.ts queries the
--- same non-existent car_listings, so the seller-side read is broken end to end
--- and wants fixing as one deliberate piece.
+-- Nor can it simply be pointed at the right table here. Introspection of the
+-- live database (023a) returned car_enquiries, cars, listings, sellers and
+-- users — so of the two names 009 uses, `sellers` is real and `car_listings`
+-- is the one that does not exist. The table it was reaching for is `listings`
+-- (uuid id, uuid car_id -> cars.id, uuid seller_id -> users.id).
+--
+-- Rewriting the policy against that is a change to who can read buyer contact
+-- details, which is a decision about access to personal data and not something
+-- to smuggle into a column-type fix — the more so because `sellers` and
+-- `users` are two different tables and which one a seller is identified by
+-- decides who gets to see phone numbers. dealer-dashboard.component.ts queries
+-- the same non-existent car_listings, so the seller-side read is broken end to
+-- end and wants fixing as one deliberate piece.
 --
 -- The effect of this migration on read access is therefore: none. There is no
 -- policy to drop and none is added.
+--
+-- CONFIRMED AGAINST PRODUCTION BEFORE RUNNING (023a)
+--
+--   car_enquiries.car_id  -> integer, NOT NULL     (the bug, measured)
+--   policies on the table -> enquiries_insert only (so the DROP below is a
+--                                                   genuine no-op)
+--   car_listings          -> absent
 --
 -- WHY THE OLD ROWS CAN BE CONVERTED WITHOUT LOSS
 --
