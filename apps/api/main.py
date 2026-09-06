@@ -317,6 +317,18 @@ async def lifespan(app: FastAPI):
     from db.session import engine
     await report_schema_drift(engine)
 
+    # Fetch Supabase's signing keys before the first request needs them.
+    #
+    # httpx.get is synchronous and this service runs with WEB_CONCURRENCY=1, so
+    # whichever request used to trigger the fetch stopped the event loop for as
+    # long as it took — measured at 5s in Render's log, against 2s for the same
+    # three requests in the round that did not pay for it. Public catalogue
+    # reads that carry no token at all waited behind it.
+    #
+    # Awaited here on purpose: startup is allowed to block, a request is not.
+    from services.llm_tier import warm_jwks_cache
+    await warm_jwks_cache()
+
     start_scheduler()
 
     # Two subsystems that degrade silently by design. That is right for
