@@ -444,6 +444,75 @@
   .nav-ic { display: none; }
 }
 
+/* ── The band where the desktop bar does not actually fit ─────────────────
+   REPORTED WITH A SCREENSHOT, TWICE
+
+   "English" drawn on top of "News", the city pill over "Journey". Not an
+   overflow — the document never scrolls sideways, which is why the existing
+   nav-overflow.spec passed throughout and why this survived a first report.
+
+   MEASURED, at every width from 1181 to 1920:
+
+     logo 196 + links 829 (natural) + utils 368 = 1393, plus 2 x 1rem gap = 1425
+
+   `.nav-links` carries `min-width: 0` and its children are inline-flex with
+   no wrapping, so when the bar is narrower than that the ul is squeezed below
+   its content width and the links simply paint outside their own box —
+   underneath `.nav-utils`, which holds its ground with `flex-shrink: 0`.
+   Nothing overflows the document, so nothing complained.
+
+   The links reach their natural width only at 1500px. So every laptop in the
+   1181-1499 range — 1280, 1366, 1440, the three most common — was drawing an
+   overlapping bar.
+
+   This band buys back the ~212px the narrowest case is short by, from padding
+   and gaps rather than from font size: e2e/typography.spec.ts rejects body
+   text under 11px, and shrinking type to fit a layout is how that guard ends
+   up being argued with later. The desktop bar at 1500+ is untouched. */
+@media (min-width: 1181px) and (max-width: 1499px) {
+  .nav-inner { gap: 0.5rem; }
+
+  .nav-links {
+    a, .nav-dropdown-trigger { padding: 0.45rem 0.3rem; }
+  }
+
+  .nav-utils {
+    gap: 0.3rem;
+
+    .util-pill { padding: 0 0.5rem; }
+
+    /* The globe still says what the control is; the word "English" beside it
+       is the widest thing in the utilities and the least informative, since
+       the label repeats what the current selection already shows. The city
+       pill keeps its text — it carries a value the reader chose, and it is
+       the one utility this bar deliberately pulls forward. */
+    .lang-btn span { display: none; }
+  }
+}
+
+/* The narrow end of that band is 212px short rather than 180, and the rules
+   above leave it about 12px over. Measured, not estimated: at 1181 "News" was
+   still crossing the language pill by 12px after the first pass. */
+@media (min-width: 1181px) and (max-width: 1279px) {
+  .nav-inner { gap: 0.25rem; }
+  .nav-links {
+    a, .nav-dropdown-trigger { padding: 0.45rem 0.15rem; }
+  }
+  .nav-utils .util-pill { padding: 0 0.35rem; }
+
+  /* The last 27px, taken from the logo rather than from the links.
+     196px and `flex-shrink: 0`, so it was the one element paying nothing
+     towards the squeeze. Scaling it is not a new idea here — the bar already
+     scales it to 0.9 when scrolled — and at 0.86 it is still the largest
+     thing in the bar. The alternative was link padding below 0.15rem, which
+     stops reading as separate links. */
+  .logo {
+    transform: scale(0.86);
+    transform-origin: left center;
+    margin-right: -1.6rem;   /* reclaim the space scale() leaves behind */
+  }
+}
+
 @media (max-width: 1180px) {
   .nav-utils.hide-mobile { display: none !important; }
   .hamburger.hide-desktop { display: flex !important; }

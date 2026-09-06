@@ -73,7 +73,12 @@ export default defineConfig({
       // names, no browser, no API.
       // cache-freshness likewise: reads ngsw-config.json and the API's
       // cache_policy.py, no browser, no API.
-      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|api-origin|dealer-dashboard|pwa-icons|brand-logos|cache-freshness)\.spec\.ts/,
+      // nav-overlap joins nav-overflow: same bar, different failure. One asks
+      // whether the document scrolls sideways, the other whether two controls
+      // are drawn on top of each other — the bar was doing the second without
+      // ever doing the first, so nav-overflow stayed green through two
+      // screenshot reports. Needs no API.
+      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|nav-overlap|api-origin|dealer-dashboard|pwa-icons|brand-logos|cache-freshness)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {
