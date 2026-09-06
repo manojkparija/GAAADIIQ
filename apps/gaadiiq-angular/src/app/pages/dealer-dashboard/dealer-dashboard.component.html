@@ -564,7 +564,16 @@
     <ng-container *ngIf="activeTab()==='enquiries'">
       <h2 class="section-head">📩 Buyer <span class="gradient-text">Enquiries</span></h2>
       <div *ngIf="enquiriesLoading()" style="padding:2rem;text-align:center;color:var(--muted)">Loading enquiries…</div>
-      <div *ngIf="!enquiriesLoading() && enquiries().length === 0" class="glass-card" style="padding:2rem;text-align:center;color:var(--muted)">
+      <!-- A refused read is not an empty inbox. Saying "no enquiries yet" when
+           the database actually declined the query is what let a table with
+           RLS enabled and no SELECT policy sit unnoticed: buyers were sending
+           enquiries and this tab reported, confidently, that nobody had. -->
+      <div *ngIf="!enquiriesLoading() && enquiriesError()" class="glass-card"
+           style="padding:2rem;text-align:center;color:#FF6B6B">
+        <app-icon name="alert-triangle" [size]="18"></app-icon>
+        {{ enquiriesError() }}
+      </div>
+      <div *ngIf="!enquiriesLoading() && !enquiriesError() && enquiries().length === 0" class="glass-card" style="padding:2rem;text-align:center;color:var(--muted)">
         No enquiries yet. They'll appear here once buyers contact you through a listing.
       </div>
       <div *ngIf="enquiries().length > 0" class="leads-table glass-card">

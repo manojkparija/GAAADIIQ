@@ -109,6 +109,14 @@ export class DealerDashboardComponent {
 
   enquiries = signal<CarEnquiry[]>([]);
   enquiriesLoading = signal(false);
+  /**
+   * Why the enquiries list is empty, when it is empty for a reason.
+   *
+   * A refused read and "no enquiries yet" render identically as an empty
+   * list, and that is precisely how a table with row-level security enabled
+   * and no SELECT policy went unnoticed.
+   */
+  enquiriesError = signal('');
 
   testDriveRequests = this.testDriveSvc.requests;
   testDriveCount = computed(() => this.testDriveRequests().length);
@@ -302,7 +310,7 @@ export class DealerDashboardComponent {
     this.testDriveSvc.loadForSeller(sellerId ?? null, this.auth.isAdmin());
 
     // Load buyer enquiries for this seller's car listings
-    this.loadEnquiries(sellerId ?? null);
+    this.loadEnquiries();
     this.loadLeads();
   }
 
@@ -345,26 +353,47 @@ export class DealerDashboardComponent {
     }
   }
 
-  private async loadEnquiries(sellerId: number | null) {
+  /**
+   * The enquiries this account is allowed to see.
+   *
+   * Scoped by row-level security (024), not here. This method used to filter
+   * client-side for non-admins by first fetching that seller's rows from
+   * `car_listings` — a table that does not exist in the database. The query
+   * returned null, `ids` came out empty, and the method returned an empty list
+   * before it ever asked about enquiries. So a dealer's Enquiries tab was
+   * always empty, whatever was in the table.
+   *
+   * Removing the filter rather than repairing it is deliberate, and it is the
+   * same move 010_test_drive_outcome.sql made for test drives: a filter
+   * applied in TypeScript is advisory, because the anon key ships in the
+   * browser bundle and anyone holding it can ask for the unfiltered rows.
+   * Enquiries carry a buyer's name, phone number and email. The database is
+   * the only place that rule can actually be enforced, and now it is: a seller
+   * sees enquiries naming their own listings, an admin sees all, and everyone
+   * else sees nothing.
+   *
+   * An error is surfaced rather than swallowed. `{ data }` alone turns a
+   * refused read into an empty list, which looks exactly like "no enquiries
+   * yet" — and that indistinguishability is what let this sit unnoticed.
+   */
+  private async loadEnquiries() {
     this.enquiriesLoading.set(true);
     try {
-      let query = this.sb.client
+      const { data, error } = await this.sb.client
         .from('car_enquiries')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // If not admin, scope to this seller's listings
-      if (sellerId && !this.auth.isAdmin()) {
-        const { data: listings } = await this.sb.client
-          .from('car_listings')
-          .select('id')
-          .eq('seller_id', sellerId);
-        const ids = (listings ?? []).map((l: any) => l.id);
-        if (ids.length === 0) { this.enquiries.set([]); this.enquiriesLoading.set(false); return; }
-        query = query.in('car_id', ids);
+      if (error) {
+        console.error('Could not load enquiries:', error);
+        this.enquiriesError.set(
+          `Could not load enquiries: ${error.message ?? 'unknown error'}`,
+        );
+        this.enquiries.set([]);
+        return;
       }
 
-      const { data } = await query;
+      this.enquiriesError.set('');
       this.enquiries.set((data ?? []) as CarEnquiry[]);
     } finally {
       this.enquiriesLoading.set(false);
