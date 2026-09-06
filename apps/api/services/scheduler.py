@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from db.session import AsyncSessionLocal as async_session_factory
 from models.customer_intent import CustomerIntentScore
+from services.enquiry_alerts import ALERT_POLL_SECONDS, announce_new_enquiries
 from services.llm_tier import JWKS_REFRESH_SECONDS, warm_jwks_cache
 from services.sentiment import analyse_customer_intent
 
@@ -46,10 +47,26 @@ def start_scheduler() -> None:
         id="jwks_refresh",
         replace_existing=True,
     )
+    # Tell somebody a buyer is waiting.
+    #
+    # The enquiry insert goes from the browser straight to Supabase, so no
+    # request ever reaches this service to hook. Polling the table is the only
+    # way the server learns about one — and it is the robust way, because a
+    # buyer who submits and closes the tab is precisely the lead worth
+    # chasing, and their browser is gone.
+    scheduler.add_job(
+        announce_new_enquiries,
+        "interval",
+        seconds=ALERT_POLL_SECONDS,
+        id="enquiry_alerts",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
-        "APScheduler started — nightly rescore at 02:00, JWKS refresh every %ds",
+        "APScheduler started — nightly rescore at 02:00, JWKS refresh every %ds, "
+        "enquiry alerts every %ds",
         JWKS_REFRESH_SECONDS,
+        ALERT_POLL_SECONDS,
     )
 
 

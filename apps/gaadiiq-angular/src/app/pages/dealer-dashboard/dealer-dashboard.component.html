@@ -578,15 +578,27 @@
       </div>
       <div *ngIf="enquiries().length > 0" class="leads-table glass-card">
         <div class="lt-row lt-header">
-          <span>Buyer</span><span>Phone</span><span>{{ 'Email' | t }}</span><span>Car ID</span><span>{{ 'Notes' | t }}</span><span>Received</span>
+          <span>Buyer</span><span>Phone</span><span>{{ 'Email' | t }}</span><span>{{ 'Notes' | t }}</span><span>Received</span><span>{{ 'Status' | t }}</span>
         </div>
         <div class="lt-row" *ngFor="let e of enquiries()">
           <span class="lt-name">{{ e.buyer_name }}</span>
           <span><a [href]="'tel:' + e.buyer_phone" style="color:var(--primary)">{{ e.buyer_phone }}</a></span>
           <span style="font-size:.8rem;color:var(--muted)">{{ e.buyer_email || '—' }}</span>
-          <span style="font-size:.8rem">#{{ e.car_id }}</span>
           <span style="font-size:.78rem;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="e.notes">{{ e.notes || '—' }}</span>
           <span class="lt-time">{{ timeAgo(e.created_at) }}</span>
+          <!-- The raw car UUID used to occupy this column. It told a dealer
+               nothing they could act on; knowing whether they have rung this
+               person back is the thing they actually need from a list. -->
+          <span>
+            <select class="enq-status" [ngModel]="e.status" name="enq-status-{{ e.id }}"
+                    [disabled]="savingEnquiryId() === e.id"
+                    (ngModelChange)="setEnquiryStatus(e, $event)">
+              <option *ngFor="let s of leadStatuses" [value]="s">{{ s }}</option>
+            </select>
+            <small *ngIf="enquiryStatusError() === e.id" style="display:block;color:#FF6B6B;font-size:.7rem">
+              {{ 'Not saved' | t }}
+            </small>
+          </span>
         </div>
       </div>
     </ng-container>
