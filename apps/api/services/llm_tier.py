@@ -51,40 +51,47 @@ class VerifiedCaller:
 # request would put a network round-trip in front of each authenticated call.
 _JWKS: dict | None = None
 _JWKS_FETCHED_AT: float = 0.0
-_JWKS_TTL = 3600.0
-# How soon to try again after a failed refresh, while serving the stale set.
-_JWKS_RETRY_AFTER = 60.0
+# How often warm_jwks_cache() is asked to refresh, from startup and the
+# scheduler. Nothing expires the cache at this interval — a refresh that fails
+# leaves the previous key set in place — so this is a freshness target, not a
+# deadline. Half-hourly against Supabase's rare rotations is generous.
+JWKS_REFRESH_SECONDS = 1800
+# How soon _jwks() may try again when NOTHING is cached. Without this the cold
+# branch is re-entered by every authenticated request, each paying the full 5s
+# timeout on a single worker.
+_JWKS_COLD_RETRY_AFTER = 30.0
+_JWKS_COLD_ATTEMPTED_AT: float = 0.0
 
 
-def _jwks() -> dict | None:
+def refresh_jwks_cache() -> bool:
     """
-    Supabase's public signing keys, refreshed hourly, kept on failure.
+    Fetch the key set and update the cache. Blocking; returns True on success.
 
-    A stale key set is served when the refresh fails, and that is the whole
-    point of this function's shape. It used to return None instead, which
-    signed the entire application out an hour after boot: the cache expires,
-    one refresh fails for any transient reason, and from that moment every
-    authenticated request is 401 until a later fetch happens to succeed. The
-    docstring claimed callers "fall back to the shared-secret path", but that
-    path needs SUPABASE_JWT_SECRET, which this deployment does not set — so
-    there was no fallback, only failure.
+    Split out of _jwks() so it can be driven from somewhere that is allowed to
+    block — startup, and the scheduler — rather than from a request.
 
-    Serving stale keys is not a weakening of verification. A token is still
-    checked against a key whose `kid` it names, and its signature still has to
-    verify; a rotated-away key simply stops matching. What the old behaviour
-    did was throw away keys that were still perfectly good because the network
-    hiccuped.
+    MEASURED, IN RENDER'S OWN LOG
 
-    Returns None only when nothing is cached and no key set can be fetched.
+        09:12:54  OPTIONS x3
+        09:12:55  JWKS fetch, 200 OK
+        09:12:59  the three GETs answer      <- 5s
+        09:13:09  OPTIONS x3, no JWKS line
+        09:13:11  the three GETs answer      <- 2s
+
+    Same three requests, three seconds apart, and the only difference is which
+    round paid for the key fetch. httpx.get is synchronous, the service runs
+    with WEB_CONCURRENCY=1, so the fetch stops the event loop and every request
+    in flight waits behind it — including the catalogue reads, which are
+    public and need no token at all.
+
+    This is not on its own an explanation of the 504s reported from the live
+    site; the 504 is the dead-pooled-connection fault fixed in db/session.py.
+    It is a second, independent stall that was found while looking for it.
     """
     global _JWKS, _JWKS_FETCHED_AT
 
-    # Cache first: a key set already in hand stays valid whether or not a URL
-    # is configured, and checking the URL first made a warm cache unusable.
-    if _JWKS is not None and (time.time() - _JWKS_FETCHED_AT) < _JWKS_TTL:
-        return _JWKS
     if not settings.supabase_url:
-        return _JWKS
+        return False
 
     url = settings.supabase_url.rstrip("/") + "/auth/v1/.well-known/jwks.json"
     try:
@@ -94,25 +101,84 @@ def _jwks() -> dict | None:
         resp.raise_for_status()
         _JWKS = resp.json()
         _JWKS_FETCHED_AT = time.time()
-        return _JWKS
+        return True
     except Exception as exc:
         if _JWKS is not None:
-            # Back off for a fraction of the TTL rather than retrying on every
-            # request while Supabase is unreachable, and keep serving what we
-            # have. Logged at warning because a refresh that keeps failing is
-            # a real problem — it is just not one worth signing everyone out
-            # over.
-            _JWKS_FETCHED_AT = time.time() - (_JWKS_TTL - _JWKS_RETRY_AFTER)
+            # Keep serving what we have. Logged at warning because a refresh
+            # that keeps failing is a real problem — it is just not one worth
+            # signing everyone out over, which is exactly what discarding the
+            # keys here did in production, an hour after every boot.
             logger.warning(
                 "Could not refresh Supabase JWKS from %s (%s); continuing with "
-                "the key set already held and retrying in %.0fs",
+                "the key set already held and retrying in %ds",
                 url,
                 exc,
-                _JWKS_RETRY_AFTER,
+                JWKS_REFRESH_SECONDS,
             )
-            return _JWKS
-        logger.warning("Could not fetch Supabase JWKS from %s: %s", url, exc)
+        else:
+            logger.warning("Could not fetch Supabase JWKS from %s: %s", url, exc)
+        return False
+
+
+async def warm_jwks_cache() -> None:
+    """Fill the cache off the event loop, so no request ever pays for it.
+
+    Called at startup and on a timer. `to_thread` matters: awaiting a blocking
+    call directly would stall the loop exactly as the request path did.
+    """
+    import asyncio
+
+    if not settings.supabase_url:
+        return
+    ok = await asyncio.to_thread(refresh_jwks_cache)
+    logger.info("Supabase JWKS cache refresh: %s", "ok" if ok else "failed")
+
+
+def _jwks() -> dict | None:
+    """
+    Supabase's public signing keys, read from cache. Does no I/O when warm.
+
+    This function used to run the hourly refresh itself, on whichever unlucky
+    request arrived after the cache expired — a 5s synchronous HTTP call in
+    front of an async handler on a service with one worker, so every request in
+    flight waited behind it. refresh_jwks_cache() has the measurement.
+    warm_jwks_cache() now does that work from startup and the scheduler, and a
+    held key set is served here whatever its age.
+
+    That also removes the older fault, where an expiry plus one failed refresh
+    signed the whole application out an hour after boot. Its docstring claimed
+    callers "fall back to the shared-secret path", but that path needs
+    SUPABASE_JWT_SECRET, which this deployment does not set. There was no
+    fallback, only failure — and now there is no expiry for it to hang on.
+
+    Serving a key set past its intended freshness is not a weakening of
+    verification. A token is still checked against the key its `kid` names and
+    its signature still has to verify; a rotated-away key simply stops
+    matching. Freshness was never the security boundary, and the refresher is
+    what keeps it.
+
+    The one fetch left here is the cold one — nothing cached at all, meaning
+    startup's warm-up has not landed or failed. It is rate-limited, because
+    otherwise every request in that gap pays the full timeout in series and
+    reintroduces the stall this change removes.
+
+    Returns None only when nothing is cached and no key set can be fetched.
+    """
+    global _JWKS_COLD_ATTEMPTED_AT
+
+    # Cache first: a key set already in hand stays valid whether or not a URL
+    # is configured, and checking the URL first made a warm cache unusable.
+    if _JWKS is not None:
+        return _JWKS
+    if not settings.supabase_url:
         return None
+
+    now = time.time()
+    if now - _JWKS_COLD_ATTEMPTED_AT < _JWKS_COLD_RETRY_AFTER:
+        return None
+    _JWKS_COLD_ATTEMPTED_AT = now
+    refresh_jwks_cache()
+    return _JWKS
 
 
 def _verify_supabase_token(token: str) -> VerifiedCaller | None:

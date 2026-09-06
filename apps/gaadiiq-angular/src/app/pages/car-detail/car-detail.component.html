@@ -11,6 +11,9 @@
     <button class="btn-gradient" (click)="retryLoad()">{{ 'Try again' | t }}</button>
     <a routerLink="/used-cars" class="btn-outline">{{ 'Browse all cars' | t }}</a>
   </div>
+  <!-- The reason, for whoever is looking into it. Below the buttons and quiet:
+       it is not advice to the buyer. Not translated — a diagnostic string. -->
+  <p *ngIf="failureDetail" class="cd-failure-detail">{{ failureDetail }}</p>
 </div>
 
 <div *ngIf="!carLoaded && !loadFailed()" style="min-height:60vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem">

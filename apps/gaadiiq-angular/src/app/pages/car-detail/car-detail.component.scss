@@ -910,3 +910,17 @@
   line-height: 1.45;
   color: var(--muted);
 }
+
+/* The failure reason under the "could not load this car" panel.
+
+   Same shape and same constraints as .nc-failure-detail on /new-cars: not
+   monospace (typography.spec allows Outfit and Manrope only), 0.75rem to stay
+   clear of the 11px floor, word-break so a long URL cannot widen the column. */
+.cd-failure-detail {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted);
+  word-break: break-word;
+  max-width: 46ch;
+}

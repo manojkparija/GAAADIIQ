@@ -1,21 +1,36 @@
 """
-The JWKS cache, and the hour-later sign-out.
+The JWKS cache: the hour-later sign-out, and the stall it caused every hour.
 
-Reported from production: loan applications worked, and roughly an hour later
-every one of them answered 401. Nothing had been deployed in between.
+TWO PRODUCTION FAULTS, ONE FUNCTION
 
-`_JWKS_TTL` is 3600 seconds. The cache expires at exactly the reported
-interval, and the old `_jwks()` returned None the moment a refresh failed —
-so one transient failure at the hour mark signed the whole application out
-until some later fetch happened to succeed. The docstring said callers would
-"fall back to the shared-secret path", but that path needs
-SUPABASE_JWT_SECRET, which is not set on the Render service (its absence is
-visible in the alphabetical env-var list, between STT_PROVIDER and
-SUPABASE_URL). There was no fallback.
+First: loan applications worked, and roughly an hour later every one of them
+answered 401. Nothing had been deployed in between. The cache lifetime was
+3600 seconds — exactly the reported interval — and `_jwks()` returned None the
+moment a refresh failed, so one transient failure at the hour mark signed the
+whole application out. The docstring said callers would "fall back to the
+shared-secret path", but that path needs SUPABASE_JWT_SECRET, which is not set
+on the Render service. There was no fallback.
 
-These tests pin the fix: a key set already held survives a failed refresh.
-They do not loosen verification — the tests at the bottom check that a stale
-set still only verifies tokens whose kid it actually contains.
+Second, found in Render's log while looking for something else:
+
+    09:12:54  OPTIONS x3
+    09:12:55  JWKS fetch, 200 OK
+    09:12:59  the three GETs answer      <- 5s
+    09:13:09  OPTIONS x3, no JWKS line
+    09:13:11  the three GETs answer      <- 2s
+
+The fetch is `httpx.get`, which is synchronous, inside an async handler, on a
+service running WEB_CONCURRENCY=1. Whichever request triggered the refresh
+stopped the event loop for the whole fetch and everything in flight waited
+behind it — including public catalogue reads carrying no token at all.
+
+The fix for the second is that the request path no longer refreshes. Startup
+and the scheduler call warm_jwks_cache(), which runs the blocking fetch in a
+thread; `_jwks()` serves whatever is cached and does no I/O. That subsumes the
+first fault as well: there is no expiry left for a failed refresh to fall off.
+
+These tests pin both, and the last one pins the security half — a stale set
+still only verifies tokens whose kid it actually contains.
 """
 import logging
 
@@ -28,6 +43,7 @@ from services import llm_tier
 def _clean_cache(monkeypatch):
     monkeypatch.setattr(llm_tier, "_JWKS", None)
     monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", 0.0)
+    monkeypatch.setattr(llm_tier, "_JWKS_COLD_ATTEMPTED_AT", 0.0)
     monkeypatch.setattr(llm_tier.settings, "supabase_url", "https://proj.supabase.co", raising=False)
     yield
 
@@ -66,46 +82,38 @@ def _serving(monkeypatch, *responses):
     return calls
 
 
-def test_a_failed_refresh_keeps_the_keys_already_held(monkeypatch, caplog):
-    # The reported failure, reproduced: fetch once, let the hour pass, and have
-    # the refresh fail. Before the fix this returned None and every signed-in
-    # user got a 401.
-    _serving(monkeypatch, KEYS, RuntimeError("connection reset"))
+def test_the_request_path_never_fetches_once_the_cache_is_warm(monkeypatch):
+    """The one that fixes the stall.
 
-    assert llm_tier._jwks() == KEYS
+    However old the held key set is, reading it costs no network call. This is
+    the whole of the fix: the 5s the log shows was one request paying for a
+    refresh that startup and the scheduler now do off the event loop.
+    """
+    calls = _serving(monkeypatch, KEYS)
+    assert llm_tier.refresh_jwks_cache() is True
+    warmed = calls["n"]
 
-    monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", llm_tier._JWKS_FETCHED_AT - 3601)
-    with caplog.at_level(logging.WARNING):
+    # Far past the old 3600s lifetime, and past any plausible one.
+    monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", llm_tier._JWKS_FETCHED_AT - 86_400)
+
+    for _ in range(5):
         assert llm_tier._jwks() == KEYS
 
+    assert calls["n"] == warmed, "a request refreshed the key set on the event loop"
+
+
+def test_a_failed_refresh_keeps_the_keys_already_held(monkeypatch, caplog):
+    # The hour-later sign-out, reproduced: fetch once, then have the refresh
+    # fail. Before the fix this discarded the keys and every signed-in user
+    # got a 401.
+    _serving(monkeypatch, KEYS, RuntimeError("connection reset"))
+    assert llm_tier.refresh_jwks_cache() is True
+
+    with caplog.at_level(logging.WARNING):
+        assert llm_tier.refresh_jwks_cache() is False
+
+    assert llm_tier._jwks() == KEYS
     assert "continuing with the key set already held" in caplog.text
-
-
-def test_a_failed_refresh_does_not_retry_on_every_request(monkeypatch):
-    # Retrying per request would put a timing-out network call in front of
-    # every authenticated call while Supabase is unreachable.
-    calls = _serving(monkeypatch, KEYS, RuntimeError("down"))
-    llm_tier._jwks()
-    monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", llm_tier._JWKS_FETCHED_AT - 3601)
-
-    llm_tier._jwks()
-    before = calls["n"]
-    llm_tier._jwks()
-    llm_tier._jwks()
-
-    assert calls["n"] == before, "should back off, not refetch each time"
-
-
-def test_it_does_retry_once_the_backoff_has_passed(monkeypatch):
-    _serving(monkeypatch, KEYS, RuntimeError("down"), {"keys": [{"kid": "k2"}]})
-    llm_tier._jwks()
-    monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", llm_tier._JWKS_FETCHED_AT - 3601)
-    llm_tier._jwks()  # fails, backs off
-
-    monkeypatch.setattr(
-        llm_tier, "_JWKS_FETCHED_AT", llm_tier._JWKS_FETCHED_AT - llm_tier._JWKS_RETRY_AFTER - 1
-    )
-    assert llm_tier._jwks() == {"keys": [{"kid": "k2"}]}
 
 
 def test_a_cold_cache_that_cannot_fetch_still_returns_none(monkeypatch, caplog):
@@ -116,13 +124,65 @@ def test_a_cold_cache_that_cannot_fetch_still_returns_none(monkeypatch, caplog):
     assert "Could not fetch Supabase JWKS" in caplog.text
 
 
+def test_a_cold_cache_does_not_refetch_on_every_request(monkeypatch):
+    """The cold path is the only fetch left on the request path, so it is rate
+    limited. Unbounded, every request in a Supabase outage would pay the full
+    5s timeout in series on the single worker — the exact stall being fixed,
+    reintroduced by the recovery path."""
+    calls = _serving(monkeypatch, RuntimeError("down"))
+
+    assert llm_tier._jwks() is None
+    after_first = calls["n"]
+    assert llm_tier._jwks() is None
+    assert llm_tier._jwks() is None
+
+    assert calls["n"] == after_first, "should back off, not refetch each time"
+
+
+def test_the_cold_path_retries_once_the_backoff_has_passed(monkeypatch):
+    _serving(monkeypatch, RuntimeError("down"), KEYS)
+    assert llm_tier._jwks() is None
+
+    monkeypatch.setattr(
+        llm_tier,
+        "_JWKS_COLD_ATTEMPTED_AT",
+        llm_tier._JWKS_COLD_ATTEMPTED_AT - llm_tier._JWKS_COLD_RETRY_AFTER - 1,
+    )
+    assert llm_tier._jwks() == KEYS
+
+
 def test_losing_the_project_url_does_not_discard_a_warm_cache(monkeypatch):
     _serving(monkeypatch, KEYS)
-    llm_tier._jwks()
+    llm_tier.refresh_jwks_cache()
     monkeypatch.setattr(llm_tier.settings, "supabase_url", "", raising=False)
-    monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", llm_tier._JWKS_FETCHED_AT - 3601)
 
     assert llm_tier._jwks() == KEYS
+
+
+@pytest.mark.asyncio
+async def test_the_warm_up_does_not_block_the_event_loop(monkeypatch):
+    """warm_jwks_cache must hand the blocking call to a thread.
+
+    Awaiting the fetch directly would stall the loop exactly as the request
+    path did, which is the failure this whole change exists to remove — and it
+    would look identical from the outside, because the cache would still fill.
+    """
+    import threading
+
+    caller: dict[str, int] = {}
+
+    def _get(url, timeout=None):
+        caller["thread"] = threading.get_ident()
+        return _Resp(KEYS)
+
+    import types
+
+    monkeypatch.setitem(__import__("sys").modules, "httpx", types.SimpleNamespace(get=_get))
+
+    await llm_tier.warm_jwks_cache()
+
+    assert llm_tier._jwks() == KEYS
+    assert caller["thread"] != threading.get_ident(), "the fetch ran on the event loop's thread"
 
 
 def test_a_stale_key_set_still_refuses_a_token_it_has_no_key_for(monkeypatch, caplog):
@@ -133,8 +193,8 @@ def test_a_stale_key_set_still_refuses_a_token_it_has_no_key_for(monkeypatch, ca
     from jose import jwt
 
     _serving(monkeypatch, KEYS, RuntimeError("down"))
-    llm_tier._jwks()
-    monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", llm_tier._JWKS_FETCHED_AT - 3601)
+    llm_tier.refresh_jwks_cache()
+    monkeypatch.setattr(llm_tier, "_JWKS_FETCHED_AT", llm_tier._JWKS_FETCHED_AT - 86_400)
 
     signed = jwt.encode({"sub": "u-1"}, "x", algorithm="HS256")
     header = base64.urlsafe_b64encode(b'{"alg":"ES256","kid":"not-in-the-set"}').rstrip(b"=").decode()

@@ -336,6 +336,14 @@
               Please try again in a moment.
             </p>
             <button class="btn-gradient" (click)="retryLoad()">{{ 'Try again' | t }}</button>
+            <!--
+              The reason, below the button and quiet: it is not advice to the
+              buyer and there is nothing they can do with it.
+              Not translated — it is a diagnostic string, not prose.
+            -->
+            @if (failureDetail) {
+              <p class="uc-failure-detail">{{ failureDetail }}</p>
+            }
           </div>
         } @else if (displayedCars().length === 0) {
           <div class="empty-state glass-card">
