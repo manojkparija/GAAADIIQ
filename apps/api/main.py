@@ -6,13 +6,14 @@ import subprocess
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from sqlalchemy.exc import TimeoutError as SQLTimeoutError
 
 from core.cache_policy import apply_cache_policy
 from core.config import settings
@@ -405,6 +406,41 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+async def _database_timeout_handler(request: Request, exc: Exception) -> JSONResponse:
+    """A database that ran out of time answers 503, not 500.
+
+    db/session.py bounds every connect and every statement so a stall cannot
+    hold a worker until the gateway gives up. That converts a hang into an
+    exception — and the status this hands back decides whether the browser
+    treats it as worth retrying.
+
+    503 is the accurate one: nothing is wrong with the request, the dependency
+    was too slow this time. It is also in the set CarsDataService retries, so
+    a single slow moment is absorbed before the reader ever sees a panel; a
+    500 would be shown immediately and would be a lie about whose fault it is.
+
+    Retry-After is deliberately short. The typical cause is a moment of
+    contention, not an outage, and a client that waits a second usually
+    succeeds.
+    """
+    _log.warning(
+        "Database timed out serving %s %s: %s", request.method, request.url.path, exc
+    )
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "The database did not respond in time. Please try again."},
+        headers={"Retry-After": "1"},
+    )
+
+
+# TimeoutError covers asyncpg's own cancellations and anything the driver
+# raises through asyncio; OperationalError is what SQLAlchemy wraps a Postgres
+# statement_timeout in. Registered narrowly on purpose — a broad Exception
+# handler here would turn every genuine bug into a soothing 503 and hide it.
+app.add_exception_handler(TimeoutError, _database_timeout_handler)
+app.add_exception_handler(SQLTimeoutError, _database_timeout_handler)
 
 # WITHOUT THIS, THE DEFAULT LIMIT DOES NOTHING.
 #
