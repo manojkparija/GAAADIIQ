@@ -597,22 +597,52 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Contact whoever is actually selling this car.
+   *
+   * Staff see the dealer's own details, so they can ring them. Everyone else
+   * gets the enquiry form. That much was always true.
+   *
+   * WHAT CHANGED, AND WHY IT MATTERS FOR GO-LIVE
+   *
+   * The staff branch used to open the dealer card unconditionally, and
+   * SellersService always had a dealer to give it: an unmapped car fell back
+   * to dealer number one, and a failed lookup produced a fabricated one —
+   * "Rajesh Kumar, RK Motors, Verified Dealer, 4.8 stars", with a phone number
+   * a buyer could ring. It was reported from the live site by somebody who
+   * knew that dealer did not exist.
+   *
+   * Both inventions are gone, so getForCar now returns null for a catalogue
+   * car — manufacturer stock, with no dealer behind it. That is the ordinary
+   * case before any dealer is onboarded, and it needs an answer rather than a
+   * blank modal.
+   *
+   * The answer is the enquiry form, for staff too. An enquiry with no dealer
+   * behind it is visible to admins (024) and alerts them (025), so the buyer
+   * reaches somebody who can act. Showing staff an empty dealer card instead
+   * would be a dead end on the one path that has to work at launch.
+   */
   async openContactSeller() {
     const user = this.auth.currentUser();
-    if (user?.role === 'admin' || user?.role === 'seller') {
+    const isStaff = user?.role === 'admin' || user?.role === 'seller';
+
+    if (isStaff) {
       if (!this.seller()) {
-        const s = await this.sellersSvc.getForCar(this.car.id);
-        this.seller.set(s);
+        this.seller.set(await this.sellersSvc.getForCar(this.car.id));
       }
-      this.sellerModalOpen.set(true);
-    } else {
-      // Pre-fill form from logged-in user if available
-      if (user) {
-        this.enquiryForm.name  = this.enquiryForm.name  || user.name;
-        this.enquiryForm.email = this.enquiryForm.email || user.email;
+      // Only when there is a real dealer to show.
+      if (this.seller()) {
+        this.sellerModalOpen.set(true);
+        return;
       }
-      this.enquiryModalOpen.set(true);
     }
+
+    // Pre-fill from the signed-in user if we know them.
+    if (user) {
+      this.enquiryForm.name  = this.enquiryForm.name  || user.name;
+      this.enquiryForm.email = this.enquiryForm.email || user.email;
+    }
+    this.enquiryModalOpen.set(true);
   }
 
   async submitEnquiry() {

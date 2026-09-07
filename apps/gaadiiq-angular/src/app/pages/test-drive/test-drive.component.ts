@@ -71,6 +71,11 @@ export class TestDriveComponent {
     this.submitting.set(true);
     this.submitError.set('');
 
+    // Null for a catalogue car: manufacturer stock has no dealer behind it,
+    // and SellersService no longer invents one. A booking with no dealer is
+    // still a real booking — seller_id is nullable, and the request lands in
+    // the dashboard where an admin can see it and assign somebody. Refusing to
+    // take the booking would be worse than taking one nobody owns yet.
     const seller = await this.sellersSvc.getForCar(car.id);
 
     const ok = await this.testDriveSvc.submit({
@@ -85,7 +90,7 @@ export class TestDriveComponent {
       preferred_time: this.form.time,
       location: this.form.location || undefined,
       notes: this.form.notes || undefined,
-      seller_id: seller.id,
+      seller_id: seller?.id,
     });
 
     this.submitting.set(false);
@@ -93,7 +98,9 @@ export class TestDriveComponent {
       this.submitted.set(true);
       const { data } = await this.sb.client.auth.getSession();
       const buyerId = data.session?.user?.id;
-      if (buyerId) {
+      // Intent tracking is keyed on the dealer, so there is nothing to record
+      // when there is no dealer. Skipped rather than faked.
+      if (buyerId && seller?.email) {
         this.sentimentSvc.trackPublic(seller.email, buyerId, 'test_drive_request', BUYER_TRACKING_CONSENT);
       }
     } else {
