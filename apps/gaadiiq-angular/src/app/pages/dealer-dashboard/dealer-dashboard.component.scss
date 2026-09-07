@@ -571,3 +571,47 @@
 .leads-table.enq-table .lt-row {
   grid-template-columns: 1.2fr 1.1fr 1.3fr 1.4fr 1fr 1fr 1.2fr;
 }
+
+
+/* The two native <select>s on this page — enquiry status, and which dealer an
+   enquiry was handed to — plus the status select on Recent Leads.
+
+   All three carried a class name that was never defined anywhere: grep for
+   .enq-status or .lead-status across the app's stylesheets returned nothing.
+   So they were unstyled UA controls sitting on a dark glass card. Two things
+   went wrong at once, and only the second was visible in the report:
+
+     - The closed control. <select> does not inherit `color`, it falls back to
+       the UA `buttontext`, so the chosen value rendered near-black on the dark
+       card.
+     - The open popup. Its rows DID take the page's white text, onto the
+       system's white popup surface, leaving only the highlighted row legible
+       — which is what the screenshot showed.
+
+   The popup half is fixed globally in styles.scss, since every other native
+   select in the app had the same exposure. This is the closed control: paint
+   both colours explicitly rather than relying on inheritance that does not
+   happen. --fill-dim / --divider / --text are the same tokens the rest of the
+   dashboard's controls use, so this matches rather than introduces a look. */
+.enq-status,
+.lead-status {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  background: var(--fill-dim);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+}

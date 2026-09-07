@@ -122,7 +122,14 @@
   // which is how it was reported.
   //
   // So the chip is light in BOTH themes. A white badge on a dark card reads as
-  // deliberate, and it is what every logo in the set was designed to sit on.
+  // deliberate, and it is what MOST of the set was designed to sit on.
+  //
+  // (This line used to say "every logo in the set". Measured, it is ten short:
+  // Genesis, Lexus, Volvo, Renault, Rolls-Royce, Aston Martin, Bentley and
+  // Skoda are light or silver artwork, and Ferrari and Lotus are yellow. On a
+  // white chip those score 0.19-0.48 of the mark above 3:1 and wash out. They
+  // take --logo-chip-dark instead; see app/data/brand-logo-plates.ts and
+  // scripts/measure_brand_logo_plates.py, which is what produced the numbers.)
   //
   // The alternative — inverting dark logos in dark mode — is why the dead
   // `--logo-filter` hook existed. It cannot work: invert() turns Ferrari's
@@ -130,6 +137,11 @@
   // because it is monochrome from one that is dark because that is its colour.
   --logo-chip:        #FFFFFF;
   --logo-chip-border: rgba(15,23,42,0.12);
+  // The other polarity, for the ten above. --navy's value rather than the
+  // token, on purpose: in light mode the chip has to stay dark for a silver
+  // mark to show, so it must not follow the theme the way --navy does.
+  --logo-chip-dark:        #0B1220;
+  --logo-chip-dark-border: rgba(255,255,255,0.18);
   // The light-mode text ramp, deliberately compressed and darkened.
   //
   // These were #94A3B8 / #475569 / #64748B — a conventional Tailwind-ish scale
@@ -1004,6 +1016,33 @@ input, select, textarea {
     box-shadow: 0 0 0 3px rgba(47,107,255,0.12);
   }
   &::placeholder { color: var(--text-tertiary); }
+}
+
+// Every row in a native <select> popup, not just the highlighted one.
+//
+// REPORTED WITH A SCREENSHOT: the dealer dropdown on the Enquiries tab opened
+// as white letters on white. Only the highlighted row was readable, which is
+// the tell — `option:checked` below was the sole global rule, so the selected
+// row got a colour and the rest inherited the page's white text onto the
+// popup's own white surface.
+//
+// The comment below already recorded that pages paint `option { background }`
+// individually "to keep the popup dark over a dark hero". Three of them do.
+// Every other native select in the app was one dark theme away from the same
+// bug, and the dealer dashboard is where that finally showed.
+//
+// Fixed here rather than on that one page, because a per-page fix leaves the
+// trap armed for whoever adds the next <select>. --dropdown-bg already existed
+// for exactly this and was defined in all four theme blocks; nothing was using
+// it globally. It pairs with --text, so the popup follows the theme: dark rows
+// in dark mode, light in light, legible in both.
+//
+// The three pages that paint their own option background still win — a
+// component-scoped rule carries Angular's attribute selector and outranks
+// this — so nothing that was already deliberate changes.
+option {
+  background: var(--dropdown-bg);
+  color: var(--text);
 }
 
 // The highlighted row in a native <select> popup.

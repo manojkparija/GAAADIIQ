@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService, PLACEHOLDER, hasPhotograph, priceBand } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
+import { usesDarkPlate } from '../../data/brand-logo-plates';
 import { AuthService } from '../../services/auth.service';
 import { UpcomingCarsService } from '../../services/upcoming-cars.service';
 
@@ -154,6 +155,17 @@ export class NewCarsComponent implements OnInit {
   sortOptions = ['Popularity', 'Price: Low to High', 'Price: High to Low'];
 
   get brands() { return this.brandsService.brands(); }
+
+  /**
+   * Which plate this brand's mark needs behind it.
+   *
+   * A method rather than a computed(): `brand.slug` is a plain field on a row,
+   * not a signal, and a computed() over one evaluates once and then reports a
+   * stale answer forever — that has shipped twice in this codebase.
+   */
+  usesDarkPlate(slug: string | null | undefined): boolean {
+    return usesDarkPlate(slug);
+  }
 
   // The icon is drawn in the template, selected by `shape`, rather than being a
   // character in this array.
