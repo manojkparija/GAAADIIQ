@@ -1006,6 +1006,33 @@ input, select, textarea {
   &::placeholder { color: var(--text-tertiary); }
 }
 
+// Every row in a native <select> popup, not just the highlighted one.
+//
+// REPORTED WITH A SCREENSHOT: the dealer dropdown on the Enquiries tab opened
+// as white letters on white. Only the highlighted row was readable, which is
+// the tell — `option:checked` below was the sole global rule, so the selected
+// row got a colour and the rest inherited the page's white text onto the
+// popup's own white surface.
+//
+// The comment below already recorded that pages paint `option { background }`
+// individually "to keep the popup dark over a dark hero". Three of them do.
+// Every other native select in the app was one dark theme away from the same
+// bug, and the dealer dashboard is where that finally showed.
+//
+// Fixed here rather than on that one page, because a per-page fix leaves the
+// trap armed for whoever adds the next <select>. --dropdown-bg already existed
+// for exactly this and was defined in all four theme blocks; nothing was using
+// it globally. It pairs with --text, so the popup follows the theme: dark rows
+// in dark mode, light in light, legible in both.
+//
+// The three pages that paint their own option background still win — a
+// component-scoped rule carries Angular's attribute selector and outranks
+// this — so nothing that was already deliberate changes.
+option {
+  background: var(--dropdown-bg);
+  color: var(--text);
+}
+
 // The highlighted row in a native <select> popup.
 //
 // accent-color above is not enough on its own: once a page paints its own
