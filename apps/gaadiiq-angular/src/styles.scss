@@ -122,7 +122,14 @@
   // which is how it was reported.
   //
   // So the chip is light in BOTH themes. A white badge on a dark card reads as
-  // deliberate, and it is what every logo in the set was designed to sit on.
+  // deliberate, and it is what MOST of the set was designed to sit on.
+  //
+  // (This line used to say "every logo in the set". Measured, it is ten short:
+  // Genesis, Lexus, Volvo, Renault, Rolls-Royce, Aston Martin, Bentley and
+  // Skoda are light or silver artwork, and Ferrari and Lotus are yellow. On a
+  // white chip those score 0.19-0.48 of the mark above 3:1 and wash out. They
+  // take --logo-chip-dark instead; see app/data/brand-logo-plates.ts and
+  // scripts/measure_brand_logo_plates.py, which is what produced the numbers.)
   //
   // The alternative — inverting dark logos in dark mode — is why the dead
   // `--logo-filter` hook existed. It cannot work: invert() turns Ferrari's
@@ -130,6 +137,11 @@
   // because it is monochrome from one that is dark because that is its colour.
   --logo-chip:        #FFFFFF;
   --logo-chip-border: rgba(15,23,42,0.12);
+  // The other polarity, for the ten above. --navy's value rather than the
+  // token, on purpose: in light mode the chip has to stay dark for a silver
+  // mark to show, so it must not follow the theme the way --navy does.
+  --logo-chip-dark:        #0B1220;
+  --logo-chip-dark-border: rgba(255,255,255,0.18);
   // The light-mode text ramp, deliberately compressed and darkened.
   //
   // These were #94A3B8 / #475569 / #64748B — a conventional Tailwind-ish scale

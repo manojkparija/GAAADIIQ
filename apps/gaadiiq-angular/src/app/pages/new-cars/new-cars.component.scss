@@ -262,17 +262,42 @@
   }
 }
 
+/* The plate a brand mark sits on.
+ *
+ * This wrap used to be a bare flex box, so the logo was painted straight onto
+ * the dark glass card and thirteen of them were invisible in dark mode —
+ * reported with a screenshot circling Toyota, Kia, Lexus, Mini and Jaguar.
+ * The home page already had the answer in --logo-chip; this grid never got it.
+ *
+ * The default is that white chip. `.plate-dark` is the other polarity, for the
+ * ten marks that are light, silver or yellow artwork and wash out on white —
+ * see app/data/brand-logo-plates.ts for which, and for the measurements. */
 .brand-logo-wrap {
   width: 64px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--logo-chip, #fff);
+  border: 1px solid var(--logo-chip-border, rgba(15,23,42,0.12));
+  border-radius: 10px;
+  // The mark needs room to breathe off the chip's edge, but this tile is 64px
+  // wide and every pixel of padding costs two of logo — the same trade the
+  // home page settled at 5px.
+  padding: 5px;
+  box-sizing: border-box;
+
+  &.plate-dark {
+    background: var(--logo-chip-dark, #0B1220);
+    border-color: var(--logo-chip-dark-border, rgba(255,255,255,0.18));
+  }
 }
 
 .brand-logo-img {
-  max-width: 64px;
-  max-height: 44px;
+  // Bounded by the chip rather than by the tile: the wrap now carries 5px of
+  // padding and a border, so a 64px logo inside it would sit on the edge.
+  max-width: 100%;
+  max-height: 100%;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -284,6 +309,18 @@
   width: 24px;
   height: 20px;
   object-fit: contain;
+  // These pills sit on the hero gradient, which is blue-to-teal and mid-toned,
+  // so a dark mark has no more contrast here than it had on the dark card —
+  // the same bug as the grid below, one section higher up the page. Same fix,
+  // scaled down: 2px, because a 24px chip cannot spare 5.
+  background: var(--logo-chip, #fff);
+  border-radius: 5px;
+  padding: 2px;
+  box-sizing: border-box;
+
+  &.plate-dark {
+    background: var(--logo-chip-dark, #0B1220);
+  }
 }
 
 .brand-name {
