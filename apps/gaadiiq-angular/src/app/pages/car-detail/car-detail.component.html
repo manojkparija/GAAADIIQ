@@ -665,6 +665,16 @@
             <div *ngIf="price.caption" style="color:var(--muted);font-size:0.8rem;margin-bottom:0.25rem">{{ price.caption }}</div>
             <div style="color:var(--muted);font-size:0.85rem">EMI from ₹{{ displayEmi().toLocaleString() }}/mo · No cost EMI available</div>
           </ng-container>
+          <!-- Most of the catalogue has no ex_showroom_price yet, and this
+               block used to render "₹0" with "EMI from ₹0/mo" under it. Saying
+               so is the honest version and the one a buyer can act on: it
+               reads as a car awaiting its price rather than a broken page. -->
+          <ng-container *ngIf="!displayPrice()">
+            <div class="price-pending">{{ 'Price not announced yet' | t }}</div>
+            <div style="color:var(--muted);font-size:0.8rem;margin-bottom:0.25rem">
+              {{ 'Ask for a callback and we will send it as soon as it is published.' | t }}
+            </div>
+          </ng-container>
           <div class="action-btns">
             <!-- New cars only: a used listing has a seller to contact directly,
                  so routing that buyer through a dealer callback would add a
@@ -723,15 +733,22 @@
           <div class="orp-total"><span>{{ 'On-Road Price' | t }}</span><span class="gradient-text">{{ formatPrice(orp.total) }}</span></div>
         </div>
 
-        <!-- AI VALUATION CARD -->
-        <div class="ai-val-card glass-card">
+        <!-- AI VALUATION CARD
+             Only for a car that has one. A catalogue row is manufacturer
+             stock with a published price and no asking price to judge, so
+             mapCatalogueCar sets no aiValuation at all — and this card used
+             to render anyway, as "₹0 — ₹0", "AI Fair Value: ₹0", a blank
+             verdict badge and "% confidence" with no number in front of it.
+             An analysis of nothing, presented with the same confidence as a
+             real one. -->
+        <div class="ai-val-card glass-card" *ngIf="car.aiValuation as val">
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
             <app-icon name="brain" [size]="22"></app-icon>
             <div>
               <div style="font-weight:700">{{ 'AI Price Analysis' | t }}</div>
-              <div style="font-size:0.78rem;color:var(--muted)">{{ car.aiValuation?.confidence }}% confidence</div>
+              <div style="font-size:0.78rem;color:var(--muted)">{{ val.confidence }}% confidence</div>
             </div>
-            <span class="badge badge-green" style="margin-left:auto">{{ car.aiValuation?.verdict }}</span>
+            <span class="badge badge-green" style="margin-left:auto">{{ val.verdict }}</span>
           </div>
           <div class="val-bar">
             <div class="val-range">
@@ -743,18 +760,21 @@
               <div class="bar-marker"></div>
             </div>
             <div class="val-range">
-              <span class="gold-text">{{ formatPrice(car.aiValuation?.marketMin || 0) }}</span>
-              <span class="gold-text">{{ formatPrice(car.aiValuation?.marketMax || 0) }}</span>
+              <span class="gold-text">{{ formatPrice(val.marketMin) }}</span>
+              <span class="gold-text">{{ formatPrice(val.marketMax) }}</span>
             </div>
           </div>
           <div style="text-align:center;margin-top:0.75rem">
             <span style="font-size:0.85rem;color:var(--muted)">{{ 'AI Fair Value:' | t }} </span>
-            <span class="gradient-text" style="font-weight:800;font-size:1.1rem">{{ formatPrice(car.aiValuation?.fairPrice || 0) }}</span>
+            <span class="gradient-text" style="font-weight:800;font-size:1.1rem">{{ formatPrice(val.fairPrice) }}</span>
           </div>
         </div>
 
-        <!-- EMI CALCULATOR -->
-        <div class="emi-card glass-card">
+        <!-- EMI CALCULATOR
+             Gated on a price for the same reason as the panels above: with
+             nothing to finance the slider spanned 0 to 0 and the card
+             announced a monthly EMI of ₹0 in 2rem type. -->
+        <div class="emi-card glass-card" *ngIf="hasPrice()">
           <h3><app-icon name="credit-card" [size]="16"></app-icon> {{ 'EMI Calculator' | t }}</h3>
           <div class="emi-row">
             <div class="emi-label-row"><label>{{ 'Loan Amount' | t }}</label><span class="emi-val">{{ formatPrice(loan.amount) }}</span></div>
