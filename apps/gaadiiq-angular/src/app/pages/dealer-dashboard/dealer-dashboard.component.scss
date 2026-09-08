@@ -615,3 +615,13 @@
     cursor: progress;
   }
 }
+
+/* The honest empty state for a panel with nothing to compute from. Muted and
+   plain on purpose: it is the absence of an insight, and should not be dressed
+   up as one. */
+.intel-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  margin: 0;
+}

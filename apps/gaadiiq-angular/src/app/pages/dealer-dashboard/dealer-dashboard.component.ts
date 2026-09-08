@@ -70,13 +70,174 @@ export class DealerDashboardComponent {
     { name: 'Lalita Sharma', car: 'Toyota Innova HyCross', budget: '₹20–25L', stage: 'Hot Lead', stageColor: 'red', time: '4 hr ago', intentScore: 44, leadGrade: 'C', bestContactTime: 'Eve · 7–9pm', nba: 'Re-engage via WhatsApp', phone: '+91 94532 10987' },
   ];
 
-  fuelMix = [
-    { label: 'Petrol', pct: 42, color: '#2F6BFF' },
-    { label: 'Diesel', pct: 28, color: '#EF4444' },
-    { label: 'Electric', pct: 18, color: '#43E97B' },
-    { label: 'CNG', pct: 8, color: '#FFD700' },
-    { label: 'Hybrid', pct: 4, color: '#60A5FA' },
-  ];
+  /**
+   * The colour each fuel is drawn in. The percentages are computed from the
+   * dealer's own listings — see fuelMix() below.
+   */
+  private readonly FUEL_COLOURS: Record<string, string> = {
+    Petrol: '#2F6BFF',
+    Diesel: '#EF4444',
+    Electric: '#43E97B',
+    CNG: '#FFD700',
+    Hybrid: '#60A5FA',
+  };
+
+  /**
+   * What this dealer actually has on the forecourt, by fuel.
+   *
+   * This was a fixed list — Petrol 42%, Diesel 28%, Electric 18%, CNG 8%,
+   * Hybrid 4% — shown under the heading "Fuel Mix Breakdown" on a page
+   * subtitled "Real-time insights into your listings". It was the same five
+   * numbers for every dealer on every day, including a dealer with no
+   * listings at all.
+   *
+   * Now counted from myCars(). Anything the colour map does not name still
+   * appears, so a fuel nobody anticipated is shown rather than dropped.
+   */
+  fuelMix = computed(() => {
+    const cars = this.myCars();
+    if (!cars.length) return [];
+
+    const counts = new Map<string, number>();
+    for (const c of cars) {
+      const label = (c.fuel || '').trim() || 'Not stated';
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+
+    return [...counts.entries()]
+      .map(([label, n]) => ({
+        label,
+        pct: Math.round((n / cars.length) * 100),
+        count: n,
+        color: this.FUEL_COLOURS[label] ?? '#94A3B8',
+      }))
+      .sort((a, b) => b.pct - a.pct);
+  });
+
+  /**
+   * Market Intelligence, computed from this dealer's own data.
+   *
+   * WHAT WAS THERE BEFORE
+   *
+   * Four cards of fixed prose, identical for every dealer on every day, under
+   * a heading on a page that promises "real-time insights":
+   *
+   *   "SUVs in Bangalore are trending 4.2% above national average this week."
+   *   "Electric vehicle searches up 34% in your city."
+   *   "Your response time (avg 22 min) is in the top 15% of dealers."
+   *   "Listings posted Thursday-Friday see 28% more views over the weekend."
+   *
+   * Reported as static, which it was. But the deeper problem is that two of
+   * them are claims about the reader: a response time nobody measured, and a
+   * ranking against a peer group that has four members. A dealer in Rourkela
+   * was being told what SUVs do in Bangalore. This is the same rule the rest
+   * of the codebase already follows — credit_bureau.fetch_score raises rather
+   * than returning a plausible number, and the car page now says "Price not
+   * announced yet" rather than ₹0.
+   *
+   * WHAT REPLACED THEM, AND WHAT DID NOT
+   *
+   * Every card below is derived from data this dashboard already holds, and a
+   * card that cannot be computed is not rendered at all rather than filled in
+   * with something reasonable-sounding. Two of the originals have no honest
+   * version and are simply gone:
+   *
+   *   - Response time. Nothing records when a dealer first replied to an
+   *     enquiry; there is no such column. It could be built (stamp a
+   *     first_responded_at when status leaves 'new') but it cannot be
+   *     back-computed, and a made-up 22 minutes is worse than no card.
+   *   - Best time to list. Needs views bucketed by weekday. Listing views are
+   *     not recorded per day anywhere.
+   */
+  marketIntel = computed<{ icon: string; title: string; detail: string }[]>(() => {
+    const cards: { icon: string; title: string; detail: string }[] = [];
+    const cars = this.myCars();
+    const enquiries = this.enquiries();
+    const now = Date.now();
+    const DAY = 86_400_000;
+
+    // 1. Demand on this dealer's cars, this month against last.
+    //
+    // The honest version of "EV Demand Surge": a count of enquiries actually
+    // received, not a search statistic nobody collects.
+    if (enquiries.length) {
+      const age = (e: { created_at: string }) => (now - new Date(e.created_at).getTime()) / DAY;
+      const last30 = enquiries.filter(e => age(e) <= 30).length;
+      const prev30 = enquiries.filter(e => age(e) > 30 && age(e) <= 60).length;
+      const trend = prev30 === 0
+        ? (last30 ? `up from none in the 30 days before` : '')
+        : `against ${prev30} in the 30 days before`;
+      cards.push({
+        icon: 'trending-up',
+        title: 'Enquiries this month',
+        detail: `${last30} ${last30 === 1 ? 'enquiry' : 'enquiries'} in the last 30 days${trend ? ', ' + trend : ''}.`,
+      });
+    }
+
+    // 2. What is waiting on the dealer right now.
+    //
+    // Replaces the invented "top 15% of dealers" with the thing that claim was
+    // pretending to be about: whether anyone is being kept waiting.
+    const unworked = enquiries.filter(e => (e.status ?? 'new') === 'new').length;
+    const pendingDrives = this.testDriveRequests().filter(
+      r => (r.status ?? 'Pending') === 'Pending',
+    ).length;
+    if (unworked || pendingDrives) {
+      const parts: string[] = [];
+      if (unworked) parts.push(`${unworked} ${unworked === 1 ? 'enquiry' : 'enquiries'} not yet worked`);
+      if (pendingDrives) parts.push(`${pendingDrives} test ${pendingDrives === 1 ? 'drive' : 'drives'} awaiting a date`);
+      cards.push({
+        icon: 'star',
+        title: 'Waiting on you',
+        detail: `${parts.join(' and ')}. A buyer who enquired is comparing you against whoever replies first.`,
+      });
+    }
+
+    // 3. Stock that has been sitting.
+    //
+    // Computed from each listing's own created_at, so it says something true
+    // about this forecourt rather than about listing habits in general.
+    if (cars.length) {
+      const ageDays = (c: { createdAt: string }) =>
+        Math.floor((now - new Date(c.createdAt).getTime()) / DAY);
+      const stale = cars.filter(c => c.createdAt && ageDays(c) >= 30);
+      if (stale.length) {
+        const oldest = stale.reduce((a, b) => (ageDays(a) > ageDays(b) ? a : b));
+        cards.push({
+          icon: 'bell',
+          title: 'Ageing stock',
+          detail: `${stale.length} of your ${cars.length} ${cars.length === 1 ? 'listing has' : 'listings have'} been up 30 days or more — the oldest is the ${oldest.make} ${oldest.model} at ${ageDays(oldest)} days.`,
+        });
+      }
+    }
+
+    // 4. Where this dealer's prices sit against their own book.
+    //
+    // Deliberately NOT "4.2% above the national average". This dashboard holds
+    // one dealer's listings, so a national comparison would be a number
+    // invented to fill a card. The spread across their own stock is something
+    // the data actually supports.
+    const priced = cars.filter(c => c.price > 0);
+    if (priced.length >= 2) {
+      const prices = priced.map(c => c.price).sort((a, b) => a - b);
+      const mid = Math.floor(prices.length / 2);
+      const median = prices.length % 2 ? prices[mid] : Math.round((prices[mid - 1] + prices[mid]) / 2);
+      cards.push({
+        icon: 'trending-up',
+        title: 'Your price band',
+        detail: `${priced.length} priced ${priced.length === 1 ? 'listing' : 'listings'} from ${this.formatRupees(prices[0])} to ${this.formatRupees(prices[prices.length - 1])}, median ${this.formatRupees(median)}.`,
+      });
+    }
+
+    return cards;
+  });
+
+  /** Lakh/crore short form, the way every other price on the site reads. */
+  formatRupees(p: number): string {
+    if (p >= 10000000) return `₹${(p / 10000000).toFixed(2)} Cr`;
+    if (p >= 100000) return `₹${(p / 100000).toFixed(2)}L`;
+    return `₹${p.toLocaleString('en-IN')}`;
+  }
 
   topModels = [
     { model: 'Maruti Swift', views: 312, enquiries: 24 },
