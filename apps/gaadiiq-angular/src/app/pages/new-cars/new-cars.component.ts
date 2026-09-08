@@ -398,7 +398,13 @@ export class NewCarsComponent implements OnInit {
     if (min > 0 && max >= MAX_BUDGET) return `Above ${this.formatBudgetLabel(min)}`;
     if (min > 0 && max < MAX_BUDGET) return `${this.formatBudgetLabel(min)} – ${this.formatBudgetLabel(max)}`;
     if (max < MAX_BUDGET) return `Max ${this.formatBudgetLabel(max)}`;
-    return 'Max Budget: ₹1 Cr';
+    // Derived from the ceiling, not typed. This was the literal string
+    // "Max Budget: ₹1 Cr", and it survived the change that raised MAX_BUDGET
+    // from ₹1 Cr to ₹2 Cr — so the panel read "Max Budget: ₹1 Cr" directly
+    // above a slider whose own end label said ₹2 Cr, with the thumb at the
+    // top. Two different maximums for the same filter, which is the same
+    // fault that change was made to fix, one line further down.
+    return `Max Budget: ${this.formatBudgetLabel(MAX_BUDGET)}`;
   });
 
   ngOnInit() {

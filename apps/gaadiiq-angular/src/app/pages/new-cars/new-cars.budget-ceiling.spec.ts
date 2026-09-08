@@ -100,6 +100,24 @@ describe('NewCarsComponent — the budget ceiling', () => {
     expect(mount().formatBudgetLabel(TWO_CRORE)).toBe('₹2 Cr');
   });
 
+  it('says ₹2 Cr in the filter label when the slider is at the top', () => {
+    // Reported with the panel and the slider in one screenshot: "Budget: Max
+    // Budget: ₹1 Cr" above a track whose right end read ₹2 Cr, thumb at the
+    // maximum. The end label was fixed when the ceiling moved; this branch of
+    // budgetFilterLabel was a typed string and was missed, so the two halves
+    // of the same control disagreed.
+    const c = mount();
+    expect(c.maxBudget()).withContext('the default is the ceiling').toBe(TWO_CRORE);
+    expect(c.budgetFilterLabel()).toBe('Max Budget: ₹2 Cr');
+  });
+
+  it('agrees with the end of the slider it sits above', () => {
+    // The property that actually matters, stated once: whatever the ceiling
+    // becomes next, these two must name the same number.
+    const c = mount();
+    expect(c.budgetFilterLabel()).toContain(c.formatBudgetLabel(c.maxBudgetCeiling));
+  });
+
   it('still renders a ₹1 Cr price as "₹1 Cr"', () => {
     // The formatters divide by 10000000 to reach crores. That literal is the
     // unit, not the ceiling; moving them together would print ₹2 Cr here.

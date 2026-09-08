@@ -1570,8 +1570,17 @@ export const HINDI: Record<string, string> = {
     '98% अनुकूलता स्कोर',
   '↑ 2.4% vs last month':
     '↑ पिछले महीने से 2.4%',
-  'Max Budget: ₹1 Cr':
-    'अधिकतम बजट: ₹1 Cr',
+  // Keyed on the string the page now builds. It was 'Max Budget: ₹1 Cr',
+  // which stopped matching when the slider's ceiling rose to ₹2 Cr — a
+  // translation map keyed by English text goes stale silently, falling back to
+  // English rather than reporting a miss.
+  //
+  // Note this entry does not currently reach the reader either way: the panel
+  // renders budgetFilterLabel() raw, without the `t` pipe, and the label's
+  // other branches ("Max ₹15L", "Above ₹5L") are built at runtime and could
+  // not be keyed here at all. Kept correct so it works if that is fixed.
+  'Max Budget: ₹2 Cr':
+    'अधिकतम बजट: ₹2 Cr',
   'Under ₹5L':
     '₹5L से कम',
   'Above ₹30L':
