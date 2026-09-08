@@ -542,9 +542,14 @@ function mapListing(lst: ApiListing): Car {
         features: [] as string[],
       };
     })(),
+    // `confidence` is a percentage, because that is the slot it renders into:
+    // the card reads "{{ confidence }}% confidence". It was 0.8 — a fraction —
+    // so every listing with a valuation advertised "0.8% confidence" in its
+    // own price analysis. The number was meant to say four-fifths and said
+    // less than one part in a hundred.
     aiValuation: lst.ai_valuation ? {
       fairPrice: lst.ai_valuation, marketMin: lst.ai_valuation * 0.95,
-      marketMax: lst.ai_valuation * 1.05, verdict: 'Fair', confidence: 0.8,
+      marketMax: lst.ai_valuation * 1.05, verdict: 'Fair', confidence: 80,
     } : undefined,
   };
 }

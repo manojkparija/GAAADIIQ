@@ -865,6 +865,11 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     // the top and "Ex-Showroom ₹9.0L" in the panel beside it — a difference
     // of more than double, on the two numbers a buyer compares first.
     const price = Number(trim?.ex_showroom_price) || this.displayPrice()?.amount || this.car.price;
+    // Nothing to price. With a base of 0 this still returned a breakdown —
+    // road tax 0, insurance at its floor, and the flat ₹10,000 handling
+    // charge — so an unpriced car quoted a plausible-looking on-road total
+    // for a figure nobody published.
+    if (!(price > 0)) return null;
     return computeOnRoadPrice(
       price,
       trim?.fuel_type || this.car.fuel || 'Petrol',
@@ -895,6 +900,10 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   // Ownership cost (annual)
   ownershipCost = computed(() => {
     if (!this.car) return null;
+    // Maintenance, insurance and depreciation are all percentages of the
+    // price, so with no price this panel is a column of ₹0 presented as a
+    // cost of ownership.
+    if (!(this.car.price > 0)) return null;
     const km = this.annualKm();
     const fp = this.fuelPrice();
     // estimate mileage from specs or default
@@ -926,6 +935,9 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     if (!this.car) return [];
     const ai = this.aiForecast();
     if (ai) return ai;
+    // A depreciation curve from a price of zero is a flat line of zeros
+    // drawn as though it were a forecast.
+    if (!(this.car.price > 0)) return [];
     const age = Math.max(0, new Date().getFullYear() - this.car.year);
     return this.resaleSvc.local(this.car.price, this.car.fuel || 'Petrol', this.forecastYears(), age);
   });
@@ -1003,6 +1015,9 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   // Resale prediction
   resaleValue = computed(() => {
     if (!this.car) return null;
+    // Without a price the value is 0 and the percentage is 0/0 — the panel
+    // rendered a literal "NaN%".
+    if (!(this.car.price > 0)) return null;
     const age = new Date().getFullYear() - this.car.year;
     const depRate = this.car.fuel === 'Electric' ? 0.12 : 0.15;
     const val = Math.round(this.car.price * Math.pow(1 - depRate, Math.max(age, 1)));
@@ -1206,12 +1221,31 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       };
     }
 
+    // No published price is not a price of zero.
+    //
+    // This used to fall through to `amount: this.car.price` unconditionally,
+    // and 135 of the 136 catalogue rows carry no ex_showroom_price. Those
+    // rendered a ₹0 headline, "EMI from ₹0/mo" beneath it, and an On-Road
+    // panel that added road tax and insurance to nothing and quoted the
+    // ₹10,000 handling charge as the cost of the car.
+    //
+    // Returning null instead lets every caller say "we do not have this"
+    // rather than print a number nobody entered — the same rule the credit
+    // bureau service follows, where fetch_score raises rather than returning
+    // a plausible figure. A wrong price is not a cosmetic defect on a
+    // marketplace; a buyer who sees ₹0 concludes the site is broken, and one
+    // who sees ₹10,000 on the road concludes something worse.
+    if (!(this.car.price > 0)) return null;
+
     return {
       amount: this.car.price,
       text: this.formatPrice(this.car.price),
       caption: this.isNewCar ? 'Ex-Showroom Price' : '',
     };
   });
+
+  /** Whether there is a published price to reason from at all. */
+  hasPrice = computed(() => (this.displayPrice()?.amount ?? 0) > 0);
 
   /**
    * EMI on whatever the hero is quoting.

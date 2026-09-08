@@ -924,3 +924,15 @@
   word-break: break-word;
   max-width: 46ch;
 }
+
+/* The headline slot when a car has no published price.
+ *
+ * Same size and weight as .big-price so the hero does not collapse and reflow
+ * the panels beside it, but in --text-muted rather than the gradient: this is
+ * the absence of a number, and it should not read like one. */
+.price-pending {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
