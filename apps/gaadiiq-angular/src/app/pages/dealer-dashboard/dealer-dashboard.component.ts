@@ -38,11 +38,6 @@ interface CarEnquiry {
 }
 
 interface DealerMetric { label: string; value: string; change: string; up: boolean; icon: string; }
-interface LeadRow {
-  name: string; car: string; budget: string; stage: string; stageColor: string; time: string;
-  intentScore: number; leadGrade: 'A' | 'B' | 'C' | 'D';
-  bestContactTime: string; nba: string; phone: string;
-}
 
 @Component({
   selector: 'app-dealer-dashboard',
@@ -52,23 +47,131 @@ interface LeadRow {
   styleUrl: './dealer-dashboard.component.scss',
 })
 export class DealerDashboardComponent {
-  metrics: DealerMetric[] = [
-    { label: 'Total Listings', value: '24', change: '+3 this week', up: true, icon: '🚗' },
-    { label: 'Profile Views', value: '1,248', change: '+18% vs last week', up: true, icon: '👁️' },
-    { label: 'Enquiries', value: '87', change: '+12 today', up: true, icon: '💬' },
-    { label: 'Test Drive Requests', value: '—', change: 'Loading…', up: true, icon: '🗝️' },
-    { label: 'Avg. Days to Sell', value: '18', change: '−3 days improved', up: true, icon: '📅' },
-    { label: 'Revenue (MTD)', value: '₹14.2L', change: '+24% vs last month', up: true, icon: '💰' },
-  ];
+  /**
+   * The headline cards, counted from this dealer's own data.
+   *
+   * WHAT WAS HERE
+   *
+   * Six fixed cards, assigned once and never touched again — grep for
+   * `metrics` and the declaration was the only hit:
+   *
+   *   Total Listings 24 · Profile Views 1,248 · Enquiries 87 ·
+   *   Test Drive Requests "—" / "Loading…" · Avg. Days to Sell 18 ·
+   *   Revenue (MTD) ₹14.2L "+24% vs last month"
+   *
+   * They sat on the Overview while the tabs beside them read Test Drives 1
+   * and Enquiries 2, so the page contradicted itself on screen. The fourth
+   * card is its own small tell: it said "Loading…" permanently, because
+   * nothing ever loaded it.
+   *
+   * WHAT IS COUNTED NOW, AND WHAT IS GONE
+   *
+   * Three of the six have a real source and are counted here. The other
+   * three are removed rather than approximated, because nothing in this
+   * system records them:
+   *
+   *   - Profile views. No per-dealer view counter exists anywhere.
+   *   - Avg. days to sell. A listing has createdAt and a status, but no
+   *     sold-at timestamp, so the interval cannot be computed even in
+   *     principle.
+   *   - Revenue. The dealer's own sales are not in this database at all.
+   *     "₹14.2L, +24% vs last month" is the most believable number on the
+   *     page and the one with the least behind it.
+   */
+  metrics = computed<DealerMetric[]>(() => {
+    const DAY = 86_400_000;
+    const now = Date.now();
+    const withinWeek = (iso?: string | null) =>
+      !!iso && now - new Date(iso).getTime() <= 7 * DAY;
 
-  leads: LeadRow[] = [
-    { name: 'Arjun Mehta', car: 'Maruti Swift 2024', budget: '₹7–9L', stage: 'Hot Lead', stageColor: 'red', time: '2 min ago', intentScore: 92, leadGrade: 'A', bestContactTime: 'Now · 10am–1pm', nba: 'Schedule Test Drive', phone: '+91 98765 43210' },
-    { name: 'Priya Nair', car: 'Hyundai Creta 2023', budget: '₹12–15L', stage: 'Test Drive', stageColor: 'purple', time: '18 min ago', intentScore: 85, leadGrade: 'A', bestContactTime: 'Eve · 6–8pm', nba: 'Send Finance Offer', phone: '+91 98745 12340' },
-    { name: 'Ravi Kumar', car: 'Tata Nexon EV', budget: '₹14–18L', stage: 'Negotiation', stageColor: 'gold', time: '1 hr ago', intentScore: 78, leadGrade: 'B', bestContactTime: 'Morn · 9–11am', nba: 'Share Subsidy Details', phone: '+91 97865 43201' },
-    { name: 'Sneha Joshi', car: 'Maruti Alto K10', budget: '₹4–5L', stage: 'New Enquiry', stageColor: 'blue', time: '2 hr ago', intentScore: 61, leadGrade: 'B', bestContactTime: 'Noon · 12–2pm', nba: 'Send Brochure', phone: '+91 96754 32109' },
-    { name: 'Deepak Rao', car: 'Mahindra Scorpio-N', budget: '₹18–22L', stage: 'Documentation', stageColor: 'green', time: '3 hr ago', intentScore: 95, leadGrade: 'A', bestContactTime: 'Morn · 10am', nba: 'Collect Documents', phone: '+91 95643 21098' },
-    { name: 'Lalita Sharma', car: 'Toyota Innova HyCross', budget: '₹20–25L', stage: 'Hot Lead', stageColor: 'red', time: '4 hr ago', intentScore: 44, leadGrade: 'C', bestContactTime: 'Eve · 7–9pm', nba: 'Re-engage via WhatsApp', phone: '+91 94532 10987' },
-  ];
+    const cars = this.myCars();
+    const enquiries = this.enquiries();
+    const drives = this.testDriveRequests();
+
+    const newCars = cars.filter(c => withinWeek(c.createdAt)).length;
+    const newEnquiries = enquiries.filter(e => withinWeek(e.created_at)).length;
+    const pendingDrives = drives.filter(r => (r.status ?? 'Pending') === 'Pending').length;
+
+    return [
+      {
+        label: 'Live Listings', value: String(cars.length), icon: '🚗', up: true,
+        change: newCars ? `+${newCars} this week` : 'none added this week',
+      },
+      {
+        label: 'Enquiries', value: String(enquiries.length), icon: '💬', up: true,
+        change: newEnquiries ? `+${newEnquiries} this week` : 'none this week',
+      },
+      {
+        label: 'Test Drive Requests', value: String(drives.length), icon: '🗝️', up: true,
+        change: pendingDrives ? `${pendingDrives} awaiting a date` : 'none awaiting a date',
+      },
+    ];
+  });
+
+  /**
+   * The four most recent enquiries, for the Overview preview.
+   *
+   * This table used to render `leads.slice(0, 4)` — six invented buyers,
+   * each with a name, a budget band, an intent score and a DIALABLE PHONE
+   * NUMBER (Arjun Mehta +91 98765 43210 and five more). The same shape as
+   * the fabricated dealer removed in #235, and a dealer could have rung one.
+   *
+   * The columns that survive are the ones a real enquiry can fill. Budget
+   * and lead grade are not among them: a buyer enquiry carries no budget,
+   * and a grade is the sentiment service's to assign, not this table's to
+   * invent.
+   */
+  recentEnquiries = computed(() =>
+    [...this.enquiries()]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 4)
+      .map(e => ({
+        id: e.id,
+        name: e.buyer_name,
+        car: this.carLabel(e.car_id),
+        status: e.status ?? 'new',
+        when: this.timeAgo(e.created_at),
+      })),
+  );
+
+  /**
+   * Which of this dealer's cars buyers are actually asking about.
+   *
+   * Was `topModels`: five models with view counts (312, 278, 241…) and
+   * conversion rates computed from them. Nothing records listing views, so
+   * both columns and the rate derived from them were invented.
+   *
+   * Enquiries per model IS recorded, so that is what this counts. A model
+   * nobody has asked about does not appear, and with no enquiries at all
+   * the panel does not render.
+   */
+  enquiredModels = computed(() => {
+    const counts = new Map<string, number>();
+    for (const e of this.enquiries()) {
+      const label = this.carLabel(e.car_id);
+      if (label === '—') continue;
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([model, enquiries]) => ({ model, enquiries }))
+      .sort((a, b) => b.enquiries - a.enquiries)
+      .slice(0, 5);
+  });
+
+  /**
+   * A car_id as something a dealer recognises.
+   *
+   * car_enquiries.car_id holds two kinds of uuid — a listings.id from
+   * mapListing, or a cars.id from mapCatalogueCar — and the column cannot
+   * tell them apart. Only the first can be matched against this dealer's
+   * own stock; an enquiry against catalogue stock is a lead for the
+   * business rather than for them, and says "—" rather than guessing.
+   */
+  carLabel(carId: string): string {
+    const hit = this.myCars().find(c => c.supabaseId === carId);
+    return hit ? `${hit.make} ${hit.model}`.trim() : '—';
+  }
+
 
   /**
    * The colour each fuel is drawn in. The percentages are computed from the
@@ -239,13 +342,6 @@ export class DealerDashboardComponent {
     return `₹${p.toLocaleString('en-IN')}`;
   }
 
-  topModels = [
-    { model: 'Maruti Swift', views: 312, enquiries: 24 },
-    { model: 'Hyundai Creta', views: 278, enquiries: 19 },
-    { model: 'Tata Nexon EV', views: 241, enquiries: 16 },
-    { model: 'Mahindra Scorpio-N', views: 198, enquiries: 11 },
-    { model: 'Maruti Alto K10', views: 176, enquiries: 9 },
-  ];
 
   activeTab = signal<'overview' | 'leads' | 'inventory' | 'analytics' | 'test-drives' | 'enquiries' | 'car-leads'>('overview');
 
@@ -736,8 +832,18 @@ export class DealerDashboardComponent {
     return `${Math.floor(hrs / 24)} days ago`;
   }
 
+  /**
+   * How many scored leads sit in a grade.
+   *
+   * The AI Lead Intelligence chips read
+   * `sentimentSummary()?.grade_a ?? countGrade('A')`, and this used to count
+   * the six invented buyers — so whenever the sentiment service had nothing
+   * to say, the panel confidently reported an AI grading of customers who
+   * did not exist. It reads the real scored leads now, and answers zero when
+   * there are none, which is the honest fallback for a fallback.
+   */
   countGrade(grade: 'A' | 'B' | 'C' | 'D') {
-    return this.leads.filter(l => l.leadGrade === grade).length;
+    return this.sentimentLeads().filter(l => l.lead_grade === grade).length;
   }
 
   // Sentiment helpers

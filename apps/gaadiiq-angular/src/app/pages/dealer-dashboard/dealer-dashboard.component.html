@@ -4,7 +4,7 @@
     <div class="dd-hero-left">
       <div class="hero-badge">🏢 Dealer Intelligence</div>
       <h1 class="dd-title">Dealer <span class="gradient-text">Dashboard</span></h1>
-      <p class="dd-sub">Real-time insights into your listings, leads, and revenue performance.</p>
+      <p class="dd-sub">Your listings, enquiries and test drives — counted from your own data.</p>
     </div>
     <div class="dd-hero-right">
       <div class="dealer-card glass-card" *ngIf="currentSeller()">
@@ -57,7 +57,7 @@
 
       <!-- Metric Cards -->
       <div class="metrics-grid">
-        <div class="metric-card glass-card" *ngFor="let m of metrics">
+        <div class="metric-card glass-card" *ngFor="let m of metrics()">
           <div class="mc-top">
             <span class="mc-icon">{{ m.icon }}</span>
             <span class="mc-change" [class.up]="m.up" [class.down]="!m.up">
@@ -116,31 +116,42 @@
 
       <!-- Recent Leads preview -->
       <h2 class="section-head" style="margin-top:2rem">Recent <span class="gradient-text">Leads</span></h2>
-      <div class="leads-table glass-card">
+      <!-- Real enquiries, newest first. This table used to render six
+           invented buyers with dialable phone numbers. Budget and grade are
+           gone with them: an enquiry carries no budget, and a grade belongs
+           to the sentiment service, not to this table. -->
+      <div class="leads-table recent-enq glass-card" *ngIf="recentEnquiries().length > 0; else noRecent">
         <div class="lt-row lt-header">
-          <span>Buyer</span><span>{{ 'Car' | t }}</span><span>{{ 'Budget' | t }}</span><span>Stage</span><span>Grade</span><span>Time</span>
+          <span>Buyer</span><span>{{ 'Car' | t }}</span><span>{{ 'Status' | t }}</span><span>Received</span>
         </div>
-        <div class="lt-row" *ngFor="let l of leads.slice(0,4)">
-          <span class="lt-name">{{ l.name }}</span>
-          <span class="lt-car">{{ l.car }}</span>
-          <span class="lt-budget">{{ l.budget }}</span>
-          <span class="lt-stage" [ngClass]="'stage-' + l.stageColor">{{ l.stage }}</span>
-          <span class="lead-grade" [ngClass]="'grade-' + l.leadGrade">{{ l.leadGrade }}</span>
-          <span class="lt-time">{{ l.time }}</span>
+        <div class="lt-row" *ngFor="let e of recentEnquiries()">
+          <span class="lt-name">{{ e.name }}</span>
+          <span class="lt-car">{{ e.car }}</span>
+          <span class="lt-stage">{{ e.status }}</span>
+          <span class="lt-time">{{ e.when }}</span>
         </div>
       </div>
+      <ng-template #noRecent>
+        <div class="glass-card" style="padding:1.6rem;text-align:center;color:var(--text-muted);font-size:.9rem">
+          No enquiries yet. They appear here as buyers contact you.
+        </div>
+      </ng-template>
 
-      <!-- Top Models -->
-      <h2 class="section-head" style="margin-top:2rem">Top <span class="gradient-text">Performing Models</span></h2>
-      <div class="top-models glass-card">
-        <div class="tm-row tm-header"><span>{{ 'Model' | t }}</span><span>Views</span><span>Enquiries</span><span>Conv. Rate</span></div>
-        <div class="tm-row" *ngFor="let m of topModels; let i = index">
-          <span class="tm-rank-name"><span class="tm-rank">{{ i+1 }}</span>{{ m.model }}</span>
-          <span>{{ m.views }}</span>
-          <span>{{ m.enquiries }}</span>
-          <span class="tm-rate">{{ (m.enquiries/m.views*100).toFixed(1) }}%</span>
+      <!-- Was "Top Performing Models": five models with view counts (312,
+           278, 241…) and a conversion rate computed from them. Nothing
+           records listing views, so the views, the rate and the ranking were
+           all invented. Enquiries per model is recorded, so that is what
+           this counts — and with none, the panel does not render. -->
+      <ng-container *ngIf="enquiredModels().length > 0">
+        <h2 class="section-head" style="margin-top:2rem">Most <span class="gradient-text">Enquired Models</span></h2>
+        <div class="top-models glass-card">
+          <div class="tm-row tm-header two-col"><span>{{ 'Model' | t }}</span><span>Enquiries</span></div>
+          <div class="tm-row two-col" *ngFor="let m of enquiredModels(); let i = index">
+            <span class="tm-rank-name"><span class="tm-rank">{{ i+1 }}</span>{{ m.model }}</span>
+            <span>{{ m.enquiries }}</span>
+          </div>
         </div>
-      </div>
+      </ng-container>
     </ng-container>
 
     <!-- LEADS TAB -->

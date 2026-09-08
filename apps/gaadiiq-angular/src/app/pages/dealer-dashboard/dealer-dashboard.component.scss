@@ -625,3 +625,14 @@
   line-height: 1.55;
   margin: 0;
 }
+
+/* The Overview preview tables lost the columns nothing could fill: the
+   recent-enquiry table dropped Budget and Grade, and the enquired-models
+   table dropped Views and Conv. Rate. Both inherit .leads-table / .tm-row
+   grids sized for the old column counts, so each states its own. */
+.leads-table.recent-enq .lt-row {
+  grid-template-columns: 1.2fr 1.4fr 1fr 1fr;
+}
+.top-models .tm-row.two-col {
+  grid-template-columns: 1fr auto;
+}
