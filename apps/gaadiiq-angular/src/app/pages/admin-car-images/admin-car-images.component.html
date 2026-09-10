@@ -244,6 +244,9 @@
         <div class="aci-form-grid">
           <div class="aci-form-field">
             <label class="aci-label">Manufacturer</label>
+            <!-- makeOptions(), not makeSelectOptions(): this dropdown browses
+                 photographs that already exist, so an "add new" row here would
+                 offer to filter by a manufacturer that by definition has none. -->
             <app-custom-select class="aci-input" [options]="makeOptions()"
                                placeholder="Select manufacturer…"
                                [ngModel]="manageMake()" (ngModelChange)="onManageMake($event)" />
@@ -289,6 +292,14 @@
                      referrerpolicy="no-referrer" loading="lazy" />
                 <div class="aci-existing-meta">
                   <span class="aci-existing-name" [title]="img.filename">{{ img.filename }}</span>
+                  <!-- Which surface this photograph reaches. New Cars filters
+                       on media_bucket and this panel does not, so without it a
+                       Used-only image looks present here and is invisible to a
+                       buyer. See imageSurface(). -->
+                  <span class="aci-existing-surface"
+                        [class.aci-surface-warn]="imageSurface(img).warn">
+                    {{ imageSurface(img).label }}
+                  </span>
                   <span class="aci-existing-tags">
                     @if (img.origin === 'listing') {
                       From a listing
@@ -370,7 +381,7 @@
             <div class="aci-form-field">
               <label class="aci-label">{{ 'Manufacturer *' | t }}</label>
               @if (!customMake() && makeOptions().length) {
-                <app-custom-select class="aci-input" [options]="makeOptions()"
+                <app-custom-select class="aci-input" [options]="makeSelectOptions()"
                                    placeholder="Select manufacturer…"
                                    [ngModel]="make()" (ngModelChange)="onIdentityPick('make', $event)" />
               } @else {
@@ -389,7 +400,7 @@
             <div class="aci-form-field">
               <label class="aci-label">{{ 'Model *' | t }}</label>
               @if (!customModel() && modelOptions().length) {
-                <app-custom-select class="aci-input" [options]="modelOptions()"
+                <app-custom-select class="aci-input" [options]="modelSelectOptions()"
                                    placeholder="Select model…"
                                    [ngModel]="model()" (ngModelChange)="onIdentityPick('model', $event)" />
               } @else {
@@ -408,7 +419,7 @@
             <div class="aci-form-field">
               <label class="aci-label">Variant (optional)</label>
               @if (!customVariant() && variantOptions().length) {
-                <app-custom-select class="aci-input" [options]="variantOptions()"
+                <app-custom-select class="aci-input" [options]="variantSelectOptions()"
                                    placeholder="No variant"
                                    [ngModel]="variant()" (ngModelChange)="onIdentityPick('variant', $event)" />
               } @else {

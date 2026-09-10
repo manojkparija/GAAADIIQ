@@ -192,6 +192,37 @@ export class AdminCarImagesComponent implements OnInit {
         .filter((v): v is string => !!v)
     )].sort()
   );
+
+  /**
+   * The same three lists, each with a way out of them.
+   *
+   * REPORTED: photographing a Maruti Suzuki model the catalogue has not heard
+   * of was impossible. The dropdown offered Baleno, Fronx, Grand Vitara,
+   * S-Presso and e Vitara, and nothing else — no row for anything absent, and
+   * no link beside it to type one.
+   *
+   * The escape was already designed and half-built: ADD_NEW exists,
+   * onIdentityPick() switches the field to a text box when it sees it, and the
+   * text box carries a "Choose an existing model instead" link back. The year
+   * picker offers "➕ Add new year…" and works. Make, model and variant simply
+   * never got the row, so the only route into their text boxes was the
+   * catalogue failing to load at all — which is why this looked like a missing
+   * feature rather than a missing option.
+   *
+   * The upload path does not require a catalogue row (see the note on
+   * researchAvailable), so a typed model was always accepted. It just could
+   * not be typed.
+   */
+  makeSelectOptions = computed(() => this.withAddNew(this.makeOptions(), 'manufacturer'));
+  modelSelectOptions = computed(() => this.withAddNew(this.modelOptions(), 'model'));
+  variantSelectOptions = computed(() => this.withAddNew(this.variantOptions(), 'variant'));
+
+  private withAddNew(values: string[], noun: string) {
+    return [
+      ...values.map(v => ({ value: v, label: v })),
+      { value: this.ADD_NEW, label: `➕ Add new ${noun}…` },
+    ];
+  }
   /**
    * The current model year, and the one manufacturers are already selling into.
    *
@@ -1053,6 +1084,50 @@ export class AdminCarImagesComponent implements OnInit {
       this.existingImages.set([]);
     } finally {
       this.existingLoading.set(false);
+    }
+  }
+
+  /**
+   * Where a stored photograph will actually be seen, in the reader's terms.
+   *
+   * WHY THIS EXISTS
+   *
+   * Reported: Baleno photographs uploaded and approved, but "not visible in
+   * the new car section". Diagnosing it needed the read path traced by hand,
+   * because nothing on screen distinguished the three ways it can happen —
+   * and two of them look identical here, since this panel lists every stored
+   * image while New Cars filters them.
+   *
+   * The three, and what each looks like without this label:
+   *
+   *   - The image serves Used Cars only. media_bucket is the one filter
+   *     urls_for_cars applies beyond identity, so New Cars excludes it —
+   *     while this panel shows it, present and correct. That is the cruel
+   *     case: the admin is looking straight at an image the buyer cannot see.
+   *   - The image came from a dealer's listing. It belongs to that listing,
+   *     not to a catalogue model, and no New Cars page reads that store.
+   *   - Nothing is stored under this identity at all, and the panel is empty.
+   *     That one at least says so by being empty.
+   *
+   * Display only: this reads media_bucket, which the API has always returned
+   * and this page has never shown. Nothing about which images are stored, or
+   * which a buyer sees, changes.
+   */
+  imageSurface(image: VehicleImage): { label: string; warn: boolean } {
+    if (image.origin === 'listing') {
+      return { label: 'From a listing — not on catalogue pages', warn: false };
+    }
+    switch (image.media_bucket) {
+      case 'used':
+        return { label: 'Used Cars only — not on New Cars', warn: true };
+      case 'new':
+        return { label: 'New Cars only', warn: false };
+      case 'both':
+        return { label: 'New & Used Cars', warn: false };
+      default:
+        // NULL predates the column and matches either surface, which is what
+        // urls_for_cars does with it.
+        return { label: 'New & Used Cars', warn: false };
     }
   }
 

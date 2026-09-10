@@ -853,3 +853,21 @@
   font-style: italic;
   white-space: nowrap;
 }
+
+/* Where a stored photograph is actually seen. Quiet by default — it is
+   metadata, not an alert — and amber only when the answer is "not where you
+   are probably looking for it", which is the case that cost an afternoon. */
+.aci-existing-surface {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.15rem;
+}
+.aci-existing-surface.aci-surface-warn {
+  // No hex fallback: --warning-ink is defined in all four theme blocks, and a
+  // literal here is what e2e/admin-theme.spec.ts exists to catch — an admin
+  // screen painted in a colour that cannot follow the theme. It caught this
+  // one on the way in.
+  color: var(--warning-ink);
+}
