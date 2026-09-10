@@ -26,10 +26,20 @@ fake session, which pins the contract — the guard, the read-back, the 404 —
 but not the SQL. The statement is deliberately plain UPDATE ... RETURNING for
 that reason: there is nothing dialect-specific in it to get wrong.
 """
+import uuid
+
 import pytest
 from fastapi import HTTPException
 
-from routers.media_admin import ListingImageOrderPatch, reorder_listing_image
+from routers.media_admin import (
+    GalleryImageRef,
+    GalleryOrder,
+    ListingImageOrderPatch,
+    reorder_listing_image,
+    set_gallery_order,
+)
+
+MEDIA_ID = uuid.uuid4()
 
 
 class _Rows:
@@ -74,6 +84,84 @@ async def _call(db, image_id=7, sort_order=0):
         patch=ListingImageOrderPatch(sort_order=sort_order),
         admin=_Admin(), db=db,
     )
+
+
+@pytest.mark.asyncio
+async def test_the_whole_gallery_is_renumbered_into_one_sequence():
+    # The point of the bulk endpoint. Each table numbers its own rows from
+    # zero, so moving one image could never carry it past the boundary — an
+    # admin pressing ↑ on the first dealer photograph watched it stay put.
+    # Renumbering everything into 0..n-1 is what makes a position mean
+    # something across both, and distinct positions are also the signal the
+    # read path uses to know this car was arranged at all.
+    db = FakeDb([])
+
+    result = await set_gallery_order(
+        request=None,
+        order=GalleryOrder(images=[
+            GalleryImageRef(id="7", origin="listing"),
+            GalleryImageRef(id=str(MEDIA_ID), origin="media_library"),
+            GalleryImageRef(id="8", origin="listing"),
+        ]),
+        admin=_Admin(), db=db,
+    )
+
+    assert result == {"ordered": 3}
+    assert db.committed is True
+    positions = [p["p"] for p in db.params if isinstance(p, dict) and "p" in p]
+    assert positions == [0, 2]  # the two listing rows, in their new places
+
+
+@pytest.mark.asyncio
+async def test_an_empty_order_is_refused():
+    # A partial renumber is worse than none: it could leave the positions
+    # distinct by accident and silently switch a gallery to an order nobody
+    # chose. The whole list, or nothing.
+    db = FakeDb([])
+
+    with pytest.raises(HTTPException) as exc:
+        await set_gallery_order(
+            request=None, order=GalleryOrder(images=[]), admin=_Admin(), db=db,
+        )
+
+    assert exc.value.status_code == 422
+    assert db.committed is False
+
+
+@pytest.mark.asyncio
+async def test_the_same_photograph_twice_is_refused():
+    # Two entries for one row would consume two positions and leave the
+    # sequence short, which reads downstream as a gallery nobody arranged.
+    db = FakeDb([])
+
+    with pytest.raises(HTTPException) as exc:
+        await set_gallery_order(
+            request=None,
+            order=GalleryOrder(images=[
+                GalleryImageRef(id="7", origin="listing"),
+                GalleryImageRef(id="7", origin="listing"),
+            ]),
+            admin=_Admin(), db=db,
+        )
+
+    assert exc.value.status_code == 422
+    assert "twice" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_the_admin_claim_is_set_once_when_listing_rows_are_touched():
+    # car_images carries a BEFORE UPDATE trigger reading auth.jwt(). Set for
+    # the transaction rather than per row — and not at all when no listing
+    # photograph is being written.
+    db = FakeDb([])
+
+    await set_gallery_order(
+        request=None,
+        order=GalleryOrder(images=[GalleryImageRef(id="7", origin="listing")]),
+        admin=_Admin(), db=db,
+    )
+
+    assert sum("set_config" in s for s in db.statements) == 2
 
 
 @pytest.mark.asyncio
