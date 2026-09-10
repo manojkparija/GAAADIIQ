@@ -244,6 +244,9 @@
         <div class="aci-form-grid">
           <div class="aci-form-field">
             <label class="aci-label">Manufacturer</label>
+            <!-- makeOptions(), not makeSelectOptions(): this dropdown browses
+                 photographs that already exist, so an "add new" row here would
+                 offer to filter by a manufacturer that by definition has none. -->
             <app-custom-select class="aci-input" [options]="makeOptions()"
                                placeholder="Select manufacturer…"
                                [ngModel]="manageMake()" (ngModelChange)="onManageMake($event)" />
@@ -370,7 +373,7 @@
             <div class="aci-form-field">
               <label class="aci-label">{{ 'Manufacturer *' | t }}</label>
               @if (!customMake() && makeOptions().length) {
-                <app-custom-select class="aci-input" [options]="makeOptions()"
+                <app-custom-select class="aci-input" [options]="makeSelectOptions()"
                                    placeholder="Select manufacturer…"
                                    [ngModel]="make()" (ngModelChange)="onIdentityPick('make', $event)" />
               } @else {
@@ -389,7 +392,7 @@
             <div class="aci-form-field">
               <label class="aci-label">{{ 'Model *' | t }}</label>
               @if (!customModel() && modelOptions().length) {
-                <app-custom-select class="aci-input" [options]="modelOptions()"
+                <app-custom-select class="aci-input" [options]="modelSelectOptions()"
                                    placeholder="Select model…"
                                    [ngModel]="model()" (ngModelChange)="onIdentityPick('model', $event)" />
               } @else {
@@ -408,7 +411,7 @@
             <div class="aci-form-field">
               <label class="aci-label">Variant (optional)</label>
               @if (!customVariant() && variantOptions().length) {
-                <app-custom-select class="aci-input" [options]="variantOptions()"
+                <app-custom-select class="aci-input" [options]="variantSelectOptions()"
                                    placeholder="No variant"
                                    [ngModel]="variant()" (ngModelChange)="onIdentityPick('variant', $event)" />
               } @else {

@@ -192,6 +192,37 @@ export class AdminCarImagesComponent implements OnInit {
         .filter((v): v is string => !!v)
     )].sort()
   );
+
+  /**
+   * The same three lists, each with a way out of them.
+   *
+   * REPORTED: photographing a Maruti Suzuki model the catalogue has not heard
+   * of was impossible. The dropdown offered Baleno, Fronx, Grand Vitara,
+   * S-Presso and e Vitara, and nothing else — no row for anything absent, and
+   * no link beside it to type one.
+   *
+   * The escape was already designed and half-built: ADD_NEW exists,
+   * onIdentityPick() switches the field to a text box when it sees it, and the
+   * text box carries a "Choose an existing model instead" link back. The year
+   * picker offers "➕ Add new year…" and works. Make, model and variant simply
+   * never got the row, so the only route into their text boxes was the
+   * catalogue failing to load at all — which is why this looked like a missing
+   * feature rather than a missing option.
+   *
+   * The upload path does not require a catalogue row (see the note on
+   * researchAvailable), so a typed model was always accepted. It just could
+   * not be typed.
+   */
+  makeSelectOptions = computed(() => this.withAddNew(this.makeOptions(), 'manufacturer'));
+  modelSelectOptions = computed(() => this.withAddNew(this.modelOptions(), 'model'));
+  variantSelectOptions = computed(() => this.withAddNew(this.variantOptions(), 'variant'));
+
+  private withAddNew(values: string[], noun: string) {
+    return [
+      ...values.map(v => ({ value: v, label: v })),
+      { value: this.ADD_NEW, label: `➕ Add new ${noun}…` },
+    ];
+  }
   /**
    * The current model year, and the one manufacturers are already selling into.
    *
