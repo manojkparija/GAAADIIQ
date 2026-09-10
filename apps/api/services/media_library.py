@@ -25,7 +25,8 @@ import logging
 import uuid
 from typing import TYPE_CHECKING, Sequence
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
@@ -540,7 +541,73 @@ async def urls_for_cars(
         for car_id in wanted.get(key, ()):
             if len(out[car_id]) < per_car:
                 out[car_id].append(storage.url_for(media.webp_key or media.storage_key))
+
+    await _append_approved_dealer_photos(db, out, per_car)
     return out
+
+
+async def _append_approved_dealer_photos(
+    db: AsyncSession,
+    out: dict[uuid.UUID, list[str]],
+    per_car: int,
+) -> None:
+    """
+    Approved dealer photographs, which are photographs of a catalogue car.
+
+    REPORTED THREE TIMES: eight Baleno photographs approved in Image Review,
+    and Baleno absent from New Cars entirely.
+
+    car_images.car_id references public.cars — the catalogue table, not a
+    listing — so an approved row there IS a photograph of that catalogue
+    model, and /media-admin/list has always said so: it unions both tables
+    into the admin browse panel. This function is the half that was missing.
+    Without it the same API told an admin the car had photographs and told
+    buyers it had none, and since isShowable() hides a catalogue row with no
+    photograph, the model did not merely lose its pictures — it vanished.
+
+    Approval is the gate, exactly as the review queue promises. No bucket
+    filter: car_images has no such column, so these behave like a NULL
+    media_bucket and serve whichever surface asked, which is what that value
+    already means a few lines above.
+
+    A missing table is not an error. car_images exists only where the
+    hand-run Supabase migrations have been applied. The check goes through
+    SQLAlchemy's inspector rather than to_regclass, which is Postgres-only —
+    media_admin learned that the hard way, taking a whole endpoint down under
+    SQLite.
+    """
+    car_ids = [cid for cid, urls in out.items() if len(urls) < per_car]
+    if not car_ids:
+        return
+
+    def _has_table(sync_conn: object) -> bool:
+        return sa_inspect(sync_conn).has_table("car_images", schema=None)
+
+    conn = await db.connection()
+    if not await conn.run_sync(_has_table):
+        return
+
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT car_id, url
+                  FROM public.car_images
+                 WHERE status = 'approved'
+                   AND car_id = ANY(:car_ids)
+                 ORDER BY sort_order NULLS LAST, created_at
+                """
+            ),
+            {"car_ids": car_ids},
+        )
+    ).mappings().all()
+
+    for row in rows:
+        urls = out.get(row["car_id"])
+        # Behind the curated ones rather than in front: an admin's own upload
+        # is the hero shot where both exist.
+        if urls is not None and len(urls) < per_car and row["url"]:
+            urls.append(row["url"])
 
 
 #: Below this many frames a spin is not a spin — it jumps between angles rather
