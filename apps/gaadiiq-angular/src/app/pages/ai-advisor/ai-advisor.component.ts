@@ -40,12 +40,15 @@ const RESALE: Record<string, number> = {
   'Tata': 0.52, 'MG Motor': 0.50,
 };
 
-const ANALYZE_MSGS = [
+// Exported so a test can assert every entry is a name the icon set actually
+// has: these go through <app-icon>, and an unknown name renders an empty
+// <svg> rather than failing — two of them silently drew nothing.
+export const ANALYZE_MSGS = [
   { icon: 'search', text: 'Profiling your requirements...' },
-  { icon: '🧮', text: 'Evaluating vehicles against your answers...' },
+  { icon: 'scale', text: 'Evaluating vehicles against your answers...' },
   { icon: 'calculator', text: 'Calculating 5-year ownership costs...' },
   { icon: 'bar-chart', text: 'Scoring listings against your profile...' },
-  { icon: '✨', text: 'Ranking your best matches...' },
+  { icon: 'sparkles', text: 'Ranking your best matches...' },
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -171,7 +174,7 @@ export class AiAdvisorComponent {
       ]
     },
     {
-      key: 'budget', category: 'Financial', icon: 'calculator', multi: false,
+      key: 'budget', category: 'Financial', icon: '🧮', multi: false,
       title: 'What is your total car budget?',
       subtitle: 'We\'ll match cars precisely within your price range',
       options: [
@@ -184,7 +187,7 @@ export class AiAdvisorComponent {
       ]
     },
     {
-      key: 'dailyKm', category: 'Driving', icon: 'road', multi: false,
+      key: 'dailyKm', category: 'Driving', icon: '🛣️', multi: false,
       title: 'How much do you drive daily?',
       subtitle: 'Helps calculate fuel costs & EV range requirements',
       options: [
@@ -217,7 +220,7 @@ export class AiAdvisorComponent {
       ]
     },
     {
-      key: 'usageType', category: 'Family', icon: 'car', multi: true,
+      key: 'usageType', category: 'Family', icon: '🚗', multi: true,
       title: 'How will you primarily use the car?',
       subtitle: 'Select all that apply',
       options: [
@@ -243,7 +246,7 @@ export class AiAdvisorComponent {
       ]
     },
     {
-      key: 'ev', category: 'Electric', icon: 'zap', multi: false, ev: true,
+      key: 'ev', category: 'Electric', icon: '⚡', multi: false, ev: true,
       title: 'EV Suitability Check',
       subtitle: 'Helps us assess your readiness for electric vehicles',
       options: [
