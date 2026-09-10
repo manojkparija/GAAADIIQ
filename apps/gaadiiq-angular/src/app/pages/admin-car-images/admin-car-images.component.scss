@@ -865,5 +865,9 @@
   margin-bottom: 0.15rem;
 }
 .aci-existing-surface.aci-surface-warn {
-  color: var(--warning-ink, #92400e);
+  // No hex fallback: --warning-ink is defined in all four theme blocks, and a
+  // literal here is what e2e/admin-theme.spec.ts exists to catch — an admin
+  // screen painted in a colour that cannot follow the theme. It caught this
+  // one on the way in.
+  color: var(--warning-ink);
 }
