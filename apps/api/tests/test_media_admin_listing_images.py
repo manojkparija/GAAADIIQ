@@ -88,8 +88,15 @@ class _When:
         return "2026-08-27T21:13:18+00:00"
 
 
-def _row(id_=1, url="https://cdn.example/img/front-view.webp"):
-    return {"id": id_, "url": url, "created_at": _When(), "submitted_by": "dealer@x.in"}
+def _row(id_=1, url="https://cdn.example/img/front-view.webp", sort_order=0):
+    # sort_order is selected because the panel now shows each photograph's
+    # place in the gallery and lets an admin change it — the first one is the
+    # cover a buyer meets on the card. The column is not new: migration 011
+    # defines it and this query has always ordered by it.
+    return {
+        "id": id_, "url": url, "created_at": _When(),
+        "submitted_by": "dealer@x.in", "sort_order": sort_order,
+    }
 
 
 @pytest.mark.asyncio

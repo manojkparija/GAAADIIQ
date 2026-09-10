@@ -1082,6 +1082,7 @@ export class AdminCarImagesComponent implements OnInit {
   existingLoading = signal(false);
   existingError = signal('');
   removingId = signal<string | null>(null);
+  reorderingId = signal<string | null>(null);
   /** The last removal, so it can be undone without hunting for it. */
   lastRemoved = signal<VehicleImage | null>(null);
 
@@ -1235,6 +1236,95 @@ export class AdminCarImagesComponent implements OnInit {
     }
   }
 
+  /**
+   * Move a photograph one place towards or away from the front of the gallery.
+   *
+   * WHAT THIS FIXES
+   *
+   * The Baleno card on New Cars led with a photograph of the boot. Nothing was
+   * wrong with the image or the car — the gallery simply had no order anyone
+   * had chosen. `car_images` numbers its rows in the sequence the dealer
+   * happened to drag files in, and until now nothing could change that.
+   *
+   * The first photograph is the cover: `urls_for_cars` returns the gallery in
+   * order and the listing card takes the head of it. So moving a front
+   * three-quarter shot to position 0 is what puts it on the card.
+   *
+   * WHY A SWAP RATHER THAN A NUMBER BOX
+   *
+   * Two photographs exchange positions, so the set of numbers in use never
+   * changes and no two images can end up claiming the same place. Typing
+   * positions by hand allows both, and neither has an obvious repair — the
+   * gallery would then order by whatever the tiebreak happens to be, which is
+   * how it got into this state to begin with.
+   *
+   * WHY THE TWO STORES ARE WRITTEN DIFFERENTLY
+   *
+   * Same split as removal. A media-library image is a UUID in vehicle_media
+   * and PATCH /media-admin/{id} has always accepted sort_order; a listing
+   * photograph is an integer in car_images and needs the endpoint added
+   * alongside this. Both are reordered here because an admin looking at one
+   * grid should not have to know which table a picture came from — not
+   * knowing that is what made this take three reports.
+   */
+  async moveImage(image: VehicleImage, direction: -1 | 1) {
+    const images = this.existingImages();
+    const from = images.findIndex(i => i.id === image.id);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= images.length) return;
+
+    const other = images[to];
+    // Positions are swapped, so each image keeps a place that exists. Fall
+    // back to the array index when the API sent no sort_order: an older build
+    // omits it, and refusing to reorder because a number is missing would
+    // leave the panel unable to do the one thing it is here for.
+    const mine = image.sort_order ?? from;
+    const theirs = other.sort_order ?? to;
+
+    this.reorderingId.set(image.id);
+    try {
+      await this.writeOrder(image, theirs, to === 0);
+      await this.writeOrder(other, mine, from === 0);
+      // Re-read rather than reordering the array here. The gallery's order is
+      // decided by the API — is_primary first for media-library rows, then
+      // sort_order — and guessing at it on the client is how a panel starts
+      // showing an order buyers do not get.
+      await this.loadExistingImages();
+      this.toast(to === 0 ? '⭐ That photograph is now the cover' : '↕ Order updated');
+    } catch (err) {
+      this.toast(`❌ Could not change the order: ${err}`);
+    } finally {
+      this.reorderingId.set(null);
+    }
+  }
+
+  /**
+   * Write one image's position, to whichever table it lives in.
+   *
+   * `isCover` matters only for vehicle_media, and it is not decoration: that
+   * gallery is ordered `is_primary DESC, sort_order ASC`, so a flagged hero
+   * sits in front of position 0 and sort_order alone could never dislodge it.
+   * Whichever photograph ends up first has to carry the flag, and the API
+   * clears it from the others.
+   *
+   * car_images has no such column — its order is sort_order alone — so a
+   * listing photograph is sent the position and nothing more.
+   */
+  private async writeOrder(image: VehicleImage, sortOrder: number, isCover: boolean) {
+    const fromListing = image.origin === 'listing';
+    const path = fromListing
+      ? `${this.apiUrl}/media-admin/listing-image/${image.id}/order`
+      : `${this.apiUrl}/media-admin/${image.id}`;
+    const resp = await fetch(path, {
+      method: 'PATCH',
+      headers: { ...(await this.authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify(
+        fromListing ? { sort_order: sortOrder } : { sort_order: sortOrder, is_primary: isCover }
+      ),
+    });
+    if (!resp.ok) throw new Error(await this.describeError(resp));
+  }
+
   async undoRemove() {
     const image = this.lastRemoved();
     if (!image) return;
@@ -1322,6 +1412,15 @@ interface VehicleImage {
   origin?: 'media_library' | 'listing';
   /** False for listing photographs: removal belongs in the review queue. */
   removable?: boolean;
+  /**
+   * Where this photograph sits in its car's gallery, lowest first.
+   *
+   * Optional for the same reason as `origin`: an older API build does not
+   * send it, and a missing position is not the same as position zero.
+   */
+  sort_order?: number | null;
+  /** True for the photograph a buyer meets as the card's cover. */
+  is_cover?: boolean;
   /** Where removal does belong, when it is not here. */
   manage_at?: string | null;
 }

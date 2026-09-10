@@ -315,10 +315,37 @@
           <small class="aci-hint">{{ 'Loading…' | t }}</small>
         } @else if (existingImages().length) {
           <div class="aci-existing-grid">
-            @for (img of existingImages(); track img.id) {
+            @for (img of existingImages(); track img.id; let i = $index) {
               <div class="aci-existing-card">
                 <img [src]="img.thumbnail_url || img.url" [alt]="img.filename"
                      referrerpolicy="no-referrer" loading="lazy" />
+                <!--
+                  Position in the gallery, and the move controls.
+
+                  The card on New Cars uses the FIRST photograph, and until now
+                  nothing on this screen said which one that was or let anyone
+                  change it — a Baleno led with its boot. Numbered from 1
+                  because that is how the order reads to a person; the API
+                  stores it from 0.
+                -->
+                <div class="aci-order-bar">
+                  <span class="aci-order-n">{{ i + 1 }}</span>
+                  @if (img.is_cover) {
+                    <span class="aci-order-cover" title="Buyers see this one on the card">
+                      ⭐ Cover
+                    </span>
+                  }
+                  <span class="aci-order-moves">
+                    <button type="button" class="aci-order-move"
+                            [disabled]="i === 0 || reorderingId() === img.id"
+                            [attr.aria-label]="'Move ' + img.filename + ' earlier'"
+                            (click)="moveImage(img, -1)">↑</button>
+                    <button type="button" class="aci-order-move"
+                            [disabled]="i === existingImages().length - 1 || reorderingId() === img.id"
+                            [attr.aria-label]="'Move ' + img.filename + ' later'"
+                            (click)="moveImage(img, 1)">↓</button>
+                  </span>
+                </div>
                 <div class="aci-existing-meta">
                   <span class="aci-existing-name" [title]="img.filename">{{ img.filename }}</span>
                   <!-- Which surface this photograph reaches. New Cars filters
