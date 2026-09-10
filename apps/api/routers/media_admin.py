@@ -138,6 +138,12 @@ class MetadataPatch(BaseModel):
     sort_order: int | None = None
 
 
+class ListingImageOrderPatch(BaseModel):
+    """Where a listing photograph sits in its car's gallery. 0 is the cover."""
+
+    sort_order: int
+
+
 def _category(value: str | None) -> ImageCategory | None:
     """Map an incoming string to the fixed vocabulary, or reject it by name."""
     if not value:
@@ -698,6 +704,16 @@ class VehicleImageOut(BaseModel):
     # stamps who decided; a second delete path here would bypass that record.
     origin: Literal["media_library", "listing"] = "media_library"
     removable: bool = True
+
+    # Where this photograph sits in its car's gallery, lowest first, and
+    # whether it is the one a buyer meets as the card's cover.
+    #
+    # Both halves are needed on screen because both stores order galleries but
+    # neither showed it: a Baleno card led with the boot, and nothing on the
+    # admin panel said which photograph was in front or offered a way to
+    # change it.
+    sort_order: int | None = None
+    is_cover: bool = False
     # Where to go instead, when it is not removable here. Carried in the
     # response rather than hardcoded in the UI so the two cannot drift.
     manage_at: str | None = None
@@ -752,11 +768,26 @@ async def list_vehicle_images(
             media_bucket=m.media_bucket,
             created_at=m.created_at.isoformat(),
             uploaded_by=str(m.uploaded_by) if m.uploaded_by else None,
+            sort_order=m.sort_order,
+            is_cover=bool(m.is_primary),
         )
         for m in (await db.execute(q)).scalars().all()
     ]
 
-    out.extend(await _listing_images(db, make=make, model=model, model_year=model_year))
+    # The cover when no image is flagged. urls_for_cars orders by is_primary
+    # first and takes the head of the list, so with nothing flagged the first
+    # row here IS what a buyer meets — and saying nothing would leave the
+    # panel silent about the very thing being asked of it.
+    if out and not any(img.is_cover for img in out):
+        out[0].is_cover = True
+
+    listing = await _listing_images(db, make=make, model=model, model_year=model_year)
+    # Listing photographs are appended behind the curated ones by
+    # urls_for_cars, so one of them leads the gallery only when there are no
+    # media-library images at all. That is exactly the reported Baleno case.
+    if listing and not out:
+        listing[0].is_cover = True
+    out.extend(listing)
     return out
 
 
@@ -800,7 +831,7 @@ async def _listing_images(
         return []
 
     sql = """
-        SELECT i.id, i.url, i.created_at, i.submitted_by
+        SELECT i.id, i.url, i.created_at, i.submitted_by, i.sort_order
           FROM public.car_images i
           JOIN public.cars c ON c.id = i.car_id
          WHERE lower(btrim(c.make)) = :make
@@ -825,6 +856,7 @@ async def _listing_images(
             url=r["url"],
             created_at=r["created_at"].isoformat() if r["created_at"] else "",
             uploaded_by=r["submitted_by"],
+            sort_order=r["sort_order"],
             origin="listing",
             # Removable here now. It is carried out as a rejection rather than
             # a delete, so buyers stop seeing it, the review queue's Rejected
@@ -1287,6 +1319,81 @@ async def get_safety_results(
         "license_plate_bbox": media.license_plate_bbox,
         "safety_metadata": media.safety_metadata or {},
     }
+
+
+@router.patch("/listing-image/{image_id}/order", status_code=status.HTTP_200_OK)
+@limiter.limit("60/minute")
+async def reorder_listing_image(
+    request: Request,
+    image_id: int,
+    patch: ListingImageOrderPatch,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Set where a listing photograph sits in its car's gallery.
+
+    WHY THIS EXISTS
+
+    Reported against Baleno: the card on New Cars showed the boot, because the
+    first photograph in the gallery is the one the grid uses as the cover and
+    `car_images` had never been ordered by anyone. Its `sort_order` is assigned
+    at upload as `startAt + i` — the sequence the dealer happened to drag files
+    in — and nothing could change it afterwards.
+
+    The media library half of the problem was already solved: `vehicle_media`
+    carries `is_primary` and `sort_order`, and PATCH /media-admin/{id} has
+    always accepted both. `car_images` had no write path at all, so the store
+    holding a car's only photographs was the one that could not be arranged.
+
+    Position 0 is the cover. `urls_for_cars` reads these with
+    `ORDER BY sort_order NULLS LAST, created_at`, so the lowest number is what
+    a buyer sees first, on the card and at the top of the gallery.
+
+    WHY THE JWT CLAIM IS SET
+
+    Same reason as the removal below: car_images carries a BEFORE UPDATE
+    trigger that reads auth.jwt(), which is fed by PostgREST's per-request
+    setting. This service connects straight to Postgres, so the setting is
+    empty unless it is set here. The trigger guards the review columns rather
+    than sort_order, but this update is fed the same way as the one that is
+    known to work — an ordering change must not be the thing that discovers a
+    trigger difference in production.
+    """
+    if patch.sort_order < 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A position cannot be negative. Use 0 for the cover image.",
+        )
+
+    claims = json.dumps({"email": admin.email})
+    for setting in ("request.jwt.claim", "request.jwt.claims"):
+        await db.execute(
+            text("SELECT set_config(:k, :v, true)"), {"k": setting, "v": claims},
+        )
+
+    rows = (await db.execute(text("""
+        UPDATE public.car_images
+           SET sort_order = :sort_order
+         WHERE id = :id
+        RETURNING id, sort_order
+    """), {"id": image_id, "sort_order": patch.sort_order})).mappings().all()
+
+    if not rows:
+        raise HTTPException(status_code=404, detail="Listing image not found")
+
+    # Read the value back rather than trusting that a row came back, for the
+    # reason spelled out on the removal: a returned row says the statement
+    # matched something, not that the row now holds what was asked for.
+    if rows[0]["sort_order"] != patch.sort_order:
+        raise HTTPException(
+            status_code=500,
+            detail=(f"The database kept this image at position "
+                    f"{rows[0]['sort_order']!r}. The order was not applied."),
+        )
+
+    await db.commit()
+    return {"id": str(image_id), "sort_order": patch.sort_order}
 
 
 @router.delete("/listing-image/{image_id}", status_code=status.HTTP_200_OK)

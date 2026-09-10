@@ -857,6 +857,58 @@
 /* Where a stored photograph is actually seen. Quiet by default — it is
    metadata, not an alert — and amber only when the answer is "not where you
    are probably looking for it", which is the case that cost an afternoon. */
+/* Gallery position, and the controls that change it.
+
+   The card on New Cars shows the first photograph, so this row answers "which
+   one do buyers meet?" — the question a Baleno leading with its boot could not
+   be asked on this screen. Colours come from tokens only: a literal here is
+   what e2e/admin-theme.spec.ts fails the build over. */
+.aci-order-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem 0;
+}
+.aci-order-n {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--fill-dim);
+  color: var(--text-muted);
+}
+.aci-order-cover {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--teal-ink);
+}
+.aci-order-moves {
+  margin-left: auto;
+  display: flex;
+  gap: 0.2rem;
+}
+.aci-order-move {
+  width: 1.4rem;
+  height: 1.4rem;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
+  border-radius: 5px;
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  &:hover:not(:disabled) { background: var(--fill-dim); color: var(--primary); }
+  &:disabled { opacity: 0.35; cursor: default; }
+}
+
 .aci-existing-surface {
   display: block;
   font-size: 0.7rem;
