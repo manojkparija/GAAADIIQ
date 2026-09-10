@@ -531,25 +531,108 @@ async def urls_for_cars(
             spin_counts[_key(media)] = spin_counts.get(_key(media), 0) + 1
 
     storage = get_storage()
-    out: dict[uuid.UUID, list[str]] = {car.id: [] for car in cars}
+    # (position, store_rank, sequence, url) per car. Collected from both
+    # stores and ordered together — see _gallery_order for why the two cannot
+    # simply be concatenated any more.
+    entries: dict[uuid.UUID, list[tuple[int, int, int, str]]] = {car.id: [] for car in cars}
+    seq = 0
     for media in rows:
         if not media.make or not media.model:
             continue
         if is_spin_frame(media) and spin_counts.get(_key(media), 0) >= SPIN_MIN_FRAMES:
             continue
         key = _key(media)
+        position = _HERO_POSITION if media.is_primary else (media.sort_order or 0)
+        url = storage.url_for(media.webp_key or media.storage_key)
         for car_id in wanted.get(key, ()):
-            if len(out[car_id]) < per_car:
-                out[car_id].append(storage.url_for(media.webp_key or media.storage_key))
+            entries[car_id].append((position, _MEDIA_LIBRARY, seq, url))
+        seq += 1
 
-    await _append_approved_dealer_photos(db, out, per_car)
-    return out
+    await _add_approved_dealer_photos(db, entries)
+
+    return {car_id: _gallery_order(items)[:per_car] for car_id, items in entries.items()}
 
 
-async def _append_approved_dealer_photos(
+#: A media-library photograph flagged as the hero sorts ahead of every numbered
+#: position. A sentinel rather than a real number, so the flag and the
+#: numbering never have to agree with each other.
+_HERO_POSITION = -1
+
+#: Which store a photograph came from. Also the tiebreak when two photographs
+#: claim the same position: the curated one goes first, which is the rule the
+#: gallery had before positions crossed the two stores at all.
+_MEDIA_LIBRARY = 0
+_LISTING = 1
+
+
+def gallery_is_arranged(curated_positions: set[int], dealer_positions: set[int]) -> bool:
+    """
+    Whether someone has actually put this car's gallery in order.
+
+    The two photograph tables number their rows independently, each from zero,
+    so an un-arranged car has a curated 0,1,2,3 and a dealer 0,1,2,3,4 — the
+    overlap is the signature. The reorder endpoint renumbers every photograph
+    on the car into one 0..n-1 sequence, which cannot overlap.
+
+    So the data answers the question itself, with no marker column, migration
+    or per-car flag. Shared with the admin listing so the panel and the
+    gallery cannot come to different conclusions about the same car — them
+    disagreeing is the whole family of faults this area keeps producing.
+    """
+    return not (curated_positions & dealer_positions)
+
+
+def _gallery_order(items: "list[tuple[int, int, int, str]]") -> list[str]:
+    """
+    Put one car's photographs in the order a buyer sees them.
+
+    THE PROBLEM THIS SOLVES
+
+    Photographs live in two tables that number their rows independently, each
+    from zero. For most of this app's life that did not matter, because the
+    gallery was simply the curated ones followed by the dealer ones — two
+    lists, concatenated. So an admin could never put a dealer photograph in
+    front of a curated one, and on a car whose only good exterior shots came
+    through a dealer, the card led with whatever the curated set happened to
+    start with. Reported against Baleno, whose card showed a boot.
+
+    WHY THE RULE IS SHAPED LIKE THIS
+
+    Ordering purely by position would fix that and break everything else: on a
+    car nobody has arranged, the curated photographs are numbered 0,1,2,3 and
+    the dealer ones 0,1,2,3,4, so merging on the number alone interleaves
+    them — every existing gallery would be shuffled by a change that was
+    supposed to be about one car.
+
+    Duplicate positions across the two stores are exactly the signature of
+    that un-arranged state, and their absence is the signature of a gallery
+    someone has actually put in order (the reorder endpoint renumbers every
+    photograph on the car into one 0..n-1 sequence, which cannot collide).
+    So the data says which rule it wants, and no marker column, migration or
+    per-car flag is needed to ask it.
+
+      - positions collide  -> curated first, then dealer: today's order, kept
+        exactly, for every gallery nobody has touched.
+      - positions distinct -> one sequence, lowest first: the order the admin
+        arranged, with any photograph able to lead.
+
+    Ties inside a store keep the order the query returned, so the sequence is
+    stable between requests.
+    """
+    curated = {position for position, rank, _, _ in items if rank == _MEDIA_LIBRARY}
+    dealer = {position for position, rank, _, _ in items if rank == _LISTING}
+
+    if not gallery_is_arranged(curated, dealer):
+        def key(item): return (item[1], item[0], item[2])
+    else:
+        def key(item): return (item[0], item[1], item[2])
+
+    return [url for *_, url in sorted(items, key=key)]
+
+
+async def _add_approved_dealer_photos(
     db: AsyncSession,
-    out: dict[uuid.UUID, list[str]],
-    per_car: int,
+    entries: "dict[uuid.UUID, list[tuple[int, int, int, str]]]",
 ) -> None:
     """
     Approved dealer photographs, which are photographs of a catalogue car.
@@ -576,7 +659,7 @@ async def _append_approved_dealer_photos(
     media_admin learned that the hard way, taking a whole endpoint down under
     SQLite.
     """
-    car_ids = [cid for cid, urls in out.items() if len(urls) < per_car]
+    car_ids = list(entries.keys())
     if not car_ids:
         return
 
@@ -595,7 +678,7 @@ async def _append_approved_dealer_photos(
     # chain, which does not contain car_images.
     stmt = text(
         """
-        SELECT car_id, url
+        SELECT car_id, url, sort_order
           FROM car_images
          WHERE status = 'approved'
            AND car_id IN :car_ids
@@ -605,12 +688,16 @@ async def _append_approved_dealer_photos(
 
     rows = (await db.execute(stmt, {"car_ids": car_ids})).mappings().all()
 
-    for row in rows:
-        urls = out.get(row["car_id"])
-        # Behind the curated ones rather than in front: an admin's own upload
-        # is the hero shot where both exist.
-        if urls is not None and len(urls) < per_car and row["url"]:
-            urls.append(row["url"])
+    for seq, row in enumerate(rows):
+        items = entries.get(row["car_id"])
+        if items is None or not row["url"]:
+            continue
+        # Contributed with its position rather than appended to the end.
+        # Where the two stores number their rows independently _gallery_order
+        # still puts these behind the curated ones, which is the order this
+        # gallery has always had; where an admin has arranged the car, the
+        # position is what decides.
+        items.append((row["sort_order"] or 0, _LISTING, seq, row["url"]))
 
 
 #: Below this many frames a spin is not a spin — it jumps between angles rather

@@ -1,28 +1,31 @@
 /**
- * An admin decides which photograph a buyer meets first.
+ * An admin decides which photograph a buyer meets first — from either store.
  *
- * WHAT THIS COMES FROM
+ * WHAT THIS COMES FROM, AND WHAT THESE TESTS MISSED THE FIRST TIME
  *
- * The Baleno card on New Cars led with a photograph of the boot. Nothing was
- * wrong with the image, the car, or the approval — the gallery simply had no
- * order anyone had chosen. `car_images` numbers its rows in whatever sequence
- * the dealer dragged files in, and no screen could change it afterwards.
+ * The Baleno card on New Cars led with a photograph of the boot. The first
+ * attempt at a fix gave each image ↑/↓ buttons that swapped `sort_order` with
+ * its neighbour. On screen that looked right. In practice, pressing ↑ on the
+ * first dealer photograph did nothing at all.
  *
- * The first photograph is the cover: urls_for_cars returns the gallery in
- * order and the listing card takes the head of it.
+ * The gallery is not one list. Photographs live in two tables that number
+ * their rows independently, each from zero, and both the API listing and
+ * urls_for_cars returned the curated ones followed by the dealer ones. So a
+ * position meant nothing outside its own table: swapping numbers across the
+ * boundary moved neither image, and quietly disturbed the curated half's
+ * internal order on the way.
  *
- * THE PART THAT IS EASY TO GET WRONG
+ * The earlier version of this file set up a single flat array of images, so it
+ * could not see any of that — it tested a gallery shape the app never had.
+ * That is the blind spot that let the bug ship, and it is why these tests now
+ * always mix the two origins.
  *
- * The two stores do not order the same way.
+ * THE FIX UNDER TEST
  *
- *   vehicle_media  ORDER BY is_primary DESC, sort_order ASC, created_at
- *   car_images     ORDER BY sort_order NULLS LAST, created_at
- *
- * So for a media-library image, writing sort_order alone cannot move it to the
- * front — a flagged hero sits ahead of position 0 regardless. Whichever image
- * ends up first has to carry is_primary too, and car_images has no such column
- * to carry. Both are pinned below, because getting this wrong looks like
- * success on this screen and changes nothing for a buyer.
+ * A move sends the car's WHOLE gallery, in its new order, to one endpoint that
+ * renumbers every photograph into a single 0..n-1 sequence. Distinct positions
+ * across the two stores are also the signal the read path uses to know this
+ * car was arranged, so a partial write would be worse than none.
  */
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -43,13 +46,23 @@ function stubFetch(calls: Call[]) {
   };
 }
 
-function img(over: Partial<any> = {}): any {
+/** A curated photograph — vehicle_media, UUID id. */
+function curated(id: string, over: Partial<any> = {}): any {
   return {
-    id: 'm1', filename: 'boot.jpg', url: 'https://cdn.test/boot.jpg',
-    thumbnail_url: null, image_category: 'interior', variant: null, colour: null,
+    id, filename: `${id}.jpg`, url: `https://cdn.test/${id}.jpg`,
+    thumbnail_url: null, image_category: 'gallery', variant: null, colour: null,
     media_bucket: 'new', origin: 'media_library', removable: true,
-    sort_order: 0, is_cover: true,
-    ...over,
+    sort_order: 0, is_cover: false, ...over,
+  };
+}
+
+/** A dealer photograph — car_images, integer id. */
+function dealer(id: string, over: Partial<any> = {}): any {
+  return {
+    id, filename: `${id}.jpg`, url: `https://cdn.test/${id}.jpg`,
+    thumbnail_url: null, image_category: null, variant: null, colour: null,
+    media_bucket: null, origin: 'listing', removable: true,
+    sort_order: 0, is_cover: false, ...over,
   };
 }
 
@@ -60,113 +73,135 @@ function mount(): AdminCarImagesComponent {
     providers: [provideHttpClient(), provideHttpClientTesting()],
   });
   const c = TestBed.createComponent(AdminCarImagesComponent).componentInstance;
-  // Re-reading after a write is the component's job; it is not what these
-  // tests are about, and letting it run would overwrite the fixture.
+  // Re-reading after a write is the component's job and not what these tests
+  // are about; letting it run would overwrite the fixture.
   (c as any).loadExistingImages = () => Promise.resolve();
   return c;
 }
 
-describe('AdminCarImagesComponent — gallery order', () => {
+/** The reported gallery: four curated images, then the dealer photographs. */
+function balenoGallery() {
+  return [
+    curated('m1', { is_cover: true }), curated('m2'), curated('m3'), curated('m4'),
+    dealer('5'), dealer('6'), dealer('7'),
+  ];
+}
+
+function orderCall(calls: Call[]) {
+  return calls.find(c => c.url.includes('/vehicle-images/order'));
+}
+
+describe('AdminCarImagesComponent — gallery order across both stores', () => {
   const realFetch = globalThis.fetch;
   afterEach(() => { globalThis.fetch = realFetch; });
 
-  it('swaps positions rather than renumbering', async () => {
-    // Two images exchange places, so the set of numbers in use never changes
-    // and no two images can claim the same position.
+  it('carries a dealer photograph past the curated ones', async () => {
+    // THE REPORTED BUG. Image 5 is the first dealer photograph and sits right
+    // behind the last curated one. Pressing ↑ used to swap two numbers in
+    // different numbering spaces and move nothing.
     const calls: Call[] = [];
     stubFetch(calls);
     const c = mount();
-    c.existingImages.set([
-      img({ id: 'boot', sort_order: 0 }),
-      img({ id: 'front', sort_order: 1, is_cover: false }),
-    ]);
+    c.existingImages.set(balenoGallery());
 
-    await c.moveImage(c.existingImages()[1], -1);
+    await c.moveImage(c.existingImages()[4], -1);
 
-    const orders = calls.filter(x => x.method === 'PATCH').map(x => x.body.sort_order);
-    expect(orders).toEqual([0, 1]);
+    const sent = orderCall(calls)!.body.images.map((i: any) => i.id);
+    expect(sent).toEqual(['m1', 'm2', 'm3', '5', 'm4', '6', '7']);
   });
 
-  it('gives the new front image the primary flag', async () => {
-    // The one that decides whether this works at all. vehicle_media orders by
-    // is_primary before sort_order, so without this the boot shot stays in
-    // front and the admin sees a reordered panel with an unchanged website.
+  it('can take a dealer photograph all the way to the cover', async () => {
+    // What actually puts a real front shot on the Baleno card. Under the old
+    // rule no dealer photograph could ever lead, however many times it moved.
     const calls: Call[] = [];
     stubFetch(calls);
     const c = mount();
-    c.existingImages.set([
-      img({ id: 'boot', sort_order: 0, is_cover: true }),
-      img({ id: 'front', sort_order: 1, is_cover: false }),
-    ]);
+    c.existingImages.set([curated('m1', { is_cover: true }), dealer('7')]);
 
     await c.moveImage(c.existingImages()[1], -1);
 
-    const promoted = calls.find(x => x.url.includes('/front'));
-    const demoted = calls.find(x => x.url.includes('/boot'));
-    expect(promoted!.body.is_primary)
-      .withContext('the image moving to position 0 becomes the cover')
-      .toBeTrue();
-    expect(demoted!.body.is_primary).toBeFalse();
+    const sent = orderCall(calls)!.body.images.map((i: any) => i.id);
+    expect(sent[0])
+      .withContext('the dealer photograph is now the cover')
+      .toBe('7');
   });
 
-  it('sends a listing photograph to its own endpoint, without a primary flag', async () => {
-    // car_images has no is_primary column. Sending one would be a field the
-    // table cannot honour, and its order is sort_order alone.
+  it('sends the whole gallery, not only the images that moved', async () => {
+    // Distinct positions across the two tables are what tell the read path
+    // this car was arranged. A partial write could make them distinct by
+    // accident and switch a gallery to an order nobody chose.
     const calls: Call[] = [];
     stubFetch(calls);
     const c = mount();
-    c.existingImages.set([
-      img({ id: '7', origin: 'listing', sort_order: 0 }),
-      img({ id: '8', origin: 'listing', sort_order: 1, is_cover: false }),
-    ]);
+    c.existingImages.set(balenoGallery());
+
+    await c.moveImage(c.existingImages()[6], -1);
+
+    expect(orderCall(calls)!.body.images.length).toBe(7);
+  });
+
+  it('names the table each photograph lives in', async () => {
+    // The endpoint writes to two tables keyed differently — a UUID in
+    // vehicle_media, an integer in car_images — so it cannot guess.
+    const calls: Call[] = [];
+    stubFetch(calls);
+    const c = mount();
+    c.existingImages.set([curated('m1'), dealer('5')]);
 
     await c.moveImage(c.existingImages()[1], -1);
 
-    const call = calls.find(x => x.url.includes('/8'))!;
-    expect(call.url).toContain('/media-admin/listing-image/8/order');
-    expect(call.body).toEqual({ sort_order: 0 });
-    expect('is_primary' in call.body).toBeFalse();
+    expect(orderCall(calls)!.body.images).toEqual([
+      { id: '5', origin: 'listing' },
+      { id: 'm1', origin: 'media_library' },
+    ]);
+  });
+
+  it('treats a photograph with no origin as curated', async () => {
+    // An older API build does not send the field, and every row was a
+    // media-library one before listing photographs were listed here.
+    const calls: Call[] = [];
+    stubFetch(calls);
+    const c = mount();
+    c.existingImages.set([curated('m1', { origin: undefined }), curated('m2')]);
+
+    await c.moveImage(c.existingImages()[1], -1);
+
+    expect(orderCall(calls)!.body.images[1].origin).toBe('media_library');
+  });
+
+  it('moves down as well as up', async () => {
+    const calls: Call[] = [];
+    stubFetch(calls);
+    const c = mount();
+    c.existingImages.set([curated('m1'), dealer('5'), dealer('6')]);
+
+    await c.moveImage(c.existingImages()[0], 1);
+
+    expect(orderCall(calls)!.body.images.map((i: any) => i.id)).toEqual(['5', 'm1', '6']);
   });
 
   it('does nothing at the ends of the list', async () => {
     // Guards the controls the template disables. A move off either end would
-    // write a position no image occupies.
+    // renumber the gallery for no reason.
     const calls: Call[] = [];
     stubFetch(calls);
     const c = mount();
-    c.existingImages.set([img({ id: 'a' }), img({ id: 'b' })]);
+    c.existingImages.set([curated('m1'), dealer('5')]);
 
     await c.moveImage(c.existingImages()[0], -1);
     await c.moveImage(c.existingImages()[1], 1);
 
-    expect(calls.filter(x => x.method === 'PATCH').length).toBe(0);
-  });
-
-  it('falls back to list position when the API sent no sort_order', async () => {
-    // An older API build omits the field. Refusing to reorder because a
-    // number is missing would disable the one thing this panel is for.
-    const calls: Call[] = [];
-    stubFetch(calls);
-    const c = mount();
-    c.existingImages.set([
-      img({ id: 'a', sort_order: undefined }),
-      img({ id: 'b', sort_order: undefined, is_cover: false }),
-    ]);
-
-    await c.moveImage(c.existingImages()[1], -1);
-
-    const orders = calls.filter(x => x.method === 'PATCH').map(x => x.body.sort_order);
-    expect(orders).toEqual([0, 1]);
+    expect(calls.filter(x => x.method === 'PUT').length).toBe(0);
   });
 
   it('reports a failure instead of implying the order changed', async () => {
-    // A silent no-op is the failure mode that produced this report: the panel
-    // looked right and the site did not change.
+    // A silent no-op is exactly what produced this report: the panel looked
+    // right and the site did not change.
     (globalThis as any).fetch = () => Promise.resolve({
       ok: false, status: 500, text: () => Promise.resolve('boom'),
     });
     const c = mount();
-    c.existingImages.set([img({ id: 'a' }), img({ id: 'b', is_cover: false })]);
+    c.existingImages.set([curated('m1'), dealer('5')]);
 
     await c.moveImage(c.existingImages()[1], -1);
 

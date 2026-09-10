@@ -1273,22 +1273,22 @@ export class AdminCarImagesComponent implements OnInit {
     const to = from + direction;
     if (from < 0 || to < 0 || to >= images.length) return;
 
-    const other = images[to];
-    // Positions are swapped, so each image keeps a place that exists. Fall
-    // back to the array index when the API sent no sort_order: an older build
-    // omits it, and refusing to reorder because a number is missing would
-    // leave the panel unable to do the one thing it is here for.
-    const mine = image.sort_order ?? from;
-    const theirs = other.sort_order ?? to;
+    // The whole gallery is sent, in its new order, rather than two images
+    // swapping numbers. Swapping could not move a photograph across the
+    // boundary between the two tables at all — each numbers its own rows from
+    // zero, so a dealer photograph pressing ↑ against the last curated one
+    // exchanged numbers with it and stayed exactly where it was, while
+    // quietly disturbing the curated half's internal order. That is the bug
+    // this replaced: the panel reported success and nothing moved.
+    const reordered = [...images];
+    reordered.splice(to, 0, ...reordered.splice(from, 1));
 
     this.reorderingId.set(image.id);
     try {
-      await this.writeOrder(image, theirs, to === 0);
-      await this.writeOrder(other, mine, from === 0);
-      // Re-read rather than reordering the array here. The gallery's order is
-      // decided by the API — is_primary first for media-library rows, then
-      // sort_order — and guessing at it on the client is how a panel starts
-      // showing an order buyers do not get.
+      await this.writeGalleryOrder(reordered);
+      // Re-read rather than trusting the local array. The order a buyer gets
+      // is the API's answer, and a panel that renders its own guess is how
+      // this screen came to disagree with the site in the first place.
       await this.loadExistingImages();
       this.toast(to === 0 ? '⭐ That photograph is now the cover' : '↕ Order updated');
     } catch (err) {
@@ -1299,28 +1299,21 @@ export class AdminCarImagesComponent implements OnInit {
   }
 
   /**
-   * Write one image's position, to whichever table it lives in.
+   * Write a car's whole gallery order, both tables in one call.
    *
-   * `isCover` matters only for vehicle_media, and it is not decoration: that
-   * gallery is ordered `is_primary DESC, sort_order ASC`, so a flagged hero
-   * sits in front of position 0 and sort_order alone could never dislodge it.
-   * Whichever photograph ends up first has to carry the flag, and the API
-   * clears it from the others.
-   *
-   * car_images has no such column — its order is sort_order alone — so a
-   * listing photograph is sent the position and nothing more.
+   * Every photograph is numbered, not just the ones that moved. Distinct
+   * positions across the two stores are what tells the read path this gallery
+   * has been arranged and its numbers should be honoured; a partial write
+   * could make them distinct by accident and switch a gallery to an order
+   * nobody chose.
    */
-  private async writeOrder(image: VehicleImage, sortOrder: number, isCover: boolean) {
-    const fromListing = image.origin === 'listing';
-    const path = fromListing
-      ? `${this.apiUrl}/media-admin/listing-image/${image.id}/order`
-      : `${this.apiUrl}/media-admin/${image.id}`;
-    const resp = await fetch(path, {
-      method: 'PATCH',
+  private async writeGalleryOrder(images: VehicleImage[]) {
+    const resp = await fetch(`${this.apiUrl}/media-admin/vehicle-images/order`, {
+      method: 'PUT',
       headers: { ...(await this.authHeaders()), 'Content-Type': 'application/json' },
-      body: JSON.stringify(
-        fromListing ? { sort_order: sortOrder } : { sort_order: sortOrder, is_primary: isCover }
-      ),
+      body: JSON.stringify({
+        images: images.map(i => ({ id: i.id, origin: i.origin ?? 'media_library' })),
+      }),
     });
     if (!resp.ok) throw new Error(await this.describeError(resp));
   }

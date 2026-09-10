@@ -144,6 +144,19 @@ class ListingImageOrderPatch(BaseModel):
     sort_order: int
 
 
+class GalleryImageRef(BaseModel):
+    """One photograph in a gallery, named by the table it lives in."""
+
+    id: str
+    origin: Literal["media_library", "listing"]
+
+
+class GalleryOrder(BaseModel):
+    """A car's whole gallery, in the order a buyer should see it."""
+
+    images: list[GalleryImageRef]
+
+
 def _category(value: str | None) -> ImageCategory | None:
     """Map an incoming string to the fixed vocabulary, or reject it by name."""
     if not value:
@@ -774,21 +787,41 @@ async def list_vehicle_images(
         for m in (await db.execute(q)).scalars().all()
     ]
 
-    # The cover when no image is flagged. urls_for_cars orders by is_primary
-    # first and takes the head of the list, so with nothing flagged the first
-    # row here IS what a buyer meets — and saying nothing would leave the
-    # panel silent about the very thing being asked of it.
-    if out and not any(img.is_cover for img in out):
-        out[0].is_cover = True
-
     listing = await _listing_images(db, make=make, model=model, model_year=model_year)
-    # Listing photographs are appended behind the curated ones by
-    # urls_for_cars, so one of them leads the gallery only when there are no
-    # media-library images at all. That is exactly the reported Baleno case.
-    if listing and not out:
-        listing[0].is_cover = True
-    out.extend(listing)
-    return out
+
+    # Ordered exactly as urls_for_cars orders it, through the same rule.
+    #
+    # This panel says it shows "exactly what buyers see". While the two stores
+    # were simply concatenated that was nearly true, but once a gallery can be
+    # arranged across both, a panel with its own ordering would drift from the
+    # site the moment anyone used the arrows — and an admin would be dragging
+    # photographs into an order no buyer gets. The shared helper is what stops
+    # the two from ever answering differently.
+    curated_positions = {img.sort_order or 0 for img in out}
+    dealer_positions = {img.sort_order or 0 for img in listing}
+
+    if media_library.gallery_is_arranged(curated_positions, dealer_positions):
+        combined = sorted(
+            out + listing,
+            # is_primary outranks every number, matching the read path.
+            key=lambda i: (
+                -1 if (i.origin == "media_library" and i.is_cover) else (i.sort_order or 0),
+                0 if i.origin == "media_library" else 1,
+            ),
+        )
+    else:
+        combined = out + listing
+
+    # Say which photograph a buyer actually meets, rather than leaving it to
+    # be inferred from position. Recomputed after ordering because the flag on
+    # a media-library row is about that table, and the cover is about the
+    # gallery — on the reported car they were different photographs.
+    for image in combined:
+        image.is_cover = False
+    if combined:
+        combined[0].is_cover = True
+
+    return combined
 
 
 async def _listing_images(
@@ -1319,6 +1352,85 @@ async def get_safety_results(
         "license_plate_bbox": media.license_plate_bbox,
         "safety_metadata": media.safety_metadata or {},
     }
+
+
+@router.put("/vehicle-images/order", status_code=status.HTTP_200_OK)
+@limiter.limit("60/minute")
+async def set_gallery_order(
+    request: Request,
+    order: GalleryOrder,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Put one car's whole gallery in order, across both photograph tables.
+
+    WHY THE WHOLE GALLERY AND NOT ONE IMAGE
+
+    Photographs live in two tables that number their rows independently, each
+    from zero. Moving a single image could therefore never carry it past the
+    boundary between them: an admin pressing ↑ on the first dealer photograph
+    watched it stay exactly where it was, because the gallery was two lists
+    concatenated and a number meant nothing outside its own list. Reported
+    against Baleno, whose only real exterior shots were dealer photographs and
+    so could not reach the card however many times they were moved.
+
+    Renumbering everything at once is what makes the order real. Every
+    photograph on the car gets a distinct position in one 0..n-1 sequence, and
+    _gallery_order reads that sequence back as a single gallery.
+
+    IT IS ALSO THE SIGNAL
+
+    Distinct positions across the two stores are precisely what tells the read
+    path that this car has been arranged, so it should honour the numbers
+    rather than fall back to curated-first. That fallback is what keeps every
+    gallery nobody has touched exactly as it was. So a partial renumber would
+    be worse than none: it could leave the positions distinct by accident and
+    silently switch a gallery to an order no one chose. The whole list, or
+    nothing.
+
+    is_primary is set here too, and only for the photograph at position 0.
+    Left alone it outranks every number in the media-library half, so a stale
+    flag elsewhere would quietly overrule the admin — the flag and the
+    sequence have to be written together or they disagree.
+    """
+    if not order.images:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Send the car's whole gallery in order, not an empty list.",
+        )
+
+    seen = {(img.origin, img.id) for img in order.images}
+    if len(seen) != len(order.images):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The same photograph appears twice in the order.",
+        )
+
+    # The trigger on car_images reads auth.jwt(); see remove_listing_image.
+    # Set once for the transaction rather than per row.
+    if any(img.origin == "listing" for img in order.images):
+        claims = json.dumps({"email": admin.email})
+        for setting in ("request.jwt.claim", "request.jwt.claims"):
+            await db.execute(
+                text("SELECT set_config(:k, :v, true)"), {"k": setting, "v": claims},
+            )
+
+    for position, img in enumerate(order.images):
+        if img.origin == "listing":
+            await db.execute(
+                text("UPDATE public.car_images SET sort_order = :p WHERE id = :id"),
+                {"p": position, "id": int(img.id)},
+            )
+        else:
+            await db.execute(
+                update(VehicleMedia)
+                .where(VehicleMedia.id == UUID(img.id))
+                .values(sort_order=position, is_primary=(position == 0))
+            )
+
+    await db.commit()
+    return {"ordered": len(order.images)}
 
 
 @router.patch("/listing-image/{image_id}/order", status_code=status.HTTP_200_OK)
