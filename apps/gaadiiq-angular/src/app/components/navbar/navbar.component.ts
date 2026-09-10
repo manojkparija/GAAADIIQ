@@ -193,6 +193,31 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
     if (keep !== 'lang') this.langOpen.set(false);
   }
 
+  /**
+   * A menu entry closes its menu, whether or not the click navigates.
+   *
+   * WHY THIS IS NOT LEFT TO THE ROUTER
+   *
+   * Closing used to happen only on NavigationEnd. That covers the ordinary
+   * case and misses the one people actually hit: choosing the entry you are
+   * already on. Clicking "Maruti Suzuki" while on /new-cars?make=Maruti%20Suzuki
+   * resolves to the URL already in the bar, so the router declines to navigate,
+   * emits nothing, and the panel stays open across the page it is covering —
+   * which reads as the click having failed. Reported as having to click
+   * outside to get rid of it, "many times".
+   *
+   * Any anchor counts, so this keeps working for entries added later, and it
+   * is bound to the panel rather than to each of the twenty-odd links inside
+   * it. Clicks on a heading or the panel's own padding are left alone: they
+   * are not a choice, and closing on them would make the menu feel like it
+   * dismisses itself at random.
+   */
+  onMenuLinkClick(e: Event): void {
+    if ((e.target as HTMLElement).closest('a')) {
+      this.closeOthers('none');
+    }
+  }
+
   // ── Language picker ──────────────────────────────────────────────────────
   readonly languages = LANGUAGES;
   langOpen = signal(false);

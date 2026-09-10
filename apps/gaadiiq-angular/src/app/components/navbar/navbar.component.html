@@ -29,7 +29,7 @@
             <app-icon name="chevron-down" [size]="13" class="nav-caret"></app-icon>
           </button>
 
-          <div class="nav-mega" *ngIf="newCarsOpen()" role="menu">
+          <div class="nav-mega" *ngIf="newCarsOpen()" role="menu" (click)="onMenuLinkClick($event)">
             <div class="nav-mega-cols">
               <!-- The whole column goes, heading included, when the catalogue
                    has no new cars. A 'Browse by Brand' heading over nothing is
@@ -88,7 +88,7 @@
             <app-icon name="chevron-down" [size]="13" class="nav-caret"></app-icon>
           </button>
 
-          <div class="nav-mega" *ngIf="usedCarsOpen()" role="menu">
+          <div class="nav-mega" *ngIf="usedCarsOpen()" role="menu" (click)="onMenuLinkClick($event)">
             <div class="nav-mega-cols">
               <div class="nav-mega-col">
                 <div class="nav-mega-head">{{ 'Browse Used Cars' | t }}</div>
@@ -173,7 +173,7 @@
             <app-icon name="indian-rupee" [size]="20" class="nav-ic"></app-icon><span>{{ 'EMI & Loan' | t }}</span>
             <app-icon name="chevron-down" [size]="13" class="nav-caret"></app-icon>
           </button>
-          <div class="nav-mega nav-mega-sm" *ngIf="financeOpen()" role="menu">
+          <div class="nav-mega nav-mega-sm" *ngIf="financeOpen()" role="menu" (click)="onMenuLinkClick($event)">
             <a routerLink="/emi-calculator" class="nav-mega-item" role="menuitem">
               <app-icon name="calculator" [size]="15"></app-icon> {{ 'EMI Calculator' | t }}
             </a>
@@ -199,7 +199,7 @@
             <app-icon name="shield" [size]="20" class="nav-ic"></app-icon><span>{{ 'Insurance' | t }}</span>
             <app-icon name="chevron-down" [size]="13" class="nav-caret"></app-icon>
           </button>
-          <div class="nav-mega nav-mega-sm" *ngIf="insuranceOpen()" role="menu">
+          <div class="nav-mega nav-mega-sm" *ngIf="insuranceOpen()" role="menu" (click)="onMenuLinkClick($event)">
             <a routerLink="/insurance" class="nav-mega-item" role="menuitem">
               <app-icon name="shield" [size]="15"></app-icon> {{ 'Car Insurance' | t }}
             </a>
@@ -414,7 +414,7 @@
           <app-icon name="chevron-down" [size]="12" class="nav-caret"></app-icon>
         </button>
 
-        <div class="nav-mega nav-mega-sm nav-mega-right" *ngIf="moreOpen()" role="menu">
+        <div class="nav-mega nav-mega-sm nav-mega-right" *ngIf="moreOpen()" role="menu" (click)="onMenuLinkClick($event)">
           <a routerLink="/ev-charging" class="nav-mega-item" role="menuitem">
           <app-icon name="zap" [size]="15"></app-icon> {{ 'EV Charging' | t }}
         </a>
