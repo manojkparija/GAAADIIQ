@@ -345,6 +345,70 @@ export class AdminCarImagesComponent implements OnInit {
   catalogueStatus = signal<'ok' | 'empty' | 'unavailable'>('ok');
 
   /** Load the identities the catalogue already knows, for the dropdowns. */
+  /**
+   * Priced models that no buyer can see, because they have no photograph.
+   *
+   * WHY THIS PANEL EXISTS
+   *
+   * Reported as "I uploaded Baleno images and they are not visible in the new
+   * car section". The catalogue row was there and correctly priced —
+   * ex_showroom_price ₹6.10L, ten variants from ₹6.10L to ₹10.09L — and the
+   * New Cars page listed two Maruti models where the catalogue holds five.
+   *
+   * The rule doing it is isShowable() in cars-data.service:
+   *
+   *     car.fromCatalogue === false || hasPhotograph(car)
+   *
+   * A catalogue row with no photograph is hidden from every buyer-facing
+   * list. That is deliberate and worth keeping — an advert is a real car
+   * someone is selling and must never be hidden for want of a picture, while
+   * a catalogue row without one is just missing data. What was missing is any
+   * way for an admin to SEE it: a priced model simply was not on the page,
+   * and the only way to notice was to count the cards.
+   *
+   * This asks the API exactly what New Cars asks it — same bucket, same
+   * priced_only — so the list cannot drift from the rule it reports on. A
+   * model here is one upload away from being live.
+   */
+  hiddenForNoPhoto = signal<{ make: string; model: string; year: number }[]>([]);
+  hiddenLoading = signal(false);
+  hiddenError = signal('');
+
+  private async loadHiddenModels() {
+    this.hiddenLoading.set(true);
+    this.hiddenError.set('');
+    try {
+      // The New Cars query, verbatim: /cars?bucket=new&priced_only=true.
+      // Reading it any other way would report on a rule nobody applies.
+      const rows: any[] = [];
+      for (let page = 1; page <= 20; page++) {
+        const resp = await fetch(
+          `${this.apiUrl}/cars?bucket=new&priced_only=true&page=${page}&page_size=100`,
+        );
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const body = await resp.json();
+        const items = body.items ?? [];
+        rows.push(...items);
+        if (!items.length || rows.length >= (body.total ?? 0)) break;
+      }
+
+      this.hiddenForNoPhoto.set(
+        rows
+          .filter(r => !(r.image_urls?.length))
+          .map(r => ({ make: r.make, model: r.model, year: r.year }))
+          .sort((a, b) =>
+            a.make.localeCompare(b.make) || a.model.localeCompare(b.model) || a.year - b.year),
+      );
+    } catch (err) {
+      // Silent is the one thing this panel must not be: it exists because a
+      // silent absence is what caused the report.
+      this.hiddenError.set('Could not check which models are missing photographs.');
+      console.error('Hidden-model check failed:', err);
+    } finally {
+      this.hiddenLoading.set(false);
+    }
+  }
+
   private async loadCatalogueOptions() {
     try {
       const resp = await fetch(`${this.apiUrl}/cars/catalogue/options`);
@@ -430,6 +494,7 @@ export class AdminCarImagesComponent implements OnInit {
       this.toast('Admin access required');
     }
     this.loadCatalogueOptions();
+    this.loadHiddenModels();
   }
 
   @HostListener('dragover', ['$event']) onDragOver(e: DragEvent) {
