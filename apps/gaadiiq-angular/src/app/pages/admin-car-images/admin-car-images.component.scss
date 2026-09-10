@@ -871,3 +871,21 @@
   // one on the way in.
   color: var(--warning-ink);
 }
+
+/* Priced models with no photograph. A list of work to do, not an alarm — the
+   amber rule on the left is enough to separate it from the panels around it. */
+.aci-hidden-section {
+  border-left: 3px solid var(--warning-ink);
+}
+.aci-hidden-list {
+  margin: 0.6rem 0 0;
+  padding-left: 1.1rem;
+  columns: 2;
+  column-gap: 2rem;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+@media (max-width: 620px) {
+  .aci-hidden-list { columns: 1; }
+}

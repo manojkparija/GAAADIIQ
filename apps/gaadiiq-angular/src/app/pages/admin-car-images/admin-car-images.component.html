@@ -233,6 +233,35 @@
       in order to delete something. Its own section, on the screen an admin
       lands on.
     -->
+    <!-- A priced model with no photograph is hidden from every buyer-facing
+         list by isShowable() in cars-data.service. That is deliberate — an
+         advert must never be hidden for want of a picture, while a catalogue
+         row without one is missing data — but until now an admin had no way
+         to see it happening. This asks the API exactly what New Cars asks. -->
+    @if (!showMetadataGrid() && !uploadResults() && hiddenForNoPhoto().length) {
+      <div class="aci-section aci-hidden-section">
+        <h2 class="aci-section-title">
+          Priced, but hidden from buyers — {{ hiddenForNoPhoto().length }}
+          {{ hiddenForNoPhoto().length === 1 ? 'model' : 'models' }}
+        </h2>
+        <p class="aci-section-sub">
+          These carry a price but no photograph, so New Cars does not list them
+          at all. One upload each puts them live.
+        </p>
+        <ul class="aci-hidden-list">
+          @for (m of hiddenForNoPhoto(); track m.make + m.model + m.year) {
+            <li>{{ m.year }} {{ m.make }} {{ m.model }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (hiddenError()) {
+      <div class="aci-section">
+        <p class="aci-section-sub">{{ hiddenError() }}</p>
+      </div>
+    }
+
     @if (!showMetadataGrid() && !uploadResults()) {
       <div class="aci-section">
         <h2 class="aci-section-title">Manage images already on the site</h2>
