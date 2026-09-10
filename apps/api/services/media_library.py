@@ -25,7 +25,7 @@ import logging
 import uuid
 from typing import TYPE_CHECKING, Sequence
 
-from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy import and_, bindparam, func, or_, select, text
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -587,20 +587,23 @@ async def _append_approved_dealer_photos(
     if not await conn.run_sync(_has_table):
         return
 
-    rows = (
-        await db.execute(
-            text(
-                """
-                SELECT car_id, url
-                  FROM public.car_images
-                 WHERE status = 'approved'
-                   AND car_id = ANY(:car_ids)
-                 ORDER BY sort_order NULLS LAST, created_at
-                """
-            ),
-            {"car_ids": car_ids},
-        )
-    ).mappings().all()
+    # IN with an expanding bindparam rather than `= ANY(:ids)`. ANY() is
+    # Postgres-only and hands asyncpg a bare list it must infer an array type
+    # for; expanding renders `IN (?, ?, ?)` on any backend. Neither CI job
+    # would have caught a mistake here — the SQLite job returns at the table
+    # check above, and the Postgres job builds its database from the Alembic
+    # chain, which does not contain car_images.
+    stmt = text(
+        """
+        SELECT car_id, url
+          FROM car_images
+         WHERE status = 'approved'
+           AND car_id IN :car_ids
+         ORDER BY sort_order NULLS LAST, created_at
+        """
+    ).bindparams(bindparam("car_ids", expanding=True))
+
+    rows = (await db.execute(stmt, {"car_ids": car_ids})).mappings().all()
 
     for row in rows:
         urls = out.get(row["car_id"])
