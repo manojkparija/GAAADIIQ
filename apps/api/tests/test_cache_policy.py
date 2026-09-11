@@ -255,3 +255,30 @@ async def test_the_middleware_is_actually_wired():
         resp = await c.get("/health")
 
     assert resp.headers["Cache-Control"] == PRIVATE_CACHE_CONTROL
+
+
+def test_image_search_is_cacheable():
+    """The busiest read on the site, and until now the only one left uncached.
+
+    /cars was served from the edge while the endpoint behind every image on
+    every one of those same pages went to the origin on every request.
+    """
+    assert cache_directive(_request("/brochures/images"), _response()) == PUBLIC_CACHE_CONTROL
+    assert cache_directive(
+        _request("/brochures/images?make=Maruti&model=Swift"), _response()
+    ) == PUBLIC_CACHE_CONTROL
+
+
+def test_the_rest_of_the_brochures_router_is_not_cacheable():
+    """Only the one path was allowlisted, not the router it lives in.
+
+    /brochures/jobs is admin-only PDF ingestion history. It would also be
+    caught by the Authorization condition, but that is a second line: the
+    allowlist itself must not claim a whole router is public because one route
+    on it is.
+    """
+    assert cache_directive(_request("/brochures"), _response()) == PRIVATE_CACHE_CONTROL
+    assert cache_directive(_request("/brochures/jobs"), _response()) == PRIVATE_CACHE_CONTROL
+    assert cache_directive(
+        _request("/brochures/jobs/8f14e45f-ceea-467a-9a3a-1a3b1cd8e2a1"), _response()
+    ) == PRIVATE_CACHE_CONTROL

@@ -32,8 +32,11 @@ The second is the one worth having. A purge that runs too often costs a cold
 cache; one that runs on a read would throw the zone's cache away on every
 request, which is worse than having no cache at all.
 """
+import asyncio
+
 import httpx
 import pytest
+import pytest_asyncio
 
 from main import _writes_to_catalogue
 from services import cdn_purge
@@ -206,3 +209,95 @@ def test_is_configured_needs_both_halves(monkeypatch):
     monkeypatch.setattr(cdn_purge.settings, "cloudflare_zone_id", "z", raising=False)
     monkeypatch.setattr(cdn_purge.settings, "cloudflare_api_token", "", raising=False)
     assert cdn_purge.is_configured() is False
+
+
+# ── coalescing a burst ──────────────────────────────────────────────────────
+
+@pytest_asyncio.fixture
+async def _no_coalesce_state():
+    await cdn_purge._reset_for_tests()
+    yield
+    await cdn_purge._reset_for_tests()
+
+
+@pytest.mark.asyncio
+async def test_a_lone_write_purges_immediately(monkeypatch, _no_coalesce_state):
+    """The common case must not become slower or later than it was.
+
+    One admin saving one change should see it on the refresh they are about to
+    do, so this one runs inline rather than being deferred to a timer.
+    """
+    monkeypatch.setattr(httpx, "AsyncClient", _client_returning())
+
+    assert await cdn_purge.request_purge("PATCH /cars/1") is True
+    assert len(_FakeClient.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_a_burst_does_not_purge_once_per_write(monkeypatch, _no_coalesce_state):
+    """THE ONE THIS EXISTS FOR.
+
+    A brochure ingestion stores a batch of images and a gallery reorder saves a
+    row at a time. Each write used to empty the entire zone, discarding what
+    the previous purge had just rebuilt — and with readers on the site, every
+    one of those sends a fresh wave at an origin running a single worker.
+    """
+    monkeypatch.setattr(httpx, "AsyncClient", _client_returning())
+
+    for n in range(20):
+        await cdn_purge.request_purge(f"POST /media-admin/upload#{n}")
+
+    # One inline purge for the first write; the other nineteen share the
+    # trailing one, which has not fired yet.
+    assert len(_FakeClient.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_the_last_write_in_a_burst_is_still_purged(monkeypatch, _no_coalesce_state):
+    """Coalescing must not mean dropping.
+
+    The final write in a burst is the one most likely to be the change somebody
+    is waiting to see. If the window simply discarded everything after the
+    first purge, that change would sit behind a stale edge copy for a full
+    s-maxage — the failure this whole module exists to prevent.
+    """
+    monkeypatch.setattr(httpx, "AsyncClient", _client_returning())
+    monkeypatch.setattr(cdn_purge, "COALESCE_WINDOW_SECONDS", 0.05)
+
+    await cdn_purge.request_purge("POST /cars")          # inline
+    await cdn_purge.request_purge("POST /cars/2")        # schedules the trailing one
+    assert len(_FakeClient.calls) == 1
+
+    await asyncio.sleep(0.15)
+    assert len(_FakeClient.calls) == 2, "the trailing purge never ran"
+
+
+@pytest.mark.asyncio
+async def test_writes_after_the_window_purge_again(monkeypatch, _no_coalesce_state):
+    # Coalescing is a rate limit, not a one-shot. A write an hour later is a
+    # lone write again and gets its own immediate purge.
+    monkeypatch.setattr(httpx, "AsyncClient", _client_returning())
+    monkeypatch.setattr(cdn_purge, "COALESCE_WINDOW_SECONDS", 0.05)
+
+    assert await cdn_purge.request_purge("POST /cars") is True
+    await asyncio.sleep(0.1)
+    assert await cdn_purge.request_purge("POST /cars") is True
+    assert len(_FakeClient.calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_coalescing_does_nothing_when_unconfigured(monkeypatch, _no_coalesce_state):
+    monkeypatch.setattr(cdn_purge.settings, "cloudflare_api_token", "", raising=False)
+    monkeypatch.setattr(httpx, "AsyncClient", _client_returning())
+
+    assert await cdn_purge.request_purge("POST /cars") is False
+    assert _FakeClient.calls == []
+
+
+@pytest.mark.asyncio
+async def test_a_failed_purge_does_not_reach_the_caller(monkeypatch, _no_coalesce_state):
+    # Same contract as purge_catalogue: the admin's write is committed and a
+    # cache is not worth failing it over.
+    monkeypatch.setattr(httpx, "AsyncClient", _client_returning(raises=httpx.ConnectError("down")))
+
+    assert await cdn_purge.request_purge("POST /cars") is False

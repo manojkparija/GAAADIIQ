@@ -628,6 +628,13 @@ async def _cdn_purge_middleware(request: Request, call_next):
     that to upload, and awaiting means the admin's next page load — which is
     usually an immediate refresh to check the change — sees the new content
     rather than racing a task that may not have run yet.
+
+    That is still true of a lone write, which is the common case: request_purge
+    runs it inline. A BURST is what changed — a brochure ingestion storing a
+    batch of images, or a gallery reordered a row at a time, used to empty the
+    whole zone once per write, each purge discarding what the last had just
+    rebuilt. With readers on the site that is a stampede against a single
+    worker. Writes inside the window now share one trailing purge instead.
     """
     response = await call_next(request)
 
@@ -637,22 +644,30 @@ async def _cdn_purge_middleware(request: Request, call_next):
         and cdn_purge.is_configured()
         and _writes_to_catalogue(request.url.path)
     ):
-        await cdn_purge.purge_catalogue(f"{request.method} {request.url.path}")
+        await cdn_purge.request_purge(f"{request.method} {request.url.path}")
 
     return response
 
 
 #: Prefixes whose writes change what the catalogue serves.
 #:
-#: The first four mirror cache_policy.CACHEABLE_PREFIXES — what is cached is
-#: what needs clearing. /media-admin is the exception that is not itself
-#: cacheable: it writes the photographs /cars returns.
+#: These mirror cache_policy.CACHEABLE_PREFIXES — what is cached is what needs
+#: clearing — plus the two places that write images without being cacheable
+#: themselves: /media-admin and /brochures both store and delete the
+#: photographs that /cars and /brochures/images return.
+#:
+#: /brochures matters more than it looks. Image writes arrive through BOTH
+#: routers, and for a long time only one of them purged: brochures.py indexes
+#: media at line 511 and deletes it at 722, and neither cleared the edge. With
+#: /brochures/images now cacheable, a deletion there would otherwise have left
+#: the photograph on the page for a full s-maxage.
 _CATALOGUE_WRITE_PREFIXES: tuple[str, ...] = (
     "/cars",
     "/upcoming-cars",
     "/news",
     "/video-reviews",
     "/media-admin",
+    "/brochures",
 )
 
 

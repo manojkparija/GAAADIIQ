@@ -44,11 +44,30 @@ from starlette.responses import Response
 #:
 #: Matched as path segments, not as raw string prefixes: "/cars" must not admit
 #: a future "/cars-private". See `_prefix_matches`.
+#: /brochures/images is the exact path, NOT the /brochures prefix. The router
+#: it belongs to also serves /brochures/jobs, which is admin-only ingestion
+#: history — a different answer for a different caller, and precisely what this
+#: allowlist is meant to keep out. Condition 3 would catch it anyway, since an
+#: admin request carries a token, but relying on that would mean the allowlist
+#: said "this router is public" when only one of its routes is.
+#:
+#: It earns its place on the stated test — the same for every caller. It takes
+#: no auth, and MediaOut carries image metadata only (url, dimensions,
+#: make/model/variant, source PDF name); there is no uploader, no user, nothing
+#: that varies by who asked.
+#:
+#: It is also the busiest read on the site. Its own docstring: "the single read
+#: path behind every surface that shows vehicle imagery — brand, model and
+#: variant pages, comparison, the advisor, the dealer portal and search." Until
+#: now it fell through to no-store, so every one of those views reached the
+#: origin — one worker, thirty connections — while /cars beside it was served
+#: from the edge.
 CACHEABLE_PREFIXES: tuple[str, ...] = (
     "/cars",
     "/upcoming-cars",
     "/news",
     "/video-reviews",
+    "/brochures/images",
 )
 
 #: The browser revalidates every time; the edge absorbs the load.
