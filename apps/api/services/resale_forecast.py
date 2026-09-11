@@ -28,7 +28,7 @@ import json
 import logging
 from datetime import datetime
 
-from services import gemini_gateway
+from services import ai_cache, gemini_gateway
 
 logger = logging.getLogger("gaadiiq.resale_forecast")
 
@@ -194,11 +194,35 @@ async def ai_forecast(
 
     Never raises: the caller always has the heuristic to fall back to, and a
     resale estimate is not worth failing a page render over.
+
+    Cached (services/ai_cache.py). Every buyer looking at the same car asks this
+    same question and each miss is a billed Gemini call, so the second visitor
+    to a 2021 Swift VXi should not pay for the answer the first one bought.
     """
     if not gemini_available():
         return [], ""
 
     age = max(0, datetime.now().year - int(year or 0))
+
+    # `age` is in the key as well as `year` because the prompt contains it and
+    # it is computed from today's date: without it, a curve cached in December
+    # would be served in January still describing a car one year younger.
+    key = ai_cache.build_key(
+        "resale",
+        make=make,
+        model=model,
+        variant=variant or "base",
+        year=year,
+        age=age,
+        fuel=fuel or "Petrol",
+        transmission=transmission or "Manual",
+        price=price,
+        years=years,
+    )
+    cached = await ai_cache.get(key)
+    if isinstance(cached, dict) and cached.get("forecast"):
+        return cached["forecast"], cached.get("summary", "")
+
     prompt = _PROMPT.format(
         years=years,
         make=make,
@@ -217,7 +241,14 @@ async def ai_forecast(
             caller="resale forecast",
             temperature=0.0,
         )
-        return _clean(json.loads(text), price, years)
+        rows, summary = _clean(json.loads(text), price, years)
+        if rows:
+            # Only a usable curve is stored. _clean returns ([], "") for an
+            # answer it rejected, and caching that would freeze a bad reply in
+            # for a day — the caller would keep falling back to the heuristic
+            # with no way to tell why, and no retry would ever reach Gemini.
+            await ai_cache.put(key, {"forecast": rows, "summary": summary})
+        return rows, summary
     except Exception as exc:
         logger.warning("Resale forecast failed for %s %s: %s", make, model, exc)
         return [], ""
