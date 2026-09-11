@@ -38,6 +38,14 @@ class MechanicRegisterRequest(BaseModel):
     pan_number: str = Field(min_length=10, max_length=10)
     aadhaar_number: str = Field(min_length=12, max_length=14)
 
+    # Mandatory in effect, though still typed optional here.
+    #
+    # The check lives in services.kyc with PAN and Aadhaar, for the reason
+    # stated above — one place, same rules on any future import path. Declaring
+    # it required here as well would only change which error the caller sees:
+    # Pydantic's "Field required" instead of kyc's explanation that this is
+    # where their payouts are sent, which is the part a mechanic filling in a
+    # form needs to read.
     upi_vpa: str | None = Field(default=None, max_length=120)
     specialisations: list[str] | None = None
 

@@ -25,6 +25,12 @@ PAN_RE = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]$")
 
 AADHAAR_RE = re.compile(r"^[2-9][0-9]{11}$")
 
+# `handle@psp`. Deliberately permissive on the handle — NPCI publishes no
+# pattern and PSPs differ on the characters they issue — while still rejecting
+# the mistakes a typed id actually suffers: no @, a second @, an empty half, or
+# a handle/PSP that starts or ends on a separator.
+UPI_VPA_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*@[a-z][a-z0-9.-]*[a-z0-9]$")
+
 
 class KycError(ValueError):
     """Raised when a KYC field is missing or structurally invalid."""
@@ -73,6 +79,49 @@ def normalise_pan(raw: str | None) -> str:
     if not PAN_RE.match(pan):
         raise KycError("PAN must be 10 characters in the format ABCDE1234F")
     return pan
+
+
+def normalise_upi_vpa(raw: str | None) -> str:
+    """Lowercase and validate a UPI id, or raise `KycError`.
+
+    WHY THIS IS REQUIRED AND NOT OPTIONAL
+
+    This is where the mechanic's share of a job is settled, and the platform
+    collects the customer's money before it reaches them: the scan-to-pay QR
+    resolves to the platform VPA so commission can be deducted (see
+    services/upi.py). So a mechanic with no payout destination is not a profile
+    with a blank field — it is a job that can be quoted, accepted, worked and
+    paid for, with the money sitting on our side and nowhere to send it. That
+    is discovered at the worst possible moment: the repair is done, the driver
+    has paid, and the person owed is standing next to the car.
+
+    WHAT IS AND IS NOT CHECKED
+
+    The format only. A VPA is `handle@psp` — NPCI does not publish a pattern
+    beyond that, and the accepted character set varies by provider, so this
+    stays deliberately permissive: it rejects the mistakes a typed id actually
+    suffers (no @, a second @, spaces, a missing half, a trailing dot) and
+    accepts anything a real PSP might issue.
+
+    It cannot tell you the id exists or belongs to this person. Only a payout
+    or a verification API can, and neither is in this codebase yet — so this
+    narrows the failure, it does not close it.
+    """
+    if not raw or not raw.strip():
+        raise KycError(
+            "A UPI ID is required — it is where your payouts for completed jobs are sent"
+        )
+    # Surrounding whitespace only. PAN strips interior spaces too, because
+    # "ABCDE 1234F" has one correct reading — but joining the halves of
+    # "name space@okaxis" invents "namespace@okaxis", which may be well-formed
+    # and belong to somebody else. A wrong payout destination is worse than a
+    # refused one, so an interior space is left in and the pattern rejects it.
+    vpa = raw.strip().lower()
+    if not UPI_VPA_RE.match(vpa):
+        raise KycError(
+            "UPI ID must look like name@bank, for example 9876543210@okaxis"
+        )
+    return vpa
 
 
 def normalise_aadhaar(raw: str | None) -> str:
