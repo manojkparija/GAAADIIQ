@@ -719,17 +719,36 @@ async def _cdn_purge_middleware(request: Request, call_next):
     """
     response = await call_next(request)
 
-    if (
+    changed_the_catalogue = (
         request.method not in ("GET", "HEAD", "OPTIONS")
         and 200 <= response.status_code < 300
-        and cdn_purge.is_configured()
         and _writes_to_catalogue(request.url.path)
-    ):
-        # The origin's own copy first, and unconditionally. It is a local
-        # dictionary or a Redis DEL — no network call to Cloudflare, nothing to
-        # coalesce, and leaving it while purging the edge would mean an admin's
-        # own refresh was answered from the stale copy sitting one layer below.
+    )
+
+    if changed_the_catalogue:
+        # The origin's own copy first, and WITHOUT asking whether Cloudflare is
+        # configured.
+        #
+        # THE BUG THIS SHAPE FIXES
+        #
+        # This call was nested inside the `cdn_purge.is_configured()` condition
+        # below, which meant the origin cache was only ever cleared on an
+        # environment that had a Cloudflare token. Anywhere else — a developer
+        # machine, CI, or production on a day the token is missing or wrong —
+        # every admin write left the origin serving its own stale copy for a
+        # full TTL, with the edge purge that was supposed to be the fallback
+        # equally absent.
+        #
+        # CI caught it as seventeen failures: an admin tagged images and the
+        # next read still returned the empty list from before the write.
+        #
+        # The two clears have nothing in common but their trigger. This one is
+        # a dict clear or a Redis DEL — local, instant, and always applicable.
+        # The other is a network call to a third party that may not be set up.
+        # Gating the first on the second was the mistake.
         await response_cache.invalidate_all()
+
+    if changed_the_catalogue and cdn_purge.is_configured():
         await cdn_purge.request_purge(f"{request.method} {request.url.path}")
 
     return response

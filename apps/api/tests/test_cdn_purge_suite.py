@@ -39,7 +39,7 @@ import pytest
 import pytest_asyncio
 
 from main import _writes_to_catalogue
-from services import cdn_purge
+from services import cdn_purge, response_cache
 
 
 class _Response:
@@ -301,3 +301,85 @@ async def test_a_failed_purge_does_not_reach_the_caller(monkeypatch, _no_coalesc
     monkeypatch.setattr(httpx, "AsyncClient", _client_returning(raises=httpx.ConnectError("down")))
 
     assert await cdn_purge.request_purge("POST /cars") is False
+
+
+# ── the origin cache is cleared independently of Cloudflare ─────────────────
+
+async def _drive_middleware(path: str, method: str = "POST", status_code: int = 200):
+    """Run _cdn_purge_middleware over one request/response pair."""
+    from starlette.datastructures import Headers
+    from starlette.requests import Request
+    from starlette.responses import JSONResponse
+
+    from main import _cdn_purge_middleware
+
+    request = Request({
+        "type": "http", "method": method, "path": path,
+        "raw_path": path.encode(), "query_string": b"",
+        "headers": Headers({}).raw, "scheme": "https",
+        "server": ("api.gaadiiq.com", 443),
+    })
+
+    async def _call_next(_):
+        return JSONResponse(status_code=status_code, content={})
+
+    return await _cdn_purge_middleware(request, _call_next)
+
+
+@pytest.mark.asyncio
+async def test_the_origin_cache_is_cleared_even_with_no_cloudflare(monkeypatch):
+    """THE REGRESSION. CI caught this as seventeen failures.
+
+    invalidate_all was nested inside the `cdn_purge.is_configured()` condition,
+    so the origin's own cache was only ever cleared where a Cloudflare token
+    happened to be set. Everywhere else — a developer machine, CI, or
+    production on a day the token is missing — an admin write left the origin
+    serving its own stale copy for a full TTL, with the edge purge that was
+    meant to be the fallback equally absent.
+
+    The symptom was exactly what this area has produced before: images were
+    tagged, and the read straight afterwards still returned the empty list from
+    before the write.
+    """
+    monkeypatch.setattr(cdn_purge.settings, "cloudflare_api_token", "", raising=False)
+    monkeypatch.setattr(cdn_purge.settings, "cloudflare_zone_id", "", raising=False)
+
+    await response_cache.put("rc:/brochures/images?", 200, "[]", "application/json")
+    await _drive_middleware("/brochures/tag-images")
+
+    assert await response_cache.get("rc:/brochures/images?") is None, (
+        "an admin write left the origin serving its pre-write copy"
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_read_does_not_clear_the_origin_cache(monkeypatch):
+    # The other half: clearing on a READ would throw the cache away on every
+    # request, which is worse than having no cache at all.
+    monkeypatch.setattr(cdn_purge.settings, "cloudflare_api_token", "", raising=False)
+
+    await response_cache.put("rc:/cars?", 200, "[]", "application/json")
+    await _drive_middleware("/cars", method="GET")
+
+    assert await response_cache.get("rc:/cars?") is not None
+
+
+@pytest.mark.asyncio
+async def test_a_failed_write_does_not_clear_the_origin_cache(monkeypatch):
+    monkeypatch.setattr(cdn_purge.settings, "cloudflare_api_token", "", raising=False)
+
+    await response_cache.put("rc:/cars?", 200, "[]", "application/json")
+    await _drive_middleware("/cars", status_code=422)
+
+    assert await response_cache.get("rc:/cars?") is not None
+
+
+@pytest.mark.asyncio
+async def test_a_private_write_does_not_clear_the_origin_cache(monkeypatch):
+    # A loan application changes nothing a buyer sees.
+    monkeypatch.setattr(cdn_purge.settings, "cloudflare_api_token", "", raising=False)
+
+    await response_cache.put("rc:/cars?", 200, "[]", "application/json")
+    await _drive_middleware("/loan-applications")
+
+    assert await response_cache.get("rc:/cars?") is not None

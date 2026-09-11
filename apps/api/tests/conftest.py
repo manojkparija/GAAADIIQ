@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from db.base import Base
 from db.session import get_db
 from main import app
+from services import response_cache
 
 #: Set by CI to a Postgres DSN. Absent locally, where SQLite is the default.
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "").strip()
@@ -141,6 +142,32 @@ async def db_session(db_engine):
     async with AsyncSession(db_engine, expire_on_commit=False) as session:
         yield session
         await session.rollback()
+
+
+@pytest.fixture(autouse=True)
+def clear_response_cache():
+    """Empty the origin response cache between tests.
+
+    WHY THIS IS NEEDED, AND WHY IT IS NOT HIDING A BUG
+
+    services/response_cache.py holds public catalogue responses for a few
+    seconds in module-level state, which outlives a test; the database does not,
+    because each test gets its own. So without this, one test's GET /cars is
+    answered from the copy a previous test's GET put there, and the failure
+    looks like a product bug — "the car I just created is not in the list" —
+    with nothing in that test to explain it.
+
+    The cache clears itself on any write that goes through the API, which
+    covers a test that creates something over HTTP. It cannot cover a fixture
+    that seeds rows through SQLAlchemy directly, because nothing in the request
+    path ever sees that. In production the equivalent is a scheduler or a
+    backfill job writing behind the API, and there the TTL is the answer: a few
+    seconds of staleness. A test suite runs faster than the TTL, so it needs
+    this instead.
+    """
+    response_cache._reset_for_tests()
+    yield
+    response_cache._reset_for_tests()
 
 
 @pytest.fixture(autouse=True)
