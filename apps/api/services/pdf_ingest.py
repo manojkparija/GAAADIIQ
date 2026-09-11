@@ -36,6 +36,7 @@ import hashlib
 import io
 import json
 import logging
+import math
 import os
 import re
 import uuid
@@ -1044,6 +1045,77 @@ def image_dimensions(data: bytes) -> tuple[int | None, int | None]:
         return None, None
 
 
+def _json_safe_exif_value(value, _depth: int = 0):
+    """
+    One EXIF value as something json.dumps can actually write, or None to drop it.
+
+    WHY THIS EXISTS
+
+    The loop that used to do this inline said it "handled other non-serializable
+    types" and skipped what it could not serialize. It did neither: the only
+    conversions were bytes and anything iterable, and its try/except wrapped the
+    conversion rather than any serialization, so nothing ever tested whether the
+    result could be written.
+
+    Pillow returns rationals as IFDRational — exposure time, f-number, focal
+    length, every GPS coordinate — which is neither bytes nor iterable, so it
+    passed through untouched. json.dumps then raised at INSERT time, several
+    layers away, and took the whole upload down with a 500:
+
+        sqlalchemy.exc.StatementError: (builtins.TypeError)
+        Object of type IFDRational is not JSON serializable
+
+    That is a photograph from an ordinary camera or phone failing to upload with
+    no usable message, on a screen whose entire job is uploading photographs.
+
+    WHAT IS DROPPED, AND WHY DROPPING IS RIGHT
+
+    EXIF here is enrichment, not data the product depends on — nothing reads a
+    specific tag. So an unconvertible value is worth losing and a failed upload
+    is not. Non-finite floats go too: a rational with a zero denominator is
+    legal in EXIF, and json.dumps writes inf as `Infinity`, which is not valid
+    JSON and which Postgres refuses.
+    """
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+
+    # IFDRational, Fraction, Decimal — anything that divides into a number.
+    if hasattr(value, "numerator") and hasattr(value, "denominator"):
+        try:
+            as_float = float(value)
+        except (ZeroDivisionError, ValueError, OverflowError):
+            return None
+        return as_float if math.isfinite(as_float) else None
+
+    # Bounded, because EXIF is attacker-supplied: a deeply nested structure
+    # should cost a dropped tag, not a recursion error inside an upload.
+    if _depth >= 4:
+        return None
+
+    if isinstance(value, dict):
+        out = {
+            str(k): safe
+            for k, v in value.items()
+            if (safe := _json_safe_exif_value(v, _depth + 1)) is not None
+        }
+        return out or None
+
+    if isinstance(value, (list, tuple)):
+        out = [
+            safe for v in value
+            if (safe := _json_safe_exif_value(v, _depth + 1)) is not None
+        ]
+        return out or None
+
+    return None
+
+
 def extract_exif(data: bytes) -> dict | None:
     """
     Extract EXIF metadata from an image file.
@@ -1064,16 +1136,9 @@ def extract_exif(data: bytes) -> dict | None:
             result = {}
             for tag_id, value in exif_data.items():
                 tag_name = TAGS.get(tag_id, f"Unknown({tag_id})")
-                try:
-                    # Convert bytes to string if needed, handle other non-serializable types
-                    if isinstance(value, bytes):
-                        value = value.decode("utf-8", errors="replace")
-                    elif hasattr(value, "__iter__") and not isinstance(value, (str, dict)):
-                        value = list(value)
-                    result[tag_name] = value
-                except Exception:
-                    # Skip fields that can't be serialized
-                    pass
+                safe = _json_safe_exif_value(value)
+                if safe is not None:
+                    result[tag_name] = safe
 
             return result if result else None
     except Exception:
