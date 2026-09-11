@@ -18,7 +18,7 @@ from sqlalchemy.exc import TimeoutError as SQLTimeoutError
 from core.cache_policy import apply_cache_policy
 from core.config import settings
 from core.limiter import came_through_trusted_proxy, limiter
-from services import cdn_purge
+from services import cdn_purge, response_cache
 
 # Debug: Verify configuration is loaded (redact credentials)
 async_url = settings.async_database_url
@@ -466,6 +466,87 @@ app.add_middleware(SlowAPIMiddleware)
 
 
 @app.middleware("http")
+async def _micro_cache_middleware(request: Request, call_next):
+    """
+    Hold public catalogue responses at the origin for a few seconds.
+
+    WHAT IT IS FOR
+
+    Cloudflare absorbs almost all of this traffic. This covers the moments it
+    does not — the window after a purge, a TTL lapsing under load, and the long
+    tail of filter combinations that are cold at any given time. In those, every
+    request in flight arrives at a service running WEB_CONCURRENCY=1 behind
+    thirty connections, and a large enough simultaneous arrival times out rather
+    than queues.
+
+    The single-flight in services/response_cache.py is the half that matters:
+    a cache alone does not stop a stampede, because a thousand concurrent
+    misses all miss before any of them has filled it.
+
+    WHY IT IS REGISTERED FIRST
+
+    Middlewares registered earlier sit further in, so this is the innermost
+    layer and a cache hit still returns THROUGH every one of the others: the
+    origin lock has already run, and the security headers, the cache policy and
+    CORS are applied to a hit exactly as they are to a miss. Nothing about the
+    response differs except that the database was not asked.
+
+    That is also why only the body, status and content type are cached, never
+    the headers. Cache-Control and Access-Control-Allow-Origin depend on the
+    request that is being answered now — storing one caller's copy and replaying
+    it for another is the bug cache_policy.py's Vary handling exists to avoid.
+    """
+    if not response_cache.is_cacheable(request):
+        return await call_next(request)
+
+    key = response_cache.cache_key(request)
+
+    cached = await response_cache.get(key)
+    if cached is not None:
+        status_code, body, media_type = cached
+        return Response(content=body, status_code=status_code, media_type=media_type)
+
+    async def _produce():
+        response = await call_next(request)
+
+        # Only a public, 200, JSON response is worth holding. Anything else —
+        # a streamed PDF, image bytes, an error — is passed through untouched
+        # rather than buffered into the memory of a single-worker process.
+        media_type = response.headers.get("content-type", "")
+        if not response_cache.is_cacheable(request, response.status_code) or not (
+            media_type.startswith("application/json")
+        ):
+            return response, None, request
+
+        body = b"".join([chunk async for chunk in response.body_iterator])
+        return response, body, request
+
+    response, body, produced_for = await response_cache.single_flight(key, _produce)
+
+    if body is None:
+        # Not cacheable after all — an error, or a non-JSON payload.
+        #
+        # The leader may return its own response. A FOLLOWER MUST NOT: that
+        # object was built for someone else's request and its body iterator is
+        # single-use, so replaying it would send one caller an empty payload and
+        # possibly another caller's status. Followers do their own work, which
+        # is what they would have done without a cache in front of them.
+        if produced_for is request:
+            return response
+        return await call_next(request)
+
+    await response_cache.put(key, response.status_code, body.decode("utf-8"), "application/json")
+
+    # The body iterator is consumed, so the original response can no longer be
+    # returned as it stands — it would send an empty payload.
+    return Response(
+        content=body,
+        status_code=response.status_code,
+        media_type="application/json",
+    )
+
+
+@app.middleware("http")
 async def _origin_lock(request: Request, call_next):
     """
     Refuse requests that did not come through the proxy in front of us.
@@ -644,6 +725,11 @@ async def _cdn_purge_middleware(request: Request, call_next):
         and cdn_purge.is_configured()
         and _writes_to_catalogue(request.url.path)
     ):
+        # The origin's own copy first, and unconditionally. It is a local
+        # dictionary or a Redis DEL — no network call to Cloudflare, nothing to
+        # coalesce, and leaving it while purging the edge would mean an admin's
+        # own refresh was answered from the stale copy sitting one layer below.
+        await response_cache.invalidate_all()
         await cdn_purge.request_purge(f"{request.method} {request.url.path}")
 
     return response
