@@ -567,6 +567,50 @@ function mapListing(lst: ApiListing): Car {
  * rendering on a grid built around price, so those are filtered out upstream
  * rather than shown at ₹0.
  */
+/**
+ * The fuel badge on a catalogue card — EV, Eco or CNG — or none.
+ *
+ * WHY THIS IS NOT JUST `car.fuel_type`
+ *
+ * Reported: "Grand Vitara is not a fully electric model, it should not be
+ * tagged as an EV." The card carried an EV chip while the line beneath it read
+ * "Electric / Petrol / CNG / Hybrid" — the badge and the fuels it sat above
+ * contradicted each other on the same card.
+ *
+ * A catalogue row is a MODEL, and `fuel_type` on it is a single value. That is
+ * fine for a model sold one way and a falsehood for one sold four ways: the
+ * Grand Vitara row happens to say `electric`, so every buyer saw an EV badge
+ * on a car whose fourteen trims are mostly petrol.
+ *
+ * A badge like this asserts something about the whole model, so it may only
+ * appear when the whole model is that fuel. Where the published trims disagree
+ * with each other there is no true single-fuel badge, and none is shown — the
+ * fuel line below already tells the honest story.
+ *
+ * `variant_fuels` is the authority when it exists, because it is built from
+ * the trims actually published. `fuel_type` remains the fallback for a model
+ * with no priced trims yet, which is the only case where it is the best thing
+ * available.
+ *
+ * NOTE: this stops the card claiming something untrue. It does not correct the
+ * underlying data — a Grand Vitara trim recorded as Electric is still recorded
+ * that way, and still appears in the fuel line and in an Electric filter. That
+ * is a catalogue correction under Admin → Variants, not a display rule.
+ */
+export function catalogueFuelBadge(car: ApiCar): string {
+  const BADGES: Record<string, string> = { electric: 'EV', hybrid: 'Eco', cng: 'CNG' };
+
+  const fuels = (car.variant_fuels ?? []).map(f => f.trim().toLowerCase()).filter(Boolean);
+  if (fuels.length) {
+    const only = new Set(fuels);
+    // More than one fuel across the trims: no single badge is true of the model.
+    return only.size === 1 ? (BADGES[[...only][0]] ?? '') : '';
+  }
+
+  return BADGES[car.fuel_type ?? ''] ?? '';
+}
+
+
 function mapCatalogueCar(car: ApiCar): Car {
   const apiImgs = (car.image_urls ?? []).filter(
     u => u && !u.includes('media.gaadiiq.com') && !u.includes('picsum'),
@@ -574,10 +618,7 @@ function mapCatalogueCar(car: ApiCar): Car {
   // As in mapListing: the database is the only source. See the note there.
   const images = apiImgs.length ? apiImgs : [PLACEHOLDER];
 
-  const badge = car.fuel_type === 'electric' ? 'EV'
-              : car.fuel_type === 'hybrid' ? 'Eco'
-              : car.fuel_type === 'cng' ? 'CNG'
-              : '';
+  const badge = catalogueFuelBadge(car);
 
   return {
     id: car.id,
