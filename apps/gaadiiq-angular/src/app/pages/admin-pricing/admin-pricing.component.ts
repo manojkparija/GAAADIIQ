@@ -54,6 +54,16 @@ interface PriceRow {
   /** Rupees, or null when nobody has priced this model yet. */
   price: number | null;
   imageCount: number;
+  /**
+   * The model's own fuel type, as the catalogue row records it.
+   *
+   * Editable here because nothing else could edit it, and a wrong value is not
+   * cosmetic: the detail page computes annual running cost, depreciation and
+   * resale from it. A Grand Vitara recorded as `electric` was being costed at
+   * ₹1.5/km of electricity with its fuel-price control hidden entirely.
+   */
+  fuel: string;
+  editFuel: string;
   editPrice: number | null;
   editing: boolean;
   saving: boolean;
@@ -102,6 +112,30 @@ export class AdminPricingComponent {
   loading = signal(true);
   loadError = signal('');
 
+  /**
+   * Exactly the API's FuelType enum (models/car.py). A value outside it is
+   * rejected with a 422, so a free-text box here would only let an admin
+   * discover that after pressing save — and the value they were correcting
+   * was itself a wrong fuel.
+   *
+   * The blank entry is not a fuel: it clears the column back to unknown, which
+   * is the honest state for a model nobody has established yet, and the state
+   * the row was in before anything guessed at it.
+   */
+  readonly fuelOptions: { value: string; label: string }[] = [
+    { value: '', label: '— not set —' },
+    { value: 'petrol', label: 'Petrol' },
+    { value: 'diesel', label: 'Diesel' },
+    { value: 'cng', label: 'CNG' },
+    { value: 'hybrid', label: 'Hybrid' },
+    { value: 'electric', label: 'Electric' },
+  ];
+
+  /** The stored value as a person reads it. */
+  fuelLabel(value: string): string {
+    return this.fuelOptions.find(o => o.value === value)?.label ?? value;
+  }
+
   private cars = signal<PriceRow[]>([]);
 
   constructor(auth: AuthService, router: Router) {
@@ -129,6 +163,8 @@ export class AdminPricingComponent {
         year: c.year,
         price: c.ex_showroom_price == null ? null : Number(c.ex_showroom_price),
         imageCount: (c.image_urls ?? []).length,
+        fuel: c.fuel_type ?? '',
+        editFuel: c.fuel_type ?? '',
         editPrice: c.ex_showroom_price == null ? null : Number(c.ex_showroom_price),
         editing: false,
         saving: false,
@@ -164,12 +200,14 @@ export class AdminPricingComponent {
   startEdit(row: PriceRow) {
     row.editing = true;
     row.editPrice = row.price;
+    row.editFuel = row.fuel;
     row.error = '';
   }
 
   cancelEdit(row: PriceRow) {
     row.editing = false;
     row.editPrice = row.price;
+    row.editFuel = row.fuel;
     row.error = '';
   }
 
@@ -226,13 +264,29 @@ export class AdminPricingComponent {
     try {
       // An empty field clears the price back to "price on request", which is
       // how a model is taken off the New Cars pages without deleting it.
-      const body = { ex_showroom_price: value == null ? null : String(value) };
+      //
+      // fuel_type rides along only when the admin actually changed it. PATCH
+      // applies the fields it is sent, so including it unconditionally would
+      // rewrite the column on every price edit — turning a save that was meant
+      // to be about money into one that also restates the fuel, which is how a
+      // value nobody chose gets committed.
+      const body: Record<string, unknown> = {
+        ex_showroom_price: value == null ? null : String(value),
+      };
+      if (row.editFuel !== row.fuel) {
+        body['fuel_type'] = row.editFuel || null;
+      }
       const updated = await firstValueFrom(
         this.http.patch<ApiCatalogueCar>(`${this.apiUrl}/cars/${row.id}`, body)
       );
 
       row.price = updated.ex_showroom_price == null ? null : Number(updated.ex_showroom_price);
       row.editPrice = row.price;
+      // Read back from the response rather than from what was typed: the API
+      // is what decides, and a row showing the typed value while the database
+      // holds another is the disagreement this screen exists to end.
+      row.fuel = updated.fuel_type ?? '';
+      row.editFuel = row.fuel;
       row.editing = false;
       row.overrideWarning = false;
       row.priceCheck = null;
@@ -244,7 +298,7 @@ export class AdminPricingComponent {
       setTimeout(() => this.savedMsg.set(''), 3000);
       this.carsData.reload();
     } catch (err) {
-      row.error = 'Could not save that price. Please retry.';
+      row.error = 'Could not save those changes. Please retry.';
       console.error('Price update failed:', err);
     } finally {
       row.saving = false;

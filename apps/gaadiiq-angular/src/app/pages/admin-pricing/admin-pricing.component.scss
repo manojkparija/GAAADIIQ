@@ -73,6 +73,31 @@
   border-radius: 50px; background: var(--fill-soft); border: 1px solid var(--border-soft);
 }
 
+/* Fuel, editable in the same row as the price.
+
+   Colours come from tokens only: e2e/admin-theme.spec.ts fails the build on a
+   literal in an admin stylesheet, and it has caught one here before. */
+.fuel-cell { min-width: 120px; color: var(--text); }
+
+/* Its own class rather than .unpriced, which is scoped to .price-val and is
+   about money — a fuel nobody has set is a different absence. */
+.fuel-unset { color: var(--muted); font-style: italic; }
+
+.fuel-select {
+  width: 118px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--divider);
+  background: var(--input-bg);
+  color: var(--input-color);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  &:focus-visible { border-color: var(--primary); }
+}
+
 .price-cell { min-width: 140px; }
 .price-val { font-weight: 700; font-size: 1rem; color: var(--text); }
 
