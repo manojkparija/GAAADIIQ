@@ -57,9 +57,11 @@ import hashlib
 import json
 import logging
 
-from core.config import settings
+from services import redis_support
 
 logger = logging.getLogger("gaadiiq.ai_cache")
+
+_LABEL = "AI cache"
 
 #: A day. These answers are projections and research, not live facts — a
 #: forecast does not change hour to hour — and the window is what keeps the
@@ -71,29 +73,31 @@ TTL_SECONDS = 24 * 60 * 60
 MAX_MEMORY_ENTRIES = 500
 
 _memory: dict[str, str] = {}
-_redis = None
-_redis_checked = False
+
+#: Last known backend, for stats(). stats() is sync; probing is not.
+_backend = "memory"
 
 _stats = {"hits": 0, "misses": 0, "stores": 0, "skips": 0}
 
 
-def _get_redis():
-    global _redis, _redis_checked
-    if _redis_checked:
-        return _redis
-    _redis_checked = True
-    try:
-        import redis.asyncio as aioredis
+async def _get_redis():
+    """Redis when a real PING says so, else None — see services/redis_support.
 
-        _redis = aioredis.from_url(settings.redis_url, decode_responses=True)
-    except Exception as exc:
-        logger.info("AI cache: Redis unavailable (%s); using in-process fallback", exc)
-        _redis = None
-    return _redis
+    This used to ask only whether the CLIENT had been constructed, which always
+    succeeds: redis_url defaults to redis://localhost:6379 and redis-py connects
+    lazily. On a deployment with no Redis that meant a refused connection, and a
+    log line, on every single call. See the module docstring in redis_support.
+    """
+    global _backend
+
+    r = await redis_support.client(_LABEL, logger)
+    _backend = "redis" if r is not None else "memory"
+    return r
 
 
 def using_redis() -> bool:
-    return _get_redis() is not None
+    """The last probed answer. Sync, so it reports rather than asks."""
+    return _backend == "redis"
 
 
 def stats() -> dict:
@@ -102,7 +106,7 @@ def stats() -> dict:
     return {
         **_stats,
         "hit_rate": round(_stats["hits"] / total, 3) if total else 0.0,
-        "backend": "redis" if using_redis() else "memory",
+        "backend": _backend,
     }
 
 
@@ -120,7 +124,7 @@ def build_key(namespace: str, **parts) -> str:
 
 
 async def get(key: str) -> dict | list | None:
-    r = _get_redis()
+    r = await _get_redis()
     if r is not None:
         try:
             raw = await r.get(key)
@@ -131,6 +135,7 @@ async def get(key: str) -> dict | list | None:
             return None
         except Exception as exc:
             logger.info("AI cache: Redis read failed (%s); using fallback", exc)
+            redis_support.forget(_LABEL)
 
     raw = _memory.get(key)
     if raw:
@@ -148,7 +153,7 @@ async def put(key: str, value: dict | list) -> None:
         _stats["skips"] += 1
         return
 
-    r = _get_redis()
+    r = await _get_redis()
     if r is not None:
         try:
             await r.setex(key, TTL_SECONDS, payload)
@@ -156,6 +161,7 @@ async def put(key: str, value: dict | list) -> None:
             return
         except Exception as exc:
             logger.info("AI cache: Redis write failed (%s); using fallback", exc)
+            redis_support.forget(_LABEL)
 
     if len(_memory) >= MAX_MEMORY_ENTRIES:
         # Crude, but the fallback is not the production path and an LRU here
@@ -172,7 +178,7 @@ async def invalidate(namespace: str) -> int:
     for k in [k for k in _memory if k.startswith(prefix)]:
         del _memory[k]
 
-    r = _get_redis()
+    r = await _get_redis()
     if r is not None:
         try:
             async for k in r.scan_iter(match=f"{prefix}*", count=500):
@@ -183,9 +189,9 @@ async def invalidate(namespace: str) -> int:
 
 
 def _reset_for_tests() -> None:
-    global _redis, _redis_checked
+    global _backend
     _memory.clear()
-    _redis = None
-    _redis_checked = False
+    _backend = "memory"
+    redis_support._reset_for_tests()
     for k in _stats:
         _stats[k] = 0

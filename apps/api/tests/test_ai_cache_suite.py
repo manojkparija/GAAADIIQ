@@ -15,9 +15,11 @@ Caching an answer that cost money, without changing what any caller sees.
 The second class is why `_clean` rejecting a curve and `embed_texts` returning
 None are both tested for *absence* of a cache entry rather than presence.
 """
+import time
+
 import pytest
 
-from services import ai_cache, embeddings, resale_forecast
+from services import ai_cache, embeddings, redis_support, resale_forecast
 
 
 @pytest.fixture(autouse=True)
@@ -26,8 +28,7 @@ def _clean_cache():
     # Pin the in-process backend. Whether a Redis is reachable from CI is not
     # what any of these tests is about, and letting it vary would make them
     # assert different things on different machines.
-    ai_cache._redis = None
-    ai_cache._redis_checked = True
+    redis_support._state[ai_cache._LABEL] = (time.monotonic(), None)
     embeddings._embed_one_cached.cache_clear()
     yield
     ai_cache._reset_for_tests()
@@ -103,8 +104,7 @@ async def test_a_broken_redis_does_not_reach_the_caller():
         async def setex(self, *a, **kw):
             raise RuntimeError("connection refused")
 
-    ai_cache._redis = _Exploding()
-    ai_cache._redis_checked = True
+    redis_support._state[ai_cache._LABEL] = (time.monotonic(), _Exploding())
 
     key = ai_cache.build_key("resale", q="2")
     await ai_cache.put(key, {"forecast": [1]})

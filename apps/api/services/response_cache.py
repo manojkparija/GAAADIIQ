@@ -72,7 +72,7 @@ from typing import Awaitable, Callable
 from starlette.requests import Request
 
 from core.cache_policy import PUBLIC_CACHE_CONTROL, cache_directive
-from core.config import settings
+from services import redis_support
 
 logger = logging.getLogger("gaadiiq.response_cache")
 
@@ -89,27 +89,25 @@ MAX_BODY_BYTES = 512 * 1024
 #: The in-process fallback when Redis is absent.
 MAX_MEMORY_ENTRIES = 200
 
+_LABEL = "Response cache"
+
 _memory: dict[str, tuple[float, str]] = {}
 _inflight: dict[str, asyncio.Future] = {}
-_redis = None
-_redis_checked = False
 
 _stats = {"hits": 0, "misses": 0, "stores": 0, "coalesced": 0}
 
+#: Last known backend, for stats(). Kept as a plain string because stats() is
+#: sync and probing is not.
+_backend = "memory"
 
-def _get_redis():
-    global _redis, _redis_checked
-    if _redis_checked:
-        return _redis
-    _redis_checked = True
-    try:
-        import redis.asyncio as aioredis
 
-        _redis = aioredis.from_url(settings.redis_url, decode_responses=True)
-    except Exception as exc:
-        logger.info("Response cache: Redis unavailable (%s); using in-process fallback", exc)
-        _redis = None
-    return _redis
+async def _get_redis():
+    """Redis when a real PING says so, else None — see services/redis_support."""
+    global _backend
+
+    r = await redis_support.client(_LABEL, logger)
+    _backend = "redis" if r is not None else "memory"
+    return r
 
 
 def stats() -> dict:
@@ -117,7 +115,7 @@ def stats() -> dict:
     return {
         **_stats,
         "hit_rate": round(_stats["hits"] / total, 3) if total else 0.0,
-        "backend": "redis" if _get_redis() is not None else "memory",
+        "backend": _backend,
         "in_flight": len(_inflight),
     }
 
@@ -156,13 +154,14 @@ def cache_key(request: Request) -> str:
 
 async def get(key: str) -> tuple[int, str, str] | None:
     """A cached (status, body, media_type), or None."""
-    r = _get_redis()
+    r = await _get_redis()
     raw = None
     if r is not None:
         try:
             raw = await r.get(key)
         except Exception as exc:
             logger.info("Response cache: Redis read failed (%s); using fallback", exc)
+            redis_support.forget(_LABEL)
 
     if raw is None:
         entry = _memory.get(key)
@@ -196,7 +195,7 @@ async def put(key: str, status: int, body: str, media_type: str) -> None:
     except Exception:
         return
 
-    r = _get_redis()
+    r = await _get_redis()
     if r is not None:
         try:
             await r.setex(key, TTL_SECONDS, payload)
@@ -204,6 +203,7 @@ async def put(key: str, status: int, body: str, media_type: str) -> None:
             return
         except Exception as exc:
             logger.info("Response cache: Redis write failed (%s); using fallback", exc)
+            redis_support.forget(_LABEL)
 
     if len(_memory) >= MAX_MEMORY_ENTRIES:
         _memory.clear()
@@ -267,7 +267,7 @@ async def invalidate_all() -> int:
     dropped = len(_memory)
     _memory.clear()
 
-    r = _get_redis()
+    r = await _get_redis()
     if r is not None:
         try:
             async for k in r.scan_iter(match="rc:*", count=500):
@@ -278,10 +278,8 @@ async def invalidate_all() -> int:
 
 
 def _reset_for_tests() -> None:
-    global _redis, _redis_checked
     _memory.clear()
     _inflight.clear()
-    _redis = None
-    _redis_checked = False
+    redis_support._reset_for_tests()
     for k in _stats:
         _stats[k] = 0

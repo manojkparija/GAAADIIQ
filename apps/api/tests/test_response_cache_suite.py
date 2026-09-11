@@ -24,22 +24,23 @@ authenticated request, a non-200, a POST and an unlisted path must all pass
 through untouched.
 """
 import asyncio
+import time
 
 import pytest
 from starlette.datastructures import Headers
 from starlette.requests import Request
 
 from core.cache_policy import PUBLIC_CACHE_CONTROL, cache_directive
-from services import response_cache
+from services import redis_support, response_cache
 
 
 @pytest.fixture(autouse=True)
 def _clean():
     response_cache._reset_for_tests()
     # Pin the in-process backend: whether CI can reach a Redis is not what any
-    # of these tests is about.
-    response_cache._redis = None
-    response_cache._redis_checked = True
+    # of these tests is about. Recorded as a probed answer so no PING is
+    # attempted either.
+    redis_support._state[response_cache._LABEL] = (time.monotonic(), None)
     yield
     response_cache._reset_for_tests()
 
@@ -184,8 +185,7 @@ async def test_a_broken_redis_falls_back_rather_than_failing():
         async def setex(self, *a, **kw):
             raise RuntimeError("connection refused")
 
-    response_cache._redis = _Exploding()
-    response_cache._redis_checked = True
+    redis_support._state[response_cache._LABEL] = (time.monotonic(), _Exploding())
 
     await response_cache.put("rc:/cars?x", 200, '{"ok":1}', "application/json")
     assert await response_cache.get("rc:/cars?x") == (200, '{"ok":1}', "application/json")
