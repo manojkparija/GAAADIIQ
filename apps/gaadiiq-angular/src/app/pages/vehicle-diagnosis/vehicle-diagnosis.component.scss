@@ -1,9 +1,26 @@
 :host { display: block; }
 
-.diag-page { min-height: 100vh; background: var(--bg); }
+// No background of its own, so the page reads like AI Advisor beside it.
+//
+// This used to paint `background: var(--bg)` — #FFFFFF in light, #131C2F in
+// dark — across the whole page. body is var(--navy) (#F4F7FB light), and the
+// hexagon watermark is a fixed pseudo-element behind everything, so an opaque
+// page-level fill covered both: the tab sat on flat white while every page
+// next to it in the AI row had the soft ground and the lattice.
+//
+// styles.scss says as much where the watermark is defined — any section
+// painting its own opaque background hides it by design. That is right for a
+// card or a gradient hero, and wrong for the page wrapper itself. .advisor-page
+// sets no background for this reason; this now matches it, in both themes,
+// by inheriting body rather than by naming a colour of its own.
+.diag-page { min-height: 100vh; }
 
 .diag-hero {
-  background: linear-gradient(135deg, #1e40af 0%, #00D4A8 100%);
+  // var(--teal) rather than #00D4A8, which is what .advisor-hero uses. The two
+  // tabs sit next to each other in the AI row and their heroes were ending on
+  // different greens — near enough to look like a rendering difference rather
+  // than a decision. The token also follows the theme; the literal could not.
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
      (176px on a phone since the nav strip). max() keeps the designed spacing
      wherever it is the larger, and clears the bar when it is not. */
