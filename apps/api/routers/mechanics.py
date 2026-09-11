@@ -101,6 +101,9 @@ async def register_mechanic(
     try:
         pan = kyc.normalise_pan(payload.pan_number)
         aadhaar_digits = kyc.normalise_aadhaar(payload.aadhaar_number)
+        # Alongside the KYC fields rather than further down, so a registration
+        # with no payout destination is refused before any of it is stored.
+        upi_vpa = kyc.normalise_upi_vpa(payload.upi_vpa)
     except kyc.KycError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
@@ -125,7 +128,7 @@ async def register_mechanic(
         pan_number=pan,
         aadhaar_last4=last4,
         aadhaar_hash=digest,
-        upi_vpa=payload.upi_vpa,
+        upi_vpa=upi_vpa,
         specialisations=payload.specialisations,
         status=MechanicStatus.pending_verification,
         # Anonymous registration stays possible — a mechanic signing up has no

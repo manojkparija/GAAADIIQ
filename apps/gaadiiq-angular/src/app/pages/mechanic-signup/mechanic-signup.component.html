@@ -42,10 +42,17 @@
         </label>
 
         <label class="ms-field">
-          <span class="ms-label">UPI ID</span>
-          <input type="text" name="upi_vpa" [(ngModel)]="form.upi_vpa" maxlength="120"
-                 placeholder="name@okaxis" />
-          <span class="ms-help">Where your payouts are settled.</span>
+          <!--
+            Required, and marked so here rather than only refused by the API.
+            A mechanic who registers without this can be matched, quote, do the
+            work and be paid for by the driver — with the money on our side and
+            nowhere to send it. Better to ask for it while they are filling in
+            the form than to reject the whole submission afterwards.
+          -->
+          <span class="ms-label">{{ 'UPI ID *' | t }}</span>
+          <input type="text" name="upi_vpa" [(ngModel)]="form.upi_vpa" required maxlength="120"
+                 placeholder="9876543210@okaxis" />
+          <span class="ms-help">Where your payouts for completed jobs are sent.</span>
         </label>
       </div>
 

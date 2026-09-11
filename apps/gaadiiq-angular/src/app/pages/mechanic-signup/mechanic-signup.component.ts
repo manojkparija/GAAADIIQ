@@ -118,7 +118,11 @@ export class MechanicSignupComponent {
         // Trim the optional strings the API would rather receive as absent than
         // as an empty string.
         shop_name: this.form.shop_name?.trim() || undefined,
-        upi_vpa: this.form.upi_vpa?.trim() || undefined,
+        // Sent even when blank, unlike shop_name above. The API refuses a
+        // registration with no payout destination and says why; dropping the
+        // key here would turn that explanation into a generic missing-field
+        // error, and the reason is the part worth reading.
+        upi_vpa: this.form.upi_vpa?.trim().toLowerCase() ?? '',
         pan_number: this.form.pan_number.trim().toUpperCase(),
         aadhaar_number: this.form.aadhaar_number.replace(/[\s-]/g, ''),
       });
