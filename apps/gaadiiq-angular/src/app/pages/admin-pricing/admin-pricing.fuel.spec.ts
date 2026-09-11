@@ -133,3 +133,52 @@ describe('AdminPricingComponent — correcting a model fuel type', () => {
     expect(r.editing).toBeFalse();
   });
 });
+
+/**
+ * The table's columns line up.
+ *
+ * WHY THIS EXISTS
+ *
+ * Adding the Fuel column shipped a broken table: the edit that inserted it
+ * consumed the Images cell instead of sitting beside it, so the body carried
+ * six cells under seven headers and every value rendered one column to the
+ * left. Images showed the fuel, Fuel showed the price, Ex-showroom Price
+ * showed the status.
+ *
+ * Nothing caught it. The build passed — a `<td>` too few is valid HTML. The
+ * unit tests passed because they drove the component and never rendered its
+ * template. The admin-theme spec passed because it reads stylesheets, not
+ * markup. It took a person opening the page.
+ *
+ * Counting the cells is the cheapest check that would have failed.
+ */
+describe('AdminPricingComponent — the table lines up', () => {
+  it('renders one body cell per header', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [AdminPricingComponent, RouterTestingModule],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    const fixture = TestBed.createComponent(AdminPricingComponent);
+    const c: any = fixture.componentInstance;
+
+    // One row, straight into the signal the table reads.
+    c['cars'].set([{
+      id: 'gv-2026', make: 'Maruti Suzuki', model: 'Grand Vitara', variant: null,
+      year: 2026, price: 1619000, imageCount: 10,
+      fuel: 'electric', editFuel: 'electric',
+      editPrice: 1619000, editing: false, saving: false, error: '',
+    }]);
+    c.loading?.set?.(false);
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const headers = el.querySelectorAll('thead th').length;
+    const cells = el.querySelectorAll('tbody tr td').length;
+
+    expect(headers).toBeGreaterThan(0);
+    expect(cells)
+      .withContext(`${cells} cells under ${headers} headers — the row is shifted`)
+      .toBe(headers);
+  });
+});
