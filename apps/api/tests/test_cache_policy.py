@@ -19,6 +19,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from core.cache_policy import (
+    CACHEABLE_PREFIXES,
     PRIVATE_CACHE_CONTROL,
     PUBLIC_CACHE_CONTROL,
     apply_cache_policy,
@@ -185,10 +186,11 @@ def test_the_reader_is_never_served_a_knowingly_stale_catalogue():
     every single time — because a hard refresh sends `Cache-Control: no-cache`
     and skips the caches this directive fills.
 
-    There is still no purge-on-write hook, so this string is the only thing
-    bounding how long an admin's edit stays invisible. Anything that lets a
-    reader be served known-stale catalogue data belongs behind that hook, not
-    here.
+    Purge-on-write now exists (services/cdn_purge.py, fired from a middleware
+    in main.py), so an edit no longer waits out a TTL. That changed what
+    s-maxage is for — see the test below — but not this: stale-while-revalidate
+    serves a copy ALREADY KNOWN to be out of date, which no purge can undo,
+    because the reader is handed the old bytes before the refresh happens.
     """
     assert "stale-while-revalidate" not in PUBLIC_CACHE_CONTROL
 
@@ -197,15 +199,40 @@ def test_the_reader_is_never_served_a_knowingly_stale_catalogue():
     assert "must-revalidate" in PUBLIC_CACHE_CONTROL
 
 
-def test_the_edge_window_is_short_enough_that_an_edit_shows_up():
-    """s-maxage bounds how long an admin edit stays invisible.
+def test_a_long_edge_window_is_paid_for_by_purge_on_write():
+    """s-maxage may only be long while something clears the edge on a write.
 
-    Not an arbitrary number: with no purge hook, this is the wait between
-    saving a car and seeing it. Thirty seconds is short enough to look
-    immediate. If someone raises it, purge-on-write should exist first.
+    This test used to assert `edge <= 60`, and said why: with no purge hook,
+    s-maxage WAS the wait between saving a car and seeing it, so thirty seconds
+    was the most that could look immediate. Its closing line was "if someone
+    raises it, purge-on-write should exist first."
+
+    It does — services/cdn_purge.py, fired from a middleware in main.py after
+    any successful write under a catalogue prefix. So the number was raised to
+    an hour, and the edge is now a real cache rather than a bound on how long a
+    mistake stays visible.
+
+    The protection is kept rather than deleted, and re-pointed at the thing the
+    long window depends on. Delete the purge and this fails, which is the point:
+    the two only make sense together, and a future change that removes the purge
+    while leaving an hour on the edge would recreate the fifteen-minute-stale
+    catalogue this file exists to describe.
     """
     edge = int(PUBLIC_CACHE_CONTROL.split("s-maxage=")[1].split(",")[0].strip())
-    assert edge <= 60, f"s-maxage={edge}s is long enough to read as a broken page"
+    if edge <= 60:
+        return  # Short enough to need no purge, as it was before.
+
+    from main import _cdn_purge_middleware, _writes_to_catalogue
+    from services import cdn_purge
+
+    assert callable(cdn_purge.purge_catalogue), (
+        f"s-maxage={edge}s without a purge is how an edit stays invisible"
+    )
+    assert callable(_cdn_purge_middleware)
+    # The prefixes it purges for have to cover the ones being cached, or a
+    # write to a cached area would leave the edge holding the old answer.
+    for prefix in CACHEABLE_PREFIXES:
+        assert _writes_to_catalogue(prefix), f"{prefix} is cached but never purged"
 
 
 def test_private_is_no_store_not_no_cache():

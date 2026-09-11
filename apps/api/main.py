@@ -18,6 +18,7 @@ from sqlalchemy.exc import TimeoutError as SQLTimeoutError
 from core.cache_policy import apply_cache_policy
 from core.config import settings
 from core.limiter import came_through_trusted_proxy, limiter
+from services import cdn_purge
 
 # Debug: Verify configuration is loaded (redact credentials)
 async_url = settings.async_database_url
@@ -596,6 +597,71 @@ async def _cache_policy_middleware(request: Request, call_next):
     response = await call_next(request)
     apply_cache_policy(request, response)
     return response
+
+
+@app.middleware("http")
+async def _cdn_purge_middleware(request: Request, call_next):
+    """
+    Clear Cloudflare's copy after an admin write that changes the catalogue.
+
+    WHY A MIDDLEWARE RATHER THAN A CALL PER ENDPOINT
+
+    Fifteen endpoints change what a buyer sees — image upload, removal,
+    restore, the gallery reorder, a price or fuel edit, variant publish and
+    edit, and the rest. Adding a purge to each is a list that has to stay
+    complete forever, and the endpoint somebody forgets is not a visible
+    failure: it is a page that is quietly stale, which is the exact report
+    this whole area has produced three times.
+
+    Here there is no list to keep. Anything that writes under a prefix the
+    catalogue is built from purges, including endpoints nobody has written yet.
+
+    WHAT TRIGGERS IT
+
+    A non-GET that succeeded. A 4xx changed nothing, a 5xx may have changed
+    nothing, and neither is worth throwing the zone's cache away for.
+    /media-admin is included even though it is not itself cacheable — it is
+    where photographs are written, and photographs are what /cars serves.
+
+    The purge is awaited rather than backgrounded. It costs at most
+    PURGE_TIMEOUT_SECONDS on an admin action that already took longer than
+    that to upload, and awaiting means the admin's next page load — which is
+    usually an immediate refresh to check the change — sees the new content
+    rather than racing a task that may not have run yet.
+    """
+    response = await call_next(request)
+
+    if (
+        request.method not in ("GET", "HEAD", "OPTIONS")
+        and 200 <= response.status_code < 300
+        and cdn_purge.is_configured()
+        and _writes_to_catalogue(request.url.path)
+    ):
+        await cdn_purge.purge_catalogue(f"{request.method} {request.url.path}")
+
+    return response
+
+
+#: Prefixes whose writes change what the catalogue serves.
+#:
+#: The first four mirror cache_policy.CACHEABLE_PREFIXES — what is cached is
+#: what needs clearing. /media-admin is the exception that is not itself
+#: cacheable: it writes the photographs /cars returns.
+_CATALOGUE_WRITE_PREFIXES: tuple[str, ...] = (
+    "/cars",
+    "/upcoming-cars",
+    "/news",
+    "/video-reviews",
+    "/media-admin",
+)
+
+
+def _writes_to_catalogue(path: str) -> bool:
+    """Segment-wise, so "/cars-private" never matches "/cars"."""
+    return any(
+        path == prefix or path.startswith(prefix + "/")
+        for prefix in _CATALOGUE_WRITE_PREFIXES
+    )
 
 
 @app.middleware("http")
