@@ -49,6 +49,7 @@
               <th>{{ 'Model' | t }}</th>
               <th>{{ 'Year' | t }}</th>
               <th>Images</th>
+              <th>{{ 'Fuel' | t }}</th>
               <th>Ex-showroom Price</th>
               <th>Status</th>
               <th>Actions</th>
@@ -62,7 +63,27 @@
                 <div class="car-variant">{{ row.variant }}</div>
               </td>
               <td>{{ row.year }}</td>
-              <td class="muted-cell">{{ row.imageCount || '—' }}</td>
+              <!--
+                Editable because nothing else could edit it, and a wrong value
+                is not cosmetic: the detail page derives running cost,
+                depreciation and resale from this column. A Grand Vitara
+                recorded as electric was costed at ₹1.5/km with its fuel-price
+                control hidden. Only the API's own FuelType values are offered,
+                since anything else is a 422 discovered after pressing save.
+              -->
+              <td class="fuel-cell">
+                <ng-container *ngIf="!row.editing">
+                  <span [class.fuel-unset]="!row.fuel">
+                    {{ row.fuel ? fuelLabel(row.fuel) : 'Not set' }}
+                  </span>
+                </ng-container>
+                <ng-container *ngIf="row.editing">
+                  <select class="fuel-select" [(ngModel)]="row.editFuel"
+                          [attr.aria-label]="'Fuel type for ' + row.make + ' ' + row.model">
+                    <option *ngFor="let opt of fuelOptions" [value]="opt.value">{{ opt.label }}</option>
+                  </select>
+                </ng-container>
+              </td>
               <td class="price-cell">
                 <ng-container *ngIf="!row.editing">
                   <span class="price-val" [class.unpriced]="row.price === null">
