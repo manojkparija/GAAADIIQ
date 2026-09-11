@@ -44,11 +44,30 @@ from starlette.responses import Response
 #:
 #: Matched as path segments, not as raw string prefixes: "/cars" must not admit
 #: a future "/cars-private". See `_prefix_matches`.
+#: /brochures/images is the exact path, NOT the /brochures prefix. The router
+#: it belongs to also serves /brochures/jobs, which is admin-only ingestion
+#: history — a different answer for a different caller, and precisely what this
+#: allowlist is meant to keep out. Condition 3 would catch it anyway, since an
+#: admin request carries a token, but relying on that would mean the allowlist
+#: said "this router is public" when only one of its routes is.
+#:
+#: It earns its place on the stated test — the same for every caller. It takes
+#: no auth, and MediaOut carries image metadata only (url, dimensions,
+#: make/model/variant, source PDF name); there is no uploader, no user, nothing
+#: that varies by who asked.
+#:
+#: It is also the busiest read on the site. Its own docstring: "the single read
+#: path behind every surface that shows vehicle imagery — brand, model and
+#: variant pages, comparison, the advisor, the dealer portal and search." Until
+#: now it fell through to no-store, so every one of those views reached the
+#: origin — one worker, thirty connections — while /cars beside it was served
+#: from the edge.
 CACHEABLE_PREFIXES: tuple[str, ...] = (
     "/cars",
     "/upcoming-cars",
     "/news",
     "/video-reviews",
+    "/brochures/images",
 )
 
 #: The browser revalidates every time; the edge absorbs the load.
@@ -87,9 +106,35 @@ CACHEABLE_PREFIXES: tuple[str, ...] = (
 #: sees is worth more here than the latency it saved.
 #:
 #: The browser/edge distinction the old comment defended is intact, and in the
-#: same direction: the browser holds nothing, the edge holds longer. Raise
-#: s-maxage once purge-on-write exists, not before.
-PUBLIC_CACHE_CONTROL = "public, max-age=0, must-revalidate, s-maxage=30"
+#: same direction: the browser holds nothing, the edge holds longer.
+#:
+#: RAISED FROM 30s TO AN HOUR, AND WHY THAT IS NOW SAFE
+#:
+#: The line above used to end "Raise s-maxage once purge-on-write exists, not
+#: before." It exists: services/cdn_purge.py clears the zone after any
+#: successful admin write under a catalogue prefix, fired from a middleware in
+#: main.py so no endpoint can be forgotten.
+#:
+#: Thirty seconds was never a cache so much as a bound on how long a mistake
+#: stayed visible — the edge could only absorb traffic for half a minute before
+#: going back to Postgres. An hour is a real cache: a model that nobody edits
+#: is served from Cloudflare all day and the origin is not asked at all.
+#:
+#: The staleness that number used to control is now controlled by the purge
+#: instead, and controlled better: an edit is visible in seconds rather than
+#: after a TTL, however long the TTL is.
+#:
+#: WHAT STILL BOUNDS THE DAMAGE IF A PURGE FAILS
+#:
+#: An hour, and only for anonymous catalogue reads. A purge failure is logged
+#: and swallowed by design (the admin's write is already committed), so the
+#: worst case is the behaviour this codebase had before the purge existed —
+#: with a longer wait. If that proves too long in practice, lower this rather
+#: than removing the purge: the purge is what makes any number here defensible.
+#:
+#: `max-age=0, must-revalidate` is unchanged. The browser still holds nothing
+#: without asking, so a reader who refreshes always gets the current answer.
+PUBLIC_CACHE_CONTROL = "public, max-age=0, must-revalidate, s-maxage=3600"
 
 #: Everything else. no-store rather than no-cache: no-cache permits storing the
 #: response and revalidating it, which still means a copy of a loan application

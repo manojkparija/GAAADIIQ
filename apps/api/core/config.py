@@ -39,6 +39,17 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379"
 
+    # ── Cloudflare, in front of api.gaadiiq.com ──────────────────────────────
+    #
+    # Used only to purge the cache after an admin changes the catalogue. The
+    # token needs a single permission — Zone → Cache Purge → Purge — and
+    # nothing else; anything wider is a key to the zone sitting in an env var.
+    #
+    # Both empty by default so a developer machine, CI, and any environment not
+    # behind Cloudflare no-op rather than fail. See services/cdn_purge.py.
+    cloudflare_api_token: str = ""
+    cloudflare_zone_id: str = ""
+
     # ── Trusting the proxy in front ───────────────────────────────────────────
     #
     # THE BUG THESE EXIST FOR

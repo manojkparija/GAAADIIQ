@@ -18,6 +18,7 @@ from sqlalchemy.exc import TimeoutError as SQLTimeoutError
 from core.cache_policy import apply_cache_policy
 from core.config import settings
 from core.limiter import came_through_trusted_proxy, limiter
+from services import cdn_purge, response_cache
 
 # Debug: Verify configuration is loaded (redact credentials)
 async_url = settings.async_database_url
@@ -465,6 +466,87 @@ app.add_middleware(SlowAPIMiddleware)
 
 
 @app.middleware("http")
+async def _micro_cache_middleware(request: Request, call_next):
+    """
+    Hold public catalogue responses at the origin for a few seconds.
+
+    WHAT IT IS FOR
+
+    Cloudflare absorbs almost all of this traffic. This covers the moments it
+    does not — the window after a purge, a TTL lapsing under load, and the long
+    tail of filter combinations that are cold at any given time. In those, every
+    request in flight arrives at a service running WEB_CONCURRENCY=1 behind
+    thirty connections, and a large enough simultaneous arrival times out rather
+    than queues.
+
+    The single-flight in services/response_cache.py is the half that matters:
+    a cache alone does not stop a stampede, because a thousand concurrent
+    misses all miss before any of them has filled it.
+
+    WHY IT IS REGISTERED FIRST
+
+    Middlewares registered earlier sit further in, so this is the innermost
+    layer and a cache hit still returns THROUGH every one of the others: the
+    origin lock has already run, and the security headers, the cache policy and
+    CORS are applied to a hit exactly as they are to a miss. Nothing about the
+    response differs except that the database was not asked.
+
+    That is also why only the body, status and content type are cached, never
+    the headers. Cache-Control and Access-Control-Allow-Origin depend on the
+    request that is being answered now — storing one caller's copy and replaying
+    it for another is the bug cache_policy.py's Vary handling exists to avoid.
+    """
+    if not response_cache.is_cacheable(request):
+        return await call_next(request)
+
+    key = response_cache.cache_key(request)
+
+    cached = await response_cache.get(key)
+    if cached is not None:
+        status_code, body, media_type = cached
+        return Response(content=body, status_code=status_code, media_type=media_type)
+
+    async def _produce():
+        response = await call_next(request)
+
+        # Only a public, 200, JSON response is worth holding. Anything else —
+        # a streamed PDF, image bytes, an error — is passed through untouched
+        # rather than buffered into the memory of a single-worker process.
+        media_type = response.headers.get("content-type", "")
+        if not response_cache.is_cacheable(request, response.status_code) or not (
+            media_type.startswith("application/json")
+        ):
+            return response, None, request
+
+        body = b"".join([chunk async for chunk in response.body_iterator])
+        return response, body, request
+
+    response, body, produced_for = await response_cache.single_flight(key, _produce)
+
+    if body is None:
+        # Not cacheable after all — an error, or a non-JSON payload.
+        #
+        # The leader may return its own response. A FOLLOWER MUST NOT: that
+        # object was built for someone else's request and its body iterator is
+        # single-use, so replaying it would send one caller an empty payload and
+        # possibly another caller's status. Followers do their own work, which
+        # is what they would have done without a cache in front of them.
+        if produced_for is request:
+            return response
+        return await call_next(request)
+
+    await response_cache.put(key, response.status_code, body.decode("utf-8"), "application/json")
+
+    # The body iterator is consumed, so the original response can no longer be
+    # returned as it stands — it would send an empty payload.
+    return Response(
+        content=body,
+        status_code=response.status_code,
+        media_type="application/json",
+    )
+
+
+@app.middleware("http")
 async def _origin_lock(request: Request, call_next):
     """
     Refuse requests that did not come through the proxy in front of us.
@@ -596,6 +678,110 @@ async def _cache_policy_middleware(request: Request, call_next):
     response = await call_next(request)
     apply_cache_policy(request, response)
     return response
+
+
+@app.middleware("http")
+async def _cdn_purge_middleware(request: Request, call_next):
+    """
+    Clear Cloudflare's copy after an admin write that changes the catalogue.
+
+    WHY A MIDDLEWARE RATHER THAN A CALL PER ENDPOINT
+
+    Fifteen endpoints change what a buyer sees — image upload, removal,
+    restore, the gallery reorder, a price or fuel edit, variant publish and
+    edit, and the rest. Adding a purge to each is a list that has to stay
+    complete forever, and the endpoint somebody forgets is not a visible
+    failure: it is a page that is quietly stale, which is the exact report
+    this whole area has produced three times.
+
+    Here there is no list to keep. Anything that writes under a prefix the
+    catalogue is built from purges, including endpoints nobody has written yet.
+
+    WHAT TRIGGERS IT
+
+    A non-GET that succeeded. A 4xx changed nothing, a 5xx may have changed
+    nothing, and neither is worth throwing the zone's cache away for.
+    /media-admin is included even though it is not itself cacheable — it is
+    where photographs are written, and photographs are what /cars serves.
+
+    The purge is awaited rather than backgrounded. It costs at most
+    PURGE_TIMEOUT_SECONDS on an admin action that already took longer than
+    that to upload, and awaiting means the admin's next page load — which is
+    usually an immediate refresh to check the change — sees the new content
+    rather than racing a task that may not have run yet.
+
+    That is still true of a lone write, which is the common case: request_purge
+    runs it inline. A BURST is what changed — a brochure ingestion storing a
+    batch of images, or a gallery reordered a row at a time, used to empty the
+    whole zone once per write, each purge discarding what the last had just
+    rebuilt. With readers on the site that is a stampede against a single
+    worker. Writes inside the window now share one trailing purge instead.
+    """
+    response = await call_next(request)
+
+    changed_the_catalogue = (
+        request.method not in ("GET", "HEAD", "OPTIONS")
+        and 200 <= response.status_code < 300
+        and _writes_to_catalogue(request.url.path)
+    )
+
+    if changed_the_catalogue:
+        # The origin's own copy first, and WITHOUT asking whether Cloudflare is
+        # configured.
+        #
+        # THE BUG THIS SHAPE FIXES
+        #
+        # This call was nested inside the `cdn_purge.is_configured()` condition
+        # below, which meant the origin cache was only ever cleared on an
+        # environment that had a Cloudflare token. Anywhere else — a developer
+        # machine, CI, or production on a day the token is missing or wrong —
+        # every admin write left the origin serving its own stale copy for a
+        # full TTL, with the edge purge that was supposed to be the fallback
+        # equally absent.
+        #
+        # CI caught it as seventeen failures: an admin tagged images and the
+        # next read still returned the empty list from before the write.
+        #
+        # The two clears have nothing in common but their trigger. This one is
+        # a dict clear or a Redis DEL — local, instant, and always applicable.
+        # The other is a network call to a third party that may not be set up.
+        # Gating the first on the second was the mistake.
+        await response_cache.invalidate_all()
+
+    if changed_the_catalogue and cdn_purge.is_configured():
+        await cdn_purge.request_purge(f"{request.method} {request.url.path}")
+
+    return response
+
+
+#: Prefixes whose writes change what the catalogue serves.
+#:
+#: These mirror cache_policy.CACHEABLE_PREFIXES — what is cached is what needs
+#: clearing — plus the two places that write images without being cacheable
+#: themselves: /media-admin and /brochures both store and delete the
+#: photographs that /cars and /brochures/images return.
+#:
+#: /brochures matters more than it looks. Image writes arrive through BOTH
+#: routers, and for a long time only one of them purged: brochures.py indexes
+#: media at line 511 and deletes it at 722, and neither cleared the edge. With
+#: /brochures/images now cacheable, a deletion there would otherwise have left
+#: the photograph on the page for a full s-maxage.
+_CATALOGUE_WRITE_PREFIXES: tuple[str, ...] = (
+    "/cars",
+    "/upcoming-cars",
+    "/news",
+    "/video-reviews",
+    "/media-admin",
+    "/brochures",
+)
+
+
+def _writes_to_catalogue(path: str) -> bool:
+    """Segment-wise, so "/cars-private" never matches "/cars"."""
+    return any(
+        path == prefix or path.startswith(prefix + "/")
+        for prefix in _CATALOGUE_WRITE_PREFIXES
+    )
 
 
 @app.middleware("http")
