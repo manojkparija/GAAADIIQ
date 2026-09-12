@@ -132,6 +132,64 @@ describe('AdminCarImagesComponent — priced models hidden for want of a photogr
     expect(c.hiddenForNoPhoto().map(m => m.model)).toEqual(['A', 'B']);
   });
 
+  it('counts one model held at two years as one model', async () => {
+    // Asked directly: "already models are visible, then why is this
+    // information there?" — the panel read "2 models" for a single Grand
+    // Vitara sitting at 2025 and 2026, which looks like two cars needing
+    // attention. It is one car needing attention in two places, and the count
+    // is the first thing anyone reads.
+    stubFetch([{
+      items: [
+        car({ id: 'a', model: 'Grand Vitara', year: 2025 }),
+        car({ id: 'b', model: 'Grand Vitara', year: 2026 }),
+      ],
+      total: 2,
+    }]);
+    const c = mount();
+
+    await (c as any).loadHiddenModels();
+
+    expect(c.hiddenModelGroups().length).toBe(1);
+    expect(c.hiddenModelGroups()[0].make).toBe('Maruti Suzuki');
+    expect(c.hiddenModelGroups()[0].model).toBe('Grand Vitara');
+  });
+
+  it('keeps every year, in order, because each needs its own upload', async () => {
+    // Photographs attach by make, model AND year, all three exact. Collapsing
+    // to the model alone would turn an overstatement into an understatement:
+    // an admin uploads once, the entry survives, and nothing says why.
+    stubFetch([{
+      items: [
+        car({ id: 'a', model: 'Grand Vitara', year: 2026 }),
+        car({ id: 'b', model: 'Grand Vitara', year: 2024 }),
+        car({ id: 'c', model: 'Grand Vitara', year: 2025 }),
+      ],
+      total: 3,
+    }]);
+    const c = mount();
+
+    await (c as any).loadHiddenModels();
+
+    expect(c.hiddenModelGroups()[0].years).toEqual([2024, 2025, 2026]);
+  });
+
+  it('keeps genuinely different models apart', async () => {
+    // The grouping key is make and model together, so two manufacturers'
+    // identically-named models do not merge into one entry.
+    stubFetch([{
+      items: [
+        car({ id: 'a', make: 'Maruti Suzuki', model: 'Baleno', year: 2026 }),
+        car({ id: 'b', make: 'Toyota', model: 'Glanza', year: 2026 }),
+      ],
+      total: 2,
+    }]);
+    const c = mount();
+
+    await (c as any).loadHiddenModels();
+
+    expect(c.hiddenModelGroups().length).toBe(2);
+  });
+
   it('says so when the check itself fails', async () => {
     // A silent absence is what caused the report in the first place; this
     // panel must never become one.

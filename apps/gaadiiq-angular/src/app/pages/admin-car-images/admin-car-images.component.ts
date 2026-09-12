@@ -374,6 +374,31 @@ export class AdminCarImagesComponent implements OnInit {
   hiddenLoading = signal(false);
   hiddenError = signal('');
 
+  /**
+   * The same models, one entry each, with the years that are missing a photo.
+   *
+   * The count is the first thing read, and counting catalogue rows overstated
+   * the problem: one Grand Vitara held at 2025 and 2026 reported as "2 models"
+   * and read as two cars needing attention. It is one car needing attention in
+   * two places.
+   *
+   * The years stay on screen because they are not a detail: photographs attach
+   * to a model by make, model AND year, all three exact, so a 2026 upload does
+   * nothing for the 2025 row. Collapsing to the model alone would turn an
+   * overstatement into an understatement — an admin would upload once, see the
+   * entry survive, and have no idea why.
+   */
+  hiddenModelGroups = computed(() => {
+    const groups = new Map<string, { make: string; model: string; years: number[] }>();
+    for (const row of this.hiddenForNoPhoto()) {
+      const key = `${row.make}|${row.model}`;
+      const group = groups.get(key) ?? { make: row.make, model: row.model, years: [] };
+      group.years.push(row.year);
+      groups.set(key, group);
+    }
+    return [...groups.values()].map(g => ({ ...g, years: [...g.years].sort((a, b) => a - b) }));
+  });
+
   private async loadHiddenModels() {
     this.hiddenLoading.set(true);
     this.hiddenError.set('');
