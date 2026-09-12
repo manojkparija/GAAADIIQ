@@ -227,6 +227,17 @@ class Settings(BaseSettings):
     ocm_api_url: str = "https://api.openchargemap.io/v3"
     ocm_api_key: str = ""
 
+    # Google Places (New), the second charging-station adapter.
+    #
+    # A SEPARATE KEY FROM THE ONE IN THE BROWSER BUNDLE. environment.prod.ts
+    # carries a Maps JavaScript key restricted to that API and to four HTTP
+    # referrers; referrer restrictions mean nothing to a server call, so reusing
+    # it would either be rejected or, worse, work and widen a public key's
+    # reach. This one belongs to the backend and should be restricted by IP to
+    # Render's egress addresses and to the Places API alone.
+    google_places_api_url: str = "https://places.googleapis.com/v1"
+    google_maps_server_key: str = ""
+
     # ── News provider ────────────────────────────────────────────────────────
     # Which upstream the /news endpoint reads. "google" is the Google News RSS
     # feed and needs no key; "apitube" is APITube's News API and needs one.

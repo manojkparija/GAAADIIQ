@@ -131,10 +131,17 @@ class StationsResponse(BaseModel):
     notice: str | None
 
 
-def _charger_out(charger: Charger, vehicle: VehicleChargingSpec | None) -> ChargerOut:
+def _charger_out(charger, vehicle: VehicleChargingSpec | None) -> ChargerOut:
+    """A charger as the page sees it.
+
+    Takes either a stored Charger row or a provider's NormalisedCharger: they
+    carry the same fields, and only a stored one has an id. Kept as one
+    function so the compatibility assessment below cannot drift between the
+    two paths — which is the half a reader actually depends on.
+    """
     category = classify(charger.power_kw)
     out = ChargerOut(
-        id=charger.id,
+        id=getattr(charger, "id", None),
         connector_type=charger.connector_type.value,
         current_type=charger.current_type.value,
         power_kw=charger.power_kw,
@@ -232,6 +239,18 @@ async def nearby_stations(
     provider = active_provider()
     vehicle = await _vehicle_spec(db, make, model, variant)
 
+    notice = None
+    if vehicle is None and (make or model):
+        notice = (
+            "We do not hold charging specifications for that car yet, so compatibility "
+            "is not shown. Every charger's connector and power rating is still listed."
+        )
+
+    # A provider whose licence does not permit us to keep a copy is asked on
+    # every request and never written to charging_stations. See _stations_live.
+    if provider is not None and not provider.may_store:
+        return await _stations_live(provider, vehicle, lat, lon, radius_km, limit, notice)
+
     # A generous bounding box, then an exact distance filter. Cheap on the
     # index and correct at the edges, where a naive box is up to 40% too wide
     # in longitude at Indian latitudes.
@@ -250,7 +269,6 @@ async def nearby_stations(
         )
     ).scalars().all()
 
-    notice = None
     if not rows and provider is not None:
         # Nothing cached here yet. Ask upstream once, store what comes back, and
         # answer from it — so the next pan over the same area is instant.
@@ -306,19 +324,90 @@ async def nearby_stations(
     out.sort(key=lambda s: s.distance_km or 0)
     out = out[:limit]
 
-    if vehicle is None and (make or model):
-        notice = (
-            "We do not hold charging specifications for that car yet, so compatibility "
-            "is not shown. Every charger's connector and power rating is still listed."
-        )
-
     return StationsResponse(
         stations=out,
         provider_configured=provider is not None,
         provider=provider.name if provider else None,
-        # Open Charge Map carries no live occupancy. Saying otherwise is what
-        # AC-07 forbids.
-        live_availability=False,
+        # Read from the adapter rather than hardcoded: Open Charge Map carries
+        # no live occupancy and says so, and claiming otherwise is what AC-07
+        # forbids. A stored provider that did report it would be told the truth
+        # here without anyone having to remember this line.
+        live_availability=provider.live_availability if provider else False,
+        notice=notice,
+    )
+
+
+async def _stations_live(
+    provider,
+    vehicle: VehicleChargingSpec | None,
+    lat: float,
+    lon: float,
+    radius_km: float,
+    limit: int,
+    notice: str | None,
+) -> StationsResponse:
+    """
+    Answer from the provider, storing nothing.
+
+    WHY THIS PATH EXISTS
+
+    The cached path below keeps a copy of every station in charging_stations,
+    which is right for an openly-licensed source and not permitted for Google
+    Places: its terms allow showing the data and caching it briefly, not
+    accumulating it. So a provider with may_store = False is asked on every
+    request and nothing it returns is written down.
+
+    The cost is real — an upstream call per search, where OCM pays for one and
+    serves the rest from our own table — and it is the honest reading of the
+    licence rather than a performance choice.
+    """
+    try:
+        fetched = await provider.nearby(lat, lon, radius_km, limit)
+    except ProviderUnavailable as exc:
+        logger.warning("Charging provider unavailable: %s", exc)
+        return StationsResponse(
+            stations=[], provider_configured=True, provider=provider.name,
+            live_availability=False,
+            notice=(
+                "We could not reach the charging station directory just now. "
+                "Please try again shortly."
+            ),
+        )
+
+    out: list[StationOut] = []
+    for item in fetched:
+        distance = _distance_km(lat, lon, item.latitude, item.longitude)
+        if distance > radius_km:
+            continue
+        out.append(
+            StationOut(
+                # No row, so no id. Both id fields are Optional for this reason.
+                id=None,
+                name=item.name,
+                operator_name=item.operator_name,
+                address=item.address,
+                city=item.city,
+                latitude=item.latitude,
+                longitude=item.longitude,
+                status=item.status.value,
+                distance_km=round(distance, 2),
+                price_per_kwh=None,
+                chargers=[_charger_out(c, vehicle) for c in item.chargers],
+                source=item.source,
+                source_url=item.source_url,
+                # Fetched just now, which is the whole point of not storing it.
+                last_updated=datetime.now(timezone.utc),
+                data_confidence=item.data_confidence,
+            )
+        )
+
+    out.sort(key=lambda s: s.distance_km or 0)
+
+    return StationsResponse(
+        stations=out[:limit],
+        provider_configured=True,
+        provider=provider.name,
+        live_availability=provider.live_availability,
         notice=notice,
     )
 
