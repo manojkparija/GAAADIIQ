@@ -1,7 +1,33 @@
 #!/usr/bin/env python3
-"""Which plate does each brand logo need to be visible on?
+"""Does this brand logo read on the white chip?
 
-WHY THIS EXISTS
+WHAT THIS IS NOW
+
+A check you run on a candidate file BEFORE uploading it through
+Admin → Brands, not a generator. It answers one question per logo: would this
+artwork be visible on the chip the grid actually paints?
+
+It used to emit a DARK_PLATE_SLUGS set for src/app/data/brand-logo-plates.ts,
+choosing a per-brand plate. That file is gone, and the reason is worth keeping:
+the list was keyed on slug and measured from the bundled files here, but
+brands.service.ts resolves a logo as `logo_url ?? assets/brand-logos/<slug>.svg`
+and most brands render an UPLOADED logo from Supabase storage instead. So the
+plate was chosen by measuring an image the page does not display, and an admin
+swapping a logo could invert its polarity with nothing able to notice. A list
+that cannot see the asset it describes cannot stay right.
+
+The grid now paints one white chip for every brand, and the requirement moved
+to the artwork: supply a dark or monochrome mark. This script is how you check
+one before it goes in — a score below VISIBLE_FRACTION on light means the file
+will wash out, and the fix is a darker version of that logo.
+
+NOTE ON WHAT IT CAN SEE
+
+Only the bundled files in src/assets/brand-logos/. An uploaded logo lives in
+Supabase storage and is not readable from here; to check one, download it into
+that folder first (or point LOGO_DIR at wherever you have it).
+
+WHERE IT CAME FROM
 
 The brand grid on /new-cars rendered its logos straight onto the dark glass
 card, and thirteen of them were invisible in dark mode — reported with a
@@ -17,9 +43,8 @@ chip fixes the first group and breaks the second, which is worse than the bug
 being fixed — the second group is legible today in the theme the report came
 from.
 
-So the plate is chosen per logo, and this script is what chooses it. Run it
-after adding or replacing any file in src/assets/brand-logos/ and paste the
-result into src/app/data/brand-logo-plates.ts.
+That per-logo plate is gone — see the top of this file. Run this on a
+candidate before uploading it, and supply a darker mark if it fails.
 
     python3 scripts/measure_brand_logo_plates.py
 
@@ -42,8 +67,10 @@ import os
 
 from PIL import Image
 
-# The two candidate plates. Light is --logo-chip; dark is --logo-chip-dark,
-# which is --navy so the chip disappears into the card and only the mark shows.
+# The chip the grid actually paints is LIGHT_PLATE (--logo-chip, white in both
+# themes). DARK_PLATE is kept only to print a diagnostic second column: a logo
+# scoring low on white and high on dark is light artwork, which tells you what
+# to fix in the file. Nothing renders on it any more.
 LIGHT_PLATE = (255, 255, 255)
 DARK_PLATE = (11, 18, 32)
 
@@ -88,23 +115,30 @@ def main() -> None:
 
     rows.sort(key=lambda r: r[1])
 
-    print(f"{'slug':20}{'on light':>9}{'on dark':>9}   plate")
-    needs_dark = []
+    print(f"{'slug':20}{'on white':>9}{'(on dark)':>10}   verdict")
+    failing = []
     for slug, on_light, on_dark in rows:
-        # Light is the default, matching the home page. A logo only moves to
-        # the dark plate when the light one actually fails it AND the dark one
-        # is better — not merely because the dark one scores higher, which
-        # would move marks like BMW that are perfectly readable either way.
-        dark = on_light < VISIBLE_FRACTION and on_dark > on_light
-        if dark:
-            needs_dark.append(slug)
-        print(f"{slug:20}{on_light:9.2f}{on_dark:9.2f}   {'dark' if dark else 'light'}")
+        # The dark column is kept for diagnosis only. A low score on white with
+        # a high one on dark says "this is light artwork" — which is the thing
+        # to fix in the file, not something to work around with a second plate.
+        ok = on_light >= VISIBLE_FRACTION
+        if not ok:
+            failing.append(slug)
+        print(f"{slug:20}{on_light:9.2f}{on_dark:10.2f}   {'ok' if ok else 'TOO LIGHT'}")
 
-    print("\nPaste into src/app/data/brand-logo-plates.ts:\n")
-    print("export const DARK_PLATE_SLUGS = new Set([")
-    for slug in sorted(needs_dark):
-        print(f"  '{slug}',")
-    print("]);")
+    if failing:
+        print(
+            f"\n{len(failing)} logo(s) will wash out on the chip the grid paints:\n"
+        )
+        for slug in sorted(failing):
+            print(f"  {slug}")
+        print(
+            "\nSupply a dark or monochrome version of each, then upload it through\n"
+            "Admin → Brands. Do not reintroduce a per-brand dark plate: see the\n"
+            "module docstring for why that could not be kept correct."
+        )
+    else:
+        print("\nEvery logo reads on the white chip.")
 
 
 if __name__ == "__main__":

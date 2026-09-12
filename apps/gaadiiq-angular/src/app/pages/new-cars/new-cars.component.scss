@@ -262,16 +262,40 @@
   }
 }
 
-/* The plate a brand mark sits on.
+/* The chip a brand mark sits on. One chip, every brand.
+ *
+ * WHERE THIS CAME FROM
  *
  * This wrap used to be a bare flex box, so the logo was painted straight onto
  * the dark glass card and thirteen of them were invisible in dark mode —
  * reported with a screenshot circling Toyota, Kia, Lexus, Mini and Jaguar.
  * The home page already had the answer in --logo-chip; this grid never got it.
  *
- * The default is that white chip. `.plate-dark` is the other polarity, for the
- * ten marks that are light, silver or yellow artwork and wash out on white —
- * see app/data/brand-logo-plates.ts for which, and for the measurements. */
+ * The first fix added a second polarity: a `.plate-dark` class for ten marks
+ * that were light, silver or yellow artwork and washed out on white, chosen
+ * per slug from measurements in app/data/brand-logo-plates.ts.
+ *
+ * WHY THAT IS GONE
+ *
+ * Two reasons, and the second is the one that mattered.
+ *
+ * It was reported again — a screenshot circling those same ten — because in
+ * LIGHT theme a navy plate reads as a black box among transparent ones. The
+ * measurement had optimised contrast and left visual consistency behind.
+ *
+ * More seriously, the list could not stay correct. It was keyed on slug and
+ * derived from the bundled files in src/assets/brand-logos/ — but seven of
+ * those ten brands render an UPLOADED logo from Supabase storage instead
+ * (brands.service.ts: `logo_url ?? assets/brand-logos/<slug>.svg`). So the
+ * plate was being chosen by measuring an image the page does not display, and
+ * an admin replacing a logo through Admin → Brands could invert its polarity
+ * with nothing in the code noticing. A per-slug list cannot track an asset
+ * that is swapped at runtime by someone else.
+ *
+ * So the artwork was made dark instead, for all ten, and there is one rule
+ * again. If a future logo washes out on white, the fix is a darker version of
+ * that logo — not a second plate. scripts/measure_brand_logo_plates.py still
+ * exists to check a candidate file before it is uploaded. */
 .brand-logo-wrap {
   width: 64px;
   height: 48px;
@@ -286,11 +310,6 @@
   // home page settled at 5px.
   padding: 5px;
   box-sizing: border-box;
-
-  &.plate-dark {
-    background: var(--logo-chip-dark, #0B1220);
-    border-color: var(--logo-chip-dark-border, rgba(255,255,255,0.18));
-  }
 }
 
 .brand-logo-img {
@@ -317,10 +336,6 @@
   border-radius: 5px;
   padding: 2px;
   box-sizing: border-box;
-
-  &.plate-dark {
-    background: var(--logo-chip-dark, #0B1220);
-  }
 }
 
 .brand-name {
