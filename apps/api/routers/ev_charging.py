@@ -39,6 +39,7 @@ from sqlalchemy.orm import selectinload
 from core.dependencies import get_admin_user
 from core.limiter import limiter
 from db.session import get_db
+from models.car import Car, FuelType
 from models.ev_charging import (
     Charger,
     ChargingStation,
@@ -566,15 +567,90 @@ def _profile_out(p: VehicleChargingProfile) -> ProfileOut:
 @router.get("/profiles", response_model=list[ProfileOut])
 @limiter.limit("60/minute")
 async def list_profiles(request: Request, db: DbDep):
-    """Cars we hold charging specifications for — the picker's options."""
-    rows = (
+    """
+    The picker's options: every electric car we can name.
+
+    WHY THIS IS NOT JUST THE PROFILE TABLE
+
+    It was, and the page shipped with an empty dropdown — two rows, both of
+    them apologies: "Not selected" and "My car is not listed". Reported as
+    "EV is already listed, why are they not there?", and the answer is that
+    they were listed somewhere else: vehicle_charging_profiles is a separate
+    table from the catalogue, migration 0044 creates it and seeds nothing, and
+    nobody had entered a row. Every EV in `cars` was invisible to this page.
+
+    So the options now come from both, profiles first:
+
+      * a car WITH a profile carries its connector and power, and the station
+        list can say whether each charger fits;
+      * a car WITHOUT one carries nulls, and /stations already answers that
+        case — "We do not hold charging specifications for that car yet, so
+        compatibility is not shown. Every charger's connector and power rating
+        is still listed." That notice was written for exactly this and had no
+        way of being reached, because no such car could be selected.
+
+    WHY THE FIGURES ARE NOT FILLED IN FROM SOMEWHERE
+
+    Because there is nowhere honest to fill them from. The catalogue holds no
+    battery or charge-rate columns — `cars.specs` is free-form label/value
+    JSON — and VehicleChargingProfile.source_note exists precisely so a figure
+    can be checked when a driver says it is wrong. A number with no provenance
+    cannot be, and a wrong usable-kWh is a wrong charging time for somebody
+    planning a journey. They are entered on Admin -> Charging Profiles, and
+    each one entered upgrades that car from "no compatibility shown" to the
+    full assessment with no further change here.
+    """
+    profiles = (
         await db.execute(
             select(VehicleChargingProfile).order_by(
                 VehicleChargingProfile.make, VehicleChargingProfile.model
             )
         )
     ).scalars().all()
-    return [_profile_out(p) for p in rows]
+
+    out = [_profile_out(p) for p in profiles]
+
+    # Matched case-insensitively: the catalogue and a hand-typed profile
+    # disagree about capitalisation more often than not ("MG" vs "Mg", "Tata"
+    # vs "TATA"), and a near-miss here shows the same car twice.
+    covered = {(p.make.strip().lower(), p.model.strip().lower()) for p in profiles}
+
+    catalogue = (
+        await db.execute(
+            select(Car)
+            .where(Car.fuel_type == FuelType.electric)
+            .order_by(Car.make, Car.model)
+        )
+    ).scalars().all()
+
+    seen: set[tuple[str, str]] = set()
+    for car in catalogue:
+        key = (car.make.strip().lower(), car.model.strip().lower())
+        if key in covered or key in seen:
+            # One row per model, not per model-year: the picker asks which car
+            # you drive, and a 2024 and 2026 Nexon EV charge alike.
+            continue
+        seen.add(key)
+        out.append(
+            ProfileOut(
+                # The catalogue row's own id. Real and stable, and the frontend
+                # only uses it to remember the selection before sending
+                # make/model/variant to /stations.
+                id=car.id,
+                make=car.make,
+                model=car.model,
+                variant="",
+                battery_capacity_kwh=None,
+                usable_battery_capacity_kwh=None,
+                ac_connector=None,
+                max_ac_kw=None,
+                dc_connector=None,
+                max_dc_kw=None,
+                source_note=None,
+            )
+        )
+
+    return out
 
 
 class ProfileIn(BaseModel):
