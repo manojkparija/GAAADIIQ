@@ -33,7 +33,7 @@
               @for (brand of brands.slice(0, 8); track brand.name) {
                 <button class="brand-quick-pill" (click)="navigateToBrand(brand.name)">
                   <img [src]="brand.logo" [alt]="brand.name" class="brand-quick-logo"
-                       [class.plate-dark]="usesDarkPlate(brand.slug)" (error)="onImgError($event)">
+                       (error)="onImgError($event)">
                   <span>{{ brand.name }}</span>
                 </button>
               }
@@ -78,7 +78,7 @@
     <div class="brand-grid">
       @for (brand of brands; track brand.name) {
         <button class="brand-card glass-card" (click)="navigateToBrand(brand.name)">
-          <div class="brand-logo-wrap" [class.plate-dark]="usesDarkPlate(brand.slug)">
+          <div class="brand-logo-wrap">
             <img [src]="brand.logo" [alt]="brand.name" class="brand-logo-img" (error)="onImgError($event)">
           </div>
           <span class="brand-name">{{ brand.name }}</span>

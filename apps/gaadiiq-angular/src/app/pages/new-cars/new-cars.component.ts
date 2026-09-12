@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { CarsDataService, PLACEHOLDER, hasPhotograph, priceBand } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
-import { usesDarkPlate } from '../../data/brand-logo-plates';
 import { AuthService } from '../../services/auth.service';
 import { UpcomingCarsService } from '../../services/upcoming-cars.service';
 
@@ -156,16 +155,10 @@ export class NewCarsComponent implements OnInit {
 
   get brands() { return this.brandsService.brands(); }
 
-  /**
-   * Which plate this brand's mark needs behind it.
-   *
-   * A method rather than a computed(): `brand.slug` is a plain field on a row,
-   * not a signal, and a computed() over one evaluates once and then reports a
-   * stale answer forever — that has shipped twice in this codebase.
-   */
-  usesDarkPlate(slug: string | null | undefined): boolean {
-    return usesDarkPlate(slug);
-  }
+  // usesDarkPlate() was here, and the per-slug plate list with it. Both are
+  // gone: every mark now sits on the one white chip, because the artwork is
+  // dark. See the comment on .brand-logo-wrap in the stylesheet for why the
+  // list could not be kept correct.
 
   // The icon is drawn in the template, selected by `shape`, rather than being a
   // character in this array.

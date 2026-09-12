@@ -1,32 +1,42 @@
 /**
- * Every brand logo sits on a plate it can actually be seen against.
+ * Every brand logo sits on one chip, and that chip is never transparent.
  *
- * WHAT WAS REPORTED
+ * WHAT WAS REPORTED, TWICE
  *
- * A screenshot of /new-cars in dark mode, circling Toyota, Kia, Lexus, Mini
- * and Jaguar: "logos are not visible in web application". The tiles were
+ * First, a screenshot of /new-cars in dark mode circling Toyota, Kia, Lexus,
+ * Mini and Jaguar: "logos are not visible in web application". The tiles were
  * there, the names were there, and the marks were black artwork painted
  * directly onto a dark glass card.
  *
- * WHY THE OBVIOUS FIX WAS THE WRONG ONE
+ * The fix gave the grid the home page's --logo-chip — a white chip in both
+ * themes — plus a second polarity, `.plate-dark`, for ten marks measured as
+ * light, silver or yellow artwork that washed out on white.
  *
- * The home page had already solved this with --logo-chip, a white chip in both
- * themes, and the note beside that token said a light ground "is what every
- * logo in the set was designed to sit on". Measuring the files says otherwise:
- * ten of the marks are light, silver or yellow artwork. Putting the whole grid
- * on a white chip would have fixed thirteen logos and broken those ten — in
- * dark mode, the theme the report came from. So the plate is chosen per logo.
+ * Then a second screenshot, light theme, circling exactly those ten: a navy
+ * plate among transparent ones reads as a black box.
  *
- * WHAT THIS FILE MEASURES, AND WHAT IT CANNOT
+ * WHY THE SECOND POLARITY IS GONE RATHER THAN RETUNED
  *
- * The classification itself comes from the image pixels and lives in
- * scripts/measure_brand_logo_plates.py, which is where the numbers in
- * brand-logo-plates.ts come from; a browser test cannot re-derive it without
- * decoding all 36 PNGs. What is checked here is the part that regressed: that
- * the grid paints a plate at all, that it is opaque, and that the two
- * polarities are actually different — a chip that quietly resolved to
- * `transparent` would restore the exact reported bug while every ratio in the
- * suite still passed.
+ * Not because of how it looked. Because it could not stay correct.
+ *
+ * The list was keyed on slug and measured from the bundled files in
+ * src/assets/brand-logos/. But brands.service.ts resolves a logo as
+ * `logo_url ?? assets/brand-logos/<slug>.svg`, and seven of those ten brands
+ * have an UPLOADED logo in Supabase storage — confirmed on Admin → Brands,
+ * where they read "Uploaded" rather than "Shipped with the app". The plate was
+ * therefore chosen by measuring an image the page does not render, and an
+ * admin replacing a logo could invert its polarity with nothing in the code
+ * able to notice.
+ *
+ * So the artwork is dark for all of them now, and there is one rule again.
+ *
+ * WHAT THIS FILE STILL GUARDS
+ *
+ * The original bug, which is the one that can silently come back: a chip that
+ * resolves to `transparent` puts dark marks on a dark card again, and every
+ * contrast ratio in the suite would still pass while the grid looked empty.
+ * That is checked in both themes, because the chip is deliberately light in
+ * both and a "fix" making it follow the theme would restore the bug exactly.
  */
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -39,7 +49,6 @@ import { signal } from '@angular/core';
 import { NewCarsComponent } from './new-cars.component';
 import { CarsDataService } from '../../services/cars-data.service';
 import { BrandsService } from '../../services/brands.service';
-import { usesDarkPlate, DARK_PLATE_SLUGS } from '../../data/brand-logo-plates';
 
 const BRANDS = [
   { name: 'Toyota', slug: 'toyota', logo: 'assets/brand-logos/toyota.png', country: 'Japan' },
@@ -71,44 +80,7 @@ function alpha(colour: string): number {
   return n.length > 3 ? n[3] : 1;
 }
 
-describe('brand logo plates — the classification', () => {
-  it('puts a light-artwork mark on the dark plate', () => {
-    // Two of the ten, and the two the reporter circled from that group.
-    expect(usesDarkPlate('lexus')).toBeTrue();
-    expect(usesDarkPlate('genesis')).toBeTrue();
-  });
-
-  it('leaves a dark-artwork mark on the default white chip', () => {
-    expect(usesDarkPlate('toyota')).toBeFalse();
-    expect(usesDarkPlate('audi')).toBeFalse();
-  });
-
-  it('defaults an unknown brand to the white chip', () => {
-    // A logo an admin uploads later cannot be measured ahead of time. The
-    // default has to be the one the home page already ships, so an unknown
-    // logo is no worse off than it is today — never undefined behaviour.
-    expect(usesDarkPlate('some-brand-added-next-year')).toBeFalse();
-    expect(usesDarkPlate(null)).toBeFalse();
-    expect(usesDarkPlate(undefined)).toBeFalse();
-    expect(usesDarkPlate('')).toBeFalse();
-  });
-
-  it('is not thrown by the casing or padding a slug arrives in', () => {
-    expect(usesDarkPlate('  Lexus ')).toBeTrue();
-  });
-
-  it('keeps the measured set intact', () => {
-    // Pins the list itself: dropping a slug here is dropping a logo back into
-    // being invisible, and that should be a deliberate edit with a re-run of
-    // scripts/measure_brand_logo_plates.py behind it.
-    expect([...DARK_PLATE_SLUGS].sort()).toEqual([
-      'aston-martin', 'bentley', 'ferrari', 'genesis', 'lexus',
-      'lotus', 'renault', 'rolls-royce', 'skoda', 'volvo',
-    ]);
-  });
-});
-
-describe('NewCarsComponent — the brand grid paints those plates', () => {
+describe('NewCarsComponent — the brand grid chip', () => {
   let host: HTMLElement;
 
   afterEach(() => {
@@ -130,9 +102,10 @@ describe('NewCarsComponent — the brand grid paints those plates', () => {
   }
 
   (['light', 'dark'] as const).forEach((theme) => {
-    it(`gives every mark an opaque plate in ${theme} mode`, () => {
-      // The regression guard. Before the fix this wrap was a bare flex box
-      // with no background at all, which is what made the marks vanish.
+    it(`gives every mark an opaque chip in ${theme} mode`, () => {
+      // THE REGRESSION GUARD. Before the original fix this wrap was a bare
+      // flex box with no background at all, which is what made the marks
+      // vanish against the dark card.
       const el = render(theme);
       const wraps = Array.from(el.querySelectorAll<HTMLElement>('.brand-logo-wrap'));
       expect(wraps.length).withContext('no brand tiles rendered').toBe(BRANDS.length);
@@ -140,31 +113,41 @@ describe('NewCarsComponent — the brand grid paints those plates', () => {
       for (const wrap of wraps) {
         const bg = getComputedStyle(wrap).backgroundColor;
         expect(alpha(bg))
-          .withContext(`[${theme}] a transparent plate is the reported bug: ${bg}`)
+          .withContext(`[${theme}] a transparent chip is the reported bug: ${bg}`)
           .toBe(1);
       }
     });
 
-    it(`gives the two polarities different plates in ${theme} mode`, () => {
-      // If both resolved to the same colour the classification would be
-      // decorative — one of the two groups would still be invisible.
-      const el = render(theme);
-      const light = el.querySelector<HTMLElement>('.brand-logo-wrap:not(.plate-dark)');
-      const dark = el.querySelector<HTMLElement>('.brand-logo-wrap.plate-dark');
-
-      expect(light).withContext('Toyota should be on the default chip').toBeTruthy();
-      expect(dark).withContext('Lexus should be on the dark plate').toBeTruthy();
-      expect(getComputedStyle(light!).backgroundColor)
-        .not.toBe(getComputedStyle(dark!).backgroundColor);
-    });
-
-    it(`keeps the chip the same colour in ${theme} mode as the home page uses`, () => {
+    it(`keeps the chip white in ${theme} mode, as the home page has it`, () => {
       // The chip is deliberately light in BOTH themes — see the note on
       // --logo-chip. A theme-following chip would put dark marks back on a
       // dark ground the moment someone "fixed" the token to match the card.
       const el = render(theme);
-      const light = el.querySelector<HTMLElement>('.brand-logo-wrap:not(.plate-dark)')!;
-      expect(getComputedStyle(light).backgroundColor).toBe('rgb(255, 255, 255)');
+      for (const wrap of Array.from(el.querySelectorAll<HTMLElement>('.brand-logo-wrap'))) {
+        expect(getComputedStyle(wrap).backgroundColor).toBe('rgb(255, 255, 255)');
+      }
+    });
+
+    it(`gives every mark the SAME chip in ${theme} mode`, () => {
+      // The point of removing the second polarity. One brand rendering on a
+      // different ground from its neighbours is the second reported bug, and
+      // it would return the moment a per-brand class came back.
+      const el = render(theme);
+      const backgrounds = new Set(
+        Array.from(el.querySelectorAll<HTMLElement>('.brand-logo-wrap'))
+          .map((w) => getComputedStyle(w).backgroundColor),
+      );
+      expect(backgrounds.size)
+        .withContext(`[${theme}] tiles disagree about their chip: ${[...backgrounds]}`)
+        .toBe(1);
+    });
+
+    it(`paints no dark plate on any tile in ${theme} mode`, () => {
+      // Pins the removal itself. Re-adding the class is a deliberate decision
+      // that has to come with an answer to the problem it was removed for:
+      // the list cannot see an uploaded logo, so it cannot stay correct.
+      const el = render(theme);
+      expect(el.querySelectorAll('.plate-dark').length).toBe(0);
     });
   });
 });
