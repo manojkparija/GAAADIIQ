@@ -70,6 +70,22 @@ class StationProvider(Protocol):
 
     name: str
 
+    #: May results be written to our charging_stations table?
+    #:
+    #: True for an openly-licensed source. False for one whose terms permit
+    #: only display and short-lived caching — Google Places among them. The
+    #: router reads this: a provider that says False is queried per request and
+    #: its stations are never persisted, so the answer cannot outlive the
+    #: licence that allowed it.
+    may_store: bool
+
+    #: Does this provider report how many connectors are free right now?
+    #:
+    #: BR-07 permits live status only where a provider supports it, and AC-07
+    #: forbids claiming a charger is free when that is not known. OCM cannot,
+    #: so it says so; Google can, for the networks that report to it.
+    live_availability: bool
+
     def configured(self) -> bool: ...
 
     async def nearby(
@@ -246,6 +262,12 @@ class OpenChargeMapProvider:
 
     name = "openchargemap"
 
+    #: Open data, so a copy in our own table is ours to keep and serve.
+    may_store = True
+
+    #: See the module docstring: OCM records what a site has, not what is free.
+    live_availability = False
+
     def configured(self) -> bool:
         # Deliberately not gated on the key. OCM answers unauthenticated
         # requests, and refusing to work without a key would mean the map is
@@ -315,9 +337,254 @@ class OpenChargeMapProvider:
         return out
 
 
+
+# ── Google Places (New) ──────────────────────────────────────────────────────
+#
+# WHY A SECOND ADAPTER
+#
+# Open Charge Map is community-contributed, and its Indian coverage was judged
+# too thin to ship: a search over Kolkata returned almost nothing. Google knows
+# about far more sites, and for the networks that report to it, knows how many
+# connectors are free right now — which OCM cannot express at all.
+#
+# WHY ITS RESULTS ARE NEVER STORED
+#
+# Google Maps Platform terms allow displaying Places content and caching it
+# only briefly for performance; they do not allow building your own copy of it.
+# This application's whole station flow was written around a local
+# charging_stations table, so this adapter sets may_store = False and the
+# router answers from the provider on each request instead. That is a real cost
+# — see the cache note on `nearby` — and it is the price of using this source
+# honestly rather than quietly accumulating somebody else's database.
+#
+# Consequences worth knowing, both small today:
+#   * a Google station has no row, so StationOut.id is null for it. Both id
+#     fields were already declared Optional, and no UI reads them yet.
+#   * POST /ev-charging/report resolves a station by primary key, so a Google
+#     station cannot be reported. Nothing in the page calls that endpoint yet.
+
+#: Google's EV connector enum -> ours. Anything absent stays `unknown` rather
+#: than being guessed at: a driver told their CCS2 car fits a CHAdeMO post has
+#: been actively misled, which is worse than being told we do not know.
+_GOOGLE_CONNECTOR_TYPES: dict[str, tuple[ConnectorType, CurrentType]] = {
+    # CCS1 is a North American plug and has no member in our ConnectorType,
+    # which was built for the Indian market. Mapping it onto ccs2 because both
+    # are "CCS" would tell a CCS2 driver a post fits when it physically cannot,
+    # so it stays unknown and only the DC current type is claimed.
+    "EV_CONNECTOR_TYPE_CCS_COMBO_1": (ConnectorType.unknown, CurrentType.dc),
+    "EV_CONNECTOR_TYPE_CCS_COMBO_2": (ConnectorType.ccs2, CurrentType.dc),
+    "EV_CONNECTOR_TYPE_CHADEMO": (ConnectorType.chademo, CurrentType.dc),
+    "EV_CONNECTOR_TYPE_J1772": (ConnectorType.type1, CurrentType.ac),
+    "EV_CONNECTOR_TYPE_TYPE_2": (ConnectorType.type2, CurrentType.ac),
+    "EV_CONNECTOR_TYPE_TESLA": (ConnectorType.unknown, CurrentType.unknown),
+    "EV_CONNECTOR_TYPE_TYPE_3": (ConnectorType.unknown, CurrentType.ac),
+    "EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET": (ConnectorType.unknown, CurrentType.ac),
+    "EV_CONNECTOR_TYPE_OTHER": (ConnectorType.unknown, CurrentType.unknown),
+}
+
+
+def _google_chargers(ev_options: dict) -> list[NormalisedCharger]:
+    """One NormalisedCharger per connector aggregation Google reports."""
+    out: list[NormalisedCharger] = []
+
+    for agg in ev_options.get("connectorAggregation") or []:
+        if not isinstance(agg, dict):
+            continue
+
+        connector, current = _GOOGLE_CONNECTOR_TYPES.get(
+            str(agg.get("type") or ""), (ConnectorType.unknown, CurrentType.unknown)
+        )
+
+        try:
+            power = float(agg["maxChargeRateKw"]) if agg.get("maxChargeRateKw") else None
+        except (TypeError, ValueError):
+            power = None
+
+        try:
+            total = int(agg["count"]) if agg.get("count") is not None else None
+        except (TypeError, ValueError):
+            total = None
+
+        # LIVE AVAILABILITY, AND ONLY WHEN IT IS ACTUALLY PRESENT.
+        #
+        # availableCount is absent for operators that do not report it, and
+        # absent is not zero: treating a missing field as "none free" would
+        # tell a driver a working site is full. Only a present count sets a
+        # live status; anything else stays unknown, which is what AC-07 asks.
+        status = ChargerStatus.unknown
+        is_live = False
+        available = agg.get("availableCount")
+        if isinstance(available, (int, float)):
+            status = ChargerStatus.available if available >= 1 else ChargerStatus.occupied
+            is_live = True
+
+        out.append(
+            NormalisedCharger(
+                connector_type=connector,
+                current_type=current,
+                power_kw=power,
+                total_ports=total,
+                status=status,
+                status_is_live=is_live,
+            )
+        )
+
+    return out
+
+
+def normalise_google_place(place: dict) -> NormalisedStation | None:
+    """One Places result -> our shape, or None when it is unusable."""
+    if not isinstance(place, dict):
+        return None
+
+    location = place.get("location") or {}
+    try:
+        lat = float(location["latitude"])
+        lon = float(location["longitude"])
+    except (KeyError, TypeError, ValueError):
+        # Without coordinates it cannot be placed on a map or distance-filtered.
+        return None
+
+    place_id = str(place.get("id") or "").strip()
+    if not place_id:
+        return None
+
+    display = place.get("displayName") or {}
+    name = str(display.get("text") or "").strip() or "Charging station"
+
+    ev_options = place.get("evChargeOptions") or {}
+    chargers = _google_chargers(ev_options) if isinstance(ev_options, dict) else []
+
+    return NormalisedStation(
+        source="google",
+        source_station_id=place_id,
+        name=name,
+        latitude=lat,
+        longitude=lon,
+        address=(place.get("formattedAddress") or None),
+        country="IN",
+        status=StationStatus.unknown,
+        source_url=(place.get("googleMapsUri") or None),
+        chargers=chargers,
+        # Deliberately NOT the raw payload. `raw` exists to be stored, and
+        # nothing from this provider is stored.
+        raw=None,
+    )
+
+
+class GoogleMapsProvider:
+    """
+    Google Places (New), searchNearby.
+
+    Needs its own server key — see google_maps_server_key in core/config.py for
+    why the browser one cannot be reused.
+    """
+
+    name = "google"
+
+    #: See the section comment above. This is the whole reason the router has
+    #: two paths.
+    may_store = False
+
+    #: For the operators that report to Google. Per charger, and only where the
+    #: count is actually present.
+    live_availability = True
+
+    def configured(self) -> bool:
+        from core.config import settings
+
+        # Gated on the key, unlike OCM: Places answers nothing without one, so
+        # claiming to be configured would produce an empty map and a 403 in the
+        # log rather than an honest "no directory connected".
+        return bool(settings.google_maps_server_key.strip())
+
+    async def nearby(
+        self, latitude: float, longitude: float, radius_km: float, limit: int
+    ) -> list[NormalisedStation]:
+        import httpx
+
+        from core.config import settings
+
+        # Places caps a nearby search at 20 results and 50 km.
+        max_results = max(1, min(int(limit), 20))
+        radius_m = max(1.0, min(float(radius_km) * 1000.0, 50000.0))
+
+        url = f"{settings.google_places_api_url.rstrip('/')}/places:searchNearby"
+        headers = {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": settings.google_maps_server_key.strip(),
+            # Billing follows the field mask, so it asks for what the page
+            # renders and nothing else. evChargeOptions is the expensive part
+            # and the reason to be here at all.
+            "X-Goog-FieldMask": ",".join(
+                [
+                    "places.id",
+                    "places.displayName",
+                    "places.formattedAddress",
+                    "places.location",
+                    "places.googleMapsUri",
+                    "places.evChargeOptions",
+                ]
+            ),
+        }
+        body = {
+            "includedTypes": ["electric_vehicle_charging_station"],
+            "maxResultCount": max_results,
+            "locationRestriction": {
+                "circle": {
+                    "center": {"latitude": latitude, "longitude": longitude},
+                    "radius": radius_m,
+                }
+            },
+        }
+
+        # No _download here: that helper is a hardened GET for user-influenced
+        # URLs, and this is a POST to one fixed host from a constant in config.
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(url, headers=headers, json=body)
+        except Exception as exc:
+            raise ProviderUnavailable(f"Google Places unreachable: {exc}") from exc
+
+        if response.status_code != 200:
+            # The key is in the header, so it cannot leak through the URL in a
+            # log line; the body can still carry a reason worth reading.
+            raise ProviderUnavailable(
+                f"Google Places returned HTTP {response.status_code}: {response.text[:200]}"
+            )
+
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise ProviderUnavailable("Google Places returned invalid JSON") from exc
+
+        places = payload.get("places") if isinstance(payload, dict) else None
+        if places is None:
+            # An empty area legitimately returns {} with no "places" key.
+            places = []
+        if not isinstance(places, list):
+            raise ProviderUnavailable("Google Places returned an unexpected shape")
+
+        out: list[NormalisedStation] = []
+        for place in places:
+            station = normalise_google_place(place)
+            if station is not None:
+                out.append(station)
+
+        logger.info(
+            "Google Places returned %d results near %.4f,%.4f (%d usable)",
+            len(places), latitude, longitude, len(out),
+        )
+        return out
+
+
 #: Adapters, in preference order. A government feed or an operator's OCPI
 #: endpoint is added here and nothing downstream changes.
-_PROVIDERS: list[StationProvider] = [OpenChargeMapProvider()]
+#:
+#: Google first, and only when its key is set. It has the coverage and the live
+#: availability; Open Charge Map stays behind it as the source that works with
+#: no key at all, so a developer machine and CI still show a map.
+_PROVIDERS: list[StationProvider] = [GoogleMapsProvider(), OpenChargeMapProvider()]
 
 
 def active_provider() -> StationProvider | None:
