@@ -44,6 +44,8 @@ import { join } from 'node:path';
 const REPO = join(__dirname, '..', '..', '..');
 const NGSW = join(__dirname, '..', 'ngsw-config.json');
 const CACHE_POLICY = join(REPO, 'apps', 'api', 'core', 'cache_policy.py');
+const API_MAIN = join(REPO, 'apps', 'api', 'main.py');
+const CDN_PURGE = join(REPO, 'apps', 'api', 'services', 'cdn_purge.py');
 
 interface DataGroup {
   name: string;
@@ -117,6 +119,38 @@ test('the API never serves a knowingly stale catalogue', () => {
     'stale-while-revalidate is back: it serves content already known to be out of date',
   ).not.toContain('stale-while-revalidate');
 
+  // A LONG EDGE WINDOW IS ALLOWED, BUT ONLY IF SOMETHING CLEARS IT
+  //
+  // This asserted `edge <= 60`, and said why: with no purge hook, s-maxage WAS
+  // the wait between saving a car and seeing it, so a minute was the most that
+  // could look immediate.
+  //
+  // The purge exists now — services/cdn_purge.py, fired from a middleware in
+  // main.py after any successful write under a catalogue prefix — so the
+  // number was raised to an hour and the edge became a real cache rather than
+  // a bound on how long a mistake stays visible.
+  //
+  // The check is re-pointed rather than deleted, at the thing the long window
+  // depends on. Remove the purge and this fails, which is the point: the two
+  // only make sense together.
+  //
+  // (The same guard exists on the Python side in tests/test_cache_policy.py
+  // and was re-pointed when s-maxage was raised. THIS COPY WAS MISSED, and it
+  // turned CI red on the next change to touch apps/gaadiiq-angular — which is
+  // exactly the failure mode CLAUDE.md warns about: Playwright does run in CI,
+  // for desktop-chrome. Two guards on one number, in two languages, and only
+  // one was updated.)
   const edge = Number(/s-maxage=(\d+)/.exec(directive!)?.[1]);
-  expect(edge, 's-maxage is the wait between saving a car and seeing it').toBeLessThanOrEqual(60);
+
+  if (edge > 60) {
+    const main = readFileSync(API_MAIN, 'utf8');
+    expect(
+      main,
+      `s-maxage=${edge}s without a purge middleware is how an edit stays invisible`,
+    ).toContain('_cdn_purge_middleware');
+    expect(
+      readFileSync(CDN_PURGE, 'utf8'),
+      `s-maxage=${edge}s without services/cdn_purge.py is the same bug with a longer wait`,
+    ).toContain('purge_catalogue');
+  }
 });
