@@ -17,6 +17,12 @@
     </div>
 
     <!-- Listings grid (show whenever there is data, regardless of loading) -->
+    <!-- A failed removal used to be discarded, so a seller believed a sold car
+         was off the market while buyers could still see it. -->
+    <div class="remove-error" *ngIf="removeError()" role="alert">
+      ⚠️ {{ removeError() }}
+    </div>
+
     <div class="listings-grid" *ngIf="myListings.listings().length > 0">
       <div class="listing-card glass-card" *ngFor="let car of myListings.listings()">
         <div class="card-image" *ngIf="car.imageUrl">
@@ -78,7 +84,10 @@
 
         <div class="card-footer">
           <span class="date">Listed {{ car.createdAt | date:'d MMM yyyy' }}</span>
-          <button class="btn-remove" (click)="remove(car.id)">🗑️ Remove</button>
+          <button class="btn-remove" [disabled]="removing() === car.id"
+                  (click)="remove(car.id)">
+            {{ removing() === car.id ? '…' : '🗑️ Remove' }}
+          </button>
         </div>
       </div>
     </div>

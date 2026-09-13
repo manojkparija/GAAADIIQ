@@ -217,3 +217,17 @@
     display: block;
   }
 }
+
+// The failed-removal banner. --danger-ink, not --danger: this is text on a
+// tint of its own hue, where the bright token measures under AA — see the
+// note on the --*-ink tokens in CLAUDE.md.
+.remove-error {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--fill-dim);
+  color: var(--danger-ink, var(--danger));
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
