@@ -7,6 +7,10 @@ from models.listing import ListingCondition, ListingType
 from schemas.car import CarOut
 from schemas.user import UserPublicOut
 
+# A listing card shows a handful; a seller with forty photographs is a seller
+# with a slow page. The form caps uploads well below this.
+MAX_LISTING_IMAGES = 12
+
 
 class ListingCreate(BaseModel):
     car_id: uuid.UUID
@@ -20,6 +24,45 @@ class ListingCreate(BaseModel):
     condition: ListingCondition | None = None
     city: str | None = None
     description: str | None = None
+
+    # Photographs the seller has already uploaded to storage.
+    #
+    # WHY THE CREATE CALL CARRIES THESE AT ALL
+    #
+    # A listing's image_urls was hardcoded to [] here and filled only by
+    # POST /listings/{id}/images, which takes raw file bytes. The sell form has
+    # no bytes to send: it uploads to the storage bucket first and holds the
+    # public URLs. So every listing it created rendered "No Image Available"
+    # while the photographs sat in the bucket, uploaded and approved.
+    #
+    # Accepting URLs from a client is the part that needs care — an unchecked
+    # list here is a way to render an arbitrary remote image inside a listing
+    # card — so _own_storage_only below restricts them to our own buckets.
+    image_urls: list[str] = []
+
+    @field_validator("image_urls")
+    @classmethod
+    def _own_storage_only(cls, value: list[str]) -> list[str]:
+        """
+        Keep only https URLs pointing at storage we control.
+
+        Not a formality. Anything that survives this is rendered as an <img>
+        on a public listing card, so an unrestricted list would let a caller
+        put a chosen image — or a tracking pixel — on a page attributed to
+        this site. A URL that does not match is dropped rather than rejected:
+        the listing is the thing being created, and refusing it outright over
+        one odd URL loses the advert as well.
+        """
+        allowed_suffixes = (".supabase.co", ".supabase.in", "res.cloudinary.com")
+        kept: list[str] = []
+        for raw in value[:MAX_LISTING_IMAGES]:
+            url = (raw or "").strip()
+            if not url.startswith("https://") or len(url) > 1000:
+                continue
+            host = url.split("/", 3)[2].split("@")[-1].split(":")[0].lower()
+            if host.endswith(allowed_suffixes):
+                kept.append(url)
+        return kept
 
     @field_validator("price")
     @classmethod
