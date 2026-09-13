@@ -72,6 +72,51 @@
           stays hidden from buyers until you publish it.
         </p>
 
+        <!-- Specs and features, typed by hand.
+             Beside the AI button rather than instead of it: the draft is
+             useless for a model a language model has not heard of, which is
+             exactly the new launch this was reported on. -->
+        <div class="av-details">
+          <h3>{{ 'Specs & features' | t }}</h3>
+          <p class="av-note">
+            {{ 'These fill the Specs and Features tabs on the car page. Draft them with AI above, or type them here — the draft only fills what is empty, so it never overwrites what you write.' | t }}
+          </p>
+
+          <div class="av-field">
+            <label>{{ 'Features — one per line' | t }}</label>
+            <textarea rows="6"
+                      [ngModel]="featuresText()"
+                      (ngModelChange)="setFeaturesText($event)"
+                      name="features"
+                      placeholder="360° camera&#10;Ventilated front seats&#10;Six airbags"></textarea>
+          </div>
+
+          <div class="av-field">
+            <label>{{ 'Specifications' | t }}</label>
+            @for (row of specRows(); track $index) {
+              <div class="av-spec-row">
+                <input [ngModel]="row.label" [ngModelOptions]="{standalone: true}"
+                       (ngModelChange)="setSpec($index, 'label', $event)"
+                       [placeholder]="'Label, e.g. Engine' | t" />
+                <input [ngModel]="row.value" [ngModelOptions]="{standalone: true}"
+                       (ngModelChange)="setSpec($index, 'value', $event)"
+                       [placeholder]="'Value, e.g. 1462 cc' | t" />
+                <button type="button" class="btn-secondary"
+                        (click)="removeSpecRow($index)"
+                        [attr.aria-label]="'Remove this specification' | t">✕</button>
+              </div>
+            }
+            <button type="button" class="btn-secondary" (click)="addSpecRow()">
+              {{ '➕ Add specification' | t }}
+            </button>
+          </div>
+
+          <button type="button" class="btn-primary"
+                  (click)="saveDetails()" [disabled]="savingDetails()">
+            {{ savingDetails() ? ('Saving…' | t) : ('Save specs & features' | t) }}
+          </button>
+        </div>
+
         <!-- Add / edit form -->
         @if (editingId(); as editing) {
           <div class="av-form">
