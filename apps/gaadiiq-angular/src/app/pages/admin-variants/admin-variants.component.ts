@@ -188,7 +188,118 @@ export class AdminVariantsComponent {
   async onCarChange(carId: string) {
     this.selectedCarId.set(carId);
     this.cancelEdit();
-    if (carId) await this.loadVariants();
+    if (carId) {
+      await this.loadVariants();
+      await this.loadDetails();
+    }
+  }
+
+  // ── Specs and features, typed by hand ──────────────────────────────────────
+  //
+  // WHY THIS EXISTS BESIDE THE AI BUTTON
+  //
+  // "Draft specs & features" asks a language model, which is useless for the
+  // car this was reported on: a Victoris whose price is not announced yet,
+  // with images uploaded and variants listed, and "Feature details for this
+  // car haven't been added yet" under Features. There was no way to type them
+  // — cars.features had exactly one writer in the whole codebase, and it was
+  // that button.
+  //
+  // The two coexist rather than compete. The draft fills a field only when it
+  // is empty, so pressing it after typing a list leaves the list alone.
+
+  /** One feature per line. A textarea, not sixteen inputs: this is a list. */
+  featuresText = signal('');
+
+  /** Label/value rows, with blanks allowed while typing — the API drops them. */
+  specRows = signal<{ label: string; value: string }[]>([]);
+
+  detailsLoading = signal(false);
+  savingDetails = signal(false);
+
+  async loadDetails() {
+    const carId = this.selectedCarId();
+    if (!carId) return;
+    this.detailsLoading.set(true);
+    try {
+      // The list endpoint this screen's dropdown is built from does not carry
+      // specs or features, so the single-car read is the only source.
+      const resp = await fetch(`${this.apiUrl}/cars/${carId}`);
+      if (!resp.ok) return;
+      const car = await resp.json();
+      this.featuresText.set((car.features ?? []).join('\n'));
+      this.specRows.set(
+        (car.specs ?? []).map((sp: { label?: string; value?: string }) => ({
+          label: sp?.label ?? '',
+          value: sp?.value ?? '',
+        })),
+      );
+    } catch {
+      // Left silent on purpose: the rest of the screen works, and an error
+      // banner here reads as the whole page having failed to load.
+    } finally {
+      this.detailsLoading.set(false);
+    }
+  }
+
+  setFeaturesText(text: string) {
+    this.featuresText.set(text);
+  }
+
+  addSpecRow() {
+    this.specRows.set([...this.specRows(), { label: '', value: '' }]);
+  }
+
+  removeSpecRow(index: number) {
+    this.specRows.set(this.specRows().filter((_, i) => i !== index));
+  }
+
+  setSpec(index: number, field: 'label' | 'value', text: string) {
+    this.specRows.set(
+      this.specRows().map((row, i) => (i === index ? { ...row, [field]: text } : row)),
+    );
+  }
+
+  async saveDetails() {
+    const carId = this.selectedCarId();
+    if (!carId) return;
+    this.savingDetails.set(true);
+    this.error.set('');
+    try {
+      const features = this.featuresText()
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+
+      // Sent whole, both of them, every time. PATCH applies only the fields it
+      // receives, so this replaces these two and touches nothing else — the
+      // price and fuel this endpoint also carries are not in the body at all.
+      const resp = await fetch(`${this.apiUrl}/cars/${carId}`, {
+        method: 'PATCH',
+        headers: { ...(await this.authHeaders()), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ features, specs: this.specRows() }),
+      });
+      if (!resp.ok) throw new Error(await this.describeFailure(resp));
+
+      // Read back from the response rather than trusting what was typed: the
+      // API trims, drops blank rows and caps the list, so the box should show
+      // what was actually saved.
+      const car = await resp.json();
+      this.featuresText.set((car.features ?? []).join('\n'));
+      this.specRows.set(
+        (car.specs ?? []).map((sp: { label?: string; value?: string }) => ({
+          label: sp?.label ?? '',
+          value: sp?.value ?? '',
+        })),
+      );
+      this.toast(
+        `📋 ${car.features?.length ?? 0} feature(s) and ${car.specs?.length ?? 0} specification(s) saved`,
+      );
+    } catch (err) {
+      this.error.set(`${err}`.replace(/^Error:\s*/, ''));
+    } finally {
+      this.savingDetails.set(false);
+    }
   }
 
   async loadVariants() {
@@ -335,6 +446,10 @@ export class AdminVariantsComponent {
           ? `📋 ${specs} specification(s) and ${features} feature(s) saved`
           : 'The AI returned no specification for this model. Nothing was saved.'
       );
+      // Show what landed in the editor below, so a draft can be corrected
+      // rather than admired. Without this the boxes keep the state they had
+      // before the button was pressed, and the next save would write it back.
+      await this.loadDetails();
     } catch (err) {
       this.error.set(`${err}`.replace(/^Error:\s*/, ''));
     } finally {

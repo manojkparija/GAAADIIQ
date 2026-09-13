@@ -246,3 +246,59 @@
   &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.18); }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
+
+/* Specs and features, typed by hand.
+ *
+ * Same card as .av-form, because it is the same kind of thing: a panel on this
+ * screen that writes to the catalogue. Tokens only — e2e/admin-theme.spec.ts
+ * fails on a literal hex in an admin stylesheet, and has caught one here
+ * before. */
+.av-details {
+  background: var(--fill-dim);
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+
+  h3 { margin: 0 0 0.5rem; font-size: 1rem; color: var(--text); }
+
+  .av-field { margin-bottom: 1rem; }
+
+  textarea {
+    padding: 0.65rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    background: var(--input-bg);
+    color: var(--input-color);
+    font: inherit;
+    // The list is read top to bottom, so it wraps rather than scrolling
+    // sideways, and grows rather than being resized to be read.
+    resize: vertical;
+    min-height: 7rem;
+  }
+}
+
+/* Label, value, and a way to remove the row.
+ *
+ * auto for the button so the two inputs share what is left; on a phone the
+ * whole row stacks rather than squeezing three controls into 390px. */
+.av-spec-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+
+  input {
+    padding: 0.65rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    background: var(--input-bg);
+    color: var(--input-color);
+    font: inherit;
+    min-width: 0;
+  }
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}

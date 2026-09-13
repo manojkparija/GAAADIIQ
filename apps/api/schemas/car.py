@@ -6,6 +6,15 @@ from pydantic import BaseModel, Field, field_validator
 
 from models.car import BodyType, FuelType, Transmission
 
+#: Mirrors services/variant_research.MAX_FEATURES / MAX_SPECS.
+#:
+#: Duplicated rather than imported: schemas/ importing a service would invert
+#: the dependency every other schema here follows, and these two numbers are a
+#: presentation bound — how much the tab can show — not a research detail. The
+#: comment on CarUpdate.features records why they must stay in step.
+_MAX_FEATURES = 16
+_MAX_SPECS = 12
+
 
 class CarCreate(BaseModel):
     make: str
@@ -114,6 +123,58 @@ class CarUpdate(BaseModel):
     reference_price: Decimal | None = Field(default=None, ge=0)
     reference_price_source: str | None = Field(default=None, max_length=255)
     reference_price_checked_on: date | None = None
+
+    # The Specs and Features tabs, editable by hand.
+    #
+    # WHY THESE ARE HERE
+    #
+    # They had exactly one writer: POST /cars/{id}/research-details, which asks
+    # a language model. That is fine when the model knows the car and useless
+    # when it does not — which is precisely the case for a launch whose price
+    # is not announced yet, reported on the Maruti Suzuki Victoris with images
+    # uploaded, variants listed, and "Feature details for this car haven't been
+    # added yet" under Features. There was no way to type them.
+    #
+    # The AI draft is unaffected: research_car_details writes each field only
+    # when it is empty, so it still fills a gap and still never overwrites
+    # anything a person curated — now including what they typed here.
+    #
+    # Bounds match services/variant_research (MAX_FEATURES, MAX_SPECS and the
+    # per-string caps) on purpose. A hand-entered list that the drafted path
+    # would have truncated is the same list rendered differently, and the tab
+    # has no idea which route a value arrived by.
+    features: list[str] | None = None
+    specs: list[dict] | None = None
+
+    @field_validator("features")
+    @classmethod
+    def _tidy_features(cls, value: list[str] | None) -> list[str] | None:
+        """Strip, drop blanks, bound. None stays None — see the class docstring."""
+        if value is None:
+            return None
+        cleaned = [str(item).strip()[:80] for item in value]
+        return [item for item in cleaned if item][:_MAX_FEATURES]
+
+    @field_validator("specs")
+    @classmethod
+    def _tidy_specs(cls, value: list[dict] | None) -> list[dict] | None:
+        """Label/value pairs, both non-empty. A half-filled row is dropped.
+
+        Not an error: the editor renders blank rows to type into, and rejecting
+        the save because one was left empty would be a validation failure the
+        person cannot see the cause of.
+        """
+        if value is None:
+            return None
+        out: list[dict] = []
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            label = str(item.get("label") or "").strip()[:60]
+            detail = str(item.get("value") or "").strip()[:80]
+            if label and detail:
+                out.append({"label": label, "value": detail})
+        return out[:_MAX_SPECS]
 
 
 class PriceCheckOut(BaseModel):
