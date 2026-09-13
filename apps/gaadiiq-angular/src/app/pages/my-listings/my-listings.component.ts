@@ -27,8 +27,30 @@ export class MyListingsComponent {
       : `₹${p.toLocaleString('en-IN')}`;
   }
 
-  remove(id: string) {
-    if (confirm('Remove this listing?')) this.myListings.remove(id);
+  /** Shown when a removal fails, because the old code swallowed that entirely. */
+  removeError = signal('');
+  removing = signal<string | null>(null);
+
+  async remove(id: string) {
+    if (!confirm('Remove this listing?')) return;
+    this.removeError.set('');
+    this.removing.set(id);
+    try {
+      await this.myListings.remove(id);
+    } catch (err: any) {
+      // The failure this screen used to hide. A seller whose advert is still
+      // live must be told, or they believe a car is off the market when
+      // buyers can still see it.
+      const status = err?.status ? ` (${err.status})` : '';
+      const detail = err?.error?.detail ?? err?.message ?? 'unknown error';
+      this.removeError.set(
+        `Could not remove this listing${status}: ` +
+        `${typeof detail === 'string' ? detail : JSON.stringify(detail)}. ` +
+        `It is still visible to buyers.`,
+      );
+    } finally {
+      this.removing.set(null);
+    }
   }
 
   startEdit(car: MyListing) {

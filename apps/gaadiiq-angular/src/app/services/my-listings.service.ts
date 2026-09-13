@@ -1,6 +1,9 @@
 import { Injectable, signal, effect } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
 import { SupabaseService } from './supabase.service';
+import { environment } from '../../environments/environment';
 
 export interface MyListing {
   id: string;
@@ -15,6 +18,18 @@ export interface MyListing {
   // to call Number() on it and get NaN.
   supabaseId?: string | null;
   imageUrl?: string | null;
+
+  /**
+   * The `listings` row this advert is, as distinct from `supabaseId`, which
+   * is the CAR row it is about.
+   *
+   * Taking an advert down means deactivating the listing, and until this was
+   * stored there was nothing to address that with — see remove().
+   *
+   * Optional because every entry created before it existed has none; remove()
+   * looks those up by car id instead.
+   */
+  listingId?: string | null;
 }
 
 // Single stable key — no email dependency, no key mismatch possible
@@ -25,7 +40,13 @@ export class MyListingsService {
   listings = signal<MyListing[]>([]);
   loading = signal(false);
 
-  constructor(private auth: AuthService, private sb: SupabaseService) {
+  constructor(
+    private auth: AuthService,
+    private sb: SupabaseService,
+    // HttpClient so auth.interceptor.ts signs the request: DELETE /listings/{id}
+    // checks the listing belongs to the caller, and an unsigned one is a 401.
+    private http: HttpClient,
+  ) {
     // Load from localStorage immediately on service creation
     this.loadFromStorage();
 
@@ -149,14 +170,92 @@ export class MyListingsService {
     this.listings.set(updated);
   }
 
-  remove(id: string) {
+  /**
+   * Take an advert down.
+   *
+   * WHAT THIS USED TO DO, AND WHY IT STOPPED WORKING
+   *
+   * It deleted the CAR row:
+   *
+   *     this.sb.client.from('cars').delete().eq('id', listing.supabaseId)
+   *       .then(() => {});
+   *
+   * That worked while a sold car was only a `cars` row. Once the sell form
+   * began creating a real listing, it could not: `listings.car_id` is
+   * ForeignKey("cars.id") with no ondelete, so Postgres defaults to NO ACTION
+   * and refuses to delete a car an advert points at. And `.then(() => {})`
+   * takes no error argument, so the refusal was discarded — the row vanished
+   * from this page, the advert stayed live on /used-cars, and nothing said so.
+   *
+   * A seller who has sold their car could not take it off the market.
+   *
+   * WHAT IT DOES NOW
+   *
+   * Deactivates the LISTING, which is what DELETE /listings/{id} is for — a
+   * soft delete setting is_active = false, so the advert leaves every
+   * buyer-facing page while the row survives for the seller's own history.
+   * The car row is left alone: it is the catalogue entry the photographs hang
+   * off, and it is not what is being withdrawn.
+   *
+   * Falls back to the old behaviour only when there is no listing at all,
+   * which is what an entry created before listings existed looks like.
+   *
+   * THROWS rather than reporting silently. The caller decides what to show,
+   * and the one thing that must not happen again is a failure nobody sees.
+   */
+  async remove(id: string): Promise<void> {
     const listing = this.listings().find(l => l.id === id);
-    if (listing?.supabaseId) {
-      this.sb.client.from('cars').delete().eq('id', listing.supabaseId).then(() => {});
+    if (!listing) return;
+
+    const listingId = listing.listingId ?? await this.findListingId(listing);
+
+    if (listingId) {
+      // Not caught: a refused delete must reach the caller. Removing it from
+      // this list regardless is exactly the bug being fixed.
+      await firstValueFrom(
+        this.http.delete(`${environment.apiUrl}/listings/${listingId}`),
+      );
+    } else if (listing.supabaseId) {
+      // No advert to withdraw — an entry that predates listings. The car row
+      // is all there is, and deleting it now succeeds because nothing
+      // references it.
+      const { error } = await this.sb.client
+        .from('cars').delete().eq('id', listing.supabaseId);
+      if (error) throw new Error(error.message || 'Could not remove the car');
     }
+
     const updated = this.listings().filter(l => l.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     this.listings.set(updated);
+  }
+
+  /**
+   * The listing id for an advert that never stored one.
+   *
+   * Every entry created before `listingId` existed — including adverts placed
+   * between the sell form learning to create listings and this being written —
+   * knows only its car. /listings/me is the seller's own listings, so matching
+   * on car id there is exact rather than a guess on make and model.
+   *
+   * Returns null on any failure, which sends remove() down the car-row path.
+   * That path then fails loudly on the foreign key rather than pretending, so
+   * a lookup outage cannot resurrect the silent success this replaced.
+   */
+  private async findListingId(listing: MyListing): Promise<string | null> {
+    if (!listing.supabaseId) return null;
+    try {
+      const mine = await firstValueFrom(
+        this.http.get<{ items: { id: string; car?: { id?: string } }[] }>(
+          `${environment.apiUrl}/listings/me?page=1&page_size=100`,
+        ),
+      );
+      const hit = (mine?.items ?? []).find(
+        row => String(row.car?.id ?? '') === String(listing.supabaseId),
+      );
+      return hit?.id ?? null;
+    } catch {
+      return null;
+    }
   }
 
   // Keep for backward compat

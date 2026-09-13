@@ -780,6 +780,9 @@ export class ListCarComponent {
    */
   private createdCarId = signal<string | null>(null);
 
+  /** The listing just created, stored on the My Listings entry below. */
+  private createdListingId = signal<string | null>(null);
+
   /**
    * Put the car on the market.
    *
@@ -821,9 +824,13 @@ export class ListCarComponent {
     };
 
     try {
-      await firstValueFrom(
+      const created = await firstValueFrom(
         this.http.post<{ id: string }>(`${environment.apiUrl}/listings`, body),
       );
+      // Kept so My Listings can take the advert down later. Without it,
+      // removal has to look the id up by car, and a seller whose lookup fails
+      // cannot withdraw a car they have sold.
+      this.createdListingId.set(created?.id ?? null);
       return null;
     } catch (err: any) {
       const status = err?.status ? ` (${err.status})` : '';
@@ -1025,6 +1032,7 @@ export class ListCarComponent {
       description: this.form.description, bodyType: this.form.bodyType,
       name: this.form.name, phone: this.form.phone, email: this.form.email,
       supabaseId: carId,
+      listingId: this.createdListingId(),
       imageUrl: imageUrl,
     });
 
