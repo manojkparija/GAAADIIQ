@@ -204,6 +204,38 @@ describe('ListCarComponent — the listing actually gets created', () => {
     await done;
   });
 
+  it('sends the photographs the seller uploaded', async () => {
+    // REPORTED ON THE FIRST ADVERT THIS FLOW PRODUCED: the Ritz live on
+    // /used-cars reading "No Image Available", with the picture sitting in
+    // the bucket the whole time. create_listing forced image_urls to [], and
+    // POST /listings/{id}/images cannot help — it takes file bytes, and by
+    // this point the form holds URLs.
+    const { c, http } = build();
+    c.uploadedImages.set([
+      { path: 'a.jpg', url: 'https://abc.supabase.co/storage/v1/object/public/car-images/a.jpg' },
+      { path: 'b.jpg', url: 'https://abc.supabase.co/storage/v1/object/public/car-images/b.jpg' },
+    ]);
+    const done = c.onSubmit();
+
+    const req = await expectListingPost(http);
+    expect(req.request.body.image_urls).toEqual([
+      'https://abc.supabase.co/storage/v1/object/public/car-images/a.jpg',
+      'https://abc.supabase.co/storage/v1/object/public/car-images/b.jpg',
+    ]);
+    req.flush({ id: 'listing-1' });
+    await done;
+  });
+
+  it('sends an empty list when the seller uploaded none', async () => {
+    const { c, http } = build();
+    const done = c.onSubmit();
+
+    const req = await expectListingPost(http);
+    expect(req.request.body.image_urls).toEqual([]);
+    req.flush({ id: 'listing-1' });
+    await done;
+  });
+
   it('goes through HttpClient, so the auth interceptor can sign it', async () => {
     // POST /listings requires get_current_user. The interceptor attaches the
     // Supabase token to HttpClient requests aimed at environment.apiUrl; a

@@ -48,7 +48,11 @@ async def create_listing(
     if not car:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Car not found")
 
-    listing = Listing(**payload.model_dump(), seller_id=current_user.id, image_urls=[])
+    # image_urls comes from the payload now, validated to our own storage by
+    # ListingCreate._own_storage_only. It used to be forced to [] here, which
+    # meant a listing created by the sell form — which uploads to the bucket
+    # and holds URLs, not bytes — could never show a photograph.
+    listing = Listing(**payload.model_dump(), seller_id=current_user.id)
     db.add(listing)
     await db.commit()
 

@@ -810,6 +810,14 @@ export class ListCarComponent {
       condition: this.isNew() ? null : this.conditionForApi(),
       city: this.form.city || null,
       description: this.form.description || null,
+      // The photographs, which the seller has already uploaded to the bucket.
+      //
+      // Without these the listing is created with image_urls = [] and the card
+      // reads "No Image Available" — reported on the first advert this flow
+      // ever produced, with the picture sitting in storage the whole time.
+      // POST /listings/{id}/images cannot help: it takes file bytes, and by
+      // this point we hold URLs.
+      image_urls: this.uploadedImages().map(img => img.url).filter(Boolean),
     };
 
     try {
@@ -972,23 +980,34 @@ export class ListCarComponent {
       }
     }
 
-    // 3. Save AI valuation result if available
-    const val = this.valuation();
-    if (val) {
-      const { error: valError } = await this.sb.client.from('ai_valuation').insert({
-        car_id: carId,
-        fair_price: val.mid,
-        market_min: val.low,
-        market_max: val.high,
-        verdict: val.marketTrend,
-        confidence: val.confidence,
-      });
-      if (valError) {
-        followUpProblems.push(
-          `the AI valuation (${valError.message || 'unknown error'})`
-        );
-      }
-    }
+    // 4. The AI valuation is NOT written here, and there is no step to do it.
+    //
+    // This used to insert into an `ai_valuation` table straight from the
+    // browser, and that insert has been failing in production for as long as
+    // anyone has looked at it — first
+    //
+    //   invalid input syntax for type bigint: "664045d0-e803-…"
+    //
+    // because ai_valuation.car_id was bigint while cars.id is uuid, and then,
+    // once that was corrected,
+    //
+    //   new row violates row-level security policy for table "ai_valuation"
+    //
+    // Each failure surfaced as a warning on the success screen, so every
+    // seller who listed a car was told something had gone wrong.
+    //
+    // The write is gone rather than fixed because NOTHING READS THAT TABLE.
+    // Searched across every .ts, .py and .sql in the repository: the only
+    // other matches are `listings.ai_valuation` — a COLUMN on the listings
+    // table, which the API models and ListingOut returns — plus a metric name
+    // in main.py and an unrelated subscription feature flag. No page, service
+    // or endpoint reads the table this was inserting into. Granting it an RLS
+    // policy would have unblocked a write with no reader.
+    //
+    // Nothing is lost. The seller sees the valuation on the form before
+    // submitting, and my-listings keeps its own copy. If a stored figure is
+    // wanted later, the modelled place for it is listings.ai_valuation via
+    // POST /listings/{id}/valuate — not a second table the browser writes.
 
     if (followUpProblems.length) {
       this.submitWarning.set(
@@ -997,7 +1016,7 @@ export class ListCarComponent {
       );
     }
 
-    // 4. Mirror to My Listings (localStorage) so seller sees it immediately
+    // 5. Mirror to My Listings (localStorage) so seller sees it immediately
     this.myListings.add({
       make: this.form.make, model: this.form.model, variant: this.form.variant,
       year: this.form.year, km: +this.form.km, fuel: this.form.fuel,
