@@ -1,5 +1,7 @@
 import { environment } from '../../../environments/environment';
 import { Component, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -548,6 +550,14 @@ export class ListCarComponent {
     private imageUpload: ImageUploadService,
     private cityService: CityService,
     private native: NativeService,
+    // HttpClient, not fetch, and the distinction is load-bearing: the listing
+    // POST needs the seller's token, and interceptors/auth.interceptor.ts
+    // attaches it to HttpClient requests aimed at environment.apiUrl. The
+    // valuation call below uses fetch because that endpoint is public; this
+    // one is not, and a fetch() here would arrive unauthenticated and 401.
+    // Setting the header by hand is what CLAUDE.md forbids, for the same
+    // reason: one hand-attached header is nine missing ones.
+    private http: HttpClient,
   ) {
     const user = auth.currentUser();
     if (user) {
@@ -741,6 +751,83 @@ export class ListCarComponent {
     return `Could not save the listing${code}: ${detail}`;
   }
 
+  /**
+   * The grade the API's enum accepts, from the grade this form stores.
+   *
+   * models/listing.py declares excellent | good | fair | poor. This form has
+   * always stored 'Excellent', 'Good', 'Fair' and 'Needs Work' — the values
+   * the valuation engine matches on — so passing one straight through is a 422
+   * on every submission, and "Needs Work" has no counterpart at all.
+   *
+   * Mapped rather than renamed at the source: those strings reach
+   * valuation-engine.ts and the localStorage mirror, and changing them there
+   * would alter an estimate a seller has already been shown.
+   */
+  private conditionForApi(): string | null {
+    const grade = (this.form.condition || '').trim().toLowerCase();
+    if (grade === 'needs work') return 'poor';
+    return ['excellent', 'good', 'fair', 'poor'].includes(grade) ? grade : null;
+  }
+
+  /**
+   * The catalogue row a failed submission already committed.
+   *
+   * The cars insert is not transactional with the listing POST that follows
+   * it. Without this, a seller who hits a failed listing and presses submit
+   * again inserts a SECOND cars row, and the first is orphaned — so retrying
+   * the obvious way quietly fills the catalogue with duplicates of one car.
+   * Holding the id makes the retry attach a listing to the row that exists.
+   */
+  private createdCarId = signal<string | null>(null);
+
+  /**
+   * Put the car on the market.
+   *
+   * WHY THIS EXISTS AT ALL
+   *
+   * It did not, and that was the bug: this form wrote a `cars` row straight to
+   * Supabase and stopped. Used Cars renders /listings?listing_type=used, and
+   * no listing was ever created, so a car listed here could not appear there —
+   * "0 used cars found" while the seller had just been told "Listing
+   * Submitted!". The Render log showed it plainly: no POST /listings in the
+   * window at all, because nothing in this file made one.
+   *
+   * The catalogue row is left exactly as it was. It is what the admin image
+   * review and the pricing screens read, and detaching it would trade this bug
+   * for another.
+   */
+  private async createListing(carId: string): Promise<string | null> {
+    const body = {
+      car_id: carId,
+      listing_type: this.listingType(),
+      price: this.isNew() ? (+this.form.exShowroomPrice || 0) : +this.form.price,
+      negotiable: false,
+      // Null rather than 0 for new stock. An advert filed under
+      // listing_type=new does not have to carry an odometer reading, and 0 is
+      // a reading rather than the absence of one.
+      km_driven: this.isNew() ? null : (+this.form.km || 0),
+      owners_count: this.isNew() ? null : (+this.form.owners || null),
+      condition: this.isNew() ? null : this.conditionForApi(),
+      city: this.form.city || null,
+      description: this.form.description || null,
+    };
+
+    try {
+      await firstValueFrom(
+        this.http.post<{ id: string }>(`${environment.apiUrl}/listings`, body),
+      );
+      return null;
+    } catch (err: any) {
+      const status = err?.status ? ` (${err.status})` : '';
+      const detail =
+        err?.error?.detail ??
+        (typeof err?.error === 'string' ? err.error : '') ??
+        err?.message ??
+        'unknown error';
+      return `${typeof detail === 'string' ? detail : JSON.stringify(detail)}${status}`;
+    }
+  }
+
   async onSubmit() {
     if (!this.validatePhone()) return;
     this.loading.set(true);
@@ -748,86 +835,119 @@ export class ListCarComponent {
     const user = this.auth.currentUser();
     const imageUrl = this.uploadedImages()[0]?.url ?? null;
 
-    // 1. Insert car row
-    const { data: inserted, error: insertError } = await this.sb.client
-      .from('cars')
-      .insert({
-        make: this.form.make,
-        model: this.form.model,
-        variant: this.form.variant || null,
-        year: this.form.year,
-        km: this.isNew() ? 0 : +this.form.km,
-        fuel: this.form.fuel,
-        // Written alongside `fuel`, not instead of it: this is the column the
-        // API filters on, and leaving it NULL is why a listed EV never
-        // appeared under Electric. See FUEL_TYPE_LABELS.
-        fuel_type: this.fuelTypeForDb(),
-        // The enum label, not the display text. See TRANSMISSION_LABELS.
-        transmission: this.transmissionForDb(),
-        owners: this.isNew() ? null : (this.form.owners || null),
-        color: this.form.color || null,
-        city: this.form.city || null,
-        // For new stock the ex-showroom figure is the price, so it goes here
-        // too — `price` is what the used-car views and My Listings read.
-        price: this.isNew() ? (+this.form.exShowroomPrice || 0) : +this.form.price,
+    // 1. Insert car row — skipped on a retry after the listing failed, because
+    // the row is already committed. Inserting another would orphan the first
+    // and put a duplicate of one car into the catalogue on every press of
+    // Submit. See createdCarId.
+    let carId = this.createdCarId();
 
-        // ...and in ex_showroom_price, which is what New Cars requires.
-        //
-        // The comment that used to sit here said this column was deliberately
-        // skipped because "this file cannot see the live schema, and naming a
-        // column that may not be there fails the whole insert". That was true
-        // when it was written and is not now: the column exists, 017 declares
-        // it, and listing-columns.spec.ts holds every inserted column to that.
-        //
-        // Skipping it made a listed new car invisible on New Cars entirely.
-        // cars-data.service.ts:519 drops any catalogue row whose
-        // ex_showroom_price is NULL *before* it looks at fuel or body type, so
-        // no amount of fixing fuel_type could have made an EV appear — it was
-        // never in the list to be filtered.
-        //
-        // Only for new stock. A used advert's asking price is one seller's
-        // number for one car; writing it here would state it as the
-        // manufacturer's published price for the model, which it is not.
-        ex_showroom_price: this.exShowroomPriceForDb(),
-        description: this.form.description || null,
-        // The enum label, not the display text. See BODY_TYPE_LABELS.
-        body_type: this.bodyTypeForDb(),
-        // Was hardcoded to 'Used' on every listing this form ever created.
-        badge: this.isNew() ? 'New' : 'Used',
-        badge_type: this.isNew() ? 'new' : 'used',
-        seller_email: this.form.email,
-        seller_phone: this.form.phone || null,
-        seller_id: user?.sellerId ?? null,
-        is_seller_listing: true,
-        verified: false,
-        rating: 0,
-        reviews: 0,
-        image_url: imageUrl,
-      })
-      .select('id')
-      .single();
+    if (!carId) {
+      const { data: inserted, error: insertError } = await this.sb.client
+        .from('cars')
+        .insert({
+          make: this.form.make,
+          model: this.form.model,
+          variant: this.form.variant || null,
+          year: this.form.year,
+          km: this.isNew() ? 0 : +this.form.km,
+          fuel: this.form.fuel,
+          // Written alongside `fuel`, not instead of it: this is the column the
+          // API filters on, and leaving it NULL is why a listed EV never
+          // appeared under Electric. See FUEL_TYPE_LABELS.
+          fuel_type: this.fuelTypeForDb(),
+          // The enum label, not the display text. See TRANSMISSION_LABELS.
+          transmission: this.transmissionForDb(),
+          owners: this.isNew() ? null : (this.form.owners || null),
+          color: this.form.color || null,
+          city: this.form.city || null,
+          // For new stock the ex-showroom figure is the price, so it goes here
+          // too — `price` is what the used-car views and My Listings read.
+          price: this.isNew() ? (+this.form.exShowroomPrice || 0) : +this.form.price,
 
-    if (insertError || !inserted) {
-      // Say what actually went wrong.
-      //
-      // This used to read "Failed to submit listing. Please try again." and
-      // discard `insertError` entirely. Trying again cannot help with the
-      // reason it usually fails: this insert names columns directly against
-      // Supabase, bypassing the API and the ORM, so a column the live schema
-      // does not have rejects the whole row — every time, identically. The
-      // advice was not just unhelpful, it was wrong.
-      //
-      // Postgres says exactly what is wrong ('column "km" of relation "cars"
-      // does not exist', code 42703). Showing it costs nothing and turns a
-      // support conversation into a one-line fix.
-      this.submitError.set(this.describeSubmitFailure(insertError));
+          // ...and in ex_showroom_price, which is what New Cars requires.
+          //
+          // The comment that used to sit here said this column was deliberately
+          // skipped because "this file cannot see the live schema, and naming a
+          // column that may not be there fails the whole insert". That was true
+          // when it was written and is not now: the column exists, 017 declares
+          // it, and listing-columns.spec.ts holds every inserted column to that.
+          //
+          // Skipping it made a listed new car invisible on New Cars entirely.
+          // cars-data.service.ts:519 drops any catalogue row whose
+          // ex_showroom_price is NULL *before* it looks at fuel or body type, so
+          // no amount of fixing fuel_type could have made an EV appear — it was
+          // never in the list to be filtered.
+          //
+          // Only for new stock. A used advert's asking price is one seller's
+          // number for one car; writing it here would state it as the
+          // manufacturer's published price for the model, which it is not.
+          ex_showroom_price: this.exShowroomPriceForDb(),
+          description: this.form.description || null,
+          // The enum label, not the display text. See BODY_TYPE_LABELS.
+          body_type: this.bodyTypeForDb(),
+          // Was hardcoded to 'Used' on every listing this form ever created.
+          badge: this.isNew() ? 'New' : 'Used',
+          badge_type: this.isNew() ? 'new' : 'used',
+          seller_email: this.form.email,
+          seller_phone: this.form.phone || null,
+          seller_id: user?.sellerId ?? null,
+          is_seller_listing: true,
+          verified: false,
+          rating: 0,
+          reviews: 0,
+          image_url: imageUrl,
+        })
+        .select('id')
+        .single();
+
+      if (insertError || !inserted) {
+        // Say what actually went wrong.
+        //
+        // This used to read "Failed to submit listing. Please try again." and
+        // discard `insertError` entirely. Trying again cannot help with the
+        // reason it usually fails: this insert names columns directly against
+        // Supabase, bypassing the API and the ORM, so a column the live schema
+        // does not have rejects the whole row — every time, identically. The
+        // advice was not just unhelpful, it was wrong.
+        //
+        // Postgres says exactly what is wrong ('column "km" of relation "cars"
+        // does not exist', code 42703). Showing it costs nothing and turns a
+        // support conversation into a one-line fix.
+        this.submitError.set(this.describeSubmitFailure(insertError));
+        this.loading.set(false);
+        return;
+      }
+
+        // String(), not a bare assignment: Supabase types the selected id as
+        // `any`, which defeats the narrowing on `carId` below and leaves it
+        // string | null for the rest of the method.
+        carId = String(inserted.id);
+      this.createdCarId.set(carId);
+    }
+
+    // 2. Put it on the market.
+    //
+    // A HARD FAILURE, unlike the two follow-ups below, and the difference is
+    // the whole point of this step. A missing photograph is a worse advert; a
+    // missing LISTING means the car is not for sale anywhere — it appears on
+    // no buyer-facing page, and the seller has been told it was submitted.
+    // That is the bug this fixes, so reporting it as a footnote would be
+    // reproducing it with better wording.
+    //
+    // The car row stays committed; it is the catalogue entry the photographs
+    // attach to, and createdCarId makes a retry reuse it rather than insert a
+    // duplicate.
+    const listingProblem = await this.createListing(carId);
+    if (listingProblem) {
+      this.submitError.set(
+        `Your car was saved but could not be listed for sale: ${listingProblem}. ` +
+        `Nothing has been published yet — press Submit again to retry.`,
+      );
       this.loading.set(false);
       return;
     }
 
-    const carId = inserted.id;
-
-    // 2. Save all uploaded images to car_images table
+    // 3. Save all uploaded images to car_images table
     //
     // These two inserts had their results discarded entirely — not even
     // checked. A listing whose photographs never attached looked identical to
