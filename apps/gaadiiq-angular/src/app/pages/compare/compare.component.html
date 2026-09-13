@@ -16,8 +16,29 @@
                style="opacity:0;transition:opacity 0.25s ease"
                (load)="onImgLoad($event)" (error)="onImgError($event)">
           <h4>{{ car.make }} {{ car.model }}</h4>
-          <div class="slot-price gradient-text">{{ formatPrice(startsAt(car)) }}</div>
+          <div class="slot-price gradient-text">
+            {{ formatPrice(slotPrice(slot, car)) }}
+          </div>
           <div class="slot-sub">{{ car.year }} · {{ car.fuel }}</div>
+
+          <!-- The trim picker. Absent when the car has no published trims —
+               a seller's advert is one car at one price — so those slots look
+               and behave exactly as they did before this existed. -->
+          <select class="trim-select" *ngIf="trimOptions()[slot].length"
+                  [ngModel]="trims()[slot]?.id || ''"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="setTrimById(slot, $event)"
+                  [attr.aria-label]="'Choose a variant' | t">
+            <option value="">{{ 'All variants · from' | t }} {{ formatPrice(startsAt(car)) }}</option>
+            <option *ngFor="let v of trimOptions()[slot]" [value]="v.id">
+              {{ v.name }}{{ v.ex_showroom_price ? ' · ' + formatPrice(+v.ex_showroom_price) : '' }}
+            </option>
+          </select>
+
+          <button type="button" class="trim-vs" *ngIf="canCompareTrims(slot)"
+                  (click)="compareTrims(slot)">
+            {{ 'Compare its variants' | t }}
+          </button>
         </div>
 
         <div class="slot-empty glass-card" *ngIf="!selected()[slot]">
@@ -50,8 +71,8 @@
          hardcode three, so comparing two cars laid every row out in four
          columns and left an empty one on the right: the header, the spec rows
          and the feature rows all stopped lining up with the cars above them. -->
-    <div class="comparison-table glass-card" *ngIf="activeCars().length >= 2"
-         [style.--cols]="activeCars().length">
+    <div class="comparison-table glass-card" *ngIf="activeEntries().length >= 2"
+         [style.--cols]="activeEntries().length">
       <!-- Header -->
       <div class="comp-header">
         <!-- The corner cell of a comparison table names nothing: the rows
@@ -59,33 +80,45 @@
              column of its own. Kept as an empty cell because the grid needs
              the placeholder. -->
         <div class="comp-label-col"></div>
-        <div class="comp-car-col" *ngFor="let car of activeCars()">
-          <img [src]="optimisedImageFor(car)" [alt]="car.model" referrerpolicy="no-referrer"
+        <div class="comp-car-col" *ngFor="let e of activeEntries()">
+          <img [src]="optimisedImageFor(e.car)" [alt]="e.car.model" referrerpolicy="no-referrer"
                style="opacity:0;transition:opacity 0.25s ease"
                (load)="onImgLoad($event)" (error)="onImgError($event)">
-          <div class="comp-car-name">{{ car.make }} {{ car.model }}</div>
-          <div class="comp-car-price gradient-text">{{ formatPrice(startsAt(car)) }}</div>
-          <a [routerLink]="['/cars', car.id]" class="btn-outline btn-sm">{{ 'View Details' | t }}</a>
+          <div class="comp-car-name">{{ entryName(e) }}</div>
+          <!-- Without this, comparing two trims of one model gives two columns
+               headed identically and the reader cannot tell which is which. -->
+          <div class="comp-car-trim" *ngIf="entryTrimName(e)">{{ entryTrimName(e) }}</div>
+          <div class="comp-car-price gradient-text">{{ formatPrice(entryPrice(e)) }}</div>
+          <a [routerLink]="['/cars', e.car.id]" class="btn-outline btn-sm">{{ 'View Details' | t }}</a>
         </div>
       </div>
 
       <!-- Spec rows -->
       <div class="comp-row" *ngFor="let row of specRows" [class.alt]="specRows.indexOf(row) % 2 === 0">
         <div class="comp-label">{{ row.label }}</div>
-        <div class="comp-val" *ngFor="let car of activeCars()"
-             [class.winner]="isWinner(row.key, car, row.higher)">
-          {{ row.format(getVal(car, row.key)) }}
-          <span class="win-crown" *ngIf="isWinner(row.key, car, row.higher)">👑</span>
+        <div class="comp-val" *ngFor="let e of activeEntries()"
+             [class.winner]="isEntryWinner(row.key, e, row.higher)">
+          {{ row.format(getEntryVal(e, row.key)) }}
+          <span class="win-crown" *ngIf="isEntryWinner(row.key, e, row.higher)">👑</span>
         </div>
       </div>
+
+      <!-- Trim-only rows. Hidden until a trim is chosen somewhere, so an
+           untouched comparison is the table it has always been. -->
+      <ng-container *ngIf="comparingTrims()">
+        <div class="comp-row" *ngFor="let row of trimRows">
+          <div class="comp-label">{{ row.label }}</div>
+          <div class="comp-val" *ngFor="let e of activeEntries()">{{ row.value(e) }}</div>
+        </div>
+      </ng-container>
 
       <!-- Features comparison -->
       <div class="features-comp">
         <h3>{{ 'Features Comparison' | t }}</h3>
         <div class="feat-row" *ngFor="let f of ['Sunroof','ADAS','360 Camera','Wireless Charging','Ventilated Seats','6 Airbags']">
           <div class="feat-label">{{ f }}</div>
-          <div class="feat-val" *ngFor="let car of activeCars()">
-            {{ hasFeature(car, f) ? '✓' : '✗' }}
+          <div class="feat-val" *ngFor="let e of activeEntries()">
+            {{ entryHasFeature(e, f) ? '✓' : '✗' }}
           </div>
         </div>
       </div>
@@ -96,16 +129,16 @@
         <div class="feat-row tco-row" *ngFor="let row of tcoRows"
              [class.tco-total]="row.key === 'netCost5yr'" [class.tco-resale]="row.key === 'resaleValue'">
           <div class="feat-label">{{ row.label }}</div>
-          <div class="feat-val tco-val" *ngFor="let car of activeCars()"
-               [class.winner]="row.key === 'netCost5yr' && getTco(car).netCost5yr === minTco()">
-            {{ row.key === 'resaleValue' ? '−' : '' }}{{ formatPrice(getTco(car)[row.key]) }}
-            <span class="win-crown" *ngIf="row.key === 'netCost5yr' && getTco(car).netCost5yr === minTco()">👑</span>
+          <div class="feat-val tco-val" *ngFor="let e of activeEntries()"
+               [class.winner]="row.key === 'netCost5yr' && getEntryTco(e).netCost5yr === minEntryTco()">
+            {{ row.key === 'resaleValue' ? '−' : '' }}{{ formatPrice(getEntryTco(e)[row.key]) }}
+            <span class="win-crown" *ngIf="row.key === 'netCost5yr' && getEntryTco(e).netCost5yr === minEntryTco()">👑</span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="empty-hint" *ngIf="activeCars().length < 2">
+    <div class="empty-hint" *ngIf="activeEntries().length < 2">
       <div class="glass-card" style="text-align:center;padding:3rem">
         <div style="font-size:3rem;margin-bottom:1rem">⚖️</div>
         <h3>{{ 'Search and select at least 2 cars to compare' | t }}</h3>
