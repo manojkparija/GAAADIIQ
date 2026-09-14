@@ -147,7 +147,14 @@ export class MyListingsService {
 
       const { data, error } = await Promise.race([query, timeout]) as any;
 
-      if (!error && data && data.length > 0) {
+      // `data` may legitimately be EMPTY, and that is information.
+      //
+      // This used to require data.length > 0 before merging, so a seller who
+      // removed their last advert kept it on this page forever: the server
+      // said "you have none", and the code treated that as nothing to do. An
+      // empty list is an answer, not a non-answer. Only an ERROR — an outage
+      // or the 5s timeout — means "do not touch what is stored".
+      if (!error && data) {
         const remote: MyListing[] = data.map((r: any) => {
           const car = r.car ?? {};
           return {
@@ -178,11 +185,33 @@ export class MyListingsService {
         //
         // supabaseId stays as the fallback for entries saved before listingId
         // existed, which have no listing id to key on.
+        // AN ENTRY THE SERVER HAS FORGOTTEN IS GONE, NOT LOCAL-ONLY.
+        //
+        // This kept every local entry the server did not return, which reads
+        // as "be generous, do not lose the seller's data". It is the opposite:
+        // an entry carrying a listingId IS a server record — it was created
+        // there and its id came back from there. If /listings/me no longer
+        // lists it, the advert has been deleted, and keeping the card means
+        // the seller stares at a car they already removed.
+        //
+        // REPORTED: a Swift whose advert was deleted along with its catalogue
+        // row stayed on My Listings, and every Remove answered 404 because
+        // there was nothing left to withdraw.
+        //
+        // An entry with NO listingId is different: it never reached the API
+        // (a draft this browser saved) or predates listing ids. Nothing on the
+        // server contradicts it, so it stays.
         const local = this.listings();
-        const remoteKeys = new Set(remote.map(r => r.listingId ?? `car:${r.supabaseId}`));
+        const remoteCars = new Set(remote.map(r => r.supabaseId).filter(Boolean));
         const localOnly = local.filter(l => {
-          const key = l.listingId ?? (l.supabaseId ? `car:${l.supabaseId}` : null);
-          return !key || !remoteKeys.has(key);
+          // Server-backed: `remote` above already carries it, or the server
+          // has deleted it. Either way this copy is not the authority.
+          if (l.listingId) return false;
+          // Legacy entry with only a car id: dropped when the server already
+          // lists an advert for that car, which is the same entry arriving
+          // with its id attached.
+          if (l.supabaseId && remoteCars.has(l.supabaseId)) return false;
+          return true;
         });
         const merged = [...remote, ...localOnly];
         merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
