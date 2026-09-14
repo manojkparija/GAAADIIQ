@@ -128,42 +128,64 @@ async def _variant_summaries(
     """
     if not car_ids:
         return {}
-    rows = await db.execute(
-        select(
-            CarVariant.car_id,
-            func.count(),
-            func.min(CarVariant.ex_showroom_price),
-            func.max(CarVariant.ex_showroom_price),
-        )
-        .where(
-            CarVariant.car_id.in_(car_ids),
-            CarVariant.status == VariantStatus.published,
-        )
-        .group_by(CarVariant.car_id)
-    )
-    summaries = {
-        car_id: _VariantSummary(count=count, price_min=lo, price_max=hi)
-        for car_id, count, lo, hi in rows.all()
-    }
 
-    # The distinct gearboxes and fuels, gathered separately.
+    # WHICH ROWS COUNT AS THIS CAR
     #
-    # Not an aggregate on the query above: string_agg and array_agg spell
-    # differently across Postgres and SQLite, and the tests run on both. This
-    # is one extra round trip for the page, not one per car.
-    detail = await db.execute(
-        select(CarVariant.car_id, CarVariant.transmission, CarVariant.fuel_type)
-        .where(
-            CarVariant.car_id.in_(car_ids),
-            CarVariant.status == VariantStatus.published,
+    # The card used to count the trims hanging off this row's id alone. The
+    # detail page stopped doing that (see _same_model_car_ids): a model's trim
+    # ladder belongs to the MODEL, and the catalogue holds more than one row
+    # per model. Leaving the card on the narrow lookup is how the Swift's card
+    # advertised a band the page it opens disagrees with — the two screens
+    # reading two rows, both of them right.
+    #
+    # So the same resolution runs here, in bulk. Aggregating in Python rather
+    # than in SQL because the dedupe below cannot be spelled as a GROUP BY: it
+    # needs to know which sibling shares the requested car's model year.
+    siblings = await _sibling_ids_for_cars(db, car_ids)
+    every_id = {i for ids, _ in siblings.values() for i in ids}
+
+    rows = (
+        await db.execute(
+            select(CarVariant)
+            .where(
+                CarVariant.car_id.in_(every_id),
+                CarVariant.status == VariantStatus.published,
+            )
+            .order_by(CarVariant.ex_showroom_price, CarVariant.sort_order)
         )
-    )
-    for car_id, transmission, fuel in detail.all():
-        summary = summaries.setdefault(car_id, _VariantSummary())
-        if transmission and transmission.strip() not in summary.transmissions:
-            summary.transmissions.append(transmission.strip())
-        if fuel and fuel.strip() not in summary.fuels:
-            summary.fuels.append(fuel.strip())
+    ).scalars().all()
+
+    by_car: dict[uuid.UUID, list[CarVariant]] = {}
+    for v in rows:
+        by_car.setdefault(v.car_id, []).append(v)
+
+    summaries: dict[uuid.UUID, _VariantSummary] = {}
+    for car_id in car_ids:
+        sibling_ids, same_year = siblings.get(car_id, ([car_id], set()))
+        mine: list[CarVariant] = []
+        for sid in sibling_ids:
+            mine.extend(by_car.get(sid, []))
+        if not mine:
+            continue
+        # One row per trim name, the buyer's own model year winning the tie —
+        # exactly what the detail page shows, so the two cannot disagree.
+        mine = _dedupe_trims(mine, same_year)
+
+        prices = [v.ex_showroom_price for v in mine if v.ex_showroom_price is not None]
+        summary = _VariantSummary(
+            count=len(mine),
+            # An unpriced trim does not vote, the way min()/max() ignored NULL
+            # when this was SQL. A model whose trims are all unpriced yields
+            # None and the caller falls back to the catalogue figure.
+            price_min=min(prices) if prices else None,
+            price_max=max(prices) if prices else None,
+        )
+        for v in mine:
+            if v.transmission and v.transmission.strip() not in summary.transmissions:
+                summary.transmissions.append(v.transmission.strip())
+            if v.fuel_type and v.fuel_type.strip() not in summary.fuels:
+                summary.fuels.append(v.fuel_type.strip())
+        summaries[car_id] = summary
 
     return summaries
 
@@ -519,6 +541,126 @@ async def _get_car_or_404(db: AsyncSession, car_id: uuid.UUID) -> Car:
     return car
 
 
+def _dedupe_trims(
+    variants: "list[CarVariant]", same_year: "set[uuid.UUID]"
+) -> "list[CarVariant]":
+    """
+    One row per trim name, preferring the model year the buyer is looking at.
+
+    Widening the lookup across catalogue rows means a model present in two
+    model years can offer "VXi" twice, at two prices. Both are true and the
+    buyer cannot tell them apart, which is worse than either alone.
+
+    The car's own year wins where it has that trim. Everything else keeps the
+    order it arrived in, which is the price ladder the query built.
+    """
+    best: dict[str, CarVariant] = {}
+    for v in variants:
+        key = (v.name or "").strip().lower()
+        held = best.get(key)
+        if held is None:
+            best[key] = v
+        elif v.car_id in same_year and held.car_id not in same_year:
+            best[key] = v
+    # dict preserves insertion order, so the ladder survives the dedupe.
+    return list(best.values())
+
+
+async def _same_model_car_ids(
+    db: AsyncSession, car_id: uuid.UUID
+) -> "tuple[list[uuid.UUID], set[uuid.UUID]]":
+    """
+    Every catalogue row describing the same model as this one.
+
+    Matched on make and model, lower-cased and trimmed, the way
+    media_admin._ensure_catalogue_car and routers/cars.py::resolve_catalogue_car
+    already match. Year is deliberately NOT part of it: a 2025 row and a 2026
+    row are the same trim ladder to a buyer, and requiring the year is what
+    leaves a model year with no trims showing an empty tab.
+
+    Returns the ids, and which of them share the requested car's year — the
+    second is what _dedupe_trims prefers when two model years offer the same
+    trim name.
+
+    Returns [car_id] alone when the car is unknown, so a bad id yields nothing
+    rather than every trim in the catalogue.
+    """
+    row = (
+        await db.execute(
+            select(Car.make, Car.model, Car.year).where(Car.id == car_id)
+        )
+    ).one_or_none()
+    if row is None:
+        return [car_id], set()
+
+    make, model, year = row
+    rows = (
+        await db.execute(
+            select(Car.id, Car.year).where(
+                func.lower(func.trim(Car.make)) == (make or "").strip().lower(),
+                func.lower(func.trim(Car.model)) == (model or "").strip().lower(),
+            )
+        )
+    ).all()
+    ids = [r[0] for r in rows]
+    same_year = {r[0] for r in rows if r[1] == year}
+    return (ids or [car_id]), same_year
+
+
+async def _sibling_ids_for_cars(
+    db: AsyncSession, car_ids: "list[uuid.UUID]"
+) -> "dict[uuid.UUID, tuple[list[uuid.UUID], set[uuid.UUID]]]":
+    """
+    _same_model_car_ids for a whole page, in two queries rather than 2N.
+
+    The New Cars grid resolves a page of cars at once, and asking per car would
+    turn one round trip into forty. Same rule, same match: make and model,
+    lower-cased and trimmed; year deliberately not part of it.
+
+    The second query is narrowed by MODEL name only, not by the make+model
+    pair — a tuple IN spells differently across Postgres and SQLite, and this
+    file's tests run on both. Model names are selective enough that the extra
+    rows are few, and the pair is re-checked in Python before anything is
+    grouped, so a Ford Figo cannot borrow trims from a Tata Figo.
+    """
+    if not car_ids:
+        return {}
+
+    wanted = (
+        await db.execute(
+            select(Car.id, Car.make, Car.model, Car.year).where(Car.id.in_(car_ids))
+        )
+    ).all()
+
+    def key(make: "str | None", model: "str | None") -> "tuple[str, str]":
+        return (make or "").strip().lower(), (model or "").strip().lower()
+
+    keys = {r[0]: key(r[1], r[2]) for r in wanted}
+    years = {r[0]: r[3] for r in wanted}
+    if not keys:
+        return {}
+
+    family = (
+        await db.execute(
+            select(Car.id, Car.make, Car.model, Car.year).where(
+                func.lower(func.trim(Car.model)).in_({k[1] for k in keys.values()})
+            )
+        )
+    ).all()
+
+    grouped: dict[tuple[str, str], list[tuple[uuid.UUID, int | None]]] = {}
+    for row_id, make, model, year in family:
+        grouped.setdefault(key(make, model), []).append((row_id, year))
+
+    out: dict[uuid.UUID, tuple[list[uuid.UUID], set[uuid.UUID]]] = {}
+    for car_id in car_ids:
+        members = grouped.get(keys.get(car_id, ("", "")), [])
+        ids = [m[0] for m in members] or [car_id]
+        same_year = {m[0] for m in members if m[1] == years.get(car_id)}
+        out[car_id] = (ids, same_year)
+    return out
+
+
 @router.get("/{car_id}/variants", response_model=list[VariantOut])
 async def list_variants(
     car_id: uuid.UUID,
@@ -532,9 +674,44 @@ async def list_variants(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    q = select(CarVariant).where(CarVariant.car_id == car_id)
-    if not include_drafts:
-        q = q.where(CarVariant.status == VariantStatus.published)
+    """
+    The trims a buyer can choose from for this car.
+
+    WHY THIS IS NOT SIMPLY `WHERE car_id = :id`
+
+    REPORTED: the Swift's page showed no trims at all, while Admin -> Variants
+    showed thirteen of them, published and "visible to buyers". Both screens
+    were right. They were looking at different `cars` rows.
+
+    The catalogue holds more than one row per model, by design and by
+    accident. The image upload path creates a row per make+model+YEAR
+    (media_admin._ensure_catalogue_car), the sell form creates one per
+    submission, and a model sold across two model years is two rows. Trims get
+    attached to whichever row the admin screen had open; the buyer page asks
+    about whichever row Browse resolved to. Nothing links them.
+
+    But a trim ladder is a property of the MODEL. "Which versions of the Swift
+    can I buy" has one answer, and which catalogue row the buyer happened to
+    land on is not part of the question. So the published view resolves by
+    make and model, the way media_library already resolves photographs, rather
+    than by the row id.
+
+    The admin view does NOT widen: include_drafts is the admin screen, and it
+    is editing one row's trims. Showing it a neighbouring row's would mean an
+    Edit button that silently writes somewhere else.
+
+    Same-year trims win where both exist, because that is the more specific
+    answer; a model year with none falls back to the ladder that does exist,
+    which is far better than the empty tab this was reported for.
+    """
+    if include_drafts:
+        q = select(CarVariant).where(CarVariant.car_id == car_id)
+    else:
+        sibling_ids, same_year = await _same_model_car_ids(db, car_id)
+        q = select(CarVariant).where(
+            CarVariant.car_id.in_(sibling_ids),
+            CarVariant.status == VariantStatus.published,
+        )
     # Cheapest trim first, which is the order a buyer reads a trim ladder in.
     # sort_order is whatever the row happened to be inserted with — the
     # research importer numbers them in the order it found them — so the Fronx
@@ -546,7 +723,10 @@ async def list_variants(
         CarVariant.sort_order,
         CarVariant.name,
     )
-    return [_variant_out(v) for v in (await db.execute(q)).scalars().all()]
+    rows = list((await db.execute(q)).scalars().all())
+    if not include_drafts:
+        rows = _dedupe_trims(rows, same_year)
+    return [_variant_out(v) for v in rows]
 
 
 @router.post(

@@ -494,11 +494,10 @@
 // Plain text, not brand blue: these names are labels, not links, and colouring
 // them like the tappable prices beside them invited clicks that go nowhere.
 .variant-name { font-weight: 600; font-size: 0.95rem; color: var(--text); }
-.variant-count-badge {
-  font-size: 0.72rem; font-weight: 700; color: var(--muted);
-  border: 1px solid var(--glass-border); border-radius: 8px;
-  padding: 0.15rem 0.6rem; background: var(--fill-soft);
-}
+// .variant-count-badge removed with the hardcoded Variants tab it belonged to.
+// It rendered "View 2 Variants" as something that looked like a button, on
+// rows that had no click handler and nothing to expand to — which is what was
+// reported as "not clickable" on the Swift.
 .variant-price { font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
 
 // ── Section title ─────────────────────────────────────────────────────────────

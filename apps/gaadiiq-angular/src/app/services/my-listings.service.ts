@@ -108,35 +108,70 @@ export class MyListingsService {
       const timeout = new Promise<{ data: null; error: Error }>((resolve) =>
         setTimeout(() => resolve({ data: null, error: new Error('timeout') }), 5000)
       );
-      const query = this.sb.client
-        .from('cars')
-        .select('id, make, model, variant, year, km, fuel, transmission, owners, color, city, price, body_type, seller_email, verified, created_at, image_url')
-        .eq('seller_email', email)
-        .eq('is_seller_listing', true)
-        .order('created_at', { ascending: false });
+      // GET /listings/me, not `cars` filtered by seller_email.
+      //
+      // WHY THIS MOVED
+      //
+      // A seller's adverts used to be found by querying `cars` for
+      // seller_email — which only worked because this form minted a fresh
+      // `cars` row per submission, stamped with the seller. That duplication
+      // is the bug being removed: a used advert now JOINS the catalogue row
+      // for its model, and that row belongs to the model, not to a seller. It
+      // carries somebody else's email, or none.
+      //
+      // So ownership has to be read where it actually lives. `listings`
+      // carries seller_id, and /listings/me is the endpoint that already
+      // answers "which adverts are mine" — authenticated, so it cannot be
+      // asked about anyone else's.
+      //
+      // It also carries the per-advert facts this list shows. The `cars`
+      // columns it used to read — km, price, owners, city — are the ones the
+      // duplicate rows existed to hold, and mapListing already stopped
+      // trusting them for buyers.
+      const query = firstValueFrom(
+        this.http.get<any>(`${environment.apiUrl}/listings/me?page=1&page_size=100`),
+      ).then(res => ({ data: res?.items ?? [], error: null }))
+       .catch(err => ({ data: null, error: err }));
 
       const { data, error } = await Promise.race([query, timeout]) as any;
 
       if (!error && data && data.length > 0) {
-        const remote: MyListing[] = data.map((r: any) => ({
-          id: String(r.id),
-          supabaseId: r.id,
-          make: r.make ?? '', model: r.model ?? '', variant: r.variant ?? '',
-          year: r.year ?? 0, km: r.km ?? 0, fuel: r.fuel ?? '',
-          transmission: r.transmission ?? '', owners: r.owners ?? '',
-          color: r.color ?? '', city: r.city ?? '', price: r.price ?? 0,
-          description: '', bodyType: r.body_type ?? '',
-          name: this.auth.currentUser()?.name ?? '', phone: '',
-          email: r.seller_email ?? '',
-          status: (r.verified ? 'live' : 'pending') as MyListing['status'],
-          createdAt: r.created_at ?? new Date().toISOString(),
-          imageUrl: r.image_url ?? null,
-        }));
+        const remote: MyListing[] = data.map((r: any) => {
+          const car = r.car ?? {};
+          return {
+            id: String(r.id),
+            listingId: String(r.id),
+            supabaseId: car.id ?? null,
+            make: car.make ?? '', model: car.model ?? '', variant: car.variant ?? '',
+            year: car.year ?? 0, km: r.km_driven ?? 0, fuel: car.fuel_type ?? '',
+            transmission: car.transmission ?? '', owners: r.owners_count ? `${r.owners_count}` : '',
+            color: '', city: r.city ?? '', price: Number(r.price) || 0,
+            description: r.description ?? '', bodyType: car.body_type ?? '',
+            name: this.auth.currentUser()?.name ?? '', phone: '',
+            email,
+            status: (r.is_active ? 'live' : 'sold') as MyListing['status'],
+            createdAt: r.created_at ?? new Date().toISOString(),
+            imageUrl: (r.image_urls ?? [])[0] ?? null,
+          };
+        });
 
-        // Merge: Supabase records take priority; keep local-only entries
+        // Merge: the server's records win; keep entries it does not know about.
+        //
+        // Keyed on the LISTING, not the car. It used to dedupe on supabaseId —
+        // the car id — which was unique per advert only because every
+        // submission minted its own `cars` row. Now that a used advert joins
+        // the model's row, two of a seller's adverts for the same model share
+        // one car id, and keying on it would silently drop one of their cars
+        // from their own list.
+        //
+        // supabaseId stays as the fallback for entries saved before listingId
+        // existed, which have no listing id to key on.
         const local = this.listings();
-        const remoteIds = new Set(remote.map(r => r.supabaseId));
-        const localOnly = local.filter(l => !l.supabaseId || !remoteIds.has(l.supabaseId));
+        const remoteKeys = new Set(remote.map(r => r.listingId ?? `car:${r.supabaseId}`));
+        const localOnly = local.filter(l => {
+          const key = l.listingId ?? (l.supabaseId ? `car:${l.supabaseId}` : null);
+          return !key || !remoteKeys.has(key);
+        });
         const merged = [...remote, ...localOnly];
         merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         this.listings.set(merged);
