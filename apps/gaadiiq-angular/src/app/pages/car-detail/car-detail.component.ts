@@ -763,7 +763,21 @@ export class CarDetailComponent implements OnInit, OnDestroy {
           const urls = fresh.images ?? [];
           this.car = {
             ...this.car,
-            images: urls.length > (this.car.images?.length ?? 0) ? urls : this.car.images,
+            // Any non-empty answer wins — not just a LONGER one.
+            //
+            // REPORTED: an admin reordered a gallery in Image Review, the
+            // panel showed the new order, and the car's page on the site kept
+            // the old one.
+            //
+            // This read `urls.length > (this.car.images?.length ?? 0)`, which
+            // is a count test standing in for a freshness test. A reorder does
+            // not change the count — the same seven photographs in a different
+            // order — so `7 > 7` was false and the page kept the list page's
+            // copy, which is capped, sampled, and in whatever order it was
+            // fetched. The full record is the authority on both which pictures
+            // this car has and what order they go in; the only thing worth
+            // guarding against is it coming back empty.
+            images: urls.length ? urls : this.car.images,
             spinImages: fresh.spinImages ?? [],
             image: urls.length ? urls[0] : this.car.image,
             // Curated specification wins over the hardcoded map.
