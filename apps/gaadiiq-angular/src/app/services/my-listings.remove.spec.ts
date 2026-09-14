@@ -237,6 +237,59 @@ describe('MyListingsService — a failed removal is not hidden', () => {
       .toBe(1);
   });
 
+  it('treats a 404 as already gone, not as a failure', async () => {
+    /**
+     * REPORTED, with a screenshot: "Could not remove this listing (404):
+     * Listing not found. It is still visible to buyers."
+     *
+     * On an advert that had just been deleted along with its catalogue row —
+     * so it was visible to nobody. My Listings held a stale entry pointing at
+     * a listing id the server no longer has, every Remove returned 404, the
+     * card could not be cleared, and the message said the opposite of the
+     * truth.
+     *
+     * A 404 means the server has no such advert. That IS the state being
+     * asked for.
+     */
+    const { svc, http } = build(entry({ listingId: LISTING_ID }));
+
+    const done = svc.remove('local-1');
+    await flush();
+    http.expectOne(`${environment.apiUrl}/listings/${LISTING_ID}`)
+      .flush({ detail: 'Listing not found' }, { status: 404, statusText: 'Not Found' });
+
+    await expectAsync(done).toBeResolved();
+    expect(svc.listings().length).toBe(0);
+  });
+
+  it('still throws on a refusal that is not a 404', async () => {
+    // The distinction the 404 handling must not blur: 403 means the advert is
+    // there and the seller may not touch it. Clearing the card on that would
+    // be the original bug, back again.
+    const { svc, http } = build(entry({ listingId: LISTING_ID }));
+
+    const done = svc.remove('local-1');
+    await flush();
+    http.expectOne(`${environment.apiUrl}/listings/${LISTING_ID}`)
+      .flush({ detail: 'Not your listing' }, { status: 403, statusText: 'Forbidden' });
+
+    await expectAsync(done).toBeRejected();
+    expect(svc.listings().length).toBe(1);
+  });
+
+  it('still throws when the network fails', async () => {
+    // An unreachable API is not evidence the advert is gone.
+    const { svc, http } = build(entry({ listingId: LISTING_ID }));
+
+    const done = svc.remove('local-1');
+    await flush();
+    http.expectOne(`${environment.apiUrl}/listings/${LISTING_ID}`)
+      .error(new ProgressEvent('network'));
+
+    await expectAsync(done).toBeRejected();
+    expect(svc.listings().length).toBe(1);
+  });
+
   it('still removes an entry that has no car and no listing', async () => {
     // A purely local draft. Nothing to call, nothing to fail.
     const { svc } = build(entry({ listingId: null, supabaseId: null }));

@@ -275,11 +275,26 @@ export class MyListingsService {
 
     const listingId = await this.listingIdFor(listing);
     if (listingId) {
-      // Not caught: a refused delete must reach the caller. Removing it from
-      // this list regardless is exactly the bug being fixed.
-      await firstValueFrom(
-        this.http.delete(`${environment.apiUrl}/listings/${listingId}`),
-      );
+      try {
+        // Not swallowed: a REFUSED delete must reach the caller. Removing it
+        // from this list regardless is exactly the bug this replaced.
+        await firstValueFrom(
+          this.http.delete(`${environment.apiUrl}/listings/${listingId}`),
+        );
+      } catch (err: any) {
+        // ...but a 404 is not a refusal. It means the server has no such
+        // advert, which is the state the seller is asking for.
+        //
+        // REPORTED: "Could not remove this listing (404): Listing not found.
+        // It is still visible to buyers." — on an advert that had just been
+        // deleted along with its catalogue row, so it was visible to nobody.
+        // The entry could not be cleared, and the message said the opposite
+        // of the truth.
+        //
+        // Anything a seller might act on — 403, a network failure, a 500 —
+        // still throws, keeps the card on screen, and says so.
+        if (err?.status !== 404) throw err;
+      }
     }
     // No listing id means the server has no advert for this entry — a draft
     // this browser saved that never reached the API. There is nothing to
