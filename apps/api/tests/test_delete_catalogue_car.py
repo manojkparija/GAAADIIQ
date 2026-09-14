@@ -10,6 +10,7 @@ What must NOT follow from adding a delete is the interesting half. A catalogue
 correction must not be able to destroy a seller's advert, and must not take an
 applicant's loan record with it.
 """
+import logging
 import uuid
 
 import pytest
@@ -255,6 +256,38 @@ async def test_a_live_advert_is_reported_even_beside_withdrawn_ones(client):
 
     assert detail["blocker"] == "live"
     assert detail["count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_the_refusal_says_which_kind_it_is_in_the_log(client, caplog):
+    """So a production 409 can be read without asking anyone what they saw.
+
+    "DELETE /cars/... 409" is the same access-log line whether the advert is
+    live (final) or withdrawn (one confirmation from succeeding), and those
+    need different actions from whoever is looking. Chasing the reported bug
+    meant relaying a sentence off somebody's screen because of it.
+    """
+    c, session_factory = client
+    car_id = await _car(session_factory, model="Celerio")
+    await _listing(session_factory, car_id, is_active=False)
+
+    with caplog.at_level(logging.INFO, logger="gaadiiq.cars"):
+        await c.delete(f"/cars/{car_id}")
+
+    assert "blocker=withdrawn" in caplog.text
+    assert "count=1" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_a_live_refusal_is_logged_as_live(client, caplog):
+    c, session_factory = client
+    car_id = await _car(session_factory, model="Alto")
+    await _listing(session_factory, car_id)
+
+    with caplog.at_level(logging.INFO, logger="gaadiiq.cars"):
+        await c.delete(f"/cars/{car_id}")
+
+    assert "blocker=live" in caplog.text
 
 
 @pytest.mark.asyncio
