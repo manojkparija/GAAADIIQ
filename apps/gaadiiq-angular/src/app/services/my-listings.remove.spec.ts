@@ -148,7 +148,9 @@ describe('MyListingsService — removing an advert', () => {
 
   it('does not withdraw somebody else’s advert on a near match', async () => {
     // Matching on car id, not on make and model. Two sellers with the same
-    // model must not be able to take each other's adverts down.
+    // model must not be able to take each other's adverts down — and since
+    // used adverts started sharing one catalogue row per model, they now
+    // genuinely do have the same car id in common.
     const { svc, sb, http } = build(entry({ listingId: null }));
 
     const done = svc.remove('local-1');
@@ -157,11 +159,61 @@ describe('MyListingsService — removing an advert', () => {
       .flush({ items: [{ id: 'other-listing', car: { id: 'a-different-car' } }] });
     await flush();
 
-    // No listing of ours — falls back to the car row rather than deleting one
-    // that is not ours.
     http.expectNone(`${environment.apiUrl}/listings/other-listing`);
     await done;
-    expect(sb.calls).toEqual([`cars:${CAR_ID}`]);
+    // And no car row is touched either. See the next block.
+    expect(sb.calls).toEqual([]);
+  });
+});
+
+describe('MyListingsService — a seller never deletes a catalogue row', () => {
+  afterEach(() => localStorage.removeItem('gaadiiq_my_listings'));
+
+  /**
+   * THE ROOT CAUSE, PINNED.
+   *
+   * Remove used to fall back to deleting the CAR row through Supabase when it
+   * could not find a listing. That is the wrong table and the wrong owner: a
+   * catalogue row describes the MODEL, and since used adverts began sharing
+   * one, deleting it would take every other seller's car with it. The database
+   * refuses (listings.car_id is NOT NULL with no ON DELETE), so what the
+   * seller actually got was an error about a table they never meant to touch,
+   * for an advert the server had already forgotten.
+   *
+   * Pressing Remove now does exactly one thing: withdraw the listing. When
+   * there is no listing, there is nothing on the server to withdraw, and
+   * dropping the local row IS the removal.
+   */
+  it('drops a local entry the server has no advert for, touching nothing else', async () => {
+    const { svc, sb, http } = build(entry({ listingId: null, supabaseId: CAR_ID }));
+
+    const done = svc.remove('local-1');
+    await flush();
+    http.expectOne(`${environment.apiUrl}/listings/me?page=1&page_size=100`)
+      .flush({ items: [] });
+    await done;
+
+    expect(sb.calls)
+      .withContext('a seller pressing Remove must never delete a catalogue row')
+      .toEqual([]);
+    expect(svc.listings().length).toBe(0);
+    http.verify();
+  });
+
+  it('removes it even when the listing lookup fails outright', async () => {
+    // An outage must not leave a seller stuck with an entry they cannot clear.
+    // There is no advert to strand: one that reached the server has its id
+    // stored, and this branch is only for entries that never did.
+    const { svc, sb, http } = build(entry({ listingId: null, supabaseId: CAR_ID }));
+
+    const done = svc.remove('local-1');
+    await flush();
+    http.expectOne(`${environment.apiUrl}/listings/me?page=1&page_size=100`)
+      .error(new ProgressEvent('network'));
+    await done;
+
+    expect(sb.calls).toEqual([]);
+    expect(svc.listings().length).toBe(0);
   });
 });
 
@@ -183,24 +235,6 @@ describe('MyListingsService — a failed removal is not hidden', () => {
     expect(svc.listings().length)
       .withContext('an advert that is still live must stay on this page')
       .toBe(1);
-  });
-
-  it('throws when the legacy car delete is refused', async () => {
-    // The foreign key path: a car an advert points at cannot be deleted, and
-    // that refusal is exactly what used to be swallowed.
-    const { svc } = build(
-      entry({ listingId: null, supabaseId: CAR_ID }),
-      { message: 'update or delete on table "cars" violates foreign key constraint' },
-    );
-    const http = TestBed.inject(HttpTestingController);
-
-    const done = svc.remove('local-1');
-    await flush();
-    http.expectOne(`${environment.apiUrl}/listings/me?page=1&page_size=100`)
-      .flush({ items: [] });
-
-    await expectAsync(done).toBeRejected();
-    expect(svc.listings().length).toBe(1);
   });
 
   it('still removes an entry that has no car and no listing', async () => {
