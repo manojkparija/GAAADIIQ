@@ -625,36 +625,59 @@ export class AdminVariantsComponent {
    */
   deleteError = signal('');
 
+  /**
+   * How many withdrawn adverts the API is refusing over, or 0.
+   *
+   * Set only by a 409 that named them, and cleared on every fresh attempt.
+   * While it holds a number the confirm row shows the second button, which is
+   * the one that actually destroys those rows — so an admin cannot reach that
+   * click without having been told the count first.
+   */
+  withdrawnBlocking = signal(0);
+
   askDeleteCar() {
     this.deleteError.set('');
+    this.withdrawnBlocking.set(0);
     this.confirmingDelete.set(true);
   }
 
   cancelDeleteCar() {
     this.confirmingDelete.set(false);
+    this.withdrawnBlocking.set(0);
   }
 
-  async deleteCar() {
+  async deleteCar(acknowledgeWithdrawn = false) {
     const car = this.selectedCar();
     if (!car) return;
 
     this.deletingCar.set(true);
     this.deleteError.set('');
     try {
-      const resp = await fetch(`${this.apiUrl}/cars/${car.id}`, {
+      const url = `${this.apiUrl}/cars/${car.id}`
+        + (acknowledgeWithdrawn ? '?acknowledge_withdrawn=true' : '');
+      const resp = await fetch(url, {
         method: 'DELETE',
         headers: await this.authHeaders(),
       });
 
       if (resp.status === 409) {
-        // The seller-advert refusal. Its detail is the whole point.
+        // The advert refusal. Its detail is the whole point — and which of the
+        // two refusals it is decides whether there is anything the admin can
+        // do about it. `blocker` says which; the wording is for reading, not
+        // for branching on.
         const body = await resp.json().catch(() => null);
-        this.deleteError.set(body?.detail ?? 'This car still has listings against it.');
+        const detail = body?.detail;
+        const message = typeof detail === 'string' ? detail : detail?.message;
+        this.deleteError.set(message ?? 'This car still has listings against it.');
+        this.withdrawnBlocking.set(
+          detail?.blocker === 'withdrawn' ? (detail.count ?? 0) : 0,
+        );
         return;
       }
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
       this.confirmingDelete.set(false);
+      this.withdrawnBlocking.set(0);
       this.variants.set([]);
       this.selectedCarId.set('');
       await this.loadCars();

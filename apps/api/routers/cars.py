@@ -572,9 +572,10 @@ async def _same_model_car_ids(
     """
     Every catalogue row describing the same model as this one.
 
-    Matched on make and model, lower-cased and trimmed, the way
-    media_admin._ensure_catalogue_car and routers/cars.py::resolve_catalogue_car
-    already match. Year is deliberately NOT part of it: a 2025 row and a 2026
+    Matched on vehicle_identity.model_key — the make through the alias table,
+    the model squashed — which is the comparison media_library has always made
+    when it decides which car a photograph belongs to. Year is deliberately
+    NOT part of it: a 2025 row and a 2026
     row are the same trim ladder to a buyer, and requiring the year is what
     leaves a model year with no trims showing an empty tab.
 
@@ -585,26 +586,8 @@ async def _same_model_car_ids(
     Returns [car_id] alone when the car is unknown, so a bad id yields nothing
     rather than every trim in the catalogue.
     """
-    row = (
-        await db.execute(
-            select(Car.make, Car.model, Car.year).where(Car.id == car_id)
-        )
-    ).one_or_none()
-    if row is None:
-        return [car_id], set()
-
-    make, model, year = row
-    rows = (
-        await db.execute(
-            select(Car.id, Car.year).where(
-                func.lower(func.trim(Car.make)) == (make or "").strip().lower(),
-                func.lower(func.trim(Car.model)) == (model or "").strip().lower(),
-            )
-        )
-    ).all()
-    ids = [r[0] for r in rows]
-    same_year = {r[0] for r in rows if r[1] == year}
-    return (ids or [car_id]), same_year
+    resolved = await _sibling_ids_for_cars(db, [car_id])
+    return resolved.get(car_id, ([car_id], set()))
 
 
 async def _sibling_ids_for_cars(
@@ -614,14 +597,27 @@ async def _sibling_ids_for_cars(
     _same_model_car_ids for a whole page, in two queries rather than 2N.
 
     The New Cars grid resolves a page of cars at once, and asking per car would
-    turn one round trip into forty. Same rule, same match: make and model,
-    lower-cased and trimmed; year deliberately not part of it.
+    turn one round trip into forty. Same rule, same match: model_key, with year
+    deliberately not part of it.
 
-    The second query is narrowed by MODEL name only, not by the make+model
-    pair — a tuple IN spells differently across Postgres and SQLite, and this
-    file's tests run on both. Model names are selective enough that the extra
-    rows are few, and the pair is re-checked in Python before anything is
-    grouped, so a Ford Figo cannot borrow trims from a Tata Figo.
+    WHY THE SECOND QUERY DOES NOT FILTER
+
+    It reads every catalogue row's identity columns and groups them here. An
+    earlier version narrowed on `lower(trim(model)) IN (...)`, which is a
+    filter model_key does not agree with: "S-Presso" and "SPRESSO" are one
+    model and that WHERE clause returns one of them, so the row holding the
+    trims never reaches the grouping and the tab is empty again — the bug this
+    resolution exists to fix, reintroduced in the optimisation for it.
+
+    Squashing in SQL is not portable enough to push down: there is no shared
+    spelling for "strip every character that is not a letter or digit", and
+    these tests run on SQLite and Postgres both.
+
+    So this is a scan of four narrow columns, once per request rather than once
+    per car. The catalogue is a list of models a person maintains by hand, and
+    the sell form no longer adds a row per advert, so it stays in the
+    thousands. If it ever does not, the fix is a stored canonical key with an
+    index on it — not a filter that quietly disagrees with the comparison.
     """
     if not car_ids:
         return {}
@@ -632,25 +628,18 @@ async def _sibling_ids_for_cars(
         )
     ).all()
 
-    def key(make: "str | None", model: "str | None") -> "tuple[str, str]":
-        return (make or "").strip().lower(), (model or "").strip().lower()
-
-    keys = {r[0]: key(r[1], r[2]) for r in wanted}
+    keys = {r[0]: vehicle_identity.model_key(r[1], r[2]) for r in wanted}
     years = {r[0]: r[3] for r in wanted}
     if not keys:
         return {}
 
-    family = (
-        await db.execute(
-            select(Car.id, Car.make, Car.model, Car.year).where(
-                func.lower(func.trim(Car.model)).in_({k[1] for k in keys.values()})
-            )
-        )
-    ).all()
+    family = (await db.execute(select(Car.id, Car.make, Car.model, Car.year))).all()
 
     grouped: dict[tuple[str, str], list[tuple[uuid.UUID, int | None]]] = {}
     for row_id, make, model, year in family:
-        grouped.setdefault(key(make, model), []).append((row_id, year))
+        grouped.setdefault(vehicle_identity.model_key(make, model), []).append(
+            (row_id, year)
+        )
 
     out: dict[uuid.UUID, tuple[list[uuid.UUID], set[uuid.UUID]]] = {}
     for car_id in car_ids:
@@ -823,6 +812,14 @@ async def delete_variant(
 @router.delete("/{car_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_car(
     car_id: uuid.UUID,
+    acknowledge_withdrawn: bool = Query(
+        False,
+        description=(
+            "Proceed even though withdrawn adverts reference this row, "
+            "deleting them with it. The first call refuses and reports how "
+            "many there are, so this is never the default answer to a 409."
+        ),
+    ),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_admin_user),
 ):
@@ -836,10 +833,29 @@ async def delete_car(
     but never delete the car — so a mistake made in one click was permanent and
     visible to buyers.
 
-    Refused while any seller has advertised against it. `listings.car_id` has no
-    ON DELETE, so the database would refuse anyway, but with an integrity error
-    rather than a sentence: an admin tidying the catalogue must not be able to
-    destroy somebody's advert, and must be told that is why.
+    Refused while any seller has a LIVE advert against it. `listings.car_id` has
+    no ON DELETE, so the database would refuse anyway, but with an integrity
+    error rather than a sentence: an admin tidying the catalogue must not be
+    able to destroy somebody's advert, and must be told that is why.
+
+    A WITHDRAWN ADVERT USED TO BLOCK IT FOREVER
+
+    This counted every listing, active or not. But taking an advert down is a
+    SOFT delete — DELETE /listings/{id} sets is_active = false and keeps the
+    row, deliberately, so the seller keeps their history. So a seller who had
+    already withdrawn their car left a row here that nothing could clear, and
+    this endpoint answered "remove those listings first" when removing one was
+    not a thing the product could do. Reported from production: a row deleted
+    from the front end, still in the catalogue, with a 409 nobody could act on.
+
+    Withdrawn adverts therefore no longer block — but they are not ignored
+    either. The first call still refuses, naming how many there are, and only a
+    second call carrying acknowledge_withdrawn deletes them along with the car.
+    The refusal is the confirmation step: this destroys rows, and an admin
+    should see the number before it happens rather than after.
+
+    Live adverts are never overridable. acknowledge_withdrawn does not apply to
+    them and does not mention them.
 
     Trims go with it (`Car.variants` cascades) because a trim has no meaning
     without its model. Leads, insurance quotes and loan applications hold
@@ -853,18 +869,54 @@ async def delete_car(
     """
     car = await _get_car_or_404(db, car_id)
 
-    listing_count = (await db.execute(
-        select(func.count()).select_from(Listing).where(Listing.car_id == car_id)
+    live = (await db.execute(
+        select(func.count()).select_from(Listing).where(
+            Listing.car_id == car_id,
+            Listing.is_active.is_(True),
+        )
     )).scalar_one()
-    if listing_count:
+    if live:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f"{listing_count} listing(s) still point at this car. "
-                "Remove those listings first — deleting this row would destroy "
-                "a seller's advert."
-            ),
+            # A dict, not a sentence. The screen has to tell these two 409s
+            # apart — one is final, the other is a confirmation — and matching
+            # on the wording would break the moment somebody edits it.
+            detail={
+                "blocker": "live",
+                "count": live,
+                "message": (
+                    f"{live} live advert(s) point at this car. Ask the seller "
+                    "to take them down first — deleting this row would destroy "
+                    "a seller's advert."
+                ),
+            },
         )
+
+    withdrawn = list((await db.execute(
+        select(Listing).where(
+            Listing.car_id == car_id,
+            Listing.is_active.is_(False),
+        )
+    )).scalars().all())
+    if withdrawn and not acknowledge_withdrawn:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "blocker": "withdrawn",
+                "count": len(withdrawn),
+                "message": (
+                    f"{len(withdrawn)} withdrawn advert(s) reference this car. "
+                    "They are already off the site, and deleting this row "
+                    "deletes them too. Confirm to go ahead."
+                ),
+            },
+        )
+
+    # Explicit rather than a cascade on the relationship: a cascade would also
+    # fire on a live advert the moment that check above is ever loosened, and
+    # this is the one delete in the file that destroys somebody else's record.
+    for listing in withdrawn:
+        await db.delete(listing)
 
     await db.delete(car)
     await db.commit()

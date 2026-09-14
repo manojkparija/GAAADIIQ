@@ -268,6 +268,83 @@ async def test_a_draft_trim_still_never_reaches_the_advisor(client, seed):
     assert all(i["model"] != "Swift" for i in body["items"])
 
 
+# ── the same model, spelled two ways ────────────────────────────────────────
+#
+# vehicle_identity opens with the pair that motivated it:
+#
+#     cars  | Maruti        | SPRESSO  | 2020
+#     cars  | Maruti Suzuki | S-Presso | 2026
+#
+# Resolution first matched make and model AS STORED, so those were two models
+# and a trim ladder entered against one row stayed invisible from the other —
+# the reported bug, surviving the fix for it on any model somebody typed
+# short. It now matches on model_key, which is what media_library has always
+# used to decide whether a photograph belongs to a car.
+
+
+@pytest.mark.asyncio
+async def test_a_short_brand_name_is_the_same_model(client, seed):
+    page_row = _car(make="Maruti Suzuki", model="Swift", year=2026)
+    sibling = _car(make="Maruti", model="Swift", year=2025)
+    await seed(page_row, sibling, _trim(sibling, "VXi", 668000))
+
+    rows = (await client.get(f"/cars/{page_row.id}/variants")).json()
+
+    assert [r["name"] for r in rows] == ["VXi"]
+
+
+@pytest.mark.asyncio
+async def test_punctuation_in_a_model_name_does_not_split_it(client, seed):
+    page_row = _car(make="Maruti Suzuki", model="S-Presso", year=2026)
+    sibling = _car(make="Maruti", model="SPRESSO", year=2020)
+    await seed(page_row, sibling, _trim(sibling, "VXi", 468000))
+
+    rows = (await client.get(f"/cars/{page_row.id}/variants")).json()
+
+    assert [r["name"] for r in rows] == ["VXi"]
+
+
+@pytest.mark.asyncio
+async def test_the_card_agrees_about_a_model_spelled_two_ways(client, seed):
+    card_row = _car(make="Maruti Suzuki", model="S-Presso", year=2026)
+    sibling = _car(make="MSIL", model="SPRESSO", year=2020)
+    await seed(card_row, sibling, _trim(sibling, "VXi", 468000))
+
+    card = await _card_for(client, card_row)
+
+    assert card["variant_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_the_advisor_treats_two_spellings_as_one_candidate(client, seed):
+    # Otherwise the same car takes two of the three shortlist places under two
+    # different names, which reads as a site that does not know its own stock.
+    formal = _car(make="Maruti Suzuki", model="S-Presso", year=2026,
+                  seating_capacity=5)
+    short = _car(make="Maruti", model="SPRESSO", year=2020, seating_capacity=5)
+    await seed(formal, short,
+               _trim(formal, "VXi", 468000), _trim(short, "LXi", 426000))
+
+    body = await _advice(client)
+    spressos = [i for i in body["items"] if i["model"].lower().replace("-", "") == "spresso"]
+
+    assert len(spressos) == 1
+    assert spressos[0]["car_id"] == str(formal.id)
+
+
+@pytest.mark.asyncio
+async def test_an_unrelated_make_is_still_not_merged_in(client, seed):
+    # The alias table maps spellings of ONE manufacturer. Widening the match
+    # must not start pooling different ones.
+    page_row = _car(make="Maruti Suzuki", model="Swift", year=2026)
+    other = _car(make="Hyundai", model="Swift", year=2026)
+    await seed(page_row, other, _trim(other, "Borrowed", 668000))
+
+    rows = (await client.get(f"/cars/{page_row.id}/variants")).json()
+
+    assert rows == []
+
+
 @pytest.mark.asyncio
 async def test_two_makes_sharing_a_model_name_stay_apart(client, seed):
     # The bulk sibling lookup narrows on MODEL name alone and re-checks the
