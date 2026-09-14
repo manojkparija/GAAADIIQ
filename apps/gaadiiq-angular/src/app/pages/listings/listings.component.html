@@ -265,9 +265,20 @@
 
                 <ng-container *ngIf="confirmRemoveId() === v.id">
                   <span class="nc-vc-confirm">Remove {{ cardName(v) }}?</span>
+                  <!--
+                    Two buttons, never both — the second appears only after the
+                    API has refused once and said how many withdrawn adverts go
+                    with the row. Same two-step as the variants admin screen.
+                  -->
                   <button type="button" class="nc-vc-remove" [disabled]="removingId() === v.id"
-                          (click)="removeCar(v, $event)">
+                          *ngIf="!withdrawnBlocking()" (click)="removeCar(v, $event)">
                     {{ removingId() === v.id ? 'Removing…' : 'Yes, remove' }}
+                  </button>
+                  <button type="button" class="nc-vc-remove" [disabled]="removingId() === v.id"
+                          *ngIf="withdrawnBlocking() as n" (click)="removeCar(v, $event, true)">
+                    {{ removingId() === v.id
+                        ? 'Removing…'
+                        : 'Remove it and the ' + n + ' withdrawn advert(s)' }}
                   </button>
                   <button type="button" class="nc-vc-cancel" (click)="cancelRemove($event)">
                     Cancel

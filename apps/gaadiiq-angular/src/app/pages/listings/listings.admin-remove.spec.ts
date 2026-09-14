@@ -131,19 +131,93 @@ describe('ListingsComponent — removing a row', () => {
   });
 
   it('shows the reason when a seller has advertised against it', async () => {
-    // The 409's detail names how many listings are in the way. Replacing it
-    // with "something went wrong" would leave the admin no way forward.
+    /**
+     * REPORTED: this screen showed an admin "[object Object]" where the reason
+     * should be.
+     *
+     * The API's 409 detail stopped being a sentence and became
+     * {blocker, count, message} when the catalogue delete grew two refusals
+     * that need different actions. The other caller of DELETE /cars/{id} was
+     * updated; this one was not, and `e.error.detail` was typed `string`, so
+     * the object went straight into the template.
+     *
+     * This test is why it survived: it flushed a STRING, which is what the API
+     * used to send. It asserted against the old contract and passed happily
+     * while the screen was broken in production. It now sends the shape the
+     * API actually sends.
+     */
     const { c, http, reloaded } = build({ isAdmin: true });
 
     const done = c.removeCar(SIGMA, clickEvent());
     http.expectOne(`${environment.apiUrl}/cars/car-sigma`).flush(
-      { detail: '2 listing(s) still point at this car. Remove those listings first.' },
+      {
+        detail: {
+          blocker: 'live',
+          count: 2,
+          message: '2 live advert(s) point at this car. Ask the seller to take them down first.',
+        },
+      },
       { status: 409, statusText: 'Conflict' },
     );
     await done;
 
-    expect(c.removeError()).toContain('2 listing(s)');
+    expect(c.removeError()).toContain('2 live advert(s)');
+    expect(c.removeError()).not.toContain('object Object');
     expect(reloaded.count).withContext('nothing was removed').toBe(0);
+  });
+
+  it('still reads a plain-string detail', async () => {
+    // Refusals raised elsewhere, and any older deployment, send a sentence.
+    // Handling one shape and breaking on the other is how this broke.
+    const { c, http } = build({ isAdmin: true });
+
+    const done = c.removeCar(SIGMA, clickEvent());
+    http.expectOne(`${environment.apiUrl}/cars/car-sigma`)
+      .flush({ detail: 'Something the server said.' }, { status: 409, statusText: 'Conflict' });
+    await done;
+
+    expect(c.removeError()).toBe('Something the server said.');
+    expect(c.withdrawnBlocking()).toBe(0);
+  });
+
+  it('offers a second click for withdrawn adverts, and only then acknowledges', async () => {
+    // The same two-step the variants admin screen has: the count reaches the
+    // admin before the click that destroys those rows.
+    const { c, http } = build({ isAdmin: true });
+
+    const first = c.removeCar(SIGMA, clickEvent());
+    const req = http.expectOne(`${environment.apiUrl}/cars/car-sigma`);
+    expect(req.request.url).not.toContain('acknowledge_withdrawn');
+    req.flush(
+      { detail: { blocker: 'withdrawn', count: 1, message: '1 withdrawn advert(s) reference this car.' } },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await first;
+
+    expect(c.withdrawnBlocking()).toBe(1);
+
+    const second = c.removeCar(SIGMA, clickEvent(), true);
+    http.expectOne(`${environment.apiUrl}/cars/car-sigma?acknowledge_withdrawn=true`)
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await second;
+
+    expect(c.withdrawnBlocking()).toBe(0);
+    expect(c.confirmRemoveId()).toBeNull();
+  });
+
+  it('offers no second click for a live advert', async () => {
+    // A live advert is never overridable. A button suggesting otherwise would
+    // be worse than no button.
+    const { c, http } = build({ isAdmin: true });
+
+    const done = c.removeCar(SIGMA, clickEvent());
+    http.expectOne(`${environment.apiUrl}/cars/car-sigma`).flush(
+      { detail: { blocker: 'live', count: 1, message: '1 live advert(s) point at this car.' } },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await done;
+
+    expect(c.withdrawnBlocking()).toBe(0);
   });
 
   it('says to sign in when the API refuses the caller', async () => {

@@ -61,6 +61,7 @@ export class ListingsComponent implements OnInit {
     event.stopPropagation();
     event.preventDefault();
     this.removeError.set(null);
+    this.withdrawnBlocking.set(0);
     this.confirmRemoveId.set(car.id);
   }
 
@@ -68,9 +69,18 @@ export class ListingsComponent implements OnInit {
     event.stopPropagation();
     event.preventDefault();
     this.confirmRemoveId.set(null);
+    this.withdrawnBlocking.set(0);
   }
 
-  async removeCar(car: Car, event: Event): Promise<void> {
+  /**
+   * How many withdrawn adverts the API is refusing over, or 0.
+   *
+   * Same two-step as the variants admin screen: the count has to be on screen
+   * before the click that destroys those rows.
+   */
+  withdrawnBlocking = signal(0);
+
+  async removeCar(car: Car, event: Event, acknowledgeWithdrawn = false): Promise<void> {
     event.stopPropagation();
     event.preventDefault();
 
@@ -79,16 +89,36 @@ export class ListingsComponent implements OnInit {
     try {
       // No Authorization header by hand: the interceptor attaches the Supabase
       // token to everything aimed at environment.apiUrl.
-      await firstValueFrom(this.http.delete(`${environment.apiUrl}/cars/${car.id}`));
+      const url = `${environment.apiUrl}/cars/${car.id}`
+        + (acknowledgeWithdrawn ? '?acknowledge_withdrawn=true' : '');
+      await firstValueFrom(this.http.delete(url));
       this.confirmRemoveId.set(null);
+      this.withdrawnBlocking.set(0);
       await this.carsData.reload();
     } catch (err: unknown) {
-      const e = err as { status?: number; error?: { detail?: string } };
+      // detail is an OBJECT — {blocker, count, message} — not a sentence.
+      //
+      // It became one when the catalogue delete grew two different refusals
+      // that need different actions, and this screen was not updated with the
+      // other caller. `e.error.detail` was typed `string`, so Angular rendered
+      // an admin "[object Object]" where the reason used to be. A type that
+      // says string does not make the wire carry one.
+      const e = err as {
+        status?: number;
+        error?: { detail?: string | { blocker?: string; count?: number; message?: string } };
+      };
+      const detail = e?.error?.detail;
+      const message = typeof detail === 'string' ? detail : detail?.message;
       this.removeError.set(
-        e?.error?.detail
+        message
         ?? (e?.status === 401 || e?.status === 403
               ? 'Sign in as an admin to remove a car.'
               : 'Could not remove this car. Please try again.'),
+      );
+      this.withdrawnBlocking.set(
+        typeof detail === 'object' && detail?.blocker === 'withdrawn'
+          ? (detail.count ?? 0)
+          : 0,
       );
     } finally {
       this.removingId.set(null);
