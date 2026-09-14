@@ -14,8 +14,25 @@
   // misalignment reported from UAT. A page can now state the height its other
   // controls are without reaching inside the component with ::ng-deep.
   min-height: var(--cs-min-h, 0);
-  padding: var(--cs-pad, 10px 14px); border: 1.5px solid var(--border, #e5e7eb); border-radius: 10px;
-  font-size: 14px; background: var(--bg, #fff); color: var(--text, #111);
+  // --cs-bg / --cs-border / --cs-color, for the same reason --cs-min-h exists:
+  // a page that puts this control on its own surface can say so, instead of
+  // reaching in with ::ng-deep.
+  //
+  // ::ng-deep does not reliably win here. `.search-select ::ng-deep
+  // .cs-trigger` compiles to `.search-select[_ngcontent-a] .cs-trigger`, and
+  // the dark rule below compiles to `[data-theme="dark"] .cs-trigger[
+  // _ngcontent-b]` — the SAME specificity, so source order decides, and the
+  // component's own stylesheet is the one that ships later. That is why the
+  // Used Cars hero read as a black box in dark mode while its neighbouring
+  // text inputs stayed translucent: the page asked, and lost the tie.
+  //
+  // A custom property inherits, so it does not enter that contest at all.
+  padding: var(--cs-pad, 10px 14px);
+  border: 1.5px solid var(--cs-border, var(--border, #e5e7eb));
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--cs-bg, var(--bg, #fff));
+  color: var(--cs-color, var(--text, #111));
   cursor: pointer; text-align: left; gap: 8px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -122,9 +139,13 @@
    pinning one shade of slate. */
 @mixin cs-dark {
   .cs-trigger {
-    background: var(--nav-panel, #1e293b);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: var(--text, #e2e8f0);
+    // Through the same custom properties as the light rule. Without this the
+    // dark arm would go back to overriding a page that had set --cs-bg, which
+    // is the bug these variables exist to end — and it would only do it in one
+    // theme, which is how it went unnoticed the first time.
+    background: var(--cs-bg, var(--nav-panel, #1e293b));
+    border-color: var(--cs-border, rgba(255, 255, 255, 0.12));
+    color: var(--cs-color, var(--text, #e2e8f0));
   }
   .cs-dropdown {
     background: var(--nav-panel, #1e293b);
@@ -132,7 +153,7 @@
   }
   .cs-option { color: var(--text, #e2e8f0); }
   .cs-option.placeholder-opt { color: var(--text-muted, #94a3b8); }
-  .cs-value.placeholder { color: var(--text-muted, #94a3b8); }
+  .cs-value.placeholder { color: var(--cs-placeholder, var(--text-muted, #94a3b8)); }
 }
 
 :host-context([data-theme="dark"]) { @include cs-dark; }

@@ -113,20 +113,36 @@
   display: block;
   min-width: 0;
 
+  // REPORTED FROM DARK MODE: Make and Max Budget rendering as black boxes in
+  // the hero while City and Model — plain inputs beside them — stayed
+  // translucent.
+  //
+  // The hero gradient is the same blue-teal in both themes, so a control on it
+  // must be translucent white in both. These colours used to be set through
+  // ::ng-deep below, which ties on specificity with the component's own
+  // :host-context([data-theme="dark"]) rule and loses on source order. The
+  // page asked for translucent and got --nav-panel.
+  //
+  // Custom properties inherit, so they settle it without a specificity fight.
+  --cs-bg: rgba(255,255,255,0.1);
+  --cs-border: rgba(255,255,255,0.2);
+  --cs-color: #fff;
+  --cs-placeholder: rgba(255,255,255,0.6);
+
   ::ng-deep .cs-trigger {
     padding: 0.55rem 0.75rem;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
+    // 1px, not the component's default 1.5px. --cs-border carries the colour
+    // only, and the half-pixel difference is half a pixel of height against
+    // the text inputs beside it — which is the row misalignment the component's
+    // own --cs-min-h comment records being reported from UAT.
+    border-width: 1px;
     border-radius: 8px;
-    color: #fff;
     font-size: 0.9rem;
     box-shadow: none;
     // Matches .search-input exactly. Both are 0.9rem text with the same
     // padding and border, so both come out the same height.
     line-height: 1.5;
   }
-
-  ::ng-deep .cs-value.placeholder { color: rgba(255,255,255,0.6); }
   ::ng-deep .cs-arrow { color: rgba(255,255,255,0.7); }
 }
 
