@@ -120,6 +120,54 @@ class BriefResponse(BaseModel):
 # ── Trim selection ────────────────────────────────────────────────────────────
 
 
+def _one_row_per_model(cars: "list[Car]") -> "list[tuple[Car, list[CarVariant]]]":
+    """
+    One candidate per model, carrying every published trim its rows hold.
+
+    The catalogue keeps more than one row per model — media_admin creates one
+    per make+model+YEAR, and the sell form used to mint one per advert — and
+    `car_variants.car_id` points at exactly one of them. Scored row by row that
+    has two consequences, both wrong:
+
+      - a model whose rows each hold trims is recommended TWICE, taking two of
+        the three shortlist places and hiding a real alternative
+      - a model whose trims all sit on a neighbouring row is scored on the few
+        its own row happens to hold, so the trim that actually fits the budget
+        may not be in the running
+
+    Rows are grouped on make and model, lower-cased and trimmed — the same
+    match routers/cars.py::_same_model_car_ids uses for the detail page, so the
+    Advisor recommends the ladder that page will show. The newest model year
+    represents the group, and a trim name offered by two years is kept once, at
+    the representative's price.
+
+    Draft and unpriced trims are dropped here, as they were in the loop this
+    replaces: a draft is a figure nobody has read, and an unpriced trim cannot
+    be costed or compared against a budget.
+    """
+    groups: dict[tuple[str, str], list[Car]] = {}
+    for car in cars:
+        key = ((car.make or "").strip().lower(), (car.model or "").strip().lower())
+        groups.setdefault(key, []).append(car)
+
+    out: list[tuple[Car, list[CarVariant]]] = []
+    for members in groups.values():
+        # Newest year represents the model; id breaks the tie so the choice is
+        # stable across requests rather than following row order.
+        chosen = max(members, key=lambda c: ((c.year or 0), str(c.id)))
+        best: dict[str, CarVariant] = {}
+        for car in members:
+            for v in car.variants:
+                if v.status != VariantStatus.published or v.ex_showroom_price is None:
+                    continue
+                name = (v.name or "").strip().lower()
+                held = best.get(name)
+                if held is None or car.id == chosen.id:
+                    best[name] = v
+        out.append((chosen, list(best.values())))
+    return out
+
+
 def _price_of(variant: CarVariant) -> int | None:
     return int(variant.ex_showroom_price) if variant.ex_showroom_price is not None else None
 
@@ -333,13 +381,10 @@ async def brief(
         .limit(400)
     )
     cars = (await db.execute(q)).scalars().unique().all()
+    candidates = _one_row_per_model(cars)
 
     scored: list[tuple[int, Car, CarVariant, list[str], list[str], str, list[str]]] = []
-    for car in cars:
-        published = [
-            v for v in car.variants
-            if v.status == VariantStatus.published and v.ex_showroom_price is not None
-        ]
+    for car, published in candidates:
         if not published:
             continue
 

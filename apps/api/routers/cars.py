@@ -128,42 +128,64 @@ async def _variant_summaries(
     """
     if not car_ids:
         return {}
-    rows = await db.execute(
-        select(
-            CarVariant.car_id,
-            func.count(),
-            func.min(CarVariant.ex_showroom_price),
-            func.max(CarVariant.ex_showroom_price),
-        )
-        .where(
-            CarVariant.car_id.in_(car_ids),
-            CarVariant.status == VariantStatus.published,
-        )
-        .group_by(CarVariant.car_id)
-    )
-    summaries = {
-        car_id: _VariantSummary(count=count, price_min=lo, price_max=hi)
-        for car_id, count, lo, hi in rows.all()
-    }
 
-    # The distinct gearboxes and fuels, gathered separately.
+    # WHICH ROWS COUNT AS THIS CAR
     #
-    # Not an aggregate on the query above: string_agg and array_agg spell
-    # differently across Postgres and SQLite, and the tests run on both. This
-    # is one extra round trip for the page, not one per car.
-    detail = await db.execute(
-        select(CarVariant.car_id, CarVariant.transmission, CarVariant.fuel_type)
-        .where(
-            CarVariant.car_id.in_(car_ids),
-            CarVariant.status == VariantStatus.published,
+    # The card used to count the trims hanging off this row's id alone. The
+    # detail page stopped doing that (see _same_model_car_ids): a model's trim
+    # ladder belongs to the MODEL, and the catalogue holds more than one row
+    # per model. Leaving the card on the narrow lookup is how the Swift's card
+    # advertised a band the page it opens disagrees with — the two screens
+    # reading two rows, both of them right.
+    #
+    # So the same resolution runs here, in bulk. Aggregating in Python rather
+    # than in SQL because the dedupe below cannot be spelled as a GROUP BY: it
+    # needs to know which sibling shares the requested car's model year.
+    siblings = await _sibling_ids_for_cars(db, car_ids)
+    every_id = {i for ids, _ in siblings.values() for i in ids}
+
+    rows = (
+        await db.execute(
+            select(CarVariant)
+            .where(
+                CarVariant.car_id.in_(every_id),
+                CarVariant.status == VariantStatus.published,
+            )
+            .order_by(CarVariant.ex_showroom_price, CarVariant.sort_order)
         )
-    )
-    for car_id, transmission, fuel in detail.all():
-        summary = summaries.setdefault(car_id, _VariantSummary())
-        if transmission and transmission.strip() not in summary.transmissions:
-            summary.transmissions.append(transmission.strip())
-        if fuel and fuel.strip() not in summary.fuels:
-            summary.fuels.append(fuel.strip())
+    ).scalars().all()
+
+    by_car: dict[uuid.UUID, list[CarVariant]] = {}
+    for v in rows:
+        by_car.setdefault(v.car_id, []).append(v)
+
+    summaries: dict[uuid.UUID, _VariantSummary] = {}
+    for car_id in car_ids:
+        sibling_ids, same_year = siblings.get(car_id, ([car_id], set()))
+        mine: list[CarVariant] = []
+        for sid in sibling_ids:
+            mine.extend(by_car.get(sid, []))
+        if not mine:
+            continue
+        # One row per trim name, the buyer's own model year winning the tie —
+        # exactly what the detail page shows, so the two cannot disagree.
+        mine = _dedupe_trims(mine, same_year)
+
+        prices = [v.ex_showroom_price for v in mine if v.ex_showroom_price is not None]
+        summary = _VariantSummary(
+            count=len(mine),
+            # An unpriced trim does not vote, the way min()/max() ignored NULL
+            # when this was SQL. A model whose trims are all unpriced yields
+            # None and the caller falls back to the catalogue figure.
+            price_min=min(prices) if prices else None,
+            price_max=max(prices) if prices else None,
+        )
+        for v in mine:
+            if v.transmission and v.transmission.strip() not in summary.transmissions:
+                summary.transmissions.append(v.transmission.strip())
+            if v.fuel_type and v.fuel_type.strip() not in summary.fuels:
+                summary.fuels.append(v.fuel_type.strip())
+        summaries[car_id] = summary
 
     return summaries
 
@@ -583,6 +605,60 @@ async def _same_model_car_ids(
     ids = [r[0] for r in rows]
     same_year = {r[0] for r in rows if r[1] == year}
     return (ids or [car_id]), same_year
+
+
+async def _sibling_ids_for_cars(
+    db: AsyncSession, car_ids: "list[uuid.UUID]"
+) -> "dict[uuid.UUID, tuple[list[uuid.UUID], set[uuid.UUID]]]":
+    """
+    _same_model_car_ids for a whole page, in two queries rather than 2N.
+
+    The New Cars grid resolves a page of cars at once, and asking per car would
+    turn one round trip into forty. Same rule, same match: make and model,
+    lower-cased and trimmed; year deliberately not part of it.
+
+    The second query is narrowed by MODEL name only, not by the make+model
+    pair — a tuple IN spells differently across Postgres and SQLite, and this
+    file's tests run on both. Model names are selective enough that the extra
+    rows are few, and the pair is re-checked in Python before anything is
+    grouped, so a Ford Figo cannot borrow trims from a Tata Figo.
+    """
+    if not car_ids:
+        return {}
+
+    wanted = (
+        await db.execute(
+            select(Car.id, Car.make, Car.model, Car.year).where(Car.id.in_(car_ids))
+        )
+    ).all()
+
+    def key(make: "str | None", model: "str | None") -> "tuple[str, str]":
+        return (make or "").strip().lower(), (model or "").strip().lower()
+
+    keys = {r[0]: key(r[1], r[2]) for r in wanted}
+    years = {r[0]: r[3] for r in wanted}
+    if not keys:
+        return {}
+
+    family = (
+        await db.execute(
+            select(Car.id, Car.make, Car.model, Car.year).where(
+                func.lower(func.trim(Car.model)).in_({k[1] for k in keys.values()})
+            )
+        )
+    ).all()
+
+    grouped: dict[tuple[str, str], list[tuple[uuid.UUID, int | None]]] = {}
+    for row_id, make, model, year in family:
+        grouped.setdefault(key(make, model), []).append((row_id, year))
+
+    out: dict[uuid.UUID, tuple[list[uuid.UUID], set[uuid.UUID]]] = {}
+    for car_id in car_ids:
+        members = grouped.get(keys.get(car_id, ("", "")), [])
+        ids = [m[0] for m in members] or [car_id]
+        same_year = {m[0] for m in members if m[1] == years.get(car_id)}
+        out[car_id] = (ids, same_year)
+    return out
 
 
 @router.get("/{car_id}/variants", response_model=list[VariantOut])
