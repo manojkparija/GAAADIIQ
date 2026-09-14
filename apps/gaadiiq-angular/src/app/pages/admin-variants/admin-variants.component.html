@@ -280,9 +280,21 @@
           <span class="av-confirm-q">
             Remove {{ car.make }} {{ car.model }} {{ car.year }}? This cannot be undone.
           </span>
+          <!--
+            Two buttons, never both. The second appears only after the API has
+            refused once and said how many withdrawn adverts go with the row —
+            so the number is on screen before the click that destroys them,
+            which is the whole reason the refusal exists.
+          -->
           <button type="button" class="av-delete-car" [disabled]="deletingCar()"
-                  (click)="deleteCar()">
+                  *ngIf="!withdrawnBlocking()" (click)="deleteCar()">
             {{ deletingCar() ? 'Removing…' : 'Yes, remove it' }}
+          </button>
+          <button type="button" class="av-delete-car" [disabled]="deletingCar()"
+                  *ngIf="withdrawnBlocking() as n" (click)="deleteCar(true)">
+            {{ deletingCar()
+                ? 'Removing…'
+                : 'Remove it and the ' + n + ' withdrawn advert(s)' }}
           </button>
           <button type="button" (click)="cancelDeleteCar()">Cancel</button>
         </div>

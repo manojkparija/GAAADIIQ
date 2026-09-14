@@ -812,6 +812,14 @@ async def delete_variant(
 @router.delete("/{car_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_car(
     car_id: uuid.UUID,
+    acknowledge_withdrawn: bool = Query(
+        False,
+        description=(
+            "Proceed even though withdrawn adverts reference this row, "
+            "deleting them with it. The first call refuses and reports how "
+            "many there are, so this is never the default answer to a 409."
+        ),
+    ),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_admin_user),
 ):
@@ -825,10 +833,29 @@ async def delete_car(
     but never delete the car — so a mistake made in one click was permanent and
     visible to buyers.
 
-    Refused while any seller has advertised against it. `listings.car_id` has no
-    ON DELETE, so the database would refuse anyway, but with an integrity error
-    rather than a sentence: an admin tidying the catalogue must not be able to
-    destroy somebody's advert, and must be told that is why.
+    Refused while any seller has a LIVE advert against it. `listings.car_id` has
+    no ON DELETE, so the database would refuse anyway, but with an integrity
+    error rather than a sentence: an admin tidying the catalogue must not be
+    able to destroy somebody's advert, and must be told that is why.
+
+    A WITHDRAWN ADVERT USED TO BLOCK IT FOREVER
+
+    This counted every listing, active or not. But taking an advert down is a
+    SOFT delete — DELETE /listings/{id} sets is_active = false and keeps the
+    row, deliberately, so the seller keeps their history. So a seller who had
+    already withdrawn their car left a row here that nothing could clear, and
+    this endpoint answered "remove those listings first" when removing one was
+    not a thing the product could do. Reported from production: a row deleted
+    from the front end, still in the catalogue, with a 409 nobody could act on.
+
+    Withdrawn adverts therefore no longer block — but they are not ignored
+    either. The first call still refuses, naming how many there are, and only a
+    second call carrying acknowledge_withdrawn deletes them along with the car.
+    The refusal is the confirmation step: this destroys rows, and an admin
+    should see the number before it happens rather than after.
+
+    Live adverts are never overridable. acknowledge_withdrawn does not apply to
+    them and does not mention them.
 
     Trims go with it (`Car.variants` cascades) because a trim has no meaning
     without its model. Leads, insurance quotes and loan applications hold
@@ -842,18 +869,54 @@ async def delete_car(
     """
     car = await _get_car_or_404(db, car_id)
 
-    listing_count = (await db.execute(
-        select(func.count()).select_from(Listing).where(Listing.car_id == car_id)
+    live = (await db.execute(
+        select(func.count()).select_from(Listing).where(
+            Listing.car_id == car_id,
+            Listing.is_active.is_(True),
+        )
     )).scalar_one()
-    if listing_count:
+    if live:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f"{listing_count} listing(s) still point at this car. "
-                "Remove those listings first — deleting this row would destroy "
-                "a seller's advert."
-            ),
+            # A dict, not a sentence. The screen has to tell these two 409s
+            # apart — one is final, the other is a confirmation — and matching
+            # on the wording would break the moment somebody edits it.
+            detail={
+                "blocker": "live",
+                "count": live,
+                "message": (
+                    f"{live} live advert(s) point at this car. Ask the seller "
+                    "to take them down first — deleting this row would destroy "
+                    "a seller's advert."
+                ),
+            },
         )
+
+    withdrawn = list((await db.execute(
+        select(Listing).where(
+            Listing.car_id == car_id,
+            Listing.is_active.is_(False),
+        )
+    )).scalars().all())
+    if withdrawn and not acknowledge_withdrawn:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "blocker": "withdrawn",
+                "count": len(withdrawn),
+                "message": (
+                    f"{len(withdrawn)} withdrawn advert(s) reference this car. "
+                    "They are already off the site, and deleting this row "
+                    "deletes them too. Confirm to go ahead."
+                ),
+            },
+        )
+
+    # Explicit rather than a cascade on the relationship: a cascade would also
+    # fire on a live advert the moment that check above is ever loosened, and
+    # this is the one delete in the file that destroys somebody else's record.
+    for listing in withdrawn:
+        await db.delete(listing)
 
     await db.delete(car)
     await db.commit()
