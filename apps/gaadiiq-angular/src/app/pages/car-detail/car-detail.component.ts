@@ -1134,6 +1134,40 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     )].sort()
   );
 
+  /**
+   * Every fuel this model is sold in, not just the one on the catalogue row.
+   *
+   * REPORTED: the Victoris Overview read "Fuel: Petrol" and "Gearbox: Manual"
+   * while its own Variants tab listed CNG and Strong Hybrid trims, and AMT
+   * alongside Manual. `cars.fuel_type` and `cars.transmission` hold ONE value
+   * each — they describe the catalogue row, and a model sold in three fuels
+   * has no single true answer to put there.
+   *
+   * So the summary comes from the published trims, which is where the real
+   * spread lives, and falls back to the catalogue row only when there are no
+   * trims to read — a model nobody has priced yet, which is the one case where
+   * that single value is the best available answer. A model genuinely sold in
+   * one fuel reads exactly as it did before.
+   *
+   * A METHOD, NOT A COMPUTED. `car` is a plain field, not a signal (line 279),
+   * and a computed() reading it would evaluate once and report a stale answer
+   * forever — the trap CLAUDE.md records as having shipped twice. `variants()`
+   * being a signal does not save it: the fallback branch is the one that would
+   * freeze, and it freezes on the loading state.
+   */
+  fuelSummary(): string {
+    const fuels = [...new Set(
+      this.variants().map(v => (v.fuel_type ?? '').trim()).filter(Boolean)
+    )];
+    return fuels.length ? fuels.join(' · ') : (this.car?.fuel ?? '');
+  }
+
+  /** The gearboxes this model is sold with. See fuelSummary. */
+  gearboxSummary(): string {
+    const boxes = this.gearboxOptions();
+    return boxes.length ? boxes.join(' · ') : (this.car?.transmission ?? '');
+  }
+
   /** The trims on screen, after the gearbox filter. */
   filteredVariants = computed<CarVariant[]>(() => {
     const want = this.gearboxFilter();

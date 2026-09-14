@@ -246,7 +246,15 @@
     background: var(--glass); border-radius: 12px; padding: 1rem;
     span:first-child { color: var(--primary); display: inline-flex; }
     .pill-label { font-size: 0.72rem; color: var(--muted); }
-    .pill-val { font-size: 0.9rem; font-weight: 600; }
+    // Wraps because this can now be a list — "Petrol · CNG · Strong Hybrid"
+    // rather than one word. Without it a three-fuel model pushes the pill
+    // wider than its neighbours and the row stops lining up.
+    .pill-val {
+      font-size: 0.9rem;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+      line-height: 1.3;
+    }
   }
 }
 
@@ -820,12 +828,26 @@
 
 .gf-chip {
   padding: 0.32rem 0.85rem;
-  border: 1.5px solid var(--border, #e5e7eb);
+  // --border-strong, not `var(--border, …)`: there is no --border token, so
+  // that always resolved to the #e5e7eb fallback — a light-theme literal
+  // outlining a dark chip.
+  border: 1.5px solid var(--border-strong);
   border-radius: 999px;
-  background: var(--bg, #fff);
+  background: var(--bg);
   font-size: 0.8rem;
   font-weight: 600;
   font-family: inherit;
+  // REPORTED FROM DARK MODE: "Manual & AMT readable, button is not".
+  //
+  // A <button> does not inherit colour — browsers paint it in the user-agent's
+  // own button text, which is black. This rule asked for `font-family:
+  // inherit` and never for `color`, so the chip took the theme's background
+  // and the UA's foreground: black on #131C2F.
+  //
+  // Only the selected chip escaped it, because `.active` sets color: #fff
+  // outright — which is exactly what the screenshot showed, AMT legible and
+  // All and Manual not.
+  color: var(--text);
   cursor: pointer;
   transition: border-color 0.15s, filter 0.15s;
 
