@@ -16,22 +16,25 @@ import {
   vehicleScore,
 } from '../../utils/market-position';
 
-interface NewCarVariant { name: string; minPrice: number; maxPrice: number; count?: number; }
 interface NewCarHighlight { icon: string; title: string; caption: string; }
 interface NewCarUpdate { text: string; date: string; }
-interface NewCarMeta { priceRange: [number, number]; variants: NewCarVariant[]; highlights: NewCarHighlight[]; updates: NewCarUpdate[]; }
+/**
+ * The bits of a model this file still hardcodes.
+ *
+ * `variants` used to be here too, rendering a second Variants tab for the six
+ * models below whenever the database had no trims for them. It was deleted
+ * with that tab: grouped summaries with no ids, which could not be selected or
+ * priced, and which made the Swift's tab behave differently from the
+ * Victoris's. See the note in the template.
+ *
+ * What remains feeds "Top Things to Know" and the headline price band, both of
+ * which have no equivalent in the database yet.
+ */
+interface NewCarMeta { priceRange: [number, number]; highlights: NewCarHighlight[]; updates: NewCarUpdate[]; }
 
 const NEW_CAR_META: Record<string, NewCarMeta> = {
   'Maruti Suzuki Swift': {
     priceRange: [649000, 999000],
-    variants: [
-      { name: 'LXi', minPrice: 649000, maxPrice: 649000 },
-      { name: 'VXi', minPrice: 749000, maxPrice: 809000, count: 2 },
-      { name: 'VXi S-CNG', minPrice: 819000, maxPrice: 819000 },
-      { name: 'ZXi', minPrice: 899000, maxPrice: 959000, count: 2 },
-      { name: 'ZXi S-CNG', minPrice: 919000, maxPrice: 919000 },
-      { name: 'ZXi+', minPrice: 969000, maxPrice: 999000, count: 2 },
-    ],
     highlights: [
       { icon: 'cpu', title: 'Z-Series Engine', caption: 'New 1.2L Z12E 3-cylinder engine with 81.58 PS and S-CNG option.' },
       { icon: 'shield', title: '6 Airbags Standard', caption: '6 airbags across all variants — best-in-class safety.' },
@@ -46,14 +49,6 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
   },
   'Tata Punch': {
     priceRange: [570000, 1067000],
-    variants: [
-      { name: 'Smart', minPrice: 570000, maxPrice: 680000, count: 2 },
-      { name: 'Pure', minPrice: 660000, maxPrice: 761000, count: 2 },
-      { name: 'Pure Plus', minPrice: 710000, maxPrice: 867000, count: 4 },
-      { name: 'Pure Plus (S)', minPrice: 745000, maxPrice: 846000, count: 2 },
-      { name: 'Adventure', minPrice: 820000, maxPrice: 970000, count: 3 },
-      { name: 'Accomplished', minPrice: 910000, maxPrice: 1067000, count: 4 },
-    ],
     highlights: [
       { icon: 'star', title: '5-Star BNCAP', caption: 'Scored 30.58/32 for adult occupants and 45/49 for child safety.' },
       { icon: 'settings', title: 'CNG Automatic', caption: 'First-in-segment CNG with AMT and paddle shifters.' },
@@ -68,14 +63,6 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
   },
   'Hyundai Creta': {
     priceRange: [1100000, 2015000],
-    variants: [
-      { name: 'E', minPrice: 1100000, maxPrice: 1100000 },
-      { name: 'EX', minPrice: 1318000, maxPrice: 1318000 },
-      { name: 'S', minPrice: 1400000, maxPrice: 1500000, count: 2 },
-      { name: 'S(O)', minPrice: 1550000, maxPrice: 1620000, count: 2 },
-      { name: 'SX', minPrice: 1720000, maxPrice: 1800000, count: 3 },
-      { name: 'SX(O)', minPrice: 1900000, maxPrice: 2015000, count: 2 },
-    ],
     highlights: [
       { icon: 'sparkles', title: 'ADAS Level 2', caption: 'Advanced driver-assistance with lane keep, auto emergency braking.' },
       { icon: 'cpu', title: 'Dual 10.25" Screens', caption: 'Panoramic dual-screen setup for driver and infotainment.' },
@@ -90,13 +77,6 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
   },
   'Tata Nexon': {
     priceRange: [810000, 1475000],
-    variants: [
-      { name: 'Smart', minPrice: 810000, maxPrice: 810000 },
-      { name: 'Smart+', minPrice: 920000, maxPrice: 970000, count: 2 },
-      { name: 'Pure', minPrice: 1020000, maxPrice: 1060000, count: 2 },
-      { name: 'Creative', minPrice: 1250000, maxPrice: 1310000, count: 2 },
-      { name: 'Fearless', minPrice: 1350000, maxPrice: 1475000, count: 3 },
-    ],
     highlights: [
       { icon: 'star', title: '5-Star Global NCAP', caption: 'India\'s first 5-star rated car — 16.45/17 for adult safety.' },
       { icon: 'zap', title: 'EV Option', caption: 'Available as Nexon EV with 40.5 kWh battery and 465 km range.' },
@@ -111,13 +91,6 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
   },
   'Kia Seltos': {
     priceRange: [1089000, 2000000],
-    variants: [
-      { name: 'HTK', minPrice: 1089000, maxPrice: 1089000 },
-      { name: 'HTK+', minPrice: 1342000, maxPrice: 1420000, count: 2 },
-      { name: 'HTX', minPrice: 1570000, maxPrice: 1650000, count: 2 },
-      { name: 'HTX+', minPrice: 1735000, maxPrice: 1800000, count: 2 },
-      { name: 'GTX+', minPrice: 1900000, maxPrice: 2000000, count: 2 },
-    ],
     highlights: [
       { icon: 'cpu', title: 'Panoramic Dual Display', caption: '26-inch dual-screen curved display — biggest in segment.' },
       { icon: 'car', title: '3 Powertrain Options', caption: 'Petrol, Diesel and Petrol Turbo DCT available.' },
@@ -132,13 +105,6 @@ const NEW_CAR_META: Record<string, NewCarMeta> = {
   },
   'Mahindra XUV700': {
     priceRange: [1399000, 2699000],
-    variants: [
-      { name: 'MX', minPrice: 1399000, maxPrice: 1399000 },
-      { name: 'AX3', minPrice: 1649000, maxPrice: 1749000, count: 2 },
-      { name: 'AX5', minPrice: 1849000, maxPrice: 1999000, count: 3 },
-      { name: 'AX7', minPrice: 2099000, maxPrice: 2399000, count: 3 },
-      { name: 'AX7 L', minPrice: 2499000, maxPrice: 2699000, count: 2 },
-    ],
     highlights: [
       { icon: 'brain', title: 'ADAS Level 2', caption: 'AdrenoX ADAS with 5 radars and cameras for autonomous driving assistance.' },
       { icon: 'sparkles', title: 'Sony 3D Sound', caption: '12-speaker Sony 3D surround sound in top AX7 L variants.' },

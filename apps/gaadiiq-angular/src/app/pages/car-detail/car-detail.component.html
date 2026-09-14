@@ -146,7 +146,12 @@
         <div class="tabs glass-card">
           <div class="tab-nav">
             <button [class.active]="activeTab()==='overview'" (click)="activeTab.set('overview')">{{ 'Overview' | t }}</button>
-            <button *ngIf="isNewCar && (variants().length || newCarMeta)" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">{{ 'Variants' | t }}</button>
+            <!-- Shown for every new car, like Specs and Features beside it,
+                 rather than only for cars that happen to have trims. A tab
+                 that appears on some models and not others is the divergence
+                 this page was reported for. A used advert still has none: it
+                 is one car, and a trim ladder means nothing for it. -->
+            <button *ngIf="isNewCar" [class.active]="activeTab()==='variants'" (click)="activeTab.set('variants')">{{ 'Variants' | t }}</button>
             <button [class.active]="activeTab()==='specs'" (click)="activeTab.set('specs')">{{ 'Specs' | t }}</button>
             <button [class.active]="activeTab()==='features'" (click)="activeTab.set('features')">{{ 'Features' | t }}</button>
             <button *ngIf="modelColours().length > 0" [class.active]="activeTab()==='colours'" (click)="activeTab.set('colours')">{{ 'Colours' | t }}</button>
@@ -228,8 +233,30 @@
 
           <!-- VARIANTS (new cars only) -->
           <!--
-            Trims an admin maintains, with the old hardcoded map as a fallback
-            for the seven models it covered until they are entered properly.
+            Trims an admin maintains. ONE rendering, for every car.
+
+            There used to be a second: when a model had no rows in
+            car_variants, the tab fell through to a hardcoded map in this
+            component's source (NEW_CAR_META) covering six models — Swift,
+            Punch, Creta, Nexon, Seltos, XUV700. Those rows carried no click
+            handler and could not, because they are grouped summaries
+            ("VXi, 7.49-8.09L, count: 2") rather than trims with ids, so
+            nothing could be selected and nothing could be priced. They also
+            rendered a "View 2 Variants" badge that looked like a button and
+            did nothing.
+
+            Reported as "not clickable", against the Swift, with the Victoris
+            named as the one that works. Both were this same file: the Victoris
+            has trims in the database and the Swift does not.
+
+            A model with no trims now says so, in the same words the Specs and
+            Features tabs use. That is worse content and better information:
+            the fix is to enter the trims under Admin -> Variants, and a page
+            that quietly showed a frozen price list instead was hiding the fact
+            that nobody had.
+
+            NEW_CAR_META itself stays. It still feeds "Top Things to Know" and
+            the headline price band, and removing those was not what this is.
           -->
           <div class="tab-content" *ngIf="activeTab()==='variants' && variants().length">
             <div class="variants-header">
@@ -292,22 +319,12 @@
             </div>
           </div>
 
-          <div class="tab-content" *ngIf="activeTab()==='variants' && !variants().length && newCarMeta">
-            <div class="variants-header">
-              <p class="variants-sub">{{ car.make }} {{ car.model }} price starts at
-                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[0]) }}</strong> {{ 'and goes up to' | t }}
-                <strong class="gradient-text">{{ formatLakh(newCarMeta!.priceRange[1]) }}</strong> {{ '(ex-showroom).' | t }}
-              </p>
-            </div>
-            <div class="variants-list">
-              <div class="variant-row" *ngFor="let v of newCarMeta!.variants">
-                <div class="variant-name-wrap">
-                  <span class="variant-name">{{ car.model }} {{ v.name }}</span>
-                  <span *ngIf="v.count && v.count > 1" class="variant-count-badge">View {{ v.count }} Variants</span>
-                </div>
-                <span class="variant-price gradient-text">{{ formatLakhRange(v.minPrice, v.maxPrice) }}</span>
-              </div>
-            </div>
+          <!-- The same sentence Specs and Features use when they have nothing,
+               so a reader meets one phrasing across the whole tab strip. -->
+          <div class="tab-content" *ngIf="activeTab()==='variants' && !variants().length">
+            <p class="tab-empty">
+              Variant details for this {{ car.make }} {{ car.model }} haven't been added yet.
+            </p>
           </div>
 
           <!-- SPECS -->
