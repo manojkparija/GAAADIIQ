@@ -220,6 +220,23 @@ describe('ListingsComponent — removing a row', () => {
     expect(c.withdrawnBlocking()).toBe(0);
   });
 
+  it('treats a 404 as already gone and refreshes the list', async () => {
+    // REPORTED: an admin deleting a row that had already been removed from
+    // another screen was told "Error: HTTP 404". This page renders a cached
+    // car list, so a stale card is normal — and a card that cannot be removed
+    // because it no longer exists is the worst possible answer.
+    const { c, http, reloaded } = build({ isAdmin: true });
+
+    const done = c.removeCar(SIGMA, clickEvent());
+    http.expectOne(`${environment.apiUrl}/cars/car-sigma`)
+      .flush({ detail: 'Car not found' }, { status: 404, statusText: 'Not Found' });
+    await done;
+
+    expect(c.removeError()).toBeNull();
+    expect(c.confirmRemoveId()).toBeNull();
+    expect(reloaded.count).withContext('the stale card must go away').toBe(1);
+  });
+
   it('says to sign in when the API refuses the caller', async () => {
     const { c, http } = build({ isAdmin: true });
 

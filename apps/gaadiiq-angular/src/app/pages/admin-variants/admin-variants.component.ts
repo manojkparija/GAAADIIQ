@@ -674,7 +674,15 @@ export class AdminVariantsComponent {
         );
         return;
       }
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      // 404 is not a failure. It means the catalogue row is not there, which
+      // is what this button is for.
+      //
+      // REPORTED: "Error: HTTP 404" on a Swift that had been deleted
+      // successfully moments earlier — this screen's car list was stale, so
+      // the admin was deleting a row that was already gone and being told it
+      // had failed. The list reloads below, which is the actual remedy: the
+      // row disappears and the screen agrees with the database again.
+      if (!resp.ok && resp.status !== 404) throw new Error(`HTTP ${resp.status}`);
 
       this.confirmingDelete.set(false);
       this.withdrawnBlocking.set(0);

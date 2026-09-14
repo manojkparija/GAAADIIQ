@@ -96,6 +96,17 @@ export class ListingsComponent implements OnInit {
       this.withdrawnBlocking.set(0);
       await this.carsData.reload();
     } catch (err: unknown) {
+      // A 404 means the row is already gone — which is what this button is
+      // for. This page renders a cached car list, so a row deleted from
+      // another screen is still on it, and reporting "not found" as a failure
+      // leaves an admin clicking a card that cannot be removed because it no
+      // longer exists. Reload instead: the card disappears.
+      if ((err as { status?: number })?.status === 404) {
+        this.confirmRemoveId.set(null);
+        this.withdrawnBlocking.set(0);
+        await this.carsData.reload();
+        return;
+      }
       // detail is an OBJECT — {blocker, count, message} — not a sentence.
       //
       // It became one when the catalogue delete grew two different refusals
