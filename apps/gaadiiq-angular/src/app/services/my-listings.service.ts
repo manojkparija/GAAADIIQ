@@ -2,7 +2,6 @@ import { Injectable, signal, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
-import { SupabaseService } from './supabase.service';
 import { environment } from '../../environments/environment';
 
 export interface MyListing {
@@ -40,11 +39,24 @@ export class MyListingsService {
   listings = signal<MyListing[]>([]);
   loading = signal(false);
 
+  /**
+   * One backend, on purpose.
+   *
+   * This service used to talk to the API for some operations and to Supabase
+   * directly for others — reading `cars`, deleting `cars`, updating
+   * `cars.price` — while the adverts a buyer sees live in `listings` behind
+   * the API. Two clients, two tables, and localStorage as a third opinion.
+   * Every seller-facing bug this session came out of that split: a removal
+   * that hit the wrong table, a price edit nobody read, a sync that found a
+   * seller's cars only because each submission minted a row stamped with
+   * their email.
+   *
+   * It is all /listings now. HttpClient so auth.interceptor.ts signs each
+   * request — every one of those endpoints checks the listing belongs to the
+   * caller, and an unsigned one is a 401.
+   */
   constructor(
     private auth: AuthService,
-    private sb: SupabaseService,
-    // HttpClient so auth.interceptor.ts signs the request: DELETE /listings/{id}
-    // checks the listing belongs to the caller, and an unsigned one is a 401.
     private http: HttpClient,
   ) {
     // Load from localStorage immediately on service creation
@@ -194,12 +206,31 @@ export class MyListingsService {
     return listing;
   }
 
+  /**
+   * Change the asking price.
+   *
+   * PATCH /listings/{id}, because the price a buyer sees is on the LISTING.
+   *
+   * This used to write `cars.price` straight through Supabase, which was wrong
+   * in two ways. The catalogue row is not the advert — /used-cars renders
+   * listing.price, so the figure the seller changed was not the figure anyone
+   * read. And now that a used advert joins the model's shared catalogue row,
+   * writing to it would edit a row that belongs to every Swift on the site,
+   * from one seller's price field.
+   */
   async updatePrice(id: string, newPrice: number): Promise<void> {
     const listing = this.listings().find(l => l.id === id);
     if (!listing) return;
-    if (listing.supabaseId) {
-      await this.sb.client.from('cars').update({ price: newPrice }).eq('id', listing.supabaseId);
+
+    const listingId = await this.listingIdFor(listing);
+    if (listingId) {
+      // Not caught: a refused edit must reach the caller, for the same reason
+      // a refused removal must. Silence is what made the old one unfixable.
+      await firstValueFrom(
+        this.http.patch(`${environment.apiUrl}/listings/${listingId}`, { price: newPrice }),
+      );
     }
+
     const updated = this.listings().map(l => l.id === id ? { ...l, price: newPrice } : l);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     this.listings.set(updated);
@@ -242,22 +273,26 @@ export class MyListingsService {
     const listing = this.listings().find(l => l.id === id);
     if (!listing) return;
 
-    const listingId = listing.listingId ?? await this.findListingId(listing);
-
+    const listingId = await this.listingIdFor(listing);
     if (listingId) {
       // Not caught: a refused delete must reach the caller. Removing it from
       // this list regardless is exactly the bug being fixed.
       await firstValueFrom(
         this.http.delete(`${environment.apiUrl}/listings/${listingId}`),
       );
-    } else if (listing.supabaseId) {
-      // No advert to withdraw — an entry that predates listings. The car row
-      // is all there is, and deleting it now succeeds because nothing
-      // references it.
-      const { error } = await this.sb.client
-        .from('cars').delete().eq('id', listing.supabaseId);
-      if (error) throw new Error(error.message || 'Could not remove the car');
     }
+    // No listing id means the server has no advert for this entry — a draft
+    // this browser saved that never reached the API. There is nothing to
+    // withdraw, so dropping the local row IS the removal.
+    //
+    // What used to happen here was a direct Supabase delete of the CAR row,
+    // and that is the bug. A seller pressing Remove on their own advert has
+    // no business deleting a catalogue row — it belongs to the model, not to
+    // them, and since used adverts started sharing it, deleting it would take
+    // every other seller's car with it. The database refuses (listings.car_id
+    // is NOT NULL with no ON DELETE), so in practice the seller got an error
+    // from a table they never meant to touch, for an advert that was already
+    // gone from the server.
 
     const updated = this.listings().filter(l => l.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -276,6 +311,10 @@ export class MyListingsService {
    * That path then fails loudly on the foreign key rather than pretending, so
    * a lookup outage cannot resurrect the silent success this replaced.
    */
+  private async listingIdFor(listing: MyListing): Promise<string | null> {
+    return listing.listingId ?? await this.findListingId(listing);
+  }
+
   private async findListingId(listing: MyListing): Promise<string | null> {
     if (!listing.supabaseId) return null;
     try {
