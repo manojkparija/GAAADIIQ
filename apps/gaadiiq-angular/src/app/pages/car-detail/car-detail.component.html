@@ -157,8 +157,8 @@
           <!-- OVERVIEW -->
           <div class="tab-content" *ngIf="activeTab()==='overview'">
             <div class="overview-pills">
-              <div class="pill"><span><app-icon name="fuel" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Fuel' | t }}</div><div class="pill-val">{{ car.fuel }}</div></div></div>
-              <div class="pill"><span><app-icon name="settings" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Gearbox' | t }}</div><div class="pill-val">{{ car.transmission }}</div></div></div>
+              <div class="pill"><span><app-icon name="fuel" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Fuel' | t }}</div><div class="pill-val">{{ fuelSummary() }}</div></div></div>
+              <div class="pill"><span><app-icon name="settings" [size]="16"></app-icon></span><div><div class="pill-label">{{ 'Gearbox' | t }}</div><div class="pill-val">{{ gearboxSummary() }}</div></div></div>
               <!-- Owner count is a used-car fact. On a new car it is either
                    blank or "0", and both read as missing data rather than as
                    "nobody has owned this yet" — so it does not appear at all. -->
