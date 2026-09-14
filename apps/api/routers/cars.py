@@ -1,3 +1,4 @@
+import logging
 import uuid
 from decimal import Decimal
 
@@ -17,6 +18,8 @@ from schemas.car import CarCreate, CarListOut, CarOut, CarUpdate, PriceCheckOut
 from services import media_library, price_reference, variant_research, vehicle_identity
 
 router = APIRouter(prefix="/cars", tags=["cars"])
+
+logger = logging.getLogger("gaadiiq.cars")
 
 
 @router.get("", response_model=CarListOut)
@@ -876,6 +879,12 @@ async def delete_car(
         )
     )).scalar_one()
     if live:
+        # Logged because the access log alone cannot answer the question this
+        # refusal raises. Chasing a 409 in production meant asking somebody to
+        # read a sentence off their screen, because "DELETE /cars/... 409" is
+        # the same line whether the advert is live (final) or withdrawn (a
+        # confirmation away from succeeding). Those need different actions.
+        logger.info("delete_car refused: car=%s blocker=live count=%s", car_id, live)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             # A dict, not a sentence. The screen has to tell these two 409s
@@ -899,6 +908,11 @@ async def delete_car(
         )
     )).scalars().all())
     if withdrawn and not acknowledge_withdrawn:
+        logger.info(
+            "delete_car refused: car=%s blocker=withdrawn count=%s "
+            "(retry with acknowledge_withdrawn=true)",
+            car_id, len(withdrawn),
+        )
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
@@ -920,6 +934,10 @@ async def delete_car(
 
     await db.delete(car)
     await db.commit()
+    logger.info(
+        "delete_car: removed car=%s %s %s %s with %s withdrawn advert(s)",
+        car_id, car.make, car.model, car.year, len(withdrawn),
+    )
 
 
 class ResearchAvailability(BaseModel):
