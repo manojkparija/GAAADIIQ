@@ -216,8 +216,22 @@ async def test_the_buyers_own_model_year_wins_that_tie(client, seed):
 
 @pytest.mark.asyncio
 async def test_an_unknown_car_yields_nothing_rather_than_everything(client, seed):
-    # A bad id must not resolve to "no make, no model" and match the catalogue.
-    await seed(_car(), _trim(_car(), "Stray", 500000))
+    """A bad id must not resolve to "no make, no model" and match everything.
+
+    The stray car is SEEDED, not just constructed. Writing this as
+    `_trim(_car(), ...)` built a Car that was never added to the session, so
+    the trim's car_id pointed at a row that does not exist — which SQLite
+    accepts and Postgres refuses:
+
+        insert or update on table "car_variants" violates foreign key
+        constraint "car_variants_car_id_fkey"
+
+    Caught by the Postgres job, not by the local run, which is exactly the
+    gap CLAUDE.md records for the twelve files excluded from it. This one is
+    not excluded, and it earned its place there.
+    """
+    stray = _car()
+    await seed(stray, _trim(stray, "Stray", 500000))
 
     rows = (await client.get(f"/cars/{uuid.uuid4()}/variants")).json()
 
