@@ -133,6 +133,31 @@ def looks_like_variant(a: str | None, b: str | None) -> bool:
     return _squash(a) == _squash(b) and a.strip() != b.strip()
 
 
+def model_key(make: str | None, model: str | None) -> tuple[str, str]:
+    """What two catalogue rows share when they describe the same MODEL.
+
+    Year is not part of it: a 2025 Swift and a 2026 Swift are two rows and one
+    model, and the surfaces that resolve a trim ladder need them together.
+
+    The make goes through the alias table, and the model is squashed rather
+    than compared as typed — which is what makes this different from a plain
+    lower().strip() on the two columns, and the whole point of it:
+
+        cars  | Maruti        | SPRESSO  | 2020
+        cars  | Maruti Suzuki | S-Presso | 2026
+
+    Those are one model. Compared as stored they are two, and a trim ladder
+    entered against one row stays invisible from the other.
+
+    Squashing here is safe in a way `canonical_model` is not. canonical_model
+    decides what a car is CALLED, and guessing wrong there files a photograph
+    against the wrong vehicle. This only decides which rows to look at
+    together, and it is the same comparison `same_vehicle` — and so
+    media_library — has always made.
+    """
+    return (canonical_make(make) or "", _squash(model or ""))
+
+
 def same_vehicle(
     make_a: str | None, model_a: str | None, year_a: int | None,
     make_b: str | None, model_b: str | None, year_b: int | None,
@@ -144,7 +169,4 @@ def same_vehicle(
     """
     if year_a != year_b:
         return False
-    return (
-        canonical_make(make_a) == canonical_make(make_b)
-        and _squash(model_a or "") == _squash(model_b or "")
-    )
+    return model_key(make_a, model_a) == model_key(make_b, model_b)

@@ -572,9 +572,10 @@ async def _same_model_car_ids(
     """
     Every catalogue row describing the same model as this one.
 
-    Matched on make and model, lower-cased and trimmed, the way
-    media_admin._ensure_catalogue_car and routers/cars.py::resolve_catalogue_car
-    already match. Year is deliberately NOT part of it: a 2025 row and a 2026
+    Matched on vehicle_identity.model_key — the make through the alias table,
+    the model squashed — which is the comparison media_library has always made
+    when it decides which car a photograph belongs to. Year is deliberately
+    NOT part of it: a 2025 row and a 2026
     row are the same trim ladder to a buyer, and requiring the year is what
     leaves a model year with no trims showing an empty tab.
 
@@ -585,26 +586,8 @@ async def _same_model_car_ids(
     Returns [car_id] alone when the car is unknown, so a bad id yields nothing
     rather than every trim in the catalogue.
     """
-    row = (
-        await db.execute(
-            select(Car.make, Car.model, Car.year).where(Car.id == car_id)
-        )
-    ).one_or_none()
-    if row is None:
-        return [car_id], set()
-
-    make, model, year = row
-    rows = (
-        await db.execute(
-            select(Car.id, Car.year).where(
-                func.lower(func.trim(Car.make)) == (make or "").strip().lower(),
-                func.lower(func.trim(Car.model)) == (model or "").strip().lower(),
-            )
-        )
-    ).all()
-    ids = [r[0] for r in rows]
-    same_year = {r[0] for r in rows if r[1] == year}
-    return (ids or [car_id]), same_year
+    resolved = await _sibling_ids_for_cars(db, [car_id])
+    return resolved.get(car_id, ([car_id], set()))
 
 
 async def _sibling_ids_for_cars(
@@ -614,14 +597,27 @@ async def _sibling_ids_for_cars(
     _same_model_car_ids for a whole page, in two queries rather than 2N.
 
     The New Cars grid resolves a page of cars at once, and asking per car would
-    turn one round trip into forty. Same rule, same match: make and model,
-    lower-cased and trimmed; year deliberately not part of it.
+    turn one round trip into forty. Same rule, same match: model_key, with year
+    deliberately not part of it.
 
-    The second query is narrowed by MODEL name only, not by the make+model
-    pair — a tuple IN spells differently across Postgres and SQLite, and this
-    file's tests run on both. Model names are selective enough that the extra
-    rows are few, and the pair is re-checked in Python before anything is
-    grouped, so a Ford Figo cannot borrow trims from a Tata Figo.
+    WHY THE SECOND QUERY DOES NOT FILTER
+
+    It reads every catalogue row's identity columns and groups them here. An
+    earlier version narrowed on `lower(trim(model)) IN (...)`, which is a
+    filter model_key does not agree with: "S-Presso" and "SPRESSO" are one
+    model and that WHERE clause returns one of them, so the row holding the
+    trims never reaches the grouping and the tab is empty again — the bug this
+    resolution exists to fix, reintroduced in the optimisation for it.
+
+    Squashing in SQL is not portable enough to push down: there is no shared
+    spelling for "strip every character that is not a letter or digit", and
+    these tests run on SQLite and Postgres both.
+
+    So this is a scan of four narrow columns, once per request rather than once
+    per car. The catalogue is a list of models a person maintains by hand, and
+    the sell form no longer adds a row per advert, so it stays in the
+    thousands. If it ever does not, the fix is a stored canonical key with an
+    index on it — not a filter that quietly disagrees with the comparison.
     """
     if not car_ids:
         return {}
@@ -632,25 +628,18 @@ async def _sibling_ids_for_cars(
         )
     ).all()
 
-    def key(make: "str | None", model: "str | None") -> "tuple[str, str]":
-        return (make or "").strip().lower(), (model or "").strip().lower()
-
-    keys = {r[0]: key(r[1], r[2]) for r in wanted}
+    keys = {r[0]: vehicle_identity.model_key(r[1], r[2]) for r in wanted}
     years = {r[0]: r[3] for r in wanted}
     if not keys:
         return {}
 
-    family = (
-        await db.execute(
-            select(Car.id, Car.make, Car.model, Car.year).where(
-                func.lower(func.trim(Car.model)).in_({k[1] for k in keys.values()})
-            )
-        )
-    ).all()
+    family = (await db.execute(select(Car.id, Car.make, Car.model, Car.year))).all()
 
     grouped: dict[tuple[str, str], list[tuple[uuid.UUID, int | None]]] = {}
     for row_id, make, model, year in family:
-        grouped.setdefault(key(make, model), []).append((row_id, year))
+        grouped.setdefault(vehicle_identity.model_key(make, model), []).append(
+            (row_id, year)
+        )
 
     out: dict[uuid.UUID, tuple[list[uuid.UUID], set[uuid.UUID]]] = {}
     for car_id in car_ids:

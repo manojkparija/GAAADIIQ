@@ -39,7 +39,7 @@ from core.limiter import limiter
 from db.session import get_db
 from models.car import Car
 from models.car_variant import CarVariant, VariantStatus
-from services import ownership_cost, resale_forecast
+from services import ownership_cost, resale_forecast, vehicle_identity
 from services.buyer_brief import BuyerNeed, parse_query
 
 router = APIRouter(prefix="/advisor", tags=["advisor"])
@@ -135,9 +135,11 @@ def _one_row_per_model(cars: "list[Car]") -> "list[tuple[Car, list[CarVariant]]]
         its own row happens to hold, so the trim that actually fits the budget
         may not be in the running
 
-    Rows are grouped on make and model, lower-cased and trimmed — the same
-    match routers/cars.py::_same_model_car_ids uses for the detail page, so the
-    Advisor recommends the ladder that page will show. The newest model year
+    Rows are grouped on vehicle_identity.model_key — the same match
+    routers/cars.py::_same_model_car_ids uses for the detail page, so the
+    Advisor recommends the ladder that page will show, and a model spelled two
+    ways ("Maruti | SPRESSO" and "Maruti Suzuki | S-Presso") is one candidate
+    rather than two. The newest model year
     represents the group, and a trim name offered by two years is kept once, at
     the representative's price.
 
@@ -147,8 +149,7 @@ def _one_row_per_model(cars: "list[Car]") -> "list[tuple[Car, list[CarVariant]]]
     """
     groups: dict[tuple[str, str], list[Car]] = {}
     for car in cars:
-        key = ((car.make or "").strip().lower(), (car.model or "").strip().lower())
-        groups.setdefault(key, []).append(car)
+        groups.setdefault(vehicle_identity.model_key(car.make, car.model), []).append(car)
 
     out: list[tuple[Car, list[CarVariant]]] = []
     for members in groups.values():
