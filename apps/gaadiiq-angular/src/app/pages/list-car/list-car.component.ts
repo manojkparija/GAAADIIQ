@@ -1,6 +1,6 @@
 import { environment } from '../../../environments/environment';
 import { Component, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -799,6 +799,38 @@ export class ListCarComponent {
    * review and the pricing screens read, and detaching it would trade this bug
    * for another.
    */
+  /**
+   * The catalogue row this vehicle belongs to, if the catalogue already knows it.
+   *
+   * GET /cars/catalogue/resolve is the endpoint built for exactly this
+   * question — the image-upload screen asks it before committing, so that an
+   * upload and the price typed beside it land on the same row. It matches the
+   * way _ensure_catalogue_car matches, which is what keeps this form and that
+   * one agreeing about which row a Swift 2020 is.
+   *
+   * Null on any failure, which falls through to inserting a row: an advert
+   * that cannot be filed is worse than one filed against a duplicate.
+   */
+  private async existingCatalogueCarId(): Promise<string | null> {
+    const make = (this.form.make || '').trim();
+    const model = (this.form.model || '').trim();
+    const year = Number(this.form.year);
+    if (!make || !model || !year) return null;
+
+    try {
+      const params = new HttpParams()
+        .set('make', make).set('model', model).set('year', String(year));
+      const found = await firstValueFrom(
+        this.http.get<{ car_id: string | null }>(
+          `${environment.apiUrl}/cars/catalogue/resolve`, { params },
+        ),
+      );
+      return found?.car_id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   private async createListing(carId: string): Promise<string | null> {
     const body = {
       car_id: carId,
@@ -855,6 +887,35 @@ export class ListCarComponent {
     // and put a duplicate of one car into the catalogue on every press of
     // Submit. See createdCarId.
     let carId = this.createdCarId();
+
+    // A used advert joins the catalogue row for its model rather than minting
+    // another one.
+    //
+    // WHY THIS EXISTS
+    //
+    // This form inserted a fresh `cars` row on EVERY submission, so a hundred
+    // used Swifts meant a hundred "Maruti Suzuki Swift" rows. Trims,
+    // photographs and the Advisor's eligibility all hang off one row's id, so
+    // the more rows a model has the more places its own data is invisible from
+    // — which is exactly the empty Variants tab reported against the Swift.
+    //
+    // A used advert does not need a row of its own. Everything specific to the
+    // car is on the LISTING: mapListing reads price, km, city, owners and
+    // condition from there, and takes only make, model, year, fuel, gearbox
+    // and body type from the car. Those are model facts, and they are the same
+    // for every Swift of that year.
+    //
+    // WHY USED ONLY
+    //
+    // New stock carries ex_showroom_price, which IS model-level data the
+    // seller legitimately contributes, and PATCH /cars/{id} is admin-only — so
+    // a dealer reusing a row with no price could not set one, and the model
+    // would stay off New Cars. That path keeps inserting its own row until
+    // there is a route for it to fill that gap.
+    if (!carId && !this.isNew()) {
+      carId = await this.existingCatalogueCarId();
+      if (carId) this.createdCarId.set(carId);
+    }
 
     if (!carId) {
       const { data: inserted, error: insertError } = await this.sb.client

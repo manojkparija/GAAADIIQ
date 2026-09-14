@@ -108,8 +108,18 @@ async function flushMicrotasks(times = 10) {
   for (let i = 0; i < times; i++) await Promise.resolve();
 }
 
-/** Answer the listing POST, and return the request that was made. */
+/**
+ * Answer the catalogue lookup, then return the listing POST.
+ *
+ * A used advert now asks GET /cars/catalogue/resolve first, to join the
+ * model's existing row instead of minting another. Answering car_id: null
+ * keeps these tests on the path they were written for — no existing row, so
+ * the Supabase insert still runs. The reuse path has its own tests below.
+ */
 async function expectListingPost(http: HttpTestingController) {
+  await flushMicrotasks();
+  const resolve = http.match(req => req.url.endsWith('/cars/catalogue/resolve'));
+  resolve.forEach(r => r.flush({ car_id: null }));
   await flushMicrotasks();
   return http.expectOne(`${environment.apiUrl}/listings`);
 }
@@ -251,6 +261,79 @@ describe('ListCarComponent — the listing actually gets created', () => {
   });
 });
 
+describe('ListCarComponent — a used advert joins the model\'s catalogue row', () => {
+  it('reuses the existing row instead of minting another', async () => {
+    // THE DUPLICATE THIS REMOVES. Every submission used to insert a fresh
+    // `cars` row, so a hundred used Swifts meant a hundred Swift rows — and
+    // trims, photographs and the Advisor all hang off one row's id, which is
+    // how the Swift's Variants tab came to be empty while its trims existed.
+    const { c, http } = build();
+    const done = c.onSubmit();
+    await flushMicrotasks();
+
+    const lookup = http.expectOne(
+      r => r.url.endsWith('/cars/catalogue/resolve'),
+    );
+    expect(lookup.request.params.get('make')).toBe('Maruti Suzuki');
+    expect(lookup.request.params.get('model')).toBe('Ritz');
+    expect(lookup.request.params.get('year')).toBe('2010');
+    lookup.flush({ car_id: 'existing-catalogue-row' });
+    await flushMicrotasks();
+
+    const post = http.expectOne(`${environment.apiUrl}/listings`);
+    expect(post.request.body.car_id).toBe('existing-catalogue-row');
+    post.flush({ id: 'listing-1' });
+    await done;
+  });
+
+  it('inserts a row when the catalogue has never heard of the car', async () => {
+    // A model nobody has listed or photographed yet. Falling back to the
+    // insert is what keeps that advert possible at all.
+    const { c, http } = build();
+    const done = c.onSubmit();
+
+    const post = await expectListingPost(http);   // answers resolve with null
+    expect(post.request.body.car_id).toBe(CAR_ID); // the Supabase insert's id
+    post.flush({ id: 'listing-1' });
+    await done;
+  });
+
+  it('does not reuse a row for NEW stock', async () => {
+    // New stock carries ex_showroom_price, which is model-level data the
+    // seller contributes — and PATCH /cars/{id} is admin-only, so a dealer
+    // reusing an unpriced row could not set one and the model would stay off
+    // New Cars. That path keeps its own row until there is a route for it.
+    const { c, http } = build();
+    c.listingType.set('new');
+    c.form.exShowroomPrice = '850000';
+    const done = c.onSubmit();
+    await flushMicrotasks();
+
+    http.expectNone(r => r.url.endsWith('/cars/catalogue/resolve'));
+
+    const post = http.expectOne(`${environment.apiUrl}/listings`);
+    post.flush({ id: 'listing-1' });
+    await done;
+  });
+
+  it('still lists the car when the lookup itself fails', async () => {
+    // An advert that cannot be filed is worse than one filed against a
+    // duplicate, so a failed lookup falls through to the insert.
+    const { c, http } = build();
+    const done = c.onSubmit();
+    await flushMicrotasks();
+
+    http.expectOne(r => r.url.endsWith('/cars/catalogue/resolve'))
+        .flush(null, { status: 500, statusText: 'Server Error' });
+    await flushMicrotasks();
+
+    const post = http.expectOne(`${environment.apiUrl}/listings`);
+    expect(post.request.body.car_id).toBe(CAR_ID);
+    post.flush({ id: 'listing-1' });
+    await done;
+  });
+});
+
 describe('ListCarComponent — a failed listing is not a success', () => {
   it('does not show the success screen when the listing fails', async () => {
     // THE ONE THAT MATTERS MOST. The reported bug was a green "Listing
@@ -306,7 +389,13 @@ describe('ListCarComponent — a failed listing is not a success', () => {
     // the seller needs to see here.
     const { c, http } = build({ code: '42703', message: 'column "km" does not exist' });
 
-    await c.onSubmit();
+    const done = c.onSubmit();
+    // The catalogue lookup runs first and must be answered, or onSubmit never
+    // reaches the insert it is here to fail on.
+    await flushMicrotasks();
+    http.match(req => req.url.endsWith('/cars/catalogue/resolve'))
+        .forEach(r => r.flush({ car_id: null }));
+    await done;
     await flushMicrotasks();
 
     http.expectNone(`${environment.apiUrl}/listings`);
