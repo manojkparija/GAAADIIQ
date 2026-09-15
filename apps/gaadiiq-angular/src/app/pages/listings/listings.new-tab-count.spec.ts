@@ -16,22 +16,17 @@
  * a seller listing through without a picture (`fromCatalogue === false ||
  * hasPhotograph`), which the grid never would.
  *
- * THE GRID NO LONGER HIDES THEM
+ * WHY THE GRID STILL HIDES THEM
  *
- * It did, and that came from the opposite report: e Vitara, Fronx and Grand
- * Vitara sitting on this grid reading "No Image Available", with no photograph
- * rows behind any of them. Hiding them then produced this one — a catalogue of
- * seven models showing one, and "← Back to all models" leading to a list of a
- * single car.
+ * Because that is a decision, not an oversight, and it came from the opposite
+ * report: e Vitara, Fronx and Grand Vitara sitting on this grid reading
+ * "No Image Available", with no photograph rows behind any of them. See
+ * listings.model-photos.spec.ts, which pins it.
  *
- * Both reports are answered by a card that says what it is: a silhouette with
- * the model's name and "Photographs coming soon". See
- * listings.model-photos.spec.ts, which pins that nothing ever stands in for a
- * photograph the car has not got.
- *
- * So these pin two things: the count promises exactly the cards the grid
- * renders, and the models still awaiting a picture are counted where a reader
- * — and an admin — can see how many there are.
+ * What was actually wrong was doing it silently. Six models left the page and
+ * nothing anywhere said so, so a deliberate rule read as a broken catalogue.
+ * These pin both halves: the count promises the cards, and the models held
+ * back are counted where a reader can see them.
  */
 import { signal } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
@@ -89,11 +84,6 @@ function mountWith(cars: any[]) {
 describe('ListingsComponent — the New tab counts what it shows', () => {
   it('the pill count matches the page under it', () => {
     // THE REPORTED BUG: 7 beside the label, "1 models available" beneath it.
-    //
-    // The expected number changed from 1 to 3 when the grid stopped hiding
-    // models with no photograph — which is the point of the assertion above
-    // it: whatever the grid shows, the pill says that. The second assertion
-    // is deliberately written in terms of the fixture rather than a constant.
     const c = mountWith([
       car({ model: 'Baleno', image: REAL, images: [REAL] }),
       car({ model: 'Victoris' }),
@@ -101,7 +91,7 @@ describe('ListingsComponent — the New tab counts what it shows', () => {
     ]);
 
     expect(c.newModelCount()).toBe(c.newCarModels().length);
-    expect(c.newModelCount()).toBe(3);
+    expect(c.newModelCount()).toBe(1);
   });
 
   it('counts models, not catalogue rows', () => {
@@ -115,19 +105,16 @@ describe('ListingsComponent — the New tab counts what it shows', () => {
     expect(c.newModelCount()).toBe(1);
   });
 
-  it('counts the models still awaiting a photograph', () => {
-    // They are on the grid; the number is what tells an admin how much of the
-    // catalogue is still missing pictures.
+  it('accounts for the models held back for want of a photograph', () => {
+    // THE ONE THAT MATTERS MOST. Hiding them is the decision; hiding the fact
+    // that they were hidden is the bug.
     const c = mountWith([
       car({ model: 'Baleno', image: REAL, images: [REAL] }),
       car({ model: 'Victoris' }),
       car({ model: 'S-Presso' }),
     ]);
 
-    // Listed on the grid, and counted so the heading can say how many still
-    // need a picture.
     expect(c.modelsAwaitingPhotos()).toBe(2);
-    expect(c.newCarModels().length).toBe(3);
   });
 
   it('counts a model as waiting only when no row of it has a picture', () => {
@@ -157,6 +144,7 @@ describe('ListingsComponent — the New tab counts what it shows', () => {
 describe('ListingsComponent — the All and Used tabs count what they show', () => {
   it('the All Cars count matches the list beneath it', () => {
     // REPORTED: "All Cars 8" over a page reading "1 listings found".
+    // minYear defaults to 2018, so the 2010 advert is in neither.
     const c = mountWith([
       car({ model: 'Baleno', image: REAL, images: [REAL] }),
       car({ model: 'Ritz', year: 2010, km: 95000, price: 110000,

@@ -1147,20 +1147,3 @@
   word-break: break-word;
   max-width: 46ch;
 }
-
-/* A model the catalogue holds but has no photograph for.
-   Deliberate rather than broken: the "No Image Available" graphic is what made
-   such a model look like a page fault, which is why they used to be hidden. */
-.model-img-pending {
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: .4rem;
-  background: var(--fill-dim);
-  color: var(--text-muted);
-}
-.pending-car-svg { width: 96px; height: 48px; color: var(--text-muted); }
-.pending-label {
-  font-size: .78rem; font-weight: 700; letter-spacing: .02em;
-  color: var(--text-muted); text-align: center; padding: 0 .5rem;
-}
-.pending-note { font-size: .68rem; color: var(--text-muted); opacity: .75; }

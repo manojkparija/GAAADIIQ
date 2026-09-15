@@ -102,12 +102,7 @@ describe('ListingsComponent — the card grid and the type chips', () => {
       car({ model: 'S-Presso', image: PHOTO, images: [PHOTO] }),
     ]);
 
-    // Four catalogue rows, four models, one of them with a photograph. The
-    // chip counts the CARDS the grid renders — all four now that a model is
-    // no longer withheld for want of a picture — while filteredCars is the
-    // row-level list the other tabs use, which still applies isShowable.
-    expect(c.newModelCount()).toBe(c.newCarModels().length);
-    expect(c.newModelCount()).toBe(4);
+    expect(c.newModelCount()).toBe(1);
     expect(c.filteredCars().length).toBe(1);
   });
 

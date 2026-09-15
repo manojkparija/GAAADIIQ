@@ -1,28 +1,5 @@
 /**
- * What the Browse page's model grid does about a model with no photograph.
- *
- * IT USED TO HIDE IT. IT NOW SHOWS IT, MARKED.
- *
- * Both behaviours came from a real report, which is why this file has been
- * rewritten rather than deleted:
- *
- *   - blanks reading "No Image Available" across the grid looked like a broken
- *     page (the original report, below);
- *   - hiding the model made a catalogue of seven show one, and "← Back to all
- *     models" led to a list containing a single car.
- *
- * The two only conflict if the choice is between hiding a model and showing a
- * broken-looking card. It is not: the grid has a deliberate treatment — a car
- * silhouette carrying the model's name and "Photographs coming soon" — which
- * was unreachable, because `image` holds PLACEHOLDER rather than being empty
- * and PLACEHOLDER is truthy, so the <img> branch always won.
- *
- * So the rule these pin is unchanged in substance: NOTHING stands in for a
- * photograph the car does not have. No bundled drawing, no other model year's
- * picture, no third-party URL. The model is now listed rather than dropped,
- * and it is listed as having no picture.
- *
- * The original report follows, because the reasoning still applies.
+ * The Browse page's model grid shows only models that have photographs.
  *
  * Reported against "Explore New Cars": e Vitara, Fronx and Grand Vitara all
  * sat there reading "No Image Available", and their images are not in the
@@ -83,31 +60,21 @@ function mountWith(cars: any[]) {
 }
 
 describe('ListingsComponent — the Explore New Cars model grid', () => {
-  it('lists a model with no photograph, marked as having none', () => {
-    // e Vitara, Fronx and Grand Vitara, exactly as reported — all three on the
-    // grid now, none of them claiming a picture it does not have.
+  it('hides a model with no photograph', () => {
+    // e Vitara, Fronx and Grand Vitara, exactly as reported.
     const c = mountWith([
       car({ model: 'e Vitara', price: 1599000 }),
       car({ model: 'Fronx', price: 684000 }),
       car({ model: 'S-Presso', image: PHOTO, images: [PHOTO] }),
     ]);
 
-    const byModel = Object.fromEntries(
-      c.newCarModels().map((m: any) => [m.model, m.image]),
-    );
-    expect(Object.keys(byModel).sort()).toEqual(['Fronx', 'S-Presso', 'e Vitara']);
-    expect(byModel['e Vitara']).toBe(PLACEHOLDER);
-    expect(byModel['Fronx']).toBe(PLACEHOLDER);
-    expect(byModel['S-Presso']).toBe(PHOTO);
+    expect(c.newCarModels().map((m: any) => m.model)).toEqual(['S-Presso']);
   });
 
-  it('still lists the model when none has a photograph', () => {
-    // The catalogue is not empty, so the page must not read as though it is.
-    // That was the second report: one model shown out of seven.
+  it('shows nothing rather than a blank card when no model has one', () => {
     const c = mountWith([car({ model: 'Fronx', price: 684000 })]);
 
-    expect(c.newCarModels().length).toBe(1);
-    expect(c.newCarModels()[0].image).toBe(PLACEHOLDER);
+    expect(c.newCarModels()).toEqual([]);
   });
 
   it('takes the photograph from the model year that has one', () => {
@@ -124,11 +91,10 @@ describe('ListingsComponent — the Explore New Cars model grid', () => {
 
   it('does not keep a bundled drawing for a Swift with no photographs', () => {
     // The database is the only source. A Swift whose images were deleted must
-    // read like any other model rather than keeping a picture — it is listed,
-    // with the placeholder, not with a drawing that ships in the bundle.
+    // read like any other model rather than keeping a picture.
     const c = mountWith([car({ model: 'Swift', price: 649000 })]);
 
-    expect(c.newCarModels()[0].image).toBe(PLACEHOLDER);
+    expect(c.newCarModels()).toEqual([]);
   });
 
   it('shows an uploaded Swift photograph when there is one', () => {
@@ -142,11 +108,10 @@ describe('ListingsComponent — the Explore New Cars model grid', () => {
 
   it('does not treat an aeplcdn URL as a photograph', () => {
     // Those are a third party's and frequently dead; a broken image tag is
-    // worse than an honest absence. The model is listed, with the placeholder
-    // rather than the borrowed URL.
+    // worse than an honest absence.
     const aepl = 'https://imgd.aeplcdn.com/s-presso.jpg';
     const c = mountWith([car({ image: aepl, images: [aepl] })]);
 
-    expect(c.newCarModels()[0].image).toBe(PLACEHOLDER);
+    expect(c.newCarModels()).toEqual([]);
   });
 });

@@ -38,6 +38,12 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default is 'tools platform-tools', and 'tools' has
+          # been withdrawn from the Android SDK repository, so sdkmanager
+          # exits 1 with "Failed to find package 'tools'" before anything in
+          # this repository is compiled. Name what is actually needed.
+          packages: 'platform-tools'
 
       - name: Install dependencies
         working-directory: apps/gaadiiq-angular
@@ -106,6 +112,12 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default is 'tools platform-tools', and 'tools' has
+          # been withdrawn from the Android SDK repository, so sdkmanager
+          # exits 1 with "Failed to find package 'tools'" before anything in
+          # this repository is compiled. Name what is actually needed.
+          packages: 'platform-tools'
 
       - name: Install dependencies
         working-directory: apps/gaadiiq-angular
