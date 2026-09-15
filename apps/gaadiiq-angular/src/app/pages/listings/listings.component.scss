@@ -617,3 +617,7 @@
   line-height: 1.45;
   color: var(--danger-ink);
 }
+
+/* Sits under the model name on a silhouette card, so the reader knows the
+   picture is missing rather than the page being broken. */
+.nc-no-img-note { font-size:.66rem;color:var(--text-muted);opacity:.75; }

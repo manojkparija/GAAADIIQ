@@ -18,13 +18,14 @@
           <ng-container *ngIf="carType()==='New' && !selectedModel()">
             {{ newCarModels().length }} models available
             <!--
-              The six that were missing with no explanation. The grid holds a
-              model back until it has a photograph, on purpose; saying nothing
-              about it is what made the page look broken.
+              No longer "waiting" anywhere off-screen: these models are ON the
+              grid, with a silhouette card. The line stays because the backlog
+              is worth seeing at a glance, and because an admin reading it is
+              the person who can clear it.
             -->
             <span *ngIf="modelsAwaitingPhotos() as waiting">&nbsp;·&nbsp;
               <span style="color:var(--text-muted)">
-                {{ waiting }} more waiting for photographs
+                {{ waiting }} awaiting photographs
               </span>
             </span>
           </ng-container>
@@ -130,8 +131,16 @@
                *ngFor="let m of newCarModels()"
                (click)="selectModel(m)">
             <div class="nc-card-img-wrap">
-              <img *ngIf="m.image" [src]="m.image" [alt]="m.make + ' ' + m.model" class="nc-card-img" referrerpolicy="no-referrer" imgFallback>
-              <div *ngIf="!m.image" class="nc-card-no-img">
+              <!--
+                `m.image` is PLACEHOLDER, not empty, for a model with no
+                photograph — and PLACEHOLDER is a truthy string, so this test
+                used to pass every time and the silhouette below was
+                unreachable. The card rendered the "No Image Available"
+                graphic instead, which is what made a photograph-less model
+                look like a broken page and got such models hidden entirely.
+              -->
+              <img *ngIf="m.image && m.image !== placeholder" [src]="m.image" [alt]="m.make + ' ' + m.model" class="nc-card-img" referrerpolicy="no-referrer" imgFallback>
+              <div *ngIf="!m.image || m.image === placeholder" class="nc-card-no-img">
                 <svg viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg" class="nc-car-svg">
                   <rect x="5" y="32" width="110" height="16" rx="5" fill="currentColor" opacity=".12"/>
                   <path d="M18 32 L28 14 L92 14 L102 32Z" fill="currentColor" opacity=".18"/>
@@ -144,6 +153,7 @@
                   <circle cx="88" cy="48" r="4" fill="currentColor" opacity=".35"/>
                 </svg>
                 <span class="nc-no-img-label">{{ m.make }} {{ m.model }}</span>
+                <span class="nc-no-img-note">{{ 'Photographs coming soon' | t }}</span>
               </div>
               <!-- Only show badge if it's meaningful (not the generic "Brand New" — already on a new-cars page) -->
               <span class="nc-card-badge" *ngIf="m.badge && !['Brand New','New','Used'].includes(m.badge)">{{ m.badge }}</span>
