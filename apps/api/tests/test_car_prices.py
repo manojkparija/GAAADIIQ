@@ -110,6 +110,88 @@ async def test_priced_only_excludes_unpriced_models(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_priced_only_keeps_a_model_priced_through_its_trims(
+    client: AsyncClient, as_admin
+):
+    """
+    REPORTED: a catalogue of eight models, of which the New Cars grid offered
+    one — "1 models available" — with no message anywhere saying why.
+
+    `priced_only` tested `cars.ex_showroom_price` alone, and that column stopped
+    being where a model's price lives. The trims are: the band on the detail
+    page, the "from" figure on every card and the sort order all read the
+    published trims and fall back to the row. So a model could carry twelve
+    published, priced trims and a real price band on its own page, and still be
+    withheld from every buyer-facing grid because one legacy column on its
+    catalogue row was blank.
+
+    The flag's intent is unchanged — see the test below.
+    """
+    token = await _token(client)
+    car = await _create_car(client, token, model="Swift")  # row price left blank
+    assert car["ex_showroom_price"] is None
+
+    resp = await client.post(
+        f"/cars/{car['id']}/variants",
+        json={"name": "LXi MT", "ex_showroom_price": "580000"},
+    )
+    assert resp.status_code == 201, resp.text
+
+    body = (await client.get("/cars", params={"priced_only": True})).json()
+
+    assert [c["model"] for c in body["items"]] == ["Swift"]
+    assert body["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_priced_only_still_excludes_a_model_with_no_price_anywhere(
+    client: AsyncClient, as_admin
+):
+    """
+    The half that must not change. A trim with no figure is not a price, so a
+    model whose only trims are unpriced is still a model nobody has priced, and
+    a grid that sorts and filters on price is not the place for it.
+    """
+    token = await _token(client)
+    car = await _create_car(client, token, model="Victoris")
+
+    resp = await client.post(
+        f"/cars/{car['id']}/variants", json={"name": "Base"}  # no price
+    )
+    assert resp.status_code == 201, resp.text
+
+    body = (await client.get("/cars", params={"priced_only": True})).json()
+
+    assert body["items"] == []
+
+
+@pytest.mark.asyncio
+async def test_priced_only_does_not_count_a_draft_trim(client: AsyncClient, as_admin):
+    """
+    A draft is a figure nobody has read — typically one a language model stated
+    with complete confidence. It cannot be what puts a model in front of a
+    buyer, for the same reason it is not counted or banded anywhere else.
+    """
+    token = await _token(client)
+    car = await _create_car(client, token, model="Fronx")
+
+    created = await client.post(
+        f"/cars/{car['id']}/variants",
+        json={"name": "Sigma", "ex_showroom_price": "684000"},
+    )
+    assert created.status_code == 201, created.text
+    demoted = await client.patch(
+        f"/cars/{car['id']}/variants/{created.json()['id']}",
+        json={"status": "draft"},
+    )
+    assert demoted.status_code == 200, demoted.text
+
+    body = (await client.get("/cars", params={"priced_only": True})).json()
+
+    assert body["items"] == []
+
+
+@pytest.mark.asyncio
 async def test_admin_can_set_and_clear_a_price(client: AsyncClient, as_admin):
     token = await _token(client)
     car = await _create_car(client, token)

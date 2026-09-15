@@ -626,7 +626,15 @@ function mapCatalogueCar(car: ApiCar): Car {
     model: car.model,
     variant: car.variant ?? undefined,
     year: car.year,
-    price: Number(car.ex_showroom_price),
+    // The row's own figure, falling back to the cheapest published trim.
+    //
+    // Both directions of this matter. `Number(null)` is 0, so a row with no
+    // figure of its own used to arrive priced at nothing — harmless while
+    // such rows were filtered out upstream, and a "₹0" card the moment they
+    // stopped being. And a card that reads `price` directly (the grid, sorting,
+    // the price sliders) would otherwise put a fully-priced model at the
+    // bottom of "price: low to high" for want of one legacy column.
+    price: Number(car.ex_showroom_price ?? car.variant_price_min ?? 0) || 0,
     km: 0,
     fuel: FUEL_LABEL[car.fuel_type ?? ''] ?? car.fuel_type ?? '',
     transmission: TX_LABEL[car.transmission ?? ''] ?? car.transmission ?? '',
@@ -905,8 +913,15 @@ export class CarsDataService {
       const advertised = new Set(
         newCars.filter(c => c.km === 0).map(variantKey)
       );
+      // A second copy of the API's priced_only rule, and it has to say the
+      // same thing: a model is priced if its row carries a figure OR its
+      // published trims do. Testing `ex_showroom_price` alone withheld a model
+      // with twelve priced trims from every grid, because one legacy column on
+      // its catalogue row was blank — see the note on priced_only in
+      // routers/cars.py. The row's figure is only the fallback now.
       const catalogueCars = (catalogueResp?.items ?? [])
-        .filter(c => c.ex_showroom_price != null && c.year >= NEW_CAR_MIN_YEAR)
+        .filter(c => (c.ex_showroom_price != null || c.variant_price_min != null)
+          && c.year >= NEW_CAR_MIN_YEAR)
         .map(mapCatalogueCar)
         .filter(c => !advertised.has(variantKey(c)));
 
