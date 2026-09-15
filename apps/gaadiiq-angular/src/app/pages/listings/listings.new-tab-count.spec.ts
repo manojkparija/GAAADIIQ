@@ -140,3 +140,59 @@ describe('ListingsComponent — the New tab counts what it shows', () => {
     expect(c.newModelCount()).toBe(2);
   });
 });
+
+describe('ListingsComponent — the All and Used tabs count what they show', () => {
+  it('the All Cars count matches the list beneath it', () => {
+    // REPORTED: "All Cars 8" over a page reading "1 listings found".
+    // minYear defaults to 2018, so the 2010 advert is in neither.
+    const c = mountWith([
+      car({ model: 'Baleno', image: REAL, images: [REAL] }),
+      car({ model: 'Ritz', year: 2010, km: 95000, price: 110000,
+            image: REAL, images: [REAL], fromCatalogue: false, isSellerListing: true }),
+    ]);
+    c.carType.set('All');
+
+    expect(c.allCount()).toBe(c.filteredCars().length);
+  });
+
+  it('a sidebar filter moves the count with the list', () => {
+    // THE ONE THAT MATTERS MOST. The counts used to ignore every filter, so
+    // narrowing the page left them stating the unfiltered catalogue.
+    const c = mountWith([
+      car({ model: 'Baleno', image: REAL, images: [REAL], fuel: 'Petrol' }),
+      car({ model: 'e Vitara', image: REAL, images: [REAL], fuel: 'Electric' }),
+    ]);
+    c.carType.set('All');
+    expect(c.allCount()).toBe(2);
+
+    c.selectedFuel.set('Electric');
+
+    expect(c.allCount()).toBe(1);
+    expect(c.allCount()).toBe(c.filteredCars().length);
+  });
+
+  it('the Used count matches its own tab', () => {
+    const c = mountWith([
+      car({ model: 'Baleno', image: REAL, images: [REAL] }),
+      car({ model: 'Swift', year: 2020, km: 42000, price: 550000,
+            image: REAL, images: [REAL], fromCatalogue: false, isSellerListing: true }),
+    ]);
+    c.carType.set('Used');
+
+    expect(c.usedCount()).toBe(c.filteredCars().length);
+    expect(c.usedCount()).toBe(1);
+  });
+
+  it('an advert older than the year filter is in neither the count nor the list', () => {
+    // Not a special case for 2010 — the point is that one predicate decides
+    // both, so any filter that hides a car also stops counting it.
+    const c = mountWith([
+      car({ model: 'Ritz', year: 2010, km: 95000, price: 110000,
+            image: REAL, images: [REAL], fromCatalogue: false, isSellerListing: true }),
+    ]);
+    c.carType.set('Used');
+
+    expect(c.usedCount()).toBe(0);
+    expect(c.filteredCars().length).toBe(0);
+  });
+});

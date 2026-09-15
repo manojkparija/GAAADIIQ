@@ -57,7 +57,7 @@
   <div class="car-type-bar">
     <div class="container car-type-inner">
       <button class="type-btn" [class.active]="carType()==='All'" (click)="setCarType('All')">
-        🚘 All Cars <span class="type-count">{{ newCount() + usedCount() }}</span>
+        🚘 All Cars <span class="type-count">{{ allCount() }}</span>
       </button>
       <!-- Models, not rows: this tab renders one card per model, and the count
            beside the label is a promise about what clicking produces. -->

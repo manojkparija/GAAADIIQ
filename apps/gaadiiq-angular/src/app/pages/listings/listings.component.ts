@@ -216,8 +216,26 @@ export class ListingsComponent implements OnInit {
     this.usedKmRange.set('All');
   }
 
-  filteredCars = computed(() => {
-    let cars = this.carsData.cars().filter(c => {
+  /**
+   * Whether one car belongs on the tab named by `type`, under the filters
+   * currently set.
+   *
+   * EXTRACTED SO THE COUNTS CANNOT DISAGREE WITH THE LIST
+   *
+   * REPORTED: the pill read "All Cars 8" and the page under it read
+   * "1 listings found".
+   *
+   * filteredCars applied every sidebar filter — price band, minimum year,
+   * fuel, transmission, body type, search — while the counts beside the tab
+   * labels applied make, type and isShowable and nothing else. minYear alone
+   * defaults to 2018, so a 2010 advert counted on the pill and could never
+   * appear in the list beneath it.
+   *
+   * Two implementations of "does this car belong here" is what produced that,
+   * and writing the counts a third time would have produced it again. One
+   * predicate, asked once per tab.
+   */
+  private matches(c: Car, type: 'All' | 'New' | 'Used'): boolean {
       const q = this.searchQuery().toLowerCase();
       const matchQ  = !q || `${c.make} ${c.model} ${c.variant ?? ''} ${c.city} ${c.bodyType} ${c.year} ${c.fuel} ${c.transmission} ${c.color ?? ''}`.toLowerCase().includes(q);
       const matchMake = this.selectedMake() === 'All' || c.make === this.selectedMake();
@@ -228,8 +246,8 @@ export class ListingsComponent implements OnInit {
       const matchPrice = c.price >= this.minPrice() && c.price <= this.maxPrice();
       const matchYear  = c.year >= this.minYear();
 
-      // Top-level New / Used split
-      const type = this.carType();
+      // Top-level New / Used split. `type` is a parameter rather than a read
+      // of carType() so a count can ask about a tab the reader is not on.
       const matchType = type === 'All' ? true :
         type === 'New'  ? c.km === 0 && c.year >= 2024 :
         /* Used */ c.km > 0 || c.year < 2024;
@@ -252,7 +270,10 @@ export class ListingsComponent implements OnInit {
       const matchPhoto = this.visible(c);
 
       return matchQ && matchMake && matchModel && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchType && matchRange && matchPhoto;
-    });
+  }
+
+  filteredCars = computed(() => {
+    let cars = this.carsData.cars().filter(c => this.matches(c, this.carType()));
 
     const sort = this.selectedSort();
     if (sort === 'Price: Low to High') cars = [...cars].sort((a,b) => a.price - b.price);
@@ -272,13 +293,25 @@ export class ListingsComponent implements OnInit {
    */
   private visible = isShowable;
 
-  newCount  = computed(() => {
-    const make = this.selectedMake();
-    return this.carsData.cars().filter(c =>
-      c.km === 0 && c.year >= 2024 && (make === 'All' || c.make === make)
-      && this.visible(c)
-    ).length;
-  });
+  /**
+   * What the All tab holds, counted the way that tab decides.
+   *
+   * REPORTED: the pill read "All Cars 8" and the page under it read
+   * "1 listings found".
+   *
+   * The counts asked their own question — make, type and isShowable — while
+   * the list applied every sidebar filter as well. So the pills were
+   * answering "how many cars of this kind exist" and the reader was asking
+   * "how many will I get if I click". minYear alone, which defaults to 2018,
+   * is enough to separate the two: a 2010 advert counts on the pill and can
+   * never appear in the list beneath it.
+   *
+   * It is the list's own predicate now, so the answer cannot drift from what
+   * appears.
+   */
+  allCount = computed(() =>
+    this.carsData.cars().filter(c => this.matches(c, 'All')).length
+  );
 
   /**
    * What the New tab will actually render: models, not catalogue rows.
@@ -326,13 +359,10 @@ export class ListingsComponent implements OnInit {
     }
     return all.size - withPhoto.size;
   });
-  usedCount = computed(() => {
-    const make = this.selectedMake();
-    return this.carsData.cars().filter(c =>
-      (c.km > 0 || c.year < 2024) && (make === 'All' || c.make === make)
-      && this.visible(c)
-    ).length;
-  });
+  /** The Used tab, counted by the same predicate that renders it. */
+  usedCount = computed(() =>
+    this.carsData.cars().filter(c => this.matches(c, 'Used')).length
+  );
 
   selectedModel = signal<string | null>(null);
 
