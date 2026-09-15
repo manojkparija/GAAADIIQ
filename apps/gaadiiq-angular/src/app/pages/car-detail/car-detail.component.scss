@@ -1,4 +1,12 @@
-.detail-page { padding: 100px 0 4rem; min-height: 100vh; }
+// LAY-007: clear the fixed navbar.
+//
+// REPORTED: the "Home / Browse / Maruti Suzuki Baleno" breadcrumb sitting
+// half behind the bar. This padded a literal 100px while the navbar is
+// 182px at rest and 118px above 1180px, so the first thing on the page was
+// always underneath it. Every other page offsets by --nav-offset, which
+// NavbarComponent republishes from the rendered bar; a literal cannot
+// track the bar compacting on scroll or changing at a breakpoint.
+.detail-page { padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 0 4rem; min-height: 100vh; }
 
 .breadcrumb {
   font-size: 0.85rem;

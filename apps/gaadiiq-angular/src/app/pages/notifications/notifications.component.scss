@@ -5,7 +5,10 @@
 // it must have a reason to.
 .notif-page {
   min-height: 100vh;
-  padding: 5rem 0 4rem;
+  // LAY-007: clear the fixed navbar. A literal top padding is a guess at
+  // the bar's height, and the bar is 182px at rest (118px above 1180px),
+  // so the first thing on the page rendered underneath it.
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 0 4rem;
 
   .container {
     max-width: 44rem;

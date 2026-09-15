@@ -6,7 +6,9 @@
 .dd-wrap { min-height: 100vh; padding-bottom: 4rem; }
 
 .dd-hero {
-  padding: 7rem 1.5rem 2rem;
+  // LAY-007: 7rem is the right order of magnitude but still a literal;
+  // --nav-offset tracks the bar's measured height.
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 1.5rem 2rem;
   display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem; flex-wrap: wrap;
 
   .hero-badge {
