@@ -279,6 +279,53 @@ export class ListingsComponent implements OnInit {
       && this.visible(c)
     ).length;
   });
+
+  /**
+   * What the New tab will actually render: models, not catalogue rows.
+   *
+   * REPORTED: the pill read "New Cars 7" and the page under it read "1 models
+   * available". Both were right about different things — the pill counted
+   * ROWS that pass isShowable, the heading counted MODELS left after grouping
+   * and after photograph-less ones were dropped. Three differences between two
+   * numbers side by side, on a screen whose own note says a count is a promise
+   * about what clicking will produce.
+   *
+   * The promise is what matters, so the pill now counts the cards. All Cars
+   * and Used Cars still count listings, because those tabs render listings —
+   * each number counts its own tab's units rather than all three sharing one
+   * definition that fits none of them.
+   */
+  newModelCount = computed(() => this.newCarModels().length);
+
+  /**
+   * Models in the catalogue that the grid is holding back for want of a
+   * photograph.
+   *
+   * The grid hides them on purpose — "No Image Available" across a row of
+   * cars reads as a broken page, and that was itself a report. What was wrong
+   * was doing it SILENTLY: the tab read "New Cars 7" over a page saying "1
+   * models available", and nothing anywhere accounted for the other six. A
+   * rule nobody can see reads as a bug however well reasoned it is, and this
+   * one cost an evening of looking for a fault that was not there.
+   *
+   * Counted the same way the grid decides, so the two cannot drift: group the
+   * rows this tab considers, and count the groups no row of which has a
+   * picture.
+   */
+  modelsAwaitingPhotos = computed(() => {
+    const make = this.selectedMake();
+    const rows = this.carsData.cars().filter(c =>
+      c.km === 0 && c.year >= 2024 && (make === 'All' || c.make === make)
+    );
+    const withPhoto = new Set<string>();
+    const all = new Set<string>();
+    for (const c of rows) {
+      const key = `${c.make}||${c.model}`;
+      all.add(key);
+      if (hasPhotograph(c)) withPhoto.add(key);
+    }
+    return all.size - withPhoto.size;
+  });
   usedCount = computed(() => {
     const make = this.selectedMake();
     return this.carsData.cars().filter(c =>
@@ -359,6 +406,11 @@ export class ListingsComponent implements OnInit {
       // A card with no photograph is not shown, as on the New Cars grid.
       // "No Image Available" on a row of cars reads as a broken page rather
       // than as a catalogue gap; a model waits until it has a picture.
+      //
+      // The models this removes are no longer removed SILENTLY — see
+      // modelsAwaitingPhotos below. A count that said 7 above a page showing
+      // 1, with nothing to explain the gap, is what made this rule look like
+      // a bug rather than a decision.
       m.image !== PLACEHOLDER
     )
     .sort((a, b) => b.reviews - a.reviews);

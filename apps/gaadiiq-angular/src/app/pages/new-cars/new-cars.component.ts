@@ -355,7 +355,12 @@ export class NewCarsComponent implements OnInit {
    * The models the grid shows: those with a photograph.
    *
    * "No Image Available" on a grid of cars reads as a broken page rather than
-   * as a catalogue gap, so a model waits until it has a photograph.
+   * as a catalogue gap, so a model waits until it has a photograph. Reported
+   * that way once: e Vitara, Fronx and Grand Vitara sitting on the grid as
+   * blanks, with no photograph rows behind any of them.
+   *
+   * hiddenForNoPhoto is what keeps that from being silent, which is the other
+   * half of the same complaint — see the note there.
    */
   newCarModels = computed<NewCarModel[]>(() => {
     const shown = this.allModels().filter(m => m.image !== PLACEHOLDER);
@@ -372,6 +377,11 @@ export class NewCarsComponent implements OnInit {
    * An empty grid has two causes needing opposite responses — no model matched
    * the filters (change them) or none has a picture yet (upload one) — and one
    * message for both sends the reader the wrong way.
+   *
+   * It is also what stops the hiding being silent. Reported the other way
+   * round: the New Cars tab read "1 models available" over a catalogue of
+   * seven and said nothing about the six. A rule nobody can see reads as a
+   * bug, however well reasoned it is.
    */
   hiddenForNoPhoto = computed(
     () => this.allModels().filter(m => m.image === PLACEHOLDER).length,
