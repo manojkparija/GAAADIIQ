@@ -349,10 +349,16 @@
           </div>
         </div>
         <div class="filter-group" *ngIf="carType()!=='New'">
-          <label>Min Year: <strong class="gradient-text">{{ minYear() }}</strong></label>
-          <input type="range" min="2015" max="2025" step="1"
-            [value]="minYear()" (input)="minYear.set(+$any($event.target).value)" class="price-range">
-          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>2015</span><span>2025</span></div>
+          <!--
+            The floor follows the catalogue. It was fixed at 2015 with a 2018
+            default, so a 2010 advert was excluded from the page and from the
+            tab counts with no control able to bring it back.
+          -->
+          <label>Min Year: <strong class="gradient-text">{{ minYear() ? minYear() : ('Any' | t) }}</strong></label>
+          <input type="range" [min]="oldestYear()" [max]="thisYear" step="1"
+            [value]="minYear() || oldestYear()"
+            (input)="minYear.set(+$any($event.target).value)" class="price-range">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>{{ oldestYear() }}</span><span>{{ thisYear }}</span></div>
         </div>
         <div class="filter-group">
           <label>{{ 'Max Budget:' | t }} <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>

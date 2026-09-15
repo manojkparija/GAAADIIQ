@@ -184,15 +184,88 @@ describe('ListingsComponent — the All and Used tabs count what they show', () 
   });
 
   it('an advert older than the year filter is in neither the count nor the list', () => {
-    // Not a special case for 2010 — the point is that one predicate decides
-    // both, so any filter that hides a car also stops counting it.
+    // One predicate decides both, so any filter that hides a car also stops
+    // counting it.
+    //
+    // The year is SET here rather than relied upon: this test used to lean on
+    // minYear defaulting to 2018, and that default turned out to be the next
+    // bug — it hid a real 2010 advert from Browse entirely. A test that leans
+    // on a default is really a test of the default.
+    const c = mountWith([
+      car({ model: 'Ritz', year: 2010, km: 95000, price: 110000,
+            image: REAL, images: [REAL], fromCatalogue: false, isSellerListing: true }),
+    ]);
+    c.carType.set('Used');
+    c.minYear.set(2018);
+
+    expect(c.usedCount()).toBe(0);
+    expect(c.filteredCars().length).toBe(0);
+  });
+});
+
+describe('ListingsComponent — the year filter does not hide real inventory', () => {
+  it('shows a 2010 advert by default', () => {
+    /**
+     * REPORTED: a 2010 Ritz visible on /used-cars and absent from Browse.
+     *
+     * minYear defaulted to 2018 and its slider floor was 2015, so every car
+     * older than that was excluded from the page AND from the tab counts, with
+     * no control able to bring it back. The catalogue looked empty rather than
+     * filtered, which is the same failure as hiding a model with no
+     * photograph: a rule with no visible cause.
+     */
     const c = mountWith([
       car({ model: 'Ritz', year: 2010, km: 95000, price: 110000,
             image: REAL, images: [REAL], fromCatalogue: false, isSellerListing: true }),
     ]);
     c.carType.set('Used');
 
-    expect(c.usedCount()).toBe(0);
-    expect(c.filteredCars().length).toBe(0);
+    expect(c.filteredCars().length).toBe(1);
+    expect(c.usedCount()).toBe(1);
+  });
+
+  it('still filters when the reader sets a year', () => {
+    // The control has to keep working; the fault was the default, not the
+    // filter.
+    const c = mountWith([
+      car({ model: 'Ritz', year: 2010, km: 95000, price: 110000,
+            image: REAL, images: [REAL], fromCatalogue: false, isSellerListing: true }),
+      car({ model: 'Swift', year: 2020, km: 42000, price: 550000,
+            image: REAL, images: [REAL], fromCatalogue: false, isSellerListing: true }),
+    ]);
+    c.carType.set('Used');
+    expect(c.usedCount()).toBe(2);
+
+    c.minYear.set(2018);
+
+    expect(c.usedCount()).toBe(1);
+    expect(c.filteredCars().length).toBe(1);
+  });
+
+  it('offers a slider floor that reaches the oldest car there is', () => {
+    // A fixed floor of 2015 could not be dragged down to a 2010 car. The
+    // control now spans what the catalogue actually holds.
+    const c = mountWith([
+      car({ model: 'Ritz', year: 2010, km: 95000, price: 110000,
+            image: REAL, images: [REAL], fromCatalogue: false, isSellerListing: true }),
+      car({ model: 'Baleno', image: REAL, images: [REAL] }),
+    ]);
+
+    expect(c.oldestYear()).toBe(2010);
+  });
+});
+
+describe('ListingsComponent — switching tabs leaves the variants view', () => {
+  it('clears the selected model', () => {
+    // Reported from the Baleno Variants page: the New/Used/All bar was still
+    // there, offering "Used Cars 0". Switching tabs left the drill-down alive
+    // behind them, so returning to New reopened a model the reader had
+    // navigated away from.
+    const c = mountWith([car({ model: 'Baleno', image: REAL, images: [REAL] })]);
+    c.selectedModel.set('Maruti Suzuki||Baleno');
+
+    c.setCarType('Used');
+
+    expect(c.selectedModel()).toBeNull();
   });
 });
