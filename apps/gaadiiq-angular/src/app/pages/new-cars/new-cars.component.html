@@ -273,8 +273,33 @@
             @for (model of newCarModels(); track model.make + model.model) {
               <div class="model-card glass-card">
                 <div class="model-img-wrap">
-                  <img [src]="imageFor(model)" [alt]="model.make + ' ' + model.model"
-                    class="model-img" (error)="onImgError($event)" loading="lazy" />
+                  <!--
+                    A model with no photograph gets a silhouette carrying its
+                    name, not the "No Image Available" graphic. That graphic
+                    reads as a broken page — which is why such models used to
+                    be hidden from this grid entirely, and hiding them is what
+                    made the catalogue show one model out of seven.
+                  -->
+                  @if (imageFor(model) !== placeholder) {
+                    <img [src]="imageFor(model)" [alt]="model.make + ' ' + model.model"
+                      class="model-img" (error)="onImgError($event)" loading="lazy" />
+                  } @else {
+                    <div class="model-img-pending">
+                      <svg viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg" class="pending-car-svg">
+                        <rect x="5" y="32" width="110" height="16" rx="5" fill="currentColor" opacity=".12"/>
+                        <path d="M18 32 L28 14 L92 14 L102 32Z" fill="currentColor" opacity=".18"/>
+                        <rect x="15" y="30" width="90" height="18" rx="6" fill="currentColor" opacity=".22"/>
+                        <rect x="30" y="16" width="22" height="13" rx="3" fill="currentColor" opacity=".3"/>
+                        <rect x="56" y="16" width="22" height="13" rx="3" fill="currentColor" opacity=".3"/>
+                        <circle cx="32" cy="48" r="8" fill="currentColor" opacity=".25"/>
+                        <circle cx="32" cy="48" r="4" fill="currentColor" opacity=".35"/>
+                        <circle cx="88" cy="48" r="8" fill="currentColor" opacity=".25"/>
+                        <circle cx="88" cy="48" r="4" fill="currentColor" opacity=".35"/>
+                      </svg>
+                      <span class="pending-label">{{ model.make }} {{ model.model }}</span>
+                      <span class="pending-note">{{ 'Photographs coming soon' | t }}</span>
+                    </div>
+                  }
                   @if (model.badge) {
                     <span class="model-badge badge-featured">{{ model.badge }}</span>
                   }
