@@ -1,4 +1,5 @@
-.profile-page { padding: 6rem 1rem 3rem; max-width: 560px; margin: 0 auto; }
+// LAY-007: clear the fixed navbar — see the note in car-detail.
+.profile-page { padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 1rem 3rem; max-width: 560px; margin: 0 auto; }
 .profile-title { font-size: 1.6rem; font-weight: 800; margin-bottom: 1.5rem; }
 
 .glass-card { padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem; }

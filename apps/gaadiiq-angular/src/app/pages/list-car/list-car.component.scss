@@ -1,6 +1,9 @@
 .list-page {
   min-height: 100vh;
-  padding: 6rem 1rem 4rem;
+  // LAY-007: clear the fixed navbar. A literal top padding is a guess at
+  // the bar's height, and the bar is 182px at rest (118px above 1180px),
+  // so the first thing on the page rendered underneath it.
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 1rem 4rem;
   position: relative;
   overflow: hidden;
 }
