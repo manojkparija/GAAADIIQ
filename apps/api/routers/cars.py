@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependencies import get_admin_user, get_current_user
@@ -39,11 +39,9 @@ async def list_cars(
     priced_only: bool = Query(
         False,
         description=(
-            "Return only models a buyer can be quoted a price for — either the "
-            "row's own ex-showroom figure or a published trim that carries "
-            "one. Customer-facing catalogue pages set this so a model nobody "
-            "has priced at all never reaches a buyer; admin screens leave it "
-            "off so the gaps stay visible."
+            "Return only models that carry an ex-showroom price. Customer-"
+            "facing catalogue pages set this so unpriced rows never reach a "
+            "buyer; admin screens leave it off so the gaps stay visible."
         ),
     ),
     page: int = Query(1, ge=1),
@@ -52,33 +50,7 @@ async def list_cars(
 ):
     q = select(Car)
     if priced_only:
-        # A MODEL IS PRICED IF ANYTHING ABOUT IT CARRIES A PRICE
-        #
-        # This used to read `Car.ex_showroom_price.is_not(None)` alone, and
-        # that one column is not where a model's price lives any more. The
-        # trims are: `_variant_summaries` computes the band the published
-        # trims span, `startingPrice` and `priceBand` on the web read it in
-        # preference to the row, and the row's own figure survives only as the
-        # fallback for a model whose trims are unpriced or not entered.
-        #
-        # So a model could be fully priced — twelve published trims, a real
-        # band on its own detail page — and still be withheld from every
-        # buyer-facing grid because one legacy column on its catalogue row was
-        # blank. Nothing on any screen said why, and an admin filling in trims
-        # had no reason to think the model was still invisible.
-        #
-        # The intent of the flag is unchanged: a model nobody has priced at
-        # all stays out of a grid that sorts and filters on price.
-        priced_variant = (
-            select(CarVariant.id)
-            .where(
-                CarVariant.car_id == Car.id,
-                CarVariant.status == VariantStatus.published,
-                CarVariant.ex_showroom_price.is_not(None),
-            )
-            .exists()
-        )
-        q = q.where(or_(Car.ex_showroom_price.is_not(None), priced_variant))
+        q = q.where(Car.ex_showroom_price.is_not(None))
     if make:
         q = q.where(func.lower(Car.make).contains(make.lower()))
     if model:

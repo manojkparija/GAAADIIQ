@@ -141,9 +141,6 @@ export class ListingsComponent implements OnInit {
     return `${car.make} ${car.model}${car.variant ? ' ' + car.variant : ''} ${car.year}`;
   }
 
-  /** For the template: tells a real photograph from the stand-in. */
-  readonly placeholder = PLACEHOLDER;
-
   get loading() { return this.carsData.loading; }
 
   searchQuery        = signal('');
@@ -468,24 +465,16 @@ export class ListingsComponent implements OnInit {
     })
     .filter((m): m is NewCarModel => m !== null &&
       (bt === 'All' || m.bodyType === bt) &&
-      (fuel === 'All' || m.fuel.includes(fuel))
-      // NOTHING IS DROPPED FOR WANT OF A PHOTOGRAPH.
+      (fuel === 'All' || m.fuel.includes(fuel)) &&
+      // A card with no photograph is not shown, as on the New Cars grid.
+      // "No Image Available" on a row of cars reads as a broken page rather
+      // than as a catalogue gap; a model waits until it has a picture.
       //
-      // This filtered on `m.image !== PLACEHOLDER`, and the reasoning was
-      // sound: "No Image Available" across a grid of cars reads as a broken
-      // page rather than as a catalogue gap. That was itself a report.
-      //
-      // But it produced the opposite report — a catalogue of seven models
-      // showing one, and a "Back to all models" link leading to a list of a
-      // single car. Both complaints are right, and they only conflict if the
-      // choice is between hiding a model and showing a broken-looking card.
-      //
-      // It is not. The grid already has a deliberate treatment for a model
-      // with no picture — a car silhouette carrying the model's name — and it
-      // was unreachable, because `image` is set to PLACEHOLDER rather than
-      // left empty, and PLACEHOLDER is a truthy string. So the <img> branch
-      // always won and rendered the "No Image Available" graphic that caused
-      // the original complaint. See the template.
+      // The models this removes are no longer removed SILENTLY — see
+      // modelsAwaitingPhotos below. A count that said 7 above a page showing
+      // 1, with nothing to explain the gap, is what made this rule look like
+      // a bug rather than a decision.
+      m.image !== PLACEHOLDER
     )
     .sort((a, b) => b.reviews - a.reviews);
   });

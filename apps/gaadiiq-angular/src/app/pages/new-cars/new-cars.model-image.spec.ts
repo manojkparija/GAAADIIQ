@@ -89,14 +89,12 @@ describe('NewCarsComponent — which photograph a model card shows', () => {
     expect(model.maxPrice).toBe(930000);
   });
 
-  it('lists the model with the placeholder when no year has one', () => {
-    // A model genuinely without photographs used to be kept off the grid. It
-    // is listed now, with the placeholder — the concern was never "hide it",
-    // it was "do not claim a picture it has not got", and that still holds.
+  it('shows nothing at all when no year has one', () => {
+    // A model genuinely without photographs is kept off the grid rather than
+    // rendered as a blank card.
     const c = mountWith([car({ year: 2024, price: 899000 }), car({ year: 2026 })]);
 
-    expect(c.newCarModels().length).toBe(1);
-    expect(c.newCarModels()[0].image).toBe(PLACEHOLDER);
+    expect(c.newCarModels()).toEqual([]);
     expect(c.hiddenForNoPhoto()).toBe(1);
   });
 
@@ -122,9 +120,9 @@ describe('NewCarsComponent — which photograph a model card shows', () => {
       car({ year: 2026, price: 930000, image: aepl, images: [aepl] }),
     ]);
 
-    // Nothing renderable, so the card shows the placeholder — an aeplcdn URL
-    // must not count as a photograph and put a broken image back on the grid.
-    expect(c.newCarModels()[0].image).toBe(PLACEHOLDER);
+    // Nothing renderable, so nothing is shown — an aeplcdn URL must not count
+    // as a photograph and put a broken card back on the grid.
+    expect(c.newCarModels()).toEqual([]);
     expect(c.hiddenForNoPhoto()).toBe(1);
   });
 
@@ -141,33 +139,26 @@ describe('NewCarsComponent — which photograph a model card shows', () => {
     expect(c.newCarModels()[0].image).toBe(swift);
   });
 
-  it('shows a model with no photograph beside one that has pictures', () => {
-    // Reported against the e Vitara and Grand Vitara cards, which sat here as
-    // blanks reading "No Image Available" — so they were hidden. Hiding them
-    // then produced the opposite report: a catalogue of seven showing one.
-    //
-    // Both are answered by the silhouette card: the model is listed, and it is
-    // visibly a model awaiting a photograph rather than a broken tile.
+  it('keeps a model with no photograph off the grid', () => {
+    // "No Image Available" on a grid of cars reads as a broken page rather
+    // than a catalogue gap. Reported against the e Vitara and Grand Vitara
+    // cards, which sat there as blanks.
     const c = mountWith([
       car({ model: 'e Vitara', year: 2026, price: 1600000 }),
       car({ year: 2026, price: 930000, image: REAL, images: [REAL] }),
     ]);
 
-    const byModel = Object.fromEntries(
-      c.newCarModels().map((m: any) => [m.model, m.image]),
-    );
-    expect(Object.keys(byModel).sort()).toEqual(['Fronx', 'e Vitara']);
-    expect(byModel['e Vitara']).toBe(PLACEHOLDER);
-    expect(byModel['Fronx']).toBe(REAL);
+    const shown = c.newCarModels().map((m: any) => m.model);
+    expect(shown).toEqual(['Fronx']);
   });
 
-  it('counts the models still awaiting a photograph', () => {
-    // Nothing is hidden now, but the backlog is still worth a number: it is
-    // what tells an admin there is work to do, and it is what the heading
-    // reads out beside the model count.
+  it('counts what it hid, so the empty state can explain itself', () => {
+    // An empty grid has two causes needing opposite responses: no model
+    // matched the filters (change them) or none has a photograph (upload
+    // one). One message for both sends the reader the wrong way.
     const c = mountWith([car({ model: 'e Vitara', year: 2026, price: 1600000 })]);
 
-    expect(c.newCarModels().length).toBe(1);
+    expect(c.newCarModels().length).toBe(0);
     expect(c.hiddenForNoPhoto()).toBe(1);
   });
 

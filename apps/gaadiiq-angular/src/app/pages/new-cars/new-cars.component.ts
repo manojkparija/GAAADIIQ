@@ -352,21 +352,18 @@ export class NewCarsComponent implements OnInit {
   });
 
   /**
-   * Every model the catalogue holds, photograph or not.
+   * The models the grid shows: those with a photograph.
    *
-   * This kept only models with a picture, because "No Image Available" across
-   * a grid of cars reads as a broken page rather than as a catalogue gap —
-   * reported that way once: e Vitara, Fronx and Grand Vitara sitting here as
+   * "No Image Available" on a grid of cars reads as a broken page rather than
+   * as a catalogue gap, so a model waits until it has a photograph. Reported
+   * that way once: e Vitara, Fronx and Grand Vitara sitting on the grid as
    * blanks, with no photograph rows behind any of them.
    *
-   * Then it produced the opposite report: a catalogue of seven models showing
-   * one. Both are right. They conflict only if the choice is between hiding a
-   * model and showing a broken-looking card, and it is not — the grid has a
-   * deliberate no-photograph treatment that was simply unreachable. See the
-   * template and modelsAwaitingPhotos.
+   * hiddenForNoPhoto is what keeps that from being silent, which is the other
+   * half of the same complaint — see the note there.
    */
   newCarModels = computed<NewCarModel[]>(() => {
-    const shown = [...this.allModels()];
+    const shown = this.allModels().filter(m => m.image !== PLACEHOLDER);
 
     const sort = this.selectedSort();
     if (sort === 'Price: Low to High') return shown.sort((a, b) => a.minPrice - b.minPrice);
