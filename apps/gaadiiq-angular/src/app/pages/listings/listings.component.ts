@@ -152,7 +152,23 @@ export class ListingsComponent implements OnInit {
   selectedModelName  = signal('All');
   minPrice           = signal(0);
   maxPrice           = signal(20000000);
-  minYear            = signal(2018);
+  /**
+   * No lower bound until the reader sets one.
+   *
+   * REPORTED: a 2010 Ritz visible on /used-cars and absent from Browse.
+   *
+   * This defaulted to 2018 and its slider could not be dragged below 2015, so
+   * every car older than that was excluded from the page and from the tab
+   * counts — permanently, with no control able to bring it back. A default
+   * that hides real inventory is worse than no filter at all: the catalogue
+   * looked empty rather than filtered, and nothing on screen said a year
+   * filter was in force.
+   *
+   * 0 means "no bound". The slider's floor is now the oldest car actually in
+   * the catalogue (see oldestYear), so the control always spans what there is
+   * to find rather than a range chosen when the fixtures were newer.
+   */
+  minYear            = signal(0);
   sidebarOpen        = signal(false);
 
   // Top-level car type: 'All' | 'New' | 'Used'
@@ -211,13 +227,48 @@ export class ListingsComponent implements OnInit {
   bodyTypes     = ['All', 'Hatchback', 'Sedan', 'SUV', 'MUV'];
   sorts         = ['Relevance', 'Price: Low to High', 'Price: High to Low', 'Newest First', 'Top Rated'];
 
+  /**
+   * The oldest model year the catalogue actually holds, for the year slider's
+   * floor. Falls back to 2000 while the catalogue is still loading, so the
+   * control is never inverted.
+   */
+  /** For the year slider's ceiling; a car cannot be newer than next year's plate. */
+  readonly thisYear = new Date().getFullYear() + 1;
+
+  oldestYear = computed(() => {
+    const years = this.carsData.cars().map(c => c.year).filter(y => y > 1900);
+    return years.length ? Math.min(...years) : 2000;
+  });
+
   setCarType(t: 'All' | 'New' | 'Used') {
     this.carType.set(t);
     this.usedKmRange.set('All');
+    // Leaving a model selected kept the variants drill-down alive behind the
+    // other tabs, so coming back to New reopened a model the reader had
+    // navigated away from.
+    this.selectedModel.set(null);
   }
 
-  filteredCars = computed(() => {
-    let cars = this.carsData.cars().filter(c => {
+  /**
+   * Whether one car belongs on the tab named by `type`, under the filters
+   * currently set.
+   *
+   * EXTRACTED SO THE COUNTS CANNOT DISAGREE WITH THE LIST
+   *
+   * REPORTED: the pill read "All Cars 8" and the page under it read
+   * "1 listings found".
+   *
+   * filteredCars applied every sidebar filter — price band, minimum year,
+   * fuel, transmission, body type, search — while the counts beside the tab
+   * labels applied make, type and isShowable and nothing else. minYear alone
+   * defaults to 2018, so a 2010 advert counted on the pill and could never
+   * appear in the list beneath it.
+   *
+   * Two implementations of "does this car belong here" is what produced that,
+   * and writing the counts a third time would have produced it again. One
+   * predicate, asked once per tab.
+   */
+  private matches(c: Car, type: 'All' | 'New' | 'Used'): boolean {
       const q = this.searchQuery().toLowerCase();
       const matchQ  = !q || `${c.make} ${c.model} ${c.variant ?? ''} ${c.city} ${c.bodyType} ${c.year} ${c.fuel} ${c.transmission} ${c.color ?? ''}`.toLowerCase().includes(q);
       const matchMake = this.selectedMake() === 'All' || c.make === this.selectedMake();
@@ -228,8 +279,8 @@ export class ListingsComponent implements OnInit {
       const matchPrice = c.price >= this.minPrice() && c.price <= this.maxPrice();
       const matchYear  = c.year >= this.minYear();
 
-      // Top-level New / Used split
-      const type = this.carType();
+      // Top-level New / Used split. `type` is a parameter rather than a read
+      // of carType() so a count can ask about a tab the reader is not on.
       const matchType = type === 'All' ? true :
         type === 'New'  ? c.km === 0 && c.year >= 2024 :
         /* Used */ c.km > 0 || c.year < 2024;
@@ -252,7 +303,10 @@ export class ListingsComponent implements OnInit {
       const matchPhoto = this.visible(c);
 
       return matchQ && matchMake && matchModel && matchFuel && matchTx && matchBT && matchPrice && matchYear && matchType && matchRange && matchPhoto;
-    });
+  }
+
+  filteredCars = computed(() => {
+    let cars = this.carsData.cars().filter(c => this.matches(c, this.carType()));
 
     const sort = this.selectedSort();
     if (sort === 'Price: Low to High') cars = [...cars].sort((a,b) => a.price - b.price);
@@ -272,20 +326,76 @@ export class ListingsComponent implements OnInit {
    */
   private visible = isShowable;
 
-  newCount  = computed(() => {
+  /**
+   * What the All tab holds, counted the way that tab decides.
+   *
+   * REPORTED: the pill read "All Cars 8" and the page under it read
+   * "1 listings found".
+   *
+   * The counts asked their own question — make, type and isShowable — while
+   * the list applied every sidebar filter as well. So the pills were
+   * answering "how many cars of this kind exist" and the reader was asking
+   * "how many will I get if I click". minYear alone, which defaults to 2018,
+   * is enough to separate the two: a 2010 advert counts on the pill and can
+   * never appear in the list beneath it.
+   *
+   * It is the list's own predicate now, so the answer cannot drift from what
+   * appears.
+   */
+  allCount = computed(() =>
+    this.carsData.cars().filter(c => this.matches(c, 'All')).length
+  );
+
+  /**
+   * What the New tab will actually render: models, not catalogue rows.
+   *
+   * REPORTED: the pill read "New Cars 7" and the page under it read "1 models
+   * available". Both were right about different things — the pill counted
+   * ROWS that pass isShowable, the heading counted MODELS left after grouping
+   * and after photograph-less ones were dropped. Three differences between two
+   * numbers side by side, on a screen whose own note says a count is a promise
+   * about what clicking will produce.
+   *
+   * The promise is what matters, so the pill now counts the cards. All Cars
+   * and Used Cars still count listings, because those tabs render listings —
+   * each number counts its own tab's units rather than all three sharing one
+   * definition that fits none of them.
+   */
+  newModelCount = computed(() => this.newCarModels().length);
+
+  /**
+   * Models in the catalogue that the grid is holding back for want of a
+   * photograph.
+   *
+   * The grid hides them on purpose — "No Image Available" across a row of
+   * cars reads as a broken page, and that was itself a report. What was wrong
+   * was doing it SILENTLY: the tab read "New Cars 7" over a page saying "1
+   * models available", and nothing anywhere accounted for the other six. A
+   * rule nobody can see reads as a bug however well reasoned it is, and this
+   * one cost an evening of looking for a fault that was not there.
+   *
+   * Counted the same way the grid decides, so the two cannot drift: group the
+   * rows this tab considers, and count the groups no row of which has a
+   * picture.
+   */
+  modelsAwaitingPhotos = computed(() => {
     const make = this.selectedMake();
-    return this.carsData.cars().filter(c =>
+    const rows = this.carsData.cars().filter(c =>
       c.km === 0 && c.year >= 2024 && (make === 'All' || c.make === make)
-      && this.visible(c)
-    ).length;
+    );
+    const withPhoto = new Set<string>();
+    const all = new Set<string>();
+    for (const c of rows) {
+      const key = `${c.make}||${c.model}`;
+      all.add(key);
+      if (hasPhotograph(c)) withPhoto.add(key);
+    }
+    return all.size - withPhoto.size;
   });
-  usedCount = computed(() => {
-    const make = this.selectedMake();
-    return this.carsData.cars().filter(c =>
-      (c.km > 0 || c.year < 2024) && (make === 'All' || c.make === make)
-      && this.visible(c)
-    ).length;
-  });
+  /** The Used tab, counted by the same predicate that renders it. */
+  usedCount = computed(() =>
+    this.carsData.cars().filter(c => this.matches(c, 'Used')).length
+  );
 
   selectedModel = signal<string | null>(null);
 
@@ -359,6 +469,11 @@ export class ListingsComponent implements OnInit {
       // A card with no photograph is not shown, as on the New Cars grid.
       // "No Image Available" on a row of cars reads as a broken page rather
       // than as a catalogue gap; a model waits until it has a picture.
+      //
+      // The models this removes are no longer removed SILENTLY — see
+      // modelsAwaitingPhotos below. A count that said 7 above a page showing
+      // 1, with nothing to explain the gap, is what made this rule look like
+      // a bug rather than a decision.
       m.image !== PLACEHOLDER
     )
     .sort((a, b) => b.reviews - a.reviews);
@@ -496,6 +611,6 @@ export class ListingsComponent implements OnInit {
     this.selectedBodyType.set('All'); this.selectedMake.set('All');
     this.selectedModelName.set('All'); this.selectedModel.set(null);
     this.minPrice.set(0); this.maxPrice.set(20000000);
-    this.minYear.set(2018); this.searchQuery.set('');
+    this.minYear.set(0); this.searchQuery.set('');
   }
 }

@@ -15,7 +15,19 @@
           <span *ngIf="carType()==='All'">{{ 'Browse' | t }} <span class="gradient-text">{{ selectedMake() !== ('All' | t) ? selectedMake() : ('Cars' | t) }}</span></span>
         </h1>
         <p style="color:var(--muted);font-size:0.9rem">
-          <ng-container *ngIf="carType()==='New' && !selectedModel()">{{ newCarModels().length }} models available</ng-container>
+          <ng-container *ngIf="carType()==='New' && !selectedModel()">
+            {{ newCarModels().length }} models available
+            <!--
+              The six that were missing with no explanation. The grid holds a
+              model back until it has a photograph, on purpose; saying nothing
+              about it is what made the page look broken.
+            -->
+            <span *ngIf="modelsAwaitingPhotos() as waiting">&nbsp;·&nbsp;
+              <span style="color:var(--text-muted)">
+                {{ waiting }} more waiting for photographs
+              </span>
+            </span>
+          </ng-container>
           <ng-container *ngIf="carType()==='New' && selectedModel()">
             <!-- Published trims, not catalogue rows. The catalogue holds one
                  row per model-year, so counting rows called twelve trims
@@ -45,10 +57,12 @@
   <div class="car-type-bar">
     <div class="container car-type-inner">
       <button class="type-btn" [class.active]="carType()==='All'" (click)="setCarType('All')">
-        🚘 All Cars <span class="type-count">{{ newCount() + usedCount() }}</span>
+        🚘 All Cars <span class="type-count">{{ allCount() }}</span>
       </button>
+      <!-- Models, not rows: this tab renders one card per model, and the count
+           beside the label is a promise about what clicking produces. -->
       <button class="type-btn new-btn" [class.active]="carType()==='New'" (click)="setCarType('New')">
-        ✨ New Cars <span class="type-count">{{ newCount() }}</span>
+        ✨ New Cars <span class="type-count">{{ newModelCount() }}</span>
       </button>
       <button class="type-btn used-btn" [class.active]="carType()==='Used'" (click)="setCarType('Used')">
         🔑 Used Cars <span class="type-count">{{ usedCount() }}</span>
@@ -335,10 +349,16 @@
           </div>
         </div>
         <div class="filter-group" *ngIf="carType()!=='New'">
-          <label>Min Year: <strong class="gradient-text">{{ minYear() }}</strong></label>
-          <input type="range" min="2015" max="2025" step="1"
-            [value]="minYear()" (input)="minYear.set(+$any($event.target).value)" class="price-range">
-          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>2015</span><span>2025</span></div>
+          <!--
+            The floor follows the catalogue. It was fixed at 2015 with a 2018
+            default, so a 2010 advert was excluded from the page and from the
+            tab counts with no control able to bring it back.
+          -->
+          <label>Min Year: <strong class="gradient-text">{{ minYear() ? minYear() : ('Any' | t) }}</strong></label>
+          <input type="range" [min]="oldestYear()" [max]="thisYear" step="1"
+            [value]="minYear() || oldestYear()"
+            (input)="minYear.set(+$any($event.target).value)" class="price-range">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>{{ oldestYear() }}</span><span>{{ thisYear }}</span></div>
         </div>
         <div class="filter-group">
           <label>{{ 'Max Budget:' | t }} <strong class="gradient-text">{{ formatPrice(maxPrice()) }}</strong></label>

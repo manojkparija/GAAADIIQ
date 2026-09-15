@@ -90,6 +90,11 @@ describe('ListingsComponent — the card grid and the type chips', () => {
 
   it('makes the New chip agree with the grid', () => {
     // The reported contradiction: "New Cars 8" beside a single card.
+    //
+    // `newCount` became `newModelCount` when the chip stopped counting
+    // catalogue ROWS and started counting the model cards the tab renders —
+    // reported again as "New Cars 7" over "1 models available". Same
+    // assertion, same intent: the chip agrees with what is under it.
     const c = mountWith([
       car({ model: 'e Vitara', price: 1600000 }),
       car({ model: 'Fronx', price: 684000 }),
@@ -97,7 +102,7 @@ describe('ListingsComponent — the card grid and the type chips', () => {
       car({ model: 'S-Presso', image: PHOTO, images: [PHOTO] }),
     ]);
 
-    expect(c.newCount()).toBe(1);
+    expect(c.newModelCount()).toBe(1);
     expect(c.filteredCars().length).toBe(1);
   });
 
