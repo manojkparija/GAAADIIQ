@@ -2,7 +2,7 @@ import { Component, signal, computed, OnInit, OnDestroy, effect, HostListener } 
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CarsDataService, Car, CarVariant, isShowable, startingPrice, capacityLabel, economyLabel } from '../../services/cars-data.service';
+import { CarsDataService, Car, CarVariant, isShowable, startingPrice, priceBand, capacityLabel, economyLabel } from '../../services/cars-data.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { MarketPositionComponent } from '../../components/market-position/market-position.component';
 import { VehicleScorecardComponent } from '../../components/vehicle-scorecard/vehicle-scorecard.component';
@@ -1208,6 +1208,37 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       return {
         amount: band[0],
         text: this.formatLakhRange(band[0], band[1]),
+        caption: 'Ex-Showroom Price',
+      };
+    }
+
+    // THE SAME BAND, BEFORE THE TRIMS ARRIVE.
+    //
+    // REPORTED, with two screenshots of one page load: "₹6.1L" on paint, and
+    // "₹6.10 - 10.09 Lakh" a few seconds later.
+    //
+    // Both come from this cascade. `variantPriceRange` reads `variants()`,
+    // which is filled by a SEPARATE request for /cars/{id}/variants, so until
+    // that lands it is empty and the cascade falls all the way through to
+    // `car.price` — one hand-maintained figure on the catalogue row. When the
+    // response arrives the band wins and the headline changes underneath the
+    // reader.
+    //
+    // The band never needed that request. The row this page was opened from
+    // already carries variantPriceMin/Max — the API returns them on /cars, and
+    // mapCatalogueCar keeps them — so the correct answer was in hand at first
+    // paint and was simply not being asked for.
+    //
+    // Below variantPriceRange rather than above it on purpose: once the trims
+    // are loaded, that one is measured over the FILTERED set, so choosing
+    // "Automatic" narrows the headline to the trims still on screen. This is
+    // the whole-model band, which is what the filtered set comes to while the
+    // filter is All — hence no visible change when the request lands.
+    const rowBand = priceBand(this.car);
+    if (rowBand) {
+      return {
+        amount: rowBand[0],
+        text: this.formatLakhRange(rowBand[0], rowBand[1]),
         caption: 'Ex-Showroom Price',
       };
     }
