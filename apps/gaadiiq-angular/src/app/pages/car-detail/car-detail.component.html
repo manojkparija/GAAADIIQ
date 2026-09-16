@@ -627,11 +627,15 @@
                 <!-- Similar cars rows -->
                 <tr class="similar-row" *ngFor="let s of similarCars()">
                   <td class="similar-car-name">
-                    <a [routerLink]="['/car', s.id]" class="similar-link">{{ s.make }} {{ s.model }}</a>
+                    <!-- '/cars', not '/car': the route is `cars/:id`, and a
+                         routerLink to a path with no route silently falls to
+                         `{ path: '**', redirectTo: '' }` — so this sent the
+                         reader Home, with no error anywhere. -->
+                    <a [routerLink]="['/cars', s.id]" class="similar-link">{{ s.make }} {{ s.model }}</a>
                     <span class="similar-arrow"> ›</span>
                   </td>
                   <td class="similar-img-cell">
-                    <a [routerLink]="['/car', s.id]">
+                    <a [routerLink]="['/cars', s.id]">
                       <img [src]="s.image" [alt]="s.make + ' ' + s.model"
                            referrerpolicy="no-referrer" imgFallback>
                     </a>
