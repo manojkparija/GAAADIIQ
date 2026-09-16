@@ -1,6 +1,7 @@
 import { Component, signal, computed, OnInit, OnDestroy, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { CarsDataService, Car, CarVariant, isShowable, startingPrice, priceBand, capacityLabel, economyLabel } from '../../services/cars-data.service';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -353,6 +354,7 @@ export class CarDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopSpinHint();
+    this.paramSub?.unsubscribe();
   }
 
   closeLightbox(): void {
@@ -425,6 +427,9 @@ export class CarDetailComponent implements OnInit, OnDestroy {
 
   notFound = false;
   carLoaded = false;
+
+  /** Route parameter subscription; see ngOnInit. Released in ngOnDestroy. */
+  private paramSub?: Subscription;
 
   /**
    * Every catalogue source failed and no car resolved.
@@ -698,12 +703,59 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id') ?? '';
     const tab = this.route.snapshot.queryParamMap.get('tab');
     if (tab) this.activeTab.set(tab);
-    if (!this.carsData.loading()) {
-      this.resolveCar(id);
-    }
+
+    /**
+     * Subscribed, not read once.
+     *
+     * REPORTED: on the Baleno's page, clicking "Maruti Suzuki Swift" in the
+     * similar-cars table changed the URL and kept showing the Baleno.
+     *
+     * Angular reuses this component instance when both URLs match the same
+     * route — /cars/A to /cars/B is still `cars/:id` — so ngOnInit does not
+     * run again. This read the id from `snapshot` exactly once, and
+     * resolveCar opens with `if (this.carLoaded) return`, so the second
+     * navigation did nothing at all: new address, old car.
+     *
+     * That is why it only shows up on the links BETWEEN cars. Arriving from
+     * the listings page or a cold URL builds the component fresh and works,
+     * which is every route anyone tested.
+     */
+    this.paramSub = this.route.paramMap.subscribe(params => {
+      const id = params.get('id') ?? '';
+      if (this.carLoaded && this.car?.id === id) return;
+      this.resetForCar();
+      if (!this.carsData.loading()) {
+        this.resolveCar(id);
+      }
+    });
+  }
+
+  /**
+   * Forget the car currently on screen, so the next one is not read through
+   * its leftovers.
+   *
+   * Every signal here describes ONE car. Leaving any of them would show the
+   * previous car's answer beside the new car's name, which is worse than the
+   * stale page this fixes: the reader has no way to tell which parts moved.
+   * `activeTab` and the gearbox filter are deliberately kept — those are the
+   * reader's choices, not the car's data.
+   */
+  private resetForCar(): void {
+    this.carLoaded = false;
+    this.notFound = false;
+    this.loadFailed.set(false);
+    this.variants.set([]);
+    this.selectedVariantId.set(null);
+    this.priceSettled.set(false);
+    this.reviews.set([]);
+    this.activity.set(null);
+    this.activeImg.set(0);
+    this.spinFrame.set(0);
+    this.spinMode.set(false);
+    this.liked.set(false);
+    this.selectedColour.set('');
   }
 
 

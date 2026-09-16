@@ -27,6 +27,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 
 import { CarDetailComponent } from './car-detail.component';
 import { CarsDataService } from '../../services/cars-data.service';
@@ -62,9 +63,12 @@ function mount(): ComponentFixture<CarDetailComponent> {
       {
         provide: ActivatedRoute,
         useValue: {
+          // Both halves: the component subscribes to paramMap so a link from
+          // one car to another re-resolves, and reads the snapshot for the
+          // ?tab= deep link.
+          paramMap: of(convertToParamMap({ id: 'baleno-id' })),
           snapshot: {
             paramMap: convertToParamMap({ id: 'baleno-id' }),
-            // ngOnInit reads this for the ?tab= deep link.
             queryParamMap: convertToParamMap({}),
           },
           queryParams: { subscribe: () => {} },
