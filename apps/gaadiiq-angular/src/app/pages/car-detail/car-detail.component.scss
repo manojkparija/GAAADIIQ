@@ -965,3 +965,17 @@
   color: var(--text-muted);
   margin-bottom: 0.25rem;
 }
+
+// Deliberately quieter and smaller than .price-pending: this says "we are
+// still looking", and it should not read as an announcement the way a
+// headline-sized line does. It occupies the same block so the panel does not
+// jump when the real price replaces it.
+.price-loading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+  min-height: clamp(1.4rem, 3vw, 1.9rem);
+  display: flex;
+  align-items: center;
+}
