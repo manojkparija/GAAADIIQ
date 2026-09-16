@@ -240,17 +240,24 @@
          to see it happening. This asks the API exactly what New Cars asks. -->
     @if (!showMetadataGrid() && !uploadResults() && hiddenForNoPhoto().length) {
       <div class="aci-section aci-hidden-section">
+        <!-- Counted by model, not by catalogue row: one Grand Vitara held at
+             two years read as "2 models" and looked like two cars needing
+             attention. The years stay because a photograph attaches by make,
+             model AND year — a 2026 upload does nothing for the 2025 row. -->
         <h2 class="aci-section-title">
-          Priced, but hidden from buyers — {{ hiddenForNoPhoto().length }}
-          {{ hiddenForNoPhoto().length === 1 ? 'model' : 'models' }}
+          Priced, but hidden from buyers — {{ hiddenModelGroups().length }}
+          {{ hiddenModelGroups().length === 1 ? 'model' : 'models' }}
         </h2>
         <p class="aci-section-sub">
           These carry a price but no photograph, so New Cars does not list them
-          at all. One upload each puts them live.
+          at all. Each year listed needs its own upload.
         </p>
         <ul class="aci-hidden-list">
-          @for (m of hiddenForNoPhoto(); track m.make + m.model + m.year) {
-            <li>{{ m.year }} {{ m.make }} {{ m.model }}</li>
+          @for (m of hiddenModelGroups(); track m.make + m.model) {
+            <li>
+              {{ m.make }} {{ m.model }}
+              <span class="aci-hidden-years">{{ m.years.join(' · ') }}</span>
+            </li>
           }
         </ul>
       </div>

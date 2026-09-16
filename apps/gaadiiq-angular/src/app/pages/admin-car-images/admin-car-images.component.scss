@@ -941,3 +941,13 @@
 @media (max-width: 620px) {
   .aci-hidden-list { columns: 1; }
 }
+
+/* The years this model is missing a photograph for. Quieter than the name —
+   the model is what an admin scans for — but present, because each year needs
+   its own upload. */
+.aci-hidden-years {
+  margin-left: 0.4rem;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
