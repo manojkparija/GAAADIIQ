@@ -686,7 +686,14 @@
                block used to render "₹0" with "EMI from ₹0/mo" under it. Saying
                so is the honest version and the one a buyer can act on: it
                reads as a car awaiting its price rather than a broken page. -->
-          <ng-container *ngIf="!displayPrice()">
+          <!-- Not yet looked, so nothing is claimed. See priceSettled: this
+               panel used to announce "Price not announced yet" while the trims
+               request was still in flight, then replace it with the real band
+               a few seconds later. Reported that way against the Baleno. -->
+          <ng-container *ngIf="!displayPrice() && !priceSettled()">
+            <div class="price-loading" aria-live="polite">{{ 'Fetching the latest price…' | t }}</div>
+          </ng-container>
+          <ng-container *ngIf="!displayPrice() && priceSettled()">
             <div class="price-pending">{{ 'Price not announced yet' | t }}</div>
             <div style="color:var(--muted);font-size:0.8rem;margin-bottom:0.25rem">
               {{ 'Ask for a callback and we will send it as soon as it is published.' | t }}

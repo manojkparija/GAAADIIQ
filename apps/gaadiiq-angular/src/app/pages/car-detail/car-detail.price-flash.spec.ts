@@ -136,3 +136,57 @@ describe('CarDetailComponent — the headline price does not flip', () => {
     expect(c.displayPrice().amount).toBe(610000);
   });
 });
+
+/**
+ * "Price not announced yet" is a claim about the world, not about our state.
+ *
+ * REPORTED against the Baleno: the panel read "Price not announced yet" and
+ * then, seconds later, the real band. The message was printed before the page
+ * had looked — the trims request was still in flight — so for those seconds
+ * the site told a buyer something untrue about a car that is on sale.
+ *
+ * A price we have not fetched and a price that does not exist are different
+ * facts, and only one of them is safe to state. Same rule as
+ * services/credit_bureau.py::fetch_score, which raises rather than returning a
+ * plausible number: not knowing is recoverable, a confident wrong answer is
+ * not.
+ */
+describe('CarDetailComponent — it does not announce what it has not checked', () => {
+  it('says nothing about availability while the trims are still loading', () => {
+    const c = mount(baleno({ variantPriceMin: undefined, variantPriceMax: undefined, price: 0 }))
+      .componentInstance as any;
+    c.car = baleno({ variantPriceMin: undefined, variantPriceMax: undefined, price: 0 });
+
+    // The reported state: nothing to show yet, and nothing answered yet.
+    expect(c.displayPrice()).toBeNull();
+    expect(c.priceSettled())
+      .withContext('the page must not claim a price is unannounced before it has looked')
+      .toBe(false);
+  });
+
+  it('says so once the trims have answered with nothing', () => {
+    // The message is still correct and still reachable — this is not about
+    // removing it, only about when it is allowed to be said.
+    const c = mount(baleno({ variantPriceMin: undefined, variantPriceMax: undefined, price: 0 }))
+      .componentInstance as any;
+    c.car = baleno({ variantPriceMin: undefined, variantPriceMax: undefined, price: 0 });
+
+    c.priceSettled.set(true);
+
+    expect(c.displayPrice()).toBeNull();
+    expect(c.priceSettled()).toBe(true);
+  });
+
+  it('treats a failed trims request as an answer', () => {
+    // Otherwise a page whose request failed sits on "Fetching..." for ever,
+    // which is its own kind of lie. loadVariants sets the flag in a finally.
+    const c = mount(baleno()).componentInstance as any;
+    c.car = baleno();
+    (c as any).carsData = { variantsFor: () => Promise.reject(new Error('offline')) };
+
+    return (c as any).loadVariants('c5c6b687').then(
+      () => expect(c.priceSettled()).toBe(true),
+      () => expect(c.priceSettled()).toBe(true),
+    );
+  });
+});

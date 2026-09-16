@@ -754,6 +754,9 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       // than showing a quiet car.
       if (this.car.isSellerListing) {
         void this.demandSvc.activity(this.car.id).then(a => this.activity.set(a));
+        // An advert carries its own asking price on the row; nothing further
+        // is fetched for it, so there is nothing to wait for.
+        this.priceSettled.set(true);
       }
 
       if (!this.car.isSellerListing) {
@@ -769,6 +772,18 @@ export class CarDetailComponent implements OnInit, OnDestroy {
             // Curated specification wins over the hardcoded map.
             specs: fresh.specs?.length ? fresh.specs : this.car.specs,
             features: fresh.features?.length ? fresh.features : this.car.features,
+            // fullCar returns these and this block was discarding them.
+            //
+            // It matters when the row this page started from is stale. The
+            // list response is cached by the service worker under the
+            // api-catalogue dataGroup, which serves its copy once the network
+            // has taken longer than its 5s timeout — so a page can open on a
+            // row recorded before anyone entered that model's prices. This is
+            // the newer, narrower answer for this one car; let it correct the
+            // row rather than sit unused beside it.
+            variantCount: fresh.variantCount ?? this.car.variantCount,
+            variantPriceMin: fresh.variantPriceMin ?? this.car.variantPriceMin,
+            variantPriceMax: fresh.variantPriceMax ?? this.car.variantPriceMax,
           };
           if (urls.length) this.activeImg.set(0);
         });
@@ -1312,8 +1327,31 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     this.selectedVariantId.set(this.selectedVariantId() === v.id ? null : v.id);
   }
 
+  /**
+   * Whether every source this page prices from has answered.
+   *
+   * "Price not announced yet" is a statement of fact — it tells a buyer the
+   * manufacturer has not published a figure — and the page was making it
+   * before it had looked. REPORTED: the Baleno reading "Price not announced
+   * yet" and then, a few seconds later, its real band.
+   *
+   * A price the page has not fetched and a price that does not exist are
+   * different things, and only one of them is safe to tell someone. This is
+   * the same rule services/credit_bureau.py::fetch_score follows, where not
+   * knowing raises rather than returning a plausible number: silence is
+   * recoverable, a confident wrong answer is not.
+   *
+   * False until the trims request settles — failure included, since a failed
+   * request is still an answer about what we can show.
+   */
+  priceSettled = signal(false);
+
   private async loadVariants(carId: string) {
-    this.variants.set(await this.carsData.variantsFor(carId));
+    try {
+      this.variants.set(await this.carsData.variantsFor(carId));
+    } finally {
+      this.priceSettled.set(true);
+    }
   }
 
   get isNewCar() { return this.car?.km === 0 && this.car?.year >= 2024; }

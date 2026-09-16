@@ -189,11 +189,37 @@ describe('CarDetailComponent — what the unpriced page actually renders', () =>
   // This is the closest measurement available here.
 
   it('prints no ₹0 anywhere, and says the price is not announced', () => {
-    const text = (fixture(car()).nativeElement as HTMLElement).innerText;
+    // priceSettled is set explicitly because this test is about what a car
+    // with NO price renders, and that sentence is now only allowed once the
+    // page has actually looked.
+    //
+    // The page used to print "Price not announced yet" while the trims request
+    // was still in flight — reported against the Baleno, which has a price:
+    // the panel announced one was not published, then replaced it with the
+    // real band seconds later. A price we have not fetched and a price that
+    // does not exist are different facts, and only one is safe to state.
+    //
+    // The concern here is unchanged — no ₹0, no NaN, and say so plainly when
+    // there is nothing to show. Only the precondition moved.
+    const f = fixture(car());
+    (f.componentInstance as any).priceSettled.set(true);
+    f.detectChanges();
+    const text = (f.nativeElement as HTMLElement).innerText;
 
     expect(text).withContext('the reported symptom').not.toContain('₹0');
     expect(text).not.toContain('NaN');
     expect(text).toContain('Price not announced yet');
+  });
+
+  it('does not announce an absent price before it has looked', () => {
+    // The other half of the same rule, and the reported bug: with nothing
+    // answered yet, the panel must not make the claim at all.
+    const text = (fixture(car()).nativeElement as HTMLElement).innerText;
+
+    expect(text)
+      .withContext('a claim about the manufacturer, made before asking')
+      .not.toContain('Price not announced yet');
+    expect(text).not.toContain('₹0');
   });
 
   it('does not draw an AI Price Analysis for a car that has no valuation', () => {
