@@ -865,6 +865,18 @@
   padding: 0.5rem;
   z-index: 100;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08);
+  // This menu's height is not ours to predict: it grows with what the account
+  // can do. A signed-in buyer gets three rows and no headings; an admin gets
+  // sixteen rows and three. Unbounded, the admin menu ran past the bottom of
+  // the window and the last items — Brand Logos, Variants, Upcoming Cars —
+  // could only be reached by zooming the browser out.
+  //
+  // Same treatment .nav-mega and .nav-menu already have; this panel was the
+  // one that never got it.
+  max-height: min(70vh, 34rem);
+  overflow-y: auto;
+  // Don't hand the scroll to the page behind once the menu hits its end.
+  overscroll-behavior: contain;
 }
 
 .dropdown-email {
