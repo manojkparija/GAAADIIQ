@@ -34,6 +34,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 
 import { CarDetailComponent } from './car-detail.component';
 
@@ -58,11 +60,31 @@ function render(model: string, variants: any[], isNew = true) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     imports: [CarDetailComponent, RouterTestingModule],
-    // RouterTestingModule supplies a real ActivatedRoute. A hand-rolled stub
-    // was tried and broke on a paramMap the component reads during init —
-    // "Cannot read properties of undefined (reading 'get')" — which is a
-    // failing harness, not a failing page.
-    providers: [provideHttpClient(), provideHttpClientTesting()],
+    // RouterTestingModule supplies a real ActivatedRoute, but its root route
+    // carries no :id — and this harness hand-sets `car` and `carLoaded`
+    // below. The component now re-resolves whenever the route's id stops
+    // matching the car on screen (so a link from one car to another works),
+    // and with no id in the route it would correctly decide this is a
+    // different car and clear the trims set here.
+    //
+    // So the route is told which car this is. An earlier hand-rolled stub
+    // broke on a paramMap the component reads during init; this one supplies
+    // both the observable and the snapshot, which is what ActivatedRoute
+    // actually has.
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      {
+        provide: ActivatedRoute,
+        useValue: {
+          paramMap: of(convertToParamMap({ id: 'c1' })),
+          snapshot: {
+            paramMap: convertToParamMap({ id: 'c1' }),
+            queryParamMap: convertToParamMap({}),
+          },
+        },
+      },
+    ],
   });
   const fixture = TestBed.createComponent(CarDetailComponent);
   const c = fixture.componentInstance as any;

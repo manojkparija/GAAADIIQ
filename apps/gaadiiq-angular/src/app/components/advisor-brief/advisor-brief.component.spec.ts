@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { AdvisorBriefComponent } from './advisor-brief.component';
 import { AdvisorBrief, AdvisorPick, AdvisorVariant } from '../../services/api.service';
@@ -217,5 +218,47 @@ describe('AdvisorBriefComponent', () => {
       // changed the numbers rather than how they are explained.
       expect(rowValues(render(twoCars()), 'Fuel / km')).toEqual(['₹2.69', '₹5.3']);
     });
+  });
+});
+
+/**
+ * The advisor's recommendation leads to the car it recommends.
+ *
+ * REPORTED on the car page's similar-cars table, and this link had the same
+ * defect: built as `['/car', id]` while the route is `cars/:id`. Angular
+ * matches nothing, falls through to `{ path: '**', redirectTo: '' }` and
+ * renders Home — no console error, no 404, just a reader who ends up
+ * somewhere else.
+ *
+ * Here it meant the whole advisor flow — ask a question, get a recommended
+ * car, click through to read about it — ended on the home page. Asserted on
+ * the rendered href, since `['/car', id]` is a perfectly valid array and only
+ * resolving it against the router shows it goes nowhere.
+ */
+describe('AdvisorBriefComponent — the pick links to that car', () => {
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      // RouterTestingModule so routerLink resolves to a real href — the input
+      // on its own is what was already wrong.
+      imports: [AdvisorBriefComponent, HttpClientTestingModule, RouterTestingModule],
+    });
+  });
+
+  it('points at a route that exists', () => {
+    const fixture = TestBed.createComponent(AdvisorBriefComponent);
+    fixture.componentInstance.result.set(brief({ items: [pick({ car_id: 'spresso-id' })] }));
+    fixture.detectChanges();
+    // The link sits inside the cost breakdown, which is collapsed by default.
+    fixture.componentInstance.toggleDetail('spresso-id');
+    fixture.detectChanges();
+
+    const link: HTMLAnchorElement | null =
+      fixture.nativeElement.querySelector('.pick-link');
+
+    expect(link).withContext('no link to the recommended car at all').toBeTruthy();
+    expect(link!.getAttribute('href'))
+      .withContext('the advisor recommended a car and linked to the home page')
+      .toBe('/cars/spresso-id');
   });
 });

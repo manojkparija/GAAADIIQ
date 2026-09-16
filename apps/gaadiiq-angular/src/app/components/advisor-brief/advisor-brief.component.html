@@ -180,7 +180,10 @@
             <span *ngIf="pick.variant.mileage"> · {{ pick.variant.mileage }}</span>
           </p>
 
-          <a class="pick-link" [routerLink]="['/car', pick.car_id]">{{ 'See the full model page →' | t }}</a>
+          <!-- '/cars', not '/car'. See the note in car-detail: the wrong
+               path matched no route and redirected to Home, so the advisor's
+               recommendation led nowhere. -->
+          <a class="pick-link" [routerLink]="['/cars', pick.car_id]">{{ 'See the full model page →' | t }}</a>
         </div>
       </article>
 

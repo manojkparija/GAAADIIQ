@@ -38,7 +38,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 import { signal } from '@angular/core';
 
 import { CarDetailComponent } from './car-detail.component';
@@ -65,7 +66,13 @@ function fixture(c: any) {
       provideHttpClientTesting(),
       {
         provide: ActivatedRoute,
-        useValue: { snapshot: { paramMap: new Map([['id', c.id]]), queryParamMap: new Map() } },
+        useValue: {
+          snapshot: { paramMap: new Map([['id', c.id]]), queryParamMap: new Map() },
+          // paramMap is an Observable on the real ActivatedRoute, and the
+          // component subscribes to it so a link from one car to another
+          // re-resolves. A stub without it models a route that cannot exist.
+          paramMap: of(convertToParamMap({ id: c.id })),
+        },
       },
       {
         provide: CarsDataService,

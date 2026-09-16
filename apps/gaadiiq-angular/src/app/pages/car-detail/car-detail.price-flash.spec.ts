@@ -27,6 +27,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 
 import { CarDetailComponent } from './car-detail.component';
 import { CarsDataService, PLACEHOLDER } from '../../services/cars-data.service';
@@ -55,7 +56,17 @@ function mount(car: any): ComponentFixture<CarDetailComponent> {
       provideHttpClientTesting(),
       {
         provide: ActivatedRoute,
-        useValue: { snapshot: { paramMap: convertToParamMap({ id: car.id }) }, queryParams: { subscribe: () => {} } },
+        useValue: {
+          snapshot: {
+            paramMap: convertToParamMap({ id: car.id }),
+            queryParamMap: convertToParamMap({}),
+          },
+          // paramMap is an Observable on the real ActivatedRoute, and the
+          // component subscribes to it so a link from one car to another
+          // re-resolves. A stub without it models a route that cannot exist.
+          paramMap: of(convertToParamMap({ id: car.id })),
+          queryParams: { subscribe: () => {} },
+        },
       },
       {
         provide: CarsDataService,
