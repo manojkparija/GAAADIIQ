@@ -1,5 +1,5 @@
 <!-- ── HUB PAGE (/reviews-news) ─────────────────────────────────────────── -->
-<ng-container *ngIf="isHub()">
+<ng-container *ngIf="isHub() && !unknownSlug()">
   <section class="rn-hero">
     <div class="container">
       <div class="hero-badge"><app-icon name="newspaper" [size]="16"></app-icon> {{ 'GAADIIQ Media' | t }}</div>
@@ -52,12 +52,31 @@
        articles it rendered — five invented headlines under invented bylines. -->
 </ng-container>
 
-<!-- ── CATEGORY PAGE (/reviews-news/:category) ─────────────────────────── -->
-<ng-container *ngIf="!isHub()">
+<!-- ── A SLUG THAT NAMES NO SECTION ────────────────────────────────────── -->
+<ng-container *ngIf="unknownSlug() as slug">
   <section class="rn-hero">
     <div class="container">
       <a routerLink="/reviews-news" class="back-link">{{ '← Reviews & News' | t }}</a>
-      <h1 class="hero-title"><span class="gradient-text">{{ activeTab() }}</span></h1>
+      <h1 class="hero-title">{{ 'Section not found' | t }}</h1>
+      <p class="hero-sub">{{ 'That section of Reviews & News does not exist, or has been retired.' | t }}</p>
+    </div>
+  </section>
+  <section class="articles-section container">
+    <div class="own-empty">
+      <div class="nr-icon"><app-icon name="newspaper" [size]="34"></app-icon></div>
+      <h2>{{ 'Nothing here' | t }}</h2>
+      <p>{{ 'Expert Reviews and Special Reports were retired — they reprinted other publications rather than carrying anything of our own. News and Owner Reviews are what remain.' | t }}</p>
+      <a routerLink="/reviews-news" class="btn-gradient">{{ 'Go to Reviews & News →' | t }}</a>
+    </div>
+  </section>
+</ng-container>
+
+<!-- ── CATEGORY PAGE (/reviews-news/:category) ─────────────────────────── -->
+<ng-container *ngIf="!isHub() && !unknownSlug()">
+  <section class="rn-hero">
+    <div class="container">
+      <a routerLink="/reviews-news" class="back-link">{{ '← Reviews & News' | t }}</a>
+      <h1 class="hero-title"><span class="gradient-text">{{ categoryLabel() | t }}</span></h1>
       <p class="hero-sub">{{ categoryDesc() | t }}</p>
       <!-- Only on a collected section. Who assembled the feed and who wrote
            the stories are different things and the page says both. On Owner
@@ -96,15 +115,23 @@
         </div>
       </div>
 
-      <!-- Error banner -->
+      <!-- Error banner.
+           Carries a retry, because the banner is the only thing on the page
+           when the feed is down — there are no curated articles behind it, so
+           leaving a dead-end message over an empty region is the whole of the
+           experience. -->
       <div class="error-banner" *ngIf="liveError()">
         <span><app-icon name="alert-triangle" [size]="16"></app-icon> {{ liveError() }}</span>
+        <button type="button" class="btn-outline eb-retry" (click)="retry()">{{ 'Try again' | t }}</button>
       </div>
 
       <!-- Live articles -->
       <div class="live-grid" *ngIf="!liveLoading() && liveArticles().length">
-        <div class="live-card glass-card" *ngFor="let a of liveArticles(); let i = index"
-             [routerLink]="['/reviews-news', categorySlug(), 'live', i]">
+        <!-- Linked by the story's id, not its position in this render. The
+             feed reorders between requests, so an index in the address bar
+             pointed at a different story the moment it was reopened. -->
+        <div class="live-card glass-card" *ngFor="let a of liveArticles()"
+             [routerLink]="['/reviews-news', categorySlug(), 'live', a.id]">
           <div class="lc-thumb" [style.backgroundImage]="thumb(a.image)">
             <span *ngIf="!a.image" class="lc-thumb-emoji"><app-icon name="newspaper" [size]="32"></app-icon></span>
           </div>
@@ -139,16 +166,56 @@
     </ng-container>
 
     <!-- ── OWNER REVIEWS ──────────────────────────────────────────────────── -->
-    <!-- Not a feed, and deliberately empty rather than backfilled. Other
-         publications' ownership columns shown here would be the same
-         substitution the rest of this page just removed. -->
-    <div class="own-empty" *ngIf="!isLiveSection()">
-      <div class="nr-icon"><app-icon name="user" [size]="34"></app-icon></div>
-      <h2>{{ 'No owner reviews yet' | t }}</h2>
-      <p>
-        {{ 'This section carries reviews written by people who actually bought and drove the car — not reprints from elsewhere. It fills up as GAADIIQ owners write them.' | t }}
-      </p>
-      <a routerLink="/listings" class="btn-gradient">{{ 'Pick a car to review →' | t }}</a>
-    </div>
+    <!-- Not a feed. These are reviews written by people who bought the car and
+         approved by a moderator; other publications' ownership columns shown
+         here would be the same substitution the rest of this page removed. -->
+    <ng-container *ngIf="!isLiveSection()">
+
+      <div class="live-grid" *ngIf="ownerLoading()">
+        <div class="live-card glass-card skeleton" *ngFor="let i of [1,2,3]">
+          <div class="lc-body">
+            <div class="sk-line sk-line-short"></div>
+            <div class="sk-line"></div>
+            <div class="sk-line sk-line-med"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="error-banner" *ngIf="ownerError()">
+        <span><app-icon name="alert-triangle" [size]="16"></app-icon> {{ ownerError() }}</span>
+        <button type="button" class="btn-outline eb-retry" (click)="retryOwnerReviews()">{{ 'Try again' | t }}</button>
+      </div>
+
+      <div class="own-grid" *ngIf="!ownerLoading() && ownerReviews().length">
+        <article class="own-card glass-card" *ngFor="let r of ownerReviews()">
+          <div class="own-head">
+            <span class="own-car">{{ r.car_label || 'A GAADIIQ car' }}</span>
+            <span class="own-stars" [attr.aria-label]="r.rating + ' out of 5'">
+              <span *ngFor="let on of starsFor(r.rating)" [class.on]="on">★</span>
+            </span>
+          </div>
+          <h3 class="own-title" *ngIf="r.title">{{ r.title }}</h3>
+          <p class="own-body" *ngIf="r.body">{{ r.body }}</p>
+          <!-- The video is the review. It is served from a signed URL that the
+               API regenerates per response, so it is never cached or stored. -->
+          <video class="own-video" *ngIf="r.video_url" [src]="r.video_url" controls preload="none"></video>
+          <div class="own-foot">
+            <span class="own-author">{{ r.author_name || 'A GAADIIQ owner' }}</span>
+            <span class="own-date" *ngIf="r.created_at">{{ news.formatDate(r.created_at) }}</span>
+          </div>
+        </article>
+      </div>
+
+      <!-- Genuinely none written yet — distinct from not having been able to
+           read them, which is the banner above. -->
+      <div class="own-empty" *ngIf="!ownerLoading() && !ownerError() && !ownerReviews().length">
+        <div class="nr-icon"><app-icon name="user" [size]="34"></app-icon></div>
+        <h2>{{ 'No owner reviews yet' | t }}</h2>
+        <p>
+          {{ 'This section carries reviews written by people who actually bought and drove the car — not reprints from elsewhere. It fills up as GAADIIQ owners write them.' | t }}
+        </p>
+        <a routerLink="/listings" class="btn-gradient">{{ 'Pick a car to review →' | t }}</a>
+      </div>
+    </ng-container>
   </section>
 </ng-container>

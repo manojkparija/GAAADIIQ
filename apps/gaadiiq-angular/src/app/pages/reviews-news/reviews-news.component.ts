@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { NewsService } from '../../services/news.service';
+import { VideoReview, VideoReviewService } from '../../services/video-review.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -140,6 +141,18 @@ export class ReviewsNewsComponent implements OnDestroy {
   /** The slug of the open category, so live cards link back into it. */
   categorySlug = signal('news');
 
+  /**
+   * The open category's own name.
+   *
+   * The heading used to print activeTab(), which is the internal tab key — so
+   * the hub offered a card reading "Owner Reviews" and the page it opened was
+   * titled "User Review". CATEGORY_META.label is the name the section is
+   * advertised under, and it is the one a reader has just clicked.
+   */
+  categoryLabel = computed(
+    () => CATEGORY_META.find(c => c.slug === this.categorySlug())?.label ?? this.activeTab(),
+  );
+
   /** The open category's one-line description, shown under its title. */
   categoryDesc = computed(
     () => CATEGORY_META.find(c => c.slug === this.categorySlug())?.desc ?? '',
@@ -155,7 +168,58 @@ export class ReviewsNewsComponent implements OnDestroy {
   liveLoading = this.news.loading;
   liveError = this.news.error;
 
+  /**
+   * The URL named a category that does not exist.
+   *
+   * It used to fall through to the hub: /reviews-news/expert-reviews rendered
+   * the hub page at 200, URL unchanged, with nothing saying the section was
+   * gone. Expert Review and Special Report were both removed, so their links
+   * are still in the wild and in search results, and every one of them landed
+   * on a page that looked deliberate.
+   */
+  unknownSlug = signal<string | null>(null);
+
   private searchDebounce?: ReturnType<typeof setTimeout>;
+
+  /** Ask the feed again after a failure, for the error banner's retry. */
+  retry() {
+    this.news.fetchNews(this.categoryQuery());
+  }
+
+  // ── Owner Reviews ────────────────────────────────────────────────────────
+  //
+  // Reviews written by owners, read from our own API. This section used to be
+  // wired to nothing: the constructor cleared the article list and the template
+  // rendered a fixed empty state, so it reported "No owner reviews yet" however
+  // many existed — and they did exist, on the car detail pages and /video-review.
+  //
+  // Video reviews only, deliberately. The older car_reviews path writes from
+  // the browser straight into Supabase with `user_id: null` and no moderation,
+  // and the front page of a section is not where unreviewed text should first
+  // appear. These have been through the approval queue.
+  ownerReviews = signal<VideoReview[]>([]);
+  ownerLoading = signal(false);
+  ownerError = signal<string | null>(null);
+
+  private loadOwnerReviews() {
+    this.ownerLoading.set(true);
+    this.ownerError.set(null);
+    this.videoReviews.recent(12).then(
+      rows => { this.ownerReviews.set(rows); this.ownerLoading.set(false); },
+      () => {
+        // Distinct from "none written yet". Saying a section is empty when we
+        // simply could not read it is a claim we have not earned.
+        this.ownerError.set('Could not load owner reviews just now. Please try again in a moment.');
+        this.ownerReviews.set([]);
+        this.ownerLoading.set(false);
+      },
+    );
+  }
+
+  /** For the owner-reviews error banner. */
+  retryOwnerReviews() { this.loadOwnerReviews(); }
+
+  starsFor(rating: number) { return Array.from({ length: 5 }, (_, i) => i < rating); }
 
   /**
    * Update the query, and on the News page actually search the news.
@@ -257,11 +321,17 @@ export class ReviewsNewsComponent implements OnDestroy {
     return `cat-card-${color}`;
   }
 
-  constructor(seo: SeoService, route: ActivatedRoute, public news: NewsService) {
+  constructor(
+    seo: SeoService,
+    route: ActivatedRoute,
+    public news: NewsService,
+    private videoReviews: VideoReviewService,
+  ) {
     route.params.subscribe(params => {
       const slug = params['category'];
       if (slug && CATEGORY_SLUGS[slug]) {
         this.isHub.set(false);
+        this.unknownSlug.set(null);
         this.activeTab.set(CATEGORY_SLUGS[slug]);
         // Every category is a live feed now, not just News.
         this.isNewsPage.set(true);
@@ -270,16 +340,29 @@ export class ReviewsNewsComponent implements OnDestroy {
         const meta = CATEGORY_META.find(c => c.slug === slug);
         this.categoryQuery.set(meta?.query ?? '');
         this.isLiveSection.set(!!meta?.live);
-        // Only a live section fetches. Owner Reviews holds our own content, so
-        // asking the feed for it would be the exact substitution this section
-        // exists to avoid.
-        if (meta?.live) this.news.fetchNews(this.categoryQuery());
-        else this.news.articles.set([]);
+        // Only a live section asks the news feed. Owner Reviews holds our own
+        // content, so asking the feed for it would be the exact substitution
+        // this section exists to avoid — it reads our reviews API instead.
+        if (meta?.live) {
+          this.news.fetchNews(this.categoryQuery());
+        } else {
+          this.news.articles.set([]);
+          this.loadOwnerReviews();
+        }
         seo.setPage(CATEGORY_SLUGS[slug], `${CATEGORY_SLUGS[slug]} articles on GAADIIQ`);
+      } else if (slug) {
+        // A slug that names no section. Not the hub — see unknownSlug.
+        this.isHub.set(false);
+        this.isNewsPage.set(false);
+        this.isLiveSection.set(false);
+        this.unknownSlug.set(slug);
+        this.news.articles.set([]);
+        seo.setPage('Section not found', 'That section of Reviews & News does not exist.');
       } else {
         this.isHub.set(true);
         this.isNewsPage.set(false);
         this.activeTab.set('All');
+        this.unknownSlug.set(null);
         seo.setPage('Reviews & News', 'Latest car news, expert reviews, user stories and special reports from GAADIIQ.');
       }
     });
