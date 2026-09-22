@@ -73,12 +73,17 @@ export default defineConfig({
       // names, no browser, no API.
       // cache-freshness likewise: reads ngsw-config.json and the API's
       // cache_policy.py, no browser, no API.
+      // reviews-news-hero is safe here too: it reads the hero's rendered type
+      // and its computed gradient, and needs no API — the catalogue requests
+      // the app fires on load paint none of what it measures. It exists
+      // because contrast.spec.ts skips every element under a background-image,
+      // which is the whole of that hero.
       // nav-overlap joins nav-overflow: same bar, different failure. One asks
       // whether the document scrolls sideways, the other whether two controls
       // are drawn on top of each other — the bar was doing the second without
       // ever doing the first, so nav-overflow stayed green through two
       // screenshot reports. Needs no API.
-      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|nav-overlap|api-origin|dealer-dashboard|pwa-icons|brand-logos|cache-freshness)\.spec\.ts/,
+      testMatch: /(smoke|contrast|voice-diagnosis|typography|listing-columns|theme-tokens|admin-theme|nav-overflow|nav-overlap|api-origin|dealer-dashboard|pwa-icons|brand-logos|cache-freshness|reviews-news-hero)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 900 }, ...chromiumOverride },
     },
     {
