@@ -28,6 +28,7 @@ someone into a purchase. If AI summaries are ever wanted here, they need to be
 visibly labelled as such, not folded into a list that looks like reporting.
 """
 import asyncio
+import hashlib
 import html
 import ipaddress
 import logging
@@ -97,6 +98,29 @@ class Article:
 
 class NewsUnavailable(RuntimeError):
     """The upstream feed could not be reached or understood."""
+
+
+def article_id(url: str) -> str:
+    """
+    A stable identifier for one story, derived from its own URL.
+
+    This used to be `live-{index}` — the article's position in whatever the
+    feed returned that minute. The frontend puts that value in the address bar
+    (/reviews-news/news/live/<id>), so a shared or bookmarked link resolved
+    against a feed that had since reordered and quietly opened a *different*
+    story. Measured: the same link served "A headline 2" from one feed and
+    "B headline 2" from the next, with nothing on the page saying so.
+
+    The URL is the one thing about a story that does not move, so the id hangs
+    off that. Hashed rather than used raw because the id travels in a path
+    segment and a publisher's URL carries slashes, query strings and encoded
+    characters of its own.
+
+    Twelve hex characters, not the full digest: this identifies at most a few
+    dozen stories in one response, not a global namespace, and it has to stay
+    readable in an address bar.
+    """
+    return "live-" + hashlib.sha256(url.encode("utf-8")).hexdigest()[:12]
 
 
 def clean_query(raw: str | None) -> str:
@@ -188,7 +212,7 @@ def _parse(xml_bytes: bytes) -> list[Article]:
         raise NewsUnavailable(f"feed was not valid XML: {exc}") from exc
 
     articles: list[Article] = []
-    for index, item in enumerate(root.iterfind(".//item")):
+    for item in root.iterfind(".//item"):
         title = (item.findtext("title") or "").strip()
         link = (item.findtext("link") or "").strip()
         if not title or not link:
@@ -203,7 +227,7 @@ def _parse(xml_bytes: bytes) -> list[Article]:
         clean_title = _clean_title(title)
         articles.append(
             Article(
-                id=f"live-{index}",
+                id=article_id(link),
                 title=clean_title[:_MAX_TITLE_CHARS],
                 description=_summary(
                     item.findtext("description") or "", clean_title, source

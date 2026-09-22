@@ -579,3 +579,61 @@ async def test_a_failed_fetch_reports_the_status_but_never_the_url(monkeypatch):
     assert "403" in message
     assert key not in message
     assert "news.example" not in message
+
+
+# ── The article id ───────────────────────────────────────────────────────────
+#
+# The frontend puts this value in the address bar
+# (/reviews-news/news/live/<id>), so it is what a shared, bookmarked or indexed
+# link resolves against. It used to be the article's index in whatever the feed
+# returned that minute; Google News reorders continuously, so the same link
+# opened a DIFFERENT story later, with nothing on the page saying so.
+
+
+def test_the_article_id_is_derived_from_the_story_url():
+    """Same story, same id — whatever position it happens to hold today."""
+    url = "https://news.google.com/rss/articles/CBMiA1"
+
+    assert news_feed.article_id(url) == news_feed.article_id(url)
+    assert news_feed.article_id(url) != news_feed.article_id(url + "2")
+
+
+def test_the_article_id_survives_a_reordered_feed():
+    """
+    The property that matters, stated as the failure it prevents: reordering
+    the feed must not change which id names which story.
+    """
+    first = """<?xml version="1.0"?><rss><channel>
+      <item><title>Alpha - Autocar India</title><link>https://example.com/alpha</link>
+            <source>Autocar India</source></item>
+      <item><title>Beta - Overdrive</title><link>https://example.com/beta</link>
+            <source>Overdrive</source></item>
+    </channel></rss>""".encode()
+    # The same two stories, the other way round — an ordinary minute's churn.
+    second = """<?xml version="1.0"?><rss><channel>
+      <item><title>Beta - Overdrive</title><link>https://example.com/beta</link>
+            <source>Overdrive</source></item>
+      <item><title>Alpha - Autocar India</title><link>https://example.com/alpha</link>
+            <source>Autocar India</source></item>
+    </channel></rss>""".encode()
+
+    before = {a.id: a.title for a in news_feed._parse(first)}
+    after = {a.id: a.title for a in news_feed._parse(second)}
+
+    assert before == after, "an id must name the same story across a reorder"
+
+
+def test_the_article_id_is_safe_in_a_url_path():
+    """
+    It travels as a path segment, and a publisher's URL carries slashes, query
+    strings and encoded characters of its own.
+    """
+    messy = "https://example.com/a/b?c=d&e=%2F#frag"
+
+    generated = news_feed.article_id(messy)
+
+    assert "/" not in generated
+    assert "?" not in generated
+    assert "#" not in generated
+    assert "%" not in generated
+    assert len(generated) <= 24, "it has to stay readable in an address bar"
