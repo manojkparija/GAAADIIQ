@@ -5,6 +5,11 @@
 > Item 5 needs services created in a dashboard and is written up in
 > `docs/STAGING.md`. Item 6 is a habit, not a change. Each section below says
 > where it stands.
+>
+> **There is an addendum at the end of this file, dated 22 Sep**, covering a
+> later session: an unsolved performance problem on the car detail page, an
+> unconfirmed service-worker caching hypothesis, two parked pull requests, and
+> the traps found along the way. Start there if you are picking up recent work.
 
 Six things worth fixing, ordered by how much pain each one caused on the day it
 was written. Every item names the evidence it came from, so none of it has to be
@@ -417,3 +422,325 @@ which is the cheap moment. **When those photos are wired to a buyer page, that
 page must filter on `approved`** rather than assume the policy covers it, in
 case it is ever read with a service key.
 
+
+---
+
+# Addendum — 22 Sep 2026
+
+Everything below came out of one long session (10–16 Sep). It is written down
+because it lived only in that conversation: the reasoning behind each merged
+change is already in its commit message and PR body, but the things that were
+**not** fixed — the open questions, the hypotheses, the measurements that ruled
+things out — had no home in the repo.
+
+Read this section as a handover. It says what is known, what is guessed, and
+which observation would settle each guess.
+
+---
+
+## A. The car detail page is slow to settle — open, undiagnosed
+
+**The complaint, in the reporter's words: "my concern is the slowness."**
+Everything else on this page was cosmetic beside it, and it is the one item
+that was never resolved.
+
+### What is established, from reading the code
+
+`resolveCar` looks the car up in the **in-memory catalogue**
+(`carsData.getById`). So on a fresh load, a refresh, or a direct link, the page
+cannot render until `CarsDataService.load()` has finished — and that waits for
+all three of these to settle:
+
+```
+/listings?listing_type=new&page=1&page_size=100
+/listings?listing_type=used&page=1&page_size=100
+/cars?bucket=new&priced_only=true&page=1&page_size=100
+```
+
+`fetchOrNull` retries each up to `FETCH_ATTEMPTS` (3) times, so one slow source
+multiplies the wait rather than being skipped. Opening one Baleno therefore
+waits on every used-car listing in the system — data that page never displays.
+
+Only then does it fetch `/cars/{id}` and `/cars/{id}/variants`.
+
+**`/cars/{id}` alone already returns everything this page needs**: image urls,
+spin urls, specs, features, `variant_count`, and `variant_price_min`/`max`. The
+page could paint from that one small request and let the catalogue load behind
+it for the similar-cars table. That is the obvious change and it is **not** made
+here, for the reason below.
+
+### What is NOT established
+
+**Whether the waterfall or the server is the actual cost.** The API runs
+`WEB_CONCURRENCY=1` on Render, so requests queue behind one another, and
+`docs/` records a history of the catalogue query hanging until the gateway gave
+up at ~100s and returned 504 while Render logged 200. Either could dominate,
+and the fix is different in each case — rebuilding the load path would be
+wasted work if the cost is a cold start or a stalled query.
+
+### The observation that settles it
+
+**DevTools → Network on a car page, sorted by duration.** Which request eats the
+seconds, and whether the catalogue request is served from the network at all
+(see section B). This was asked for repeatedly and never captured; nothing
+should be rebuilt before it exists.
+
+### One thing that was measured
+
+The initial JavaScript bundle is **963 kB raw / 225 kB transferred**, against
+the 500 kB budget `angular.json` already warns about. That slows first paint.
+It does not explain a value changing seconds later.
+
+---
+
+## B. The service worker may be serving stale catalogue data — a hypothesis, not a finding
+
+`ngsw-config.json` caches the API under the `api-catalogue` dataGroup:
+
+```json
+{ "urls": ["https://api.gaadiiq.com/cars/**", ".../listings/**"],
+  "cacheConfig": { "strategy": "freshness", "maxSize": 100,
+                   "maxAge": "1m", "timeout": "5s" } }
+```
+
+`timeout: 5s` means: try the network, and if it has not answered within five
+seconds, **serve the cached copy instead**. If that copy predates a price being
+entered, the app receives a catalogue row with no `ex_showroom_price` and no
+`variant_price_min` — and the real response then arrives and replaces it.
+
+This would explain two separate reports with one cause:
+
+- the New Cars page reading **"1 models available"** while the API returned 7
+- a car page reading **"Price not announced yet"** and then, seconds later, its
+  real price band
+
+**It is not confirmed.** It fits the symptom and the timing and nothing more.
+The check is one look: in the Network panel, does the
+`/cars?bucket=new&priced_only=true…` request show **Size: `(ServiceWorker)`**,
+and take about five seconds? If yes, the fix belongs in the cache config rather
+than in any component.
+
+Do not act on this as though it were established. Two diagnoses were stated
+with more confidence than the evidence supported during that session, and both
+were wrong; this one is written down precisely so the next person tests it
+rather than inheriting it as fact.
+
+---
+
+## C. "1 models available" — what it turned out to be, and what is still unexplained
+
+Reported: the New Cars page showed **one** model over a catalogue of seven.
+
+### Measured, both ends
+
+- `GET /cars?bucket=new&priced_only=true&page=1&page_size=100` returned
+  **`"total": 7`** — every 2026 model, each carrying both an
+  `ex_showroom_price` and a `variant_price_min`.
+- That exact payload, fed through the real `CarsDataService` and the real
+  `ListingsComponent`, rendered **7**: `allCount 7, filteredCars 7,
+  newModelCount 7`, with no predicate dropping anything.
+
+So the API was right and the code was right. **The browser was running neither.**
+
+### How it ended
+
+It stopped reproducing after the reporter **restarted their machine**. That is
+consistent with a stale bundle or stale cached data on the client, and with
+nothing else that was checked.
+
+### What is still unexplained, and matters for real visitors
+
+`app.component.ts` already handles new deployments: it subscribes to
+`swUpdate.versionUpdates`, calls `activateUpdate()` on `VERSION_READY` and
+reloads, polls every 30 minutes (`UPDATE_CHECK_MS`), and recovers from
+`unrecoverable` by unregistering the worker and clearing `ngsw:` caches.
+
+**None of that delivered a new build to an open tab for hours.** Why is not
+diagnosed. It is invisible when it happens — the page simply runs old code —
+and it looks exactly like a broken feature, which is what it was taken for.
+A returning visitor can hit the same thing.
+
+### A false trail, recorded so it is not walked again
+
+PR #274 was merged and then reverted (#275) because it was **not** the cause.
+Both halves of it were aimed at this symptom, and the live data showed neither
+could have produced it: every 2026 row already had a row price (so the
+`priced_only` change was a no-op against the real catalogue) and every row
+already had photographs (so removing the photograph rule changed nothing about
+which models qualified).
+
+---
+
+## D. Two real findings from #274, preserved although it was reverted
+
+#274 is parked at the reporter's request. These two stand on their own and are
+true of the code as it is today:
+
+- **`PLACEHOLDER` is a truthy string.** The listings grid has a deliberate
+  no-photograph card — a car silhouette carrying the model's name — rendered on
+  `*ngIf="!m.image"`. A model without a picture is given `PLACEHOLDER`, so that
+  branch never fires and the "No Image Available" graphic always wins. **That
+  card has never been on screen.**
+- **`priced_only` tests one legacy column.** It filters on
+  `cars.ex_showroom_price` alone, while the published trims are where a model's
+  price actually lives — `_variant_summaries` computes the band, and
+  `startingPrice`, `priceBand`, every card's "from" figure and the price sort
+  all read the trims in preference to the row. A model priced **only** through
+  its trims is withheld from every buyer-facing grid, with nothing on any screen
+  saying so, and an admin filling in trims has no reason to think the model is
+  still invisible.
+
+---
+
+## E. Parked pull requests
+
+- **#245 — "Count hidden models by model, not by catalogue row."** Branch
+  `claude/hidden-model-grouping`, commit `6db7209`. Open, green, **not to be
+  merged** — parked at the reporter's request. The admin panel counts catalogue
+  rows, so one Grand Vitara held at 2025 and 2026 reads as "2 models".
+- **#274 — reverted by #275.** Closed. See section D for what it contained.
+
+---
+
+## F. The live catalogue's data, as measured on 15 Sep
+
+From `GET /cars?bucket=new&page=1&page_size=100` — nine rows:
+
+| model | row price | trims | trim band |
+|---|---|---|---|
+| Baleno | 6,10,000 | 10 | 6.10–10.09L |
+| e Vitara | 15,99,000 | 3 | 15.99–19.99L |
+| Fronx | 9,30,000 | 14 | **6.84**–11.98L |
+| Grand Vitara | 10,99,000 | 14 | 10.99–19.93L |
+| S-Presso | 3,49,000 | 14 | 4.26–6.40L |
+| Swift | 5,83,900 | 12 | 5.84–8.89L |
+| Victoris | 10,49,000 | 19 | 10.50–19.99L |
+| Ritz (VXi, 2010) ×2 | — | 0 | — |
+
+Two items of housekeeping fall out of it:
+
+- **Two identical Ritz rows** (`35085162…` and `5f255a80…`), same VXi/2010, one
+  with a photograph and one without. Correctly hidden from buyers — unpriced and
+  pre-2024 — so this is cleanup, not urgency.
+- **The Fronx row's figure is stale**: ₹9.30L against trims starting at ₹6.84L.
+  The trims win on every surface now, so the card reads correctly, but the row
+  should be corrected.
+
+---
+
+## G. Traps fixed in that session, each worth knowing before touching the area
+
+Every one of these was invisible to a green build, and each encodes a rule.
+
+- **`android-actions/setup-android@v3` defaults `packages` to
+  `'tools platform-tools'`**, and `tools` has been withdrawn from the Android
+  SDK repository. `sdkmanager` exited 1 before any repository code compiled, so
+  "Build debug APK" was red on every PR and on `master`. Fixed by naming
+  `platform-tools` explicitly. *A third-party action's defaults are a
+  dependency, and they move.*
+- **LAY-007 again, on nine pages.** `car-detail`, `analytics`, `leads`,
+  `notifications`, `list-car`, `my-listings`, `price-alerts`, `profile`,
+  `dealer-dashboard` each padded a **literal** top offset. The navbar measures
+  **119px** on a desktop and **177px** on a phone, and `NavbarComponent`
+  republishes `--nav-height` from the rendered bar because it compacts on scroll
+  and changes at the breakpoint. They now use
+  `max(7rem, calc(var(--nav-offset) + 1.5rem))`. *The `+1.5rem` matters:
+  `--nav-offset` alone lands content exactly on the bar's bottom edge, measured
+  at 0px clearance.*
+- **A dropdown's height is not the author's to predict.** `.user-dropdown` had
+  no `max-height`, so the account menu was as tall as its contents — three rows
+  for a buyer, **sixteen** for an admin, which ran off the bottom of the window
+  with no way to reach the last items but zooming the browser out. *`.nav-mega`
+  and `.nav-menu` already bounded themselves; this panel was simply missed.*
+- **A cascade that falls through to a placeholder will show the placeholder.**
+  `displayPrice` asked the loaded trims, then the catalogue row — and the trims
+  arrive in a separate request, so the headline showed the row's single figure
+  and swapped to the band seconds later. The row already carried
+  `variantPriceMin`/`Max`; the band never needed that request.
+- **"Price not announced yet" is a claim about the world.** It was printed
+  while the trims request was still in flight, so the site told buyers a car on
+  sale had no published price. A price not yet fetched and a price that does not
+  exist are different facts. `priceSettled` now gates it, flipping when the
+  request settles — **failure included**, or a failed request leaves the page
+  saying "Fetching…" for ever, which is its own untruth. *Same rule as
+  `services/credit_bureau.py::fetch_score`.*
+- **A `routerLink` to a path with no route is not an error in Angular.** Three
+  links were built as `['/car', id]` while the route is `cars/:id`. Angular
+  matched nothing, fell through to `{ path: '**', redirectTo: '' }` and rendered
+  Home — no console error, no 404, no log line. The worst of the three was the
+  AI Advisor's "See the full model page →", so the feature's entire payoff led
+  nowhere. *Assert the rendered `href`, not the `routerLink` input: `['/car',
+  id]` is a perfectly valid array.*
+- **Angular reuses a component across a parameter change.** `/cars/A` to
+  `/cars/B` is still `cars/:id`, so `ngOnInit` does not run again. The id was
+  read once from `route.snapshot` and `resolveCar` opened with
+  `if (this.carLoaded) return`, so a car-to-car link changed the address bar and
+  went on rendering the previous car. It subscribes to `paramMap` now and resets
+  the per-car state. *Arriving from the listings page or a cold URL builds the
+  component fresh and always worked — which is every route anyone had reason to
+  test.*
+
+---
+
+## H. Offered and not built
+
+- **A build-time check that every static `routerLink` resolves against the
+  route table.** Nothing prevents the next dead link; section G's third item was
+  found only because someone clicked it. Needs a template scan rather than a
+  browser test, which is why it was not folded into that PR.
+- **A scheduled database backup.** As of this writing **no backup of the
+  Supabase data or the `car-images` storage bucket exists anywhere.** The code
+  is safe — it is in git — but everything entered through the admin screens
+  (models, prices, trim ladders, listings, photographs) has exactly one copy.
+  The proposal was a GitHub Actions workflow running `pg_dump` daily into a
+  build artifact; at this data's size that is a few hundred KB. It needs the
+  database URL as a repository secret, which is a real trade: anyone with write
+  access could read it through a workflow. If the data ever becomes
+  business-critical, Supabase's paid point-in-time recovery is strictly better
+  than a nightly dump.
+
+---
+
+## I. Hardcoded per-model tables — root-cause cleanup, awaiting a decision
+
+Still present, verified 22 Sep. These are per-model facts frozen in source,
+which is why the same model can read differently on two screens:
+
+```
+apps/gaadiiq-angular/src/app/pages/car-detail/car-detail.component.ts   NEW_CAR_META
+apps/gaadiiq-angular/src/app/pages/listings/listings.component.ts       swiftGallery
+apps/gaadiiq-angular/src/app/pages/list-car/list-car.component.ts       modelCatalogue
+apps/gaadiiq-angular/src/app/pages/vehicle-diagnosis/…component.ts      MODELS_BY_MAKE,
+                                                                        SERVICE_CENTERS
+apps/api/services/valuation.py                                          _MODEL_CATALOGUE
+apps/api/routers/recommend.py                                           _BUDGET_BANDS,
+                                                                        _USAGE_SIGNALS
+```
+
+Removing them is the right direction and was **not** done, because it makes
+pages read "Price not announced yet" for models whose figures exist only in
+these tables. That is honest and also a visible downgrade, so it is a product
+decision rather than a refactor.
+
+---
+
+## J. Notes for whoever works on this next
+
+- **Production cannot be reached from inside a Claude Code session.**
+  `api.gaadiiq.com` and the Vercel preview hosts are refused by the egress proxy
+  (`gateway answered 403 to CONNECT`). Anything that needs live data has to be
+  fetched by a person and pasted in. Several hours went into theorising about
+  production during that session; measuring beats it every time, and when
+  measuring is impossible the honest move is to say so and ask.
+- **A Vercel preview talks to the production API.** A change with a server half
+  cannot be demonstrated on a preview — it only becomes visible once the change
+  is on `master` and Render has redeployed.
+- **Running the tests:** `CHROME_BIN=/opt/pw-browsers/chromium npx ng test
+  --watch=false --browsers=ChromeHeadlessCI` from `apps/gaadiiq-angular`. A
+  local Postgres for the API suite lives at `/var/lib/postgresql/claudetest`
+  (port 5433, socket `/tmp`, user `gaadiiq`, database `gaadiiq_test`).
+- **The sandbox disk fills.** A build failing with `ENOSPC` is usually
+  `/root/.cache/pip`, which reached 3 GB. Clear caches rather than concluding
+  the environment is broken.
+- **Still outstanding from earlier:** `REQUIRE_TRUSTED_PROXY` and
+  `TRUSTED_PROXY_SECRET` need setting before `gaadiiq.com` is public.
