@@ -93,6 +93,17 @@ export class VideoReviewService {
     return firstValueFrom(this.http.get<VideoReview[]>(`${this.base}/car/${carId}`));
   }
 
+  /**
+   * Approved reviews across every car, newest first.
+   *
+   * What the Owner Reviews section of Reviews & News reads. Approved-only is
+   * enforced by the query on the server, not here.
+   */
+  recent(limit = 12): Promise<VideoReview[]> {
+    const params = new HttpParams().set('limit', String(limit));
+    return firstValueFrom(this.http.get<VideoReview[]>(`${this.base}/recent`, { params }));
+  }
+
   // ── Moderation (admin) ─────────────────────────────────────────────────────
 
   /**

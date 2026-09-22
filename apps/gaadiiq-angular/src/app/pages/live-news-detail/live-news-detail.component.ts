@@ -1,7 +1,7 @@
-import { Component, OnDestroy, signal } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
-import { NewsService, NewsArticle } from '../../services/news.service';
+import { NewsService } from '../../services/news.service';
 import { SeoService } from '../../services/seo.service';
 import { CATEGORY_META } from '../reviews-news/reviews-news.component';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -19,6 +19,20 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
  * The feed gives us a headline, a publisher, a timestamp and a URL. Anything
  * beyond that would be invention, and on a site people use to decide what car
  * to buy, invented commentary is worse than a short page.
+ *
+ * THE URL NAMES THE STORY, NOT A POSITION IN THE FEED
+ *
+ * The route parameter used to be the article's index in whatever the feed had
+ * returned that minute. Google News reorders continuously, so a link that was
+ * shared, bookmarked or indexed resolved against a different feed and opened a
+ * *different* story — measured: the same URL served "A headline 2" from one
+ * feed and "B headline 2" from the next, with nothing on the page indicating
+ * the substitution. Sending a reader to a story that is not the one they were
+ * sent is worse than sending them nowhere.
+ *
+ * It is now the id the API derives from the story's own URL
+ * (services/news_feed.py::article_id), so the link either finds the story it
+ * names or honestly reports that it has aged out of the feed.
  */
 @Component({
   selector: 'app-live-news-detail',
@@ -27,51 +41,69 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
   templateUrl: './live-news-detail.component.html',
   styleUrl: './live-news-detail.component.scss',
 })
-export class LiveNewsDetailComponent implements OnDestroy {
-  article = signal<NewsArticle | null>(null);
+export class LiveNewsDetailComponent {
+  /** The story this URL names. */
+  private wantedId = signal<string | null>(null);
+
+  /** The category the link came from, so "back" returns where it should. */
+  categorySlug = signal('news');
+
+  /** True once we have asked the feed for this story and not merely looked. */
+  private refetched = signal(false);
+
+  article = computed(() => {
+    const id = this.wantedId();
+    if (!id) return null;
+    return this.news.articles().find(a => a.id === id) ?? null;
+  });
 
   /**
-   * True once the refetch has been and gone without finding the item.
+   * The feed answered, and the story is not in it.
    *
-   * Without this the page said "Loading article…" forever when the index no
-   * longer resolved — a dead end that looks like a hang rather than a miss.
+   * Gated on the request having actually settled rather than on a timer. The
+   * previous version waited a fixed 2000ms and then declared the story gone —
+   * measured: a feed that answered successfully after 3.5s left a perfectly
+   * valid link reading "That story is no longer in the feed", because the
+   * articles landed a second after the timer had already given up and nothing
+   * looked again. The API runs WEB_CONCURRENCY=1 and an uncached Google News
+   * query is the slowest request on the site, so that is an ordinary timing,
+   * not a pathological one.
    */
-  loadFailed = signal(false);
+  loadFailed = computed(
+    () => this.refetched() && !this.news.loading() && !this.news.error() && !this.article(),
+  );
 
-  private retryTimer?: ReturnType<typeof setTimeout>;
+  /** The feed itself could not be reached — a different fact from "aged out". */
+  fetchFailed = computed(() => this.refetched() && !this.news.loading() && !!this.news.error());
 
   constructor(route: ActivatedRoute, public news: NewsService, seo: SeoService) {
+    effect(() => {
+      const found = this.article();
+      if (found) seo.setPage(found.title, found.description);
+    });
+
     route.params.subscribe(params => {
-      const idx = Number(params['index']);
-      this.loadFailed.set(false);
+      const slug = params['category'] ?? 'news';
+      this.categorySlug.set(slug);
+      this.wantedId.set(String(params['id'] ?? ''));
+      this.refetched.set(false);
 
-      const found = this.news.articles()[idx] ?? null;
-      this.article.set(found);
-      if (found) {
-        seo.setPage(found.title, found.description);
-        return;
-      }
+      if (this.article()) return;
 
-      // A refresh lands here with an empty service, so refetch and look again.
-      //
-      // It has to be THIS category's query, not the default feed. Each section
-      // now runs its own search, so the index in the URL is an offset into that
-      // section's results — refetching the general news feed and reading index
-      // 3 of it returns a real article that is simply not the one linked to,
-      // which is a worse failure than showing nothing.
-      const meta = CATEGORY_META.find(c => c.slug === params['category']);
+      // A refresh, a shared link or a search-engine visit lands here with an
+      // empty service, so ask this category's feed and look again. It has to
+      // be THIS category's query: each section runs its own search, and an id
+      // from one feed is not in another.
+      const meta = CATEGORY_META.find(c => c.slug === slug);
+      this.refetched.set(true);
       this.news.fetchNews(meta?.query ?? '');
-      clearTimeout(this.retryTimer);
-      this.retryTimer = setTimeout(() => {
-        const refreshed = this.news.articles()[idx] ?? null;
-        this.article.set(refreshed);
-        if (refreshed) seo.setPage(refreshed.title, refreshed.description);
-        else this.loadFailed.set(true);
-      }, 2000);
     });
   }
 
-  ngOnDestroy() {
-    clearTimeout(this.retryTimer);
+  /** Ask the feed again, for the banner's retry. */
+  retry() {
+    const meta = CATEGORY_META.find(c => c.slug === this.categorySlug());
+    this.refetched.set(true);
+    this.news.fetchNews(meta?.query ?? '');
   }
 }

@@ -4,6 +4,7 @@ Owner video reviews.
     POST   /video-reviews              signed in — submit a video review
     GET    /video-reviews/mine         signed in — your own, any status
     GET    /video-reviews/car/{car_id} public    — approved only
+    GET    /video-reviews/recent       public    — approved, newest first, any car
     GET    /video-reviews/queue        admin     — the moderation queue
     GET    /video-reviews/queue/counts admin     — how many in each state
     POST   /video-reviews/{id}/approve admin
@@ -42,6 +43,7 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Query,
     Request,
     UploadFile,
     status,
@@ -225,6 +227,44 @@ async def approved_reviews_for_car(request: Request, car_id: uuid.UUID, db: DbDe
             )
             .order_by(VideoReview.created_at.desc())
             .limit(50)
+        )
+    ).scalars().all()
+    return [_out(r, include_video=True) for r in rows]
+
+
+@router.get("/recent", response_model=list[VideoReviewOut])
+@limiter.limit("60/minute")
+async def recent_approved_reviews(
+    request: Request,
+    db: DbDep,
+    limit: int = Query(12, ge=1, le=50),
+):
+    """
+    Approved reviews across every car, newest first.
+
+    What the Owner Reviews section of Reviews & News reads. Before this existed
+    that section had no data source at all: it was hardcoded to its empty state
+    and never asked for anything, so it said "No owner reviews yet" however many
+    had been written and approved — while the card next to it advertised "Real
+    ownership experiences from GAADIIQ owners" and a button invited people to
+    add one. A section that cannot ever fill up is worse than one that is
+    honestly closed.
+
+    Approved only, and the filter is in the query rather than applied to the
+    results, so a pending review cannot leak through a change to the
+    serialiser — same rule as approved_reviews_for_car.
+    """
+    rows = (
+        await db.execute(
+            select(VideoReview)
+            .options(selectinload(VideoReview.author))
+            .where(VideoReview.status == VideoReviewStatus.approved)
+            # created_at breaks the tie badly on its own: two reviews approved
+            # in the same second are a real possibility once a moderator works
+            # through a queue, and an unstable order lets the same review appear
+            # twice across requests. id makes the order total.
+            .order_by(VideoReview.created_at.desc(), VideoReview.id.desc())
+            .limit(limit)
         )
     ).scalars().all()
     return [_out(r, include_video=True) for r in rows]

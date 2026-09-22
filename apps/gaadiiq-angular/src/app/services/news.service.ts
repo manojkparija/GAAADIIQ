@@ -74,7 +74,13 @@ export class NewsService {
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Could not load live news. Showing curated articles instead.');
+        // NOT "showing curated articles instead". There are none: ARTICLES in
+        // reviews-news.component.ts was emptied when the invented bylines were
+        // removed, and this branch clears the list as well — so the page was a
+        // banner promising a fallback over an empty region. A message about the
+        // world has to be true at the moment it is printed, same rule as
+        // "Price not announced yet" and services/credit_bureau.py::fetch_score.
+        this.error.set('Could not load the latest car news just now. Please try again in a moment.');
         this.articles.set([]);
         this.loading.set(false);
       },

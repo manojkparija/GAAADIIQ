@@ -48,6 +48,7 @@ from .news_feed import (
     NewsUnavailable,
     _download,
     _strip_html,
+    article_id,
 )
 
 logger = logging.getLogger("gaadiiq.news_apitube")
@@ -104,7 +105,7 @@ def parse(payload: dict) -> list[Article]:
         raise NewsUnavailable("APITube response carried no article list")
 
     articles: list[Article] = []
-    for index, item in enumerate(results):
+    for item in results:
         if not isinstance(item, dict):
             continue
 
@@ -122,7 +123,9 @@ def parse(payload: dict) -> list[Article]:
 
         articles.append(
             Article(
-                id=f"live-{index}",
+                # Keyed on the story's own URL, like the RSS provider — see
+                # news_feed.article_id for why a position cannot be an id.
+                id=article_id(link),
                 title=_strip_html(title)[:_MAX_TITLE_CHARS],
                 description=description[:_MAX_DESCRIPTION_CHARS],
                 url=link,

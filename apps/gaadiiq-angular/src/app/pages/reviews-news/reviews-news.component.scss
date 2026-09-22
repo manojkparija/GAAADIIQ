@@ -1,10 +1,27 @@
 .rn-hero {
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
-     (176px on a phone since the nav strip). max() keeps the designed spacing
-     wherever it is the larger, and clears the bar when it is not. */
-  padding: max(7rem, var(--nav-offset)) 0 3rem;
+     (119px on a desktop, 177px on a phone since the nav strip). max() keeps the
+     designed spacing wherever it is the larger, and clears the bar when it is
+     not.
+
+     The `+ 1.5rem` is the whole point. --nav-offset *is* the bar's height, so
+     the larger branch used to land the badge on its bottom edge — measured at
+     0px clearance at both 1400px and 390px. Same correction the nine pages in
+     ENGINEERING_BACKLOG section G already carry. */
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 0 3rem;
   text-align: center;
-  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  /* Ends on a dark teal rather than --teal (#14B8A6).
+     Contrast here is measured on the painted pixels, not on a swatch, and the
+     bright token made the whole right-hand half of this hero fail AA: the
+     subtitle measured 2.36:1 and the badge 3.10:1 against 4.5:1. Even pure
+     white on #14B8A6 is only 2.49:1, so no text colour could have fixed it —
+     the background had to come down. #0F766E keeps the blue-to-teal identity
+     and puts white at 5.47:1 across the whole span.
+
+     e2e/contrast.spec.ts cannot catch this: effectiveBg() returns null under a
+     background-image, and a gradient is one, so every element in here is
+     skipped. e2e/reviews-news-hero.spec.ts walks the ramp instead. */
+  background: linear-gradient(135deg, #1e40af 0%, #0F766E 100%);
 
   .hero-badge {
     display: inline-flex;
@@ -16,9 +33,13 @@
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    background: rgba(255,255,255,0.15);
+    /* A dark scrim, not a white one. At 12px this is small text and needs
+       4.5:1; a 15% white fill over the gradient measured 3.10:1, and lightening
+       the pill only makes white text on it worse. Over the darkened gradient
+       this reads 8.66:1. */
+    background: rgba(0,0,0,0.28);
     color: #fff;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.35);
     margin-bottom: 1.25rem;
   }
 
@@ -30,14 +51,19 @@
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, #ffffff, #C4B5FD);
+    /* #DDD6FE, not #C4B5FD. The word is large text (44px/800) so it needs
+       3.0:1, and the darker lavender measured 2.37:1 at its right-hand edge
+       where the gradient is lightest. This one measures 3.94:1. */
+    background: linear-gradient(135deg, #ffffff, #DDD6FE);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .hero-sub {
-    color: rgba(255,255,255,0.75);
+    /* 0.92, not 0.75. This is 16.8px body text needing 4.5:1, and at 0.75 it
+       measured 3.12:1 on the blue end falling to 2.36:1 on the teal one. */
+    color: rgba(255,255,255,0.92);
     font-size: 1.05rem;
     max-width: 560px;
     margin: 0 auto 2rem;
@@ -51,7 +77,8 @@
     align-items: center;
     gap: 0.4rem;
     margin: -1.25rem auto 1.75rem;
-    color: rgba(255,255,255,0.88);
+    /* 0.95: smaller again than .hero-sub, so it needs the most of the three. */
+    color: rgba(255,255,255,0.95);
     font-size: 0.85rem;
     line-height: 1.5;
 
@@ -429,6 +456,11 @@
 }
 
 .error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
   background: rgba(239,68,68,0.12);
   border: 1px solid rgba(239,68,68,0.3);
   color: var(--danger);
@@ -436,6 +468,12 @@
   padding: 0.75rem 1.25rem;
   font-size: 0.88rem;
   margin-bottom: 1.5rem;
+
+  .eb-retry {
+    flex-shrink: 0;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+  }
 }
 
 .live-grid {
@@ -521,8 +559,11 @@
   .featured-grid, .articles-grid, .hub-grid { grid-template-columns: 1fr; }
   // max() here too: this override is inside @media (max-width: 768px),
   // which is exactly where the bar is TALLEST, so a bare value undoes the
-  // clearance set on .rn-hero above.
-  .rn-hero { padding: max(5.5rem, var(--nav-offset)) 0 2rem; }
+  // clearance set on .rn-hero above. And the same `+ 1.5rem` — without it the
+  // phone breakpoint put the badge back on the bar's edge (measured 0px at
+  // 390px) while the desktop rule was already fixed, which is the more
+  // confusing half of the bug because only one viewport showed it.
+  .rn-hero { padding: max(5.5rem, calc(var(--nav-offset) + 1.5rem)) 0 2rem; }
 }
 
 /* The publisher credit on a live card.
@@ -563,4 +604,84 @@
     color: var(--text-muted);
     line-height: 1.65;
   }
+}
+
+/* ── Owner review cards ──────────────────────────────────────────────────── */
+.own-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.own-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.25rem;
+  border-radius: 16px;
+
+  .own-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .own-car {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  /* --warning-ink, not the bright star colour: this is 0.95rem text on the
+     card surface, where the brand amber measures below AA. The -ink tokens are
+     the text-only counterparts and revert to the bright originals in dark. */
+  .own-stars {
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    color: var(--divider);
+
+    .on { color: var(--warning-ink, var(--warning)); }
+  }
+
+  .own-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text);
+  }
+
+  .own-body {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
+  .own-video {
+    width: 100%;
+    border-radius: 12px;
+    background: var(--fill-dim);
+    /* preload="none" on the element, so this box is what a reader sees until
+       they press play. Without a height it collapsed to nothing and the
+       control strip sat on the text below it. */
+    min-height: 11rem;
+  }
+
+  .own-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--divider);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .own-author { font-weight: 600; }
 }

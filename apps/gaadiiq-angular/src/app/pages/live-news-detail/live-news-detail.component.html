@@ -15,7 +15,7 @@
 <ng-container *ngIf="article() as a">
   <section class="lnd-hero">
     <div class="container">
-      <a routerLink="/reviews-news/news" class="back-link">{{ '← News' | t }}</a>
+      <a [routerLink]="['/reviews-news', categorySlug()]" class="back-link">{{ '← News' | t }}</a>
       <div class="lnd-meta">
         <span class="tag tag-blue">{{ a.source.name || 'India Auto News' }}</span>
         <span class="lnd-date" *ngIf="news.formatDate(a.publishedAt) as when">
@@ -50,21 +50,29 @@
 
       <div class="lnd-footer">
         <span class="tag tag-blue">{{ a.source.name || 'India Auto News' }}</span>
-        <a routerLink="/reviews-news/news" class="btn-outline">← Back to News</a>
+        <a [routerLink]="['/reviews-news', categorySlug()]" class="btn-outline">← Back to News</a>
       </div>
     </div>
   </article>
 </ng-container>
 
-<!-- Loading / not found -->
+<!-- Loading / feed unreachable / aged out.
+     Three states, not two: a story that has scrolled off the feed and a feed
+     that could not be reached are different facts, and only one of them is the
+     reader's cue to give up on this link. -->
 <ng-container *ngIf="!article()">
   <section class="lnd-hero container">
-    <a routerLink="/reviews-news/news" class="back-link">{{ '← News' | t }}</a>
+    <a [routerLink]="['/reviews-news', categorySlug()]" class="back-link">{{ '← News' | t }}</a>
     <div class="not-found">
       <div class="nf-icon"><app-icon name="newspaper" [size]="40"></app-icon></div>
-      <p>{{ loadFailed() ? 'That story is no longer in the feed.' : 'Loading article…' }}</p>
-      <a routerLink="/reviews-news/news" class="btn-outline" *ngIf="loadFailed()">
-        Back to News
+      <p *ngIf="fetchFailed()">{{ 'Could not reach the news feed just now.' | t }}</p>
+      <p *ngIf="loadFailed()">{{ 'That story is no longer in the feed.' | t }}</p>
+      <p *ngIf="!fetchFailed() && !loadFailed()">{{ 'Loading article…' | t }}</p>
+      <button type="button" class="btn-outline" *ngIf="fetchFailed()" (click)="retry()">
+        {{ 'Try again' | t }}
+      </button>
+      <a [routerLink]="['/reviews-news', categorySlug()]" class="btn-outline" *ngIf="loadFailed()">
+        {{ 'Back to News' | t }}
       </a>
     </div>
   </section>

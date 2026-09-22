@@ -502,3 +502,98 @@ async def test_a_stranger_cannot_delete_someone_elses_review(
 
     async with session_factory() as s:
         assert await s.get(VideoReview, row.id) is not None, "the row must survive"
+
+
+# ── The Owner Reviews section's data source ──────────────────────────────────
+#
+# /video-reviews/recent exists because the Owner Reviews section of Reviews &
+# News had no data source at all: it was hardcoded to its empty state and asked
+# for nothing, so it read "No owner reviews yet" however many had been written
+# and approved — beside a card advertising "Real ownership experiences from
+# GAADIIQ owners" and a button inviting people to add one.
+
+
+@pytest.mark.asyncio
+async def test_recent_serves_approved_reviews_across_cars(client, session_factory, people):
+    """Every car, not one — that is the difference from /car/{car_id}."""
+    first = await _seed(session_factory, people["author"], VideoReviewStatus.approved)
+    second = await _seed(session_factory, people["author"], VideoReviewStatus.approved)
+    assert first.car_id != second.car_id
+
+    body = (await client.get("/video-reviews/recent")).json()
+    returned = {row["id"] for row in body}
+    assert str(first.id) in returned
+    assert str(second.id) in returned
+
+
+@pytest.mark.asyncio
+async def test_recent_withholds_everything_not_approved(client, session_factory, people):
+    """
+    The same rule as the per-car endpoint, and it has to hold here too: this
+    one feeds a page in the main navigation, so a leak is on the front of the
+    section rather than on one car.
+    """
+    for status in (
+        VideoReviewStatus.pending,
+        VideoReviewStatus.rejected,
+        VideoReviewStatus.withdrawn,
+    ):
+        await _seed(
+            session_factory, people["author"], status,
+            # ck_video_review_rejection_has_reason: a rejection carries its note
+            # or the row will not insert.
+            note="reason" if status == VideoReviewStatus.rejected else None,
+        )
+
+    assert (await client.get("/video-reviews/recent")).json() == []
+
+
+@pytest.mark.asyncio
+async def test_recent_needs_no_token(client, session_factory, people):
+    """A buyer reads the section signed out; requiring a token would empty it."""
+    await _seed(session_factory, people["author"], VideoReviewStatus.approved)
+
+    resp = await client.get("/video-reviews/recent")
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_recent_honours_its_limit_and_refuses_an_absurd_one(
+    client, session_factory, people
+):
+    """
+    The page asks for twelve. The cap matters because each row costs a signed
+    URL, which is generated per response and not cached.
+    """
+    for _ in range(4):
+        await _seed(session_factory, people["author"], VideoReviewStatus.approved)
+
+    assert len((await client.get("/video-reviews/recent?limit=2")).json()) == 2
+    assert (await client.get("/video-reviews/recent?limit=0")).status_code == 422
+    assert (await client.get("/video-reviews/recent?limit=500")).status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_recent_orders_newest_first_with_a_total_order(client, session_factory, people):
+    """
+    created_at alone is not enough. A moderator working through a queue approves
+    several in the same second, and an unstable order lets one row appear on two
+    requests and another on none — the same fault the catalogue query had.
+    """
+    import inspect
+
+    from routers import video_reviews
+
+    source = inspect.getsource(video_reviews.recent_approved_reviews)
+    assert "VideoReview.created_at.desc()" in source
+    assert "VideoReview.id.desc()" in source
+
+    rows = [
+        await _seed(session_factory, people["author"], VideoReviewStatus.approved)
+        for _ in range(3)
+    ]
+    body = (await client.get("/video-reviews/recent")).json()
+    assert len(body) == len(rows)
+    stamps = [row["created_at"] for row in body]
+    assert stamps == sorted(stamps, reverse=True)
