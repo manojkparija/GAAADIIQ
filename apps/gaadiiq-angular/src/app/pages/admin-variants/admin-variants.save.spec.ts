@@ -95,6 +95,100 @@ describe('AdminVariantsComponent — editing a priced trim', () => {
   });
 });
 
+/**
+ * A refused save says why it was refused.
+ *
+ * OBSERVED IN THE PRODUCTION LOG, the deploy after the 409 shipped:
+ *
+ *   07:57:02  POST .../variants  409 Conflict
+ *   07:57:38  POST .../variants  409 Conflict
+ *   07:57:39  POST .../variants  409 Conflict
+ *   07:57:40  POST .../variants  409 Conflict
+ *   07:57:40  POST .../variants  409 Conflict
+ *   07:57:42  POST .../variants  409 Conflict
+ *
+ * Six attempts, five of them inside four seconds. The API was answering
+ * correctly every time — the `detail` on that 409 names the trim that already
+ * exists and explains that the match ignores case and spacing. The screen
+ * threw the body away and showed `Could not save: Error: HTTP 409`, so the
+ * admin learned nothing from the first refusal and had no reason to stop.
+ *
+ * Replacing a 500 with a well-worded 409 achieves nothing if the well-worded
+ * part is discarded one layer up. These assert the sentence reaches the
+ * screen, because the status code already did.
+ */
+describe('AdminVariantsComponent — a refused save explains itself', () => {
+  let c: any;
+  const DETAIL =
+    'This model already has a trim called "VXi (O) AGS | Metallic". Trim names '
+    + 'are matched ignoring case and spacing, so edit the existing row rather '
+    + 'than adding a second one.';
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [AdminVariantsComponent, RouterTestingModule],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    c = TestBed.createComponent(AdminVariantsComponent).componentInstance;
+    c.selectedCarId.set('dc26c5a5-c64c-4401-af3e-d96d3fc7c7a2');
+    c.startEdit({ id: 'v1', name: 'VXi (O) AGS | Metallic', features: [] } as any);
+  });
+
+  /** The 409 exactly as routers/cars.py::_duplicate_trim sends it. */
+  function refuse(status: number, body: unknown) {
+    spyOn(window, 'fetch').and.resolveTo({
+      ok: false,
+      status,
+      statusText: 'Conflict',
+      json: async () => body,
+    } as any);
+  }
+
+  it('shows what the API said, not the status code', async () => {
+    refuse(409, { detail: DETAIL });
+
+    await c.save();
+
+    expect(c.error()).toContain('already has a trim called');
+    expect(c.error()).toContain('VXi (O) AGS | Metallic');
+  });
+
+  it('does not bury the message behind "Error:"', async () => {
+    // String(err) on an Error prefixes "Error: ", which is machinery the
+    // reader did not ask about and cannot act on.
+    refuse(409, { detail: DETAIL });
+
+    await c.save();
+
+    expect(c.error()).not.toContain('Error:');
+  });
+
+  it('keeps the edit open so the name can be corrected', async () => {
+    // cancelEdit is deliberately past the throw: a refused save that also
+    // closed the form would make the admin retype the whole trim.
+    refuse(409, { detail: DETAIL });
+
+    await c.save();
+
+    expect(c.editingId()).toBe('v1');
+  });
+
+  it('falls back to the status line when there is no detail to read', async () => {
+    // A 502 from the platform never reaches the handler, so there is no
+    // message to show and the status genuinely is all that is known.
+    spyOn(window, 'fetch').and.resolveTo({
+      ok: false,
+      status: 502,
+      statusText: 'Bad Gateway',
+      json: async () => { throw new Error('not JSON'); },
+    } as any);
+
+    await c.save();
+
+    expect(c.error()).toContain('502');
+  });
+});
+
 describe('AdminVariantsComponent — choosing a model and year', () => {
   let c: any;
 
