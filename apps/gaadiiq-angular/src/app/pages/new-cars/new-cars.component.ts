@@ -6,6 +6,7 @@ import { CarsDataService, PLACEHOLDER, hasPhotograph, priceBand } from '../../se
 import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 import { UpcomingCarsService } from '../../services/upcoming-cars.service';
+import { hasFuel } from '../../utils/fuel';
 
 const COMPARE_KEY = 'gaadiiq_compare_keys';
 const NOTIFY_KEY = 'gaadiiq_upcoming_notify';
@@ -24,31 +25,6 @@ const LUXURY_MIN = 3000000;
  * formatters below, and those must not move with this.
  */
 const MAX_BUDGET = 20000000;
-
-/**
- * Whether a trim's fuel string offers the fuel a chip asks for.
- *
- * REPORTED: ticking CNG emptied the grid on a catalogue full of cars that are
- * sold with CNG.
- *
- * A trim's fuel is free text — the admin screen's own field is an `<input>`
- * whose placeholder reads "Petrol, Petrol + CNG…", so a bi-fuel trim is
- * entered as one string naming both. The filter compared that string to the
- * chip with `===`, and "Petrol + CNG" is not "CNG", so the models that
- * actually have CNG were the ones removed. The gearbox filter on the very
- * next line was already tolerant (`g.includes(t)`), which is why "5-Speed
- * Manual" matches the Manual chip; fuel got the strict comparison.
- *
- * Compared as words rather than as a substring: a chip must match a whole
- * token, so "CNG" matches "Petrol + CNG" but could never match some future
- * value that merely contains those letters. Splitting on non-letters covers
- * the separators people actually type — "+", "/", ",", "-" and spaces.
- */
-function hasFuel(trimFuel: string, wanted: string): boolean {
-  const target = wanted.trim().toLowerCase();
-  if (!target) return false;
-  return trimFuel.toLowerCase().split(/[^a-z]+/).includes(target);
-}
 
 interface NewCarModel {
   make: string;

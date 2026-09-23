@@ -12,6 +12,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { hasFuel, modelFuels } from '../../utils/fuel';
 
 interface NewCarModel {
   make: string; model: string; image: string;
@@ -456,7 +457,15 @@ export class ListingsComponent implements OnInit {
           affordable.length,
         ),
         bodyType: rep.bodyType ?? '',
-        fuel: [...new Set(affordable.map(c => c.fuel))].join(' / '),
+        // Trim fuels, not just the row's own value.
+        //
+        // REPORTED: ticking CNG here emptied the grid, while the same filter
+        // on New Cars listed seven models. New Cars was taught to read the
+        // published trims; this grid was not, and went on reading `c.fuel` —
+        // the one hand-maintained value on the catalogue row. An Alto K10 row
+        // says "Petrol" while its trims include CNG, so the filter removed
+        // precisely the models that have it.
+        fuel: modelFuels(affordable).join(' / '),
         rating: rep.rating,
         reviews: rep.reviews,
         badge: rep.badge,
@@ -465,7 +474,11 @@ export class ListingsComponent implements OnInit {
     })
     .filter((m): m is NewCarModel => m !== null &&
       (bt === 'All' || m.bodyType === bt) &&
-      (fuel === 'All' || m.fuel.includes(fuel)) &&
+      // Matched as words: m.fuel is now several trims joined, and a trim can
+      // itself name two fuels ("Petrol + CNG"), so a substring test would be
+      // both too loose and — for a chip that is a prefix of nothing — no
+      // safer than comparing tokens.
+      (fuel === 'All' || hasFuel(m.fuel, fuel)) &&
       // A card with no photograph is not shown, as on the New Cars grid.
       // "No Image Available" on a row of cars reads as a broken page rather
       // than as a catalogue gap; a model waits until it has a picture.

@@ -144,3 +144,85 @@ describe('listings — variants drill-down', () => {
     expect(comp.selectedModelTrimCount()).toBe(1);
   });
 });
+
+/**
+ * The fuel filter on Browse sees the trims, not just the catalogue row.
+ *
+ * REPORTED, with two screenshots taken minutes apart:
+ *
+ *   New Cars, Fuel = CNG   ->  "7 models found", cards reading "Petrol / CNG"
+ *   Browse,   Fuel = CNG   ->  "0 models available"
+ *
+ * Same catalogue, same filter, opposite answers — so the data was never the
+ * problem, and neither was the API. The New Cars grid had already been taught
+ * to read `variantFuels`, the fuels of the published trims. This grid was not.
+ * It built its fuel string from `c.fuel` alone, the one hand-maintained value
+ * on the catalogue row, and an Alto K10 row says "Petrol" while its trims
+ * include CNG. So ticking CNG removed precisely the models that have it.
+ *
+ * The two grids group the same rows into the same models for the same page of
+ * the site, which is why the matcher now lives in utils/fuel.ts rather than
+ * being written out twice. They had already drifted apart once before, on
+ * photographs (see the note on `rep` above).
+ */
+describe('listings — the fuel filter reads the published trims', () => {
+  /** The Alto K10 as the API describes it: row says Petrol, trims say both. */
+  const altoK10 = (over: Partial<Car> = {}) => car({
+    id: 'alto-2026', model: 'Alto K10', year: 2026, price: 370000,
+    bodyType: 'Hatchback', fuel: 'Petrol',
+    variantFuels: ['Petrol', 'CNG'],
+    ...over,
+  } as Partial<Car>);
+
+  it('keeps a model whose trims include CNG though the row says Petrol', () => {
+    // THE REPORTED BUG.
+    const comp = build([altoK10()]);
+    comp.selectedFuel.set('CNG');
+
+    expect(comp.newCarModels().map(m => m.model)).toEqual(['Alto K10']);
+  });
+
+  it('shows both fuels on the card, as New Cars does', () => {
+    // The same value drives the chip the reader sees. Before this the card
+    // said "Petrol" on a car the detail page describes as "Petrol · CNG".
+    const comp = build([altoK10()]);
+
+    expect(comp.newCarModels()[0].fuel).toContain('CNG');
+  });
+
+  it('does not hand CNG a petrol-only model', () => {
+    // A filter that matches everything is as useless as one that matches
+    // nothing, and harder to notice.
+    const comp = build([altoK10({ variantFuels: ['Petrol'] } as Partial<Car>)]);
+    comp.selectedFuel.set('CNG');
+
+    expect(comp.newCarModels().length).toBe(0);
+  });
+
+  it('still matches a model that has no trims entered yet', () => {
+    // The row's own value stays in the set. Dropping it would hide the models
+    // whose trims nobody has entered — the opposite failure, and quieter.
+    const comp = build([altoK10({ variantFuels: [], fuel: 'CNG' } as Partial<Car>)]);
+    comp.selectedFuel.set('CNG');
+
+    expect(comp.newCarModels().length).toBe(1);
+  });
+
+  it('matches a trim that names two fuels in one string', () => {
+    // The admin Fuel field is free text and its placeholder reads
+    // "Petrol, Petrol + CNG…", so this is a shape the product asks for.
+    const comp = build([altoK10({ variantFuels: ['Petrol + CNG'] } as Partial<Car>)]);
+    comp.selectedFuel.set('CNG');
+
+    expect(comp.newCarModels().length).toBe(1);
+  });
+
+  it('survives an older API build that sends no variantFuels', () => {
+    // Version skew: Vercel deploys in a minute and Render in several, so the
+    // browser runs this code against the previous API for a while.
+    const comp = build([altoK10({ variantFuels: undefined } as Partial<Car>)]);
+    comp.selectedFuel.set('Petrol');
+
+    expect(comp.newCarModels().length).toBe(1);
+  });
+});
