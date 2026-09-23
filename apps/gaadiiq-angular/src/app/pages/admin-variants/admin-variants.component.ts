@@ -30,6 +30,18 @@ function text(value: unknown): string {
   return value === null || value === undefined ? '' : String(value);
 }
 
+/**
+ * What to show a reader for a thrown value.
+ *
+ * `String(err)` on an Error yields "Error: ..." — so a message we wrote for a
+ * person to read reached the screen as `Could not save: Error: HTTP 409`, with
+ * two pieces of machinery in front of the only part that means anything. The
+ * Error is how the message travels here, not part of the message.
+ */
+function message(err: unknown): string {
+  return err instanceof Error ? err.message : text(err);
+}
+
 interface VariantForm {
   name: string;
   ex_showroom_price: string;
@@ -151,10 +163,10 @@ export class AdminVariantsComponent {
       // Unpriced models included on purpose: a model with no price is exactly
       // the one whose trims nobody has entered yet.
       const resp = await fetch(`${this.apiUrl}/cars?page=1&page_size=100`);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) throw new Error(await this.describeFailure(resp));
       this.cars.set((await resp.json()).items ?? []);
     } catch (err) {
-      this.error.set(`Could not load the catalogue: ${err}`);
+      this.error.set(`Could not load the catalogue: ${message(err)}`);
     } finally {
       this.loading.set(false);
     }
@@ -314,10 +326,10 @@ export class AdminVariantsComponent {
         `${this.apiUrl}/cars/${carId}/variants?include_drafts=true`,
         { headers: await this.authHeaders() },
       );
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) throw new Error(await this.describeFailure(resp));
       this.variants.set(await resp.json());
     } catch (err) {
-      this.error.set(String(err));
+      this.error.set(message(err));
     } finally {
       this.loading.set(false);
     }
@@ -542,12 +554,16 @@ export class AdminVariantsComponent {
           body: JSON.stringify(this.body()),
         },
       );
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      // The status alone is not a reason. A duplicate trim name comes back as
+      // a 409 whose `detail` names the trim that already exists and says the
+      // match ignores case and spacing — which is the whole answer, and used
+      // to be discarded here in favour of "HTTP 409".
+      if (!resp.ok) throw new Error(await this.describeFailure(resp));
       this.cancelEdit();
       await this.loadVariants();
       this.toast(isNew ? '✅ Trim added' : '✅ Trim updated');
     } catch (err) {
-      this.error.set(`Could not save: ${err}`);
+      this.error.set(`Could not save: ${message(err)}`);
     }
   }
 
@@ -569,11 +585,11 @@ export class AdminVariantsComponent {
           body: JSON.stringify({ status }),
         },
       );
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) throw new Error(await this.describeFailure(resp));
       await this.loadVariants();
       this.toast(msg);
     } catch (err) {
-      this.error.set(String(err));
+      this.error.set(message(err));
     }
   }
 
@@ -601,11 +617,11 @@ export class AdminVariantsComponent {
         `${this.apiUrl}/cars/${this.selectedCarId()}/variants/${v.id}`,
         { method: 'DELETE', headers: await this.authHeaders() },
       );
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) throw new Error(await this.describeFailure(resp));
       await this.loadVariants();
       this.toast('🗑 Trim deleted');
     } catch (err) {
-      this.error.set(String(err));
+      this.error.set(message(err));
     }
   }
 
@@ -682,7 +698,7 @@ export class AdminVariantsComponent {
       // the admin was deleting a row that was already gone and being told it
       // had failed. The list reloads below, which is the actual remedy: the
       // row disappears and the screen agrees with the database again.
-      if (!resp.ok && resp.status !== 404) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok && resp.status !== 404) throw new Error(await this.describeFailure(resp));
 
       this.confirmingDelete.set(false);
       this.withdrawnBlocking.set(0);
