@@ -19,6 +19,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from core.dependencies import get_admin_user, get_current_user
@@ -461,3 +462,93 @@ class TestVariantPriceBandSuite:
 
         assert row["variant_count"] == 1
         assert float(row["variant_price_min"]) == 684000
+
+
+class TestDuplicateTrimSuite:
+    """
+    A trim this model already has is a conflict, not a crash.
+
+    REPORTED from the production log:
+
+        POST /cars/dc26c5a5-.../variants  →  500 Internal Server Error
+        IntegrityError: duplicate key value violates unique constraint
+          "ux_car_variants_car_name"
+        Key (car_id, lower(btrim(name)))=(dc26c5a5-…, k10 vxi (o) ags | metallic)
+          already exists.
+
+    The index is deliberate — it is what stops re-running research producing
+    three rows of "VXi" — but nothing caught the violation, so SQLAlchemy's
+    IntegrityError travelled out as a 500. An admin reads that as the site
+    being broken and tries again; the truth is the opposite, and their trim is
+    already saved on the row above the one they are typing into.
+
+    WHY THESE INJECT THE ERROR RATHER THAN CAUSING IT
+
+    `ux_car_variants_car_name` is created by raw SQL in migration 0023, and
+    conftest builds every test database with `Base.metadata.create_all` — from
+    the MODELS. So the index exists in production and in no test database,
+    SQLite or Postgres alike: a test that inserted a duplicate would simply be
+    allowed to, and would fail while the code under test was correct.
+
+    What these can honestly pin is the part that changed: when the database
+    raises, the endpoint answers 409 and names the trim, rather than 500.
+    Closing the gap itself is a schema question, recorded in the backlog.
+    """
+
+    @staticmethod
+    def _integrity_error() -> IntegrityError:
+        return IntegrityError(
+            'INSERT INTO car_variants ...',
+            {},
+            Exception('duplicate key value violates unique constraint '
+                      '"ux_car_variants_car_name"'),
+        )
+
+    @pytest.mark.asyncio
+    async def test_a_duplicate_is_refused_with_409_not_500(self, client, car):
+        with patch.object(AsyncSession, "commit", side_effect=self._integrity_error()):
+            resp = await client.post(f"/cars/{car['id']}/variants", json={
+                "name": "K10 VXi (O) AGS | Metallic", "ex_showroom_price": "497400",
+                "fuel_type": "Petrol", "transmission": "AMT",
+            })
+
+        assert resp.status_code == 409, resp.text
+
+    @pytest.mark.asyncio
+    async def test_the_refusal_names_the_trim_that_collided(self, client, car):
+        """
+        The whole value of the message. Unlike the mechanic registration
+        conflict — which stays vague so it cannot be used to test whether an
+        Aadhaar is on the platform — this is a list the admin is already
+        looking at, so telling them which row to edit costs nothing.
+        """
+        with patch.object(AsyncSession, "commit", side_effect=self._integrity_error()):
+            resp = await client.post(f"/cars/{car['id']}/variants", json={
+                "name": "K10 VXi (O) AGS | Metallic",
+            })
+
+        detail = resp.json()["detail"]
+        assert "K10 VXi (O) AGS | Metallic" in detail
+        assert "case" in detail.lower()
+
+    @pytest.mark.asyncio
+    async def test_renaming_onto_an_existing_trim_is_refused_too(self, client, car):
+        """Same index, reached by PATCH rather than POST, and 500 before this."""
+        created = await client.post(f"/cars/{car['id']}/variants", json={"name": "ZXi"})
+        assert created.status_code == 201
+
+        with patch.object(AsyncSession, "commit", side_effect=self._integrity_error()):
+            resp = await client.patch(
+                f"/cars/{car['id']}/variants/{created.json()['id']}",
+                json={"name": "VXi"},
+            )
+
+        assert resp.status_code == 409
+        assert "VXi" in resp.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_an_ordinary_trim_is_still_created(self, client, car):
+        """The guard must refuse a duplicate, not every trim."""
+        resp = await client.post(f"/cars/{car['id']}/variants", json={"name": "VXi"})
+
+        assert resp.status_code == 201

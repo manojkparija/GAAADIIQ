@@ -5,6 +5,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependencies import get_admin_user, get_current_user
@@ -750,9 +751,46 @@ async def create_variant(
         sort_order=sort_order if sort_order is not None else 0,
     )
     db.add(variant)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise _duplicate_trim(data.get("name", "")) from exc
     await db.refresh(variant)
     return _variant_out(variant)
+
+
+def _duplicate_trim(name: str) -> HTTPException:
+    """
+    The model already has this trim.
+
+    `ux_car_variants_car_name` is unique on `(car_id, lower(btrim(name)))`, so
+    "VXi", "vxi" and "VXi " are one trim. That is deliberate — three rows of
+    the same trim on a page is the kind of thing nobody notices until a buyer
+    does — but the constraint was only ever enforced by the database, and the
+    IntegrityError reached the client as a 500.
+
+    REPORTED from the production log: a POST of "K10 VXi (O) AGS | Metallic"
+    to a model that already had it returned 500 Internal Server Error. An admin
+    reads that as the site being broken and tries again; the truth is that
+    their work is already saved under the row above.
+
+    Named rather than vague, unlike the mechanic registration conflict: that
+    one hides whether an Aadhaar is on the platform, and this one is a list the
+    admin is already looking at. Telling them which trim collided is the whole
+    value of the message.
+    """
+    trimmed = name.strip()
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=(
+            f'This model already has a trim called "{trimmed}". '
+            "Trim names are matched ignoring case and spacing, so edit the "
+            "existing row rather than adding a second one."
+            if trimmed
+            else "This model already has a trim with that name."
+        ),
+    )
 
 
 @router.patch("/{car_id}/variants/{variant_id}", response_model=VariantOut)
@@ -778,10 +816,17 @@ async def update_variant(
     if not variant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    patch = payload.model_dump(exclude_unset=True)
+    for field, value in patch.items():
         setattr(variant, field, value)
 
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        # Renaming a trim onto one that already exists hits the same index as
+        # creating a duplicate, and used to return the same 500.
+        await db.rollback()
+        raise _duplicate_trim(patch.get("name", "")) from exc
     await db.refresh(variant)
     return _variant_out(variant)
 
