@@ -127,3 +127,70 @@ describe('NewCarsComponent — filtering on what the trims offer', () => {
     expect(c.newCarModels().length).toBe(1);
   });
 });
+
+/**
+ * A bi-fuel trim answers the fuel chip for both of its fuels.
+ *
+ * REPORTED, with a screenshot: Fuel = CNG on New Cars showed "0 models
+ * available" over a catalogue of nine, most of them cars Maruti sells with
+ * CNG.
+ *
+ * The trim's fuel is free text. The admin screen's own field is an `<input>`
+ * whose placeholder reads "Petrol, Petrol + CNG…" — so the product asks for
+ * both fuels in one string, and the grid then compared that string to the
+ * chip with `===`. "Petrol + CNG" is not "CNG", so ticking CNG removed
+ * precisely the models that have it.
+ *
+ * The screenshot shows which branch ran: the message was "No photographs
+ * yet", not "No models found", so one photo-less model whose fuel is the bare
+ * word "CNG" did match. The filter was never dead — it was strict, which is
+ * worse, because it looked like an empty catalogue instead of a bug.
+ */
+describe('NewCarsComponent — a fuel chip matches a trim that lists two fuels', () => {
+  it('finds a model whose trim reads "Petrol + CNG"', () => {
+    // THE REPORTED BUG, in the form the admin screen asks admins to type.
+    const c = mountWith([sPresso({ variantFuels: ['Petrol', 'Petrol + CNG'] })]);
+    c.selectedFuels.set(['CNG']);
+
+    expect(c.newCarModels().map((m: any) => m.model)).toEqual(['S-Presso']);
+  });
+
+  it('still finds it when the fuel is the bare word', () => {
+    // The value that did match before, which must go on matching.
+    const c = mountWith([sPresso({ variantFuels: ['Petrol', 'CNG'] })]);
+    c.selectedFuels.set(['CNG']);
+
+    expect(c.newCarModels().length).toBe(1);
+  });
+
+  it('reads the separators people actually type', () => {
+    for (const written of ['Petrol/CNG', 'Petrol, CNG', 'Petrol-CNG', 'petrol + cng']) {
+      const c = mountWith([sPresso({ variantFuels: [written] })]);
+      c.selectedFuels.set(['CNG']);
+
+      expect(c.newCarModels().length)
+        .withContext(`a trim entered as "${written}" was filtered out`)
+        .toBe(1);
+    }
+  });
+
+  it('does not hand CNG a petrol-only model', () => {
+    // The other half. A filter that matches everything is as useless as one
+    // that matches nothing, and harder to notice.
+    const c = mountWith([sPresso({ fuel: 'Petrol', variantFuels: ['Petrol'] })]);
+    c.selectedFuels.set(['CNG']);
+
+    expect(c.newCarModels().length).toBe(0);
+  });
+
+  it('treats the Electric body-type chip the same way', () => {
+    // isElectric compared with === 'electric' on the same free-text value, so
+    // a trim written "Electric (BEV)" failed the Electric chip too.
+    const c = mountWith([
+      sPresso({ model: 'e Vitara', bodyType: 'SUV', variantFuels: ['Electric (BEV)'] }),
+    ]);
+    c.selectedBodyTypes.set(['Electric']);
+
+    expect(c.newCarModels().map((m: any) => m.model)).toEqual(['e Vitara']);
+  });
+});

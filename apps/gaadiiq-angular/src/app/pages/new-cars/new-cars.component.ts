@@ -25,6 +25,31 @@ const LUXURY_MIN = 3000000;
  */
 const MAX_BUDGET = 20000000;
 
+/**
+ * Whether a trim's fuel string offers the fuel a chip asks for.
+ *
+ * REPORTED: ticking CNG emptied the grid on a catalogue full of cars that are
+ * sold with CNG.
+ *
+ * A trim's fuel is free text — the admin screen's own field is an `<input>`
+ * whose placeholder reads "Petrol, Petrol + CNG…", so a bi-fuel trim is
+ * entered as one string naming both. The filter compared that string to the
+ * chip with `===`, and "Petrol + CNG" is not "CNG", so the models that
+ * actually have CNG were the ones removed. The gearbox filter on the very
+ * next line was already tolerant (`g.includes(t)`), which is why "5-Speed
+ * Manual" matches the Manual chip; fuel got the strict comparison.
+ *
+ * Compared as words rather than as a substring: a chip must match a whole
+ * token, so "CNG" matches "Petrol + CNG" but could never match some future
+ * value that merely contains those letters. Splitting on non-letters covers
+ * the separators people actually type — "+", "/", ",", "-" and spaces.
+ */
+function hasFuel(trimFuel: string, wanted: string): boolean {
+  const target = wanted.trim().toLowerCase();
+  if (!target) return false;
+  return trimFuel.toLowerCase().split(/[^a-z]+/).includes(target);
+}
+
 interface NewCarModel {
   make: string;
   model: string;
@@ -315,7 +340,7 @@ export class NewCarsComponent implements OnInit {
         ...inBand.flatMap(c => c.variantTransmissions ?? []),
       ].filter(Boolean))];
       const bodyType = rep.bodyType ?? '';
-      const isElectric = fuels.some(f => f.toLowerCase() === 'electric');
+      const isElectric = fuels.some(f => hasFuel(f, 'Electric'));
       const isLuxury = Math.min(...prices) >= LUXURY_MIN;
 
       if (selBTs.length > 0) {
@@ -326,7 +351,7 @@ export class NewCarsComponent implements OnInit {
         });
         if (!matchBt) return;
       }
-      if (selFuels.length > 0 && !fuels.some(f => selFuels.includes(f))) return;
+      if (selFuels.length > 0 && !fuels.some(f => selFuels.some(s => hasFuel(f, s)))) return;
       if (selTxs.length > 0 && !gearboxes.some(g => selTxs.some(t => g.includes(t)))) return;
 
       const image = this.resolveImage(make, model, rep.image);
