@@ -154,6 +154,44 @@ export class AdminUpcomingComponent {
     this.form.set({ ...EMPTY });
   }
 
+  /** True while a picture is on its way, so the button cannot be double-fired. */
+  uploading = signal(false);
+
+  /**
+   * Send the chosen picture and put the stored URL back in the field.
+   *
+   * REPORTED: "why there is no option for uploading image". The field was a
+   * URL box, which assumes the admin already has the picture hosted somewhere
+   * — true for a press image with a link, useless for one sitting in a folder.
+   *
+   * The URL box stays: a manufacturer's own link is still the better answer
+   * when there is one, and it is what the column was built for.
+   */
+  async uploadImage(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const id = this.editingId();
+    // Nothing chosen (the picker was dismissed), or no row to attach to yet.
+    if (!file || !id || id === 'new') return;
+
+    this.error.set('');
+    this.uploading.set(true);
+    try {
+      await this.service.uploadImage(id, file);
+      const saved = this.service.cars().find(c => c.id === id);
+      // Read the URL back from the row rather than guessing it: the server
+      // chooses the key, and a guess would show a broken image on success.
+      this.setField('image_url', saved?.image_url ?? '');
+    } catch (err) {
+      this.error.set(`Could not upload: ${err instanceof Error ? err.message : text(err)}`);
+    } finally {
+      this.uploading.set(false);
+      // Let the same file be chosen again after a failure; without this the
+      // input holds it and the change event never fires a second time.
+      input.value = '';
+    }
+  }
+
   /** The form as the API wants it: blanks become null, not "". */
   private body(): Record<string, unknown> {
     const f = this.form();

@@ -47,6 +47,7 @@ function mount(cars: any[]) {
     create: jasmine.createSpy('create').and.resolveTo(undefined),
     update: jasmine.createSpy('update').and.resolveTo(undefined),
     remove: jasmine.createSpy('remove').and.resolveTo(undefined),
+    uploadImage: jasmine.createSpy('uploadImage').and.resolveTo(undefined),
   };
   TestBed.configureTestingModule({
     imports: [AdminUpcomingComponent, RouterTestingModule],
@@ -251,5 +252,101 @@ describe('AdminUpcomingComponent — the form survives what the inputs emit', ()
     const sent = service.create.calls.mostRecent().args[0];
     expect(sent['make']).toBe('Hyundai');
     expect(sent['model']).toBe('Bayon');
+  });
+});
+
+/**
+ * Uploading a picture for an announced car.
+ *
+ * REPORTED: "why there is no option for uploading image". The field was a URL
+ * box, which assumes the admin already has the picture hosted somewhere —
+ * true for a press image with a link, useless for one sitting in a folder.
+ *
+ * The URL box stays. A manufacturer's own link is still the better answer
+ * when there is one, and it is what the column was built for.
+ */
+describe('AdminUpcomingComponent — uploading a picture', () => {
+  const FILE = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'bayon.png',
+    { type: 'image/png' });
+
+  /** A <input type="file"> change event carrying one chosen file. */
+  function chose(file: File | null): Event {
+    const input = document.createElement('input');
+    input.type = 'file';
+    Object.defineProperty(input, 'files', {
+      value: file ? [file] : [], configurable: true,
+    });
+    return { target: input } as unknown as Event;
+  }
+
+  it('sends the file and puts the stored URL in the field', async () => {
+    const { c, service } = mount([car({ id: 'u1' })]);
+    c.startEdit(car({ id: 'u1' }));
+    service.uploadImage = jasmine.createSpy('uploadImage').and.callFake(async () => {
+      // The server chose the key; the service reloads and the row now has it.
+      service.cars.set([car({ id: 'u1', image_url: 'https://cdn.test/a.png' })]);
+    });
+
+    await c.uploadImage(chose(FILE));
+
+    expect(service.uploadImage).toHaveBeenCalledWith('u1', FILE);
+    expect(c.form().image_url).toBe('https://cdn.test/a.png');
+  });
+
+  it('reads the URL back rather than guessing it', async () => {
+    // Guessing the key would show a broken image on a successful upload.
+    const { c, service } = mount([car({ id: 'u1' })]);
+    c.startEdit(car({ id: 'u1' }));
+    service.uploadImage = jasmine.createSpy('uploadImage').and.resolveTo(undefined);
+
+    await c.uploadImage(chose(FILE));
+
+    expect(c.form().image_url).toBe('');
+  });
+
+  it('shows what the API said when the upload is refused', async () => {
+    const { c, service } = mount([car({ id: 'u1' })]);
+    c.startEdit(car({ id: 'u1' }));
+    service.uploadImage = jasmine.createSpy('uploadImage')
+      .and.rejectWith(new Error('That is not an image we can store.'));
+
+    await c.uploadImage(chose(FILE));
+
+    expect(c.error()).toContain('not an image we can store');
+    expect(c.error()).not.toContain('Error:');
+  });
+
+  it('clears the busy flag whether it worked or not', async () => {
+    // Otherwise a failed upload leaves the button reading "Uploading…" for
+    // ever and the admin cannot try again.
+    const { c, service } = mount([car({ id: 'u1' })]);
+    c.startEdit(car({ id: 'u1' }));
+    service.uploadImage = jasmine.createSpy('uploadImage').and.rejectWith(new Error('nope'));
+
+    await c.uploadImage(chose(FILE));
+
+    expect(c.uploading()).toBe(false);
+  });
+
+  it('does nothing when the picker is dismissed', async () => {
+    const { c, service } = mount([car({ id: 'u1' })]);
+    c.startEdit(car({ id: 'u1' }));
+    service.uploadImage = jasmine.createSpy('uploadImage');
+
+    await c.uploadImage(chose(null));
+
+    expect(service.uploadImage).not.toHaveBeenCalled();
+  });
+
+  it('does not upload for a car that has not been saved yet', async () => {
+    // There is no row to attach the file to. The template says so rather than
+    // hiding the control, but the guard has to hold either way.
+    const { c, service } = mount([]);
+    c.startAdd();
+    service.uploadImage = jasmine.createSpy('uploadImage');
+
+    await c.uploadImage(chose(FILE));
+
+    expect(service.uploadImage).not.toHaveBeenCalled();
   });
 });

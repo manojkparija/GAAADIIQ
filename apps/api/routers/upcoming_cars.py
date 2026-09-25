@@ -17,7 +17,7 @@ import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,6 +26,8 @@ from core.dependencies import get_admin_user
 from db.session import get_db
 from models.upcoming_car import UpcomingCar
 from models.user import User
+from services import pdf_ingest
+from services.media_storage import StorageError, get_storage
 
 router = APIRouter(prefix="/upcoming-cars", tags=["upcoming-cars"])
 
@@ -216,3 +218,80 @@ async def delete_upcoming_car(
     row = await _get_or_404(db, car_id)
     await db.delete(row)
     await db.commit()
+
+
+#: What an upcoming car's picture may be. The same set media_admin accepts,
+#: minus nothing: sniff_image decides, not the filename or the Content-Type.
+_MAX_IMAGE_BYTES = 10 * 1024 * 1024
+
+
+@router.post("/{car_id}/image", response_model=UpcomingCarOut)
+async def upload_upcoming_car_image(
+    car_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    """
+    Attach a picture to an announced car.
+
+    WHY THIS IS NOT media_admin's UPLOADER
+
+    That one exists to photograph the catalogue, and it creates the catalogue
+    row it attaches to (`_ensure_catalogue_car`). Pointing it at an announced
+    car would put that car in the catalogue — on sale, in the New Cars grid,
+    filterable and comparable — months before it exists. The screen's whole
+    purpose is the opposite: these are cars a buyer cannot buy yet.
+
+    So the file goes to storage and its URL goes in `image_url`, the plain
+    column this row already has, and nothing is written to vehicle_media. When
+    the car does launch, it gets photographed like any other and this URL stops
+    being the answer.
+
+    Reported as "why there is no option for uploading image" — the field was a
+    URL box, which assumes the admin already has the picture hosted somewhere.
+    """
+    data = await file.read()
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="That file is empty."
+        )
+    if len(data) > _MAX_IMAGE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=(
+                f"That image is {len(data) // (1024 * 1024)} MB. "
+                f"The limit is {_MAX_IMAGE_BYTES // (1024 * 1024)} MB."
+            ),
+        )
+
+    # Magic bytes, not the Content-Type header or the extension — trusting
+    # either is how something executable gets stored under a .jpg name. Same
+    # rule as media_admin.upload_images.
+    sniffed = pdf_ingest.sniff_image(data)
+    if not sniffed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="That is not an image we can store (JPEG, PNG, WebP, TIFF, HEIC).",
+        )
+    extension, content_type = sniffed
+
+    row = await _get_or_404(db, car_id)
+
+    # Keyed by the row's id and a fresh uuid rather than the filename: two
+    # admins uploading "front.jpg" must not overwrite each other, and a
+    # filename is attacker-controlled text.
+    key = f"upcoming/{row.id}/{uuid.uuid4().hex}.{extension}"
+    storage = get_storage()
+    try:
+        await storage.save(key, data, content_type)
+    except StorageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"The image could not be stored ({exc}).",
+        ) from exc
+
+    row.image_url = storage.url_for(key)
+    await db.commit()
+    await db.refresh(row)
+    return _out(row)

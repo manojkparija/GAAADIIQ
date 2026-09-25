@@ -50,3 +50,15 @@
 }
 .au-hint { font-size: .78rem; color: var(--text-muted); }
 .au-empty { color: var(--text-muted); }
+
+/* The upload control is a <label> wrapping a hidden file input, so the button
+   is the label and the click reaches the input without any script. */
+.au-upload {
+  display: inline-block;
+  margin: .4rem 0 .2rem;
+  cursor: pointer;
+
+  /* A disabled input cannot be clicked, but its label still looks live —
+     which is how a second upload gets started on top of the first. */
+  &:has(input:disabled) { cursor: progress; opacity: .65; }
+}

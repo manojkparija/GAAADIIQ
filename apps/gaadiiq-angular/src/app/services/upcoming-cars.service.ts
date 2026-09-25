@@ -83,6 +83,29 @@ export class UpcomingCarsService {
   }
 
   /**
+   * Attach a picture to an announced car.
+   *
+   * Not `send`: a file goes as multipart/form-data, and setting Content-Type
+   * by hand omits the boundary the server needs to parse it. fetch writes the
+   * header itself when the body is a FormData, so the only thing to do here is
+   * leave it alone.
+   *
+   * The reply is the updated row, so the caller reloads rather than guessing
+   * at the URL the server chose.
+   */
+  async uploadImage(id: string, file: File): Promise<void> {
+    const form = new FormData();
+    form.append('file', file);
+    const resp = await fetch(`${this.apiUrl}/upcoming-cars/${id}/image`, {
+      method: 'POST',
+      headers: await this.authHeaders(),
+      body: form,
+    });
+    if (!resp.ok) throw new Error(await this.failureDetail(resp));
+    await this.load();
+  }
+
+  /**
    * One place that reads the API's own message on failure.
    *
    * `HTTP 500` tells an admin nothing they can act on; FastAPI puts the reason
@@ -94,15 +117,18 @@ export class UpcomingCarsService {
       headers: { 'Content-Type': 'application/json', ...(await this.authHeaders()) },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    if (!resp.ok) {
-      let detail = `HTTP ${resp.status} ${resp.statusText}`.trim();
-      try {
-        const parsed = await resp.json();
-        if (parsed?.detail) detail = typeof parsed.detail === 'string'
-          ? parsed.detail
-          : JSON.stringify(parsed.detail);
-      } catch { /* not JSON — a gateway page, most likely */ }
-      throw new Error(detail);
-    }
+    if (!resp.ok) throw new Error(await this.failureDetail(resp));
+  }
+
+  /** What the API said went wrong, or the status line when it said nothing. */
+  private async failureDetail(resp: Response): Promise<string> {
+    let detail = `HTTP ${resp.status} ${resp.statusText}`.trim();
+    try {
+      const parsed = await resp.json();
+      if (parsed?.detail) detail = typeof parsed.detail === 'string'
+        ? parsed.detail
+        : JSON.stringify(parsed.detail);
+    } catch { /* not JSON — a gateway page, most likely */ }
+    return detail;
   }
 }

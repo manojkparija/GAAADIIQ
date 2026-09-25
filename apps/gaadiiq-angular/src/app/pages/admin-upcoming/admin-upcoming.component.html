@@ -53,10 +53,31 @@
                  (ngModelChange)="setField('expected_price_max', $event)" />
         </div>
         <div class="au-field">
-          <label for="au-img">Image URL</label>
+          <label for="au-img">Image</label>
           <input id="au-img" [ngModel]="form().image_url"
-                 (ngModelChange)="setField('image_url', $event)" />
-          <span class="au-hint">A press image. Nobody has photographed this car yet.</span>
+                 (ngModelChange)="setField('image_url', $event)"
+                 placeholder="Paste a URL, or upload below" />
+          <!--
+            Upload needs a row to attach the file to, and a car being added
+            does not have one yet. Rather than hiding the control — which
+            reads as "this screen cannot do it", the report this answers —
+            it says so, and appears the moment the row is saved.
+          -->
+          @if (editingId() === 'new') {
+            <span class="au-hint">Save the car first, then upload a picture for it.</span>
+          } @else {
+            <label class="au-upload">
+              <input type="file" accept="image/*" hidden
+                     (change)="uploadImage($event)" [disabled]="uploading()" />
+              <span class="btn-outline btn-sm">
+                {{ uploading() ? 'Uploading…' : '⬆ Upload a picture' }}
+              </span>
+            </label>
+            <span class="au-hint">
+              JPEG, PNG, WebP, TIFF or HEIC, up to 10 MB. Uploading replaces
+              whatever the box above holds.
+            </span>
+          }
         </div>
       </div>
       <div class="au-row-actions">
