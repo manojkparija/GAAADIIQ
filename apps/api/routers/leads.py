@@ -63,6 +63,12 @@ class LeadCreate(BaseModel):
     email: EmailStr | None = None
     source: LeadSource = LeadSource.offers_cta
 
+    # What the buyer actually asked. The Contact Seller form has always had a
+    # "Any specific questions…" box, and before this its contents went to a
+    # different table; routing that form here without carrying the box would
+    # have thrown away the one part a buyer wrote in their own words.
+    notes: str | None = Field(None, max_length=2000)
+
     # The buyer ticking the consent line. Required to be true: a dealer calling
     # someone who did not agree to be called is the harm here, and a default of
     # false that the client can simply omit is not a consent record.
@@ -155,6 +161,7 @@ async def create_lead(
         phone_verified=True,           # only ever set on this path
         name=body.name,
         email=body.email,
+        notes=body.notes,
         consented_at=datetime.now(timezone.utc),
         source=body.source,
         status=LeadStatus.new,

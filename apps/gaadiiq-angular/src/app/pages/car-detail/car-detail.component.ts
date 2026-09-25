@@ -166,6 +166,8 @@ import { SentimentService, BUYER_TRACKING_CONSENT } from '../../services/sentime
 import { ImgFallbackDirective } from '../../directives/img-fallback.directive';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { NativeService } from '../../services/native.service';
+import { LeadService } from '../../services/lead.service';
+import { CityService } from '../../services/city.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
@@ -241,7 +243,83 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   enquirySent = signal(false);
   enquirySubmitting = signal(false);
   enquiryError = signal('');
-  enquiryForm = { name: '', phone: '', email: '', notes: '' };
+  enquiryForm = { name: '', phone: '', email: '', notes: '', city: '', otp: '' };
+
+  /**
+   * The enquiry is verified before it is recorded.
+   *
+   * WHAT THIS REPLACED, AND WHY IT MATTERED
+   *
+   * submitEnquiry used to write straight to Supabase from the browser:
+   *
+   *     this.sb.client.from('car_enquiries').insert({ buyer_phone, … })
+   *
+   * Four things followed from that. The phone number was whatever somebody
+   * typed, tied to nobody. The API was bypassed, so `phone_verified`,
+   * `consented_at` and dealer routing never ran. The row landed in
+   * `car_enquiries`, which the dealer inbox — built on `car_leads` — does not
+   * read, so these enquiries were invisible to the people meant to act on
+   * them. And its only protection was the table's RLS policy.
+   *
+   * Meanwhile "Get Best Price" next to it was fully verified through
+   * POST /leads. The site had two enquiry paths and the unverified one was on
+   * the button most buyers press.
+   *
+   * Same two-call shape as offers-modal: send a code, then submit the lead
+   * with it. /auth/otp/verify is deliberately NOT called first — a correct
+   * code is consumed on verification, so POST /leads would then find nothing
+   * to check (see LeadService).
+   */
+  enquiryOtpSent = signal(false);
+  enquiryOtpBusy = signal(false);
+  enquiryConsent = false;
+
+  /** +91XXXXXXXXXX, or null while what is typed is not a mobile number. */
+  enquiryPhoneE164(): string | null {
+    return LeadService.toE164(this.enquiryForm.phone);
+  }
+
+  // Methods, not computed(): these read plain ngModel fields rather than
+  // signals, and a computed() over one evaluates once and is stale for ever
+  // afterwards (CLAUDE.md).
+  canSendEnquiryOtp(): boolean {
+    return this.enquiryPhoneE164() !== null && !this.enquiryOtpBusy();
+  }
+
+  canSubmitEnquiry(): boolean {
+    return (
+      this.enquiryOtpSent()
+      && this.enquiryForm.otp.trim().length === 6
+      && this.enquiryForm.name.trim().length > 0
+      && this.enquiryForm.city.trim().length > 1
+      && this.enquiryConsent
+      && !this.enquirySubmitting()
+    );
+  }
+
+  async sendEnquiryOtp(): Promise<void> {
+    const phone = this.enquiryPhoneE164();
+    if (!phone) {
+      this.enquiryError.set('Enter a 10-digit Indian mobile number.');
+      return;
+    }
+    this.enquiryOtpBusy.set(true);
+    this.enquiryError.set('');
+    try {
+      await this.leads.sendOtp(phone);
+      this.enquiryOtpSent.set(true);
+    } catch (e: any) {
+      // The send limit is a different instruction to the reader than a
+      // failure they could fix by retyping the number.
+      this.enquiryError.set(
+        e?.status === 429
+          ? 'Too many requests. Try again in a little while.'
+          : 'Could not send the code. Check the number and try again.',
+      );
+    } finally {
+      this.enquiryOtpBusy.set(false);
+    }
+  }
   loan = { amount: 0, rate: 8.5, tenure: 60, emi: 0 }; // kept for template binding
   car!: Car;
   activeImg = signal(0);
@@ -613,35 +691,74 @@ export class CarDetailComponent implements OnInit, OnDestroy {
       this.enquiryForm.name  = this.enquiryForm.name  || user.name;
       this.enquiryForm.email = this.enquiryForm.email || user.email;
     }
+    // The navbar already holds a city and the reader has usually set it, so
+    // asking again from blank would be a field that answers itself.
+    this.enquiryForm.city = this.enquiryForm.city || this.cities.selectedCity() || '';
     this.enquiryModalOpen.set(true);
   }
 
   async submitEnquiry() {
-    if (!this.enquiryForm.name || !this.enquiryForm.phone) {
-      this.enquiryError.set('Name and phone number are required.');
+    const phone = this.enquiryPhoneE164();
+    if (!phone || !this.enquiryForm.name.trim()) {
+      this.enquiryError.set('Name and a 10-digit mobile number are required.');
       return;
     }
+    if (!this.enquiryForm.city.trim()) {
+      // The API requires it, and it is what routes the enquiry to a dealer
+      // who can actually reach this buyer.
+      this.enquiryError.set('Tell us your city so we can reach the right dealer.');
+      return;
+    }
+    if (!this.enquiryOtpSent()) {
+      this.enquiryError.set('Send yourself a code first, then enter it here.');
+      return;
+    }
+    if (!this.enquiryConsent) {
+      // Not defaulted and not assumed: a dealer ringing somebody who did not
+      // agree to be rung is the harm, and the server refuses it too.
+      this.enquiryError.set('Please agree to be contacted before sending.');
+      return;
+    }
+
     this.enquiryError.set('');
     this.enquirySubmitting.set(true);
-    const { error } = await this.sb.client.from('car_enquiries').insert({
-      car_id:      this.car.id,
-      buyer_name:  this.enquiryForm.name,
-      buyer_phone: this.enquiryForm.phone,
-      buyer_email: this.enquiryForm.email || null,
-      notes:       this.enquiryForm.notes || null,
-    });
-    this.enquirySubmitting.set(false);
-    if (error) {
-      // "Please try again" was advice that could not work: the failure is the
-      // same on every attempt, and the message threw away the one thing that
-      // said why. The catalogue outage cost a day for exactly this reason —
-      // six fixes aimed at the wrong layer because nobody had the real error.
-      console.error('Enquiry insert failed:', error);
-      this.enquiryError.set(describeEnquiryFailure(error));
-    } else {
+    try {
+      await this.leads.submit({
+        phone,
+        otp: this.enquiryForm.otp.trim(),
+        city: this.enquiryForm.city.trim(),
+        car_id: this.car.fromCatalogue ? this.car.id : null,
+        make: this.car.make,
+        model: this.car.model,
+        variant: this.selectedVariant()?.name ?? null,
+        name: this.enquiryForm.name.trim(),
+        email: this.enquiryForm.email.trim() || null,
+        notes: this.enquiryForm.notes.trim() || null,
+        source: 'car_detail',
+        consent: true,
+      });
       this.enquirySent.set(true);
-      this.enquiryForm = { name: '', phone: '', email: '', notes: '' };
+      this.enquiryForm = { name: '', phone: '', email: '', notes: '', city: '', otp: '' };
+      this.enquiryOtpSent.set(false);
+      this.enquiryConsent = false;
       this._trackEnquiry();
+    } catch (e: any) {
+      // "Please try again" was advice that could not work: the failure is the
+      // same on every attempt, and the old message threw away the one thing
+      // that said why. The catalogue outage cost a day for exactly this
+      // reason — six fixes aimed at the wrong layer because nobody had the
+      // real error.
+      //
+      // A wrong or expired code is the common case and the reader can act on
+      // it, so it is named rather than folded into "something went wrong".
+      console.error('Enquiry failed:', e);
+      this.enquiryError.set(
+        e?.status === 400 || e?.status === 401
+          ? 'That code did not match, or it has expired. Send a new one.'
+          : describeEnquiryFailure(e),
+      );
+    } finally {
+      this.enquirySubmitting.set(false);
     }
   }
 
@@ -661,7 +778,7 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     this.sentimentSvc.trackPublic(seller.email, buyerId, 'enquiry', BUYER_TRACKING_CONSENT);
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, private resaleSvc: ResaleForecastService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService, private demandSvc: DemandService, private native: NativeService) {
+  constructor(private route: ActivatedRoute, private router: Router, private carsData: CarsDataService, private seo: SeoService, public tco: TcoService, private resaleSvc: ResaleForecastService, public reviewsSvc: ReviewsService, private sellersSvc: SellersService, public auth: AuthService, private sb: SupabaseService, private sentimentSvc: SentimentService, private demandSvc: DemandService, private native: NativeService, private leads: LeadService, private cities: CityService) {
     // allowSignalWrites, because resolveCar() sets loadFailed and selectedColour
     // — and without it this effect throws NG0600 and the page never renders at
     // all, leaving "Loading car details…" on screen for good.

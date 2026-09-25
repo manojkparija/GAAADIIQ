@@ -14,6 +14,18 @@ export interface LeadRequest {
   model: string;
   variant?: string | null;
   name?: string | null;
+  email?: string | null;
+  /** What the buyer asked, from the Contact Seller form's questions box. */
+  notes?: string | null;
+  /**
+   * Where the buyer was standing when they asked.
+   *
+   * The follow-up script differs — someone who clicked "Get Best Price"
+   * expects a price, someone who used Contact Seller on a car's page expects
+   * an answer to the question they typed. Defaults to offers_cta server-side,
+   * which is why the car-detail form sends its own.
+   */
+  source?: 'offers_cta' | 'car_detail' | 'variants';
   consent: boolean;
 }
 

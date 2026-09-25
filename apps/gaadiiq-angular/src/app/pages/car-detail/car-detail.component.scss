@@ -726,6 +726,39 @@
   &:focus { border-color: var(--primary); }
 }
 
+/* Number and "Send OTP" sit on one line: they are one action to the reader,
+   and splitting them reads as two unrelated fields. */
+.enq-otp-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+
+  .enq-input { flex: 1 1 auto; }
+}
+
+.enq-otp-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+.enq-consent {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  /* --text-muted, not the brand colour: this is small text on a tint, and
+     contrast is measured on the page rather than on a swatch (CLAUDE.md). */
+  color: var(--text-muted);
+  cursor: pointer;
+
+  input { margin-top: 0.15rem; flex: 0 0 auto; }
+}
+
 .not-found-banner {
   margin: 0 0 1rem;
   padding: 0.75rem 1rem;
