@@ -7,6 +7,8 @@ import { BrandsService } from '../../services/brands.service';
 import { AuthService } from '../../services/auth.service';
 import { UpcomingCarsService } from '../../services/upcoming-cars.service';
 import { hasFuel } from '../../utils/fuel';
+import { LeadService } from '../../services/lead.service';
+import { CityService } from '../../services/city.service';
 
 const COMPARE_KEY = 'gaadiiq_compare_keys';
 const NOTIFY_KEY = 'gaadiiq_upcoming_notify';
@@ -97,6 +99,8 @@ export class NewCarsComponent implements OnInit {
     public brandsService: BrandsService,
     private auth: AuthService,
     private upcomingService: UpcomingCarsService,
+    private leads: LeadService,
+    private cities: CityService,
   ) {}
 
   get loading() { return this.carsData.loading; }
@@ -626,22 +630,156 @@ export class NewCarsComponent implements OnInit {
     return keys.length ? { keys: keys.join(',') } : {};
   }
 
-  toggleNotify(key: string) {
-    if (!this.auth.currentUser()) {
-      this.router.navigate(['/login'], { queryParams: { returnUrl: '/new-cars' } });
+  /**
+   * Ask to be told when an announced car goes on sale.
+   *
+   * WHAT THIS USED TO DO, AND WHY THAT WAS WORSE THAN NOTHING
+   *
+   * It added a key to `notifiedCars`, wrote the set to localStorage, and said
+   * "We will notify you when this car launches." No request was made. There
+   * was no record anywhere of who had asked, so nobody could be notified —
+   * the button made a promise the system had no way to keep, and the reader
+   * had every reason to believe it.
+   *
+   * Reported as "after clicking for contact not asking for details".
+   *
+   * Now it opens the same verified enquiry every other route uses. The
+   * localStorage set stays, but demoted to what it always actually was: a
+   * note to this browser that the button has been pressed, so the label can
+   * read "Notified" on the next visit.
+   */
+  notifyCar = signal<{ make: string; model: string; key: string } | null>(null);
+  notifyForm = { name: '', phone: '', city: '', email: '', otp: '' };
+  notifyConsent = false;
+  notifyOtpSent = signal(false);
+  notifyBusy = signal(false);
+  notifyError = signal('');
+  notifySent = signal(false);
+
+  openNotify(car: { make: string; model: string }) {
+    const key = `${car.make}||${car.model}`;
+    if (this.notifiedCars().has(key)) {
+      // Already asked from this browser. Taking it back is a local matter —
+      // there is no "unsend" for a lead a dealer may already have called.
+      const s = new Set(this.notifiedCars());
+      s.delete(key);
+      this.notifiedCars.set(s);
+      this.saveNotify();
+      this.notifyMsg.set('Removed from this browser. We still have your earlier request.');
+      setTimeout(() => this.notifyMsg.set(''), 3500);
       return;
     }
-    const s = new Set(this.notifiedCars());
-    if (s.has(key)) {
-      s.delete(key);
-      this.notifyMsg.set('Notification removed.');
-    } else {
-      s.add(key);
-      this.notifyMsg.set('We will notify you when this car launches.');
+
+    const user = this.auth.currentUser();
+    this.notifyForm = {
+      name: user?.name ?? '',
+      phone: '',
+      // The navbar already holds a city and the reader has usually set it.
+      city: this.cities.selectedCity() || '',
+      email: user?.email ?? '',
+      otp: '',
+    };
+    this.notifyConsent = false;
+    this.notifyOtpSent.set(false);
+    this.notifyError.set('');
+    this.notifySent.set(false);
+    this.notifyCar.set({ make: car.make, model: car.model, key });
+  }
+
+  closeNotify() {
+    this.notifyCar.set(null);
+  }
+
+  /** +91XXXXXXXXXX, or null while what is typed is not a mobile number. */
+  notifyPhoneE164(): string | null {
+    return LeadService.toE164(this.notifyForm.phone);
+  }
+
+  // Methods rather than computed(): these read plain ngModel fields, not
+  // signals, and a computed() over one goes stale for ever (CLAUDE.md).
+  canSendNotifyOtp(): boolean {
+    return this.notifyPhoneE164() !== null && !this.notifyBusy();
+  }
+
+  canSubmitNotify(): boolean {
+    return (
+      this.notifyOtpSent()
+      && this.notifyForm.otp.trim().length === 6
+      && this.notifyForm.name.trim().length > 0
+      && this.notifyForm.city.trim().length > 1
+      && this.notifyConsent
+      && !this.notifyBusy()
+    );
+  }
+
+  async sendNotifyOtp(): Promise<void> {
+    const phone = this.notifyPhoneE164();
+    if (!phone) {
+      this.notifyError.set('Enter a 10-digit Indian mobile number.');
+      return;
     }
-    this.notifiedCars.set(s);
-    this.saveNotify();
-    setTimeout(() => this.notifyMsg.set(''), 2500);
+    this.notifyBusy.set(true);
+    this.notifyError.set('');
+    try {
+      await this.leads.sendOtp(phone);
+      this.notifyOtpSent.set(true);
+    } catch (e: any) {
+      this.notifyError.set(
+        e?.status === 429
+          ? 'Too many requests. Try again in a little while.'
+          : 'Could not send the code. Check the number and try again.',
+      );
+    } finally {
+      this.notifyBusy.set(false);
+    }
+  }
+
+  async submitNotify(): Promise<void> {
+    const car = this.notifyCar();
+    const phone = this.notifyPhoneE164();
+    if (!car || !phone) return;
+    if (!this.notifyOtpSent()) {
+      this.notifyError.set('Send yourself a code first, then enter it here.');
+      return;
+    }
+    if (!this.notifyConsent) {
+      this.notifyError.set('Please agree to be contacted before sending.');
+      return;
+    }
+
+    this.notifyBusy.set(true);
+    this.notifyError.set('');
+    try {
+      await this.leads.submit({
+        phone,
+        otp: this.notifyForm.otp.trim(),
+        city: this.notifyForm.city.trim(),
+        // An announced car has no catalogue row. CarLead allows a null car_id
+        // deliberately, with make and model carrying the vehicle.
+        car_id: null,
+        make: car.make,
+        model: car.model,
+        name: this.notifyForm.name.trim(),
+        email: this.notifyForm.email.trim() || null,
+        source: 'upcoming',
+        consent: true,
+      });
+      // Only now is the local marker true: it means "you asked", and before
+      // this it was set whether or not anything had been recorded.
+      const s = new Set(this.notifiedCars());
+      s.add(car.key);
+      this.notifiedCars.set(s);
+      this.saveNotify();
+      this.notifySent.set(true);
+    } catch (e: any) {
+      this.notifyError.set(
+        e?.status === 400 || e?.status === 401
+          ? 'That code did not match, or it has expired. Send a new one.'
+          : 'Could not record your request. Please try again.',
+      );
+    } finally {
+      this.notifyBusy.set(false);
+    }
   }
 
   navigateToBrand(brand: string) {

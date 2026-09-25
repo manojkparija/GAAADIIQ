@@ -1147,3 +1147,108 @@
   word-break: break-word;
   max-width: 46ch;
 }
+
+/* ── Notify Me enquiry ──────────────────────────────────────────────────── */
+
+.notify-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.55);
+  overflow-y: auto;
+}
+
+.notify-modal {
+  position: relative;
+  width: 100%;
+  max-width: 26rem;
+  padding: 1.75rem;
+  border-radius: 16px;
+  /* The overlay scrolls, not the page behind it, and a tall form on a short
+     phone still reaches its own submit button. */
+  max-height: min(90vh, 44rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.notify-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.9rem;
+  background: none;
+  border: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.notify-title { margin: 0 0 0.2rem; font-size: 1.15rem; }
+.notify-sub { margin: 0 0 0.75rem; color: var(--primary); font-weight: 600; }
+.notify-copy { margin: 0 0 1.15rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+.notify-fields { display: flex; flex-direction: column; gap: 0.7rem; }
+
+.notify-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  border: 1px solid var(--divider);
+  background: var(--fill-dim);
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+
+  &:focus { border-color: var(--primary); }
+}
+
+/* Number and "Send OTP" are one action to the reader, so they share a line. */
+.notify-otp-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+
+  .notify-input { flex: 1 1 auto; }
+}
+
+.notify-otp-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+.notify-consent {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  /* --text-muted rather than the brand colour: small text on a tint, and
+     contrast is measured on the page, not on a swatch (CLAUDE.md). */
+  color: var(--text-muted);
+  cursor: pointer;
+
+  input { margin-top: 0.15rem; flex: 0 0 auto; }
+}
+
+.notify-error {
+  margin: 0.75rem 0 0;
+  font-size: 0.82rem;
+  /* --warning-ink, not the bright warning colour: this is small text on the
+     panel's tint, and the -ink tokens are the text-only counterparts. */
+  color: var(--warning-ink, #b3261e);
+}
+
+.notify-submit { width: 100%; margin-top: 1rem; padding: 0.9rem; }
+
+.notify-done { text-align: center; padding: 1rem 0; }
+.notify-tick { font-size: 2.5rem; margin-bottom: 0.5rem; }

@@ -344,3 +344,77 @@ class TestCarDetailEnquirySuite:
             lead = (await s.execute(__import__("sqlalchemy").select(CarLead))).scalars().one()
         assert lead.car_id is None
         assert lead.make == "Maruti Suzuki"
+
+
+class TestUpcomingCarNotifySuite:
+    """
+    "Notify Me" on an announced car records a verified lead.
+
+    WHAT IT USED TO DO
+
+    It added a key to a Set, wrote that Set to the reader's own localStorage,
+    and said "We will notify you when this car launches". No request was made.
+    There was no record anywhere of who had asked, so nobody could be
+    notified — the button made a promise the system had no way to keep, and
+    the reader had every reason to believe it.
+
+    Reported as "after clicking for contact not asking for details".
+
+    An announced car has no catalogue row, so car_id is null and make/model
+    carry the vehicle. CarLead allows that deliberately — the same shape as a
+    lead whose model is delisted while the lead is still being worked.
+    """
+
+    @pytest.mark.asyncio
+    async def test_a_launch_request_is_recorded_against_no_catalogue_row(
+        self, client, session_factory
+    ):
+        code = await live_otp()
+
+        resp = await client.post(
+            "/leads",
+            json=payload(
+                otp=code, source="upcoming", car_id=None,
+                make="Hyundai", model="Bayon",
+            ),
+        )
+
+        assert resp.status_code == 201, resp.text
+        async with session_factory() as s:
+            lead = (await s.execute(__import__("sqlalchemy").select(CarLead))).scalars().one()
+        assert lead.car_id is None
+        assert lead.make == "Hyundai"
+        assert lead.model == "Bayon"
+        assert lead.source is LeadSource.upcoming
+
+    @pytest.mark.asyncio
+    async def test_the_number_is_verified_here_too(self, client, session_factory):
+        # The whole point: before this the button recorded an unverified
+        # nothing. A wrong code must record nothing at all.
+        await live_otp()
+
+        resp = await client.post(
+            "/leads",
+            json=payload(otp="123456", source="upcoming", car_id=None),
+        )
+
+        assert resp.status_code >= 400
+        async with session_factory() as s:
+            rows = (await s.execute(__import__("sqlalchemy").select(CarLead))).scalars().all()
+        assert rows == []
+
+    @pytest.mark.asyncio
+    async def test_consent_is_dated_for_a_launch_request(self, client, session_factory):
+        # A dealer will ring about this months later. Consent that cannot be
+        # dated cannot be shown to have preceded the call.
+        code = await live_otp()
+
+        await client.post(
+            "/leads",
+            json=payload(otp=code, source="upcoming", car_id=None),
+        )
+
+        async with session_factory() as s:
+            lead = (await s.execute(__import__("sqlalchemy").select(CarLead))).scalars().one()
+        assert lead.consented_at is not None
+        assert lead.phone_verified is True

@@ -58,6 +58,11 @@ class LeadSource(str, PyEnum):
     offers_cta = "offers_cta"
     car_detail = "car_detail"
     variants = "variants"
+    #: Asked to be told when an announced car goes on sale. The follow-up is
+    #: months away and there is nothing to quote yet, so it reads differently
+    #: from the others — and the car has no catalogue row, so car_id is null
+    #: and make/model carry it.
+    upcoming = "upcoming"
 
 
 class CarLead(UUIDMixin, TimestampMixin, Base):
