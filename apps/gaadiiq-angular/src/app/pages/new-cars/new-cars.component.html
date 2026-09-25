@@ -391,7 +391,7 @@
             }
           </div>
           <button class="notify-btn" [class.notified]="notifiedCars().has(car.make + '||' + car.model)"
-            (click)="toggleNotify(car.make + '||' + car.model)">
+            (click)="openNotify(car)">
             {{ notifiedCars().has(car.make + '||' + car.model) ? '🔔 Notified' : ('Notify Me' | t) }}
           </button>
         </div>
@@ -423,3 +423,71 @@
     </div>
   </div>
 </section>
+
+<!--
+  NOTIFY ME — the enquiry behind the button.
+
+  This button used to write a key to localStorage and say "We will notify you
+  when this car launches". Nothing was sent, so there was no record of who had
+  asked and nobody could be notified. Reported as "after clicking for contact
+  not asking for details".
+-->
+@if (notifyCar(); as nc) {
+  <div class="notify-overlay" (click)="closeNotify()">
+    <div class="notify-modal glass-card" (click)="$event.stopPropagation()">
+      <button class="notify-close" (click)="closeNotify()" aria-label="Close">✕</button>
+
+      @if (!notifySent()) {
+        <h3 class="notify-title">{{ 'Tell me when it launches' | t }}</h3>
+        <p class="notify-sub">{{ nc.make }} {{ nc.model }}</p>
+        <!-- What we can actually do. No date is promised, because the launch
+             date is the manufacturer's to move and routinely does. -->
+        <p class="notify-copy">
+          {{ 'We will get in touch when this car goes on sale. Your details go to us, and to the dealer we pass your enquiry to.' | t }}
+        </p>
+
+        <div class="notify-fields">
+          <input class="notify-input" type="text" placeholder="Your Name *" [(ngModel)]="notifyForm.name">
+          <div class="notify-otp-row">
+            <input class="notify-input" type="tel" inputmode="numeric"
+                   placeholder="Mobile Number *" [(ngModel)]="notifyForm.phone">
+            <button type="button" class="btn-outline notify-otp-btn"
+                    [disabled]="!canSendNotifyOtp()" (click)="sendNotifyOtp()">
+              {{ notifyBusy() ? 'Sending…' : (notifyOtpSent() ? 'Resend' : 'Send OTP') }}
+            </button>
+          </div>
+          @if (notifyOtpSent()) {
+            <input class="notify-input" type="text" inputmode="numeric" maxlength="6"
+                   placeholder="Enter the 6-digit code *" [(ngModel)]="notifyForm.otp">
+          }
+          <input class="notify-input" type="text" placeholder="Your City *" [(ngModel)]="notifyForm.city">
+          <input class="notify-input" type="email" placeholder="Email (optional)" [(ngModel)]="notifyForm.email">
+          <!-- Ticked by the reader, never defaulted: the server refuses a lead
+               without it too, so this is not the only place it is enforced. -->
+          <label class="notify-consent">
+            <input type="checkbox" [(ngModel)]="notifyConsent">
+            <span>{{ 'I agree to be contacted about this car by GAADIIQ and the dealer my enquiry goes to.' | t }}</span>
+          </label>
+        </div>
+
+        @if (notifyError()) {
+          <p class="notify-error">{{ notifyError() }}</p>
+        }
+
+        <button class="btn-gradient notify-submit"
+                [disabled]="!canSubmitNotify()" (click)="submitNotify()">
+          {{ notifyBusy() ? 'Sending…' : ('Notify Me' | t) }}
+        </button>
+      } @else {
+        <div class="notify-done">
+          <div class="notify-tick">🔔</div>
+          <h3 class="notify-title">{{ 'We have your request' | t }}</h3>
+          <p class="notify-copy">
+            {{ 'We will be in touch when this car goes on sale.' | t }}
+          </p>
+          <button class="btn-outline" (click)="closeNotify()">{{ 'Close' | t }}</button>
+        </div>
+      }
+    </div>
+  </div>
+}

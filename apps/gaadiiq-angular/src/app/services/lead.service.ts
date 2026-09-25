@@ -25,7 +25,7 @@ export interface LeadRequest {
    * an answer to the question they typed. Defaults to offers_cta server-side,
    * which is why the car-detail form sends its own.
    */
-  source?: 'offers_cta' | 'car_detail' | 'variants';
+  source?: 'offers_cta' | 'car_detail' | 'variants' | 'upcoming';
   consent: boolean;
 }
 
