@@ -158,3 +158,98 @@ describe('AdminUpcomingComponent', () => {
     });
   });
 });
+
+/**
+ * Typing a price does not crash the save.
+ *
+ * REPORTED, with a screenshot of the form filled in for a Hyundai Bayon —
+ * "Could not save: TypeError: a.trim is not a function" — and a Render log
+ * covering the same minutes with NO POST to /upcoming-cars in it. The crash
+ * is in the browser, before the request; nothing was ever sent.
+ *
+ * `<input type="number">` bound with ngModel emits a NUMBER. So typing
+ * 979000 into "Expected price from" puts 979000, not "979000", into a form
+ * whose interface declares every field a string, and `money()` then called
+ * .trim() on it.
+ *
+ * startEdit already coerced with String() for this exact reason — its
+ * comment names the variants editor, which had the same fault. Loading a row
+ * was fixed; typing into the form was not, and the declared type hid the
+ * difference. So these push the wrong types in deliberately rather than
+ * trusting the interface, as the variants tests do.
+ */
+describe('AdminUpcomingComponent — the form survives what the inputs emit', () => {
+  /** The Bayon from the report, with the prices as the DOM supplies them. */
+  function bayonForm(over: Record<string, unknown> = {}) {
+    const { c, service } = mount([]);
+    c.startAdd();
+    c.form.set({
+      make: 'Hyundai', model: 'Bayon', expected_on: '2026-10-12',
+      // Numbers, not strings: this is what type="number" hands ngModel.
+      expected_price_min: 979000, expected_price_max: 1549000,
+      body_type: 'SUV', fuel_type: 'Petrol', image_url: '',
+      ...over,
+    });
+    return { c, service };
+  }
+
+  it('does not throw when the price arrives as a number', () => {
+    // THE REPORTED CRASH.
+    const { c } = bayonForm();
+
+    expect(() => (c as any).body()).not.toThrow();
+  });
+
+  it('sends the price as a number the API can store', async () => {
+    const { c, service } = bayonForm();
+
+    await c.save();
+
+    expect(service.create).toHaveBeenCalled();
+    const sent = service.create.calls.mostRecent().args[0];
+    expect(sent['expected_price_min']).toBe(979000);
+    expect(sent['expected_price_max']).toBe(1549000);
+  });
+
+  it('reports no error for a save that worked', async () => {
+    // The screenshot's red banner is the whole symptom: the admin cannot
+    // tell a rejected save from a crashed one.
+    const { c } = bayonForm();
+
+    await c.save();
+
+    expect(c.error()).toBe('');
+  });
+
+  it('turns a blank price into null, never 0 or the word "null"', async () => {
+    // "Leave blank if none was announced" — and a car with no announced price
+    // is not a car priced at zero.
+    const { c, service } = bayonForm({ expected_price_min: '', expected_price_max: '' });
+
+    await c.save();
+
+    const sent = service.create.calls.mostRecent().args[0];
+    expect(sent['expected_price_min']).toBeNull();
+    expect(sent['expected_price_max']).toBeNull();
+  });
+
+  it('turns a blank optional field into null, not an empty string', async () => {
+    const { c, service } = bayonForm({ body_type: '', fuel_type: '', image_url: '' });
+
+    await c.save();
+
+    const sent = service.create.calls.mostRecent().args[0];
+    expect(sent['body_type']).toBeNull();
+    expect(sent['image_url']).toBeNull();
+  });
+
+  it('trims whitespace off the make and model', async () => {
+    const { c, service } = bayonForm({ make: '  Hyundai  ', model: '  Bayon ' });
+
+    await c.save();
+
+    const sent = service.create.calls.mostRecent().args[0];
+    expect(sent['make']).toBe('Hyundai');
+    expect(sent['model']).toBe('Bayon');
+  });
+});
