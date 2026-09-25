@@ -888,13 +888,39 @@
       </p>
       <div style="display:flex;flex-direction:column;gap:0.75rem">
         <input class="enq-input" type="text" placeholder="Your Name *" [(ngModel)]="enquiryForm.name">
-        <input class="enq-input" type="tel" placeholder="Phone Number *" [(ngModel)]="enquiryForm.phone">
+        <!--
+          The number is verified before the enquiry is recorded, same as
+          "Get Best Price". Send and enter sit together because they are one
+          action to the reader: prove this number is yours.
+        -->
+        <div class="enq-otp-row">
+          <input class="enq-input" type="tel" inputmode="numeric"
+                 placeholder="Mobile Number *" [(ngModel)]="enquiryForm.phone">
+          <button type="button" class="btn-outline enq-otp-btn"
+                  [disabled]="!canSendEnquiryOtp()" (click)="sendEnquiryOtp()">
+            {{ enquiryOtpBusy() ? 'Sending…' : (enquiryOtpSent() ? 'Resend' : 'Send OTP') }}
+          </button>
+        </div>
+        @if (enquiryOtpSent()) {
+          <input class="enq-input" type="text" inputmode="numeric" maxlength="6"
+                 placeholder="Enter the 6-digit code *" [(ngModel)]="enquiryForm.otp">
+        }
+        <input class="enq-input" type="text" placeholder="Your City *" [(ngModel)]="enquiryForm.city">
         <input class="enq-input" type="email" placeholder="Email (optional)" [(ngModel)]="enquiryForm.email">
         <textarea class="enq-input" rows="3" placeholder="Any specific questions…" [(ngModel)]="enquiryForm.notes"></textarea>
+        <!--
+          Ticked by the reader, never defaulted. A dealer ringing somebody who
+          did not agree to be rung is the harm here, and the server refuses a
+          lead without it too — this is not the only place it is enforced.
+        -->
+        <label class="enq-consent">
+          <input type="checkbox" [(ngModel)]="enquiryConsent">
+          <span>{{ 'I agree to be contacted about this car by GAADIIQ and the dealer my enquiry goes to.' | t }}</span>
+        </label>
       </div>
       <div *ngIf="enquiryError()" style="color:#FF6B6B;font-size:0.82rem;margin-top:0.5rem"><app-icon name="alert-triangle" [size]="16"></app-icon> {{ enquiryError() }}</div>
       <button class="btn-gradient" style="width:100%;margin-top:1rem;padding:0.9rem"
-        [disabled]="enquirySubmitting()"
+        [disabled]="!canSubmitEnquiry()"
         (click)="submitEnquiry()">
         {{ enquirySubmitting() ? 'Sending…' : 'Submit Enquiry' }}
       </button>

@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from core.dependencies import get_current_user
 from db.session import get_db
 from main import app
-from models.car_lead import CarLead, LeadStatus
+from models.car_lead import CarLead, LeadSource, LeadStatus
 from models.dealer import Dealer
 from models.user import User, UserRole
 from services import otp_store
@@ -238,3 +238,109 @@ class TestLeadDeliverySuite:
         resp = await client.patch(f"/leads/{other.id}", json={"status": "contacted"})
 
         assert resp.status_code == 403
+
+
+class TestCarDetailEnquirySuite:
+    """
+    The Contact Seller form records a lead, and carries what the buyer wrote.
+
+    WHAT THIS REPLACED
+
+    car-detail's submitEnquiry used to write straight to Supabase from the
+    browser — `from('car_enquiries').insert({ buyer_phone, … })`. The phone
+    was whatever somebody typed; the API was bypassed, so phone_verified,
+    consented_at and dealer routing never ran; and the row landed in a table
+    the dealer inbox does not read. "Get Best Price" next to it was fully
+    verified, so the site had two enquiry paths and the unverified one was on
+    the button most buyers press.
+
+    Routing it here gets the OTP for free — every guard below already existed
+    and now applies to that form too. What did NOT exist was somewhere to put
+    the "Any specific questions…" box, which is why `notes` is new: carrying
+    the form over without it would have dropped the one part a buyer writes in
+    their own words.
+    """
+
+    @pytest.mark.asyncio
+    async def test_the_question_the_buyer_typed_is_kept(self, client, session_factory):
+        code = await live_otp()
+        asked = "Is the 2026 model available in Pearl Arctic White, and what is the wait?"
+
+        resp = await client.post(
+            "/leads",
+            json=payload(otp=code, source="car_detail", notes=asked),
+        )
+
+        assert resp.status_code == 201, resp.text
+        async with session_factory() as s:
+            lead = (await s.execute(__import__("sqlalchemy").select(CarLead))).scalars().one()
+        assert lead.notes == asked
+
+    @pytest.mark.asyncio
+    async def test_the_enquiry_records_where_it_came_from(self, client, session_factory):
+        # The follow-up script differs: someone who clicked "Get Best Price"
+        # expects a price, someone who typed a question expects an answer.
+        code = await live_otp()
+
+        await client.post("/leads", json=payload(otp=code, source="car_detail"))
+
+        async with session_factory() as s:
+            lead = (await s.execute(__import__("sqlalchemy").select(CarLead))).scalars().one()
+        assert lead.source is LeadSource.car_detail
+
+    @pytest.mark.asyncio
+    async def test_an_enquiry_with_no_question_is_fine(self, client, session_factory):
+        # The box is optional, and an empty one must not become the string
+        # "None" in a dealer's inbox.
+        code = await live_otp()
+
+        resp = await client.post("/leads", json=payload(otp=code, source="car_detail"))
+
+        assert resp.status_code == 201
+        async with session_factory() as s:
+            lead = (await s.execute(__import__("sqlalchemy").select(CarLead))).scalars().one()
+        assert lead.notes is None
+
+    @pytest.mark.asyncio
+    async def test_this_form_cannot_skip_the_code_either(self, client, session_factory):
+        # The whole point of the move. Before it, this form had no OTP at all.
+        await live_otp()
+
+        resp = await client.post(
+            "/leads",
+            json=payload(otp="123456", source="car_detail", notes="anything"),
+        )
+
+        assert resp.status_code >= 400
+        async with session_factory() as s:
+            rows = (await s.execute(__import__("sqlalchemy").select(CarLead))).scalars().all()
+        assert rows == []
+
+    @pytest.mark.asyncio
+    async def test_a_question_longer_than_the_column_is_refused(self, client):
+        # Refused by name rather than by a 500 from the database.
+        code = await live_otp()
+
+        resp = await client.post(
+            "/leads",
+            json=payload(otp=code, source="car_detail", notes="x" * 2001),
+        )
+
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_an_enquiry_for_a_car_with_no_catalogue_row(self, client, session_factory):
+        # A seller's own listing is not a catalogue car, so car_id is null and
+        # make/model carry the vehicle. CarLead allows this deliberately.
+        code = await live_otp()
+
+        resp = await client.post(
+            "/leads",
+            json=payload(otp=code, source="car_detail", car_id=None),
+        )
+
+        assert resp.status_code == 201
+        async with session_factory() as s:
+            lead = (await s.execute(__import__("sqlalchemy").select(CarLead))).scalars().one()
+        assert lead.car_id is None
+        assert lead.make == "Maruti Suzuki"
