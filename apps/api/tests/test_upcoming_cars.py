@@ -209,3 +209,112 @@ async def test_a_missing_car_is_a_404(client):
 
     assert (await client.patch(f"/upcoming-cars/{missing}", json={})).status_code == 404
     assert (await client.delete(f"/upcoming-cars/{missing}")).status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Uploading a picture
+#
+# REPORTED: "why there is no option for uploading image". The field was a URL
+# box, which assumes the admin already has the picture hosted somewhere.
+#
+# The catalogue's own uploader could not be reused: media_admin.upload_images
+# CREATES the catalogue row it attaches to, so pointing it at an announced car
+# would put that car in the New Cars grid — on sale, filterable, comparable —
+# months before it exists. These pin the cheap path instead: the file goes to
+# storage, its URL goes in image_url, and vehicle_media is not touched.
+# ---------------------------------------------------------------------------
+
+# A one-pixel PNG, as bytes. Real magic bytes, because the endpoint sniffs
+# them rather than trusting the filename or the Content-Type.
+PNG_1PX = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+    b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01"
+    b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
+
+@pytest.mark.asyncio
+async def test_uploading_a_picture_puts_its_url_on_the_row(client):
+    car = await _add(client)
+
+    resp = await client.post(
+        f"/upcoming-cars/{car['id']}/image",
+        files={"file": ("bayon.png", PNG_1PX, "image/png")},
+    )
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["image_url"], "the row came back with no picture on it"
+
+
+@pytest.mark.asyncio
+async def test_the_stored_url_survives_a_reload(client):
+    # The admin screen reads the row back rather than guessing the key, so the
+    # URL has to be on the listing too, not just on the upload's reply.
+    car = await _add(client)
+    upload = await client.post(
+        f"/upcoming-cars/{car['id']}/image",
+        files={"file": ("bayon.png", PNG_1PX, "image/png")},
+    )
+
+    listed = (await client.get("/upcoming-cars")).json()
+    mine = next(c for c in listed if c["id"] == car["id"])
+
+    assert mine["image_url"] == upload.json()["image_url"]
+
+
+@pytest.mark.asyncio
+async def test_something_that_is_not_an_image_is_refused(client):
+    # Magic bytes, not the name. A file called .png that is not one is how
+    # something executable gets stored where a browser will fetch it.
+    car = await _add(client)
+
+    resp = await client.post(
+        f"/upcoming-cars/{car['id']}/image",
+        files={"file": ("payload.png", b"#!/bin/sh\nrm -rf /\n", "image/png")},
+    )
+
+    assert resp.status_code == 400
+    assert "image" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_an_empty_file_is_refused_in_words(client):
+    car = await _add(client)
+
+    resp = await client.post(
+        f"/upcoming-cars/{car['id']}/image",
+        files={"file": ("nothing.png", b"", "image/png")},
+    )
+
+    assert resp.status_code == 400
+    assert "empty" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_uploading_for_a_car_that_does_not_exist_is_a_404(client):
+    resp = await client.post(
+        f"/upcoming-cars/{uuid.uuid4()}/image",
+        files={"file": ("bayon.png", PNG_1PX, "image/png")},
+    )
+
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_a_second_upload_does_not_overwrite_the_first(client):
+    # Keyed by a fresh uuid, not the filename: two admins uploading
+    # "front.jpg" for different cars must not collide, and re-uploading for
+    # one car must not leave the old key pointing at the new bytes.
+    first = await _add(client)
+    second = await _add(client, model="Curvv")
+
+    a = await client.post(
+        f"/upcoming-cars/{first['id']}/image",
+        files={"file": ("front.png", PNG_1PX, "image/png")},
+    )
+    b = await client.post(
+        f"/upcoming-cars/{second['id']}/image",
+        files={"file": ("front.png", PNG_1PX, "image/png")},
+    )
+
+    assert a.json()["image_url"] != b.json()["image_url"]
