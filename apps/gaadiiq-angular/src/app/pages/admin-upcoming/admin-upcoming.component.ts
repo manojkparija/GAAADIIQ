@@ -23,6 +23,25 @@ const EMPTY: UpcomingForm = {
 };
 
 /**
+ * Anything to the string a form field is declared to hold.
+ *
+ * UpcomingForm types every field as `string`, and that is not true of what
+ * arrives. `<input type="number">` bound with ngModel emits a NUMBER, so
+ * typing a price puts 979000 — not "979000" — into the form, and the next
+ * `.trim()` throws. Reported as "Could not save: TypeError: a.trim is not a
+ * function" while adding a Hyundai Bayon, with no request ever reaching the
+ * API: the crash is in the browser, before the save.
+ *
+ * `startEdit` already coerced with String() for the same reason, citing the
+ * variants editor, which had this exact fault. Loading a row was fixed;
+ * typing into the form was not, and TypeScript could not see the difference
+ * because the declared type says both are strings.
+ */
+function text(value: unknown): string {
+  return value === null || value === undefined ? '' : String(value);
+}
+
+/**
  * Maintain the Upcoming Cars strip.
  *
  * The strip was a hardcoded array of five entries in the New Cars component,
@@ -138,17 +157,19 @@ export class AdminUpcomingComponent {
   /** The form as the API wants it: blanks become null, not "". */
   private body(): Record<string, unknown> {
     const f = this.form();
-    const text = (v: string) => (v.trim() === '' ? null : v.trim());
-    const money = (v: string) => (v.trim() === '' ? null : Number(v));
+    // Coerce rather than assume: see `text` above. Every read goes through it,
+    // because a number reaches any of these fields the same way.
+    const orNull = (v: unknown) => (text(v).trim() ? text(v).trim() : null);
+    const money = (v: unknown) => (text(v).trim() ? Number(text(v)) : null);
     return {
-      make: f.make.trim(),
-      model: f.model.trim(),
-      expected_on: f.expected_on,
+      make: text(f.make).trim(),
+      model: text(f.model).trim(),
+      expected_on: text(f.expected_on),
       expected_price_min: money(f.expected_price_min),
       expected_price_max: money(f.expected_price_max),
-      body_type: text(f.body_type),
-      fuel_type: text(f.fuel_type),
-      image_url: text(f.image_url),
+      body_type: orNull(f.body_type),
+      fuel_type: orNull(f.fuel_type),
+      image_url: orNull(f.image_url),
     };
   }
 
