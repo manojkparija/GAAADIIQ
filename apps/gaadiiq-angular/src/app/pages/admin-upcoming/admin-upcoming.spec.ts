@@ -282,10 +282,8 @@ describe('AdminUpcomingComponent — uploading a picture', () => {
   it('sends the file and puts the stored URL in the field', async () => {
     const { c, service } = mount([car({ id: 'u1' })]);
     c.startEdit(car({ id: 'u1' }));
-    service.uploadImage = jasmine.createSpy('uploadImage').and.callFake(async () => {
-      // The server chose the key; the service reloads and the row now has it.
-      service.cars.set([car({ id: 'u1', image_url: 'https://cdn.test/a.png' })]);
-    });
+    service.uploadImage = jasmine.createSpy('uploadImage')
+      .and.resolveTo(car({ id: 'u1', image_url: 'https://cdn.test/a.png' }));
 
     await c.uploadImage(chose(FILE));
 
@@ -293,15 +291,60 @@ describe('AdminUpcomingComponent — uploading a picture', () => {
     expect(c.form().image_url).toBe('https://cdn.test/a.png');
   });
 
-  it('reads the URL back rather than guessing it', async () => {
-    // Guessing the key would show a broken image on a successful upload.
+  it('reads the URL back from the server rather than guessing it', async () => {
+    // The server chooses the key. Guessing it would show a broken image on a
+    // successful upload.
     const { c, service } = mount([car({ id: 'u1' })]);
     c.startEdit(car({ id: 'u1' }));
-    service.uploadImage = jasmine.createSpy('uploadImage').and.resolveTo(undefined);
+    service.uploadImage = jasmine.createSpy('uploadImage')
+      .and.resolveTo(car({ id: 'u1', image_url: 'https://cdn.test/chosen-by-server.png' }));
 
     await c.uploadImage(chose(FILE));
 
-    expect(c.form().image_url).toBe('');
+    expect(c.form().image_url).toBe('https://cdn.test/chosen-by-server.png');
+  });
+
+  it('never blanks a picture it already has', async () => {
+    /*
+     * REPORTED as "have uploaded image but not visible here", with a Render
+     * log reading:
+     *
+     *   POST /upcoming-cars/{id}/image  200 OK
+     *   GET  /upcoming-cars             200 OK
+     *   PATCH /upcoming-cars/{id}       200 OK
+     *
+     * The upload worked. What followed undid it. uploadImage reloaded the
+     * list and looked the row up again — but `load()` defaults to
+     * includePast=false, so it fetched the PUBLIC listing, and a row that
+     * listing omits came back undefined. The field was then set to '', and
+     * the Save in that log PATCHed image_url: null straight over the picture
+     * that had just been stored.
+     *
+     * So the field is only ever written, never cleared: a reply that carries
+     * no URL leaves what is already there alone.
+     */
+    const { c, service } = mount([car({ id: 'u1' })]);
+    c.startEdit(car({ id: 'u1', image_url: 'https://cdn.test/already-there.png' }));
+    service.uploadImage = jasmine.createSpy('uploadImage')
+      .and.resolveTo(car({ id: 'u1', image_url: null }));
+
+    await c.uploadImage(chose(FILE));
+
+    expect(c.form().image_url).toBe('https://cdn.test/already-there.png');
+  });
+
+  it('does not send a null image_url after an upload', async () => {
+    // The other half of the same fault: what the next Save actually PATCHes.
+    const { c, service } = mount([car({ id: 'u1' })]);
+    c.startEdit(car({ id: 'u1' }));
+    service.uploadImage = jasmine.createSpy('uploadImage')
+      .and.resolveTo(car({ id: 'u1', image_url: 'https://cdn.test/a.png' }));
+
+    await c.uploadImage(chose(FILE));
+    await c.save();
+
+    const sent = service.update.calls.mostRecent().args[1];
+    expect(sent['image_url']).toBe('https://cdn.test/a.png');
   });
 
   it('shows what the API said when the upload is refused', async () => {

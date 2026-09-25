@@ -90,10 +90,19 @@ export class UpcomingCarsService {
    * header itself when the body is a FormData, so the only thing to do here is
    * leave it alone.
    *
-   * The reply is the updated row, so the caller reloads rather than guessing
-   * at the URL the server chose.
+   * RETURNS THE UPDATED ROW RATHER THAN RELOADING
+   *
+   * This used to call `load()` and have the caller hunt for the row again.
+   * Two things were wrong with that. `load()` defaults to includePast=false,
+   * so it fetched the PUBLIC listing — replacing the admin screen's list and
+   * dropping every retired car from it. And a car that listing omits was not
+   * found, so the caller blanked its own field and the next Save PATCHed
+   * image_url: null, erasing the picture that had just been uploaded.
+   *
+   * The server already answers with the row it just changed. Using that is
+   * both correct and one request shorter.
    */
-  async uploadImage(id: string, file: File): Promise<void> {
+  async uploadImage(id: string, file: File): Promise<UpcomingCar> {
     const form = new FormData();
     form.append('file', file);
     const resp = await fetch(`${this.apiUrl}/upcoming-cars/${id}/image`, {
@@ -102,7 +111,11 @@ export class UpcomingCarsService {
       body: form,
     });
     if (!resp.ok) throw new Error(await this.failureDetail(resp));
-    await this.load();
+    const saved: UpcomingCar = await resp.json();
+    // Keep whatever list is already on screen, rather than swapping it for a
+    // differently-filtered one: patch the row in place if we hold it.
+    this.cars.update(rows => rows.map(r => (r.id === saved.id ? saved : r)));
+    return saved;
   }
 
   /**
