@@ -177,11 +177,16 @@ export class AdminUpcomingComponent {
     this.error.set('');
     this.uploading.set(true);
     try {
-      await this.service.uploadImage(id, file);
-      const saved = this.service.cars().find(c => c.id === id);
-      // Read the URL back from the row rather than guessing it: the server
-      // chooses the key, and a guess would show a broken image on success.
-      this.setField('image_url', saved?.image_url ?? '');
+      const saved = await this.service.uploadImage(id, file);
+      // Read the URL back from the row the server returned rather than
+      // guessing it: the server chooses the key, and a guess would show a
+      // broken image on success.
+      //
+      // Only ever WRITTEN, never cleared. This used to look the row up in a
+      // reloaded list and fall back to '' when it was not there — which
+      // turned a successful upload into a blank field, and the next Save
+      // PATCHed image_url: null over the picture just uploaded.
+      if (saved.image_url) this.setField('image_url', saved.image_url);
     } catch (err) {
       this.error.set(`Could not upload: ${err instanceof Error ? err.message : text(err)}`);
     } finally {
