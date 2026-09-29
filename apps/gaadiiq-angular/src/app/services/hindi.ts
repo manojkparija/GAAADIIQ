@@ -35,6 +35,20 @@ export const HINDI: Record<string, string> = {
   'TCO': 'खर्च',
   'News': 'समाचार',
   'Journey': 'मेरी यात्रा',
+  // The navigation labels dropped their "AI" prefix, and these keys follow.
+  // The pipe is keyed by the English sentence, so renaming a label without
+  // renaming the key here would have left a Hindi reader looking at English —
+  // the silent cost the TranslatePipe docstring warns about. The Hindi is the
+  // existing wording minus "AI", not a new phrasing.
+  //
+  // 'Car Advisor' is NOT here: it already exists further down this file, with
+  // the same translation, from copy that used the name before the navigation
+  // did. TypeScript rejects the duplicate, which is how that was found.
+  'Car Diagnoses': 'कार जांच',
+  'Car Value': 'कार मूल्य',
+  // The "AI …" keys stay: the same feature is still named that way in the
+  // pricing table, the quota messages and the privacy policy, and dropping
+  // these would un-translate those pages.
   'AI Advisor': 'AI सलाहकार',
   'AI Diagnosis': 'AI जांच',
   'AI Car Value': 'AI कार मूल्य',

@@ -122,14 +122,24 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
   closeUsedCars(): void { this.usedCarsOpen.set(false); }
 
   /**
-   * The AI row, as data rather than four hand-written blocks. routerLinkActive
-   * gives each tab its selected state, so the gradient marks where you are
-   * instead of tracking it in a signal that can disagree with the URL.
+   * The tools row, as data rather than four hand-written blocks.
+   * routerLinkActive gives each tab its selected state, so the gradient marks
+   * where you are instead of tracking it in a signal that can disagree with
+   * the URL.
+   *
+   * LABELS SAY "CAR", ROUTES STILL SAY "AI"
+   *
+   * The visible names dropped the "AI" prefix; `/ai-advisor`,
+   * `/vehicle-diagnosis` and `/ai-valuation` deliberately did not. A route is
+   * not copy — it is in bookmarks, in whatever links have been shared, in
+   * search results, and in chat.service.ts's "Open AI Advisor" prompt. Renaming
+   * it to match a label change would break all of those to fix nothing a reader
+   * can see.
    */
   readonly aiTabs: { link: string; icon: string; label: string }[] = [
-    { link: '/ai-advisor',       icon: 'sparkles',      label: 'AI Advisor' },
-    { link: '/vehicle-diagnosis', icon: 'wrench',       label: 'AI Diagnosis' },
-    { link: '/ai-valuation',     icon: 'indian-rupee',  label: 'AI Car Value' },
+    { link: '/ai-advisor',       icon: 'sparkles',      label: 'Car Advisor' },
+    { link: '/vehicle-diagnosis', icon: 'wrench',       label: 'Car Diagnoses' },
+    { link: '/ai-valuation',     icon: 'indian-rupee',  label: 'Car Value' },
     { link: '/find-mechanic',    icon: 'map-pin',       label: 'Find Mechanic' },
   ];
 
