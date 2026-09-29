@@ -197,6 +197,15 @@
       <div class="models-results">
         @if (activeFiltersCount() > 0) {
           <div class="active-filters-strip">
+            <!-- First, because it is the one the reader did not set from this
+                 sidebar: they arrived on it from the navbar's brand chips, and
+                 without this there is nothing on the page saying the grid is
+                 showing one manufacturer. -->
+            @if (selectedMake()) {
+              <span class="filter-chip">{{ selectedMake() }}
+                <button (click)="clearMake()" [attr.aria-label]="'Show all brands'">×</button>
+              </span>
+            }
             @if (minBudget() > 0 || maxBudget() < maxBudgetCeiling) {
               <span class="filter-chip">{{ budgetFilterLabel() }}
                 <button (click)="minBudget.set(0); maxBudget.set(maxBudgetCeiling); clearBudgetUrl()">×</button>
