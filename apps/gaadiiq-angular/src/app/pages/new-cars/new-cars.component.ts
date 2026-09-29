@@ -149,6 +149,19 @@ export class NewCarsComponent implements OnInit {
   selectedBodyTypes = signal<string[]>([]);
   selectedFuels = signal<string[]>([]);
   selectedTransmissions = signal<string[]>([]);
+  /**
+   * One manufacturer, or '' for all of them.
+   *
+   * REPORTED: "if I am clicking Hyundai then it should show only hyundai
+   * cars" — the navbar's Browse by Brand chips link here with ?make=, the
+   * page scrolled down to the grid, and the grid showed every make.
+   *
+   * `make` was already listed in `narrows` below, which is what scrolls, so
+   * the click LOOKED like it had filtered: it moved the page the same way
+   * bodyType and fuel do. Every one of those had a handler that applied it.
+   * This one never did, so the only thing the parameter did was scroll.
+   */
+  selectedMake = signal('');
   minBudget = signal(0);
   maxBudget = signal(MAX_BUDGET);
   selectedSort = signal('Popularity');
@@ -265,12 +278,18 @@ export class NewCarsComponent implements OnInit {
     const selBTs = this.selectedBodyTypes();
     const selFuels = this.selectedFuels();
     const selTxs = this.selectedTransmissions();
+    const selMake = this.selectedMake().trim().toLowerCase();
     const minB = this.minBudget();
     const maxB = this.maxBudget();
 
     const models: NewCarModel[] = [];
     map.forEach((cars, key) => {
       const [make, model] = key.split('||');
+      // Compared case-insensitively and trimmed: the parameter arrives from a
+      // URL that a reader can edit and that other pages construct, so
+      // "hyundai" and "Hyundai " must both find the cars. Whole-value, not a
+      // substring — "Tata" must not also match a future "Tata Motors Europe".
+      if (selMake && make.trim().toLowerCase() !== selMake) return;
       // Match any variant in the requested budget band
       const inBand = cars.filter(c => c.price >= minB && c.price <= maxB);
       if (inBand.length === 0) return;
@@ -396,6 +415,10 @@ export class NewCarsComponent implements OnInit {
     return this.selectedBodyTypes().length
       + this.selectedFuels().length
       + this.selectedTransmissions().length
+      // Counted, so the badge and the "Clear All" button appear for a brand
+      // too. A grid narrowed by something the reader cannot see or undo is
+      // the fault recorded on hiddenForNoPhoto above, arriving a second way.
+      + (this.selectedMake() ? 1 : 0)
       + (this.minBudget() > 0 ? 1 : 0)
       + (this.maxBudget() < MAX_BUDGET ? 1 : 0);
   });
@@ -446,6 +469,10 @@ export class NewCarsComponent implements OnInit {
       if (params['fuel']) {
         this.selectedFuels.set([String(params['fuel'])]);
       }
+      // The one that was missing. Set from the parameter on every emission,
+      // including back to '' when it is gone, so using the back button out of
+      // a brand actually leaves it.
+      this.selectedMake.set(params['make'] ? String(params['make']) : '');
       // Every param that narrows the list scrolls to it, `fuel` included.
       //
       // `fuel` was missing here, so the Electric Cars entry in the navbar
@@ -516,6 +543,9 @@ export class NewCarsComponent implements OnInit {
 
   private syncUrl() {
     const qp: Record<string, string | number> = {};
+    // Carried through every other filter change, or ticking a body type would
+    // drop the brand the reader arrived with and silently widen the grid.
+    if (this.selectedMake()) qp['make'] = this.selectedMake();
     if (this.minBudget() > 0) qp['minPrice'] = this.minBudget();
     if (this.maxBudget() < MAX_BUDGET) qp['maxPrice'] = this.maxBudget();
     const bts = this.selectedBodyTypes();
@@ -569,8 +599,13 @@ export class NewCarsComponent implements OnInit {
     this.syncUrl();
   }
 
-  toggleFuel(f: string) {
-    const current = this.selectedFuels();
+  /** Drop the brand filter and put the other makes back. */
+  clearMake() {
+    this.selectedMake.set('');
+    this.syncUrl();
+  }
+
+  toggleFuel(f: string) {    const current = this.selectedFuels();
     this.selectedFuels.set(
       current.includes(f) ? current.filter(x => x !== f) : [...current, f]
     );
@@ -588,6 +623,10 @@ export class NewCarsComponent implements OnInit {
     this.selectedBodyTypes.set([]);
     this.selectedFuels.set([]);
     this.selectedTransmissions.set([]);
+    // "Clear All" means all of them. Leaving the brand behind would empty the
+    // sidebar while the grid stayed narrowed, with nothing left on screen to
+    // explain why.
+    this.selectedMake.set('');
     this.minBudget.set(0);
     this.maxBudget.set(MAX_BUDGET);
     this.selectedSort.set('Popularity');
