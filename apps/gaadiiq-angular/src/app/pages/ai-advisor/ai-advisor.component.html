@@ -4,7 +4,10 @@
 <div class="advisor-page" *ngIf="phase() === 'quiz'">
   <div class="advisor-hero">
     <div class="hero-icon"><app-icon name="brain" [size]="40"></app-icon></div>
-    <h1>{{ 'AI Car' | t }} <span class="gradient-text">{{ 'Advisor' | t }}</span></h1>
+    <!-- Two keys, not one: the gradient runs on the second word only. This is
+         why a search for "AI Car Advisor" did not find the heading — the
+         string never exists whole anywhere in the source. -->
+    <h1>{{ 'Car' | t }} <span class="gradient-text">{{ 'Advisor' | t }}</span></h1>
     <p class="hero-sub">Describe what you need in one line — or answer {{ totalSteps() }} questions and get data-driven recommendations with full cost analysis</p>
   </div>
 
@@ -249,15 +252,15 @@
 
   </div>
 
-  <!-- AI Chat button (MOB-014) -->
-  <button class="chat-fab" (click)="openChat()" *ngIf="!chatOpen()" aria-label="Ask AI Advisor">
-    ✨ Ask AI
+  <!-- Chat button (MOB-014) -->
+  <button class="chat-fab" (click)="openChat()" *ngIf="!chatOpen()" aria-label="Ask Car Advisor">
+    ✨ Ask Advisor
   </button>
 
-  <!-- AI Chat panel -->
+  <!-- Chat panel -->
   <div class="chat-panel glass-card" *ngIf="chatOpen()">
     <div class="chat-header">
-      <span>🤖 AI Advisor Chat</span>
+      <span>🤖 Car Advisor Chat</span>
       <button (click)="closeChat()" aria-label="Close chat">✕</button>
     </div>
     <div class="chat-messages">
@@ -265,7 +268,7 @@
         <span class="msg-bubble">{{ m.text }}<span *ngIf="m.role==='ai' && chatBusy() && m === chatMessages()[chatMessages().length-1]" class="typing-cursor">▊</span></span>
       </div>
       <div *ngIf="chatMessages().length === 0" class="chat-welcome">
-        Hi! I'm your AI Car Advisor. Ask me anything about buying a car in India.
+        Hi! I'm your Car Advisor. Ask me anything about buying a car in India.
       </div>
     </div>
     <div class="chat-input-row">
