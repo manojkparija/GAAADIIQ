@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, OnDestroy, effect, HostListener } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, effect, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -235,6 +235,16 @@ export function describeEnquiryFailure(error: unknown): string {
   styleUrl: './car-detail.component.scss'
 })
 export class CarDetailComponent implements OnInit, OnDestroy {
+  /**
+   * The On-Road Price card, and the EMI card as the fallback.
+   *
+   * Two refs because each panel renders conditionally — the on-road card needs
+   * a price to break down, the EMI card needs hasPrice() — and a trim can be
+   * selectable while one of them is absent. See revealPriceBreakdown().
+   */
+  @ViewChild('priceBreakdown') priceBreakdown?: ElementRef<HTMLElement>;
+  @ViewChild('emiPanel') emiPanel?: ElementRef<HTMLElement>;
+
   activeTab = signal('overview');
   liked = signal(false);
   sellerModalOpen = signal(false);
@@ -1494,6 +1504,46 @@ export class CarDetailComponent implements OnInit, OnDestroy {
   selectVariant(v: CarVariant) {
     if (!v.ex_showroom_price) return;
     this.selectedVariantId.set(this.selectedVariantId() === v.id ? null : v.id);
+    // Choosing one shows what it costs. Clearing one does not move the page:
+    // the reader is back to browsing the ladder and yanking them away from it
+    // would be the surprise.
+    if (this.selectedVariantId()) this.revealPriceBreakdown();
+  }
+
+  /**
+   * The On-Road Price and EMI panels, when they are not already on screen.
+   *
+   * REPORTED from the Android app: "if user click one particular variant then
+   * the on-road price and EMI calculation should be visible like web
+   * application".
+   *
+   * Both panels already answer for the chosen trim — onRoadPrice() reads
+   * selectedVariant() and financeableMax() follows it — so nothing was being
+   * computed wrongly. They were simply unreachable. The layout is two columns
+   * with the panels beside the list, and under 1024px that collapses to one,
+   * which puts them after the whole tab body: for a Creta, seventeen trims of
+   * feature text. A tap updated numbers several screens below the fold, so on
+   * a phone the selection appeared to do nothing at all.
+   *
+   * Scrolling rather than duplicating the panels: a second copy of an EMI
+   * calculator is a second thing to keep in step with the first, and these
+   * numbers are the ones a buyer acts on.
+   */
+  private revealPriceBreakdown(): void {
+    // Matches the `max-width: 1024px` rule in this component's stylesheet that
+    // collapses .detail-grid to one column. Above it the panels sit beside the
+    // list and are already in view, so moving the page would be the surprise.
+    if (typeof window === 'undefined' || window.innerWidth > 1024) return;
+
+    // After the click has been applied, so the panel it scrolls to is the one
+    // for the trim just chosen.
+    setTimeout(() => {
+      const target = this.priceBreakdown?.nativeElement ?? this.emiPanel?.nativeElement;
+      if (!target) return;
+      // Someone who has asked for less motion gets the jump, not the glide.
+      const still = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      target.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+    });
   }
 
   /**

@@ -721,7 +721,7 @@
         </div>
 
         <!-- ON-ROAD PRICE -->
-        <div class="onroad-card glass-card" *ngIf="onRoadPrice() as orp">
+        <div class="onroad-card glass-card" #priceBreakdown *ngIf="onRoadPrice() as orp">
           <h3><app-icon name="road" [size]="16"></app-icon> {{ 'On-Road Price' | t }}</h3>
           <!--
             Which car this is pricing. Trims differ by a lakh or more and can
@@ -802,7 +802,7 @@
              Gated on a price for the same reason as the panels above: with
              nothing to finance the slider spanned 0 to 0 and the card
              announced a monthly EMI of ₹0 in 2rem type. -->
-        <div class="emi-card glass-card" *ngIf="hasPrice()">
+        <div class="emi-card glass-card" #emiPanel *ngIf="hasPrice()">
           <h3><app-icon name="credit-card" [size]="16"></app-icon> {{ 'EMI Calculator' | t }}</h3>
           <div class="emi-row">
             <div class="emi-label-row"><label>{{ 'Loan Amount' | t }}</label><span class="emi-val">{{ formatPrice(loan.amount) }}</span></div>

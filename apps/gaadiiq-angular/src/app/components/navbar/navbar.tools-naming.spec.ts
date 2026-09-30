@@ -54,6 +54,23 @@ function mount(): { fixture: ComponentFixture<NavbarComponent>; lang: LanguageSe
 }
 
 describe('navbar — the tools row is named for cars, not for AI', () => {
+  /*
+   * LanguageService.set() writes 'gaadiiq_lang' to localStorage, and that
+   * outlives the TestBed: the next spec file builds a LanguageService which
+   * reads the stored value in its initialiser. The Hindi cases below therefore
+   * left the WHOLE SUITE in Hindi, and every English assertion after them
+   * failed — 285 of them on one run, none on the next, because Jasmine
+   * randomises spec order.
+   *
+   * Shipped in #292 and caught here. Cleared after every case, not just the
+   * Hindi ones, so a case added later cannot reintroduce it.
+   */
+  afterEach(() => {
+    try {
+      localStorage.removeItem('gaadiiq_lang');
+    } catch { /* private mode: nothing was stored to clear */ }
+  });
+
   it('shows the three renamed labels', () => {
     const { fixture } = mount();
     const labels = (fixture.componentInstance as any).aiTabs.map((t: any) => t.label);
