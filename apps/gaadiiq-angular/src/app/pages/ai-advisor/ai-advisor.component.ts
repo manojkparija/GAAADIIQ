@@ -338,7 +338,7 @@ export class AiAdvisorComponent {
     private analytics: AnalyticsService,
     private api: ApiService,
   ) {
-    seo.setPage('AI Car Advisor',
+    seo.setPage('Car Advisor',
       'Answer 10 smart questions and get personalized, AI-powered car recommendations with full cost analysis.');
     try {
       const saved = sessionStorage.getItem('gaadiiq_advisor_quiz');
