@@ -46,6 +46,10 @@ export const HINDI: Record<string, string> = {
   // did. TypeScript rejects the duplicate, which is how that was found.
   'Car Diagnoses': 'कार जांच',
   'Car Value': 'कार मूल्य',
+  // The footer's two remaining "AI …" links, renamed after #292 left them
+  // behind. 'Car Valuation' rather than 'Car Value' because that is the word
+  // the footer has always used for this link; both point at /ai-valuation.
+  'Car Valuation': 'कार मूल्यांकन',
   // The "AI …" keys stay: the same feature is still named that way in the
   // pricing table, the quota messages and the privacy policy, and dropping
   // these would un-translate those pages.
