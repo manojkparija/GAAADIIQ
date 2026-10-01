@@ -684,7 +684,11 @@
           <ng-container *ngIf="displayPrice() as price">
             <div class="big-price gradient-text">{{ price.text }}</div>
             <div *ngIf="price.caption" style="color:var(--muted);font-size:0.8rem;margin-bottom:0.25rem">{{ price.caption }}</div>
-            <div style="color:var(--muted);font-size:0.85rem">EMI from ₹{{ displayEmi().toLocaleString() }}/mo · No cost EMI available</div>
+            <!-- "· No cost EMI available" was appended here unconditionally,
+                 on every car. Nothing in the repo backed it: no field, no API,
+                 no lender. A buyer reads it as a finance offer on THIS car.
+                 The EMI figure stays because displayEmi() computes it. -->
+            <div style="color:var(--muted);font-size:0.85rem">EMI from ₹{{ displayEmi().toLocaleString() }}/mo</div>
           </ng-container>
           <!-- Most of the catalogue has no ex_showroom_price yet, and this
                block used to render "₹0" with "EMI from ₹0/mo" under it. Saying
