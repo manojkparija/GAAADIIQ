@@ -749,36 +749,37 @@ export class CarsDataService {
     //
     // Two extra attempts, a quarter-second apart. Short enough that a genuine
     // outage still fails fast and the page says so rather than hanging.
-    // A key no cache can already hold.
     //
-    // WHY THIS IS HERE, AND WHY IT IS BLUNT
+    // THE CACHE-BUSTING `_=<timestamp>` THAT USED TO BE HERE IS GONE
     //
-    // Reported all day, and still after four other fixes: "0 models available"
-    // on a normal reload, the full catalogue after a hard refresh, every time.
-    // A hard refresh differs from a normal one in exactly one way — it sends
-    // `Cache-Control: no-cache`, so it skips every cache between the page and
-    // the origin. Nothing else about the two loads differs.
+    // It was added as an experiment, with its own exit condition: "Remove this
+    // once the cause is confirmed and fixed at its root." That condition is
+    // met, and core/cache_policy.py records the root cause in full.
     //
-    // Each individual cache was examined and cleared of blame: the API stamps
-    // no-store on any request carrying Authorization (and the reporter is
-    // signed in), the service worker's patterns never match `/cars?...`, and
-    // Vary: Origin is set on everything cacheable. Every one of those was
-    // reasoned from the code, and the symptom outlived all of them.
+    // The symptom it chased was "0 models available" on a normal reload with
+    // the full catalogue after a hard refresh. The cause was the API's own
+    // Cache-Control: `max-age=60, s-maxage=300, stale-while-revalidate=600`
+    // could serve a copy up to fifteen minutes old, and a hard refresh sends
+    // `Cache-Control: no-cache`, which skips exactly those — "which is why
+    // THAT always worked and nothing else did". It is now
+    // `max-age=0, must-revalidate, s-maxage=3600`: the browser holds nothing
+    // without asking, and services/cdn_purge.py clears the edge after any
+    // admin catalogue write, fired from middleware so no endpoint is missed.
     //
-    // So this stops reasoning. A timestamp makes the URL unique per request,
-    // which no browser cache, edge cache or service worker can have a stored
-    // copy of. If the page still reads zero after this, caching is not the
-    // cause and never was — which is worth knowing for certain, and cannot be
-    // established by reading configuration.
+    // Keeping the timestamp after that fix costs real money and buys nothing.
+    // A URL unique per request is a key no cache can ever hold, so it defeated
+    // all three at once — Cloudflare's hour, the origin's own response_cache
+    // (15s TTL plus single-flight, keyed on the full URL), and the browser's
+    // conditional revalidation. Every catalogue read became a database round
+    // trip on a one-worker service, which is the stampede response_cache's
+    // docstring exists to prevent.
     //
-    // The cost is real and accepted: catalogue reads no longer collapse onto
-    // the edge cache, so they reach the origin. Remove this once the cause is
-    // confirmed and fixed at its root.
-    const bust = url.includes('?') ? '&' : '?';
-
+    // What actually fixed the raciest case is the retry above, not the
+    // timestamp: a request that never leaves the browser reports status 0, and
+    // that is what turned one unlucky millisecond into an empty page.
     for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
       try {
-        return await firstValueFrom(this.http.get<T>(`${url}${bust}_=${Date.now()}`));
+        return await firstValueFrom(this.http.get<T>(url));
       } catch (err) {
         const worthRetrying = isWorthRetrying(err);
         const last = attempt === FETCH_ATTEMPTS;

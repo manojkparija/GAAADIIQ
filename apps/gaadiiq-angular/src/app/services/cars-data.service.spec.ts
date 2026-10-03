@@ -169,27 +169,41 @@ describe('CarsDataService — an advert that is not shown must not hide a model'
 });
 
 /**
- * Every catalogue request carries a key no cache can already hold.
+ * Catalogue requests are cacheable, which is the opposite of what this file
+ * used to assert.
  *
- * REPORTED ALL DAY, AND STILL AFTER FOUR OTHER FIXES
+ * WHAT CHANGED, AND WHY REVERSING A TEST IS THE RIGHT MOVE HERE
  *
- * "0 models available" on a normal reload; the full catalogue after a hard
- * refresh; every time. A hard refresh differs from a normal one in exactly one
- * way — it sends `Cache-Control: no-cache` and so skips every cache between
- * the page and the origin.
+ * Every request used to carry `_=<timestamp>`, and a test here insisted on it,
+ * on the grounds that "a future reader tidying away a stray `_=` timestamp
+ * would restore the bug without ever seeing it". That was correct while the
+ * bug was unexplained. It is not a reason to keep the parameter after the bug
+ * is explained, and the comment that introduced it set the exit condition
+ * itself: "Remove this once the cause is confirmed and fixed at its root."
  *
- * Each cache was examined and cleared of blame by reading the code: the API
- * stamps no-store on any request carrying Authorization and the reporter is
- * signed in; the service worker's compiled patterns never match `/cars?...`;
- * Vary: Origin is set on everything cacheable. The symptom outlived all of it.
+ * THE ROOT CAUSE, AND WHERE IT IS WRITTEN DOWN
  *
- * The busting parameter stops that argument: a URL unique per request cannot
- * be answered from a stored copy by anything. It is blunt and it costs the
- * edge cache on catalogue reads, which is why it needs a test saying so — a
- * future reader tidying away a stray `_=` timestamp would restore the bug
- * without ever seeing it.
+ * core/cache_policy.py. The API served `max-age=60, s-maxage=300,
+ * stale-while-revalidate=600`, so a normal reload could be answered with a
+ * copy up to fifteen minutes old, while a hard refresh sends
+ * `Cache-Control: no-cache` and skips exactly those — "which is why THAT
+ * always worked and nothing else did". It is now `max-age=0, must-revalidate,
+ * s-maxage=3600`, and services/cdn_purge.py clears the edge after any admin
+ * catalogue write, from middleware so no endpoint can be forgotten.
+ *
+ * WHY THE PARAMETER IS NOW A COST WITH NO BENEFIT
+ *
+ * A URL unique per request is a key no cache can hold, so it defeated all
+ * three at once: Cloudflare's hour, the origin's own response_cache (a 15s TTL
+ * plus single-flight, keyed on the full URL), and the browser's conditional
+ * revalidation. Every catalogue read reached the database on a one-worker
+ * service — the stampede response_cache exists to prevent.
+ *
+ * So the assertion flips: no busting parameter, and the query the caller asked
+ * for still intact. The retry in fetchOrNull is what handles the raciest case
+ * and it is untouched.
  */
-describe('CarsDataService — cache busting', () => {
+describe('CarsDataService — catalogue requests can be cached', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
@@ -198,7 +212,7 @@ describe('CarsDataService — cache busting', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  it('appends a unique parameter to every catalogue request', () => {
+  it('sends no cache-busting parameter on any catalogue request', () => {
     TestBed.inject(CarsDataService);
 
     const requests = http.match(() => true);
@@ -206,10 +220,32 @@ describe('CarsDataService — cache busting', () => {
 
     for (const req of requests) {
       expect(req.request.url)
-        .withContext('a request without a busting parameter can be served from a cache')
-        .toMatch(/[?&]_=\d+/);
+        .withContext('a unique URL per request cannot be served from any cache')
+        .not.toMatch(/[?&]_=\d+/);
       req.flush({ items: [], total: 0, page: 1, page_size: 100 });
     }
+  });
+
+  it('sends the same URL twice, so a cache has something to match on', () => {
+    // The property that actually makes the edge and response_cache work, and
+    // the one a reintroduced timestamp would break. Asserting only the absence
+    // of `_=` would still pass if some other per-request value appeared.
+    TestBed.inject(CarsDataService);
+    const first = http.match(req => req.url.includes('/cars?')).map(r => r.request.urlWithParams);
+    for (const req of http.match(() => true)) {
+      req.flush({ items: [], total: 0, page: 1, page_size: 100 });
+    }
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
+    const http2 = TestBed.inject(HttpTestingController);
+    TestBed.inject(CarsDataService);
+    const second = http2.match(req => req.url.includes('/cars?')).map(r => r.request.urlWithParams);
+    for (const req of http2.match(() => true)) {
+      req.flush({ items: [], total: 0, page: 1, page_size: 100 });
+    }
+
+    expect(second).toEqual(first);
   });
 
   it('does not lose the query the caller asked for', () => {
