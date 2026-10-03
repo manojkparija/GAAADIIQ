@@ -20,6 +20,7 @@ from db.base import Base
 from db.session import get_db
 from main import app
 from services import response_cache
+from services.ev_charging import nearby_cache
 
 #: Set by CI to a Postgres DSN. Absent locally, where SQLite is the default.
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "").strip()
@@ -168,6 +169,30 @@ def clear_response_cache():
     response_cache._reset_for_tests()
     yield
     response_cache._reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
+def clear_ev_nearby_cache():
+    """Empty the EV nearby-station cache between tests.
+
+    The same situation as clear_response_cache above, arriving a second way.
+    services/ev_charging/nearby_cache.py holds a provider's answer in
+    module-level state for ten minutes so an identical search does not pay
+    Google twice. That state outlives a test, and the existing Google suite
+    deliberately reuses one set of coordinates across its cases.
+
+    Without this, six of those cases failed as soon as they ran together and
+    passed in isolation: a test that stubs an outage, an empty area or a
+    rejected key was answered from the station a previous test had cached, so
+    the failure read as "the provider returned data during an outage" with
+    nothing in that test to explain it.
+
+    Production wants the opposite — carrying an answer across requests is the
+    entire point — so this belongs here rather than in the cache.
+    """
+    nearby_cache._reset_for_tests()
+    yield
+    nearby_cache._reset_for_tests()
 
 
 @pytest.fixture(autouse=True)
