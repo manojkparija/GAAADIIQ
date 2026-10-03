@@ -504,6 +504,22 @@ class GoogleMapsProvider:
         import httpx
 
         from core.config import settings
+        from services.ev_charging import nearby_cache
+
+        # Every call here is billed, and this is the one path with no table
+        # behind it, so an identical question asked again inside the window is
+        # answered without reaching Google. See nearby_cache for why that is the
+        # "caching it briefly" the licence allows rather than the accumulation
+        # it does not, and why the window is minutes rather than ai_cache's day.
+        key = nearby_cache.build_key(self.name, latitude, longitude, radius_km, limit)
+        cached = await nearby_cache.get(key)
+        if cached is not None:
+            stations, cached_at = cached
+            logger.info(
+                "Google Places served from cache near %.4f,%.4f (%d stations, fetched %s)",
+                latitude, longitude, len(stations), cached_at.isoformat(),
+            )
+            return stations
 
         # Places caps a nearby search at 20 results and 50 km.
         max_results = max(1, min(int(limit), 20))
@@ -565,16 +581,24 @@ class GoogleMapsProvider:
         if not isinstance(places, list):
             raise ProviderUnavailable("Google Places returned an unexpected shape")
 
+        # Stamped once, here, so every station in this answer carries the same
+        # instant and it survives into the cache. _stations_live reports it as
+        # last_updated, which is how a cached reply says when it was really
+        # obtained instead of claiming to be current.
+        fetched_at = datetime.now(timezone.utc)
+
         out: list[NormalisedStation] = []
         for place in places:
             station = normalise_google_place(place)
             if station is not None:
+                station.source_updated_at = fetched_at
                 out.append(station)
 
         logger.info(
             "Google Places returned %d results near %.4f,%.4f (%d usable)",
             len(places), latitude, longitude, len(out),
         )
+        await nearby_cache.put(key, out, fetched_at)
         return out
 
 

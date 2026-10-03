@@ -396,8 +396,13 @@ async def _stations_live(
                 chargers=[_charger_out(c, vehicle) for c in item.chargers],
                 source=item.source,
                 source_url=item.source_url,
-                # Fetched just now, which is the whole point of not storing it.
-                last_updated=datetime.now(timezone.utc),
+                # When the provider really answered, which is no longer always
+                # now: the Google adapter holds an identical question's result
+                # for a few minutes (services/ev_charging/nearby_cache.py) and
+                # stamps it with the fetch time. Reporting "now" for a cached
+                # availability count would turn that saving into AC-07's
+                # failure — a driver detouring to an occupied charger.
+                last_updated=item.source_updated_at or datetime.now(timezone.utc),
                 data_confidence=item.data_confidence,
             )
         )
