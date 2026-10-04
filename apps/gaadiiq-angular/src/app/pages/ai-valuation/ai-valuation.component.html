@@ -4,7 +4,7 @@
 
   <!-- Header -->
   <section class="val-hero container">
-    <div class="ai-badge"><app-icon name="brain" [size]="14"></app-icon> {{ 'AI Valuation' | t }}</div>
+    <div class="ai-badge"><app-icon name="brain" [size]="14"></app-icon> {{ 'Car Valuation' | t }}</div>
     <h1>{{ 'What Is Your Car' | t }} <span class="gradient-text">{{ 'Worth Today?' | t }}</span></h1>
     <p class="hero-sub">{{ 'Get a fair market estimate for your used car based on depreciation, mileage, and market signals. Free, no sign-up needed.' | t }}</p>
     <div class="trust-row">
@@ -81,7 +81,7 @@
       </div>
 
       <button class="btn-gradient val-btn" (click)="estimate()" [disabled]="!formValid || loading()">
-        <span *ngIf="!loading()">{{ 'Get AI Valuation' | t }}</span>
+        <span *ngIf="!loading()">{{ 'Get Car Valuation' | t }}</span>
         <span *ngIf="loading()" class="loading-dots">{{ 'Analysing market data' | t }}<span class="dots">...</span></span>
       </button>
     </div>

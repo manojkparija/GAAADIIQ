@@ -190,6 +190,9 @@ export const HINDI: Record<string, string> = {
     '200+ AI सिग्नल',
   'Get an accurate valuation in under 30 seconds — data-driven, instant, no guesswork.':
     '30 सेकंड से कम में सटीक मूल्यांकन — डेटा आधारित, तुरंत, बिना अंदाज़े के।',
+  'Get Car Valuation':
+    'कार मूल्यांकन पाएं',
+  // Kept: the pricing table still lists the feature as "AI Valuation".
   'Get AI Valuation':
     'AI मूल्यांकन पाएं',
   'Live Analysis':
@@ -853,6 +856,10 @@ export const HINDI: Record<string, string> = {
   'What you should realistically get':
     'वास्तविक रूप से आपको कितना मिलना चाहिए',
   // ── Diagnosis and roadside help ──────────────────────────────────────────
+  'Car Repair Advisor':
+    'कार मरम्मत सलाहकार',
+  // The old key stays: the quota and sign-in messages on the same page still
+  // name the feature "AI Diagnosis", and the pricing table lists it that way.
   'AI Repair Advisor':
     'AI मरम्मत सलाहकार',
   'Vehicle Preliminary':

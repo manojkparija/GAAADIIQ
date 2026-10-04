@@ -21,7 +21,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 export class AiValuationComponent {
   constructor(private supabase: SupabaseService, private seo: SeoService, private demandSvc: DemandService) {
     seo.setPage(
-      'AI Car Valuation',
+      'Car Valuation',
       'Get an instant AI-powered fair market valuation for your used car — free, no sign-up needed.',
     );
   }
