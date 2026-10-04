@@ -113,6 +113,14 @@ function mount() {
  * left behind here becomes some unrelated suite's viewport. That is exactly
  * what happened on the first full run: green in isolation, one unrelated
  * failure in the suite. `restoreWidth` in afterEach puts it back.
+ *
+ * EVERY CASE BELOW SETS ITS OWN WIDTH, AND THAT IS NOT OPTIONAL
+ *
+ * A case that sets none inherits the browser's real one, which for Karma's
+ * headless Chrome is 800x600 — a phone as far as revealPriceBreakdown is
+ * concerned. Such a case schedules a scroll timeout it has no reason to await,
+ * and the timer then fires inside whichever case runs next. The first test
+ * here did exactly that and made a different one fail about one run in five.
  */
 const REAL_WIDTH = window.innerWidth;
 
@@ -141,6 +149,21 @@ describe('CarDetailComponent — a chosen trim prices itself', () => {
   it('prices the trim the reader chose, not the model', () => {
     // The panels were always right — this pins that, so a later change to
     // the scrolling cannot quietly take the correctness with it.
+    //
+    // A DESKTOP WIDTH, THOUGH THIS TEST IS NOT ABOUT WIDTH AT ALL
+    //
+    // Without it the viewport is whatever the browser really is, and Karma's
+    // headless Chrome is 800x600 — under the 1024px threshold. So selectVariant
+    // below scheduled a scroll timeout that this test never awaited, and it
+    // fired during whichever test Jasmine randomly ran next. When that was
+    // "does not move the page when a trim is cleared", it landed after that
+    // test's calls.reset() and before its assertion: one failure in roughly
+    // five runs, in a different file's test, from this line.
+    //
+    // That is why every case here now states its own width. Inheriting the
+    // real one was the bug — see REAL_WIDTH below, which exists to restore a
+    // value no test should be relying on in the first place.
+    widthIs(1440);
     const c = mount();
 
     c.selectVariant(TRIMS[1]);
