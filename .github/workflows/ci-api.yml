@@ -47,6 +47,17 @@ jobs:
       # line without recording why in docs/PRODUCTION_RELEASE_PLAN.md.
       #
       #   PYSEC-2025-185  python-jose  — no upstream fix exists
+      #   CVE-2026-85394  python-jose  — no upstream fix either. 3.5.0 was
+      #                                  tried and audits the same, so this is
+      #                                  not a pin waiting to be bumped. See
+      #                                  docs/PRODUCTION_RELEASE_PLAN.md: the
+      #                                  standing answer is to leave python-jose
+      #                                  behind, not to chase its releases.
+      #   CVE-2026-59152  langsmith    — 0.8.18 fixes it and is four minors
+      #                                  away; langsmith is pinned by the LLM
+      #                                  stack, which is the "scheduled work
+      #                                  rather than a CI fix" already recorded
+      #                                  for this package.
       #   PYSEC-2026-1325 ecdsa        — no upstream fix; maintainers consider
       #                                  the Minerva timing attack out of scope,
       #                                  and python-jose[cryptography] does not
@@ -91,7 +102,9 @@ jobs:
             --ignore-vuln PYSEC-2026-3456 \
             --ignore-vuln PYSEC-2026-3457 \
             --ignore-vuln PYSEC-2026-373 \
-            --ignore-vuln PYSEC-2026-77
+            --ignore-vuln PYSEC-2026-77 \
+            --ignore-vuln CVE-2026-85394 \
+            --ignore-vuln CVE-2026-59152
 
   postgres:
     name: Test on Postgres

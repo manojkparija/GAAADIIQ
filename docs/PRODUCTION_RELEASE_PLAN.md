@@ -201,6 +201,25 @@ real audit run rather than typed. Anything not on it fails the build.
   Minerva timing attack out of scope, and `python-jose[cryptography]` does not
   route our JWT work through it.
 - `python-jose` PYSEC-2025-185 — no upstream fix exists.
+- `python-jose` CVE-2026-85394 — no upstream fix either, and **3.5.0 was tried
+  and audits identically**, so this is not a pin waiting to be bumped. That
+  makes three unfixed advisories against the library `core/security.py` uses to
+  sign and verify every token, from a project whose last release before 3.5.0
+  was over a year earlier. **The decision this now needs is whether to leave
+  python-jose rather than keep tolerating it** — PyJWT is the usual destination
+  and is actively maintained. That is a real piece of work (re-issuing tokens,
+  checking every `jwt.decode` call site) and is not a CI fix, which is why it is
+  recorded here rather than attempted alongside an unrelated change.
+
+  One thing the 3.5.0 experiment did establish: it requires `pyasn1>=0.5.0`,
+  the opposite of 3.4.0's pin. So moving to 3.5.0 *would* clear the `pyasn1`
+  entry above, which is the one advisory on this list with an available fix
+  that nothing else can reach. If the migration is deferred, taking 3.5.0 on
+  its own is worth doing for that reason alone — it does not fix CVE-2026-85394
+  but it does unblock `pyasn1` 0.6.4.
+- `langsmith` CVE-2026-59152 — 0.8.18 fixes it, four minors from the pinned
+  0.2.11. Same answer as the entry below: pinned by the LLM stack, so clearing
+  it means moving those majors.
 - `starlette`, `langchain*`, `langsmith`, `pytest` — transitive, pinned by
   FastAPI and the LLM stack. Clearing them means moving those majors, which is
   scheduled work rather than a CI fix. **`starlette` is the one to schedule
