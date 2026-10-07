@@ -1,6 +1,7 @@
 import os
 import sys
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _INSECURE_SECRET = "change-me-in-production"
@@ -329,7 +330,21 @@ class Settings(BaseSettings):
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
-    SMTP_PASS: str = ""
+    # Reads SMTP_PASSWORD as well as SMTP_PASS.
+    #
+    # The live service sets SMTP_PASSWORD. This field was named SMTP_PASS, so
+    # the two never met: services/email.py authenticated with an empty password
+    # against a host that was configured, and its one `except Exception` logs
+    # the refusal and returns. Mail has been failing for as long as both have
+    # existed, and nothing in the product says so.
+    #
+    # Renaming the field would have been the smaller diff and the worse change:
+    # a .env or a second deployment still saying SMTP_PASS would break the
+    # moment this shipped. Accepting both names cannot break either, and
+    # SMTP_PASS stays first so an explicit one keeps winning.
+    SMTP_PASS: str = Field(
+        default="", validation_alias=AliasChoices("SMTP_PASS", "SMTP_PASSWORD")
+    )
     SMTP_FROM: str = "noreply@gaadiiq.com"
 
     # ── WAVE 3 ML Features ────────────────────────────────────────────────────
