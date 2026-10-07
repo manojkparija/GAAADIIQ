@@ -37,6 +37,10 @@ logger = logging.getLogger("gaadiiq.otp")
 
 router = APIRouter(prefix="/auth/otp", tags=["auth"])
 
+class SmsUnavailable(RuntimeError):
+    """SMS could not be sent. Never means the code was wrong."""
+
+
 async def _send_sms(phone: str, otp: str) -> None:
     """Send OTP via MSG91 if configured; log in dev mode."""
     msg91_key = os.environ.get("MSG91_AUTH_KEY", "")
@@ -54,7 +58,7 @@ async def _send_sms(phone: str, otp: str) -> None:
     else:
         # Dev: log the OTP — NEVER do this in production
         if settings.is_production:
-            raise RuntimeError("MSG91_AUTH_KEY not set in production")
+            raise SmsUnavailable("MSG91_AUTH_KEY is not set")
         logger.warning("[DEV ONLY] OTP for %s: %s", phone, otp)
 
 
@@ -70,10 +74,43 @@ class VerifyOTPIn(BaseModel):
 @router.post("/send", status_code=status.HTTP_200_OK)
 @limiter.limit("5/hour")
 async def send_otp(request: Request, body: SendOTPIn):
-    """Send a 6-digit OTP to the given phone number."""
+    """
+    Send a 6-digit OTP to the given phone number.
+
+    THE SEND IS ATTEMPTED BEFORE THE CODE IS KEPT
+
+    It used to be the other way round, and the difference is not cosmetic. On
+    production with MSG91_AUTH_KEY unset — which is how the service has always
+    run, so this path has never once worked — the old order stored a code, then
+    raised, and the caller got a bare 500. Three things were wrong with that at
+    the same time: the reader was told nothing useful, a code they could not
+    receive was sitting in the store counting against them, and one of their
+    five sends an hour had been spent on a message that was never going to
+    arrive.
+
+    So the SMS goes first. A code that cannot be delivered is never written
+    down, and the reader is told the truth: 503, SMS is unavailable, not
+    "something went wrong".
+    """
     otp = otp_store.generate_otp()
+    try:
+        await _send_sms(body.phone, otp)
+    except SmsUnavailable as exc:
+        # Logged with the reason, answered without it: the reader cannot act on
+        # a missing API key and it is not theirs to know.
+        logger.error("OTP send unavailable for %s: %s", body.phone, exc)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "We cannot send SMS just now. Please try again shortly.",
+        ) from None
+    except Exception as exc:  # noqa: BLE001 - upstream failure, same to the reader
+        logger.error("OTP send failed for %s: %s", body.phone, exc)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "We cannot send SMS just now. Please try again shortly.",
+        ) from None
+
     await otp_store.store(body.phone, otp)
-    await _send_sms(body.phone, otp)
     return {"message": "OTP sent"}
 
 

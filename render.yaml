@@ -178,6 +178,104 @@ services:
       - key: KYC_HASH_PEPPER
         sync: false
 
+      # ── Set in the dashboard before this file knew about them ─────────────
+      #
+      # Every key below was already live on gaadiiq-api and named nowhere in
+      # this blueprint. That is the drift this header warns about — "Keep these
+      # two in step: if the live service changes, change this file too" — and
+      # it had been left for long enough that the file no longer described what
+      # the service needs to run.
+      #
+      # They are declared now, before the blueprint is applied for the first
+      # time, because an apply reconciles the service against this file and an
+      # undeclared variable is the one thing nobody can argue is protected.
+      # Whether Render actually prunes unmanaged keys is beside the point: the
+      # cost of being wrong is JWT keys disappearing from a live API, and the
+      # cost of declaring them is three lines each.
+      #
+      # All `sync: false`, so no secret enters the repository and no live value
+      # is touched. Declaring a key this way changes nothing at runtime — it
+      # only tells Render the key is ours and its value is not managed here.
+
+      # Auth. The API signs and verifies its own tokens with these; without
+      # them every signed-in request fails.
+      - key: JWT_PRIVATE_KEY
+        sync: false
+      - key: JWT_PUBLIC_KEY
+        sync: false
+
+      # Google Places, server side — services/ev_charging/providers.py. Its own
+      # comment explains why the browser key cannot be reused. Absent, the EV
+      # charging map reports "no directory connected" rather than failing, so
+      # losing this is quiet.
+      - key: GOOGLE_MAPS_SERVER_KEY
+        sync: false
+
+      # OTP delivery over SMS (routers/otp.py). otp.py raises in production
+      # when it is missing, so losing this breaks every phone verification —
+      # which now includes the enquiry forms from #289 and #291.
+      #
+      # MSG91_TEMPLATE_ID is read beside it and is deliberately NOT declared:
+      # see the note at the end of this block about keys that may not be set.
+      - key: MSG91_AUTH_KEY
+        sync: false
+
+      # Cloudflare purge-on-write (services/cdn_purge.py). More load-bearing
+      # since #298: with the cache-busting parameter gone, the edge holds the
+      # catalogue for an hour and this purge is what makes an admin edit appear
+      # in seconds. A purge failure is logged and swallowed, so losing these
+      # looks like nothing at all until someone asks why a change is invisible.
+      - key: CLOUDFLARE_ZONE_ID
+        sync: false
+      - key: CLOUDFLARE_API_TOKEN
+        sync: false
+
+      # Transactional email (services/email.py). Falls back silently when
+      # SMTP_HOST is unset — the one failure here that says nothing in a log.
+      #
+      # SMTP_PASSWORD is the name the dashboard uses. config.py declares
+      # SMTP_PASS, so the two do not meet and the password the dashboard holds
+      # is not the one the code reads. That is a live bug, older than this
+      # change and not fixed by it: declared here under the dashboard's
+      # spelling so an apply cannot delete the value while it is sorted out.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+      # The R2 bucket's region, read beside the four R2 keys declared above.
+      - key: MEDIA_S3_REGION
+        sync: false
+
+      # Prometheus scrape token (main.py). Without it /metrics mints an
+      # ephemeral token that changes on every restart, so scraping breaks
+      # silently rather than loudly.
+      - key: METRICS_TOKEN
+        sync: false
+
+      # Which Gemini model services/gemini_gateway.py asks for.
+      - key: GEMINI_MODEL
+        sync: false
+
+      # WHAT IS DELIBERATELY NOT DECLARED, AND WHY THAT IS NOT CARELESSNESS
+      #
+      # Only keys confirmed present on the live service are listed above. A
+      # `sync: false` key that is NOT already set is prompted for when the
+      # blueprint is applied, and answering it blank creates the variable with
+      # an empty value — which is not the same as leaving it unset. SMTP_FROM
+      # shows why that matters: config.py defaults it to noreply@gaadiiq.com,
+      # and an empty value would override that default rather than fall back
+      # to it. Declaring a key "just in case" can therefore cause the breakage
+      # this block exists to prevent.
+      #
+      # So SMTP_USER, SMTP_PASS, SMTP_FROM and MSG91_TEMPLATE_ID are read by
+      # the code and left out here. If the dashboard does hold them, add them
+      # in the same style before applying; the list above was taken from what
+      # the dashboard was seen to contain, which is a screenshot and not an
+      # export.
+
   # ── Cache ──────────────────────────────────────────────────────────────────
   #
   # Backs the diagnosis response cache and the OTP digest store. Declared here
