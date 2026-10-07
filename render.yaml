@@ -25,7 +25,22 @@ services:
     # Matches the live service: Docker (apps/api/Dockerfile), Starter plan.
     runtime: docker
     plan: starter
-    region: singapore          # closest Render region to Indian users
+    # Oregon, because that is where the service actually is.
+    #
+    # This line said `singapore`, with the comment "closest Render region to
+    # Indian users". That is a reasonable thing to want and is not what was
+    # deployed: Render's own dashboard says "You currently have services
+    # running in Oregon", and core/cache_policy.py says the same from the other
+    # direction — a catalogue read "travels the full distance to Oregon and
+    # back". The aspiration was written into the file as though it were the
+    # state, which is the exact drift this file's header warns about.
+    #
+    # A service's region cannot be changed in place. Moving to Singapore means
+    # creating a new service, which takes a new URL, new outbound IPs and a
+    # cutover — a deliberate piece of work with real latency benefit for Indian
+    # users, not something an apply should attempt by surprise. Recorded as a
+    # decision rather than made here.
+    region: oregon
     rootDir: apps/api
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
@@ -285,10 +300,17 @@ services:
   #
   # Same region as the API — a cache reached across regions costs more in
   # latency than the lookup it replaces.
+  #
+  # Which is why this had to change with the API's. It said `singapore` while
+  # the API runs in Oregon, so applying the blueprint would have created the
+  # cache a continent away from its only caller and broken the rule stated in
+  # the line above, on the very commit that introduced it. A Redis lookup is
+  # worth having because it is faster than the work it replaces; across the
+  # Pacific it is not.
   - type: keyvalue
     name: gaadiiq-cache
     plan: starter
-    region: singapore
+    region: oregon
     # Reachable only from services in this Render account. The cache holds
     # OTP digests; it must not be open to the internet.
     ipAllowList: []
