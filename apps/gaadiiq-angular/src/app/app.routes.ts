@@ -30,7 +30,12 @@ export const routes: Routes = [
   { path: 'test-drive', loadComponent: () => import('./pages/test-drive/test-drive.component').then(m => m.TestDriveComponent) },
   { path: 'buyer-journey', loadComponent: () => import('./pages/buyer-journey/buyer-journey.component').then(m => m.BuyerJourneyComponent) },
   { path: 'dealer-dashboard', loadComponent: () => import('./pages/dealer-dashboard/dealer-dashboard.component').then(m => m.DealerDashboardComponent), canActivate: [sellerGuard] },
-  { path: 'admin/pricing', loadComponent: () => import('./pages/admin-pricing/admin-pricing.component').then(m => m.AdminPricingComponent), canActivate: [sellerGuard] },
+  // adminGuard, not sellerGuard. This screen edits the shared catalogue —
+  // PATCH /cars/{id}, which routers/cars.py gates on get_admin_user — and both
+  // menus have always listed it under *ngIf="auth.isAdmin()". The guard was the
+  // only thing that said seller, so a seller could reach the page, read every
+  // catalogue price, edit one, and collect a 403 on save.
+  { path: 'admin/pricing', loadComponent: () => import('./pages/admin-pricing/admin-pricing.component').then(m => m.AdminPricingComponent), canActivate: [adminGuard] },
   { path: 'admin/pdf-ingestion', loadComponent: () => import('./pages/admin-pdf-ingestion/admin-pdf-ingestion.component').then(m => m.AdminPdfIngestionComponent), canActivate: [adminGuard] },
   { path: 'admin/upcoming', loadComponent: () => import('./pages/admin-upcoming/admin-upcoming.component').then(m => m.AdminUpcomingComponent), canActivate: [adminGuard] },
   { path: 'admin/variants', loadComponent: () => import('./pages/admin-variants/admin-variants.component').then(m => m.AdminVariantsComponent), canActivate: [adminGuard] },
