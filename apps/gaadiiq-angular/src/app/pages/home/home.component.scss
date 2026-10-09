@@ -283,6 +283,26 @@
 }
 
 /* Floating stat pills */
+// The two pills that float at the corners of the valuation card.
+//
+// THE BUG THIS FIXES
+//
+// The lower pill was `bottom: 24px; left: -18px`, which is *inside* the card's
+// vertical extent. Measured at 1440: the pill occupied y 636-704 and x 742-886,
+// while the card runs 330-742 with its content from x 789. So it was painted
+// straight over the "AI Confidence" row (652-671) and the signal chips
+// (685-713) — confirmed with elementFromPoint, which returned the pill's "30s"
+// at the centre of the Confidence label. Visible in both themes.
+//
+// `top: calc(100% + 12px)` instead of a negative `bottom` is the part worth
+// keeping. A `bottom: -56px` would also clear the chips today, but only because
+// the pill happens to be 68px tall — change its font size or padding and it
+// walks back over the content. Anchoring the pill's TOP edge to the card's
+// bottom edge is true at any height.
+//
+// The upper pill keeps its negative offsets: it overhangs the card's top-right
+// corner, where there is padding rather than text, so it never covered
+// anything.
 .hero-stat-pill {
   position: absolute;
   padding: 0.6rem 1.1rem;
@@ -290,6 +310,9 @@
   text-align: center;
   animation: float 4s ease-in-out infinite;
   &:nth-child(2) { animation-delay: 0.7s; }
+
+  &.hsp-top { top: -18px; right: -12px; }
+  &.hsp-bottom { top: calc(100% + 12px); left: -18px; }
   .hsp-num  { display: block; font-size: 1.1rem; font-weight: 800; font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
   .hsp-label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 }

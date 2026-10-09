@@ -178,39 +178,34 @@ export const HINDI: Record<string, string> = {
   'Built in India.': 'भारत में बना।',
 
   // ── Home page ────────────────────────────────────────────────────────────
-  'AI Car Valuation':
-    'AI कार मूल्यांकन',
+  // 'Car Valuation' is declared once, above, with the footer links that share it.
   "Know Your Car's":
     'जानिए अपनी कार की',
   'True Market Value':
     'असली बाज़ार कीमत',
   'Powered by':
     'संचालित',
-  '200+ AI Signals':
-    '200+ AI सिग्नल',
+  '200+ Market Signals':
+    '200+ बाज़ार सिग्नल',
   'Get an accurate valuation in under 30 seconds — data-driven, instant, no guesswork.':
     '30 सेकंड से कम में सटीक मूल्यांकन — डेटा आधारित, तुरंत, बिना अंदाज़े के।',
   'Get Car Valuation':
     'कार मूल्यांकन पाएं',
-  // Kept: the pricing table still lists the feature as "AI Valuation".
-  'Get AI Valuation':
-    'AI मूल्यांकन पाएं',
   'Live Analysis':
     'लाइव विश्लेषण',
-  'AI Fair Value':
-    'AI उचित मूल्य',
+  'Fair Value':
+    'उचित मूल्य',
   'Market Range':
     'बाज़ार रेंज',
-  'AI Confidence':
-    'AI विश्वास',
+  // 'Confidence' is declared once, with the diagnosis strings further down.
   'Fair Deal':
     'सही सौदा',
   'High Demand':
     'ज्यादा मांग',
   'Low Depreciation':
     'कम मूल्यह्रास',
-  'AI Signals':
-    'AI सिग्नल',
+  'Market Signals':
+    'बाज़ार सिग्नल',
   'Instant Result':
     'तुरंत नतीजा',
   'Popular Brands':

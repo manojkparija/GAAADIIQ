@@ -11,7 +11,7 @@
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
      (176px on a phone since the nav strip). max() keeps the designed spacing
      wherever it is the larger, and clears the bar when it is not. */
-  padding: max(5rem, var(--nav-offset)) 0 3rem;
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 0 3rem;
   text-align: center;
   margin-bottom: 0;
 }

@@ -7,7 +7,7 @@
 
 .chl-hero {
   // Clears the fixed navbar (LAY-007).
-  padding: max(7rem, var(--nav-offset)) 1rem 3rem;
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 1rem 3rem;
   background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
   border-bottom: 1px solid var(--divider);
   text-align: center;

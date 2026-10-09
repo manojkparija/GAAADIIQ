@@ -95,12 +95,22 @@ describe('AiValuationComponent — the badge and button are named for cars', () 
     }
   });
 
-  it('keeps the old keys, because the pricing table still uses them', () => {
+  it('keeps the old key the pricing table still uses', () => {
+    // NARROWED, and the reason matters. This case used to assert two keys on
+    // the grounds that "the pricing table still uses them". That is true of
+    // 'AI Valuation' — pricing-plans.component.html:103 lists it as a plan
+    // feature, and the home page names it in the sell CTA. It was never true of
+    // 'Get AI Valuation': grepping every .html and .ts finds that string only
+    // inside this spec file. It was a translation for a label no page rendered,
+    // kept alive by the test that asserted it.
+    //
+    // The home hero adopted 'Get Car Valuation' — which #299 had already added,
+    // Hindi and all, without switching the button to it — so the old key now
+    // has no caller at all and has been deleted from hindi.ts.
     const { lang } = mount();
     lang.set('hi');
 
     expect(lang.translate('AI Valuation')).toBe('AI मूल्यांकन');
-    expect(lang.translate('Get AI Valuation')).toBe('AI मूल्यांकन पाएं');
   });
 
   it('still tells the reader when the figure was AI-enhanced', () => {

@@ -14,13 +14,13 @@
     <div class="hero-text">
       <div class="badge badge-blue mb-4">
         <app-icon name="zap" [size]="13" [strokeWidth]="2.5"></app-icon>
-        {{ 'AI Car Valuation' | t }}
+        {{ 'Car Valuation' | t }}
       </div>
       <h1>
         {{ 'Know Your Car\'s' | t }}<br>
         <span class="gradient-text">{{ 'True Market Value' | t }}</span>
       </h1>
-      <p class="hero-powered">{{ 'Powered by' | t }} <strong>{{ '200+ AI Signals' | t }}</strong></p>
+      <p class="hero-powered">{{ 'Powered by' | t }} <strong>{{ '200+ Market Signals' | t }}</strong></p>
       <p class="hero-sub">
         {{ 'Get an accurate valuation in under 30 seconds — data-driven, instant, no guesswork.' | t }}
       </p>
@@ -56,7 +56,7 @@
              of what the label promises. The valuation tool is /ai-valuation. -->
         <button class="btn-gradient btn-lg" routerLink="/ai-valuation">
           <app-icon name="brain" [size]="16"></app-icon>
-          {{ 'Get AI Valuation' | t }}
+          {{ 'Get Car Valuation' | t }}
         </button>
         <button class="btn-outline btn-lg" routerLink="/listings">{{ 'Browse Cars' | t }}</button>
       </div>
@@ -115,7 +115,7 @@
         <!-- Price rows -->
         <div class="vp-price-section">
           <div class="vp-price-main">
-            <div class="vpm-label">{{ 'AI Fair Value' | t }}</div>
+            <div class="vpm-label">{{ 'Fair Value' | t }}</div>
             <div class="vpm-amount gradient-text">₹14.2L</div>
             <div class="vpm-delta positive">{{ '↑ 2.4% vs last month' | t }}</div>
           </div>
@@ -134,7 +134,7 @@
 
         <!-- AI confidence -->
         <div class="vp-confidence">
-          <span class="conf-label">{{ 'AI Confidence' | t }}</span>
+          <span class="conf-label">{{ 'Confidence' | t }}</span>
           <div class="conf-track">
             <div class="conf-fill" style="width:94%"></div>
           </div>
@@ -158,12 +158,15 @@
         </div>
       </div>
 
-      <!-- Floating stat pills -->
-      <div class="hero-stat-pill glass-card" style="top:-18px;right:-12px">
+      <!-- Floating stat pills.
+           Positioned in SCSS, not inline, because the placement needs the
+           explanation that would not fit in a style attribute — see
+           .hsp-top / .hsp-bottom in home.component.scss. -->
+      <div class="hero-stat-pill hsp-top glass-card">
         <span class="hsp-num gradient-text">200+</span>
-        <span class="hsp-label">{{ 'AI Signals' | t }}</span>
+        <span class="hsp-label">{{ 'Market Signals' | t }}</span>
       </div>
-      <div class="hero-stat-pill glass-card" style="bottom:24px;left:-18px">
+      <div class="hero-stat-pill hsp-bottom glass-card">
         <span class="hsp-num gradient-text">30s</span>
         <span class="hsp-label">{{ 'Instant Result' | t }}</span>
       </div>
@@ -259,14 +262,14 @@
     <div class="ai-banner-text">
       <span class="section-tag">
         <app-icon name="brain" [size]="12"></app-icon>
-        {{ 'AI Advisor' | t }}
+        {{ 'Car Advisor' | t }}
       </span>
       <h2 class="section-title">{{ 'Tell us what you want.' | t }}<br>{{ 'We\'ll find the' | t }} <span class="gradient-text">{{ 'perfect car.' | t }}</span></h2>
       <p class="section-sub">Answer 6 quick questions. Our AI matches you to the ideal car from 50,000+ listings — with explainable reasoning.</p>
       <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem">
         <button class="btn-gradient btn-lg" routerLink="/ai-advisor">
           <app-icon name="brain" [size]="16"></app-icon>
-          {{ 'Start AI Advisor' | t }}
+          {{ 'Start Car Advisor' | t }}
         </button>
         <button class="btn-outline btn-lg" routerLink="/emi-calculator">
           <app-icon name="calculator" [size]="16"></app-icon>

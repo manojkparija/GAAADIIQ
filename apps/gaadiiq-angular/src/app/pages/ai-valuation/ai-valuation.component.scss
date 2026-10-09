@@ -23,14 +23,14 @@
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
      (176px on a phone since the nav strip). max() keeps the designed spacing
      wherever it is the larger, and clears the bar when it is not. */
-  padding: max(6rem, var(--nav-offset)) 0 3rem;
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 0 3rem;
   text-align: center;
 }
 // The badge was #00C9FF on a pale tint — a light blue that disappears into the
 // gradient behind it. On the band it becomes the same frosted pill the other
 // heroes use.
 .ai-badge { display:inline-block; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:2rem; padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
-.val-hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 900; margin: .5rem 0; color: #fff; }
+.val-hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 800; margin: .5rem 0; color: #fff; }
 // White-to-teal, matching the other heroes. The page default is a blue-to-teal
 // gradient fill, which on a blue-to-teal band is very nearly invisible.
 .val-hero .gradient-text {

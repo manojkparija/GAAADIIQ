@@ -8,7 +8,14 @@
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
      (176px on a phone since the nav strip). max() keeps the designed spacing
      wherever it is the larger, and clears the bar when it is not. */
-  padding: max(6.5rem, var(--nav-offset)) 0 3rem; /* 6.5rem = ~4.5rem navbar height + 2rem breathing room */
+  /* The `+ 1.5rem` is the point, and it is now the same on every hero.
+     --nav-offset IS the bar's height, so `max(Nrem, var(--nav-offset))` lands
+     the first element flush on the navbar's bottom edge. Measured at 1440
+     across the set: this badge, Used Cars, Buyer Journey, About and Pricing all
+     sat at 0px clearance; the three heroes that already carried the +1.5rem had
+     24px. Those three were right and the rest were wrong — same correction
+     ENGINEERING_BACKLOG section G records for nine other pages. */
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 0 3rem;
   margin-top: 0;
   position: relative;
   overflow: hidden;
