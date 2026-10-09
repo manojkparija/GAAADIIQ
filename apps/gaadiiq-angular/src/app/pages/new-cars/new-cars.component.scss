@@ -13,6 +13,10 @@
   position: relative;
   overflow: hidden;
 
+  /* The hexagon lattice is NOT here. It is painted on ::after by the shared
+     `.gradient hero` rule in styles.scss, which carries it across every hero
+     at once; this ::before keeps the radial highlight that is this page's own.
+     Do not add the lattice here too — it would draw twice. */
   &::before {
     content: '';
     position: absolute;

@@ -389,6 +389,24 @@
   // terminates the URL and the whole rule is dropped silently.
   --page-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%232F6BFF' stroke-opacity='0.07' stroke-width='1.25' stroke-linejoin='round'/%3E%3C/svg%3E");
   --page-pattern-size: 84px 150px;
+
+  // The same lattice in white, for the gradient heroes.
+  //
+  // The note above says an opaque hero hides the watermark "by design", and the
+  // reasoning holds: the body pseudo-element is behind the page. But the
+  // consequence — the brand's own texture stops at the top of every page and
+  // resumes below the fold — was read as a gap rather than as intent. So the
+  // heroes paint it themselves.
+  //
+  // A second copy of the geometry is what the note above warns about, and it is
+  // the lesser evil here: --page-pattern's stroke is #2F6BFF at 0.07, which is
+  // the brand blue *on* a brand-blue gradient — invisible. Nothing short of a
+  // different colour works, and a data URI cannot take one from var().
+  //
+  // Two copies, not four: this one serves both themes, because a hero gradient
+  // is dark in either. If a third is ever wanted, generate them rather than
+  // typing the path again.
+  --hero-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%23FFFFFF' stroke-opacity='0.1' stroke-width='1.25' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 // ── Accent colours, as TEXT ───────────────────────────────────────────────────
@@ -510,6 +528,72 @@ body::before {
   background-image: var(--page-pattern);
   background-size: var(--page-pattern-size);
   background-repeat: repeat;
+}
+
+// The same lattice, on the gradient heroes.
+//
+// body::before above paints it behind the page, so every hero with an opaque
+// gradient covers it. The note there calls that "by design", and for a
+// watermark it is — but the effect across the site was that the brand's own
+// texture went missing exactly where each page begins and reappeared below the
+// fold. Asked for, against the New Cars hero, with the pattern in the band
+// underneath it circled: "can we use this design pattern here on blue teal",
+// then "apply it in all the heroes".
+//
+// ONE RULE, NOT SEVENTEEN EDITS
+//
+// These heroes already share a gradient to the character — all but one are
+// literally `linear-gradient(135deg, #1e40af 0%, var(--teal) 100%)`. A rule per
+// component would be seventeen copies to keep in step, and the next hero added
+// would quietly not match. This is a global stylesheet, so it reaches into
+// component DOM; component styles carry an attribute selector and therefore win
+// on specificity, which is what makes the opt-out below work.
+//
+// ::after, not ::before: .uc-hero and .nc-hero already use ::before for their
+// own highlights, and none of the seventeen defines ::after. Checked, not
+// assumed — a collision here would silently replace a hero's highlight.
+//
+// position: relative is set here because most of these heroes do not set it,
+// and inset: 0 needs a positioned ancestor. overflow is deliberately NOT set:
+// a blanket overflow:hidden on a section is how sticky children and intentional
+// scroll regions break (LAY-005 says the same thing about body).
+//
+// background-attachment stays at scroll, so the lattice moves with its hero.
+// The page-level one is fixed, which is right behind a scrolling page and wrong
+// for one painted onto a section — a pattern sliding under the thing it belongs
+// to reads as a fault rather than as depth.
+//
+// NOT in this list: .legal-hero and the listings .nc-hero. Both are light,
+// near-transparent panels that the page watermark already shows through, and a
+// white lattice on them would be both invisible and wrong.
+.nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-hero,
+.md-hero, .rn-hero, .evc-hero, .compare-hero, .diag-hero, .advisor-hero,
+.results-hero, .bj-hero, .vr-hero, .chl-hero,
+// Added after "blue to teal color missing like other heroes" was reported
+// against /ai-valuation. These three had no band at all — their hero was a
+// width-constrained .container, so there was nothing full-bleed to paint. They
+// now carry the gradient and belong on this list with the rest.
+.val-hero, .about-hero, .pricing-hero,
+// /find-mechanic, added after the same report was made against it. Its hero
+// already had .container inside the header, so it needed only the gradient.
+.fm-hero {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: var(--hero-pattern);
+    background-size: var(--page-pattern-size);
+    background-repeat: repeat;
+  }
+
+  // The hero's own content has to sit above the lattice. Without this the
+  // pattern paints over static children, because a positioned ::after beats
+  // them in paint order whatever the source order says.
+  > * { position: relative; z-index: 1; }
 }
 
 h1, h2, h3, h4, h5, h6 {

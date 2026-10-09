@@ -3,16 +3,20 @@
   <div class="orb orb-2"></div>
 
   <!-- Header -->
-  <section class="pricing-hero container">
-    <div class="ai-badge">{{ 'Pricing Plans' | t }}</div>
-    <h1>{{ 'Simple,' | t }} <span class="gradient-text">{{ 'Transparent' | t }}</span> {{ 'Pricing' | t }}</h1>
-    <p class="hero-sub">{{ 'Start free. Upgrade when you\'re ready. No hidden charges, no surprises.' | t }}</p>
+  <!-- .container moves INSIDE the hero so the gradient can run edge to edge;
+       on a container it would have been a stripe down the middle. -->
+  <section class="pricing-hero">
+    <div class="container">
+      <div class="ai-badge">{{ 'Pricing Plans' | t }}</div>
+      <h1>{{ 'Simple,' | t }} <span class="gradient-text">{{ 'Transparent' | t }}</span> {{ 'Pricing' | t }}</h1>
+      <p class="hero-sub">{{ 'Start free. Upgrade when you\'re ready. No hidden charges, no surprises.' | t }}</p>
 
-    <div class="billing-toggle">
-      <button [class.active]="billing()==='monthly'" (click)="billing.set('monthly')">{{ 'Monthly' | t }}</button>
-      <button [class.active]="billing()==='yearly'" (click)="billing.set('yearly')">
-        {{ 'Yearly' | t }} <span class="save-chip">{{ 'Save 2 months' | t }}</span>
-      </button>
+      <div class="billing-toggle">
+        <button [class.active]="billing()==='monthly'" (click)="billing.set('monthly')">{{ 'Monthly' | t }}</button>
+        <button [class.active]="billing()==='yearly'" (click)="billing.set('yearly')">
+          {{ 'Yearly' | t }} <span class="save-chip">{{ 'Save 2 months' | t }}</span>
+        </button>
+      </div>
     </div>
   </section>
 
