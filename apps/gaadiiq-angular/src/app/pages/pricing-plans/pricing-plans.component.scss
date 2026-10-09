@@ -78,7 +78,21 @@
 // back.
 .plan-badge.is-placeholder,
 .yearly-savings.is-placeholder { visibility: hidden; }
-.badge-purple { background: rgba(47,107,255,.2); color: var(--teal-ink); border: 1px solid rgba(47,107,255,.3); }
+// Measured 3.65:1 in the light theme — #0F766E on #c2d3fc at 12.5px/700, where
+// AA wants 4.5. Caught only because /pricing-plans was added to the contrast
+// spec in this branch; it had been failing silently before that.
+//
+// Two faults, and the first explains the second. --teal-ink is the text
+// counterpart for a TEAL tint, and this tint is blue: a teal ink on a blue
+// background is the hue mismatch the token set exists to prevent. --info-ink is
+// the blue one. On its own it only reaches 4.42 here, still short, so the tint
+// lightens from .2 to .10 as well — the background is what was eating the
+// contrast, and a 20% blue wash is doing no work a 10% one does not.
+//
+// Together: 5.0:1 light, measured on the rendered badge rather than on a
+// swatch. Dark was never in trouble (7.57:1) and --info-ink keeps it there, at
+// #60A5FA on the dark composite.
+.badge-purple { background: rgba(47,107,255,.10); color: var(--info-ink); border: 1px solid rgba(47,107,255,.3); }
 .badge-gold { background: rgba(255,215,0,.15); color: var(--warning-ink); border: 1px solid rgba(255,215,0,.3); }
 
 .plan-name { font-size: 1.1rem; font-weight: 700; }
