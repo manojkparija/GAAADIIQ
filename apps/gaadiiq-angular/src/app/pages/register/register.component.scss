@@ -206,3 +206,31 @@
 
   strong { color: var(--text); }
 }
+
+// ── Optional-field affordance ────────────────────────────────────────────────
+//
+// The phone field sits between Email and the role picker, both of which are
+// needed, so it read as required. It is not — and until this change it was not
+// read at all: the input was bound to a signal nothing consumed, so a number
+// typed here was discarded on submit.
+.opt-tag {
+  margin-left: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.opt-hint {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.5;
+
+  // --ink-on-white, not --primary: this card stays light in both themes, and
+  // --primary brightens to #5B8FFF for dark backgrounds, which on a white card
+  // measures about 3.1:1. The token exists for exactly this case.
+  a { color: var(--ink-on-white); font-weight: 600; }
+}

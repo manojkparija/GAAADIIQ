@@ -562,7 +562,12 @@ export class ListCarComponent {
     const user = auth.currentUser();
     if (user) {
       this.form.name = user.name;
-      this.form.email = user.email;
+      // `?? ''` because a phone-only account has no email. Assigning undefined
+      // puts the literal "undefined" in the input via ngModel.
+      this.form.email = user.email ?? '';
+      if (user.phone && 'phone' in this.form) {
+        this.form.phone = this.form.phone || user.phone;
+      }
     }
     // Prefill city from navbar selection
     const city = cityService.selectedCity();

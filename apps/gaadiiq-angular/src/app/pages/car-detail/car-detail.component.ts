@@ -674,9 +674,16 @@ export class CarDetailComponent implements OnInit, OnDestroy {
     }
 
     // Pre-fill from the signed-in user if we know them.
+    //
+    // `?? ''` because a phone-only account has no email: without it the field
+    // takes `undefined` and ngModel renders the string "undefined" in the box
+    // for the reader to delete.
     if (user) {
       this.enquiryForm.name  = this.enquiryForm.name  || user.name;
-      this.enquiryForm.email = this.enquiryForm.email || user.email;
+      this.enquiryForm.email = this.enquiryForm.email || (user.email ?? '');
+      // They signed in with this number, so asking for it again is asking a
+      // question we know the answer to.
+      this.enquiryForm.phone = this.enquiryForm.phone || (user.phone ?? '');
     }
     // The navbar already holds a city and the reader has usually set it, so
     // asking again from blank would be a field that answers itself.
