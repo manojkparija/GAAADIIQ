@@ -568,7 +568,12 @@ body::before {
 // white lattice on them would be both invisible and wrong.
 .nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-hero,
 .md-hero, .rn-hero, .evc-hero, .compare-hero, .diag-hero, .advisor-hero,
-.results-hero, .bj-hero, .vr-hero, .chl-hero {
+.results-hero, .bj-hero, .vr-hero, .chl-hero,
+// Added after "blue to teal color missing like other heroes" was reported
+// against /ai-valuation. These three had no band at all — their hero was a
+// width-constrained .container, so there was nothing full-bleed to paint. They
+// now carry the gradient and belong on this list with the rest.
+.val-hero, .about-hero, .pricing-hero {
   position: relative;
 
   &::after {

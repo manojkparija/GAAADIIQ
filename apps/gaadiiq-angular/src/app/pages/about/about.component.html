@@ -3,12 +3,16 @@
   <div class="orb orb-2"></div>
 
   <!-- Hero -->
-  <section class="about-hero container">
-    <div class="ai-badge">{{ 'Our Story' | t }}</div>
-    <h1>{{ 'We\'re Making Car Buying' | t }} <span class="gradient-text">{{ 'Smarter for India' | t }}</span></h1>
-    <p class="hero-sub">
-      {{ 'GAADIIQ was born out of frustration. Our founders spent months trying to buy a used car — only to encounter fake listings, opaque pricing, and pushy dealers. So we built the platform we wished existed.' | t }}
-    </p>
+  <!-- .container moves INSIDE the hero so the gradient can run edge to edge;
+       on a container it would have been a stripe down the middle. -->
+  <section class="about-hero">
+    <div class="container">
+      <div class="ai-badge">{{ 'Our Story' | t }}</div>
+      <h1>{{ 'We\'re Making Car Buying' | t }} <span class="gradient-text">{{ 'Smarter for India' | t }}</span></h1>
+      <p class="hero-sub">
+        {{ 'GAADIIQ was born out of frustration. Our founders spent months trying to buy a used car — only to encounter fake listings, opaque pricing, and pushy dealers. So we built the platform we wished existed.' | t }}
+      </p>
+    </div>
   </section>
 
   <!-- Stats -->

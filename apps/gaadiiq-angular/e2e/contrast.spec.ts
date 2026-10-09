@@ -27,7 +27,12 @@ import { test, expect, Page } from '@playwright/test';
  * All cleared, so dark is measured here too and stays measured.
  */
 
-const PAGES = ['/', '/new-cars', '/used-cars', '/compare', '/emi-calculator', '/reviews-news', '/car-loan', '/insurance', '/video-review', '/ev-charging'];
+// /ai-valuation, /about and /pricing-plans were added when their heroes gained
+// the brand gradient. Every run of text in those three heroes changed colour in
+// the same commit — --muted and --teal-ink are chosen against a light page and
+// fail outright on the band — so without them here the change would have shipped
+// with a green contrast run that had never opened the pages it altered.
+const PAGES = ['/', '/new-cars', '/used-cars', '/compare', '/emi-calculator', '/reviews-news', '/car-loan', '/insurance', '/video-review', '/ev-charging', '/ai-valuation', '/about', '/pricing-plans'];
 
 interface Failure {
   text: string;

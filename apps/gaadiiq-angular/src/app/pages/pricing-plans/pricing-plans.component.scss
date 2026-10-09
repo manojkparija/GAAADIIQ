@@ -1,22 +1,48 @@
-.pricing-page { min-height: 100vh; /* LAY-007: the navbar is fixed and its height changes with the bar's contents
-     (176px on a phone since the nav strip). max() keeps the designed spacing
-     wherever it is the larger, and clears the bar when it is not. */
-  padding: max(6rem, var(--nav-offset)) 0 4rem; position: relative; overflow: hidden; }
+/* LAY-007 clearance moved onto .pricing-hero, which is what paints the
+   gradient. Left here it would start the band below the navbar clearance and
+   leave a bare strip between the two. */
+.pricing-page { min-height: 100vh; padding: 0 0 4rem; position: relative; overflow: hidden; }
 .orb-1 { position:absolute; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,var(--primary)22,transparent); top:-150px; left:-150px; pointer-events:none; }
 .orb-2 { position:absolute; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,var(--danger)22,transparent); bottom:-100px; right:-100px; pointer-events:none; }
 
 // Hero
-.pricing-hero { text-align: center; padding-bottom: 3rem; }
-.ai-badge { display:inline-block; background:rgba(47,107,255,.15); border:1px solid rgba(47,107,255,.3); color: var(--teal-ink); border-radius:2rem; padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
-.pricing-hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 900; margin: .5rem 0; }
-.hero-sub { color: var(--muted); font-size: 1.05rem; margin-bottom: 2rem; }
-
-.billing-toggle {
-  display: inline-flex; gap: 0; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 2rem; padding: .25rem;
-  button { padding: .5rem 1.5rem; border: none; border-radius: 2rem; background: transparent; color: var(--muted); font-size: .9rem; cursor: pointer; transition: all .2s; font-weight: 600; }
-  button.active { background: var(--primary); color: #fff; }
+//
+// Same gradient band as every other hero — see the note in
+// ai-valuation.component.scss.
+.pricing-hero {
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  border-bottom: 1px solid var(--divider);
+  /* LAY-007: the navbar is fixed and its height changes with the bar's contents
+     (176px on a phone since the nav strip). max() keeps the designed spacing
+     wherever it is the larger, and clears the bar when it is not. */
+  padding: max(6rem, var(--nav-offset)) 0 3rem;
+  text-align: center;
 }
-.save-chip { background: rgba(67,233,123,.2); color: var(--success-ink); font-size: .7rem; border-radius: 1rem; padding: .15rem .5rem; margin-left: .4rem; font-weight: 700; }
+.ai-badge { display:inline-block; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:2rem; padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
+.pricing-hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 900; margin: .5rem 0; color:#fff; }
+.pricing-hero .gradient-text {
+  background: linear-gradient(135deg, #ffffff, #99F6E4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub { color: rgba(255,255,255,.8); font-size: 1.05rem; margin-bottom: 2rem; }
+
+// This control moved onto the band with the rest of the hero, so its colours
+// had to move with it. Every value here was picked against a light page:
+// --glass is a white film that vanishes on white and reads as a panel on the
+// gradient, --muted is a grey that fails AA on it, and --success-ink is a dark
+// green on a pale mint chip — unreadable on blue. The active state is the one
+// thing kept: solid --primary with white text, which already reads on the band.
+.billing-toggle {
+  display: inline-flex; gap: 0; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); border-radius: 2rem; padding: .25rem;
+  button { padding: .5rem 1.5rem; border: none; border-radius: 2rem; background: transparent; color: rgba(255,255,255,.85); font-size: .9rem; cursor: pointer; transition: all .2s; font-weight: 600; }
+  button.active { background: #fff; color: #1e40af; }
+}
+.save-chip { background: rgba(255,255,255,.25); color: #fff; font-size: .7rem; border-radius: 1rem; padding: .15rem .5rem; margin-left: .4rem; font-weight: 700; }
+// On the active (white) pill the chip sits on white, so it needs the dark ink
+// back — the same chip in two places needs two treatments.
+.billing-toggle button.active .save-chip { background: rgba(30,64,175,.12); color: #1e40af; }
 
 // Plans Grid
 .plans-section { padding-bottom: 4rem; }

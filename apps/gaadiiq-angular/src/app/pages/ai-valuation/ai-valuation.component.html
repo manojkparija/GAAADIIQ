@@ -3,14 +3,20 @@
   <div class="orb orb-2"></div>
 
   <!-- Header -->
-  <section class="val-hero container">
-    <div class="ai-badge"><app-icon name="brain" [size]="14"></app-icon> {{ 'Car Valuation' | t }}</div>
-    <h1>{{ 'What Is Your Car' | t }} <span class="gradient-text">{{ 'Worth Today?' | t }}</span></h1>
-    <p class="hero-sub">{{ 'Get a fair market estimate for your used car based on depreciation, mileage, and market signals. Free, no sign-up needed.' | t }}</p>
-    <div class="trust-row">
-      <span><app-icon name="check" [size]="13"></app-icon> {{ 'Catalogue-based pricing' | t }}</span>
-      <span><app-icon name="check" [size]="13"></app-icon> {{ 'AI-enhanced when available' | t }}</span>
-      <span><app-icon name="check" [size]="13"></app-icon> {{ 'Preliminary estimate — verify with a dealer' | t }}</span>
+  <!-- The hero is the full-bleed band, with .container INSIDE it. It used to be
+       `class="val-hero container"`, which is why this page had no blue-to-teal
+       band: a container is width-constrained, so a background on it would have
+       been a stripe down the middle of the page rather than a hero. -->
+  <section class="val-hero">
+    <div class="container">
+      <div class="ai-badge"><app-icon name="brain" [size]="14"></app-icon> {{ 'Car Valuation' | t }}</div>
+      <h1>{{ 'What Is Your Car' | t }} <span class="gradient-text">{{ 'Worth Today?' | t }}</span></h1>
+      <p class="hero-sub">{{ 'Get a fair market estimate for your used car based on depreciation, mileage, and market signals. Free, no sign-up needed.' | t }}</p>
+      <div class="trust-row">
+        <span><app-icon name="check" [size]="13"></app-icon> {{ 'Catalogue-based pricing' | t }}</span>
+        <span><app-icon name="check" [size]="13"></app-icon> {{ 'AI-enhanced when available' | t }}</span>
+        <span><app-icon name="check" [size]="13"></app-icon> {{ 'Preliminary estimate — verify with a dealer' | t }}</span>
+      </div>
     </div>
   </section>
 
