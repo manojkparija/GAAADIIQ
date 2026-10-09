@@ -49,11 +49,17 @@
               [name]="'search'+slot"
               [placeholder]="'Search make or model...' | t"
               (focus)="showDropdown.set(slot)">
+            <!-- `as results` so optionLabel sees the same list the reader does:
+                 its job is to disambiguate rows that appear TOGETHER, and
+                 recomputing filtered() per row would also run the search again
+                 for every line drawn. -->
             <div class="search-dropdown" *ngIf="showDropdown() === slot && search(slot)">
-              <div class="drop-item" *ngFor="let c of filtered(slot)" (click)="selectCar(slot, c)">
-                <span>{{ c.year }} {{ c.make }} {{ c.model }}</span>
-                <span class="drop-price">{{ formatPrice(startsAt(c)) }}</span>
-              </div>
+              <ng-container *ngIf="filtered(slot) as results">
+                <div class="drop-item" *ngFor="let c of results" (click)="selectCar(slot, c)">
+                  <span>{{ optionLabel(c, results) }}</span>
+                  <span class="drop-price">{{ formatPrice(startsAt(c)) }}</span>
+                </div>
+              </ng-container>
               <div class="drop-empty" *ngIf="filtered(slot).length === 0">{{ 'No results' | t }}</div>
             </div>
           </div>

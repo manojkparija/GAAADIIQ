@@ -75,16 +75,35 @@ export class CompareComponent implements OnInit {
    */
   private trimsByCar = new Map<string, Promise<CarVariant[]>>();
 
+  /**
+   * `String(v) || '—'` does not do what it reads like, and this table shipped
+   * four cells proving it.
+   *
+   * `String(undefined)` is the five-character string "undefined", which is
+   * truthy — so the `|| '—'` branch never ran, and Owners and City printed the
+   * word `undefined` on every comparison of catalogue cars, which carry neither
+   * field. The em-dash fallback was written and had never once been reached.
+   *
+   * `dash()` tests the VALUE before stringifying it, which is the only order
+   * that works. Applied to every row, not just the two that were visibly wrong:
+   * a seller's advert can be missing a rating or a fuel type just as easily, and
+   * those formatters had the same latent fault.
+   */
+  private static dash(v: any, fmt: (v: any) => string): string {
+    if (v === null || v === undefined || v === '') return '—';
+    return fmt(v);
+  }
+
   specRows = [
-    { label: 'Price', key: 'price', format: (v: any) => `₹${(+v/100000).toFixed(1)}L`, higher: false },
-    { label: 'Year', key: 'year', format: (v: any) => String(v), higher: true },
-    { label: 'KM Driven', key: 'km', format: (v: any) => `${(+v).toLocaleString()} km`, higher: false },
-    { label: 'Fuel Type', key: 'fuel', format: (v: any) => String(v), higher: null },
-    { label: 'Transmission', key: 'transmission', format: (v: any) => String(v), higher: null },
-    { label: 'Owners', key: 'owners', format: (v: any) => String(v) || '—', higher: null },
-    { label: 'Rating', key: 'rating', format: (v: any) => `${v} ★`, higher: true },
-    { label: 'Reviews', key: 'reviews', format: (v: any) => String(v), higher: true },
-    { label: 'City', key: 'city', format: (v: any) => String(v) || '—', higher: null },
+    { label: 'Price', key: 'price', format: (v: any) => CompareComponent.dash(v, x => `₹${(+x/100000).toFixed(1)}L`), higher: false },
+    { label: 'Year', key: 'year', format: (v: any) => CompareComponent.dash(v, String), higher: true },
+    { label: 'KM Driven', key: 'km', format: (v: any) => CompareComponent.dash(v, x => `${(+x).toLocaleString()} km`), higher: false },
+    { label: 'Fuel Type', key: 'fuel', format: (v: any) => CompareComponent.dash(v, String), higher: null },
+    { label: 'Transmission', key: 'transmission', format: (v: any) => CompareComponent.dash(v, String), higher: null },
+    { label: 'Owners', key: 'owners', format: (v: any) => CompareComponent.dash(v, String), higher: null },
+    { label: 'Rating', key: 'rating', format: (v: any) => CompareComponent.dash(v, x => `${x} ★`), higher: true },
+    { label: 'Reviews', key: 'reviews', format: (v: any) => CompareComponent.dash(v, String), higher: true },
+    { label: 'City', key: 'city', format: (v: any) => CompareComponent.dash(v, String), higher: null },
   ];
 
   constructor(
@@ -204,9 +223,65 @@ export class CompareComponent implements OnInit {
    */
   filtered(slot: number) {
     const q = this.search(slot).toLowerCase();
-    const all = this.carsData.cars();
+    const all = this.carsData.cars().filter(c => !this.isInAnotherSlot(slot, c));
     if (!q) return all.slice(0, CompareComponent.UNPROMPTED_SUGGESTIONS);
     return all.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q));
+  }
+
+  /**
+   * Already sitting in one of the other two slots.
+   *
+   * Reported with Hyundai Creta in columns 2 and 3: identical price, year,
+   * odometer, fuel and transmission, so every row matched and the table said
+   * nothing. A car compared against itself cannot inform anybody.
+   *
+   * THE GUARD IS HERE AND NOT IN selectCar(), DELIBERATELY
+   *
+   * compareTrims() calls selectCar() with a car that IS already in another slot
+   * — that is the whole of "Compare its variants", which puts one model in two
+   * columns so two trims of it can be read side by side. A duplicate check
+   * inside selectCar would have deleted that feature while appearing to fix a
+   * bug. Filtering the dropdown blocks the accident and leaves the deliberate
+   * path alone.
+   *
+   * Matching on id, not on make+model: two catalogue rows for one model that
+   * differ in fuel or transmission are a comparison worth making, and
+   * optionLabel() below is what makes them tellable apart.
+   */
+  private isInAnotherSlot(slot: number, car: Car): boolean {
+    return this.selected().some((c, i) => i !== slot && c?.id === car.id);
+  }
+
+  /**
+   * What a dropdown row says.
+   *
+   * The list used to render `{year} {make} {model}` and a price, which is
+   * ambiguous the moment the catalogue holds two rows for one model-year — they
+   * appear as two identical lines, and picking "the other one" is guesswork.
+   * That became reachable when the picker stopped filtering to photographed
+   * cars, so this is the other half of that change.
+   *
+   * The discriminator is only added when it is needed: the first field that
+   * actually differs from the other rows sharing this model-year. A catalogue
+   * where every Creta row is distinct reads exactly as it did before.
+   */
+  optionLabel(car: Car, list: Car[]): string {
+    const base = `${car.year} ${car.make} ${car.model}`;
+    const twins = list.filter(
+      c => c.id !== car.id && `${c.year} ${c.make} ${c.model}` === base,
+    );
+    if (!twins.length) return base;
+
+    for (const field of ['fuel', 'transmission', 'bodyType'] as const) {
+      const mine = (car as any)[field];
+      if (mine && twins.some(t => (t as any)[field] !== mine)) {
+        return `${base} · ${mine}`;
+      }
+    }
+    // Nothing distinguishes them. Say so rather than printing the same line
+    // twice as though they were different cars — two identical rows in the
+    // catalogue is a data problem, and silently hiding one would bury it.
+    return `${base} · same spec`;
   }
 
   /** Every car the picker can reach — the honest size of "our database". */
@@ -385,14 +460,45 @@ export class CompareComponent implements OnInit {
     }
   }
 
+  /**
+   * Whether this cell is the best in its row — the green shading and the crown.
+   *
+   * A WINNER EVERYONE WINS IS NOT A WINNER
+   *
+   * Reported from /compare with three new cars side by side: Year, KM Driven,
+   * Rating and Reviews were all shaded green with a crown in every column. The
+   * old test was `mine === Math.max(...vals)`, and when every value is equal
+   * every value IS the max, so all three were crowned.
+   *
+   * That is not cosmetic. Catalogue rows all carry year 2026, km 0, rating 0
+   * and reviews 0, so comparing any three new cars crowned four rows at once —
+   * and a crown on `0 ★` tells the reader that having no ratings is the thing
+   * to want. Price was the only row that behaved, because its values genuinely
+   * differ, which is what made the rest look wrong beside it.
+   *
+   * So: a row where nothing distinguishes the cars has no winner. The test is
+   * on the SPREAD, not on the individual value.
+   *
+   * NaNs are dropped rather than poisoning the row. `Math.max(NaN, 5)` is NaN
+   * and compares false against everything, so one unparseable cell used to
+   * silently remove the crown from a row that had a real winner.
+   */
   isEntryWinner(key: string, e: CompareEntry, higher: boolean | null): boolean {
     if (higher === null) return false;
     const entries = this.activeEntries();
     if (entries.length < 2) return false;
-    const vals = entries.map(x => parseFloat(String(this.getEntryVal(x, key))));
+
+    const vals = entries
+      .map(x => parseFloat(String(this.getEntryVal(x, key))))
+      .filter(v => !isNaN(v));
+    if (vals.length < 2) return false;
+
+    const best = higher ? Math.max(...vals) : Math.min(...vals);
+    // Every car agrees, so there is nothing to crown.
+    if (best === (higher ? Math.min(...vals) : Math.max(...vals))) return false;
+
     const mine = parseFloat(String(this.getEntryVal(e, key)));
-    if (isNaN(mine)) return false;
-    return higher ? mine === Math.max(...vals) : mine === Math.min(...vals);
+    return !isNaN(mine) && mine === best;
   }
 
   /**
