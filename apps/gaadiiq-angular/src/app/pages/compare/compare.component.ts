@@ -223,9 +223,65 @@ export class CompareComponent implements OnInit {
    */
   filtered(slot: number) {
     const q = this.search(slot).toLowerCase();
-    const all = this.carsData.cars();
+    const all = this.carsData.cars().filter(c => !this.isInAnotherSlot(slot, c));
     if (!q) return all.slice(0, CompareComponent.UNPROMPTED_SUGGESTIONS);
     return all.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q));
+  }
+
+  /**
+   * Already sitting in one of the other two slots.
+   *
+   * Reported with Hyundai Creta in columns 2 and 3: identical price, year,
+   * odometer, fuel and transmission, so every row matched and the table said
+   * nothing. A car compared against itself cannot inform anybody.
+   *
+   * THE GUARD IS HERE AND NOT IN selectCar(), DELIBERATELY
+   *
+   * compareTrims() calls selectCar() with a car that IS already in another slot
+   * — that is the whole of "Compare its variants", which puts one model in two
+   * columns so two trims of it can be read side by side. A duplicate check
+   * inside selectCar would have deleted that feature while appearing to fix a
+   * bug. Filtering the dropdown blocks the accident and leaves the deliberate
+   * path alone.
+   *
+   * Matching on id, not on make+model: two catalogue rows for one model that
+   * differ in fuel or transmission are a comparison worth making, and
+   * optionLabel() below is what makes them tellable apart.
+   */
+  private isInAnotherSlot(slot: number, car: Car): boolean {
+    return this.selected().some((c, i) => i !== slot && c?.id === car.id);
+  }
+
+  /**
+   * What a dropdown row says.
+   *
+   * The list used to render `{year} {make} {model}` and a price, which is
+   * ambiguous the moment the catalogue holds two rows for one model-year — they
+   * appear as two identical lines, and picking "the other one" is guesswork.
+   * That became reachable when the picker stopped filtering to photographed
+   * cars, so this is the other half of that change.
+   *
+   * The discriminator is only added when it is needed: the first field that
+   * actually differs from the other rows sharing this model-year. A catalogue
+   * where every Creta row is distinct reads exactly as it did before.
+   */
+  optionLabel(car: Car, list: Car[]): string {
+    const base = `${car.year} ${car.make} ${car.model}`;
+    const twins = list.filter(
+      c => c.id !== car.id && `${c.year} ${c.make} ${c.model}` === base,
+    );
+    if (!twins.length) return base;
+
+    for (const field of ['fuel', 'transmission', 'bodyType'] as const) {
+      const mine = (car as any)[field];
+      if (mine && twins.some(t => (t as any)[field] !== mine)) {
+        return `${base} · ${mine}`;
+      }
+    }
+    // Nothing distinguishes them. Say so rather than printing the same line
+    // twice as though they were different cars — two identical rows in the
+    // catalogue is a data problem, and silently hiding one would bury it.
+    return `${base} · same spec`;
   }
 
   /** Every car the picker can reach — the honest size of "our database". */

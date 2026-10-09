@@ -149,6 +149,81 @@ describe('CompareComponent — the crown has to mean something', () => {
   });
 });
 
+describe('CompareComponent — the same car cannot fill two columns', () => {
+  it('drops a car already held by another slot', () => {
+    // REPORTED: Hyundai Creta in columns 2 and 3, identical on every row. A car
+    // compared against itself tells the reader nothing.
+    const c = mount([
+      car({ id: 'creta', make: 'Hyundai', model: 'Creta' }),
+      car({ id: 'alto', model: 'Alto K10' }),
+    ]);
+    c.selected.set([c.carsData.cars()[0], null, null]);
+    c.searchB.set('creta');
+
+    expect(c.filtered(1).map((x: any) => x.id)).not.toContain('creta');
+  });
+
+  it('still offers that car to the slot already holding it', () => {
+    // Otherwise re-picking in the same slot would make the current choice
+    // vanish from its own list.
+    const c = mount([car({ id: 'creta', make: 'Hyundai', model: 'Creta' })]);
+    c.selected.set([c.carsData.cars()[0], null, null]);
+    c.searchA.set('creta');
+
+    expect(c.filtered(0).map((x: any) => x.id)).toContain('creta');
+  });
+
+  it('does NOT block "Compare its variants", which needs the duplicate', () => {
+    // compareTrims() puts one model in two columns on purpose so two trims can
+    // be read side by side. A guard inside selectCar would have deleted that
+    // feature while looking like a bug fix — which is why the guard is in the
+    // dropdown instead.
+    const c = mount([car({ id: 'creta', make: 'Hyundai', model: 'Creta' })]);
+    const creta = c.carsData.cars()[0];
+    c.selected.set([creta, null, null]);
+    c.trimOptions.set([[{ id: 't1' }, { id: 't2' }], [], []]);
+
+    c.compareTrims(0);
+
+    expect(c.selected()[1]?.id).toBe('creta');
+  });
+});
+
+describe('CompareComponent — two rows for one model are tellable apart', () => {
+  it('adds the field that differs when a model-year appears twice', () => {
+    const list = [
+      car({ id: 'p', make: 'Hyundai', model: 'Creta', fuel: 'Petrol' }),
+      car({ id: 'd', make: 'Hyundai', model: 'Creta', fuel: 'Diesel' }),
+    ];
+    const c = mount(list);
+
+    expect(c.optionLabel(list[0], list)).toBe('2026 Hyundai Creta · Petrol');
+    expect(c.optionLabel(list[1], list)).toBe('2026 Hyundai Creta · Diesel');
+  });
+
+  it('leaves an unambiguous row exactly as it was', () => {
+    // The common case must not grow noise.
+    const list = [
+      car({ id: 'a', make: 'Hyundai', model: 'Creta' }),
+      car({ id: 'b', make: 'Maruti Suzuki', model: 'Swift' }),
+    ];
+    const c = mount(list);
+
+    expect(c.optionLabel(list[0], list)).toBe('2026 Hyundai Creta');
+  });
+
+  it('says so when two rows really are identical', () => {
+    // Printing the same line twice would present a data fault as two choices.
+    const list = [
+      car({ id: 'a', make: 'Hyundai', model: 'Creta' }),
+      car({ id: 'b', make: 'Hyundai', model: 'Creta' }),
+    ];
+    const c = mount(list);
+
+    expect(c.optionLabel(list[0], list)).toContain('same spec');
+  });
+});
+
 describe('CompareComponent — a missing value reads as a dash', () => {
   it('prints — rather than the word "undefined"', () => {
     // String(undefined) is truthy, so `String(v) || '—'` printed "undefined".
