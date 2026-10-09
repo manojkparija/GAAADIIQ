@@ -13,11 +13,31 @@
   position: relative;
   overflow: hidden;
 
+  /* The hexagon lattice, carried up onto the gradient.
+     Asked for against this hero by name: "can we use this design pattern here
+     on blue teal". It is the same geometry the rest of the page already shows
+     through body::before, in white instead of brand blue — see --hero-pattern
+     in styles.scss for why a second copy exists.
+
+     Layered under the existing highlight, not instead of it: the radial is what
+     stops the gradient reading flat, and the lattice is a texture over it, so
+     the order matters. Both stay on this one pseudo-element because the hero
+     has no spare one and a wrapper div for a background would be markup the
+     page does not otherwise need.
+
+     background-attachment is left at scroll, so the lattice moves with the
+     hero. The page-level one is fixed, which is right for a watermark behind a
+     scrolling page and wrong here — a pattern sliding under a section it is
+     painted on reads as a fault. */
   &::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.06) 0%, transparent 70%);
+    background-image:
+      radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.06) 0%, transparent 70%),
+      var(--hero-pattern);
+    background-size: auto, var(--page-pattern-size);
+    background-repeat: no-repeat, repeat;
     pointer-events: none;
   }
 }
