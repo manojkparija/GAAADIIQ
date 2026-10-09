@@ -17,8 +17,6 @@ import {
   vehicleScore,
 } from '../../utils/market-position';
 
-interface NewCarHighlight { icon: string; title: string; caption: string; }
-interface NewCarUpdate { text: string; date: string; }
 /**
  * The bits of a model this file still hardcodes.
  *
@@ -28,95 +26,74 @@ interface NewCarUpdate { text: string; date: string; }
  * priced, and which made the Swift's tab behave differently from the
  * Victoris's. See the note in the template.
  *
- * What remains feeds "Top Things to Know" and the headline price band, both of
- * which have no equivalent in the database yet.
+ * `highlights` and `updates` have now gone the same way, and for a sharper
+ * reason than inconsistency.
+ *
+ * REPORTED: "why this information (top things to know abt creta) is only
+ * available for creta — that too wrong, creta does not have hybrid option."
+ * Both halves were right. The Creta's four highlights included
+ *
+ *     { title: 'Hybrid Option',
+ *       caption: '48V mild hybrid powertrain available for better fuel
+ *                 efficiency.' }
+ *
+ * and the Creta sold in India has no such powertrain. It was not stale, it was
+ * never true.
+ *
+ * ONE WRONG CLAIM CONDEMNS THE REST, BECAUSE NONE OF THEM HAS A SOURCE
+ *
+ * The other twenty-three highlights and eighteen updates are the same kind of
+ * statement from the same place: specific, checkable, dated — "Creta crosses
+ * 10 lakh cumulative sales, 15 Feb 2026", "price hike of up to Rs. 7,000,
+ * 6 Jul 2026" — and attributable to nothing. Correcting the hybrid line would
+ * have fixed the one a reader happened to catch and left the rest wearing the
+ * authority of a page that had just been corrected.
+ *
+ * This is the rule the file already states forty lines below, where
+ * displayPrice refuses to print a price nobody entered: "the same rule the
+ * credit bureau service follows, where fetch_score raises rather than
+ * returning a plausible figure". A fabricated spec is not softer than a
+ * fabricated number. A buyer who reads "hybrid available" and drives to a
+ * showroom has been sent there by us.
+ *
+ * `priceRange` stays, deliberately and uncomfortably — see the note on it.
  */
-interface NewCarMeta { priceRange: [number, number]; highlights: NewCarHighlight[]; updates: NewCarUpdate[]; }
+interface NewCarMeta { priceRange: [number, number]; }
 
+/**
+ * Six hardcoded price bands, and why they did not leave with the highlights.
+ *
+ * These are unsourced in exactly the same way, and the honest answer is that
+ * they should go too. They are kept here for now because deleting them is a
+ * different change with a different blast radius: displayPrice falls back to
+ * this only when the catalogue row AND the published trims both have no price,
+ * and 135 of 136 catalogue rows carry no ex_showroom_price. Removing it would
+ * replace a band with "Price not announced yet" on these six models in one
+ * step, which is a pricing decision rather than a correction.
+ *
+ * The difference that justifies the delay: a price band is a range a reader
+ * checks against a dealer in the next sentence, where "48V mild hybrid
+ * available" is a fact they act on without checking. Not a strong difference.
+ * This should be read as a deferral, not an endorsement.
+ */
 const NEW_CAR_META: Record<string, NewCarMeta> = {
   'Maruti Suzuki Swift': {
     priceRange: [649000, 999000],
-    highlights: [
-      { icon: 'cpu', title: 'Z-Series Engine', caption: 'New 1.2L Z12E 3-cylinder engine with 81.58 PS and S-CNG option.' },
-      { icon: 'shield', title: '6 Airbags Standard', caption: '6 airbags across all variants — best-in-class safety.' },
-      { icon: 'cpu', title: 'SmartPlay Pro+', caption: '17.78 cm touchscreen with wireless Android Auto & Apple CarPlay.' },
-      { icon: 'leaf', title: '32.85 km/kg CNG', caption: 'Best-in-segment S-CNG mileage with factory-fitted CNG kit.' },
-    ],
-    updates: [
-      { text: 'Maruti Swift Z-Series S-CNG now available at select dealerships nationwide.', date: '15 Jun 2026' },
-      { text: 'Swift 2025 receives 5-star Global NCAP rating for adult occupant protection.', date: '10 Mar 2026' },
-      { text: 'New Swift launched with Z-Series engine; prices start at ₹6.49 Lakh.', date: '9 Jan 2026' },
-    ],
   },
   'Tata Punch': {
     priceRange: [570000, 1067000],
-    highlights: [
-      { icon: 'star', title: '5-Star BNCAP', caption: 'Scored 30.58/32 for adult occupants and 45/49 for child safety.' },
-      { icon: 'settings', title: 'CNG Automatic', caption: 'First-in-segment CNG with AMT and paddle shifters.' },
-      { icon: 'cpu', title: '10.25" Infotainment', caption: 'Cleaner dual-tone dashboard with large touchscreen.' },
-      { icon: 'eye', title: '360-Degree Camera', caption: '360° surround-view camera for easy parking.' },
-    ],
-    updates: [
-      { text: 'Tata Punch receives a price hike of up to Rs. 7,000.', date: '6 Jul 2026' },
-      { text: 'Punch enters the seven lakh sales club in four years and three months.', date: '1 Feb 2026' },
-      { text: 'Tata Punch achieves five-star BNCAP certification — 30.58 out of 32 points.', date: '21 Jan 2026' },
-    ],
   },
   'Hyundai Creta': {
     priceRange: [1100000, 2015000],
-    highlights: [
-      { icon: 'sparkles', title: 'ADAS Level 2', caption: 'Advanced driver-assistance with lane keep, auto emergency braking.' },
-      { icon: 'cpu', title: 'Dual 10.25" Screens', caption: 'Panoramic dual-screen setup for driver and infotainment.' },
-      { icon: 'zap', title: 'Hybrid Option', caption: '48V mild hybrid powertrain available for better fuel efficiency.' },
-      { icon: 'shield', title: '6 Airbags', caption: '6 airbags standard with ESC, VSM and hill assist.' },
-    ],
-    updates: [
-      { text: 'Hyundai Creta facelift launched with updated interior and new ADAS features.', date: '1 Apr 2026' },
-      { text: 'Creta crosses 10 lakh cumulative sales milestone in India.', date: '15 Feb 2026' },
-      { text: 'Creta EV variant gets new 51.4 kWh long-range battery option.', date: '10 Jan 2026' },
-    ],
   },
   'Tata Nexon': {
     priceRange: [810000, 1475000],
-    highlights: [
-      { icon: 'star', title: '5-Star Global NCAP', caption: 'India\'s first 5-star rated car — 16.45/17 for adult safety.' },
-      { icon: 'zap', title: 'EV Option', caption: 'Available as Nexon EV with 40.5 kWh battery and 465 km range.' },
-      { icon: 'cpu', title: 'Arcade.ev Ready', caption: 'Advanced connected car tech with over-the-air updates.' },
-      { icon: 'shield', title: '6 Airbags', caption: '6 airbags with ADAS, front & rear parking sensors.' },
-    ],
-    updates: [
-      { text: 'Tata Nexon facelift launched with new turbo petrol engine and ADAS features.', date: '20 May 2026' },
-      { text: 'Nexon EV gets new 40.5 kWh battery with improved 465 km range.', date: '10 Mar 2026' },
-      { text: 'Nexon becomes best-selling compact SUV for 2025-26 fiscal year.', date: '5 Apr 2026' },
-    ],
   },
   'Kia Seltos': {
     priceRange: [1089000, 2000000],
-    highlights: [
-      { icon: 'cpu', title: 'Panoramic Dual Display', caption: '26-inch dual-screen curved display — biggest in segment.' },
-      { icon: 'car', title: '3 Powertrain Options', caption: 'Petrol, Diesel and Petrol Turbo DCT available.' },
-      { icon: 'sparkles', title: 'Bose Premium Sound', caption: '8-speaker Bose premium sound system in top variants.' },
-      { icon: 'shield', title: 'ADAS Level 2', caption: '19 ADAS safety features including Forward Collision Warning.' },
-    ],
-    updates: [
-      { text: 'Kia Seltos 2025 gets new panoramic curved display and updated ADAS suite.', date: '1 Jun 2026' },
-      { text: 'Seltos X-Line dark edition launched with new colour options.', date: '20 Mar 2026' },
-      { text: 'Kia Seltos crosses 5 lakh cumulative sales in India.', date: '10 Jan 2026' },
-    ],
   },
   'Mahindra XUV700': {
     priceRange: [1399000, 2699000],
-    highlights: [
-      { icon: 'brain', title: 'ADAS Level 2', caption: 'AdrenoX ADAS with 5 radars and cameras for autonomous driving assistance.' },
-      { icon: 'sparkles', title: 'Sony 3D Sound', caption: '12-speaker Sony 3D surround sound in top AX7 L variants.' },
-      { icon: 'trending-up', title: '200 PS Diesel', caption: 'Powerful 2.2L mHawk diesel with 450 Nm torque.' },
-      { icon: 'user', title: '7-Seater Option', caption: 'Available in 5 and 7-seater configurations.' },
-    ],
-    updates: [
-      { text: 'XUV700 AX7 L gets new stargazer moonroof and updated ADAS.', date: '15 May 2026' },
-      { text: 'Mahindra XUV700 waitlist reopens; deliveries within 4 weeks.', date: '5 Mar 2026' },
-      { text: 'XUV700 wins Indian Car of the Year award for third consecutive year.', date: '12 Jan 2026' },
-    ],
   },
 };
 // Colour name → hex map for swatches
