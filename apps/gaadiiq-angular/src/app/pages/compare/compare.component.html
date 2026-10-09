@@ -142,7 +142,14 @@
       <div class="glass-card" style="text-align:center;padding:3rem">
         <div style="font-size:3rem;margin-bottom:1rem">⚖️</div>
         <h3>{{ 'Search and select at least 2 cars to compare' | t }}</h3>
-        <p style="color:var(--muted)">{{ 'Use the search boxes above to find any car from our 54-car database' | t }}</p>
+        <!-- Counted, not typed. This read "our 54-car database" as a literal
+             string, so it was a number nobody maintained: wrong the moment a
+             car was added, and wrong already — 54 was the photographed subset
+             the picker used to search, not the catalogue. -->
+        <p style="color:var(--muted)">
+          {{ 'Use the search boxes above to find any car from our' | t }}
+          {{ searchableCount() }}{{ '-car database' | t }}
+        </p>
       </div>
     </div>
   </div>

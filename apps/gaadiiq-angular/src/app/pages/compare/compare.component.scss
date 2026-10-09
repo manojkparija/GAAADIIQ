@@ -113,7 +113,16 @@
   .search-wrap { position:relative; }
   input { width:100%; background: var(--fill-soft); border: 1px solid var(--border-soft); border-radius:10px; padding:0.75rem 1rem; color: var(--input-color); font-size:0.9rem; outline:none; box-sizing:border-box; &:focus{border-color:#1e40af;} }
 }
-.search-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background: var(--dropdown-bg); border: 1px solid var(--border-soft); border-radius:10px; z-index:50; overflow:hidden; }
+// max-height and scrolling, because a search is no longer capped.
+//
+// This was `overflow:hidden` with no height. That was survivable while the
+// picker returned at most eight rows; it is not now that typing "maruti"
+// returns every Maruti, which would otherwise grow the panel past the bottom
+// of the page with no way to reach the end of it.
+//
+// 19rem is roughly eight rows — enough that the list reads as a list, short
+// enough that it does not cover the other two search boxes on a laptop.
+.search-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background: var(--dropdown-bg); border: 1px solid var(--border-soft); border-radius:10px; z-index:50; overflow-y:auto; overscroll-behavior:contain; max-height:19rem; }
 .drop-item { display:flex; justify-content:space-between; padding:0.6rem 1rem; font-size:0.875rem; cursor:pointer; &:hover{background:rgba(30,64,175,0.15);} }
 .drop-price { color:var(--muted); font-size:0.8rem; }
 .drop-empty { padding:0.75rem 1rem; color:var(--muted); font-size:0.875rem; }

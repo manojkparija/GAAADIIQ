@@ -115,12 +115,18 @@ export class CompareComponent implements OnInit {
       for (const key of keys) {
         if (slot >= 3) break;
         const [make, model] = key.split('||');
-        // Prefer a row with a photograph. A key saved before the model's
-        // images were removed would otherwise reopen a blank card, and the
-        // compare page would keep showing what the rest of the site stopped.
+        // Prefer a row with a photograph, but never refuse to restore one.
+        //
+        // The last fallback is new, and it is the other half of letting the
+        // picker offer unphotographed models. Without it a reader could build
+        // a comparison, save it, and reopen it to find that column silently
+        // gone — selectable but not restorable, which is a worse state than
+        // either rule on its own.
         const matches = cars.filter(c => c.make === make && c.model === model);
         const car = matches.find(c => c.km === 0 && c.year >= 2024 && isShowable(c))
           ?? matches.find(isShowable)
+          ?? matches.find(c => c.km === 0 && c.year >= 2024)
+          ?? matches[0]
           ?? null;
         if (car) {
           picked[slot] = car;
@@ -151,19 +157,60 @@ export class CompareComponent implements OnInit {
   });
 
   /**
-   * What the picker offers.
+   * How many cars the picker shows before the reader has typed anything.
    *
-   * Catalogue rows with no photograph are left out, as they are on the New
-   * Cars and Browse grids. Comparing two blank cards is not a comparison, and
-   * offering a car the rest of the site has stopped showing contradicts it.
-   * Adverts stay: see isShowable.
+   * Only the unprompted list is capped. A search is not: asked for "maruti",
+   * the picker returns every Maruti. See filtered().
+   */
+  static readonly UNPROMPTED_SUGGESTIONS = 20;
+
+  /**
+   * Every car in the catalogue, not only the photographed ones.
+   *
+   * REPORTED: typing "maruti" offered four models, and "All the models are not
+   * coming in the dropdown".
+   *
+   * This used to filter by isShowable, which hides a catalogue row that has no
+   * photograph. That rule is right on the New Cars and Browse grids, where a
+   * card without a picture is a blank tile — the comment here even cited them.
+   * It is wrong on this surface, and the markup says why:
+   *
+   *     <div class="drop-item" ...>
+   *       <span>{{ c.year }} {{ c.make }} {{ c.model }}</span>
+   *       <span class="drop-price">{{ formatPrice(startsAt(c)) }}</span>
+   *
+   * There is no image in a suggestion. The photograph rule was costing the
+   * reader most of the catalogue to protect them from a picture that is never
+   * drawn. And the table they land on already falls back to
+   * assets/cars/placeholder.svg, so a model without a photo compares fine — it
+   * simply could not be found.
+   *
+   * The old comment argued that offering a car "the rest of the site has
+   * stopped showing contradicts it". The contradiction runs the other way:
+   * Compare says "Search any car from our database", and then could not find
+   * most of them.
+   *
+   * A SEARCH IS NOT CAPPED
+   *
+   * It used to stop at eight, silently. Asked for "maruti" the reader must get
+   * every Maruti, because a list that quietly stops cannot be told apart from
+   * a catalogue that is short — which is the same confusion as the photograph
+   * rule, one order of magnitude smaller. Only the unprompted list is capped,
+   * where the cars shown are arbitrary anyway and the full catalogue would be
+   * noise rather than an answer.
+   *
+   * The dropdown scrolls (see .search-dropdown in the stylesheet); before this
+   * it had no max-height, so a long list would have run off the page.
    */
   filtered(slot: number) {
     const q = this.search(slot).toLowerCase();
-    const all = this.carsData.cars().filter(isShowable);
-    if (!q) return all.slice(0, 10);
-    return all.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q)).slice(0, 8);
+    const all = this.carsData.cars();
+    if (!q) return all.slice(0, CompareComponent.UNPROMPTED_SUGGESTIONS);
+    return all.filter(c => `${c.make} ${c.model} ${c.year}`.toLowerCase().includes(q));
   }
+
+  /** Every car the picker can reach — the honest size of "our database". */
+  searchableCount = computed(() => this.carsData.cars().length);
 
   selectCar(slot: number, car: Car) {
     this.selected.update(arr => { const n = [...arr]; n[slot] = car; return n; });

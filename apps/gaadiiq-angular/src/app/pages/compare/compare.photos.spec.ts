@@ -1,16 +1,32 @@
 /**
- * Compare offers only cars the rest of the site still shows.
+ * What compare puts in front of the reader without being asked.
  *
- * Reported from /compare: three e Vitara cards reading "No Image Available",
- * for a model whose images had been removed from the database. The grids stop
- * showing such a model; the compare picker went on offering it, so the site
- * contradicted itself depending on which page you were standing on.
+ * WHAT THIS FILE USED TO SAY, AND WHY IT CHANGED
  *
- * Comparing two blank cards is also not a comparison — the photograph is most
- * of what a compare card carries.
+ * It was written for a report of three e Vitara cards reading "No Image
+ * Available", and it drew the rule that compare offers only cars the grids
+ * still show — photograph-less catalogue rows hidden everywhere, picker
+ * included.
  *
- * Adverts stay. A listing is a real car someone is trying to sell, and hiding
- * it for want of a photograph removes them from the marketplace. The
+ * That went too wide. A later report, with the picker open on "maruti" and four
+ * results showing: "All the models are not coming in the dropdown." A
+ * suggestion row draws no image at all, only
+ * `{{ c.year }} {{ c.make }} {{ c.model }}` and a price, so the photograph rule
+ * was withholding most of the catalogue from a search to spare the reader a
+ * picture that is never drawn. The reach of the picker now lives in
+ * compare.search-reach.spec.ts, which owns that half.
+ *
+ * WHAT SURVIVES, AND IT IS THE PART THE ORIGINAL REPORT WAS ABOUT
+ *
+ * Nobody asked for an e Vitara. It was offered. The unprompted surfaces —
+ * popular picks, and which of several matching rows a saved key resolves to —
+ * are choices the page makes on the reader's behalf, and there a photograph is
+ * still the right tiebreak, because a blank card is all the reader gets back.
+ * A search is the opposite: they named the thing, and a result they cannot find
+ * is worse than one that renders a placeholder.
+ *
+ * Adverts stay, as before. A listing is a real car someone is trying to sell,
+ * and hiding it for want of a photograph removes them from the marketplace. The
  * distinction is `fromCatalogue`, not `isSellerListing`: the latter is
  * `listing_type === 'used'`, so a dealer's advert for a brand-new car reads
  * false there exactly as a catalogue row does.
@@ -63,13 +79,20 @@ function mount(cars: any[], params: Record<string, string> = {}) {
 }
 
 describe('CompareComponent — which cars can be compared', () => {
-  it('does not offer a catalogue car with no photograph', () => {
-    const c = mount([
-      car({ model: 'e Vitara', image: PLACEHOLDER, images: [PLACEHOLDER] }),
-      car({ model: 'S-Presso' }),
-    ]);
+  it('prefers a photographed row when a saved key matches several', () => {
+    // The page is choosing here, not the reader: one key, two rows that both
+    // answer to it. Same make, model, year and odometer, so the photograph is
+    // the only thing left to choose on — and it decides what the restored card
+    // looks like.
+    const c = mount(
+      [
+        car({ id: 'blank', model: 'S-Presso', image: PLACEHOLDER, images: [PLACEHOLDER] }),
+        car({ id: 'shot', model: 'S-Presso' }),
+      ],
+      { keys: 'Maruti Suzuki||S-Presso' },
+    );
 
-    expect(c.filtered(0).map((x: any) => x.model)).toEqual(['S-Presso']);
+    expect(c.activeCars().map((x: any) => x.id)).toEqual(['shot']);
   });
 
   it('still offers an advert with no photograph', () => {
@@ -101,15 +124,17 @@ describe('CompareComponent — which cars can be compared', () => {
     expect(c.popularPicks().map((x: any) => x.model)).toEqual(['S-Presso']);
   });
 
-  it('ignores a saved compare key whose model lost its photographs', () => {
-    // A key stored before the images were deleted would otherwise reopen a
-    // blank card, and compare would keep showing what the grids stopped.
+  it('still opens a saved key when no matching row has a photograph', () => {
+    // The photograph is a tiebreak, not a veto. This used to resolve to nothing
+    // and the reader's saved comparison came back empty, which is a worse answer
+    // than a card with a placeholder on it: they saved this deliberately, and
+    // every spec row below the image still carries its real numbers.
     const c = mount(
       [car({ model: 'e Vitara', image: PLACEHOLDER, images: [PLACEHOLDER] })],
       { keys: 'Maruti Suzuki||e Vitara' },
     );
 
-    expect(c.activeCars()).toEqual([]);
+    expect(c.activeCars().map((x: any) => x.model)).toEqual(['e Vitara']);
   });
 
   it('opens a saved key that still has photographs', () => {
@@ -139,13 +164,18 @@ describe('CompareComponent — which cars can be compared', () => {
       .toContain(bg);
   });
 
-  it('searches within what it offers', () => {
+  it('finds the photograph-less model the picks deliberately omit', () => {
+    // The two halves of this file in one assertion, so neither can be tightened
+    // back onto the other by accident: the e Vitara is not volunteered, and it
+    // is found the moment it is asked for.
     const c = mount([
       car({ model: 'e Vitara', image: PLACEHOLDER, images: [PLACEHOLDER] }),
       car({ model: 'S-Presso' }),
     ]);
-    c.searchA.set('vitara');
 
-    expect(c.filtered(0)).toEqual([]);
+    expect(c.popularPicks().map((x: any) => x.model)).not.toContain('e Vitara');
+
+    c.searchA.set('vitara');
+    expect(c.filtered(0).map((x: any) => x.model)).toEqual(['e Vitara']);
   });
 });
