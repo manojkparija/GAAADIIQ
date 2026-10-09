@@ -26,6 +26,25 @@ export class LoginComponent {
   resetLoading = signal(false);
   resetError = signal('');
   showResetForm = signal(false);
+
+  // ── Mobile sign-in ────────────────────────────────────────────────────────
+  //
+  // One method for both signing up and signing in, because with a phone there
+  // is no difference to expose: Supabase creates the account if the number is
+  // new and returns the existing one if it is not. Asking someone to choose
+  // between "sign in" and "sign up" would be asking them to remember whether
+  // they have been here before, and getting it wrong would be an error we
+  // invented.
+  //
+  // `mode` is which credential the form is collecting, not which action it
+  // performs.
+  mode = signal<'password' | 'phone'>('password');
+  phone = signal('');
+  otp = signal('');
+  /** Set once the SMS is away; it is also the number the code is checked against. */
+  otpSentTo = signal<string | null>(null);
+  otpLoading = signal(false);
+
   private returnUrl = '/';
 
   constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {
@@ -38,6 +57,54 @@ export class LoginComponent {
   }
 
   toggleShowPass() { this.showPass.set(!this.showPass()); }
+
+  /** Switch which credential the form collects, clearing anything half-typed. */
+  setMode(mode: 'password' | 'phone') {
+    this.mode.set(mode);
+    this.error.set('');
+    // Not cleared: `phone`. Someone who typed a number, hit the wrong tab and
+    // came back should not have to type it again.
+    this.otp.set('');
+    this.otpSentTo.set(null);
+  }
+
+  async sendOtp() {
+    this.error.set('');
+    this.otpLoading.set(true);
+    try {
+      const e164 = await this.auth.sendPhoneOtp(this.phone());
+      this.otpSentTo.set(e164);
+    } catch (e: any) {
+      this.error.set(e.message || 'Could not send the code. Please try again.');
+    } finally {
+      this.otpLoading.set(false);
+    }
+  }
+
+  /**
+   * Go back to the number field. Without this, a typo in the number is a dead
+   * end: the code never arrives and the only way out is a page reload.
+   */
+  changeNumber() {
+    this.otpSentTo.set(null);
+    this.otp.set('');
+    this.error.set('');
+  }
+
+  async verifyOtp() {
+    this.error.set('');
+    this.otpLoading.set(true);
+    try {
+      await this.auth.verifyPhoneOtp(this.otpSentTo()!, this.otp());
+      // No navigate here: the effect in the constructor watches isLoggedIn and
+      // sends them to returnUrl, which is the same path Google and password
+      // sign-in take. Navigating here as well would race it.
+    } catch (e: any) {
+      this.error.set(e.message || 'Could not verify that code. Please try again.');
+    } finally {
+      this.otpLoading.set(false);
+    }
+  }
 
   async loginWithGoogle() {
     this.error.set('');

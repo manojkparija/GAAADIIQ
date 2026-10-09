@@ -112,7 +112,15 @@
   position: relative;
   margin: 1.5rem 0;
   &::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--fill-medium); }
-  span { background: rgba(10,14,26,0.8); padding: 0 1rem; color: var(--text-tertiary); font-size: 0.8rem; position: relative; }
+  // The chip masks the rule line behind it, so its background must match the
+  // card it sits on. It was rgba(10,14,26,0.8) — a hardcoded near-black from
+  // when this card was dark-only — which on the light theme drew a black bar
+  // across the divider with grey text on it, barely legible. One of the
+  // hardcoded-hex leftovers CLAUDE.md warns about; found while adding the
+  // mobile option, not caused by it.
+  //
+  // --card-bg follows the theme, so the chip disappears into the card in both.
+  span { background: var(--card-bg); padding: 0 1rem; color: var(--muted); font-size: 0.8rem; position: relative; }
 }
 
 .login-form {
@@ -225,3 +233,48 @@
 
 .confirm-sent { color: var(--success-ink); font-weight: 600; }
 .confirm-err  { color: var(--danger-ink, #B42318); }
+
+// ── Email / Mobile switch ────────────────────────────────────────────────────
+//
+// Deliberately quieter than .auth-tabs above. That pair is Sign In vs Sign Up,
+// a choice about which account you want; this pair only picks which credential
+// you are about to type. Giving them the same weight made the card read as
+// having four tabs, two of which did something quite different.
+.mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+
+  button {
+    flex: 1;
+    padding: 0.5rem;
+    border-radius: 9px;
+    border: 1px solid var(--border-soft);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    // --primary on --fill-dim rather than white-on-gradient: this control is
+    // secondary to the Sign In button below it, and two gradient fills in one
+    // card compete for the same attention.
+    &.active {
+      background: var(--fill-dim);
+      border-color: var(--primary);
+      color: var(--ink-on-white);
+    }
+    &:hover:not(.active) { color: var(--text); border-color: var(--primary); }
+  }
+}
+
+// Sits under an input to say what happens next. --muted is the established
+// secondary text colour on this card and already clears AA against it.
+.field-hint {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.5;
+}

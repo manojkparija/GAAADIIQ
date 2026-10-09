@@ -112,8 +112,13 @@ export class RegisterComponent {
     this.error.set('');
     this.loading.set(true);
     try {
+      // The phone used to stop here. The field was on the form, bound to this
+      // signal, and read by nothing — typed in, then silently discarded. It is
+      // optional, so an invalid or empty value must not block the signup; it
+      // is simply not stored. AuthService.toE164 returns undefined for both.
       const usable = await this.auth.register(
         this.name(), this.email(), this.password(), this.accountType(),
+        AuthService.toE164(this.phone()),
       );
 
       // Supabase is holding the account until the emailed link is clicked, so

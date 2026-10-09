@@ -32,9 +32,60 @@
       </button>
     </div>
 
-    <div class="divider"><span>{{ 'or continue with email' | t }}</span></div>
+    <div class="divider">
+      <span>{{ mode() === 'phone' ? ('or continue with mobile' | t) : ('or continue with email' | t) }}</span>
+    </div>
 
-    <form (ngSubmit)="onSubmit()" class="login-form">
+    <!-- Which credential the form collects. Not sign-in vs sign-up: with a
+         mobile number those are the same action, and Supabase decides which
+         one happened. -->
+    <div class="mode-toggle" role="tablist">
+      <button type="button" role="tab" [attr.aria-selected]="mode() === 'password'"
+              [class.active]="mode() === 'password'" (click)="setMode('password')">
+        {{ 'Email' | t }}
+      </button>
+      <button type="button" role="tab" [attr.aria-selected]="mode() === 'phone'"
+              [class.active]="mode() === 'phone'" (click)="setMode('phone')">
+        {{ 'Mobile' | t }}
+      </button>
+    </div>
+
+    <!-- ── Mobile ── -->
+    <form *ngIf="mode() === 'phone'" class="login-form"
+          (ngSubmit)="otpSentTo() ? verifyOtp() : sendOtp()">
+      <div class="form-group" *ngIf="!otpSentTo()">
+        <label>{{ 'Mobile number' | t }}</label>
+        <input type="tel" inputmode="numeric" autocomplete="tel"
+               [ngModel]="phone()" (ngModelChange)="phone.set($event)"
+               name="phone" placeholder="+91 98765 43210" required>
+        <!-- Said before the SMS, not after: someone expecting a password
+             prompt needs to know a code is coming. -->
+        <small class="field-hint">{{ 'We will text you a 6-digit code. No password needed.' | t }}</small>
+      </div>
+
+      <ng-container *ngIf="otpSentTo() as sentTo">
+        <div class="form-group">
+          <label>{{ 'Enter the code' | t }}</label>
+          <input type="text" inputmode="numeric" autocomplete="one-time-code"
+                 [ngModel]="otp()" (ngModelChange)="otp.set($event)"
+                 name="otp" placeholder="123456" maxlength="8" required>
+          <small class="field-hint">
+            {{ 'Sent to' | t }} <strong>{{ sentTo }}</strong> ·
+            <button type="button" class="link-btn" (click)="changeNumber()">{{ 'Change number' | t }}</button>
+          </small>
+        </div>
+      </ng-container>
+
+      <div class="error-msg" *ngIf="error()">⚠️ {{ error() }}</div>
+
+      <button type="submit" class="btn-gradient btn-full" [disabled]="otpLoading()">
+        {{ otpLoading()
+            ? ('Please wait…' | t)
+            : (otpSentTo() ? ('Verify and continue' | t) : ('Send code' | t)) }}
+      </button>
+    </form>
+
+    <form *ngIf="mode() === 'password'" (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
         <label>{{ 'Email address' | t }}</label>
         <input type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" [placeholder]="'you@example.com' | t" required>

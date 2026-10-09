@@ -64,9 +64,15 @@ export class AnalyticsService {
         if (error) console.warn('[analytics] track failed:', error.message);
       });
 
-    // Update sentiment scores in background after high-intent events
-    if (this.auth.currentUser()?.email && this.isHighIntent(type)) {
-      this.refreshSentiment(this.auth.currentUser()!.email);
+    // Update sentiment scores in background after high-intent events.
+    //
+    // Bound to a local rather than re-reading the signal: sentiment is keyed by
+    // email, and a phone-only account has none, so there is nothing to refresh
+    // for them. The guard and the argument must be the same read — two reads of
+    // a signal can disagree.
+    const email = this.auth.currentUser()?.email;
+    if (email && this.isHighIntent(type)) {
+      this.refreshSentiment(email);
     }
   }
 
