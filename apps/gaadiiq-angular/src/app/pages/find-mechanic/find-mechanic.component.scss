@@ -1,22 +1,57 @@
 .fm-page {
-  // LAY-007: clears the fixed navbar. Both admin screens shipped without this
-  // and rendered their titles underneath it.
-  padding-top: max(7rem, var(--nav-offset));
+  // LAY-007 clearance moved onto .fm-hero, which is what paints the gradient.
+  // Left here the band would start below the clearance and leave a bare strip
+  // between the navbar and the gradient. (Both admin screens once shipped with
+  // no clearance at all and rendered their titles underneath the navbar — the
+  // rule still applies, it has just moved down one element.)
   padding-bottom: 4rem;
   min-height: 70vh;
 }
 
+// The brand band, the same one every other hero carries. Asked for against this
+// page by name after the first rollout left it out: "blue to teal".
+//
+// The CTA below stays outside the band on purpose. It is `@if (!started())` and
+// is replaced by the request panel on click, so putting it inside would make the
+// hero change height and content mid-flow — a band that resizes under the reader
+// as they use the page.
 .fm-hero {
-  text-align: center;
+  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  border-bottom: 1px solid var(--divider);
+  // LAY-007: clears the fixed navbar, whose height changes with its contents.
+  padding: max(7rem, var(--nav-offset)) 0 2.5rem;
   margin-bottom: 2rem;
+  text-align: center;
+
+  // Was unstyled and inherited body text. On the band it needs the same
+  // treatment the other heroes give an eyebrow.
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+  }
 
   h1 {
     font-size: clamp(1.9rem, 3.6vw, 2.75rem);
     margin: 0.4rem 0 0.6rem;
+    color: #fff;
+  }
+
+  // White-to-teal. The page default is a blue-to-teal fill, which on a
+  // blue-to-teal band is very nearly invisible.
+  .gradient-text {
+    background: linear-gradient(135deg, #ffffff, #99F6E4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   p {
-    color: var(--text-secondary);
+    // --text-secondary is a grey picked against the page background. On the
+    // gradient it fails AA; this is what the other heroes use.
+    color: rgba(255, 255, 255, 0.78);
     max-width: 34rem;
     margin: 0 auto;
     line-height: 1.6;

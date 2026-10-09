@@ -573,7 +573,10 @@ body::before {
 // against /ai-valuation. These three had no band at all — their hero was a
 // width-constrained .container, so there was nothing full-bleed to paint. They
 // now carry the gradient and belong on this list with the rest.
-.val-hero, .about-hero, .pricing-hero {
+.val-hero, .about-hero, .pricing-hero,
+// /find-mechanic, added after the same report was made against it. Its hero
+// already had .container inside the header, so it needed only the gradient.
+.fm-hero {
   position: relative;
 
   &::after {

@@ -32,7 +32,7 @@ import { test, expect, Page } from '@playwright/test';
 // the same commit — --muted and --teal-ink are chosen against a light page and
 // fail outright on the band — so without them here the change would have shipped
 // with a green contrast run that had never opened the pages it altered.
-const PAGES = ['/', '/new-cars', '/used-cars', '/compare', '/emi-calculator', '/reviews-news', '/car-loan', '/insurance', '/video-review', '/ev-charging', '/ai-valuation', '/about', '/pricing-plans'];
+const PAGES = ['/', '/new-cars', '/used-cars', '/compare', '/emi-calculator', '/reviews-news', '/car-loan', '/insurance', '/video-review', '/ev-charging', '/ai-valuation', '/about', '/pricing-plans', '/find-mechanic'];
 
 interface Failure {
   text: string;
