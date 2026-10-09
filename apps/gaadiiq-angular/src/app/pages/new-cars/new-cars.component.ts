@@ -57,6 +57,7 @@ interface NewLaunch {
 
 
 import { BodyTypeIconComponent } from '../../components/body-type-icon/body-type-icon.component';
+import { IconComponent } from '../../components/icon/icon.component';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -69,7 +70,7 @@ interface BudgetRange {
 @Component({
   selector: 'app-new-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, BodyTypeIconComponent, CustomSelectComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, RouterLink, BodyTypeIconComponent, IconComponent, CustomSelectComponent, TranslatePipe],
   templateUrl: './new-cars.component.html',
   styleUrl: './new-cars.component.scss'
 })

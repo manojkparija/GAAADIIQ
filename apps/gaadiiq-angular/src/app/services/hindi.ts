@@ -1527,16 +1527,16 @@ export const HINDI: Record<string, string> = {
     '⏳ आने वाली',
   '🏆 Expert':
     '🏆 विशेषज्ञ',
-  '🏷️ By Brand':
-    '🏷️ ब्रांड से',
-  '💰 By Budget':
-    '💰 बजट से',
-  '🚘 By Body Type':
-    '🚘 बॉडी टाइप से',
-  '🧭 Buyer Journey':
-    '🧭 खरीदार यात्रा',
-  '🚗 New Cars 2025–26':
-    '🚗 नई कारें 2025–26',
+  'By Brand':
+    'ब्रांड से',
+  'By Budget':
+    'बजट से',
+  'By Body Type':
+    'बॉडी टाइप से',
+  'Buyer Journey':
+    'खरीदार यात्रा',
+  'New Cars 2025–26':
+    'नई कारें 2025–26',
   '🔧 Request help now':
     '🔧 अभी मदद मांगें',
   'Light Mode':

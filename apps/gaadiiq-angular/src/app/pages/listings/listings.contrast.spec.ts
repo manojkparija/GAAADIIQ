@@ -207,35 +207,46 @@ describe('listings — New / Used tabs', () => {
       .toBe(getComputedStyle(chip).backgroundImage);
   });
 
-  it('is a known contrast debt, recorded rather than silently accepted', () => {
-    // White on this gradient bottoms out at 2.43:1 — at the CYAN midpoint
-    // #06B6D4, not the teal end, which is a touch darker at 2.49:1. Measured;
-    // the teal end is the obvious suspect and it is not the worst one, which
-    // is exactly why the number comes from the browser rather than from
-    // reading the stops.
+  it('is legible now — the debt this used to pin has been paid', () => {
+    // This case used to assert the worst stop was 2.43:1 and said, in its own
+    // failure message, "if this improved, raise the expectation". It improved.
     //
-    // Under the 4.5:1 floor, and true of every chip and primary button in the
-    // app rather than only these tabs. Darkening it is a brand decision; this
-    // pins the debt so it cannot quietly become a *different* gradient without
-    // someone reading this.
-    const stops = getComputedStyle(tabs()[0]).backgroundImage.match(/rgba?\([^)]+\)/g) ?? [];
-    const worst = Math.min(...stops.map(st => contrast([255, 255, 255], parseColor(st))));
+    // --gradient-cta was linear-gradient(#2563EB, #06B6D4 55%, #14B8A6). White
+    // measured 5.17 / 2.43 / 2.49:1 across those stops, so most of the width of
+    // every primary button and selected chip in the app sat under the 4.5:1
+    // floor and the label faded as it crossed its own background. The token is
+    // now solid --primary (#295EE0), which measures 5.57:1.
+    //
+    // Still measured from the browser rather than from reading the stops: that
+    // is what caught the cyan midpoint being worse than the teal end, which
+    // reading the source would not have.
+    const cs = getComputedStyle(tabs()[0]);
+    const fill = cs.backgroundImage === 'none' ? cs.backgroundColor : cs.backgroundImage;
+    const stops = fill.match(/rgba?\([^)]+\)/g) ?? [];
 
+    expect(stops.length).withContext('no fill to measure').toBeGreaterThan(0);
+
+    const worst = Math.min(...stops.map(st => contrast([255, 255, 255], parseColor(st))));
     expect(worst).withContext(
-      `worst stop is now ${worst.toFixed(2)}:1 — if this improved, raise the ` +
-      `expectation; if it worsened, something changed the brand gradient`,
-    ).toBeCloseTo(2.43, 1);
+      `worst stop is ${worst.toFixed(2)}:1 — white on the selected tab must clear AA`,
+    ).toBeGreaterThanOrEqual(AA_NORMAL);
   });
 
-  it('gives the selected tab the brand gradient, whichever tab it is', () => {
+  it('gives the selected tab the house fill, whichever tab it is', () => {
+    // Was "the brand gradient" and asserted the computed value contained
+    // 'gradient'. The fill is solid now, so the property worth holding is the
+    // one the original complaint was about: every tab shares ONE fill, and it
+    // is not the old per-tab hues.
     for (const type of ['All', 'New', 'Used'] as const) {
       comp.setCarType(type);
       fixture.detectChanges();
 
       const active = tabs().find(t => t.classList.contains('active'))!;
-      const bg = getComputedStyle(active).backgroundImage;
+      const cs = getComputedStyle(active);
+      const bg = cs.backgroundImage === 'none' ? cs.backgroundColor : cs.backgroundImage;
 
-      expect(bg).withContext(`${type} tab has no gradient`).toContain('gradient');
+      expect(bg).withContext(`${type} tab has no fill`).toBeTruthy();
+      expect(bg).withContext(`${type} tab is transparent`).not.toBe('rgba(0, 0, 0, 0)');
       // The old per-tab hues: green for New, orange/yellow for Used.
       expect(bg).withContext(`${type} tab is still green`).not.toContain('56, 239, 125');
       expect(bg).withContext(`${type} tab is still orange`).not.toContain('255, 210, 0');

@@ -125,7 +125,7 @@
     <div class="result-grid">
       <!-- Price Range Card -->
       <div class="price-range-card glass-card">
-        <div class="confidence-badge">🎯 {{ r.confidence }}% confidence</div>
+        <div class="confidence-badge"><app-icon name="target" [size]="13"></app-icon> {{ r.confidence }}% confidence</div>
         <div class="range-row">
           <!-- Three prices for three different sales, said plainly. The old
                labels — Distress Sale, Fair Market, Premium Ask — did not say
@@ -205,8 +205,8 @@
 
     <!-- CTAs -->
     <div class="result-ctas">
-      <a routerLink="/list-car" class="btn-gradient">📋 List My Car at This Price →</a>
-      <button class="btn-outline" (click)="reset()">🔄 Value Another Car</button>
+      <a routerLink="/list-car" class="btn-gradient"><app-icon name="list" [size]="15"></app-icon> List My Car at This Price</a>
+      <button class="btn-outline" (click)="reset()"><app-icon name="refresh-cw" [size]="15"></app-icon> Value Another Car</button>
     </div>
   </section>
 </div>

@@ -105,7 +105,10 @@
         <div class="comp-val" *ngFor="let e of activeEntries()"
              [class.winner]="isEntryWinner(row.key, e, row.higher)">
           {{ row.format(getEntryVal(e, row.key)) }}
-          <span class="win-crown" *ngIf="isEntryWinner(row.key, e, row.higher)">👑</span>
+          <span class="win-mark" *ngIf="isEntryWinner(row.key, e, row.higher)"
+                [attr.aria-label]="'Best in this row' | t" title="Best in this row">
+            <app-icon name="check" [size]="13"></app-icon>
+          </span>
         </div>
       </div>
 
@@ -138,7 +141,10 @@
           <div class="feat-val tco-val" *ngFor="let e of activeEntries()"
                [class.winner]="row.key === 'netCost5yr' && getEntryTco(e).netCost5yr === minEntryTco()">
             {{ row.key === 'resaleValue' ? '−' : '' }}{{ formatPrice(getEntryTco(e)[row.key]) }}
-            <span class="win-crown" *ngIf="row.key === 'netCost5yr' && getEntryTco(e).netCost5yr === minEntryTco()">👑</span>
+            <span class="win-mark" *ngIf="row.key === 'netCost5yr' && getEntryTco(e).netCost5yr === minEntryTco()"
+                  [attr.aria-label]="'Lowest total cost' | t" title="Lowest total cost">
+              <app-icon name="check" [size]="13"></app-icon>
+            </span>
           </div>
         </div>
       </div>

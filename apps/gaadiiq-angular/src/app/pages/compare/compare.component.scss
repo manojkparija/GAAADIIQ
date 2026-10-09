@@ -228,7 +228,20 @@
 .comp-val, .feat-val { padding:0.85rem 1rem; text-align:center; font-size:0.875rem; display:flex; align-items:center; justify-content:center; gap:0.4rem;
   &.winner { color:var(--success-ink); font-weight:700; background:rgba(67,233,123,0.06); }
 }
-.win-crown { font-size:0.9rem; }
+// Was 👑. An emoji in a comparison table reads as a quiz app, renders
+// differently on every platform and sits off its own baseline — the same
+// reason tco.component.html swapped its 🔧 for an app-icon.
+//
+// The mark stays rather than leaving the green shading to carry it alone:
+// colour on its own is not a signal for a colour-blind reader, and the
+// aria-label is what a screen reader gets instead of nothing.
+.win-mark {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.3rem;
+  color: var(--success-ink);
+  vertical-align: middle;
+}
 .features-comp { padding:1.5rem 0 0; h3{padding:0 1.25rem 1rem;font-size:1rem;} }
 .feat-row { border-bottom:1px solid rgba(255,255,255,0.04); &:last-child{border-bottom:none;} }
 .empty-hint { margin-top:1rem; }

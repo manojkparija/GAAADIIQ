@@ -10,20 +10,20 @@
 <section class="nc-hero">
   <div class="container">
     <div class="hero-content">
-      <span class="hero-badge">{{ '🚗 New Cars 2025–26' | t }}</span>
+      <span class="hero-badge"><app-icon name="car" [size]="13"></app-icon> {{ 'New Cars 2025–26' | t }}</span>
       <h1 class="hero-heading">{{ 'Explore' | t }} <span class="gradient-text">{{ 'New Cars' | t }}</span></h1>
       <p class="hero-sub">{{ 'Find your perfect car from 500+ new models across all budgets' | t }}</p>
 
       <div class="hero-search-card glass-card">
         <div class="hero-tabs">
           <button class="hero-tab" [class.active]="activeHeroTab() === 'brand'" (click)="activeHeroTab.set('brand')">
-            {{ '🏷️ By Brand' | t }}
+            <app-icon name="tag" [size]="13"></app-icon> {{ 'By Brand' | t }}
           </button>
           <button class="hero-tab" [class.active]="activeHeroTab() === 'budget'" (click)="activeHeroTab.set('budget')">
-            {{ '💰 By Budget' | t }}
+            <app-icon name="indian-rupee" [size]="13"></app-icon> {{ 'By Budget' | t }}
           </button>
           <button class="hero-tab" [class.active]="activeHeroTab() === 'bodytype'" (click)="activeHeroTab.set('bodytype')">
-            {{ '🚘 By Body Type' | t }}
+            <app-icon name="car" [size]="13"></app-icon> {{ 'By Body Type' | t }}
           </button>
         </div>
 
@@ -133,7 +133,7 @@
                            [ngModel]="selectedSort()"
                            (ngModelChange)="selectedSort.set($event)" />
         <button class="filter-toggle-btn btn-outline" (click)="sidebarOpen.set(!sidebarOpen())">
-          🔧 Filters @if (activeFiltersCount() > 0) { <span class="filter-badge">{{ activeFiltersCount() }}</span> }
+          <app-icon name="sliders" [size]="14"></app-icon> Filters @if (activeFiltersCount() > 0) { <span class="filter-badge">{{ activeFiltersCount() }}</span> }
         </button>
       </div>
     </div>
