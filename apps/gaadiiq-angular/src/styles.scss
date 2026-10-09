@@ -530,6 +530,64 @@ body::before {
   background-repeat: repeat;
 }
 
+// The same lattice, on the gradient heroes.
+//
+// body::before above paints it behind the page, so every hero with an opaque
+// gradient covers it. The note there calls that "by design", and for a
+// watermark it is — but the effect across the site was that the brand's own
+// texture went missing exactly where each page begins and reappeared below the
+// fold. Asked for, against the New Cars hero, with the pattern in the band
+// underneath it circled: "can we use this design pattern here on blue teal",
+// then "apply it in all the heroes".
+//
+// ONE RULE, NOT SEVENTEEN EDITS
+//
+// These heroes already share a gradient to the character — all but one are
+// literally `linear-gradient(135deg, #1e40af 0%, var(--teal) 100%)`. A rule per
+// component would be seventeen copies to keep in step, and the next hero added
+// would quietly not match. This is a global stylesheet, so it reaches into
+// component DOM; component styles carry an attribute selector and therefore win
+// on specificity, which is what makes the opt-out below work.
+//
+// ::after, not ::before: .uc-hero and .nc-hero already use ::before for their
+// own highlights, and none of the seventeen defines ::after. Checked, not
+// assumed — a collision here would silently replace a hero's highlight.
+//
+// position: relative is set here because most of these heroes do not set it,
+// and inset: 0 needs a positioned ancestor. overflow is deliberately NOT set:
+// a blanket overflow:hidden on a section is how sticky children and intentional
+// scroll regions break (LAY-005 says the same thing about body).
+//
+// background-attachment stays at scroll, so the lattice moves with its hero.
+// The page-level one is fixed, which is right behind a scrolling page and wrong
+// for one painted onto a section — a pattern sliding under the thing it belongs
+// to reads as a fault rather than as depth.
+//
+// NOT in this list: .legal-hero and the listings .nc-hero. Both are light,
+// near-transparent panels that the page watermark already shows through, and a
+// white lattice on them would be both invisible and wrong.
+.nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-hero,
+.md-hero, .rn-hero, .evc-hero, .compare-hero, .diag-hero, .advisor-hero,
+.results-hero, .bj-hero, .vr-hero, .chl-hero {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: var(--hero-pattern);
+    background-size: var(--page-pattern-size);
+    background-repeat: repeat;
+  }
+
+  // The hero's own content has to sit above the lattice. Without this the
+  // pattern paints over static children, because a positioned ::after beats
+  // them in paint order whatever the source order says.
+  > * { position: relative; z-index: 1; }
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Outfit', sans-serif;
   line-height: 1.15;

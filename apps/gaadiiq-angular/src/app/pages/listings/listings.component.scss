@@ -412,6 +412,23 @@
 }
 
 // ── New Cars Model Browser ─────────────────────────────────────────────
+// NAME COLLISION, AND IT IS LOAD-BEARING.
+//
+// This `.nc-hero` is not the New Cars page's `.nc-hero`; two components picked
+// the same class. The shared gradient-hero rule in styles.scss paints a white
+// hexagon lattice on every hero it names, and it cannot tell these two apart.
+//
+// On that hero the lattice is the point. On this one it would be white on a
+// near-transparent tint — invisible where it isn't wrong, and redundant anyway,
+// because this panel is translucent enough that the page watermark already
+// shows through it.
+//
+// `content: none` rather than `display:none`: it stops the pseudo-element being
+// generated at all. This wins on specificity because component styles carry an
+// Angular attribute selector and the global rule does not. Renaming one of the
+// two classes would be the real fix and is a wider change than this deserves.
+.nc-hero::after { content: none; }
+
 .nc-hero {
   position: relative; overflow: hidden;
   background: linear-gradient(135deg, rgba(47,107,255,.08), rgba(56,239,125,.05));
