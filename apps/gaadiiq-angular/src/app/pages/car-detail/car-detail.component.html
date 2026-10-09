@@ -563,31 +563,23 @@
             </div>
           </div>
         </div>
-        <!-- HIGHLIGHTS (new cars only) -->
-        <div class="highlights-card glass-card" *ngIf="isNewCar && newCarMeta">
-          <div class="section-title">Top Things to Know About {{ car.make }} {{ car.model }}</div>
-          <div class="highlights-grid">
-            <div class="highlight-item" *ngFor="let h of newCarMeta!.highlights">
-              <div class="highlight-icon"><app-icon [name]="h.icon" [size]="22"></app-icon></div>
-              <div class="highlight-title">{{ h.title }}</div>
-              <div class="highlight-caption">{{ h.caption }}</div>
-            </div>
-          </div>
-        </div>
+        <!-- "Top Things to Know" and "Latest Updates" were here.
+             ==========================================================
+             Both rendered from NEW_CAR_META, a hardcoded map of six models.
+             Reported: the Creta's panel claimed a "Hybrid Option — 48V mild
+             hybrid powertrain", which that car does not have, and the reader
+             asked why the section existed for the Creta at all.
 
-        <!-- LATEST UPDATES (new cars only) -->
-        <div class="updates-card glass-card" *ngIf="isNewCar && newCarMeta">
-          <div class="section-title"><app-icon name="newspaper" [size]="16"></app-icon> {{ car.make }} {{ car.model }} Latest Updates</div>
-          <ul class="updates-list">
-            <li *ngFor="let u of newCarMeta!.updates" class="update-item">
-              <span class="update-dot"></span>
-              <div>
-                <div class="update-text">{{ u.text }}</div>
-                <div class="update-date">{{ u.date }}</div>
-              </div>
-            </li>
-          </ul>
-        </div>
+             The second question is the one that settled it. Six of 136
+             catalogue models had these panels, so the other 130 detail pages
+             were already shipping without them and nobody had missed them.
+             What the six added was twenty-four specs and eighteen dated news
+             items that no source backs — and once one is demonstrably false,
+             none of the rest can be shown true.
+
+             See the note on NEW_CAR_META in the component for the full
+             reasoning. If this section should come back, it needs a source:
+             the brochure specs already in the database would be one. -->
 
         <!-- COMPARE WITH SIMILAR CARS (new cars only) -->
         <div class="similar-cars-card glass-card" *ngIf="isNewCar && similarCars().length > 0">
