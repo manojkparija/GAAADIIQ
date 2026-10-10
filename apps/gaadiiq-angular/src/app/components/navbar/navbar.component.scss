@@ -7,7 +7,7 @@
 
   CONTRAST NOTE, load-bearing. The brief asks for a blue→teal gradient behind
   white text on the active AI tab. The house --gradient-cta cannot carry white
-  text: it passes through #06B6D4, where white measures 2.43:1 against a 4.5:1
+  text: it passes through var(--brand-cyan), where white measures 2.43:1 against a 4.5:1
   AA floor, and e2e/contrast.spec.ts walks the rendered DOM and fails under AA.
   --gradient-ai below is the same blue→teal move in darker stops — #1D4ED8 to
   #0F766E — where white measures 5.19:1 and 5.54:1. It reads as the same idea

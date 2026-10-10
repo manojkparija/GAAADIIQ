@@ -9,7 +9,7 @@
   height: 58px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, #2563EB 0%, #06B6D4 60%, #14B8A6 100%);
+  background: linear-gradient(135deg, #2563EB 0%, var(--brand-cyan) 60%, #14B8A6 100%);
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -108,7 +108,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 1rem;
-  background: linear-gradient(135deg, #2563EB 0%, #06B6D4 60%, #14B8A6 100%);
+  background: linear-gradient(135deg, #2563EB 0%, var(--brand-cyan) 60%, #14B8A6 100%);
   flex-shrink: 0;
 }
 

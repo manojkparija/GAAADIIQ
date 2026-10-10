@@ -10,7 +10,7 @@
 // Same gradient band as every other hero — see the note in
 // ai-valuation.component.scss.
 .pricing-hero {
-  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  background: linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%);
   border-bottom: 1px solid var(--divider);
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
      (176px on a phone since the nav strip). max() keeps the designed spacing
@@ -37,12 +37,12 @@
 .billing-toggle {
   display: inline-flex; gap: 0; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); border-radius: var(--r-2xl); padding: .25rem;
   button { padding: .5rem 1.5rem; border: none; border-radius: var(--r-2xl); background: transparent; color: rgba(255,255,255,.85); font-size: var(--text-base); cursor: pointer; transition: all .2s; font-weight: 600; }
-  button.active { background: #fff; color: #1e40af; }
+  button.active { background: #fff; color: var(--brand-blue-deep); }
 }
 .save-chip { background: rgba(255,255,255,.25); color: #fff; font-size: var(--text-2xs); border-radius: var(--r-xl); padding: .15rem .5rem; margin-left: .4rem; font-weight: 700; }
 // On the active (white) pill the chip sits on white, so it needs the dark ink
 // back — the same chip in two places needs two treatments.
-.billing-toggle button.active .save-chip { background: rgba(30,64,175,.12); color: #1e40af; }
+.billing-toggle button.active .save-chip { background: rgba(30,64,175,.12); color: var(--brand-blue-deep); }
 
 // Plans Grid
 .plans-section { padding-bottom: 4rem; }

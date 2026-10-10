@@ -9,7 +9,7 @@
 }
 
 .tco-hero {
-  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  background: linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%);
   border-bottom: 1px solid var(--divider);
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
      (176px on a phone since the nav strip). max() keeps the designed spacing
@@ -156,7 +156,7 @@
   // app's other primary buttons rather than a tinted outline.
   &.active {
     border-color: transparent;
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
     color: #fff;
     font-weight: 700;
     box-shadow: 0 2px 10px rgba(37, 99, 235, 0.28);
@@ -275,7 +275,7 @@
 
 // Four steps down the brand blue→teal ramp, so the cost lines stay
 // separable without pulling in hues from outside the palette.
-.bar-depreciation { background: #1E40AF; }
+.bar-depreciation { background: var(--brand-blue-deep); }
 .bar-fuel         { background: #2F6BFF; }
 .bar-insurance    { background: #14B8A6; }
 .bar-maintenance  { background: #5EEAD4; }

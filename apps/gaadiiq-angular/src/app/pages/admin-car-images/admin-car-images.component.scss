@@ -126,7 +126,7 @@
   // The brand ramp the primary buttons and tabs use, rather than the flat
   // var(--primary) this had — that blue predates the tokens and was the last thing
   // on this screen still using it.
-  background: linear-gradient(90deg, var(--primary) 0%, #06B6D4 55%, #14B8A6 100%);
+  background: linear-gradient(90deg, var(--primary) 0%, var(--brand-cyan) 55%, #14B8A6 100%);
   color: white;
   border: none;
   border-radius: var(--r-sm);

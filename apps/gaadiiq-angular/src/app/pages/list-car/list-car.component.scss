@@ -50,15 +50,15 @@
   color: var(--muted, #6b7280);
   transition: all 0.3s;
 
-  &.active { border-color: #1e40af; color: #1e40af; background: rgba(30,64,175,0.15); }
-  &.done { background: #1e40af; border-color: #1e40af; color: var(--input-color); }
+  &.active { border-color: var(--brand-blue-deep); color: var(--brand-blue-deep); background: rgba(30,64,175,0.15); }
+  &.done { background: var(--brand-blue-deep); border-color: var(--brand-blue-deep); color: var(--input-color); }
 }
 
 .step-line {
   width: 80px;
   height: 2px;
   background: var(--fill-medium);
-  &.filled { background: #1e40af; }
+  &.filled { background: var(--brand-blue-deep); }
 }
 
 .step-labels {
@@ -106,7 +106,7 @@
     transition: border-color 0.2s;
     font-family: inherit;
 
-    &:focus { border-color: #1e40af; }
+    &:focus { border-color: var(--brand-blue-deep); }
     option { background: var(--dropdown-bg); }
   }
 
@@ -339,7 +339,7 @@
   // The selected state uses the brand ramp the buttons and tabs use, so this
   // reads as the same control family as everything else on the page.
   &.active {
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
     border-color: #2563EB;
     color: #fff;
     .lt-sub { color: rgba(255,255,255,0.9); }

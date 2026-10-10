@@ -97,7 +97,7 @@
   // New/Used tabs. It was written out by hand in five places, which is how the
   // tab bar ended up a shade off the chips beside it: three near-identical
   // gradients and no one of them authoritative. One name, one definition.
-  --gradient-cta:   linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  --gradient-cta:   linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
   --gradient-gold:  linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
   --glow:           0 4px 32px rgba(47,107,255,0.18);
   --card-shadow:    0 1px 3px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06);
@@ -182,7 +182,7 @@
   --brand-cyan:      #06B6D4;  /* the midpoint of --gradient-cta */
 
   /* The hero band, currently written out by hand as
-     `linear-gradient(135deg, #1e40af 0%, var(--teal) 100%)` in page after
+     `linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%)` in page after
      page. One name, so the next hero cannot drift from the others.
 
      NO DARK-MODE OVERRIDE, deliberately. The hardcoded original has no dark

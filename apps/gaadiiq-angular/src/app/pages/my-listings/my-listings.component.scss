@@ -78,7 +78,7 @@
 .btn-edit {
   background: rgba(30,64,175,0.1);
   border: 1px solid rgba(30,64,175,0.25);
-  color: #1e40af;
+  color: var(--brand-blue-deep);
   border-radius: var(--r-md);
   padding: 0.3rem 0.7rem;
   font-size: var(--text-xs);
@@ -140,12 +140,12 @@
     background: var(--input-bg);
     color: var(--input-color);
     outline: none;
-    &:focus { border-color: #1e40af; }
+    &:focus { border-color: var(--brand-blue-deep); }
   }
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #1e40af, var(--teal));
+  background: linear-gradient(135deg, var(--brand-blue-deep), var(--teal));
   color: #fff;
   border: none;
   border-radius: var(--r-md);

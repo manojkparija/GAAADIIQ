@@ -466,7 +466,7 @@
   &:last-child { border-bottom:none; }
 }
 .review-top { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem; }
-.reviewer-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#1e40af,var(--teal)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:var(--text-xs); flex-shrink:0; }
+.reviewer-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--brand-blue-deep),var(--teal)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:var(--text-xs); flex-shrink:0; }
 .reviewer-name { font-weight:600; font-size:var(--text-base); }
 .reviewer-city { color:var(--muted); font-weight:400; }
 .review-stars { color:var(--warning-ink); font-size:var(--text-base); }
@@ -896,7 +896,7 @@
   // Same ramp as the primary buttons, so a chosen chip reads as the same
   // control family as everything else on the page.
   &.active {
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
     border-color: #2563EB;
     color: #fff;
   }

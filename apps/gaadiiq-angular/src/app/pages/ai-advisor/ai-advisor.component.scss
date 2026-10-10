@@ -1,14 +1,14 @@
 // ── Shared ────────────────────────────────────────────────────────────────────
 
 .gradient-text {
-  background: linear-gradient(135deg, #1e40af, var(--teal));
+  background: linear-gradient(135deg, var(--brand-blue-deep), var(--teal));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .btn-gradient {
-  background: linear-gradient(135deg, #1e40af, var(--teal));
+  background: linear-gradient(135deg, var(--brand-blue-deep), var(--teal));
   color: #fff;
   border: none;
   border-radius: var(--r-lg);
@@ -24,14 +24,14 @@
 .btn-outline {
   background: transparent;
   border: 2px solid rgba(30,64,175,0.5);
-  color: #1e40af;
+  color: var(--brand-blue-deep);
   border-radius: var(--r-lg);
   padding: 0.75rem 1.75rem;
   font-weight: 700;
   cursor: pointer;
   font-size: var(--text-base);
   transition: border-color 0.2s, background 0.2s;
-  &:hover { border-color: #1e40af; background: rgba(30,64,175,0.08); }
+  &:hover { border-color: var(--brand-blue-deep); background: rgba(30,64,175,0.08); }
 }
 
 .glass-card {
@@ -62,7 +62,7 @@
   // Clears the fixed navbar the same way .page-hero does (LAY-007), rather
   // than relying on a page-level top padding that also inset the sides.
   padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 1rem 3rem;
-  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  background: linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%);
 
   // The icon draws in currentColor, which inherits body text — so it came out
   // near-black on a saturated gradient. Everything else in this hero is white.
@@ -99,7 +99,7 @@
 
 .category-chip {
   background: rgba(30,64,175,0.15);
-  color: #1e40af;
+  color: var(--brand-blue-deep);
   border: 1px solid rgba(30,64,175,0.3);
   border-radius: var(--r-xl);
   padding: 0.25rem 0.75rem;
@@ -123,7 +123,7 @@
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #1e40af, var(--teal));
+  background: linear-gradient(90deg, var(--brand-blue-deep), var(--teal));
   border-radius: var(--r-sm);
   transition: width 0.4s ease;
 }
@@ -269,7 +269,7 @@
     }
 
     &.active {
-      background: linear-gradient(135deg, #1e40af, var(--teal));
+      background: linear-gradient(135deg, var(--brand-blue-deep), var(--teal));
       width: 24px;
     }
   }
@@ -323,7 +323,7 @@
 
 .analyze-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #1e40af, var(--teal));
+  background: linear-gradient(90deg, var(--brand-blue-deep), var(--teal));
   border-radius: var(--r-sm);
   transition: width 0.6s ease;
 }
@@ -345,7 +345,7 @@
     border-radius: var(--r-sm);
     background: var(--fill-medium);
     transition: background 0.4s;
-    &.active { background: linear-gradient(135deg, #1e40af, var(--teal)); }
+    &.active { background: linear-gradient(135deg, var(--brand-blue-deep), var(--teal)); }
   }
 }
 
@@ -364,7 +364,7 @@
 }
 
 .results-hero {
-  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  background: linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%);
   text-align: center;
   padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 1rem 3rem;
 
@@ -479,7 +479,7 @@
 
 .match-chip {
   background: rgba(30,64,175,0.15);
-  color: #1e40af;
+  color: var(--brand-blue-deep);
   border-radius: var(--r-xl);
   padding: 0.2rem 0.6rem;
   font-size: var(--text-2xs);
@@ -572,13 +572,13 @@
 .score-num {
   font-size: var(--text-xl);
   font-weight: 900;
-  color: #1e40af;
+  color: var(--brand-blue-deep);
 }
 
 .score-pct {
   font-size: var(--text-2xs);
   font-weight: 700;
-  color: #1e40af;
+  color: var(--brand-blue-deep);
 }
 
 .score-label {

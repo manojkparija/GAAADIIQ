@@ -20,7 +20,7 @@
   // tabs sit next to each other in the AI row and their heroes were ending on
   // different greens — near enough to look like a rendering difference rather
   // than a decision. The token also follows the theme; the literal could not.
-  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  background: linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%);
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
      (176px on a phone since the nav strip). max() keeps the designed spacing
      wherever it is the larger, and clears the bar when it is not. */
@@ -337,7 +337,7 @@
 /* Step actions */
 .step-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; flex-wrap: wrap; }
 .btn-primary {
-  padding: 12px 28px; background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%); color: #fff; border: none;
+  padding: 12px 28px; background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%); color: #fff; border: none;
   border-radius: var(--r-lg); font-size: var(--text-base); font-weight: 600; cursor: pointer;
   box-shadow: 0 2px 12px rgba(37,99,235,0.28); transition: transform .15s, box-shadow .15s, filter .15s;
   &:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(37,99,235,0.38); filter: brightness(1.08); }
@@ -585,7 +585,7 @@
 .sc-btn {
   padding: 8px 14px; border-radius: var(--r-md); font-size: var(--text-xs); font-weight: 600;
   text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
-  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
   color: #fff; border: none; cursor: pointer;
   box-shadow: 0 2px 8px rgba(37,99,235,0.22);
   transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
@@ -644,7 +644,7 @@
 @media (prefers-color-scheme: dark) {
   .sc-card { border-color: rgba(255,255,255,0.08); &:hover { border-color: #2563EB; } }
   .sc-close { background: #0f172a; }
-  .sc-btn-call, .sc-btn-map { background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%); }
+  .sc-btn-call, .sc-btn-map { background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%); }
   .step-card, .report-card, .report-header, .loading-card, .error-card, .blocked-card {
     background: #1e293b; border-color: rgba(255,255,255,0.08);
   }
@@ -661,7 +661,7 @@
   // was chosen in the app rather than in the OS.
   .sc-card { border-color: rgba(255,255,255,0.08); &:hover { border-color: #2563EB; } }
   .sc-close { background: #0f172a; }
-  .sc-btn-call, .sc-btn-map { background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%); }
+  .sc-btn-call, .sc-btn-map { background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%); }
   .step-card, .report-card, .report-header, .loading-card, .error-card {
     background: #1e293b; border-color: rgba(255,255,255,0.08);
   }
@@ -865,7 +865,7 @@
 
     &.active {
       border-color: transparent;
-      background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+      background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
       color: #fff;
     }
   }

@@ -96,7 +96,7 @@
   // is the same trade every primary button in the app already makes — the row
   // now matches them rather than being the one place that diverges. Revisit by
   // narrowing the ramp, not by re-darkening it.
-  $cs-highlight: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  $cs-highlight: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
 
   &:hover {
     background: $cs-highlight;

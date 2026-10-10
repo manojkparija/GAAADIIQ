@@ -1,7 +1,7 @@
 /* ── Variables ── */
 :host {
   --blue:    #2563EB;
-  --teal:    #06B6D4;
+  --teal:    var(--brand-cyan);
   --green:   #10B981;
   --amber:   #F59E0B;
   --rose:    #F43F5E;
