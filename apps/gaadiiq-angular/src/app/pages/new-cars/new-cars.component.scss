@@ -436,14 +436,26 @@
   letter-spacing: -0.01em;
 }
 
-// The count, not the caption, is what this card is for. --ink-on-white rather
-// than --primary: this card stays light in both themes, and --primary
-// brightens to #5B8FFF for dark backgrounds, where it measures about 3.1:1 on
-// a light surface.
+// The count, not the caption, is what this card is for.
+//
+// --info-ink, not --ink-on-white. The first version of this used
+// --ink-on-white on the reasoning that the card "stays light in both themes".
+// Sampling the rendered pixels says otherwise: the card's own surface
+// measures 0.01 relative luminance in dark mode, and --ink-on-white is
+// deliberately a non-flipping token (styles.scss) reserved for a surface
+// that really does stay white in both themes — a white pill on a coloured
+// hero. So the count rendered #295EE0 on near-black at 3.14:1, under AA.
+//
+// --info-ink flips to #60A5FA for dark (6.88:1 measured there) and is
+// #1D4ED8 in light (6.45:1 on the card's wash), so both themes clear AA.
+//
+// Worth noting why no test caught this: the card's fill is a gradient, which
+// lives in background-image, and contrast.spec.ts reads backgroundColor — so
+// the walker sees a transparent card and cannot evaluate this pair at all.
 .bt-count {
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--ink-on-white);
+  color: var(--info-ink);
 }
 .bt-desc {
   font-size: 0.8rem;
