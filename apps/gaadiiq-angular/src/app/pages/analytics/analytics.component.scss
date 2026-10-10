@@ -48,7 +48,7 @@
 .empty {
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   padding: 3rem;
   text-align: center;
   font-size: 0.88rem;
@@ -73,7 +73,7 @@
 .stat-card {
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   padding: 1.25rem;
 }
 
@@ -103,7 +103,7 @@
 .table-wrap {
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   // Keep the horizontal scroll inside the card, never on the page body.
   overflow-x: auto;
 }
@@ -186,7 +186,7 @@ td {
 .pill {
   display: inline-block;
   padding: 0.15rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 0.75rem;
   font-weight: 500;
   background: rgba(255, 255, 255, 0.08);
@@ -213,7 +213,7 @@ td {
   align-items: baseline;
   flex-wrap: wrap;
   padding: 0.55rem 0.7rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   margin-bottom: 0.4rem;
   font-size: 0.78rem;
   line-height: 1.5;
@@ -247,7 +247,7 @@ td {
 .demand-card {
   background: var(--card-bg, #fff);
   border: 1px solid var(--divider);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   padding: 1.1rem;
 
   h3 {
@@ -307,7 +307,7 @@ td {
   font-size: 0.68rem;
   font-weight: 700;
   padding: 0.1rem 0.4rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: #FDF0DC;
   color: #B45309;
 }

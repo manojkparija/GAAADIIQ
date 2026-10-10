@@ -57,7 +57,7 @@
 
   span {
     background: var(--fill-dim);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     padding: 0.25rem 0.6rem;
     font-size: 0.8rem;
     color: var(--muted);
@@ -79,7 +79,7 @@
   background: rgba(30,64,175,0.1);
   border: 1px solid rgba(30,64,175,0.25);
   color: #1e40af;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 0.3rem 0.7rem;
   font-size: 0.78rem;
   font-weight: 600;
@@ -102,7 +102,7 @@
   gap: 0.5rem;
   flex-wrap: wrap;
   padding: 0.5rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--fill-dim);
   border: 1px solid var(--border-soft);
 }
@@ -120,7 +120,7 @@
 .price-edit-row {
   background: var(--fill-soft);
   border: 1px solid rgba(30,64,175,0.25);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 1rem;
 }
 
@@ -135,7 +135,7 @@
     flex: 1;
     padding: 0.5rem 0.75rem;
     font-size: 0.95rem;
-    border-radius: 8px;
+    border-radius: var(--r-md);
     border: 1px solid var(--border-soft);
     background: var(--input-bg);
     color: var(--input-color);
@@ -148,7 +148,7 @@
   background: linear-gradient(135deg, #1e40af, var(--teal));
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 0.5rem 0.9rem;
   font-size: 0.85rem;
   font-weight: 700;
@@ -161,7 +161,7 @@
   background: transparent;
   border: 1px solid var(--border-soft);
   color: var(--muted);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 0.5rem 0.7rem;
   cursor: pointer;
   font-size: 0.85rem;
@@ -185,7 +185,7 @@
   background: rgba(239,68,68,0.1);
   border: 1px solid rgba(239,68,68,0.2);
   color: var(--danger-ink);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 0.3rem 0.7rem;
   font-size: 0.78rem;
   font-weight: 600;
@@ -195,7 +195,7 @@
 }
 
 .badge {
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   padding: 0.3rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
@@ -209,7 +209,7 @@
 .card-image {
   width: 100%;
   aspect-ratio: 16/9;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   overflow: hidden;
   margin-bottom: 1rem;
 
@@ -228,7 +228,7 @@
   margin-bottom: 1.25rem;
   padding: 0.75rem 1rem;
   border: 1px solid var(--divider);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--fill-dim);
   color: var(--danger-ink, var(--danger));
   font-size: 0.875rem;

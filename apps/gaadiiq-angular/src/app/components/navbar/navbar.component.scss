@@ -111,7 +111,7 @@
     gap: 0.3rem;
     padding: 0.45rem 0.7rem;
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     background: none;
     color: var(--text-muted);
     font: inherit;
@@ -131,7 +131,7 @@
       position: absolute;
       left: 0.7rem; right: 0.7rem; bottom: 0.15rem;
       height: 2px;
-      border-radius: 2px;
+      border-radius: var(--r-sm);
       background: var(--gradient-ai);
       transform: scaleX(0);
       transition: transform .22s cubic-bezier(.4, 0, .2, 1);
@@ -165,7 +165,7 @@
   left: 0;
   z-index: 300;
   padding: 1rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 20px 48px rgba(11, 18, 32, .14);
@@ -213,7 +213,7 @@
   width: 100%;
   padding: 0.5rem;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: none;
   color: var(--text);
   font: inherit;
@@ -248,7 +248,7 @@
   box-sizing: border-box;
   height: 1.9rem;
   padding: 0 0.55rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--border-soft);
   background: var(--fill-soft);
   color: var(--text);
@@ -279,7 +279,7 @@
   gap: 0.35rem;
   height: 2.15rem;
   padding: 0 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--border-soft);
   // Same undefined-token bug as .navbar had: this was a color-mix over --bg,
   // so the pills were rendering with no fill at all and taking their apparent
@@ -326,7 +326,7 @@
   z-index: 300;
   min-width: 9rem;
   padding: 0.3rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 14px 34px rgba(11, 18, 32, .16);
@@ -340,7 +340,7 @@
   text-align: left;
   padding: 0.5rem 0.65rem;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: none;
   color: var(--text);
   font: inherit;
@@ -398,7 +398,7 @@
   gap: 0.4rem;
   flex-shrink: 0;
   padding: 0.38rem 0.8rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid transparent;
   color: var(--text-muted);
   font-size: 0.88rem;
@@ -628,7 +628,7 @@
     display: block;
     height: 2px;
     background: var(--text);
-    border-radius: 2px;
+    border-radius: var(--r-sm);
     transition: all 0.3s;
   }
   &.open {
@@ -739,7 +739,7 @@
   gap: 0.4rem;
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 7px;
+  border-radius: var(--r-md);
   padding: 0.4rem 0.85rem;
   cursor: pointer;
   color: var(--text);
@@ -767,7 +767,7 @@
   gap: 0.5rem;
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 7px;
+  border-radius: var(--r-md);
   padding: 0.6rem 1rem;
   // Full width so it shares the column edge with everything else, rather
   // than floating centred at its own content width.
@@ -785,7 +785,7 @@
 .theme-toggle {
   width: 36px;
   height: 36px;
-  border-radius: 7px;
+  border-radius: var(--r-md);
   border: 1px solid var(--border-soft);
   background: var(--fill-soft);
   cursor: pointer;
@@ -824,7 +824,7 @@
   gap: 0.45rem;
   background: rgba(47,107,255,0.08);
   border: 1px solid rgba(47,107,255,0.25);
-  border-radius: 7px;
+  border-radius: var(--r-md);
   padding: 0.38rem 0.75rem 0.38rem 0.38rem;
   cursor: pointer;
   color: var(--input-color);
@@ -841,7 +841,7 @@
 
 .user-avatar {
   width: 26px; height: 26px;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   background: var(--gradient);
   display: flex;
   align-items: center;
@@ -861,7 +861,7 @@
   min-width: 200px;
   background: var(--dropdown-bg);
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 0.5rem;
   z-index: 100;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08);
@@ -909,7 +909,7 @@
   width: 100%;
   text-align: left;
   padding: 0.55rem 0.75rem;
-  border-radius: 7px;
+  border-radius: var(--r-md);
   font-size: 0.875rem;
   color: var(--dropdown-text);
   text-decoration: none;
@@ -927,7 +927,7 @@
     margin-top: 0.35rem;
     border-top: 1px solid var(--divider);
     padding-top: 0.6rem;
-    border-radius: 0 0 7px 7px;
+    border-radius: 0 0 var(--r-md) var(--r-md);
     color: var(--danger);
     &:hover { background: rgba(239,68,68,0.08); color: var(--danger); }
   }
@@ -975,7 +975,7 @@
   // as a narrow ladder.
   min-width: 24rem;
   padding: 0.6rem;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 12px 36px rgba(11, 18, 32, 0.16);
@@ -990,7 +990,7 @@
 .nav-menu-item {
   display: block;
   padding: 0.55rem 0.7rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text);
@@ -1063,7 +1063,7 @@
   font-size: 0.82rem;
   font-weight: 600;
   padding: 0 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid transparent;
   background: var(--gradient-cta);
   color: #fff;
@@ -1084,7 +1084,7 @@
   gap: 0.3rem;
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--border-soft);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: transparent;
   color: var(--text);
   font: inherit;
@@ -1105,7 +1105,7 @@
   z-index: 300;
   min-width: 9rem;
   padding: 0.3rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 12px 30px rgba(11, 18, 32, 0.16);
@@ -1118,7 +1118,7 @@
   text-align: left;
   padding: 0.5rem 0.65rem;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: none;
   color: var(--text);
   font: inherit;
@@ -1141,7 +1141,7 @@
 .mobile-lang-option {
   flex: 1;
   padding: 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: transparent;
   color: #fff;

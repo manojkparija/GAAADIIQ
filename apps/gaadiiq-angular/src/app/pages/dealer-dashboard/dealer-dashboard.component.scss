@@ -12,7 +12,7 @@
   display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem; flex-wrap: wrap;
 
   .hero-badge {
-    display: inline-block; padding: 0.3rem 1rem; border-radius: 50px;
+    display: inline-block; padding: 0.3rem 1rem; border-radius: var(--r-pill);
     font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
     background: rgba(47,107,255,0.15); color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.3); margin-bottom: 1rem;
   }
@@ -36,7 +36,7 @@
   display: flex; gap: 0.5rem; padding: 0 1.5rem 1.5rem; flex-wrap: wrap;
 }
 .dd-tab {
-  padding: 0.5rem 1.25rem; border-radius: 50px; font-size: 0.875rem; font-weight: 600;
+  padding: 0.5rem 1.25rem; border-radius: var(--r-pill); font-size: 0.875rem; font-weight: 600;
   background: var(--glass); border: 1px solid var(--glass-border); color: var(--muted); cursor: pointer; transition: all 0.2s;
   /* Hover and active were styled identically, so hovering an inactive tab
      made it look selected. Active is now the filled brand gradient; hover is
@@ -58,7 +58,7 @@
   padding: 1.5rem;
   .mc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
   .mc-icon { font-size: 1.5rem; }
-  .mc-change { font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 50px;
+  .mc-change { font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: var(--r-pill);
     &.up { background: rgba(67,233,123,0.15); color: var(--success-ink); }
     &.down { background: rgba(239,68,68,0.15); color: var(--danger); }
   }
@@ -82,7 +82,7 @@
   .lt-time { font-size: 0.78rem; color: var(--muted); }
   .lt-stage {
     font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
-    padding: 0.2rem 0.6rem; border-radius: 50px; display: inline-block;
+    padding: 0.2rem 0.6rem; border-radius: var(--r-pill); display: inline-block;
   }
 }
 .stage-red    { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
@@ -119,8 +119,8 @@
   .fc-bars { display: flex; flex-direction: column; gap: 1rem; }
   .fc-bar-row { display: flex; align-items: center; gap: 1rem; }
   .fc-label { font-size: 0.85rem; font-weight: 600; width: 70px; flex-shrink: 0; }
-  .fc-bar-track { flex: 1; height: 10px; background: var(--fill-medium); border-radius: 5px; overflow: hidden; }
-  .fc-bar-fill { height: 100%; border-radius: 5px; transition: width 0.6s ease; }
+  .fc-bar-track { flex: 1; height: 10px; background: var(--fill-medium); border-radius: var(--r-sm); overflow: hidden; }
+  .fc-bar-fill { height: 100%; border-radius: var(--r-sm); transition: width 0.6s ease; }
   .fc-pct { font-size: 0.82rem; font-weight: 700; width: 36px; text-align: right; flex-shrink: 0; }
 }
 
@@ -138,7 +138,7 @@
 /* AI Lead grade badges */
 .lead-grade {
   font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.55rem;
-  border-radius: 6px; display: inline-block; text-align: center; letter-spacing: 0.04em;
+  border-radius: var(--r-sm); display: inline-block; text-align: center; letter-spacing: 0.04em;
   &.grade-A { background: rgba(67,233,123,0.2); color: var(--success-ink); border: 1px solid rgba(67,233,123,0.4); }
   &.grade-B { background: rgba(96,165,250,0.15); color: var(--info-ink); border: 1px solid rgba(96,165,250,0.3); }
   &.grade-C { background: rgba(255,215,0,0.15); color: var(--warning-ink); border: 1px solid rgba(255,215,0,0.3); }
@@ -153,7 +153,7 @@
     display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;
   }
   .ai-sum-chip {
-    flex: 1; min-width: 110px; padding: 1rem; border-radius: 12px; text-align: center;
+    flex: 1; min-width: 110px; padding: 1rem; border-radius: var(--r-lg); text-align: center;
     .chip-num { font-size: 1.75rem; font-weight: 800; display: block; }
     .chip-label { font-size: 0.72rem; font-weight: 600; margin-top: 0.2rem; display: block; color: var(--muted); }
     &.hot   { background: rgba(67,233,123,0.1); border: 1px solid rgba(67,233,123,0.25); .chip-num { color: var(--success-ink); } }
@@ -163,7 +163,7 @@
   }
   .ai-top-lead {
     display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-    padding: 0.75rem 1rem; background: rgba(47,107,255,0.1); border-radius: 10px;
+    padding: 0.75rem 1rem; background: rgba(47,107,255,0.1); border-radius: var(--r-md);
     border: 1px solid rgba(47,107,255,0.2);
     .atl-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
     .atl-name  { font-weight: 700; color: var(--text); }
@@ -193,9 +193,9 @@
   .alc-intent-row {
     display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;
     .intent-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); width: 100px; flex-shrink: 0; }
-    .intent-bar-track { flex: 1; height: 8px; background: var(--fill-medium); border-radius: 4px; overflow: hidden; }
+    .intent-bar-track { flex: 1; height: 8px; background: var(--fill-medium); border-radius: var(--r-sm); overflow: hidden; }
     .intent-bar-fill {
-      height: 100%; border-radius: 4px; transition: width 0.8s ease;
+      height: 100%; border-radius: var(--r-sm); transition: width 0.8s ease;
       &.high   { background: linear-gradient(90deg, #43E97B, #38F9D7); }
       &.medium { background: linear-gradient(90deg, #FFD700, #FF9A00); }
       &.low    { background: linear-gradient(90deg, var(--danger), #FF4B6E); }
@@ -205,7 +205,7 @@
   .alc-ai-row {
     display: flex; gap: 0.75rem; flex-wrap: wrap;
     .alc-ai-chip {
-      font-size: 0.78rem; padding: 0.35rem 0.75rem; border-radius: 50px; display: flex; align-items: center; gap: 0.35rem;
+      font-size: 0.78rem; padding: 0.35rem 0.75rem; border-radius: var(--r-pill); display: flex; align-items: center; gap: 0.35rem;
       strong { font-weight: 700; }
       &.contact { background: rgba(96,165,250,0.12); color: var(--info-ink); border: 1px solid rgba(96,165,250,0.25); }
       &.nba     { background: rgba(47,107,255,0.12); color: var(--teal-ink); border: 1px solid rgba(47,107,255,0.25); }
@@ -225,7 +225,7 @@
 /* ── TEST DRIVES TAB ── */
 .td-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  background: #ef4444; color: #fff; border-radius: 999px;
+  background: #ef4444; color: #fff; border-radius: var(--r-pill);
   font-size: 0.7rem; font-weight: 700; min-width: 18px; height: 18px;
   padding: 0 4px; margin-left: 6px;
 }
@@ -259,7 +259,7 @@
 .td-time { color: var(--muted); font-size: 0.78rem; }
 
 .td-status {
-  display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
+  display: inline-block; padding: 0.2rem 0.6rem; border-radius: var(--r-pill);
   font-size: 0.75rem; font-weight: 600;
   &.pending   { background: #fef9c3; color: #854d0e; }
   &.confirmed { background: #dcfce7; color: #166534; }
@@ -296,7 +296,7 @@
 .ollama-badge {
   display: inline-block; font-size: 0.7rem; font-weight: 700;
   background: linear-gradient(90deg, #7C3AED, #2F6BFF);
-  color: #fff; padding: 0.2rem 0.65rem; border-radius: 50px;
+  color: #fff; padding: 0.2rem 0.65rem; border-radius: var(--r-pill);
   letter-spacing: 0.05em; margin-left: 0.75rem; vertical-align: middle;
 }
 
@@ -317,7 +317,7 @@
 }
 
 .gf-btn {
-  padding: 0.3rem 0.9rem; border-radius: 999px; border: 1px solid var(--border, rgba(0,0,0,0.12));
+  padding: 0.3rem 0.9rem; border-radius: var(--r-pill); border: 1px solid var(--border, rgba(0,0,0,0.12));
   font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent;
   color: var(--muted); transition: all 0.2s;
   &.active, &:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -349,7 +349,7 @@
 }
 
 .sig-chip {
-  font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 999px;
+  font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: var(--r-pill);
   background: rgba(47,107,255,0.1); color: var(--primary); font-weight: 500;
 }
 
@@ -358,7 +358,7 @@
 }
 
 .btn-sm {
-  padding: 0.3rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+  padding: 0.3rem 0.8rem; border-radius: var(--r-md); font-size: 0.8rem; font-weight: 600;
   text-decoration: none; border: none; cursor: pointer; transition: opacity 0.2s;
   &:disabled { opacity: 0.5; cursor: not-allowed; }
   &.btn-primary { background: linear-gradient(90deg, #2563EB, #14B8A6); color: #fff; }
@@ -390,13 +390,13 @@
   display: grid; grid-template-columns: 100px 1fr 36px; gap: 0.75rem; align-items: center;
   font-size: 0.82rem;
   .mini-bar {
-    height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden;
-    div { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+    height: 6px; border-radius: var(--r-pill); background: rgba(255,255,255,0.08); overflow: hidden;
+    div { height: 100%; border-radius: var(--r-pill); transition: width 0.6s ease; }
   }
 }
 
 .id-reasoning {
-  padding: 1rem; border-radius: 8px; background: rgba(47,107,255,0.06);
+  padding: 1rem; border-radius: var(--r-md); background: rgba(47,107,255,0.06);
   border: 1px solid rgba(47,107,255,0.15);
   .id-reason-label { font-size: 0.72rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
   p { margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
@@ -433,7 +433,7 @@
 .image-card {
   background: var(--glass);
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   overflow: hidden;
   transition: all 0.2s ease;
 
@@ -484,7 +484,7 @@
   padding: 0.2rem 0.6rem;
   background: rgba(37, 99, 235, 0.2);
   color: var(--primary);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -539,7 +539,7 @@
 .td-exec-input {
   width: 100%;
   padding: 0.3rem 0.45rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--border-soft, rgba(0,0,0,0.12));
   background: var(--bg, #fff);
   /* Explicit, because a bare <input> does not inherit colour from its parent
@@ -600,7 +600,7 @@
   width: 100%;
   padding: 0.35rem 0.5rem;
   border: 1px solid var(--divider);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--fill-dim);
   color: var(--text);
   font-family: inherit;

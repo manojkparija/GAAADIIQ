@@ -42,7 +42,7 @@
   .main-img {
     position: relative;
     height: 380px;
-    border-radius: 16px;
+    border-radius: var(--r-xl);
     overflow: hidden;
     margin-bottom: 1rem;
     cursor: zoom-in;
@@ -75,10 +75,10 @@
     background: var(--fill-dim);
     p { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
     .spin-loading-bar {
-      width: min(240px, 60%); height: 4px; border-radius: 999px;
+      width: min(240px, 60%); height: 4px; border-radius: var(--r-pill);
       background: var(--divider); overflow: hidden;
       span {
-        display: block; height: 100%; border-radius: 999px;
+        display: block; height: 100%; border-radius: var(--r-pill);
         background: linear-gradient(90deg, var(--primary), var(--teal));
         transition: width 0.2s ease;
       }
@@ -88,7 +88,7 @@
   .spin-hint {
     position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
     display: flex; align-items: center; gap: 0.4rem;
-    padding: 0.35rem 0.75rem; border-radius: 999px;
+    padding: 0.35rem 0.75rem; border-radius: var(--r-pill);
     background: rgba(0,0,0,0.55); color: #fff;
     font-size: 0.78rem; font-weight: 600; white-space: nowrap;
     pointer-events: none;
@@ -97,7 +97,7 @@
   .spin-toggle {
     position: absolute; bottom: 1rem; left: 1rem;
     display: flex; align-items: center; gap: 0.4rem;
-    padding: 0.5rem 0.85rem; border-radius: 999px;
+    padding: 0.5rem 0.85rem; border-radius: var(--r-pill);
     border: none; cursor: pointer; white-space: nowrap;
     background: linear-gradient(135deg, var(--primary), var(--teal));
     color: #fff; font-size: 0.82rem; font-weight: 700;
@@ -139,7 +139,7 @@
   .thumbnails { display: flex; gap: 0.75rem; }
   .thumb {
     width: 80px; height: 60px;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     overflow: hidden;
     cursor: pointer;
     border: 2px solid transparent;
@@ -171,7 +171,7 @@
     display: flex; align-items: center; gap: 0.5rem;
     button {
       min-width: 36px; height: 36px; padding: 0 0.6rem;
-      border-radius: 8px; border: 1px solid rgba(255,255,255,0.25);
+      border-radius: var(--r-md); border: 1px solid rgba(255,255,255,0.25);
       background: rgba(255,255,255,0.1); color: #fff;
       font-size: 1rem; cursor: pointer;
       &:hover:not(:disabled) { background: rgba(255,255,255,0.22); }
@@ -211,7 +211,7 @@
     background: linear-gradient(transparent, rgba(0,0,0,0.55));
     img {
       width: 72px; height: 54px; object-fit: cover; flex: 0 0 auto;
-      border-radius: 8px; cursor: pointer; opacity: 0.55;
+      border-radius: var(--r-md); cursor: pointer; opacity: 0.55;
       border: 2px solid transparent; transition: all 0.2s;
       &.active, &:hover { opacity: 1; border-color: var(--primary); }
     }
@@ -251,7 +251,7 @@
   gap: 1rem;
   .pill {
     display: flex; gap: 0.75rem; align-items: center;
-    background: var(--glass); border-radius: 12px; padding: 1rem;
+    background: var(--glass); border-radius: var(--r-lg); padding: 1rem;
     span:first-child { color: var(--primary); display: inline-flex; }
     .pill-label { font-size: 0.72rem; color: var(--muted); }
     // Wraps because this can now be a list — "Petrol · CNG · Strong Hybrid"
@@ -298,8 +298,8 @@
   padding: 1.5rem;
   .val-bar { margin: 0.75rem 0; }
   .val-range { display: flex; justify-content: space-between; margin-bottom: 0.4rem; }
-  .bar-track { height: 8px; background: var(--fill-medium); border-radius: 4px; position: relative; margin: 0.25rem 0; }
-  .bar-fill { height: 100%; width: 70%; background: var(--gradient); border-radius: 4px; }
+  .bar-track { height: 8px; background: var(--fill-medium); border-radius: var(--r-sm); position: relative; margin: 0.25rem 0; }
+  .bar-fill { height: 100%; width: 70%; background: var(--gradient); border-radius: var(--r-sm); }
   .bar-marker {
     position: absolute; top: 50%; left: 65%;
     width: 16px; height: 16px; border-radius: 50%;
@@ -314,7 +314,7 @@
   h3 { font-size: 1rem; margin-bottom: 1.25rem; }
   .emi-row { margin-bottom: 1rem; label { font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 0.4rem; } }
   .emi-val { font-weight: 700; font-size: 0.95rem; margin-top: 0.25rem; }
-  .emi-result { text-align: center; padding: 1rem; background: var(--glass); border-radius: 12px; margin: 1rem 0; }
+  .emi-result { text-align: center; padding: 1rem; background: var(--glass); border-radius: var(--r-lg); margin: 1rem 0; }
   input[type=range] { width: 100%; }
 }
 
@@ -330,11 +330,11 @@
 .oc-item { display:flex; justify-content:space-between; font-size:0.9rem; padding:0.5rem 0; border-bottom:1px solid var(--divider); }
 .oc-total { display:flex; justify-content:space-between; font-weight:800; font-size:1.05rem; padding:0.75rem 0; border-top:2px solid rgba(47,107,255,0.3); margin-top:0.5rem; }
 .oc-perkm { text-align:center; font-size:0.8rem; color:var(--muted); margin-top:0.5rem; }
-.resale-card { background:color-mix(in srgb, var(--teal) 6%, transparent); border:1px solid color-mix(in srgb, var(--teal) 20%, transparent); border-radius:12px; padding:1rem; text-align:center; margin-top:1.5rem; }
+.resale-card { background:color-mix(in srgb, var(--teal) 6%, transparent); border:1px solid color-mix(in srgb, var(--teal) 20%, transparent); border-radius:var(--r-lg); padding:1rem; text-align:center; margin-top:1.5rem; }
 
 /* Year-by-year resale forecast */
 .resale-forecast {
-  margin-top: 1.5rem; padding: 1.25rem; border-radius: 14px;
+  margin-top: 1.5rem; padding: 1.25rem; border-radius: var(--r-lg);
 
   .rf-head { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1.1rem; flex-wrap:wrap; }
   .rf-title { font-weight:800; font-size:1.05rem; }
@@ -344,7 +344,7 @@
     display:flex; gap:0.3rem; flex-shrink:0;
     button {
       background:var(--fill-soft); border:1px solid var(--border-soft); color:var(--muted);
-      border-radius:8px; padding:0.3rem 0.65rem; font-size:0.78rem; font-weight:700;
+      border-radius:var(--r-md); padding:0.3rem 0.65rem; font-size:0.78rem; font-weight:700;
       cursor:pointer; transition:all 0.18s; font-family:inherit;
       &:hover { color:var(--text); }
       &.active { background:color-mix(in srgb, var(--primary) 14%, transparent); border-color:color-mix(in srgb, var(--primary) 45%, transparent); color:var(--primary); }
@@ -360,8 +360,8 @@
   }
   .rf-year { grid-area:year; font-size:0.82rem; color:var(--muted); font-weight:600; }
   .rf-bar {
-    grid-area:bar; height:9px; border-radius:6px; background:var(--fill-dim); overflow:hidden;
-    span { display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,var(--primary),var(--teal)); transition:width 0.35s ease; }
+    grid-area:bar; height:9px; border-radius:var(--r-sm); background:var(--fill-dim); overflow:hidden;
+    span { display:block; height:100%; border-radius:var(--r-sm); background:linear-gradient(90deg,var(--primary),var(--teal)); transition:width 0.35s ease; }
   }
   .rf-val {
     grid-area:val; text-align:right; white-space:nowrap;
@@ -378,7 +378,7 @@
   }
 
   .rf-summary {
-    margin-top:0.9rem; padding:0.7rem 0.85rem; border-radius:10px; font-size:0.82rem;
+    margin-top:0.9rem; padding:0.7rem 0.85rem; border-radius:var(--r-md); font-size:0.82rem;
     background:color-mix(in srgb, var(--teal) 8%, transparent); border:1px solid color-mix(in srgb, var(--teal) 20%, transparent); line-height:1.45;
   }
 
@@ -387,7 +387,7 @@
 
   .rf-refine {
     background:var(--fill-soft); border:1px solid var(--border-soft); color:var(--text);
-    border-radius:9px; padding:0.45rem 0.85rem; font-size:0.78rem; font-weight:700;
+    border-radius:var(--r-md); padding:0.45rem 0.85rem; font-size:0.78rem; font-weight:700;
     cursor:pointer; transition:all 0.18s; font-family:inherit; white-space:nowrap;
     &:hover:not(:disabled) { border-color:color-mix(in srgb, var(--primary) 50%, transparent); color:var(--primary); }
     &:disabled { opacity:0.55; cursor:default; }
@@ -403,7 +403,7 @@
 /* On-Road Price */
 .onroad-card { padding:1.5rem; h3 { margin-bottom:1rem; font-size:1.1rem; } }
 .state-select { display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; font-size:0.85rem; color:var(--muted);
-  select { background: var(--fill-soft); border: 1px solid var(--border-soft); border-radius:8px; padding:0.4rem 0.75rem; color: var(--input-color); font-size:0.85rem; outline:none; option { background: var(--dropdown-bg); } }
+  select { background: var(--fill-soft); border: 1px solid var(--border-soft); border-radius:var(--r-md); padding:0.4rem 0.75rem; color: var(--input-color); font-size:0.85rem; outline:none; option { background: var(--dropdown-bg); } }
 }
 .orp-row { display:flex; justify-content:space-between; font-size:0.875rem; padding:0.4rem 0; border-bottom:1px solid var(--divider); color: var(--muted); }
 /* Part of the ex-showroom price above, not another charge: indented and
@@ -415,7 +415,7 @@
 .avg-rating { text-align:center; .big-num { font-size:2.5rem; font-weight:900; } .stars-row { color:var(--warning-ink); font-size:1.2rem; } }
 .review-form { padding:1.5rem; margin-bottom:1.5rem;
   h4 { margin-bottom:1rem; }
-  input, textarea { width:100%; background: var(--fill-dim); border: 1px solid var(--border-soft); border-radius:8px; padding:0.6rem 0.9rem; color: var(--input-color); font-size:0.875rem; margin-bottom:0.75rem; outline:none; box-sizing:border-box; font-family:inherit;
+  input, textarea { width:100%; background: var(--fill-dim); border: 1px solid var(--border-soft); border-radius:var(--r-md); padding:0.6rem 0.9rem; color: var(--input-color); font-size:0.875rem; margin-bottom:0.75rem; outline:none; box-sizing:border-box; font-family:inherit;
     &:focus { border-color:var(--primary); }
   }
 }
@@ -450,18 +450,18 @@
 
     &:hover { opacity: 0.75; transform: scale(1.08); }
     &.active { color: var(--warning-ink); opacity: 1; }
-    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: var(--r-sm); }
   }
 }
-.review-success { background:rgba(67,233,123,0.1); border:1px solid rgba(67,233,123,0.3); color:var(--success-ink); border-radius:8px; padding:0.75rem 1rem; font-size:0.875rem; margin-bottom:1rem; }
-.review-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:8px; padding:0.6rem 0.9rem; font-size:0.82rem; margin-bottom:0.75rem; }
+.review-success { background:rgba(67,233,123,0.1); border:1px solid rgba(67,233,123,0.3); color:var(--success-ink); border-radius:var(--r-md); padding:0.75rem 1rem; font-size:0.875rem; margin-bottom:1rem; }
+.review-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:var(--r-md); padding:0.6rem 0.9rem; font-size:0.82rem; margin-bottom:0.75rem; }
 .review-loading { color:var(--muted); font-size:0.875rem; padding:1rem 0; }
 .review-empty { color:var(--muted); font-size:0.9rem; padding:1.5rem 0; text-align:center; }
 .video-upload-wrap { margin-bottom:0.75rem; }
-.video-upload-label { display:inline-block; padding:0.5rem 1rem; border-radius:8px; border:1.5px dashed var(--glass-border); font-size:0.82rem; color:var(--muted); cursor:pointer; transition:border-color 0.2s; &:hover{border-color:var(--primary);color:var(--primary);} }
-.video-preview { width:100%; max-height:200px; border-radius:10px; margin-top:0.75rem; object-fit:cover; }
+.video-upload-label { display:inline-block; padding:0.5rem 1rem; border-radius:var(--r-md); border:1.5px dashed var(--glass-border); font-size:0.82rem; color:var(--muted); cursor:pointer; transition:border-color 0.2s; &:hover{border-color:var(--primary);color:var(--primary);} }
+.video-preview { width:100%; max-height:200px; border-radius:var(--r-md); margin-top:0.75rem; object-fit:cover; }
 .review-video-wrap { margin:0.75rem 0; }
-.review-video { width:100%; max-height:240px; border-radius:10px; object-fit:cover; background:#000; }
+.review-video { width:100%; max-height:240px; border-radius:var(--r-md); object-fit:cover; background:#000; }
 .review-card { border-bottom:1px solid var(--divider); padding:1.25rem 0;
   &:last-child { border-bottom:none; }
 }
@@ -484,7 +484,7 @@
 .variants-filter-chips {
   display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;
   .chip {
-    padding: 0.35rem 1rem; border-radius: 8px; border: 1px solid var(--glass-border);
+    padding: 0.35rem 1rem; border-radius: var(--r-md); border: 1px solid var(--glass-border);
     font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--muted);
     background: var(--fill-soft); transition: all 0.15s;
     &.active, &:hover { background: rgba(47,107,255,0.15); border-color: var(--primary); color: var(--primary); }
@@ -521,7 +521,7 @@
 }
 .highlight-item {
   background: linear-gradient(135deg, rgba(47,107,255,0.07), rgba(56,239,125,0.04));
-  border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem;
+  border: 1px solid var(--glass-border); border-radius: var(--r-lg); padding: 1rem;
 }
 .highlight-icon { font-size: 1.6rem; margin-bottom: 0.4rem; }
 .highlight-title { font-weight: 800; font-size: 0.9rem; margin-bottom: 0.3rem; }
@@ -588,7 +588,7 @@
   img {
     width: 100px; height: 65px;
     object-fit: contain;
-    border-radius: 8px;
+    border-radius: var(--r-md);
     background: var(--fill-soft);
   }
 }
@@ -621,13 +621,13 @@
   .dual-tone-badge {
     position: absolute; bottom: -2px; right: -2px;
     font-size: 0.55rem; font-weight: 700; background: #1a1a1a; color: #fff;
-    border-radius: 8px; padding: 1px 4px;
+    border-radius: var(--r-md); padding: 1px 4px;
   }
 }
 
 .selected-colour-info {
   .sci-preview {
-    border-radius: 16px; height: 100px;
+    border-radius: var(--r-xl); height: 100px;
     display: flex; align-items: flex-end; padding: 1rem;
     transition: background 0.4s;
   }
@@ -642,11 +642,11 @@
 }
 
 .emi-breakdown {
-  background: var(--glass); border-radius: 12px; padding: 1rem; margin-top: 0.5rem;
+  background: var(--glass); border-radius: var(--r-lg); padding: 1rem; margin-top: 0.5rem;
 }
 
 .emi-bar {
-  display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 0.75rem;
+  display: flex; height: 8px; border-radius: var(--r-sm); overflow: hidden; margin-bottom: 0.75rem;
   .emi-bar-principal { background: var(--primary); transition: width 0.3s; }
   .emi-bar-interest { background: var(--teal); transition: width 0.3s; }
 }
@@ -670,7 +670,7 @@
 
 .seller-modal {
   position: relative; width: 100%; max-width: 440px; margin: 1rem;
-  padding: 2rem; border-radius: 20px;
+  padding: 2rem; border-radius: var(--r-xl);
 }
 
 .seller-close {
@@ -708,19 +708,19 @@
 
 .seller-call {
   display: block; text-align: center; text-decoration: none;
-  padding: 0.9rem; border-radius: 12px; font-weight: 600; font-size: 1rem;
+  padding: 0.9rem; border-radius: var(--r-lg); font-weight: 600; font-size: 1rem;
 }
 
 .btn-whatsapp {
   display: block; text-align: center; text-decoration: none;
-  padding: 0.9rem; border-radius: 12px; font-weight: 600; font-size: 1rem;
+  padding: 0.9rem; border-radius: var(--r-lg); font-weight: 600; font-size: 1rem;
   background: #25d366; color: #fff;
 }
 
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 
 .enq-input {
-  width: 100%; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.9rem;
+  width: 100%; padding: 0.75rem 1rem; border-radius: var(--r-md); font-size: 0.9rem;
   border: 1px solid var(--border, rgba(0,0,0,0.12)); background: var(--fill-dim, #f5f5f5);
   color: var(--text); font-family: inherit; outline: none; box-sizing: border-box;
   &:focus { border-color: var(--primary); }
@@ -762,7 +762,7 @@
 .not-found-banner {
   margin: 0 0 1rem;
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid #f0c36d;
   background: #fdf6e3;
   color: #7a5b12;
@@ -785,7 +785,7 @@
   cursor: pointer;
   padding-left: 0.6rem;
   padding-right: 0.6rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   transition: background 0.15s;
 
   &:hover { background: var(--fill-soft); }
@@ -872,7 +872,7 @@
   // that always resolved to the #e5e7eb fallback — a light-theme literal
   // outlining a dark chip.
   border: 1.5px solid var(--border-strong);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--bg);
   font-size: 0.8rem;
   font-weight: 600;
@@ -941,7 +941,7 @@
   // and would otherwise be sized by its icon alone.
   width: 44px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1.5px solid var(--border-soft);
   background: var(--fill-dim);
   color: var(--text-muted);

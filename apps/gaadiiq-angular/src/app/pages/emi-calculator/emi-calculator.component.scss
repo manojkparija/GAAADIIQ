@@ -27,7 +27,7 @@
 
 .controls-card, .chart-card, .banks-card, .amort-card {
   background: var(--fill-soft); backdrop-filter: blur(20px);
-  border: 1px solid var(--border-soft); border-radius: 20px; padding: 1.75rem;
+  border: 1px solid var(--border-soft); border-radius: var(--r-xl); padding: 1.75rem;
   h2, h3 { font-family: 'Outfit', sans-serif; margin-bottom: 1.5rem; }
   h3 { font-size: 1.1rem; }
 }
@@ -45,7 +45,7 @@
 
 .loan-summary {
   background: rgba(30,64,175,0.1); border: 1px solid rgba(30,64,175,0.2);
-  border-radius: 12px; padding: 1.25rem; margin-top: 1rem;
+  border-radius: var(--r-lg); padding: 1.25rem; margin-top: 1rem;
 }
 .sum-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.9rem; color: var(--text-secondary);
   strong { color: var(--text); }
@@ -67,7 +67,7 @@
 .banks-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .bank-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.875rem 1rem; border-radius: 10px; background: var(--fill-dim);
+  padding: 0.875rem 1rem; border-radius: var(--r-md); background: var(--fill-dim);
   border: 1px solid var(--divider); position: relative;
   &.best { border-color: rgba(30,64,175,0.4); background: rgba(30,64,175,0.1); }
   &.selected { border-color: rgba(67,233,123,0.5); background: rgba(67,233,123,0.08); }
@@ -85,13 +85,13 @@
 // size used across the app. Only .selected-badge was on screen during the
 // audit; .best-badge shares the rule shape and the same defect, so it moves
 // with it rather than being left as the one 10.4px badge on the page.
-.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #1e40af, var(--teal)); color: var(--text); font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
-.selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 700; }
+.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #1e40af, var(--teal)); color: var(--text); font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: var(--r-md); font-weight: 700; }
+.selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: var(--r-md); font-weight: 700; }
 
 /* Affordability section */
 .afford-card {
   background: var(--fill-soft); backdrop-filter: blur(20px);
-  border: 1px solid var(--border-soft); border-radius: 20px; padding: 1.75rem;
+  border: 1px solid var(--border-soft); border-radius: var(--r-xl); padding: 1.75rem;
   margin-bottom: 1.5rem;
   h3 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 0.25rem; }
 }
@@ -114,7 +114,7 @@
 /* DTI */
 .dti-row {
   display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-  padding: 1rem; background: rgba(30,64,175,0.08); border-radius: 12px;
+  padding: 1rem; background: rgba(30,64,175,0.08); border-radius: var(--r-lg);
   border: 1px solid rgba(30,64,175,0.15);
   .dti-item { text-align: center; }
   .dti-val { font-size: 1.4rem; font-weight: 800; &.warn { color: var(--danger); } }
@@ -122,7 +122,7 @@
   .dti-arrow { font-size: 1.25rem; color: var(--muted); }
   .dti-ideal { flex: 1; }
   .ideal-badge {
-    font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 50px; display: inline-block;
+    font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: var(--r-pill); display: inline-block;
     &.ok { background: rgba(67,233,123,0.15); color: var(--success-ink); }
     &.over { background: rgba(239,68,68,0.15); color: var(--danger); }
   }
@@ -132,7 +132,7 @@
 .afford-metrics { display: flex; gap: 1rem; }
 .am-item {
   flex: 1; text-align: center; padding: 1rem 0.5rem; background: var(--fill-dim);
-  border: 1px solid var(--divider); border-radius: 12px;
+  border: 1px solid var(--divider); border-radius: var(--r-lg);
   .am-icon { font-size: 1.25rem; margin-bottom: 0.4rem; }
   .am-val { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem;
     // Both use the -ink tokens. `.good` already did; `.bad` used raw --danger,
@@ -164,7 +164,7 @@
 .rule-card {
   margin-top: 1rem;
   padding: 0.9rem 1.05rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
   border: 1px solid var(--divider);
 }

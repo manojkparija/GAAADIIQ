@@ -29,7 +29,7 @@
 // The badge was #00C9FF on a pale tint — a light blue that disappears into the
 // gradient behind it. On the band it becomes the same frosted pill the other
 // heroes use.
-.ai-badge { display:inline-block; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:2rem; padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
+.ai-badge { display:inline-block; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:var(--r-2xl); padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
 .val-hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 800; margin: .5rem 0; color: #fff; }
 // White-to-teal, matching the other heroes. The page default is a blue-to-teal
 // gradient fill, which on a blue-to-teal band is very nearly invisible.
@@ -51,7 +51,7 @@
 .label-tip { font-size: .75rem; color: var(--primary); font-weight: 400; }
 .form-group { display: flex; flex-direction: column; gap: .4rem;
   label { font-size: .83rem; color: var(--muted); font-weight: 500; }
-  input, select { padding: .75rem 1rem; background: var(--fill-dim); border: 1px solid var(--border-soft); border-radius: .75rem; color: var(--input-color); font-size: .95rem; outline: none;
+  input, select { padding: .75rem 1rem; background: var(--fill-dim); border: 1px solid var(--border-soft); border-radius: var(--r-lg); color: var(--input-color); font-size: .95rem; outline: none;
     &:focus { border-color: var(--primary); }
   }
   select option { background: var(--dropdown-bg); }
@@ -86,14 +86,14 @@
 @media(max-width:700px) { .result-grid { grid-template-columns: 1fr; } }
 
 .price-range-card { padding: 2rem; }
-.confidence-badge { display: inline-block; background: rgba(67,233,123,.15); border: 1px solid rgba(67,233,123,.3); color: var(--success-ink); border-radius: 2rem; padding: .25rem .85rem; font-size: .8rem; font-weight: 700; margin-bottom: 1.5rem; }
+.confidence-badge { display: inline-block; background: rgba(67,233,123,.15); border: 1px solid rgba(67,233,123,.3); color: var(--success-ink); border-radius: var(--r-2xl); padding: .25rem .85rem; font-size: .8rem; font-weight: 700; margin-bottom: 1.5rem; }
 .range-row { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 1rem; text-align: center; margin-bottom: 1.5rem; }
 .range-label { font-size: .75rem; color: var(--muted); margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .05em; }
 .range-val { font-size: 1.4rem; font-weight: 900; font-family: 'Outfit',sans-serif; }
 .range-item.mid .range-val { font-size: 1.8rem; }
 .range-sub { font-size: .72rem; color: var(--muted); margin-top: .25rem; }
-.price-bar { height: 8px; background: var(--fill-dim); border-radius: 4px; position: relative; overflow: hidden;
-  .bar-fill { position: absolute; inset: 0; background: var(--gradient); border-radius: 4px; width: 100%; }
+.price-bar { height: 8px; background: var(--fill-dim); border-radius: var(--r-sm); position: relative; overflow: hidden;
+  .bar-fill { position: absolute; inset: 0; background: var(--gradient); border-radius: var(--r-sm); width: 100%; }
 }
 
 .stats-card { padding: 1.5rem; display: flex; flex-direction: column; gap: .75rem; }
@@ -114,11 +114,11 @@
 }
 
 .result-ctas { display: flex; gap: 1rem; flex-wrap: wrap;
-  a, button { padding: .85rem 2rem; font-size: .95rem; border-radius: .75rem; font-weight: 700; text-decoration: none; cursor: pointer; }
+  a, button { padding: .85rem 2rem; font-size: .95rem; border-radius: var(--r-lg); font-weight: 700; text-decoration: none; cursor: pointer; }
 }
 
 
-.method-badge { display: inline-block; border-radius: 2rem; padding: .2rem .75rem; font-size: .78rem; font-weight: 700; margin-top: .5rem; }
+.method-badge { display: inline-block; border-radius: var(--r-2xl); padding: .2rem .75rem; font-size: .78rem; font-weight: 700; margin-top: .5rem; }
 .badge-claude { background: rgba(43,107,255,0.15); color: #2B6BFF; border: 1px solid rgba(43,107,255,0.3); }
 .badge-heuristic { background: rgba(107,114,128,0.15); color: var(--muted); border: 1px solid rgba(107,114,128,0.25); }
 

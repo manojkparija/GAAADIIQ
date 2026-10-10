@@ -100,7 +100,7 @@ section {
 .cookie-table-wrap {
   overflow-x: auto;
   margin: 0.75rem 0;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--border);
 }
 

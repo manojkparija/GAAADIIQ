@@ -13,7 +13,7 @@
 }
 .type-btn {
   display: flex; align-items: center; gap: .6rem;
-  padding: .65rem 1.5rem; border-radius: 2rem;
+  padding: .65rem 1.5rem; border-radius: var(--r-2xl);
   // Every tab carries the blue-teal gradient — asked for directly. They used
   // to sit grey and unfilled, and turned green (New) or orange (Used) when
   // selected, so the same control changed hue depending on which tab you were
@@ -41,7 +41,7 @@
   // A white-on-white pill is invisible on the light theme, which is what the
   // inactive tabs sat on. Tinted with the same blue the label now uses; the
   // active tab keeps the translucent white that reads against its gradient.
-  background: rgba(41,94,224,.12); border-radius: 1rem;
+  background: rgba(41,94,224,.12); border-radius: var(--r-xl);
   padding: .15rem .55rem; font-size: .78rem; font-weight: 800;
   .active & { background: rgba(255,255,255,.25); }
 }
@@ -70,7 +70,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 1.25rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   min-width: 280px;
   input { background: transparent; border: none; box-shadow: none; padding: 0; font-size: 0.9rem; }
 }
@@ -84,7 +84,7 @@
     border: 1px solid var(--glass-border);
     color: var(--dropdown-text, #fff);
     padding: 0.5rem 1rem;
-    border-radius: 8px;
+    border-radius: var(--r-md);
     font-size: 0.85rem;
     width: auto;
     cursor: pointer;
@@ -203,7 +203,7 @@
   grid-column: 2;
   padding: 1.75rem;
   margin-bottom: 0.75rem;
-  border-radius: 1.5rem;
+  border-radius: var(--r-2xl);
   background: linear-gradient(135deg, rgba(47,107,255,0.06), rgba(56,239,125,0.04));
 }
 
@@ -236,7 +236,7 @@
 }
 
 .sc-main-wrap {
-  border-radius: 1rem;
+  border-radius: var(--r-xl);
   overflow: hidden;
   height: 320px;
 }
@@ -256,7 +256,7 @@
 
   .sc-thumb {
     position: relative;
-    border-radius: 0.6rem;
+    border-radius: var(--r-md);
     overflow: hidden;
     cursor: pointer;
     border: 2px solid transparent;
@@ -288,13 +288,13 @@
 .dual-badge {
   background:linear-gradient(90deg,#f7971e,#ffd200);
   color:#1a1a2e; font-size:.62rem; font-weight:800;
-  padding:.1rem .5rem; border-radius:1rem; margin-left:.4rem;
+  padding:.1rem .5rem; border-radius:var(--r-xl); margin-left:.4rem;
 }
 
 .sc-colour-tabs {
   display:flex;gap:.5rem;margin-bottom:1rem;
   .sc-tab {
-    padding:.3rem .9rem;border-radius:2rem;font-size:.78rem;font-weight:700;
+    padding:.3rem .9rem;border-radius:var(--r-2xl);font-size:.78rem;font-weight:700;
     border:1.5px solid var(--glass-border);background:transparent;color:var(--muted);cursor:pointer;
     transition:all .2s;
     &.active { background:var(--gradient);border-color:transparent;color:#fff; }
@@ -311,7 +311,7 @@
 .sc-colour-card {
   cursor: pointer;
   text-align: center;
-  border-radius: .75rem;
+  border-radius: var(--r-lg);
   overflow: hidden;
   border: 2px solid transparent;
   transition: all .2s;
@@ -338,7 +338,7 @@
   position: absolute; bottom: .6rem; right: .75rem;
   background: rgba(0,0,0,.55); color: #fff;
   font-size: .72rem; font-weight: 700; padding: .2rem .6rem;
-  border-radius: 1rem; pointer-events: none;
+  border-radius: var(--r-xl); pointer-events: none;
   opacity: 0; transition: opacity .2s;
 }
 .sc-main-wrap:hover .sc-expand-hint { opacity: 1; }
@@ -371,7 +371,7 @@
 .sc-lightbox-img {
   max-width: 80vw; max-height: 72vh;
   width: auto; height: auto;
-  border-radius: 1rem;
+  border-radius: var(--r-xl);
   object-fit: contain;
   display: block;
 }
@@ -388,7 +388,7 @@
   display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center;
   max-width: 90vw;
   .sc-lb-thumb {
-    width: 70px; height: 48px; border-radius: .4rem; overflow: hidden;
+    width: 70px; height: 48px; border-radius: var(--r-md); overflow: hidden;
     border: 2px solid transparent; cursor: pointer; flex-shrink: 0;
     transition: border-color .2s;
     img { width:100%; height:100%; object-fit:cover; }
@@ -462,7 +462,7 @@
 }
 
 .nc-model-card {
-  border-radius: 1.25rem;
+  border-radius: var(--r-xl);
   overflow: hidden;
   cursor: pointer;
   transition: transform .25s, box-shadow .25s;
@@ -493,14 +493,14 @@
   position:absolute;top:.6rem;left:.6rem;
   background:linear-gradient(135deg,#f7971e,#ffd200);
   color:#1a1a2e;font-size:.65rem;font-weight:800;
-  padding:.2rem .6rem;border-radius:1rem;letter-spacing:.04em;text-transform:uppercase;
+  padding:.2rem .6rem;border-radius:var(--r-xl);letter-spacing:.04em;text-transform:uppercase;
 }
 .nc-card-body { padding:1rem 1.1rem 1.1rem; flex:1; display:flex; flex-direction:column; }
 .nc-card-make  { font-size:.72rem;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.1rem; }
 .nc-card-model { font-size:1.1rem;font-weight:800;margin-bottom:.55rem; }
 .nc-card-meta  { display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.7rem; }
 .nc-meta-chip  {
-  font-size:.7rem;padding:.2rem .6rem;border-radius:1rem;
+  font-size:.7rem;padding:.2rem .6rem;border-radius:var(--r-xl);
   background:rgba(47,107,255,.12);color:var(--primary);font-weight:600;
 }
 .nc-card-price {
@@ -516,7 +516,7 @@
   // not a text colour. --success-ink is its text-only counterpart and reverts
   // to the bright original in dark mode.
   background:rgba(56,239,125,.12);color:var(--success-ink);
-  padding:.2rem .65rem;border-radius:1rem;
+  padding:.2rem .65rem;border-radius:var(--r-xl);
 }
 .nc-rating { font-size:.78rem;color:var(--muted); }
 .nc-explore-btn { width:100%;font-size:.82rem;padding:.55rem; }
@@ -533,13 +533,13 @@
 }
 
 .nc-variant-img-wrap {
-  border-radius:1.25rem;overflow:hidden;
+  border-radius:var(--r-xl);overflow:hidden;
   margin-bottom:1rem;
 }
 .nc-variant-main-img { width:100%;height:260px;object-fit:cover;display:block; }
 
 .nc-key-specs {
-  padding:1.25rem;border-radius:1.25rem;
+  padding:1.25rem;border-radius:var(--r-xl);
   display:grid;grid-template-columns:1fr 1fr;gap:.75rem;
 }
 .nc-key-spec {
@@ -553,7 +553,7 @@
 .nc-variant-list { display:flex;flex-direction:column;gap:1rem; }
 
 .nc-variant-card {
-  padding:1.25rem 1.4rem;border-radius:1.25rem;
+  padding:1.25rem 1.4rem;border-radius:var(--r-xl);
   cursor:pointer;border:1.5px solid var(--glass-border);
   transition:all .2s;text-decoration:none;color:inherit;display:block;
   &:hover { border-color:var(--primary);transform:translateY(-2px);box-shadow:0 8px 30px rgba(47,107,255,.2); }
@@ -570,7 +570,7 @@
 
 .nc-vc-features { display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem; }
 .nc-feature-chip {
-  font-size:.7rem;padding:.2rem .65rem;border-radius:1rem;
+  font-size:.7rem;padding:.2rem .65rem;border-radius:var(--r-xl);
   // Reported as "not visible at all", and it measured 1.44:1 against its own
   // tint — against a 4.5:1 floor, at 11px. The mint is a fill; --success-ink
   // is the text counterpart and measures 7.27:1 here.
@@ -608,7 +608,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   padding: 0.35rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   cursor: pointer;
 }
 

@@ -36,7 +36,7 @@
     height: 210px;
     overflow: hidden;
     background: #0B1220 url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjIwIiB2aWV3Qm94PSIwIDAgNDAwIDIyMCI+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIyMjAiIGZpbGw9IiMwQjEyMjAiLz4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNjQsIDcyKSIgc3Ryb2tlPSIjMkY2QkZGIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNNSAxN0gzYTIgMiAwIDAgMS0yLTJWOWEyIDIgMCAwIDEgMi0yaDE4YTIgMiAwIDAgMSAyIDJ2NmEyIDIgMCAwIDEtMiAyaC0yIi8+CiAgICA8cGF0aCBkPSJNMTQgMTdIMTAiLz4KICAgIDxjaXJjbGUgY3g9IjcuNSIgY3k9IjE3LjUiIHI9IjIuNSIvPgogICAgPGNpcmNsZSBjeD0iMTYuNSIgY3k9IjE3LjUiIHI9IjIuNSIvPgogICAgPHBhdGggZD0ibTMgOSAyLTRoMTRsMiA0Ii8+CiAgPC9nPgogIDx0ZXh0IHg9IjIwMCIgeT0iMTM1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzJGNkJGRiIgZm9udC13ZWlnaHQ9IjYwMCI+Tm8gSW1hZ2UgQXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4K") center/cover no-repeat;
-    border-radius: 16px 16px 0 0;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
 
     img {
       width: 100%;
@@ -61,7 +61,7 @@
   .like-btn {
     background: rgba(0,0,0,0.38);
     border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 7px;
+    border-radius: var(--r-md);
     width: 34px; height: 34px;
     cursor: pointer;
     display: flex;
@@ -86,7 +86,7 @@
     font-size: 0.68rem;
     font-weight: 700;
     padding: 0.22rem 0.55rem;
-    border-radius: 4px;
+    border-radius: var(--r-sm);
     font-family: 'Manrope', sans-serif;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -114,7 +114,7 @@
       border: 1px solid var(--border-soft);
       font-size: 0.7rem;
       padding: 0.12rem 0.45rem;
-      border-radius: 4px;
+      border-radius: var(--r-sm);
       color: var(--muted);
       margin-top: 0.2rem;
       font-family: 'Manrope', sans-serif;
@@ -213,7 +213,7 @@
       gap: 0.25rem;
       padding: 0.4rem 0.9rem;
       font-size: 0.78rem;
-      border-radius: 6px;
+      border-radius: var(--r-sm);
       text-decoration: none;
       // "View Details" was wrapping onto two lines inside the tight column,
       // which made the pair look mismatched in height as well as width.

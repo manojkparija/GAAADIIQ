@@ -59,7 +59,7 @@
 .empty {
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 4rem 2rem;
   text-align: center;
 }
@@ -86,7 +86,7 @@
   padding: 0;
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   overflow: hidden;
 }
 

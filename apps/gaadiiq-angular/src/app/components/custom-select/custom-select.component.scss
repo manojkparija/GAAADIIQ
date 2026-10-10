@@ -29,7 +29,7 @@
   // A custom property inherits, so it does not enter that contest at all.
   padding: var(--cs-pad, 10px 14px);
   border: 1.5px solid var(--cs-border, var(--border, #e5e7eb));
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-size: 14px;
   background: var(--cs-bg, var(--bg, #fff));
   color: var(--cs-color, var(--text, #111));
@@ -73,7 +73,7 @@
   // the component and :host-context() cannot reach it. A custom property
   // defined on :root still cascades to it wherever it is parked.
   background: var(--nav-panel, #fff); border: 1.5px solid var(--teal);
-  border-radius: 10px; overflow: hidden;
+  border-radius: var(--r-md); overflow: hidden;
   box-shadow: 0 8px 28px rgba(20,184,166,0.18), 0 2px 8px rgba(0,0,0,0.08);
   max-height: 260px; overflow-y: auto;
 }

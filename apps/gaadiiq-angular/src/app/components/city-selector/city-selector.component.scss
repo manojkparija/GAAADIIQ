@@ -18,7 +18,7 @@
   max-width: 560px;
   max-height: 90vh;
   overflow-y: auto;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 2rem;
   background: var(--dropdown-bg);
   border: 1px solid var(--glass-border);
@@ -60,7 +60,7 @@
   gap: 0.75rem;
   background: var(--input-bg);
   border: 1.5px solid var(--glass-border);
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   padding: 0.7rem 1.25rem;
   margin-bottom: 1rem;
   transition: border-color 0.2s;
@@ -135,7 +135,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.9rem 0.5rem;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   border: 1.5px solid var(--glass-border);
   background: var(--fill-dim);
   cursor: pointer;

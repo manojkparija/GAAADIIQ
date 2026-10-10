@@ -15,11 +15,11 @@
 .au-error {
   background: color-mix(in srgb, #dc2626 12%, transparent);
   color: var(--danger-ink, #b91c1c);
-  border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem;
+  border-radius: var(--r-md); padding: .75rem 1rem; margin-bottom: 1rem;
 }
 .au-toast {
   background: color-mix(in srgb, var(--teal) 14%, transparent);
-  color: var(--teal-ink); border-radius: .5rem;
+  color: var(--teal-ink); border-radius: var(--r-md);
   padding: .75rem 1rem; margin-bottom: 1rem;
 }
 
@@ -28,13 +28,13 @@
 .au-row {
   display: flex; align-items: center; gap: 1rem;
   padding: .85rem 1rem; border: 1px solid var(--divider);
-  border-radius: .6rem; margin-bottom: .6rem; background: var(--fill-dim);
+  border-radius: var(--r-md); margin-bottom: .6rem; background: var(--fill-dim);
 }
 .au-row-main { flex: 1; min-width: 0; }
 .au-row-name { font-weight: 600; }
 .au-row-meta { color: var(--text-muted); font-size: .85rem; }
 .au-badge {
-  font-size: .75rem; padding: .15rem .5rem; border-radius: 1rem;
+  font-size: .75rem; padding: .15rem .5rem; border-radius: var(--r-xl);
   background: color-mix(in srgb, var(--primary) 12%, transparent);
   color: var(--info-ink);
 }
@@ -46,7 +46,7 @@
 .au-field label { font-size: .8rem; color: var(--text-muted); }
 .au-field input {
   padding: .5rem .6rem; border: 1px solid var(--divider);
-  border-radius: .4rem; background: var(--surface, #fff); color: inherit;
+  border-radius: var(--r-md); background: var(--surface, #fff); color: inherit;
 }
 .au-hint { font-size: .78rem; color: var(--text-muted); }
 .au-empty { color: var(--text-muted); }

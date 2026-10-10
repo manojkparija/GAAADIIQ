@@ -10,7 +10,7 @@
   padding: 5rem 0 2.5rem;
   text-align: center;
   .ap-badge {
-    display: inline-block; padding: 0.3rem 1rem; border-radius: 50px;
+    display: inline-block; padding: 0.3rem 1rem; border-radius: var(--r-pill);
     background: rgba(255,255,255,0.15); color: #fff; font-size: 0.75rem;
     font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
     border: 1px solid rgba(255,255,255,0.25); margin-bottom: 1rem;
@@ -24,7 +24,7 @@
 
 .toast {
   background: rgba(67,233,123,0.15); border: 1px solid rgba(67,233,123,0.4);
-  color: var(--success-ink); border-radius: 10px; padding: 0.75rem 1.25rem;
+  color: var(--success-ink); border-radius: var(--r-md); padding: 0.75rem 1.25rem;
   font-weight: 600; font-size: 0.9rem; margin-bottom: 1rem;
 }
 
@@ -34,14 +34,14 @@
 }
 
 .search-input {
-  flex: 1; min-width: 220px; padding: 0.65rem 1rem; border-radius: 10px;
+  flex: 1; min-width: 220px; padding: 0.65rem 1rem; border-radius: var(--r-md);
   border: 1px solid var(--border-soft); background: var(--input-bg);
   color: var(--input-color); font-size: 0.9rem; outline: none;
   &:focus { border-color: #1e40af; }
 }
 
 .make-select {
-  padding: 0.65rem 1rem; border-radius: 10px; border: 1px solid var(--border-soft);
+  padding: 0.65rem 1rem; border-radius: var(--r-md); border: 1px solid var(--border-soft);
   background: var(--input-bg); color: var(--input-color); font-size: 0.9rem;
   outline: none; cursor: pointer; min-width: 140px;
 }
@@ -70,7 +70,7 @@
 
 .type-chip {
   font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem;
-  border-radius: 50px; background: var(--fill-soft); border: 1px solid var(--border-soft);
+  border-radius: var(--r-pill); background: var(--fill-soft); border: 1px solid var(--border-soft);
 }
 
 /* Fuel, editable in the same row as the price.
@@ -86,7 +86,7 @@
 .fuel-select {
   width: 118px;
   padding: 0.45rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1.5px solid var(--divider);
   background: var(--input-bg);
   color: var(--input-color);
@@ -102,7 +102,7 @@
 .price-val { font-weight: 700; font-size: 1rem; color: var(--text); }
 
 .price-input {
-  width: 130px; padding: 0.45rem 0.7rem; border-radius: 8px;
+  width: 130px; padding: 0.45rem 0.7rem; border-radius: var(--r-md);
   border: 1.5px solid #1e40af; background: var(--input-bg);
   color: var(--input-color); font-size: 0.9rem; font-weight: 600; outline: none;
 }
@@ -111,7 +111,7 @@
 
 .verdict-chip {
   font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.65rem;
-  border-radius: 50px; white-space: nowrap;
+  border-radius: var(--r-pill); white-space: nowrap;
   &.v-low  { background: rgba(67,233,123,0.15);  color: var(--success-ink); border: 1px solid rgba(67,233,123,0.3); }
   &.v-fair { background: rgba(251,191,36,0.15);   color: #FBBF24; border: 1px solid rgba(251,191,36,0.3); }
   &.v-high { background: rgba(248,113,113,0.15);  color: #F87171; border: 1px solid rgba(248,113,113,0.3); }
@@ -121,7 +121,7 @@
 
 .btn-edit {
   background: rgba(30,64,175,0.1); border: 1px solid rgba(30,64,175,0.25);
-  color: #1e40af; border-radius: 8px; padding: 0.4rem 0.8rem;
+  color: #1e40af; border-radius: var(--r-md); padding: 0.4rem 0.8rem;
   font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap;
   transition: all 0.15s;
   &:hover { background: rgba(30,64,175,0.2); }
@@ -129,14 +129,14 @@
 
 .btn-save {
   background: linear-gradient(135deg, #1e40af, var(--teal)); color: #fff;
-  border: none; border-radius: 8px; padding: 0.4rem 0.8rem;
+  border: none; border-radius: var(--r-md); padding: 0.4rem 0.8rem;
   font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap;
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .btn-cancel {
   background: transparent; border: 1px solid var(--border-soft); color: var(--muted);
-  border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.8rem; cursor: pointer;
+  border-radius: var(--r-md); padding: 0.4rem 0.6rem; font-size: 0.8rem; cursor: pointer;
   &:hover { border-color: var(--border-strong); color: var(--text); }
 }
 
@@ -151,7 +151,7 @@
 /* Models with no price are hidden from buyers, so the gap is called out
    rather than left to read as a dash in a column of numbers. */
 .unpriced-note {
-  margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 10px;
+  margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: var(--r-md);
   background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3);
   color: var(--warning-ink); font-size: 0.85rem; font-weight: 600;
 }
@@ -172,7 +172,7 @@
 
 .price-check {
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   font-size: 0.85rem;
   line-height: 1.45;
 

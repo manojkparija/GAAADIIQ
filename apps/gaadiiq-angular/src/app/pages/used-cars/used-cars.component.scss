@@ -32,7 +32,7 @@
   border: 1px solid rgba(255,255,255,0.3);
   backdrop-filter: blur(8px);
   padding: 0.35rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -97,7 +97,7 @@
   padding: 0.55rem 0.75rem;
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   color: #fff;
   font-size: 0.9rem;
   font-weight: 600;
@@ -136,7 +136,7 @@
     // the text inputs beside it — which is the row misalignment the component's
     // own --cs-min-h comment records being reported from UAT.
     border-width: 1px;
-    border-radius: 8px;
+    border-radius: var(--r-md);
     font-size: 0.9rem;
     box-shadow: none;
     // Matches .search-input exactly. Both are 0.9rem text with the same
@@ -150,7 +150,7 @@
   padding: 0.55rem 0.75rem;
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   color: #fff;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -185,7 +185,7 @@
   // Stating the height matches the row instead of approximating it.
   height: 41px;
   font-weight: 700;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: #fff;
   // White button in both themes; --primary brightens for dark backgrounds and
   // would sit on this at 3.08:1. See --ink-on-white.
@@ -258,7 +258,7 @@
   position: sticky;
   top: 80px;
   padding: 1.5rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   max-height: calc(100vh - 100px);
   overflow-y: auto;
   scrollbar-width: thin;
@@ -274,7 +274,7 @@
     top: auto;
     z-index: 200;
     max-height: 90vh;
-    border-radius: 20px 20px 0 0;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
     padding: 1.25rem 1.25rem calc(1.25rem + var(--safe-bottom, 0px));
     background: var(--navy);
     border-top: 1px solid var(--border-soft);
@@ -320,7 +320,7 @@
     display: block;
     width: 40px;
     height: 4px;
-    border-radius: 2px;
+    border-radius: var(--r-sm);
     background: var(--muted);
     opacity: 0.4;
     margin: 0 auto 1rem;
@@ -417,7 +417,7 @@
     transform: translateY(-50%);
     height: 4px;
     background: var(--border, rgba(0,0,0,0.12));
-    border-radius: 2px;
+    border-radius: var(--r-sm);
     pointer-events: none;
   }
 
@@ -427,7 +427,7 @@
     transform: translateY(-50%);
     height: 4px;
     background: var(--primary, #2563EB);
-    border-radius: 2px;
+    border-radius: var(--r-sm);
     pointer-events: none;
   }
 
@@ -514,7 +514,7 @@
   min-width: 0;
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--surface);
   color: var(--text);
   font-size: 0.85rem;
@@ -553,7 +553,7 @@
 
 .chip-filter {
   padding: 0.3rem 0.7rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1px solid var(--border, rgba(0,0,0,0.12));
   background: transparent;
   color: var(--text);
@@ -587,7 +587,7 @@
   width: 38px;
   height: 20px;
   background: var(--border, #ccc);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   position: relative;
   transition: background 0.2s;
   flex-shrink: 0;
@@ -668,7 +668,7 @@
 
 .sort-select {
   padding: 0.4rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid var(--border, rgba(0,0,0,0.12));
   background: var(--navy);
   color: var(--text);
@@ -729,7 +729,7 @@
 .all-india-banner {
   display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
   background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
-  border-radius: 10px; padding: 10px 16px; margin: 0 auto; max-width: 900px;
+  border-radius: var(--r-md); padding: 10px 16px; margin: 0 auto; max-width: 900px;
   font-size: 0.85rem; color: var(--text, #1e293b);
   .banner-icon { font-size: 1.1rem; }
   .banner-link {
@@ -753,7 +753,7 @@
   padding: 0.28rem 0.7rem;
   background: rgba(37,99,235,0.1);
   border: 1px solid rgba(37,99,235,0.2);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   font-size: 0.78rem;
   color: var(--primary);
   font-weight: 600;
@@ -805,7 +805,7 @@
 .empty-state {
   text-align: center;
   padding: 3.5rem 2rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
 
   .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
   h3 { font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
@@ -816,7 +816,7 @@
     color: #fff;
     border: none;
     padding: 0.75rem 1.75rem;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
@@ -830,7 +830,7 @@
   .btn-outline {
     display: inline-block;
     padding: 0.75rem 1.75rem;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     // Transparent background means this text lands on the page, which does
     // flip — so the token that flips is the right one here. Was #2563EB,
     // measured 3.15:1 on the dark page.
@@ -855,7 +855,7 @@
 }
 
 .car-card {
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   overflow: hidden;
   transition: all 0.25s;
 
@@ -894,7 +894,7 @@
   font-size: 0.68rem;
   font-weight: 700;
   padding: 0.22rem 0.55rem;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   letter-spacing: 0.3px;
 }
 
@@ -936,7 +936,7 @@
   color: var(--muted);
   background: rgba(0,0,0,0.06);
   padding: 0.15rem 0.45rem;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 
 .car-badge {
@@ -945,7 +945,7 @@
   padding: 0.15rem 0.45rem;
   background: linear-gradient(135deg, #2563EB, var(--teal));
   color: #fff;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 
 .car-name {
@@ -998,7 +998,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.22rem 0.6rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   display: inline-block;
 }
 
@@ -1038,7 +1038,7 @@
   font-size: 0.72rem;
   color: var(--text);
   background: rgba(0,0,0,0.05);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 0.18rem 0.45rem;
   font-weight: 500;
 }
@@ -1055,7 +1055,7 @@
   font-size: 0.72rem;
   color: var(--primary);
   background: rgba(37,99,235,0.07);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 0.18rem 0.55rem;
   font-weight: 600;
 }
@@ -1109,7 +1109,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   cursor: pointer;
   transition: all 0.2s;
   flex: 0 0 auto;
@@ -1124,7 +1124,7 @@
   width: 80px;
   height: 55px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   flex-shrink: 0;
 }
 

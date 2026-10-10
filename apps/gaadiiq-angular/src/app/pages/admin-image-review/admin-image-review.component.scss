@@ -14,7 +14,7 @@
 .rv-tab {
   padding: 0.45rem 1.1rem;
   border: 1.5px solid var(--border, #e5e7eb);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--bg, #fff);
   font-weight: 600;
   font-size: 0.85rem;
@@ -41,7 +41,7 @@
 
 .rv-thumb {
   aspect-ratio: 4 / 3;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   overflow: hidden;
   background: var(--fill-dim, #f1f5f9);
 
@@ -57,7 +57,7 @@
   color: var(--danger-ink, #b91c1c);
   background: #FEE2E2;
   padding: 0.4rem 0.6rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 
 .rv-actions,
@@ -68,7 +68,7 @@
 .btn-cancel {
   flex: 1;
   padding: 0.45rem 0.8rem;
-  border-radius: 7px;
+  border-radius: var(--r-md);
   font-weight: 600;
   font-size: 0.83rem;
   font-family: inherit;
@@ -109,7 +109,7 @@
     width: 100%;
     padding: 0.5rem 0.7rem;
     border: 1.5px solid var(--border, #e5e7eb);
-    border-radius: 7px;
+    border-radius: var(--r-md);
     font-family: inherit;
     font-size: 0.85rem;
     resize: vertical;

@@ -31,7 +31,7 @@
 .vm-panel {
   background: var(--vm-bg);
   border: 1px solid var(--vm-border);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   width: min(480px, 95vw);
   max-height: 90vh;
   display: flex;
@@ -62,7 +62,7 @@
   font-size: 1.1rem;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   transition: color 0.15s, background 0.15s;
 
   &:hover { color: var(--vm-text); background: var(--vm-border); }
@@ -145,7 +145,7 @@
   padding: 10px 14px;
   background: rgba(248, 81, 73, 0.1);
   border: 1px solid rgba(248, 81, 73, 0.3);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
 }
 
 .vm-record-timer {
@@ -179,7 +179,7 @@
   width: 100%;
   margin-bottom: 14px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px dashed var(--vm-accent);
   background: rgba(88, 166, 255, 0.08);
   color: var(--vm-accent);
@@ -205,7 +205,7 @@
   padding: 14px 10px;
   background: var(--vm-surface);
   border: 1px solid var(--vm-border);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   color: var(--vm-text);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, transform 0.1s;
@@ -237,7 +237,7 @@
   font-weight: 600;
   cursor: pointer;
   padding: 2px 6px;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   text-decoration: underline;
 
   &:hover { background: rgba(88, 166, 255, 0.15); }
@@ -272,7 +272,7 @@
   &:focus-visible {
     outline: 2px solid var(--vm-accent);
     outline-offset: -4px;
-    border-radius: 12px;
+    border-radius: var(--r-lg);
   }
 }
 
@@ -331,7 +331,7 @@
   gap: 10px;
   background: rgba(88, 166, 255, 0.12);
   border: 1px solid rgba(88, 166, 255, 0.3);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   font-size: 0.78rem;
   color: var(--vm-accent);
 }
@@ -360,7 +360,7 @@
 
 .vm-chip {
   padding: 4px 10px;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   font-size: 0.78rem;
   font-weight: 500;
   background: rgba(63, 185, 80, 0.15);
@@ -374,7 +374,7 @@
   margin: 0 20px 12px;
   background: var(--vm-ai-bg);
   border: 1px solid var(--vm-border);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 14px 40px 14px 16px;
   color: var(--vm-text);
   font-size: 0.92rem;
@@ -411,7 +411,7 @@
 
 .vm-msg {
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   font-size: 0.88rem;
   line-height: 1.5;
   max-width: 85%;
@@ -450,7 +450,7 @@
   padding: 10px 12px;
   background: rgba(248, 81, 73, 0.12);
   border: 1px solid rgba(248, 81, 73, 0.3);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   font-size: 0.83rem;
   color: var(--vm-danger);
 
@@ -475,7 +475,7 @@
 
 .vm-btn {
   padding: 12px 28px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: none;
   font-size: 0.95rem;
   font-weight: 600;
@@ -537,7 +537,7 @@
 
 .vm-driving-toggle {
   padding: 6px 12px;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1px solid var(--vm-border);
   background: transparent;
   color: var(--vm-sub);
@@ -568,7 +568,7 @@
     min-height: 68px;
     font-size: 1.15rem;
     padding: 18px 28px;
-    border-radius: 16px;
+    border-radius: var(--r-xl);
   }
 
   .vm-btn--sm {

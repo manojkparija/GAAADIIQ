@@ -28,7 +28,7 @@
     align-items: center;
     gap: 0.4rem;
     padding: 0.35rem 1rem;
-    border-radius: 50px;
+    border-radius: var(--r-pill);
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -94,7 +94,7 @@
   margin: 0 auto;
   background: var(--glass);
   border: 1px solid var(--glass-border);
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   padding: 0.6rem 1.25rem;
   transition: border-color 0.2s;
 
@@ -174,7 +174,7 @@
     width: 64px; height: 64px;
     display: flex; align-items: center; justify-content: center;
     background: var(--fill-soft);
-    border-radius: 16px;
+    border-radius: var(--r-xl);
     border: 1px solid var(--glass-border);
   }
 
@@ -206,7 +206,7 @@
 .cat-count-badge {
   display: inline-block;
   padding: 0.2rem 0.65rem;
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -308,7 +308,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 1.25rem;
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   font-size: 0.875rem;
   font-weight: 500;
   white-space: nowrap;
@@ -327,7 +327,7 @@
   .tab-count {
     font-size: 0.75rem;
     background: rgba(47,107,255,0.25);
-    border-radius: 50px;
+    border-radius: var(--r-pill);
     padding: 0.1rem 0.45rem;
   }
 }
@@ -430,7 +430,7 @@
 .tag {
   display: inline-block;
   padding: 0.2rem 0.6rem;
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -451,7 +451,7 @@
   .ap-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
   h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
   p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; max-width: 500px; margin: 0 auto 0.4rem; }
-  code { background: var(--fill-medium); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.82rem; }
+  code { background: var(--fill-medium); padding: 0.1rem 0.4rem; border-radius: var(--r-sm); font-size: 0.82rem; }
   .ap-note { font-size: 0.8rem; opacity: 0.7; }
 }
 
@@ -464,7 +464,7 @@
   background: rgba(239,68,68,0.12);
   border: 1px solid rgba(239,68,68,0.3);
   color: var(--danger);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 0.75rem 1.25rem;
   font-size: 0.88rem;
   margin-bottom: 1.5rem;
@@ -525,7 +525,7 @@
   pointer-events: none;
   .sk-block { background: var(--fill-medium); animation: shimmer 1.4s infinite linear; }
   .sk-line {
-    height: 12px; border-radius: 6px;
+    height: 12px; border-radius: var(--r-sm);
     background: var(--fill-medium);
     animation: shimmer 1.4s infinite linear;
     margin-bottom: 0.5rem;
@@ -585,7 +585,7 @@
   padding: 2.5rem 1.5rem;
   text-align: center;
   border: 1px solid var(--divider);
-  border-radius: 18px;
+  border-radius: var(--r-xl);
   background: var(--card-bg);
 
   .nr-icon { color: var(--teal-ink, var(--teal)); margin-bottom: 0.75rem; }
@@ -619,7 +619,7 @@
   flex-direction: column;
   gap: 0.6rem;
   padding: 1.25rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
 
   .own-head {
     display: flex;
@@ -663,7 +663,7 @@
 
   .own-video {
     width: 100%;
-    border-radius: 12px;
+    border-radius: var(--r-lg);
     background: var(--fill-dim);
     /* preload="none" on the element, so this box is what a reader sees until
        they press play. Without a height it collapsed to nothing and the

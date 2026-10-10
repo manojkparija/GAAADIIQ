@@ -30,20 +30,20 @@
 .evc-panel {
   display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem;
   max-width: 62rem; margin: 2rem auto 0; padding: 1.25rem;
-  border: 1px solid var(--divider); border-radius: 16px; background: var(--card-bg);
+  border: 1px solid var(--divider); border-radius: var(--r-xl); background: var(--card-bg);
 
   .field { display: flex; flex-direction: column; gap: 0.3rem; flex: 1 1 14rem; min-width: 0; }
   .field > span { font-size: 0.8rem; font-weight: 700; color: var(--text); }
 
   select {
-    padding: 0.6rem 0.7rem; border: 1px solid var(--divider); border-radius: 10px;
+    padding: 0.6rem 0.7rem; border: 1px solid var(--divider); border-radius: var(--r-md);
     background: var(--fill-soft); color: var(--text); font: inherit;
     &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
   }
 
   button {
     display: inline-flex; align-items: center; gap: 0.45rem;
-    padding: 0.7rem 1.25rem; border: 0; border-radius: 999px;
+    padding: 0.7rem 1.25rem; border: 0; border-radius: var(--r-pill);
     font: inherit; font-weight: 700; cursor: pointer;
     &:disabled { opacity: 0.55; cursor: not-allowed; }
     &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -57,7 +57,7 @@
 .evc-note {
   display: flex; align-items: flex-start; gap: 0.55rem;
   max-width: 62rem; margin: 1rem auto 0; padding: 0.8rem 1rem;
-  border: 1px solid var(--divider); border-radius: 12px; background: var(--fill-dim);
+  border: 1px solid var(--divider); border-radius: var(--r-lg); background: var(--fill-dim);
   color: var(--text); font-size: 0.88rem; line-height: 1.55;
 
   app-icon { color: var(--info-ink, var(--primary)); flex-shrink: 0; margin-top: 0.1rem; }
@@ -70,7 +70,7 @@
   max-width: 62rem; margin: 1.25rem auto 0;
 
   button {
-    padding: 0.4rem 0.9rem; border: 1px solid var(--divider); border-radius: 999px;
+    padding: 0.4rem 0.9rem; border: 1px solid var(--divider); border-radius: var(--r-pill);
     // Explicit, never inherited: a bare <button> carries the UA default
     // `buttonface`, resolved from the browser's colour scheme rather than the
     // page's data-theme, so it comes out light in one place and dark in another.
@@ -88,7 +88,7 @@
 
   input {
     width: 4.5rem; padding: 0.4rem 0.5rem;
-    border: 1px solid var(--divider); border-radius: 8px;
+    border: 1px solid var(--divider); border-radius: var(--r-md);
     background: var(--fill-soft); color: var(--text); font: inherit;
     &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
   }
@@ -97,7 +97,7 @@
 .evc-list { max-width: 62rem; margin: 1.5rem auto 0; display: grid; gap: 1rem; }
 
 .evc-station {
-  border: 1px solid var(--divider); border-radius: 16px;
+  border: 1px solid var(--divider); border-radius: var(--r-xl);
   background: var(--card-bg); overflow: hidden;
 
   > header {
@@ -107,7 +107,7 @@
 
     h2 { font-size: 1.05rem; font-weight: 800; margin: 0 0 0.2rem; color: var(--text); }
     .meta { margin: 0; font-size: 0.83rem; color: var(--text-muted); }
-    a { flex-shrink: 0; padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.85rem; }
+    a { flex-shrink: 0; padding: 0.4rem 0.9rem; border-radius: var(--r-pill); font-size: 0.85rem; }
   }
 }
 
@@ -120,7 +120,7 @@
   .ch-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.6rem; }
 
   .ch-current {
-    padding: 0.1rem 0.5rem; border-radius: 6px;
+    padding: 0.1rem 0.5rem; border-radius: var(--r-sm);
     background: color-mix(in srgb, var(--teal) 15%, transparent);
     color: var(--success-ink);
     font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em;
@@ -172,7 +172,7 @@
   flex: 1 1 100%;
   padding: 0.85rem 1rem;
   border: 1px solid var(--divider);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
 
   .mn-lead { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--text-muted); }
@@ -184,7 +184,7 @@
 
   input {
     padding: 0.5rem 0.6rem;
-    border: 1px solid var(--divider); border-radius: 8px;
+    border: 1px solid var(--divider); border-radius: var(--r-md);
     background: var(--card-bg); color: var(--text); font: inherit; font-size: 0.9rem;
     &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
   }
@@ -200,7 +200,7 @@
   margin: 0.75rem 0 0;
   padding: 0.6rem 0.8rem;
   border: 1px solid var(--divider);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--fill-dim);
   color: var(--text);
   font-size: 0.85rem;
@@ -223,7 +223,7 @@
   input {
     padding: 0.55rem 0.7rem;
     border: 1px solid var(--divider);
-    border-radius: 9px;
+    border-radius: var(--r-md);
     background: var(--fill-soft);
     color: var(--text);
     font: inherit;
@@ -233,7 +233,7 @@
 
   button {
     padding: 0.55rem 1.1rem;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     font: inherit;
     font-weight: 650;
     font-size: 0.86rem;
@@ -250,7 +250,7 @@
 .evc-map {
   width: 100%;
   height: 360px;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--divider);
   // Until the API answers this is an empty box; the placeholder colour keeps it
   // from flashing white on a dark page.
@@ -263,7 +263,7 @@
 .evc-mapnote {
   display: flex; align-items: flex-start; gap: 0.5rem;
   margin: 0.6rem 0 0; padding: 0.6rem 0.8rem;
-  border: 1px solid var(--divider); border-radius: 10px;
+  border: 1px solid var(--divider); border-radius: var(--r-md);
   background: var(--fill-dim); color: var(--text);
   font-size: 0.85rem; line-height: 1.5;
   app-icon { color: var(--warning-ink); flex-shrink: 0; margin-top: 0.1rem; }

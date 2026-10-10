@@ -1,7 +1,7 @@
 .mp-card {
   background: var(--card-bg, #fff);
   border: 1px solid var(--divider);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   padding: 1.25rem;
 }
 
@@ -24,7 +24,7 @@
   font-size: 0.8rem;
   font-weight: 800;
   padding: 0.3rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   // Opaque, and each pair measured on its own background rather than tinted
   // over whatever card is behind — the same thing that put the lender marks
   // below AA on one page and above it on another.
@@ -43,7 +43,7 @@
 .mp-track {
   display: flex;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   overflow: hidden;
 }
 

@@ -46,7 +46,7 @@
   margin: 2rem auto 0;
   padding: 1.5rem;
   border: 1px solid var(--divider);
-  border-radius: 18px;
+  border-radius: var(--r-xl);
   background: var(--card-bg);
 }
 
@@ -65,7 +65,7 @@
   input {
     padding: 0.7rem 0.8rem;
     border: 1px solid var(--divider);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     background: var(--fill-soft);
     color: var(--text);
     font: inherit;
@@ -85,7 +85,7 @@
   gap: 0.5rem;
   padding: 0.7rem 1.4rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--gradient-cta);
   color: #fff;
   font: inherit;
@@ -109,7 +109,7 @@
   margin-top: 1.5rem;
   padding: 1rem;
   border: 1px solid var(--divider);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
 
   app-icon { flex-shrink: 0; margin-top: 0.15rem; }
@@ -161,7 +161,7 @@
   > div {
     padding: 0.75rem;
     border: 1px solid var(--divider);
-    border-radius: 12px;
+    border-radius: var(--r-lg);
     text-align: center;
   }
 
@@ -172,7 +172,7 @@
 .rows {
   margin-top: 1rem;
   border: 1px solid var(--divider);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   overflow: hidden;
 }
 
@@ -204,7 +204,7 @@
   margin-top: 1.25rem;
   padding: 0.55rem 1.1rem;
   border: 1px solid var(--divider);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: transparent;
   color: var(--text);
   font: inherit;
@@ -223,7 +223,7 @@
   margin: 1.25rem auto 0;
   padding: 0.85rem 1rem;
   border: 1px solid var(--divider);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
   color: var(--text);
   font-size: 0.88rem;

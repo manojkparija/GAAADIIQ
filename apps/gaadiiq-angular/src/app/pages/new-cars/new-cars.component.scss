@@ -44,7 +44,7 @@
   border: 1px solid rgba(255,255,255,0.3);
   backdrop-filter: blur(8px);
   padding: 0.35rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -92,7 +92,7 @@
 
 .hero-tab {
   padding: 0.5rem 1.25rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1px solid rgba(255,255,255,0.25);
   background: transparent;
   color: rgba(255,255,255,0.8);
@@ -138,7 +138,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.9rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1px solid rgba(255,255,255,0.3);
   background: rgba(255,255,255,0.1);
   color: #fff;
@@ -162,7 +162,7 @@
 .budget-pill,
 .bodytype-pill {
   padding: 0.45rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1px solid rgba(255,255,255,0.3);
   background: rgba(255,255,255,0.1);
   color: #fff;
@@ -259,7 +259,7 @@
   gap: 0.5rem;
   padding: 1.1rem 0.75rem;
   border: 1px solid var(--border, rgba(0,0,0,0.08));
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
@@ -315,7 +315,7 @@
   justify-content: center;
   background: var(--logo-chip, #fff);
   border: 1px solid var(--logo-chip-border, rgba(15,23,42,0.12));
-  border-radius: 10px;
+  border-radius: var(--r-md);
   // The mark needs room to breathe off the chip's edge, but this tile is 64px
   // wide and every pixel of padding costs two of logo — the same trade the
   // home page settled at 5px.
@@ -344,7 +344,7 @@
   // the same bug as the grid below, one section higher up the page. Same fix,
   // scaled down: 2px, because a 24px chip cannot spare 5.
   background: var(--logo-chip, #fff);
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   padding: 2px;
   box-sizing: border-box;
 }
@@ -368,7 +368,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 1.5rem 1rem;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--border, rgba(0,0,0,0.08));
   cursor: pointer;
   transition: all 0.2s;
@@ -429,7 +429,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--border, rgba(0,0,0,0.08));
   cursor: pointer;
   transition: all 0.2s;
@@ -469,7 +469,7 @@
   position: sticky;
   top: 80px;
   padding: 1.5rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
 
   @media (max-width: 900px) {
     display: none;
@@ -563,7 +563,7 @@
 
 .sort-select {
   padding: 0.4rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid var(--border, rgba(0,0,0,0.12));
   background: var(--navy);
   color: var(--text);
@@ -608,7 +608,7 @@
   padding: 0.3rem 0.75rem;
   background: rgba(37,99,235,0.1);
   border: 1px solid rgba(37,99,235,0.2);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   font-size: 0.8rem;
   color: var(--primary);
   font-weight: 600;
@@ -643,7 +643,7 @@
 }
 
 .model-card {
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   overflow: hidden;
   transition: all 0.25s;
 
@@ -674,7 +674,7 @@
   top: 0.6rem;
   left: 0.6rem;
   padding: 0.25rem 0.65rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -721,7 +721,7 @@
   font-weight: 700;
   color: var(--teal-ink);
   background: rgba(20,184,166,0.1);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 0.15rem 0.5rem;
 }
 
@@ -766,7 +766,7 @@
   color: var(--primary);
   background: rgba(37,99,235,0.08);
   padding: 0.15rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 
 .model-actions {
@@ -821,7 +821,7 @@
 
 .launch-card {
   flex: 0 0 240px;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   overflow: hidden;
   transition: all 0.2s;
 
@@ -849,7 +849,7 @@
   font-size: 0.65rem;
   font-weight: 800;
   padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   letter-spacing: 1px;
 }
 
@@ -861,7 +861,7 @@
   color: #fff;
   font-size: 0.72rem;
   padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   backdrop-filter: blur(4px);
   white-space: nowrap;
   max-width: calc(100% - 1rem);
@@ -905,7 +905,7 @@
   align-items: center;
   gap: 1.25rem;
   padding: 1.1rem 1.25rem;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   transition: all 0.2s;
 
   &:hover { transform: translateX(4px); }
@@ -919,7 +919,7 @@
   width: 120px;
   height: 75px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   flex-shrink: 0;
 }
 
@@ -951,7 +951,7 @@
   color: var(--teal-ink);
   background: rgba(20,184,166,0.1);
   padding: 0.2rem 0.6rem;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   display: inline-block;
   margin-bottom: 0.25rem;
 }
@@ -978,7 +978,7 @@
 .notify-btn {
   flex-shrink: 0;
   padding: 0.5rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: none;
   background: linear-gradient(90deg, #2563EB, #14B8A6);
   color: #fff;
@@ -1015,7 +1015,7 @@
 
 .expert-card {
   padding: 1.75rem 1.5rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   text-align: center;
   transition: all 0.25s;
 
@@ -1032,7 +1032,7 @@
   padding: 0.25rem 0.75rem;
   background: linear-gradient(135deg, #2563EB, var(--teal));
   color: #fff;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   font-size: 0.75rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
@@ -1077,7 +1077,7 @@
   background: #0f172a;
   color: #fff;
   padding: 0.75rem 1.25rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 0.875rem;
   font-weight: 600;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
@@ -1098,7 +1098,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 1.1rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: #0f172a;
   color: #fff;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
@@ -1178,7 +1178,7 @@
   width: 100%;
   max-width: 26rem;
   padding: 1.75rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   /* The overlay scrolls, not the page behind it, and a tall form on a short
      phone still reaches its own submit button. */
   max-height: min(90vh, 44rem);
@@ -1207,7 +1207,7 @@
 .notify-input {
   width: 100%;
   padding: 0.75rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-size: 0.9rem;
   border: 1px solid var(--divider);
   background: var(--fill-dim);

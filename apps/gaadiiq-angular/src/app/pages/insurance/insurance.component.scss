@@ -47,7 +47,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.7rem 1.4rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: #fff;
   // Not var(--primary): that token brightens to #5B8FFF in dark mode, and this
   // pill stays white in both, so the text would fall to ~3:1. --ink-on-white
@@ -69,7 +69,7 @@
   padding: 0.85rem 1rem;
   max-width: 60rem;
   border: 1px solid var(--divider);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
   color: var(--text);
   font-size: 0.9rem;
@@ -108,7 +108,7 @@
 .cover-card {
   padding: 1.25rem;
   border: 1px solid var(--divider);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   background: var(--card-bg);
 
   app-icon { color: var(--primary); }
@@ -146,7 +146,7 @@
 .term-card {
   padding: 1.25rem;
   border: 1px solid var(--divider);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   background: var(--card-bg);
 
   p {
@@ -185,7 +185,7 @@
 /* ── Add-ons ─────────────────────────────────────────────────────────────── */
 .addon-table {
   border: 1px solid var(--divider);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   overflow: hidden;
   background: var(--card-bg);
 }
@@ -228,7 +228,7 @@
 .enquiry-card {
   padding: 1.5rem;
   border: 1px solid var(--divider);
-  border-radius: 18px;
+  border-radius: var(--r-xl);
   background: var(--card-bg);
   scroll-margin-top: calc(var(--nav-offset) + 1rem);
 }
@@ -254,7 +254,7 @@
   input, select {
     padding: 0.6rem 0.7rem;
     border: 1px solid var(--divider);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     background: var(--fill-soft);
     color: var(--text);
     font: inherit;
@@ -278,7 +278,7 @@
   width: 100%;
   padding: 0.6rem 0.7rem;
   border: 1px solid var(--divider);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--fill-soft);
   color: var(--text);
   font: inherit;
@@ -306,7 +306,7 @@
   // its contrast from whatever happens to be behind it.
   background: var(--nav-panel);
   border: 1px solid var(--divider);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   box-shadow: 0 16px 36px rgba(11, 18, 32, .16);
   max-height: 15rem;
   overflow-y: auto;
@@ -314,7 +314,7 @@
 
 .listbox-option {
   padding: 0.5rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   font-size: 0.93rem;
   color: var(--text);
   cursor: pointer;
@@ -357,7 +357,7 @@
 .btn-submit {
   padding: 0.75rem 1.5rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--gradient-cta);
   color: #fff;
   font: inherit;

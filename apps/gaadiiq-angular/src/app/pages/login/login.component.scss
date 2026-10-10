@@ -35,7 +35,7 @@
   background: var(--fill-soft);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-soft);
-  border-radius: 24px;
+  border-radius: var(--r-2xl);
   position: relative;
   z-index: 1;
 }
@@ -50,7 +50,7 @@
 .auth-tabs {
   display: flex;
   background: var(--fill-dim);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 4px;
   gap: 4px;
   margin-bottom: 1.5rem;
@@ -59,7 +59,7 @@
 .auth-tab {
   flex: 1;
   padding: 0.6rem;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   border: none;
   background: transparent;
   color: var(--muted);
@@ -95,7 +95,7 @@
   justify-content: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid rgba(255,255,255,0.15);
   background: var(--fill-dim);
   color: var(--text);
@@ -138,7 +138,7 @@
     padding: 0.75rem 1rem;
     background: var(--fill-soft);
     border: 1px solid var(--border-soft);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     color: var(--text);
     font-size: 0.95rem;
     transition: border-color 0.2s;
@@ -168,7 +168,7 @@
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.4);
   color: var(--danger);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   margin-bottom: 0.75rem;
@@ -182,7 +182,7 @@
 
 .reset-modal {
   position: relative; width: 100%; max-width: 420px;
-  padding: 2rem; border-radius: 16px;
+  padding: 2rem; border-radius: var(--r-xl);
   h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
   .reset-sub { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.25rem; }
   .form-group { margin-bottom: 1rem; }
@@ -209,7 +209,7 @@
 .confirm-msg {
   margin: 0.75rem 0;
   padding: 0.85rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--fill-dim);
   border: 1px solid var(--divider);
   font-size: 0.9rem;
@@ -248,7 +248,7 @@
   button {
     flex: 1;
     padding: 0.5rem;
-    border-radius: 9px;
+    border-radius: var(--r-md);
     border: 1px solid var(--border-soft);
     background: transparent;
     color: var(--muted);

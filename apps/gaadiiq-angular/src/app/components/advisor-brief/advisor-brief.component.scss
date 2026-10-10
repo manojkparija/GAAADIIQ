@@ -44,7 +44,7 @@
   min-height: 64px;
   padding: 0.75rem 1rem;
   border: 1.5px solid var(--divider);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--bg, #fff);
   color: var(--text, #111);
   font-family: inherit;
@@ -66,7 +66,7 @@
   min-height: 64px;
   padding: 0 1.5rem;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
   color: #fff;
   font-family: inherit;
@@ -96,7 +96,7 @@
 .ex-chip {
   padding: 0.35rem 0.75rem;
   border: 1px solid var(--divider);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--fill-dim);
   color: var(--text-muted);
   font-family: inherit;
@@ -110,7 +110,7 @@
 .brief-error {
   margin-top: 0.85rem;
   padding: 0.65rem 0.9rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: rgba(220, 38, 38, 0.08);
   color: var(--danger-ink, #b91c1c);
   font-size: 0.9rem;
@@ -134,7 +134,7 @@
 .understood {
   padding: 1rem 1.25rem;
   border: 1px solid var(--divider);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
   margin-bottom: 1.25rem;
 
@@ -166,7 +166,7 @@
 
 .brief-message {
   padding: 0.85rem 1rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
   color: var(--text-muted);
   font-size: 0.92rem;
@@ -175,7 +175,7 @@
 .followup {
   padding: 1rem 1.25rem;
   border: 1px solid var(--divider);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   margin-bottom: 1.25rem;
 
   h3 { margin: 0 0 0.25rem; font-size: 0.95rem; font-weight: 700; }
@@ -208,7 +208,7 @@
     width: 150px;
     padding: 0 0.75rem;
     border: 1.5px solid var(--divider);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     background: var(--bg, #fff);
     color: var(--text, #111);
     font-family: inherit;
@@ -222,7 +222,7 @@
   min-height: 42px;
   padding: 0 1.25rem;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
   color: #fff;
   font-family: inherit;
@@ -258,7 +258,7 @@
 
 .pick {
   border: 1px solid var(--divider);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   padding: 1.25rem;
   margin-bottom: 1rem;
   background: var(--bg, #fff);
@@ -375,7 +375,7 @@
   display: inline-block;
   margin-left: 0.3rem;
   padding: 0.05rem 0.35rem;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   // 0.15 measured 4.48:1 on the rendered page — under AA, by a hair. The same
   // ink over the plain card measures 5.02, so the tint is what costs it; the
   // alpha comes down rather than the ink going darker, which would diverge
@@ -454,7 +454,7 @@
    reason this replaced the hardcoded brand ratios. */
 .basis-badge {
   padding: 0.05rem 0.4rem;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -501,7 +501,7 @@
 .compare-scroll {
   overflow-x: auto;
   border: 1px solid var(--divider);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
 }
 
 .compare-table {
@@ -544,7 +544,7 @@
 .assumptions {
   margin-top: 1.75rem;
   padding: 1rem 1.25rem;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
 
   h4 {

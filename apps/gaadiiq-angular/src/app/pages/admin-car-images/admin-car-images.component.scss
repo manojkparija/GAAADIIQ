@@ -61,7 +61,7 @@
 
 .aci-section {
   background: var(--card-bg);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 2rem;
   margin-bottom: 2rem;
   box-shadow: 0 4px 6px rgba(0,0,0,0.07);
@@ -82,7 +82,7 @@
 
 .drop-zone {
   border: 2px dashed var(--border-soft);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 2rem;
   text-align: center;
   transition: all 0.2s;
@@ -129,7 +129,7 @@
   background: linear-gradient(90deg, var(--primary) 0%, #06B6D4 55%, #14B8A6 100%);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-weight: 600;
   cursor: pointer;
   transition: filter 0.2s, box-shadow 0.2s;
@@ -147,7 +147,7 @@
   background: var(--teal);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -167,7 +167,7 @@
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border-soft);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s;
@@ -188,7 +188,7 @@
   background: rgba(41, 94, 224, 0.12);
   color: var(--info-ink);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
@@ -203,7 +203,7 @@
 .aci-selected-files {
   background: var(--fill-dim);
   border: 1px solid var(--divider);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 1.5rem;
   margin-top: 1.5rem;
 }
@@ -235,7 +235,7 @@
   font: inherit;
   font-weight: 600;
   padding: 0.6rem 1.1rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px dashed var(--primary);
   background: rgba(41, 94, 224, 0.10);
   color: var(--info-ink);
@@ -286,7 +286,7 @@
   justify-content: space-between;
   padding: 0.75rem;
   background: var(--card-bg);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--divider);
   font-size: 0.9rem;
 }
@@ -307,7 +307,7 @@
   margin-bottom: 1.5rem;
   padding: 1rem;
   background: var(--fill-dim);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 
 .upload-size-bar {
@@ -317,7 +317,7 @@
 .size-bar-track {
   height: 8px;
   background: var(--divider);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   margin-bottom: 0.5rem;
 }
@@ -359,7 +359,7 @@
   margin-bottom: 2rem;
   padding: 1.5rem;
   background: var(--fill-dim);
-  border-radius: 8px;
+  border-radius: var(--r-md);
 }
 
 .aci-subsection-title {
@@ -405,7 +405,7 @@
 .aci-input {
   padding: 0.75rem;
   border: 1px solid var(--border-soft);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-size: 0.95rem;
   font-family: inherit;
   transition: all 0.2s;
@@ -426,7 +426,7 @@
 .aci-hint-card {
   background: var(--card-bg);
   border: 1px solid var(--divider);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 1rem;
 }
 
@@ -448,7 +448,7 @@
   background: rgba(41, 94, 224, 0.16);
   color: var(--info-ink);
   padding: 0.25rem 0.75rem;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -467,7 +467,7 @@
   background: rgba(245, 158, 11, 0.12);
   color: var(--warning-ink);
   padding: 1rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   margin-top: 1rem;
   border-left: 4px solid var(--warning);
 
@@ -485,7 +485,7 @@
   background: rgba(239, 68, 68, 0.10);
   color: var(--danger-ink);
   padding: 1rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   margin-top: 1rem;
   border-left: 4px solid var(--danger-ink);
 }
@@ -500,7 +500,7 @@
 .aci-result-item {
   background: rgba(16, 185, 129, 0.10);
   border: 1px solid rgba(16, 185, 129, 0.35);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 1.5rem;
   text-align: center;
 
@@ -537,7 +537,7 @@
 .aci-errors {
   background: rgba(239, 68, 68, 0.10);
   border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 1rem;
   margin-bottom: 2rem;
 
@@ -577,7 +577,7 @@
 .aci-image-card {
   background: var(--card-bg);
   border: 1px solid var(--divider);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   overflow: hidden;
   transition: all 0.2s;
 
@@ -616,7 +616,7 @@
   background: rgba(245, 158, 11, 0.12);
   color: var(--warning-ink);
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   font-size: 0.75rem;
   font-weight: 600;
   margin-top: 0.5rem;
@@ -629,7 +629,7 @@
   background: var(--ink);
   color: white;
   padding: 1rem 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
   z-index: 1000;
   animation: slideInUp 0.3s ease-out;
@@ -676,7 +676,7 @@
     color: var(--danger-ink);
     background: rgba(239, 68, 68, 0.10);
     padding: 0.125rem 0.25rem;
-    border-radius: 2px;
+    border-radius: var(--r-sm);
   }
 }
 
@@ -719,7 +719,7 @@
 
 .aci-existing-card {
   border: 1px solid var(--divider);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   overflow: hidden;
   background: var(--card-bg);
   display: flex;
@@ -761,7 +761,7 @@
   font: inherit;
   font-size: 0.82rem;
   font-weight: 600;
-  border-radius: 7px;
+  border-radius: var(--r-md);
   border: 1px solid rgba(239, 68, 68, 0.35);
   background: rgba(239, 68, 68, 0.08);
   color: var(--danger-ink);
@@ -776,7 +776,7 @@
   margin-top: 1.5rem;
   padding: 1.25rem;
   border: 1px solid var(--divider);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
 }
 
@@ -810,7 +810,7 @@
   font-size: 0.7rem;
   font-weight: 700;
   padding: 0.1rem 0.45rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   white-space: nowrap;
 }
 
@@ -900,7 +900,7 @@
   font: inherit;
   font-size: 0.75rem;
   line-height: 1;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--divider);
   background: transparent;
   color: var(--text-muted);

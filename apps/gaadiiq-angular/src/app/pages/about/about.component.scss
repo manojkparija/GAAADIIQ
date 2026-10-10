@@ -20,7 +20,7 @@
 // --teal-ink is a dark teal picked to be legible on a LIGHT card. On this band
 // it is nearly the background. The frosted white pill is what the other heroes
 // use for the same badge.
-.ai-badge { display:inline-block; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:2rem; padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
+.ai-badge { display:inline-block; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:var(--r-2xl); padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
 .about-hero h1 { font-size:clamp(1.9rem, 3.6vw, 2.75rem); font-weight:800; margin:.5rem 0 1rem; color:#fff; }
 .about-hero .gradient-text {
   background: linear-gradient(135deg, #ffffff, #99F6E4);
@@ -70,5 +70,5 @@
 .cta-card h2 { font-size:clamp(1.5rem, 2.8vw, 2rem); font-weight:900; margin-bottom:.75rem; }
 .cta-card p { color:var(--muted); margin-bottom:2rem; }
 .cta-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;
-  a { padding:.85rem 2rem; font-size:1rem; border-radius:.75rem; text-decoration:none; font-weight:700; }
+  a { padding:.85rem 2rem; font-size:1rem; border-radius:var(--r-lg); text-decoration:none; font-weight:700; }
 }

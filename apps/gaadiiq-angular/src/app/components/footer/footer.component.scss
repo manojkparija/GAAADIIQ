@@ -48,7 +48,7 @@
 
   .social-btn {
     width: 36px; height: 36px;
-    border-radius: 7px;
+    border-radius: var(--r-md);
     background: var(--fill-soft);
     border: 1px solid var(--border-soft);
     display: flex;

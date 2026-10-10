@@ -18,7 +18,7 @@
   padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 0 3rem;
   text-align: center;
 }
-.ai-badge { display:inline-block; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:2rem; padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
+.ai-badge { display:inline-block; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:var(--r-2xl); padding:.3rem 1rem; font-size:.85rem; font-weight:600; margin-bottom:.75rem; }
 .pricing-hero h1 { font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 800; margin: .5rem 0; color:#fff; }
 .pricing-hero .gradient-text {
   background: linear-gradient(135deg, #ffffff, #99F6E4);
@@ -35,11 +35,11 @@
 // green on a pale mint chip — unreadable on blue. The active state is the one
 // thing kept: solid --primary with white text, which already reads on the band.
 .billing-toggle {
-  display: inline-flex; gap: 0; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); border-radius: 2rem; padding: .25rem;
-  button { padding: .5rem 1.5rem; border: none; border-radius: 2rem; background: transparent; color: rgba(255,255,255,.85); font-size: .9rem; cursor: pointer; transition: all .2s; font-weight: 600; }
+  display: inline-flex; gap: 0; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); border-radius: var(--r-2xl); padding: .25rem;
+  button { padding: .5rem 1.5rem; border: none; border-radius: var(--r-2xl); background: transparent; color: rgba(255,255,255,.85); font-size: .9rem; cursor: pointer; transition: all .2s; font-weight: 600; }
   button.active { background: #fff; color: #1e40af; }
 }
-.save-chip { background: rgba(255,255,255,.25); color: #fff; font-size: .7rem; border-radius: 1rem; padding: .15rem .5rem; margin-left: .4rem; font-weight: 700; }
+.save-chip { background: rgba(255,255,255,.25); color: #fff; font-size: .7rem; border-radius: var(--r-xl); padding: .15rem .5rem; margin-left: .4rem; font-weight: 700; }
 // On the active (white) pill the chip sits on white, so it needs the dark ink
 // back — the same chip in two places needs two treatments.
 .billing-toggle button.active .save-chip { background: rgba(30,64,175,.12); color: #1e40af; }
@@ -65,7 +65,7 @@
 .plan-badge {
   display: inline-flex; align-items: center;
   box-sizing: border-box; height: 1.6rem;
-  border-radius: 2rem; padding: 0 .8rem;
+  border-radius: var(--r-2xl); padding: 0 .8rem;
   font-size: .78rem; line-height: 1; font-weight: 700;
   margin-bottom: .25rem; width: fit-content;
 }
@@ -107,7 +107,7 @@
   background: rgba(67,233,123,0.15);
   color: var(--success-ink);
   border: 1px solid rgba(67,233,123,0.3);
-  border-radius: 2rem;
+  border-radius: var(--r-2xl);
   // Fixed for the same reason as .plan-badge: the free plan renders a hidden
   // placeholder here, and it has to match the real chip's height exactly.
   box-sizing: border-box;
@@ -132,7 +132,7 @@
     &:first-child { color: var(--text); }
   }
 }
-.plan-cta { display: block; text-align: center; padding: .75rem; border-radius: .75rem; font-weight: 700; font-size: .9rem; text-decoration: none; margin-top: auto; cursor: pointer; }
+.plan-cta { display: block; text-align: center; padding: .75rem; border-radius: var(--r-lg); font-weight: 700; font-size: .9rem; text-decoration: none; margin-top: auto; cursor: pointer; }
 
 // Compare Table
 .compare-section { padding-bottom: 4rem; }
@@ -169,4 +169,4 @@
 .cta-card h2 { font-size: clamp(1.5rem, 2.8vw, 2rem); font-weight: 900; margin-bottom: .75rem; }
 .cta-card p { color: var(--muted); margin-bottom: 2rem; }
 .cta-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-.cta-btns a { padding: .85rem 2rem; font-size: 1rem; border-radius: .75rem; text-decoration: none; font-weight: 700; }
+.cta-btns a { padding: .85rem 2rem; font-size: 1rem; border-radius: var(--r-lg); text-decoration: none; font-weight: 700; }

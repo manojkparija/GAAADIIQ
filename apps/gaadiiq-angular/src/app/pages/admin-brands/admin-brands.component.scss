@@ -19,7 +19,7 @@
 
 .abr-note, .abr-error {
   display: flex; align-items: flex-start; gap: 0.55rem;
-  padding: 0.7rem 0.9rem; border-radius: 10px;
+  padding: 0.7rem 0.9rem; border-radius: var(--r-md);
   border: 1px solid var(--divider); background: var(--fill-dim);
   font-size: 0.85rem; line-height: 1.55; color: var(--text);
   margin-bottom: 1.25rem;
@@ -40,7 +40,7 @@
 
 .abr-card {
   padding: 1rem; border: 1px solid var(--divider);
-  border-radius: 14px; background: var(--card-bg);
+  border-radius: var(--r-lg); background: var(--card-bg);
   display: flex; flex-direction: column; gap: 0.7rem;
 
   // Hidden brands stay legible rather than being greyed into unreadability —
@@ -95,7 +95,7 @@
 
 .abr-origin {
   display: inline-block;
-  padding: 0.15rem 0.5rem; border-radius: 999px;
+  padding: 0.15rem 0.5rem; border-radius: var(--r-pill);
   font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
   border: 1px solid var(--divider); color: var(--text-muted);
   cursor: help;
@@ -113,7 +113,7 @@
 
 .abr-btn {
   display: inline-flex; align-items: center; gap: 0.35rem;
-  padding: 0.42rem 0.75rem; border-radius: 9px;
+  padding: 0.42rem 0.75rem; border-radius: var(--r-md);
   border: 1px solid var(--divider); background: var(--fill-soft);
   color: var(--text); font: inherit; font-size: 0.82rem; font-weight: 700;
   cursor: pointer;
@@ -135,7 +135,7 @@
     display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.55rem;
     > span { font-size: 0.76rem; font-weight: 700; color: var(--text); }
     input {
-      padding: 0.5rem 0.65rem; border: 1px solid var(--divider); border-radius: 9px;
+      padding: 0.5rem 0.65rem; border: 1px solid var(--divider); border-radius: var(--r-md);
       background: var(--fill-soft); color: var(--text); font: inherit; font-size: 0.85rem;
       &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
     }

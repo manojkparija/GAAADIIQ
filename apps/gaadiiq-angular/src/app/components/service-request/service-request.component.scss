@@ -44,7 +44,7 @@
   background: color-mix(in srgb, var(--danger) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
   color: var(--danger);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 0.6rem 0.8rem;
   font-size: 0.85rem;
 }
@@ -87,7 +87,7 @@
   text-align: left;
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 0.8rem 0.9rem;
   cursor: pointer;
   font-family: inherit;
@@ -132,7 +132,7 @@
 .sr-tag {
   background: color-mix(in srgb, var(--primary) 12%, transparent);
   color: var(--primary);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 0.1rem 0.4rem;
   font-weight: 600;
 }
@@ -161,7 +161,7 @@
 .sr-chosen {
   background: color-mix(in srgb, var(--primary) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 0.7rem 0.85rem;
 }
 
@@ -176,7 +176,7 @@
   input {
     width: 100%;
     padding: 0.65rem 0.75rem;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     border: 1px solid var(--border-soft);
     // A token, not a white tint: a fixed rgba(255,255,255,…) is invisible on
     // the light theme, which is exactly the bug the TCO inputs still have.
@@ -203,7 +203,7 @@
   background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
   color: #fff;
   border: none;
-  border-radius: 11px;
+  border-radius: var(--r-lg);
   padding: 0.75rem 1.25rem;
   font-weight: 700;
   font-size: 0.95rem;
@@ -220,7 +220,7 @@
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
   color: inherit;
-  border-radius: 11px;
+  border-radius: var(--r-lg);
   padding: 0.65rem 1.25rem;
   font-weight: 700;
   font-size: 0.9rem;
@@ -243,7 +243,7 @@
   gap: 0.75rem;
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 0.7rem 0.85rem;
 }
 
@@ -263,7 +263,7 @@
   gap: 0.5rem;
   background: color-mix(in srgb, var(--teal) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--teal) 22%, transparent);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 0.85rem;
 }
 
@@ -290,7 +290,7 @@
   // behind a transparent PNG would break it.
   background: #fff;
   padding: 0.5rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--border-soft);
 }
 
@@ -351,7 +351,7 @@
   padding: 0.9rem 1rem;
   margin-bottom: 0.75rem;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   cursor: pointer;
   /* Ends on the darker teal, not --teal: the sub-line is 0.8rem, and white on
      #14B8A6 measures ~2.2:1 at that size. #0A786B clears AA. */
@@ -383,7 +383,7 @@
 .sr-broadcasting {
   background: var(--fill-dim);
   border: 1px solid var(--divider);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 0.7rem 0.9rem;
   margin-bottom: 0.75rem;
   font-size: 0.86rem;
@@ -396,7 +396,7 @@
    tabular figures. */
 .sr-otp {
   border: 1px solid var(--teal);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 0.9rem 1rem;
   margin-bottom: 0.9rem;
   text-align: center;
@@ -440,7 +440,7 @@
   margin: 0 0 1rem;
   padding: 1.1rem 1.2rem;
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--fill-dim);
 
   h3 {
