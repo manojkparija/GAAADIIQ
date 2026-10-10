@@ -96,6 +96,18 @@ class CarOut(BaseModel):
     specs: list | None = None
     features: list | None = None
 
+    #: What buyers have said about this MODEL, aggregated from car_reviews.
+    #:
+    #: Not the `reviews` table, which rates SELLERS and has no car_id at all.
+    #: Two unrelated things that happen to share a word.
+    #:
+    #: rating is None rather than 0 when nobody has reviewed the car. A zero
+    #: here travelled to the UI as "0.0 stars", which reads as rated worst
+    #: rather than as unrated, and three separate screens had to paper over it.
+    #: Absent is the honest answer and the client can tell the two apart.
+    rating: float | None = None
+    review_count: int = 0
+
     model_config = {"from_attributes": True}
 
 
