@@ -907,6 +907,43 @@ input[type="number"], table, tbody, th, td,
   background-clip: text;
 }
 
+// --gradient IS the hero gradient. So .gradient-text inside a hero paints the
+// glyphs in very nearly the colour already behind them, and the word drops out
+// of its own heading: on /compare, "Compare Cars" renders with "Compare" solid
+// white and "Cars" washed out to near-invisible against the teal end.
+//
+// The class is right everywhere else — on a white section the same blue-to-teal
+// fill is the brand accent and reads well. It is only wrong where the fill and
+// the backdrop are the same gradient, which is exactly this list of heroes.
+//
+// white -> #DDD6FE, which is the value reviews-news.component.scss already
+// arrived at and recorded: "#DDD6FE, not #C4B5FD ... the darker lavender
+// measured 2.37:1 at its right-hand edge where the gradient is lightest. This
+// one measures 3.94:1." Measured again here on /compare before the change:
+// #C4B5FD read 2.07:1 against the teal end, so large text at 3:1 was failing
+// on every hero that used it, not just the one page where it was noticed.
+//
+// Not solid white, although white measures 3.83:1 and would pass. The two-tone
+// heading is the intended look, and one page in this repo had already found a
+// lavender that keeps it and clears AA. Reusing that beats inventing a third
+// answer.
+//
+// This block is the default for heroes with no treatment of their own, where
+// the bare .gradient-text above would otherwise paint --gradient on --gradient
+// and the word would vanish into its own backdrop. Component styles load after
+// this file, so a page with a deliberate hero treatment still wins.
+.nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-hero,
+.md-hero, .rn-hero, .evc-hero, .compare-hero, .diag-hero, .advisor-hero,
+.results-hero, .bj-hero, .vr-hero, .chl-hero,
+.val-hero, .about-hero, .pricing-hero, .fm-hero {
+  .gradient-text {
+    background: linear-gradient(135deg, #ffffff, #DDD6FE);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
 .gradient-text-hero {
   background: linear-gradient(135deg, #ffffff 0%, #B3F0EA 100%);
   -webkit-background-clip: text;
