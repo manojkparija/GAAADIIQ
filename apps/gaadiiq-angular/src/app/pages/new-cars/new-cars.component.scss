@@ -358,78 +358,49 @@
 /* ── BODY TYPE GRID ── */
 .bodytype-grid {
   display: grid;
-  // Fixed six across rather than auto-fill. The cards are portrait now and
-  // carry artwork, so letting them reflow to seven narrow columns — which
-  // auto-fill did at 1440, measured — squeezes the vehicle to nothing.
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
 }
-@media (max-width: 1100px) { .bodytype-grid { grid-template-columns: repeat(3, 1fr); } }
 
 .bodytype-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.9rem 0.75rem 1.1rem;
-  border-radius: 16px;
-  border: 1px solid var(--border-soft);
+  gap: 0.4rem;
+  padding: 1.5rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border, rgba(0,0,0,0.08));
   cursor: pointer;
+  transition: all 0.2s;
   text-align: center;
+  background: none;
   color: var(--text);
-  overflow: hidden;
-  position: relative;
 
-  // Vertical wash rather than a flat fill: it gives the vehicle something to
-  // sit against, so the art reads as placed on a surface instead of floating
-  // on the page. Kept to 5% so it never competes with the card's own content.
-  background:
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--primary) 5%, var(--card-bg)) 0%,
-      var(--card-bg) 62%);
-
-  // Two-stage shadow — a tight contact shadow plus a wide soft one. One large
-  // blur alone reads as a glow; the near shadow is what makes it look like a
-  // card resting on the page.
-  box-shadow: 0 1px 2px rgba(15,23,42,0.05), 0 6px 18px rgba(15,23,42,0.06);
-  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
-
-  &:hover, &:focus-visible {
-    transform: translateY(-4px);
-    border-color: color-mix(in srgb, var(--primary) 45%, transparent);
-    box-shadow: 0 2px 4px rgba(15,23,42,0.06), 0 16px 34px rgba(15,23,42,0.13);
-  }
-  &:hover .bt-art, &:focus-visible .bt-art { transform: scale(1.06); }
-
-  // The lift and the zoom are decoration; a reader who has asked the system to
-  // stop moving things gets the colour and shadow change and nothing else.
-  @media (prefers-reduced-motion: reduce) {
-    transition: box-shadow 0.24s ease, border-color 0.24s ease;
-    &:hover, &:focus-visible { transform: none; }
-    &:hover .bt-art, &:focus-visible .bt-art { transform: none; }
-    .bt-art { transition: none; }
+  &:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(37,99,235,0.12);
   }
 }
 
-// The artwork block. Sized in the card rather than by the component so the six
-// cars share one scale across the row whatever the column width works out to.
-.bt-art {
-  width: 100%;
-  margin-bottom: 0.35rem;
-  transform-origin: 50% 78%;   // the contact patch, so a zoom grows the car off
-                               // the ground rather than through it
-  transition: transform 0.24s ease;
-}
+// Was `font-size: 2.2rem` when the icon was an emoji character. Now it sizes
+// the SVG and supplies the colour the paths inherit via currentColor.
+.bt-icon {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.4rem;
+  transition: color 0.2s ease, transform 0.2s ease;
 
-.bt-name {
-  font-weight: 700;
-  font-size: 0.95rem;
-  letter-spacing: -0.01em;
-}
-.bt-desc {
-  font-size: 0.78rem;
-  color: var(--muted);
-  line-height: 1.35;
+  // font-size, NOT a width on the svg. The icon lives inside a child component
+  // with emulated encapsulation, so `.bt-icon svg` here is compiled to a
+  // selector carrying THIS component's _ngcontent attribute — which that svg
+  // does not have, so the rule never applies and the icon rendered at its
+  // inherited size (about 13px, which is what "too small to see" looked like).
+  // The component sizes itself in `em`, so the parent's font-size is the
+  // supported way in, and it crosses the boundary because inheritance does.
+  font-size: 2.4rem;
 }
 
 .bodytype-card:hover .bt-icon {
@@ -1145,13 +1116,8 @@
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   }
 
-  // Two across, not three. With artwork in the card, three columns on a 390px
-  // phone left each car about 90px wide and wrapped every description onto
-  // three lines — the card became mostly text, which is what the redesign was
-  // meant to stop. Measured at 390.
   .bodytype-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .budget-grid {
