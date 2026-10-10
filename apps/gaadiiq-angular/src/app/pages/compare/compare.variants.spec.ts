@@ -156,8 +156,11 @@ describe('CompareComponent — comparing two trims of one model', () => {
     const [mid, top] = c.activeEntries();
     expect(c.entryTransmission(mid)).toBe('Manual');
     expect(c.entryTransmission(top)).toBe('AMT');
-    expect(c.entryHasFeature(mid, 'Sunroof')).toBeFalse();
-    expect(c.entryHasFeature(top, 'Sunroof')).toBeTrue();
+    // 'unknown' rather than false: a trim that does not list a sunroof is a
+    // trim we cannot say anything about, not one we know has none. The table
+    // renders this as a dash. See entryFeatureState.
+    expect(c.entryFeatureState(mid, 'Sunroof')).toBe('unknown');
+    expect(c.entryFeatureState(top, 'Sunroof')).toBe('yes');
   });
 
   it('prices the five-year cost from the trim', async () => {

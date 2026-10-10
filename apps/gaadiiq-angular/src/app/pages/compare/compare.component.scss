@@ -229,7 +229,24 @@
   &.winner { color:var(--success-ink); font-weight:700; background:rgba(67,233,123,0.06); }
 }
 .win-crown { font-size:var(--text-base); }
-.features-comp { padding:1.5rem 0 0; h3{padding:0 1.25rem 1rem;font-size:var(--text-md);} }
+.features-comp {
+  padding:1.5rem 0 0;
+  h3{padding:0 1.25rem 0.35rem;font-size:var(--text-md);}
+
+  // Explains the dash. Kept quiet -- it is a footnote, not a warning.
+  .feat-note {
+    padding:0 1.25rem 1rem;
+    margin:0;
+    font-size:var(--text-2xs);
+    color:var(--text-tertiary);
+    line-height:1.5;
+    max-width:70ch;
+  }
+}
+
+// A dash means "not listed", so it must not read as loudly as a tick. Same
+// treatment the unknown values in the rows above get.
+.feat-val.feat-unknown { color: var(--text-tertiary); }
 .feat-row { border-bottom:1px solid rgba(255,255,255,0.04); &:last-child{border-bottom:none;} }
 .empty-hint { margin-top:1rem; }
 .tco-section { border-top: 2px solid rgba(30,64,175,0.3); margin-top:1rem; }
