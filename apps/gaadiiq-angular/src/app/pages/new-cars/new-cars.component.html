@@ -97,14 +97,7 @@
         <button class="bodytype-card glass-card" (click)="navigateToBodyType(bt.name)">
           <div class="bt-icon"><app-body-type-icon [shape]="bt.shape" /></div>
           <div class="bt-name">{{ bt.name }}</div>
-          <!-- The count is the card's reason to exist; the caption is the
-               fallback for a type the catalogue has nothing in yet, where
-               "0 models" would read as broken rather than as empty. -->
-          @if (bodyTypeCounts()[bt.name]; as n) {
-            <div class="bt-count">{{ n }} {{ n === 1 ? ('model' | t) : ('models' | t) }}</div>
-          } @else {
-            <div class="bt-desc">{{ bt.desc }}</div>
-          }
+          <div class="bt-desc">{{ bt.desc }}</div>
         </button>
       }
     </div>

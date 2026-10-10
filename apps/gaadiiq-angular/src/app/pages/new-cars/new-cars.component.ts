@@ -196,58 +196,6 @@ export class NewCarsComponent implements OnInit {
     { name: 'Luxury',    shape: 'luxury',    desc: 'Premium experience' },
   ];
 
-  /**
-   * How many models each body-type card stands for.
-   *
-   * WHY A NUMBER AND NOT A LONGER CAPTION
-   *
-   * "Powerful & versatile" is the same sentence whether the catalogue holds
-   * forty SUVs or two. It describes the category, which the reader already
-   * knows, and says nothing about this site. A count is the one thing on the
-   * card that could only come from our own data.
-   *
-   * COUNTED THE WAY THE GRID COUNTS, OR IT WOULD BE A LIE
-   *
-   * Three rules had to be copied exactly from the grid below, because a card
-   * promising 38 that opens onto 22 is worse than no number:
-   *
-   *   - MODELS, not catalogue rows. The grid groups by make+model, so a Fronx
-   *     with three model-years is one card there and must be one here.
-   *   - PHOTOGRAPHED only. newCarModels() drops `image === PLACEHOLDER`, so
-   *     those never appear in the grid and must not be counted into it.
-   *   - Electric and Luxury are not body types. navigateToBodyType sends
-   *     Electric through the FUEL filter and Luxury through bodyType plus a
-   *     >= LUXURY_MIN price floor. Counting either on `bodyType` alone would
-   *     report nearly zero for both.
-   *
-   * DELIBERATELY IGNORES THE ACTIVE FILTERS. This row is an entry point for a
-   * reader who has not decided what kind of car they want, so it reports what
-   * the catalogue holds. With a budget filter already set, clicking through
-   * can land on fewer — which is the filter working, not the count lying.
-   */
-  bodyTypeCounts = computed<Record<string, number>>(() => {
-    const seen: Record<string, Set<string>> = {};
-    for (const card of this.bodyTypeCards) seen[card.name] = new Set();
-
-    for (const car of this.carsData.cars()) {
-      if (!hasPhotograph(car)) continue;
-      const key = `${car.make}|${car.model}`;
-      const fuels = [car.fuel, ...(car.variantFuels ?? [])].filter(Boolean);
-      const low = Math.min(...(priceBand(car) ?? [car.price]));
-
-      for (const card of this.bodyTypeCards) {
-        const match =
-          card.name === 'Electric' ? fuels.some(f => hasFuel(f, 'Electric'))
-          : card.name === 'Luxury' ? low >= LUXURY_MIN
-          : car.bodyType === card.name;
-        if (match) seen[card.name].add(key);
-      }
-    }
-    return Object.fromEntries(
-      Object.entries(seen).map(([name, set]) => [name, set.size]),
-    );
-  });
-
   budgetRanges: BudgetRange[] = [
     { label: 'Under ₹5L', min: 0, max: 500000 },
     { label: '₹5 – 10L', min: 500000, max: 1000000 },
