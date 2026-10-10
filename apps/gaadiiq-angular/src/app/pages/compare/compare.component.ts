@@ -465,8 +465,54 @@ export class CompareComponent implements OnInit {
     return e.variant?.name ?? '';
   }
 
+  /**
+   * The trim's features AND the model's, not one or the other.
+   *
+   * This used to prefer the trim's list whenever it had anything in it, and
+   * only fall back to the model's when it was empty. That reads as sensible
+   * and is wrong: the lists are not alternatives describing the same thing at
+   * different precisions, they are two partial lists written separately. The
+   * Brezza's detail page names "6 standard airbags", "Single-pane sunroof"
+   * and "360-degree camera" from the MODEL; its ZXi+ AT trim names a handful
+   * of others. Choosing the trim's list discarded everything the model knew,
+   * so the comparison showed dashes for features the detail page was listing
+   * two clicks away.
+   *
+   * Merging is safe precisely because this table never answers "no". A
+   * feature named on the model and absent from the trim's list yields a tick
+   * rather than a dash, which is the honest reading: nothing here can tell us
+   * the trim dropped it, and the detail page is already telling the reader
+   * the model has it.
+   */
   entryFeatures(e: CompareEntry): string[] {
-    return e.variant?.features?.length ? e.variant.features : (e.car.features || []);
+    return [...(e.variant?.features ?? []), ...(e.car.features ?? [])];
+  }
+
+  /**
+   * Matches on words, not on substrings.
+   *
+   * `'6 standard airbags'.includes('6 airbags')` is false, and so is
+   * `'360-degree camera'.includes('360 camera')` and
+   * `'Ventilated front seats'.includes('Ventilated Seats')`. Those are the
+   * actual strings the Brezza ships with, and all three rendered as "not
+   * listed" against labels they plainly satisfy.
+   *
+   * So each side is split into words, punctuation dropped and a trailing "s"
+   * stripped, and a label matches when every one of its words appears. That
+   * takes "6 standard airbags" for "6 Airbags" and "360-degree camera" for
+   * "360 Camera", while still refusing "wireless Android Auto" for "Wireless
+   * Charging" -- which has "wireless" but no "charging", and is a different
+   * feature.
+   *
+   * Requiring EVERY word, rather than any, is what keeps that last one
+   * honest. The risk this carries is a false tick from an unlucky
+   * combination, and a tick is a claim; it is the reason the matcher is
+   * deliberately dumb and literal rather than fuzzy.
+   */
+  private static words(s: string): string[] {
+    return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ')
+      .filter(Boolean)
+      .map(w => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w));
   }
 
   /**
@@ -503,8 +549,11 @@ export class CompareComponent implements OnInit {
    * city.
    */
   entryFeatureState(e: CompareEntry, feature: string): 'yes' | 'unknown' {
-    const has = this.entryFeatures(e)
-      .some(f => f.toLowerCase().includes(feature.toLowerCase()));
+    const want = CompareComponent.words(feature);
+    const has = this.entryFeatures(e).some(f => {
+      const got = new Set(CompareComponent.words(f));
+      return want.every(w => got.has(w));
+    });
     return has ? 'yes' : 'unknown';
   }
 
