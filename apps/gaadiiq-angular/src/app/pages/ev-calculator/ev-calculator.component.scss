@@ -58,7 +58,7 @@
 .result-val {
   font-size: var(--text-3xl); font-weight: 900; margin-bottom: 0.25rem;
   &.ev     { color: var(--success-ink); }
-  &.petrol { color: #f59e0b; }
+  &.petrol { color: var(--warning-ink); }
 }
 .result-sub { font-size: var(--text-xs); color: var(--muted); }
 .vs-divider { font-weight: 900; font-size: var(--text-xl); color: var(--muted); }
@@ -67,7 +67,7 @@
   text-align: center; padding: 1rem 1.5rem; border-radius: var(--r-lg);
   font-size: var(--text-md); margin-bottom: 1.5rem;
   &.ev-wins     { background: rgba(16,185,129,0.1);  color: var(--success-ink); }
-  &.petrol-wins { background: rgba(245,158,11,0.1); color: #f59e0b; }
+  &.petrol-wins { background: rgba(245,158,11,0.1); color: var(--warning-ink); }
   strong { font-weight: 800; }
 }
 

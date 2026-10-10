@@ -656,7 +656,7 @@
     display: flex;
     gap: 0.2rem;
     margin-bottom: 1rem;
-    .star-filled { color: #F59E0B; }
+    .star-filled { color: var(--gold); }
   }
   .testi-text { color: var(--muted); line-height: 1.8; font-size: var(--text-base); margin-bottom: 1.5rem; }
   .testi-author {

@@ -595,7 +595,7 @@
 
 .similar-price { font-weight: 700; color: var(--text); }
 .similar-onwards { font-size: var(--text-2xs); color: var(--muted); }
-.similar-rating { font-weight: 700; color: #f59e0b; white-space: nowrap; }
+.similar-rating { font-weight: 700; color: var(--warning-ink); white-space: nowrap; }
 .similar-reviews { font-size: var(--text-2xs); color: var(--muted); }
 .similar-mileage { font-weight: 600; color: var(--text); white-space: nowrap; }
 
@@ -695,7 +695,7 @@
 
 .seller-rating {
   font-size: var(--text-base); color: var(--muted); margin-bottom: 1rem;
-  .star { color: #f59e0b; }
+  .star { color: var(--warning-ink); }
 }
 
 .seller-details { margin-bottom: 1.5rem; }
@@ -896,8 +896,8 @@
   // Same ramp as the primary buttons, so a chosen chip reads as the same
   // control family as everything else on the page.
   &.active {
-    background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
-    border-color: #2563EB;
+    background: var(--gradient-cta);
+    border-color: var(--primary);
     color: #fff;
   }
 }

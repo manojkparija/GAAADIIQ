@@ -28,7 +28,7 @@
   //
   // A custom property inherits, so it does not enter that contest at all.
   padding: var(--cs-pad, 10px 14px);
-  border: 1.5px solid var(--cs-border, var(--border, #e5e7eb));
+  border: 1.5px solid var(--cs-border, var(--border));
   border-radius: var(--r-md);
   font-size: var(--text-sm);
   background: var(--cs-bg, var(--bg, #fff));
@@ -96,7 +96,7 @@
   // is the same trade every primary button in the app already makes — the row
   // now matches them rather than being the one place that diverges. Revisit by
   // narrowing the ramp, not by re-darkening it.
-  $cs-highlight: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
+  $cs-highlight: var(--gradient-cta);
 
   &:hover {
     background: $cs-highlight;

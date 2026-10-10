@@ -195,7 +195,7 @@
   }
 
   &.selected {
-    border-color: #2563EB;
+    border-color: var(--primary);
     background: rgba(37,99,235,0.12);
   }
 
@@ -521,7 +521,7 @@
   color: var(--muted, #8892b0);
   flex-shrink: 0;
 
-  &.gold   { background: rgba(251,191,36,0.18); color: #f59e0b; }
+  &.gold   { background: rgba(251,191,36,0.18); color: var(--warning-ink); }
   &.silver { background: rgba(148,163,184,0.15); color: #94a3b8; }
   &.bronze { background: rgba(180,120,80,0.15); color: #cd7f32; }
 }
@@ -563,7 +563,7 @@
   &.medium {
     border-color: #f59e0b;
     background: rgba(245,158,11,0.08);
-    .score-num, .score-pct { color: #f59e0b; }
+    .score-num, .score-pct { color: var(--warning-ink); }
   }
 }
 
@@ -738,7 +738,7 @@
   letter-spacing: 0.06em;
   margin-bottom: 0.6rem;
   &.pros-head { color: var(--success-ink); }
-  &.cons-head { color: #f59e0b; }
+  &.cons-head { color: var(--warning-ink); }
 }
 
 .pc-item {
@@ -785,7 +785,7 @@
   }
   &.medium {
     background: rgba(245,158,11,0.12);
-    color: #f59e0b;
+    color: var(--warning-ink);
   }
 }
 

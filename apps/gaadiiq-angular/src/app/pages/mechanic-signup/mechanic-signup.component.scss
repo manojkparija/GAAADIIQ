@@ -99,7 +99,7 @@
 
   &.on {
     border-color: transparent; color: #fff;
-    background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
+    background: var(--gradient-cta);
   }
 }
 
@@ -114,7 +114,7 @@
 
 .ms-primary {
   align-self: flex-start;
-  background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
+  background: var(--gradient-cta);
   color: #fff; border: none; border-radius: var(--r-lg);
   padding: 0.72rem 1.6rem; font-weight: 700; font-size: var(--text-base);
   font-family: inherit; cursor: pointer;

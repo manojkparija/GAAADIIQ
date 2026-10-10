@@ -273,7 +273,7 @@
   overflow: hidden;
   background: var(--surface, #fff);
   transition: border-color 0.2s;
-  &:hover { border-color: #2563EB; }
+  &:hover { border-color: var(--primary); }
 
   .rc-img {
     width: 90px;
@@ -291,10 +291,10 @@
   .rc-body { flex: 1; padding: 0.5rem 0.5rem 0.5rem 0; display: flex; flex-direction: column; gap: 0.2rem; }
   .rc-title { font-size: var(--text-xs); font-weight: 700; color: var(--text-primary, #111); }
   .rc-sub { font-size: var(--text-2xs); color: var(--text-secondary, #6b7280); }
-  .rc-price { font-size: var(--text-base); font-weight: 700; color: #2563EB; }
+  .rc-price { font-size: var(--text-base); font-weight: 700; color: var(--primary); }
   .rc-reasons { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.2rem; }
   .rc-reason {
-    font-size: var(--text-2xs); background: rgba(37,99,235,0.1); color: #2563EB;
+    font-size: var(--text-2xs); background: rgba(37,99,235,0.1); color: var(--primary);
     border-radius: var(--r-md); padding: 1px 6px;
   }
 }
@@ -336,7 +336,7 @@
 
   .rdc-cost { color: var(--text-primary, #111); font-weight: 600; }
   .rdc-link {
-    display: inline-block; color: #2563EB; font-size: var(--text-xs); text-decoration: none; font-weight: 600;
+    display: inline-block; color: var(--primary); font-size: var(--text-xs); text-decoration: none; font-weight: 600;
     &:hover { text-decoration: underline; }
   }
 }
@@ -351,7 +351,7 @@
   border: 1px solid rgba(37,99,235,0.35);
   border-radius: var(--r-xl);
   background: rgba(37,99,235,0.06);
-  color: #2563EB;
+  color: var(--primary);
   font-size: var(--text-2xs);
   padding: 0.3rem 0.75rem;
   cursor: pointer;
@@ -395,7 +395,7 @@
   transition: border-color 0.2s;
   font-family: inherit;
 
-  &:focus { border-color: #2563EB; }
+  &:focus { border-color: var(--primary); }
   &::placeholder { color: var(--text-secondary, #9ca3af); }
   &:disabled { opacity: 0.5; }
 

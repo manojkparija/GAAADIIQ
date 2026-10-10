@@ -13,7 +13,7 @@
 
 .rv-tab {
   padding: 0.45rem 1.1rem;
-  border: 1.5px solid var(--border, #e5e7eb);
+  border: 1.5px solid var(--border);
   border-radius: var(--r-pill);
   background: var(--bg, #fff);
   font-weight: 600;
@@ -22,8 +22,8 @@
   cursor: pointer;
 
   &.active {
-    background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
-    border-color: #2563EB;
+    background: var(--gradient-cta);
+    border-color: var(--primary);
     color: #fff;
   }
 }
@@ -79,7 +79,7 @@
 }
 
 .btn-approve {
-  background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
+  background: var(--gradient-cta);
   color: #fff;
 }
 
@@ -93,7 +93,7 @@
 
 .btn-cancel {
   background: var(--bg, #fff);
-  border-color: var(--border, #e5e7eb);
+  border-color: var(--border);
   color: var(--text-muted);
 }
 
@@ -108,7 +108,7 @@
   textarea {
     width: 100%;
     padding: 0.5rem 0.7rem;
-    border: 1.5px solid var(--border, #e5e7eb);
+    border: 1.5px solid var(--border);
     border-radius: var(--r-md);
     font-family: inherit;
     font-size: var(--text-sm);

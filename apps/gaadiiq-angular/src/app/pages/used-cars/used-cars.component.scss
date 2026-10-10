@@ -426,7 +426,7 @@
     top: 50%;
     transform: translateY(-50%);
     height: 4px;
-    background: var(--primary, #2563EB);
+    background: var(--primary);
     border-radius: var(--r-sm);
     pointer-events: none;
   }
@@ -733,7 +733,7 @@
   font-size: var(--text-sm); color: var(--text, #1e293b);
   .banner-icon { font-size: var(--text-lg); }
   .banner-link {
-    background: none; border: none; cursor: pointer; color: #2563eb;
+    background: none; border: none; cursor: pointer; color: var(--primary);
     font-weight: 700; font-size: var(--text-sm); text-decoration: underline; padding: 0;
     &:hover { color: var(--info-ink); }
   }
@@ -812,7 +812,7 @@
   p { color: var(--muted); margin-bottom: 1.25rem; }
 
   .btn-gradient {
-    background: linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
+    background: var(--gradient-cta);
     color: #fff;
     border: none;
     padding: 0.75rem 1.75rem;
