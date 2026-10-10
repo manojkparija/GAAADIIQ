@@ -744,6 +744,11 @@ body::before {
 }
 
 
+// One list, used by every rule below. Spelled out 21 times per rule it cost
+// 24kB of CSS and broke the 1MB bundle budget; :is() has the same
+// specificity as a bare class, so nothing about the cascade changes.
+$heroes: '.nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-hero, .md-hero, .rn-hero, .evc-hero, .compare-hero, .diag-hero, .advisor-hero, .results-hero, .bj-hero, .vr-hero, .chl-hero, .val-hero, .about-hero, .pricing-hero, .fm-hero';
+
 // ── The hero band, dark theme only ───────────────────────────────────────────
 //
 // Each of the 19 heroes paints its own
@@ -777,53 +782,121 @@ body::before {
 // query is guarded so it does not override someone who explicitly picked
 // light while their OS is dark.
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .nc-hero,
-  :root:not([data-theme="light"]) .uc-hero,
-  :root:not([data-theme="light"]) .emi-hero,
-  :root:not([data-theme="light"]) .ap-hero,
-  :root:not([data-theme="light"]) .ins-hero,
-  :root:not([data-theme="light"]) .ms-hero,
-  :root:not([data-theme="light"]) .tco-hero,
-  :root:not([data-theme="light"]) .md-hero,
-  :root:not([data-theme="light"]) .rn-hero,
-  :root:not([data-theme="light"]) .evc-hero,
-  :root:not([data-theme="light"]) .compare-hero,
-  :root:not([data-theme="light"]) .diag-hero,
-  :root:not([data-theme="light"]) .advisor-hero,
-  :root:not([data-theme="light"]) .results-hero,
-  :root:not([data-theme="light"]) .bj-hero,
-  :root:not([data-theme="light"]) .vr-hero,
-  :root:not([data-theme="light"]) .chl-hero,
-  :root:not([data-theme="light"]) .val-hero,
-  :root:not([data-theme="light"]) .about-hero,
-  :root:not([data-theme="light"]) .pricing-hero,
-  :root:not([data-theme="light"]) .fm-hero {
+  :root:not([data-theme="light"]) :is(#{$heroes}) {
     background: none;
   }
 }
 
-:root[data-theme="dark"] .nc-hero,
-:root[data-theme="dark"] .uc-hero,
-:root[data-theme="dark"] .emi-hero,
-:root[data-theme="dark"] .ap-hero,
-:root[data-theme="dark"] .ins-hero,
-:root[data-theme="dark"] .ms-hero,
-:root[data-theme="dark"] .tco-hero,
-:root[data-theme="dark"] .md-hero,
-:root[data-theme="dark"] .rn-hero,
-:root[data-theme="dark"] .evc-hero,
-:root[data-theme="dark"] .compare-hero,
-:root[data-theme="dark"] .diag-hero,
-:root[data-theme="dark"] .advisor-hero,
-:root[data-theme="dark"] .results-hero,
-:root[data-theme="dark"] .bj-hero,
-:root[data-theme="dark"] .vr-hero,
-:root[data-theme="dark"] .chl-hero,
-:root[data-theme="dark"] .val-hero,
-:root[data-theme="dark"] .about-hero,
-:root[data-theme="dark"] .pricing-hero,
-:root[data-theme="dark"] .fm-hero {
+:root[data-theme="dark"] :is(#{$heroes}) {
   background: none;
+}
+
+
+// ── The hero band, light theme ───────────────────────────────────────────────
+//
+// The same removal as dark, which is harder here and needs more than clearing
+// a background. On a near-white page every piece of hero furniture drawn to
+// sit on a saturated gradient stops working:
+//
+//   white headings             invisible
+//   white -> #DDD6FE accent    invisible
+//   rgba(255,255,255,.75) sub  invisible
+//   the white lattice          invisible
+//
+// TWO THINGS THIS GOT WRONG FIRST, BOTH CAUGHT BY MEASURING
+//
+// 1. `body` is in the selector for specificity, not decoration. Without it
+//    `:root[data-theme="light"] .nc-hero .gradient-text` is (0,4,0) and the
+//    component's own `.nc-hero .gradient-text` is (0,4,0) too once Angular's
+//    encapsulation attributes count -- a tie, which the component wins by
+//    coming later. The accent word stayed white and invisible. The extra
+//    element lifts these to (0,4,1) and they win outright. Checked in the
+//    browser, not reasoned about.
+//
+// 2. The first version keyed only on [data-theme="light"], which is the
+//    attribute set when a reader has EXPLICITLY chosen light. A reader on a
+//    light OS who has never touched the toggle has no attribute at all, so
+//    none of this applied to them -- which is most people. The structure now
+//    mirrors the dark block: a media query for the default, the attribute for
+//    the explicit choice, each excluding the other theme.
+@mixin hero-light {
+  background: none;
+
+  // The lattice stroke is white (--hero-pattern) and paints nothing on a light
+  // page. --page-pattern is the same geometry in brand blue at 7%, which the
+  // rest of the light page already uses. The diamonds were the condition on
+  // this request, so they have to stay VISIBLE, not merely stay defined.
+  &::after { background-image: var(--page-pattern); }
+
+  h1, h2, .hero-title, .hero-heading { color: var(--text); }
+
+  // Was rgba(255,255,255,0.75), sometimes with opacity on top. Nothing on white.
+  .hero-sub, .hero-content p, > .container > p {
+    color: var(--text-secondary);
+    opacity: 1;
+  }
+
+  // Back to the brand accent the class means everywhere else. The white ->
+  // lavender fill exists only because the hero used to be dark.
+  .gradient-text {
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  // A white pill reads as a hole in a white page. A brand tint with
+  // --primary-ink on it is what the light theme gives every other badge, and
+  // --primary-ink exists because --primary alone missed AA on a tint.
+  .hero-badge, .eyebrow, .ai-badge, .save-chip {
+    background: rgba(41, 94, 224, 0.10);
+    color: var(--primary-ink);
+    border: 1px solid rgba(41, 94, 224, 0.18);
+  }
+
+  // THE REST OF THE HERO'S FURNITURE
+  //
+  // Everything below was found by contrast.spec.ts, not by reading the
+  // templates. The first version of this block handled the heading, the sub
+  // and the badge and looked finished; the suite then listed eight more
+  // selectors rendering white on white -- tabs, the View All link, the search
+  // field labels and the brand chips. Worth recording, because "the hero
+  // looks right" and "nothing in the hero is invisible" are different claims
+  // and only one of them can be checked by eye.
+  .hero-tab, .view-all-link, .search-field-label { color: var(--text); }
+
+  // The last two the suite found: /ai-valuation's trust row and
+  // /pricing-plans' billing toggle. Both are plain spans and buttons with no
+  // class of their own worth targeting, so they are reached through their
+  // container.
+  .trust-row, .billing-toggle {
+    color: var(--text-secondary);
+    span, button { color: var(--text-secondary); }
+    button.active { color: var(--text); }
+  }
+
+  // The panels were translucent white on a saturated gradient, which is a
+  // hole on a white page -- and every chip inside them inherited white text.
+  // Giving them a real card surface fixes the container and its contents in
+  // one move, rather than recolouring each chip.
+  .hero-search-card, .hero-tab-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--card-shadow);
+    color: var(--text);
+
+    .chip, .cat-chip, .category-chip, button, span, a { color: var(--text); }
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) body :is(#{$heroes}) {
+    @include hero-light;
+  }
+}
+
+:root[data-theme="light"] body :is(#{$heroes}) {
+  @include hero-light;
 }
 
 h1, h2, h3, h4, h5, h6 {
