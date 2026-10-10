@@ -34,7 +34,7 @@
   background: var(--fill-soft);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-soft);
-  border-radius: 24px;
+  border-radius: var(--r-2xl);
   position: relative;
   z-index: 1;
 }
@@ -49,7 +49,7 @@
 .auth-tabs {
   display: flex;
   background: var(--fill-dim);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 4px;
   gap: 4px;
   margin-bottom: 1.5rem;
@@ -58,11 +58,11 @@
 .auth-tab {
   flex: 1;
   padding: 0.6rem;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   border: none;
   background: transparent;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   text-align: center;
@@ -76,7 +76,7 @@
 
 .reg-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.4rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
   text-align: center;
   margin: 0 0 1.5rem;
@@ -94,9 +94,9 @@
   border-radius: 50%;
   border: 2px solid var(--border-strong);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.8rem; font-weight: 600;
+  font-size: var(--text-xs); font-weight: 600;
   transition: all 0.3s;
-  &.active { border-color: #2563EB; background: rgba(47,107,255,0.2); color: #2563EB; }
+  &.active { border-color: var(--primary); background: rgba(47,107,255,0.2); color: var(--primary); }
   &.done { border-color: var(--success-ink); background: rgba(67,233,123,0.2); color: var(--success-ink); }
 }
 
@@ -111,44 +111,44 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 2rem;
-  span { font-size: 0.7rem; color: var(--text-tertiary); text-align: center; width: 80px; }
+  span { font-size: var(--text-2xs); color: var(--text-tertiary); text-align: center; width: 80px; }
 }
 
 .progress-bar-wrap { margin-bottom: 0; }
 
 .step-content {
-  h2 { font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin-bottom: 1.5rem; }
+  h2 { font-family: 'Outfit', sans-serif; font-size: var(--text-xl); margin-bottom: 1.5rem; }
 }
 
 .form-group {
   display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;
-  label { font-size: 0.85rem; color: var(--text-secondary); }
+  label { font-size: var(--text-sm); color: var(--text-secondary); }
   input, select {
     padding: 0.75rem 1rem;
     background: var(--fill-soft);
     border: 1px solid var(--border-soft);
-    border-radius: 10px;
-    color: var(--text); font-size: 0.95rem;
-    &:focus { outline: none; border-color: #2563EB; }
+    border-radius: var(--r-md);
+    color: var(--text); font-size: var(--text-base);
+    &:focus { outline: none; border-color: var(--primary); }
     &::placeholder { color: var(--text-tertiary); }
   }
   select option { background: var(--navy); }
 }
 
 .pass-strength {
-  height: 4px; background: var(--fill-medium); border-radius: 2px; overflow: hidden; margin-bottom: 0.5rem;
-  .bar { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+  height: 4px; background: var(--fill-medium); border-radius: var(--r-sm); overflow: hidden; margin-bottom: 0.5rem;
+  .bar { height: 100%; border-radius: var(--r-sm); transition: width 0.3s, background 0.3s; }
 }
-.pass-hint { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
+.pass-hint { font-size: var(--text-xs); color: var(--muted); margin-bottom: 1rem; }
 
 .pref-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
 .pref-chip {
   padding: 0.4rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1px solid var(--divider);
   background: var(--fill-dim);
   color: var(--text-secondary);
-  font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
+  font-size: var(--text-sm); cursor: pointer; transition: all 0.2s;
   // Blue-to-teal, matching .btn-gradient — but ending on the darker teal
   // (#0A786B) rather than --teal. The chip label is 0.85rem, so it is small
   // text under AA: white on --teal measures ~2.2:1, white on #0A786B ~5.3:1.
@@ -165,14 +165,14 @@
 }
 .role-chip {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
-  padding: 0.9rem 0.4rem 0.75rem; border-radius: 14px;
+  padding: 0.9rem 0.4rem 0.75rem; border-radius: var(--r-lg);
   border: 2px solid var(--border-soft);
   background: var(--fill-dim); cursor: pointer; transition: all 0.22s;
   overflow: hidden;
 
   .role-svg { width: 72px; height: 54px; }
-  .role-label { font-size: 0.82rem; font-weight: 700; color: var(--text); }
-  .role-desc { font-size: 0.72rem; color: var(--muted); text-align: center; line-height: 1.3; }
+  .role-label { font-size: var(--text-xs); font-weight: 700; color: var(--text); }
+  .role-desc { font-size: var(--text-2xs); color: var(--muted); text-align: center; line-height: 1.3; }
 
   &:nth-child(1).selected { border-color: #3B82F6; background: rgba(59,130,246,0.1); }
   &:nth-child(2).selected { border-color: var(--success-ink); background: rgba(16,185,129,0.1); }
@@ -181,26 +181,26 @@
   &:hover:not(.selected) { border-color: var(--border-strong); background: var(--fill-medium); transform: translateY(-2px); }
   &.selected { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: translateY(-2px); }
 }
-.checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; }
-.hint { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+.checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: var(--text-sm); color: var(--text-secondary); cursor: pointer; }
+.hint { color: var(--muted); font-size: var(--text-sm); margin-bottom: 1rem; }
 
 .btn-row { display: flex; gap: 1rem; margin-top: 1.5rem; button { flex: 1; } }
 .btn-full { width: 100%; margin-top: 1.5rem; padding: 0.875rem; }
-.login-link { text-align: center; margin-top: 1.5rem; color: var(--muted); font-size: 0.9rem; a { color: #2563EB; text-decoration: none; font-weight: 600; } }
+.login-link { text-align: center; margin-top: 1.5rem; color: var(--muted); font-size: var(--text-base); a { color: var(--primary); text-decoration: none; font-weight: 600; } }
 
 .error-msg {
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.4);
   color: var(--danger);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 0.75rem 1rem;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   margin-bottom: 0.75rem;
 }
 
 .confirm-copy {
   margin: 0 0 0.9rem;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   line-height: 1.55;
   color: var(--text-muted);
 
@@ -215,7 +215,7 @@
 // typed here was discarded on submit.
 .opt-tag {
   margin-left: 0.4rem;
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -225,7 +225,7 @@
 .opt-hint {
   display: block;
   margin-top: 0.4rem;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   line-height: 1.5;
 

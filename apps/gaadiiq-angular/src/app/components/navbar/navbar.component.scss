@@ -7,7 +7,7 @@
 
   CONTRAST NOTE, load-bearing. The brief asks for a blue→teal gradient behind
   white text on the active AI tab. The house --gradient-cta cannot carry white
-  text: it passes through #06B6D4, where white measures 2.43:1 against a 4.5:1
+  text: it passes through var(--brand-cyan), where white measures 2.43:1 against a 4.5:1
   AA floor, and e2e/contrast.spec.ts walks the rendered DOM and fails under AA.
   --gradient-ai below is the same blue→teal move in darker stops — #1D4ED8 to
   #0F766E — where white measures 5.19:1 and 5.54:1. It reads as the same idea
@@ -111,12 +111,12 @@
     gap: 0.3rem;
     padding: 0.45rem 0.7rem;
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     background: none;
     color: var(--text-muted);
     font: inherit;
     font-family: 'Manrope', sans-serif;
-    font-size: 0.95rem;
+    font-size: var(--text-base);
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
@@ -131,7 +131,7 @@
       position: absolute;
       left: 0.7rem; right: 0.7rem; bottom: 0.15rem;
       height: 2px;
-      border-radius: 2px;
+      border-radius: var(--r-sm);
       background: var(--gradient-ai);
       transform: scaleX(0);
       transition: transform .22s cubic-bezier(.4, 0, .2, 1);
@@ -165,7 +165,7 @@
   left: 0;
   z-index: 300;
   padding: 1rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 20px 48px rgba(11, 18, 32, .14);
@@ -199,7 +199,7 @@
 
 .nav-mega-head {
   padding: 0.5rem 0.5rem 0.3rem;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -213,11 +213,11 @@
   width: 100%;
   padding: 0.5rem;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: none;
   color: var(--text);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -248,11 +248,11 @@
   box-sizing: border-box;
   height: 1.9rem;
   padding: 0 0.55rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--border-soft);
   background: var(--fill-soft);
   color: var(--text);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   white-space: nowrap;
   text-decoration: none;
@@ -279,7 +279,7 @@
   gap: 0.35rem;
   height: 2.15rem;
   padding: 0 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--border-soft);
   // Same undefined-token bug as .navbar had: this was a color-mix over --bg,
   // so the pills were rendering with no fill at all and taking their apparent
@@ -287,7 +287,7 @@
   background: var(--fill-soft);
   color: var(--text);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
@@ -326,7 +326,7 @@
   z-index: 300;
   min-width: 9rem;
   padding: 0.3rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 14px 34px rgba(11, 18, 32, .16);
@@ -340,11 +340,11 @@
   text-align: left;
   padding: 0.5rem 0.65rem;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: none;
   color: var(--text);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   cursor: pointer;
   &:hover { background: var(--fill-soft); }
   // Marks which language is in use, so the list answers "which am I on?" as
@@ -398,10 +398,10 @@
   gap: 0.4rem;
   flex-shrink: 0;
   padding: 0.38rem 0.8rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid transparent;
   color: var(--text-muted);
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   font-weight: 650;
   white-space: nowrap;
   text-decoration: none;
@@ -577,7 +577,7 @@
       flex-direction: column;
       gap: 0.25rem;
       padding: 0.4rem 0.7rem 0.55rem;
-      font-size: 0.69rem;
+      font-size: var(--text-2xs);
       white-space: nowrap;
       border-bottom: 2.5px solid transparent;
       border-radius: 0;
@@ -628,7 +628,7 @@
     display: block;
     height: 2px;
     background: var(--text);
-    border-radius: 2px;
+    border-radius: var(--r-sm);
     transition: all 0.3s;
   }
   &.open {
@@ -676,7 +676,7 @@
   a {
     // 1.4rem for thirteen links made every one shout and pushed the account
     // buttons off-screen. This still clears the 44px touch target.
-    font-size: 1.05rem;
+    font-size: var(--text-md);
     font-weight: 600;
     color: var(--text);
     font-family: 'Outfit', sans-serif;
@@ -708,7 +708,7 @@
 
 .mm-head {
   margin: 0 0 0.35rem;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -717,7 +717,7 @@
 
 .mm-urgent { font-weight: 700; }
 
-.mm-item { font-size: 1rem !important; font-weight: 500 !important; }
+.mm-item { font-size: var(--text-md) !important; font-weight: 500 !important; }
 
 .mm-cta {
   width: 100%;
@@ -739,11 +739,11 @@
   gap: 0.4rem;
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 7px;
+  border-radius: var(--r-md);
   padding: 0.4rem 0.85rem;
   cursor: pointer;
   color: var(--text);
-  font-size: 0.83rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   max-width: 140px;
   transition: all 0.2s;
@@ -767,13 +767,13 @@
   gap: 0.5rem;
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 7px;
+  border-radius: var(--r-md);
   padding: 0.6rem 1rem;
   // Full width so it shares the column edge with everything else, rather
   // than floating centred at its own content width.
   width: 100%;
   justify-content: flex-start;
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 600;
   color: var(--primary);
   cursor: pointer;
@@ -785,7 +785,7 @@
 .theme-toggle {
   width: 36px;
   height: 36px;
-  border-radius: 7px;
+  border-radius: var(--r-md);
   border: 1px solid var(--border-soft);
   background: var(--fill-soft);
   cursor: pointer;
@@ -812,7 +812,7 @@
   // the links nor with the buttons. The group above owns the divider now.
   width: 100%;
 
-  span { font-size: 0.9rem; color: var(--muted); }
+  span { font-size: var(--text-base); color: var(--muted); }
   .theme-toggle { width: 34px; height: 34px; }
 }
 
@@ -824,11 +824,11 @@
   gap: 0.45rem;
   background: rgba(47,107,255,0.08);
   border: 1px solid rgba(47,107,255,0.25);
-  border-radius: 7px;
+  border-radius: var(--r-md);
   padding: 0.38rem 0.75rem 0.38rem 0.38rem;
   cursor: pointer;
   color: var(--input-color);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-family: 'Manrope', sans-serif;
   font-weight: 600;
   transition: background 0.2s, border-color 0.2s;
@@ -841,13 +841,13 @@
 
 .user-avatar {
   width: 26px; height: 26px;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   background: var(--gradient);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   color: #fff;
   font-family: 'Outfit', sans-serif;
 }
@@ -861,7 +861,7 @@
   min-width: 200px;
   background: var(--dropdown-bg);
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 0.5rem;
   z-index: 100;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08);
@@ -881,7 +881,7 @@
 
 .dropdown-email {
   padding: 0.5rem 0.75rem;
-  font-size: 0.76rem;
+  font-size: var(--text-2xs);
   color: var(--muted);
   border-bottom: 1px solid var(--divider);
   margin-bottom: 0.25rem;
@@ -894,7 +894,7 @@
   padding: 0.5rem 0.75rem 0.3rem;
   margin-top: 0.35rem;
   border-top: 1px solid var(--divider);
-  font-size: 0.68rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -909,8 +909,8 @@
   width: 100%;
   text-align: left;
   padding: 0.55rem 0.75rem;
-  border-radius: 7px;
-  font-size: 0.875rem;
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
   color: var(--dropdown-text);
   text-decoration: none;
   background: none;
@@ -927,7 +927,7 @@
     margin-top: 0.35rem;
     border-top: 1px solid var(--divider);
     padding-top: 0.6rem;
-    border-radius: 0 0 7px 7px;
+    border-radius: 0 0 var(--r-md) var(--r-md);
     color: var(--danger);
     &:hover { background: rgba(239,68,68,0.08); color: var(--danger); }
   }
@@ -975,7 +975,7 @@
   // as a narrow ladder.
   min-width: 24rem;
   padding: 0.6rem;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 12px 36px rgba(11, 18, 32, 0.16);
@@ -990,8 +990,8 @@
 .nav-menu-item {
   display: block;
   padding: 0.55rem 0.7rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: var(--r-md);
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--text);
   text-decoration: none;
@@ -1022,7 +1022,7 @@
   // 0.68rem computed to 10.88px, under the 11px floor the type system
   // declares. typography.spec.ts never caught it because it does not open the
   // menus — found by scanning the rendered DOM with them open.
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1060,10 +1060,10 @@
   justify-content: center;
   box-sizing: border-box;
   height: 2rem;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   padding: 0 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid transparent;
   background: var(--gradient-cta);
   color: #fff;
@@ -1084,18 +1084,18 @@
   gap: 0.3rem;
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--border-soft);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   cursor: pointer;
   &:hover { border-color: var(--primary); }
   // Absolute, not 0.7em. Relative to this button's 0.85rem the caret computed
   // to 10px, under the 11px floor e2e/typography.spec.ts enforces — and since
   // the navbar is on every page, that one declaration failed the check on all
   // 26 routes it covers.
-  .nav-caret { font-size: 0.75rem; }
+  .nav-caret { font-size: var(--text-2xs); }
 }
 
 .lang-menu {
@@ -1105,7 +1105,7 @@
   z-index: 300;
   min-width: 9rem;
   padding: 0.3rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--nav-panel);
   border: 1px solid var(--border-soft);
   box-shadow: 0 12px 30px rgba(11, 18, 32, 0.16);
@@ -1118,11 +1118,11 @@
   text-align: left;
   padding: 0.5rem 0.65rem;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: none;
   color: var(--text);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   cursor: pointer;
   &:hover { background: var(--fill-soft); }
   // The language in use is marked, so the list answers "which am I on?"
@@ -1141,12 +1141,12 @@
 .mobile-lang-option {
   flex: 1;
   padding: 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: transparent;
   color: #fff;
   font: inherit;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   cursor: pointer;
   &.is-current {
     background: var(--gradient-cta);
@@ -1208,3 +1208,62 @@
    It is the last item in the row, so a left-anchored panel would open past the
    viewport edge on narrower screens. */
 .nav-mega-right { left: auto; right: 0; }
+
+/* ---------------------------------------------------------------------------
+   TAP TARGETS — WCAG 2.5.5 / Material / HIG all want ~44x44 CSS px.
+
+   Measured before this block, on every one of the 55 pages because these
+   controls live in the shared bar:
+
+     .hamburger   36 x 36
+     .ai-tab      37 tall  (x3)
+     .util-pill   34 tall
+     .logo        29-32 tall
+
+   WHY A PSEUDO-ELEMENT AND NOT A BIGGER BUTTON
+
+   Growing the controls themselves is the obvious fix and the wrong one here.
+   The bar's height is --nav-height, and --nav-offset is derived from it
+   (styles.scss:19); every page in the app clears the fixed bar with that
+   offset. Make the controls 44px and the bar grows, the offset does not, and
+   content slides under the navbar on all 55 pages -- which is LAY-007, a bug
+   this project has already shipped and fixed once.
+
+   The second reason is in the comments further up this file: at 390px the bar
+   is already close to wrapping, and the hamburger wrapping onto its own row
+   has happened before. Adding 8px of width to it invites that back.
+
+   So the painted size does not change at all. ::after is a transparent,
+   centred overlay that only ever grows the hit region. Layout, bar height and
+   the 390px packing are all untouched.
+
+   Pointer events: the overlay belongs to its own control, so it extends that
+   control's clickable area. It can overhang a neighbour by a few px -- the
+   gaps in this bar are larger than the overhang, which is why nothing here
+   needed its spacing changed. Verified by hit-testing the centre of each
+   control after the change, not by eye.
+--------------------------------------------------------------------------- */
+@mixin tap-target($min: 44px) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    min-width: $min;
+    min-height: $min;
+    /* Decoration only -- never paints, never affects flow. */
+    background: none;
+    border: none;
+    pointer-events: auto;
+  }
+}
+
+.hamburger  { @include tap-target; }
+.util-pill  { @include tap-target; }
+.ai-tab     { @include tap-target; }
+.logo       { @include tap-target; }

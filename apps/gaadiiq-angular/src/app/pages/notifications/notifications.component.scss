@@ -24,14 +24,14 @@
 
   h1 {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.6rem;
+    font-size: var(--text-2xl);
     font-weight: 700;
     margin: 0;
   }
 }
 
 .unread-count {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   margin: 0.15rem 0 0;
 }
@@ -40,7 +40,7 @@
   background: none;
   border: none;
   color: var(--teal-ink);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   cursor: pointer;
   padding: 0;
 
@@ -53,19 +53,19 @@
   text-align: center;
   padding: 4rem 0;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 
 .empty {
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 4rem 2rem;
   text-align: center;
 }
 
 .empty-icon {
-  font-size: 2.2rem;
+  font-size: var(--text-4xl);
   margin: 0 0 0.75rem;
 }
 
@@ -75,7 +75,7 @@
 }
 
 .empty-body {
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   color: var(--text-muted);
   margin: 0.35rem 0 0;
 }
@@ -86,7 +86,7 @@
   padding: 0;
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   overflow: hidden;
 }
 
@@ -112,7 +112,7 @@
 }
 
 .notif-icon {
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   flex-shrink: 0;
   margin-top: 0.1rem;
 }
@@ -123,7 +123,7 @@
 }
 
 .notif-title {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   line-height: 1.35;
   margin: 0;
 
@@ -133,13 +133,13 @@
 }
 
 .notif-text {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   margin: 0.15rem 0 0;
 }
 
 .notif-date {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   margin: 0.3rem 0 0;
 }

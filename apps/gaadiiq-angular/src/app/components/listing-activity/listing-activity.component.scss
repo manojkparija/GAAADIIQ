@@ -1,13 +1,13 @@
 .la-card {
   background: var(--card-bg, #fff);
   border: 1px solid var(--divider);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   padding: 1.25rem;
 }
 
 .la-title {
   margin: 0 0 1rem;
-  font-size: 1.05rem;
+  font-size: var(--text-md);
   font-weight: 700;
 }
 
@@ -24,20 +24,20 @@
 }
 
 .la-num {
-  font-size: 1.7rem;
+  font-size: var(--text-3xl);
   font-weight: 800;
   line-height: 1;
   color: var(--primary-ink);
 }
 
 .la-lab {
-  font-size: 0.74rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
 }
 
 .la-quiet {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   line-height: 1.6;
   color: var(--text-muted);
 }
@@ -46,13 +46,13 @@
   margin: 1rem 0 0;
   padding-top: 0.85rem;
   border-top: 1px solid var(--divider);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 .la-hint {
   margin: 0.35rem 0 0;
-  font-size: 0.76rem;
+  font-size: var(--text-2xs);
   line-height: 1.55;
   color: var(--text-muted);
 }

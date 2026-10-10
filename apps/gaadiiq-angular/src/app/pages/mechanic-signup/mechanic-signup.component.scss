@@ -6,7 +6,7 @@
 .ms-page { min-height: 100vh; padding-bottom: 4rem; }
 
 .ms-hero {
-  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  background: linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%);
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
      (176px on a phone since the nav strip). max() keeps the designed spacing
      wherever it is the larger, and clears the bar when it is not. */
@@ -23,8 +23,8 @@
 
 .ms-badge {
   display: inline-block; background: rgba(255, 255, 255, 0.16); color: #fff;
-  border-radius: 999px; padding: 0.28rem 0.85rem;
-  font-size: 0.78rem; font-weight: 700; margin-bottom: 0.65rem;
+  border-radius: var(--r-pill); padding: 0.28rem 0.85rem;
+  font-size: var(--text-xs); font-weight: 700; margin-bottom: 0.65rem;
 }
 
 .ms-sub { color: rgba(255, 255, 255, 0.8); margin: 0.45rem auto 0; max-width: 52ch; }
@@ -34,7 +34,7 @@
 .ms-signin {
   background: color-mix(in srgb, var(--primary) 9%, transparent);
   border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
-  border-radius: 12px; padding: 0.85rem 1rem; font-size: 0.88rem;
+  border-radius: var(--r-lg); padding: 0.85rem 1rem; font-size: var(--text-base);
   line-height: 1.55; margin-bottom: 1.25rem;
 }
 
@@ -42,12 +42,12 @@
 
 .ms-form {
   background: var(--fill-soft); border: 1px solid var(--border-soft);
-  border-radius: 18px; padding: 1.5rem;
+  border-radius: var(--r-xl); padding: 1.5rem;
   display: flex; flex-direction: column; gap: 0.9rem;
 }
 
 .ms-h {
-  font-family: 'Outfit', sans-serif; font-size: 1rem; margin: 0.75rem 0 0;
+  font-family: 'Outfit', sans-serif; font-size: var(--text-md); margin: 0.75rem 0 0;
 
   &:first-child { margin-top: 0; }
 }
@@ -59,47 +59,47 @@
 }
 
 .ms-field { display: flex; flex-direction: column; gap: 0.3rem; }
-.ms-label { font-size: 0.82rem; font-weight: 600; }
-.ms-help { font-size: 0.73rem; color: var(--text-muted); line-height: 1.45; }
+.ms-label { font-size: var(--text-xs); font-weight: 600; }
+.ms-help { font-size: var(--text-2xs); color: var(--text-muted); line-height: 1.45; }
 
 .ms-field input {
-  width: 100%; padding: 0.62rem 0.75rem; border-radius: 10px;
+  width: 100%; padding: 0.62rem 0.75rem; border-radius: var(--r-md);
   border: 1px solid var(--border-soft);
   // Token rather than a fixed white tint, which is invisible on the light theme.
   background: var(--fill-dim); color: inherit;
-  font-size: 0.95rem; font-family: inherit;
+  font-size: var(--text-base); font-family: inherit;
 
   &:focus { outline: none; border-color: var(--primary); }
 }
 
 .ms-location {
   display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-  padding: 0.85rem; border-radius: 12px;
+  padding: 0.85rem; border-radius: var(--r-lg);
   background: var(--fill-dim); border: 1px dashed var(--border-soft);
 }
 
-.ms-located { font-size: 0.82rem; font-weight: 600; color: var(--teal-ink); }
+.ms-located { font-size: var(--text-xs); font-weight: 600; color: var(--teal-ink); }
 
 // The Aadhaar explanation carries real weight — a mechanic handing over an
 // identity number deserves to be told plainly what happens to it.
 .ms-kyc-note {
   background: color-mix(in srgb, var(--teal) 9%, transparent);
   border: 1px solid color-mix(in srgb, var(--teal) 26%, transparent);
-  border-radius: 12px; padding: 0.8rem 0.95rem;
-  font-size: 0.85rem; line-height: 1.55;
+  border-radius: var(--r-lg); padding: 0.8rem 0.95rem;
+  font-size: var(--text-sm); line-height: 1.55;
 }
 
 .ms-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 
 .ms-chip {
-  border-radius: 999px; padding: 0.38rem 0.85rem;
-  font-size: 0.82rem; font-weight: 600; font-family: inherit;
+  border-radius: var(--r-pill); padding: 0.38rem 0.85rem;
+  font-size: var(--text-xs); font-weight: 600; font-family: inherit;
   text-transform: capitalize; cursor: pointer;
   background: var(--fill-dim); border: 1px solid var(--border-soft); color: var(--text-muted);
 
   &.on {
     border-color: transparent; color: #fff;
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: var(--gradient-cta);
   }
 }
 
@@ -107,16 +107,16 @@
   background: color-mix(in srgb, var(--danger) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
   color: var(--danger);
-  border-radius: 10px; padding: 0.7rem 0.9rem; font-size: 0.86rem;
+  border-radius: var(--r-md); padding: 0.7rem 0.9rem; font-size: var(--text-sm);
 }
 
 .ms-submit { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.4rem; }
 
 .ms-primary {
   align-self: flex-start;
-  background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
-  color: #fff; border: none; border-radius: 11px;
-  padding: 0.72rem 1.6rem; font-weight: 700; font-size: 0.95rem;
+  background: var(--gradient-cta);
+  color: #fff; border: none; border-radius: var(--r-lg);
+  padding: 0.72rem 1.6rem; font-weight: 700; font-size: var(--text-base);
   font-family: inherit; cursor: pointer;
   box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
 
@@ -125,8 +125,8 @@
 
 .ms-ghost {
   background: var(--fill-soft); border: 1px solid var(--border-soft); color: inherit;
-  border-radius: 10px; padding: 0.55rem 1rem;
-  font-weight: 700; font-size: 0.85rem; font-family: inherit; cursor: pointer;
+  border-radius: var(--r-md); padding: 0.55rem 1rem;
+  font-weight: 700; font-size: var(--text-sm); font-family: inherit; cursor: pointer;
 
   &:disabled { opacity: 0.6; cursor: default; }
 }

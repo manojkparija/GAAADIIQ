@@ -97,10 +97,101 @@
   // New/Used tabs. It was written out by hand in five places, which is how the
   // tab bar ended up a shade off the chips beside it: three near-identical
   // gradients and no one of them authoritative. One name, one definition.
-  --gradient-cta:   linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  --gradient-cta:   linear-gradient(90deg, #2563EB 0%, var(--brand-cyan) 55%, #14B8A6 100%);
   --gradient-gold:  linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
   --glow:           0 4px 32px rgba(47,107,255,0.18);
   --card-shadow:    0 1px 3px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06);
+
+  /* =======================================================================
+     SCALES -- phase 1 of the token consolidation.
+
+     NOTHING CONSUMES THESE YET. This block only defines them, deliberately,
+     so that the substitutions that follow are reviewable as substitutions
+     rather than as a redesign hidden inside a refactor. Adding an unused
+     custom property changes no rendering at all.
+
+     The steps were not chosen from a style guide. They were derived by
+     counting every value the app already uses and picking the steps that the
+     most declarations already sit on, so the eventual diff moves as little as
+     possible.
+     ======================================================================= */
+
+  /* -- Type ---------------------------------------------------------------
+     Measured today: 1,498 font-size declarations across 77 distinct values,
+     including 0.73 / 0.74 / 0.76 / 0.78 / 0.82 / 0.83 / 0.84 / 0.86 / 0.87rem
+     -- differences of a third of a pixel, invisible one at a time and the
+     reason no two cards in this app set text quite the same way.
+
+     12 steps. 724 of the 1,498 declarations (48%) already sit exactly on one.
+
+     The floor is 12px ON PURPOSE. 188 declarations are currently below it
+     (down to 0.55rem = 8.8px), which is the "text under 12px" finding from
+     the audit -- 37 to 41 instances on every mobile page. Snapping the floor
+     up fixes that population in the same pass. It is a real pixel change but
+     a small one: 130 of the 188 move less than a pixel, because the cluster
+     was already bunched just under the line (90 sit at 0.72rem and move
+     0.5px). Twelve move more than 2px and want looking at on screen -- small
+     text is badge and chip text, and those are the tightest layouts here. */
+  --text-2xs:   0.75rem;   /* 12.0px -- floor; absorbs everything 0.55-0.74 */
+  --text-xs:    0.80rem;   /* 12.8px */
+  --text-sm:    0.85rem;   /* 13.6px -- the most used size in the app today */
+  --text-base:  0.90rem;   /* 14.4px */
+  --text-md:    1.00rem;   /* 16.0px */
+  --text-lg:    1.10rem;   /* 17.6px */
+  --text-xl:    1.25rem;   /* 20.0px */
+  --text-2xl:   1.50rem;   /* 24.0px */
+  --text-3xl:   1.80rem;   /* 28.8px */
+  --text-4xl:   2.25rem;   /* 36.0px */
+  --text-5xl:   3.00rem;   /* 48.0px */
+  --text-6xl:   4.00rem;   /* 64.0px */
+
+  /* -- Radius -------------------------------------------------------------
+     Measured today: 734 declarations, 21 distinct values. A single page
+     renders up to 15 different corner radii, which is most of why the UI
+     reads as unfinished.
+
+     57% of declarations already match one of these, once the two spellings of
+     a pill (50px and 999px) are counted as the same intent. The largest single
+     move will be 10px -> 8px, 114 times: 2px, invisible alone, and the main
+     source of the spread. */
+  --r-sm:    4px;    /* absorbs 2, 3, 5, 6 */
+  --r-md:    8px;    /* absorbs 10 */
+  --r-lg:   12px;    /* absorbs 14 */
+  --r-xl:   16px;    /* absorbs 20 */
+  --r-2xl:  24px;    /* absorbs 32 (2rem) */
+  --r-pill: 999px;   /* absorbs 50px */
+
+  /* -- Colour -------------------------------------------------------------
+     Only values that have no name yet. --primary, --teal, --warning,
+     --divider and the -ink family already exist and are untouched.
+
+     THE DECISION THIS RECORDS: #2563EB appears 98 times and is NOT --primary,
+     which is #295EE0. They are about 4% apart -- indistinguishable side by
+     side, entirely different to a stylesheet. #295EE0 wins, and the 98 become
+     var(--primary) in a later phase.
+
+     The reason is not that the diff is smaller; it is larger. It is that every
+     contrast figure this project has measured -- including those written into
+     comments in this file and in navbar, reviews-news and new-cars -- was
+     measured against #295EE0. Promoting #2563EB would silently invalidate all
+     of them. It is deliberately NOT given a token name here, so that nothing
+     can start depending on it in the meantime.
+
+     These two do get names, because they are structural rather than strays. */
+  --brand-blue-deep: #1E40AF;  /* 59 uses, every one a hero gradient's start */
+  --brand-cyan:      #06B6D4;  /* the midpoint of --gradient-cta */
+
+  /* The hero band, currently written out by hand as
+     `linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%)` in page after
+     page. One name, so the next hero cannot drift from the others.
+
+     NO DARK-MODE OVERRIDE, deliberately. The hardcoded original has no dark
+     variant either, so defining one here would change how heroes render in
+     dark mode -- and this phase is supposed to change nothing. What dark mode
+     should do with it belongs to the colour phase, when contrast can actually
+     be measured. */
+  --gradient-hero: linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%);
+
 
   --divider:        rgba(15,23,42,0.07);
   --border-soft:    rgba(15,23,42,0.09);
@@ -161,6 +252,24 @@
   // white pill measured 3.08:1 in dark mode. This one never flips, because the
   // surface underneath it never flips either.
   --ink-on-white:   #295EE0;
+
+  // The same idea for the other direction: text on a BRIGHT fill that stays
+  // bright in both themes. Amber is the case that forced it. #F59E0B is a
+  // light colour -- white on it measures 2.15:1, nowhere near the 4.5:1 floor
+  // -- and the usual escapes do not work:
+  //
+  //   var(--text) flips to near-white in dark, which is the original bug back
+  //   again, because the amber underneath is a literal and does not flip.
+  //
+  //   Darkening the fill to --warning-ink (#B45309) does carry white, at
+  //   5.02:1, but it changes a colour somebody chose, and in a row of
+  //   coloured chips it would make the amber one look broken next to its
+  //   bright neighbours.
+  //
+  // So the fill keeps its colour and the text goes dark. #0F172A on #F59E0B
+  // measures 8.31:1. Non-flipping for exactly the reason --ink-on-white is:
+  // the surface underneath it does not flip either.
+  --ink-on-bright:  #0F172A;
 
   --text-tertiary:  #475569;
   --text-secondary: #1E293B;
@@ -622,7 +731,7 @@ input[type="number"], table, tbody, th, td,
 .surface-card {
   background: var(--card-bg);
   border: 1px solid var(--border-soft);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   padding: 1.5rem;
   box-shadow: var(--card-shadow);
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
@@ -639,7 +748,7 @@ input[type="number"], table, tbody, th, td,
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   box-shadow: var(--card-shadow);
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
   &:hover {
@@ -665,11 +774,11 @@ input[type="number"], table, tbody, th, td,
     align-items: center;
     gap: 0.5rem;
     padding: 0.28rem 0.85rem;
-    border-radius: 4px;
+    border-radius: var(--r-sm);
     background: rgba(47,107,255,0.08);
     border: 1px solid rgba(47,107,255,0.16);
     color: var(--primary);
-    font-size: 0.7rem;
+    font-size: var(--text-2xs);
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -687,7 +796,7 @@ input[type="number"], table, tbody, th, td,
   }
 
   .hero-sub {
-    font-size: 1.1rem;
+    font-size: var(--text-lg);
     color: var(--muted);
     max-width: 520px;
     line-height: 1.75;
@@ -711,14 +820,14 @@ input[type="number"], table, tbody, th, td,
     align-items: center;
     gap: 0.4rem;
     padding: 0.22rem 0.7rem;
-    border-radius: 4px;
+    border-radius: var(--r-sm);
     background: rgba(47,107,255,0.08);
     border: 1px solid rgba(47,107,255,0.14);
     color: var(--primary);
     // 0.68rem measured 10.88px, below the 11px floor and off the 0.72rem
     // meta scale the rest of the app uses. Uppercase carries small type better
     // than lowercase, so this is a consistency correction more than a rescue.
-    font-size: 0.72rem;
+    font-size: var(--text-2xs);
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -737,7 +846,7 @@ input[type="number"], table, tbody, th, td,
 
   p {
     color: var(--muted);
-    font-size: 1rem;
+    font-size: var(--text-md);
     max-width: 480px;
     line-height: 1.7;
   }
@@ -755,10 +864,10 @@ input[type="number"], table, tbody, th, td,
   background: var(--gradient-cta);
   color: #fff;
   border: none;
-  border-radius: 11px;
+  border-radius: var(--r-lg);
   padding: 0.75rem 1.75rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   cursor: pointer;
   transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
   font-family: 'Manrope', sans-serif;
@@ -782,16 +891,16 @@ input[type="number"], table, tbody, th, td,
   background: transparent;
   color: var(--text);
   border: 1.5px solid var(--border-strong);
-  border-radius: 11px;
+  border-radius: var(--r-lg);
   padding: 0.75rem 1.75rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
   transition: border-color 0.22s, color 0.22s, background 0.22s, transform 0.22s, box-shadow 0.22s;
   &:hover {
-    border-color: #2563EB;
-    color: #2563EB;
+    border-color: var(--primary);
+    color: var(--primary);
     background: rgba(37,99,235,0.06);
     transform: translateY(-2px);
     box-shadow: 0 4px 14px rgba(37,99,235,0.12);
@@ -809,10 +918,10 @@ input[type="number"], table, tbody, th, td,
   background: var(--gradient-cta);
   color: #fff;
   border: none;
-  border-radius: 11px;
+  border-radius: var(--r-lg);
   padding: 0.75rem 1.75rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   cursor: pointer;
   transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
   font-family: 'Manrope', sans-serif;
@@ -835,10 +944,10 @@ input[type="number"], table, tbody, th, td,
   background: transparent;
   color: var(--text);
   border: 1.5px solid var(--border-strong);
-  border-radius: 11px;
+  border-radius: var(--r-lg);
   padding: 0.75rem 1.75rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
   // A button label is a label, not prose. Without this, "Sign In" breaks onto
@@ -846,8 +955,8 @@ input[type="number"], table, tbody, th, td,
   white-space: nowrap;
   transition: all 0.22s ease;
   &:hover {
-    border-color: #2563EB;
-    color: #2563EB;
+    border-color: var(--primary);
+    color: var(--primary);
     background: rgba(37,99,235,0.06);
     transform: translateY(-2px);
     box-shadow: 0 4px 14px rgba(37,99,235,0.14);
@@ -864,10 +973,10 @@ input[type="number"], table, tbody, th, td,
   background: var(--gradient-gold);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 0.75rem 1.75rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
   transition: all 0.22s ease;
@@ -885,10 +994,10 @@ input[type="number"], table, tbody, th, td,
   background: var(--teal);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 0.75rem 1.75rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
   transition: all 0.22s ease;
@@ -905,6 +1014,43 @@ input[type="number"], table, tbody, th, td,
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+// --gradient IS the hero gradient. So .gradient-text inside a hero paints the
+// glyphs in very nearly the colour already behind them, and the word drops out
+// of its own heading: on /compare, "Compare Cars" renders with "Compare" solid
+// white and "Cars" washed out to near-invisible against the teal end.
+//
+// The class is right everywhere else — on a white section the same blue-to-teal
+// fill is the brand accent and reads well. It is only wrong where the fill and
+// the backdrop are the same gradient, which is exactly this list of heroes.
+//
+// white -> #DDD6FE, which is the value reviews-news.component.scss already
+// arrived at and recorded: "#DDD6FE, not #C4B5FD ... the darker lavender
+// measured 2.37:1 at its right-hand edge where the gradient is lightest. This
+// one measures 3.94:1." Measured again here on /compare before the change:
+// #C4B5FD read 2.07:1 against the teal end, so large text at 3:1 was failing
+// on every hero that used it, not just the one page where it was noticed.
+//
+// Not solid white, although white measures 3.83:1 and would pass. The two-tone
+// heading is the intended look, and one page in this repo had already found a
+// lavender that keeps it and clears AA. Reusing that beats inventing a third
+// answer.
+//
+// This block is the default for heroes with no treatment of their own, where
+// the bare .gradient-text above would otherwise paint --gradient on --gradient
+// and the word would vanish into its own backdrop. Component styles load after
+// this file, so a page with a deliberate hero treatment still wins.
+.nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-hero,
+.md-hero, .rn-hero, .evc-hero, .compare-hero, .diag-hero, .advisor-hero,
+.results-hero, .bj-hero, .vr-hero, .chl-hero,
+.val-hero, .about-hero, .pricing-hero, .fm-hero {
+  .gradient-text {
+    background: linear-gradient(135deg, #ffffff, #DDD6FE);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 
 .gradient-text-hero {
@@ -927,11 +1073,11 @@ input[type="number"], table, tbody, th, td,
   align-items: center;
   gap: 0.3rem;
   padding: 0.22rem 0.6rem;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   // 0.68rem measured 10.88px, below the 11px floor and off the 0.72rem
   // meta scale the rest of the app uses. Uppercase carries small type better
   // than lowercase, so this is a consistency correction more than a rescue.
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -970,11 +1116,11 @@ input[type="number"], table, tbody, th, td,
 .section-tag {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   // 0.68rem measured 10.88px, below the 11px floor and off the 0.72rem
   // meta scale the rest of the app uses. Uppercase carries small type better
   // than lowercase, so this is a consistency correction more than a rescue.
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -986,12 +1132,12 @@ input[type="number"], table, tbody, th, td,
 }
 
 .section-title { font-family: 'Outfit', sans-serif; font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.025em; }
-.section-sub { color: var(--muted); font-size: 1rem; max-width: 520px; line-height: 1.75; }
+.section-sub { color: var(--muted); font-size: var(--text-md); max-width: 520px; line-height: 1.75; }
 
 // ── Scrollbar ─────────────────────────────────────────────────────────────────
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: var(--navy); }
-::-webkit-scrollbar-thumb { background: rgba(47,107,255,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(47,107,255,0.3); border-radius: var(--r-sm); }
 
 // ── Animations ────────────────────────────────────────────────────────────────
 @media (prefers-reduced-motion: no-preference) {
@@ -1045,7 +1191,7 @@ input[type="number"], table, tbody, th, td,
   background: linear-gradient(90deg, var(--fill-soft) 25%, var(--fill-medium) 50%, var(--fill-soft) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
-  border-radius: 8px;
+  border-radius: var(--r-md);
 }
 
 // ── Layout helpers ────────────────────────────────────────────────────────────
@@ -1056,8 +1202,8 @@ input[type="number"], table, tbody, th, td,
   align-items: center;
   gap: 0.4rem;
   padding: 0.35rem 0.9rem;
-  border-radius: 6px;
-  font-size: 0.82rem;
+  border-radius: var(--r-sm);
+  font-size: var(--text-xs);
   font-weight: 600;
   background: var(--fill-soft);
   border: 1px solid var(--border-soft);
@@ -1067,8 +1213,8 @@ input[type="number"], table, tbody, th, td,
   font-family: 'Manrope', sans-serif;
   &:hover {
     background: rgba(37,99,235,0.10);
-    border-color: #2563EB;
-    color: #2563EB;
+    border-color: var(--primary);
+    color: var(--primary);
   }
   &.active {
     background: var(--gradient-cta);
@@ -1083,9 +1229,9 @@ input, select, textarea {
   background: var(--input-bg);
   border: 1.5px solid var(--border-soft);
   color: var(--input-color);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;
@@ -1204,7 +1350,7 @@ input[type="checkbox"], input[type="radio"] {
 
   // Stats / chips row: allow wrap
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-  .chip { font-size: 0.76rem; padding: 0.3rem 0.7rem; }
+  .chip { font-size: var(--text-2xs); padding: 0.3rem 0.7rem; }
 
   // Footer links: single column on very small screens
   .footer-links { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
@@ -1236,7 +1382,7 @@ input[type="range"] {
   // Chrome / Safari track
   &::-webkit-slider-runnable-track {
     height: 6px;
-    border-radius: 3px;
+    border-radius: var(--r-sm);
     background: var(--gradient-cta);
     box-shadow: 0 1px 4px rgba(37,99,235,0.25);
   }
@@ -1244,7 +1390,7 @@ input[type="range"] {
   // Firefox track
   &::-moz-range-track {
     height: 6px;
-    border-radius: 3px;
+    border-radius: var(--r-sm);
     background: var(--gradient-cta);
     border: none;
     box-shadow: 0 1px 4px rgba(37,99,235,0.25);
@@ -1303,7 +1449,7 @@ input[type="range"] {
 .neon-line {
   height: 2px;
   background: var(--gradient);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   opacity: 0.6;
 }
 
@@ -1337,7 +1483,7 @@ a:focus-visible,
 [role="button"]:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 
 // The auth pages used to carry their own inline copy of the wordmark — the

@@ -14,14 +14,14 @@
     font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800;
     margin: 0 0 0.4rem; color: var(--text);
   }
-  .sub { margin: 0; color: var(--text-muted); font-size: 0.95rem; max-width: 46rem; line-height: 1.6; }
+  .sub { margin: 0; color: var(--text-muted); font-size: var(--text-base); max-width: 46rem; line-height: 1.6; }
 }
 
 .abr-note, .abr-error {
   display: flex; align-items: flex-start; gap: 0.55rem;
-  padding: 0.7rem 0.9rem; border-radius: 10px;
+  padding: 0.7rem 0.9rem; border-radius: var(--r-md);
   border: 1px solid var(--divider); background: var(--fill-dim);
-  font-size: 0.85rem; line-height: 1.55; color: var(--text);
+  font-size: var(--text-sm); line-height: 1.55; color: var(--text);
   margin-bottom: 1.25rem;
   app-icon { flex-shrink: 0; margin-top: 0.12rem; }
 }
@@ -40,7 +40,7 @@
 
 .abr-card {
   padding: 1rem; border: 1px solid var(--divider);
-  border-radius: 14px; background: var(--card-bg);
+  border-radius: var(--r-lg); background: var(--card-bg);
   display: flex; flex-direction: column; gap: 0.7rem;
 
   // Hidden brands stay legible rather than being greyed into unreadability —
@@ -75,7 +75,7 @@
   .abr-initial {
     position: absolute;
     font-family: 'Outfit', sans-serif;
-    font-weight: 800; font-size: 1.4rem;
+    font-weight: 800; font-size: var(--text-2xl);
     // A fixed slate, not --text-muted. The chip behind it is white in BOTH
     // themes now, and --text-muted goes near-white in dark — which would have
     // put pale grey on white and reproduced, on the fallback letter, exactly
@@ -86,17 +86,17 @@
 
 .abr-meta {
   min-width: 0;
-  h2 { margin: 0; font-size: 1rem; font-weight: 800; color: var(--text); }
+  h2 { margin: 0; font-size: var(--text-md); font-weight: 800; color: var(--text); }
   .slug {
-    margin: 0.1rem 0 0.35rem; font-size: 0.78rem; color: var(--text-muted);
+    margin: 0.1rem 0 0.35rem; font-size: var(--text-xs); color: var(--text-muted);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
 }
 
 .abr-origin {
   display: inline-block;
-  padding: 0.15rem 0.5rem; border-radius: 999px;
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
+  padding: 0.15rem 0.5rem; border-radius: var(--r-pill);
+  font-size: var(--text-2xs); font-weight: 700; letter-spacing: 0.02em;
   border: 1px solid var(--divider); color: var(--text-muted);
   cursor: help;
 
@@ -107,15 +107,15 @@
   &[data-origin="none"]     { color: var(--warning-ink); }
 }
 
-.abr-updated { margin: 0; font-size: 0.76rem; color: var(--text-muted); }
+.abr-updated { margin: 0; font-size: var(--text-2xs); color: var(--text-muted); }
 
 .abr-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; }
 
 .abr-btn {
   display: inline-flex; align-items: center; gap: 0.35rem;
-  padding: 0.42rem 0.75rem; border-radius: 9px;
+  padding: 0.42rem 0.75rem; border-radius: var(--r-md);
   border: 1px solid var(--divider); background: var(--fill-soft);
-  color: var(--text); font: inherit; font-size: 0.82rem; font-weight: 700;
+  color: var(--text); font: inherit; font-size: var(--text-xs); font-weight: 700;
   cursor: pointer;
 
   &:hover:not(:disabled):not(.disabled) { border-color: var(--teal); }
@@ -133,10 +133,10 @@
 
   .field {
     display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.55rem;
-    > span { font-size: 0.76rem; font-weight: 700; color: var(--text); }
+    > span { font-size: var(--text-2xs); font-weight: 700; color: var(--text); }
     input {
-      padding: 0.5rem 0.65rem; border: 1px solid var(--divider); border-radius: 9px;
-      background: var(--fill-soft); color: var(--text); font: inherit; font-size: 0.85rem;
+      padding: 0.5rem 0.65rem; border: 1px solid var(--divider); border-radius: var(--r-md);
+      background: var(--fill-soft); color: var(--text); font: inherit; font-size: var(--text-sm);
       &:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
     }
   }
@@ -144,6 +144,6 @@
 
 .abr-url-actions { display: flex; gap: 0.45rem; }
 
-.abr-ok, .abr-bad { margin: 0; font-size: 0.8rem; line-height: 1.5; }
+.abr-ok, .abr-bad { margin: 0; font-size: var(--text-xs); line-height: 1.5; }
 .abr-ok  { color: var(--success-ink); }
 .abr-bad { color: var(--warning-ink); }

@@ -19,9 +19,27 @@
     text-decoration: none;
     color: var(--text);
     margin-bottom: 1rem;
+
+    /* 196x42 painted, so 2px short of the 44px minimum. Same transparent
+       overlay the navbar controls use — see the tap-target block in
+       navbar.component.scss for why the element itself is not simply grown.
+       The navbar's rule is component-scoped and cannot reach this one. */
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      min-width: 44px;
+      min-height: 44px;
+    }
   }
 
-  p { color: var(--muted); font-size: 0.88rem; line-height: 1.7; margin-bottom: 1.5rem; }
+  p { color: var(--muted); font-size: var(--text-base); line-height: 1.7; margin-bottom: 1.5rem; }
 }
 
 .socials {
@@ -30,7 +48,7 @@
 
   .social-btn {
     width: 36px; height: 36px;
-    border-radius: 7px;
+    border-radius: var(--r-md);
     background: var(--fill-soft);
     border: 1px solid var(--border-soft);
     display: flex;
@@ -58,7 +76,7 @@
 
 .link-group {
   h4 {
-    font-size: 0.75rem;
+    font-size: var(--text-2xs);
     font-weight: 800;
     color: var(--text);
     margin-bottom: 1rem;
@@ -69,7 +87,7 @@
   a {
     display: block;
     color: var(--muted);
-    font-size: 0.875rem;
+    font-size: var(--text-sm);
     margin-bottom: 0.55rem;
     transition: color 0.2s;
     font-weight: 500;
@@ -82,7 +100,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 0;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   flex-wrap: wrap;
   gap: 1rem;
@@ -104,8 +122,8 @@
 
 @media (max-width: 480px) {
   .footer-links { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
-  .link-group h4 { font-size: 0.7rem; }
-  .link-group a { font-size: 0.82rem; }
-  .footer-bottom { font-size: 0.78rem; }
+  .link-group h4 { font-size: var(--text-2xs); }
+  .link-group a { font-size: var(--text-xs); }
+  .footer-bottom { font-size: var(--text-xs); }
   .footer-legal { flex-wrap: wrap; justify-content: center; gap: 0.75rem !important; }
 }

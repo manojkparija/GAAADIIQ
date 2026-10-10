@@ -9,7 +9,7 @@
 
 .al-head h1 {
   margin: 0 0 .35rem;
-  font-size: 1.75rem;
+  font-size: var(--text-3xl);
 }
 
 .al-sub {
@@ -29,10 +29,10 @@
 .al-tab {
   padding: .5rem .9rem;
   border: 1px solid var(--divider);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: transparent;
   color: var(--text-muted);
-  font-size: .9rem;
+  font-size: var(--text-base);
   cursor: pointer;
 
   &.is-active {
@@ -53,7 +53,7 @@
   min-width: 0;
   padding: .6rem .8rem;
   border: 1px solid var(--divider);
-  border-radius: .5rem;
+  border-radius: var(--r-md);
   background: var(--fill-dim);
   color: inherit;
   font: inherit;
@@ -62,7 +62,7 @@
 .al-refresh {
   padding: .6rem 1rem;
   border: 1px solid var(--divider);
-  border-radius: .5rem;
+  border-radius: var(--r-md);
   background: var(--fill-dim);
   color: inherit;
   cursor: pointer;
@@ -70,7 +70,7 @@
 
 .al-error {
   padding: .75rem 1rem;
-  border-radius: .5rem;
+  border-radius: var(--r-md);
   background: rgba(239, 68, 68, 0.10);
   color: var(--danger-ink);
 }
@@ -86,7 +86,7 @@
 
 .al-card {
   border: 1px solid var(--divider);
-  border-radius: .75rem;
+  border-radius: var(--r-lg);
   padding: 1.1rem;
   background: var(--fill-dim);
 }
@@ -101,20 +101,20 @@
 
 .al-name {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
 }
 
 .al-ref {
   color: var(--text-muted);
-  font-size: .85rem;
+  font-size: var(--text-sm);
   margin-top: .2rem;
 }
 
 .al-status {
   flex-shrink: 0;
   padding: .25rem .6rem;
-  border-radius: 999px;
-  font-size: .8rem;
+  border-radius: var(--r-pill);
+  font-size: var(--text-xs);
   background: var(--fill-dim);
   border: 1px solid var(--divider);
   color: var(--text-muted);
@@ -156,11 +156,11 @@
   align-items: center;
   gap: .4rem;
   padding: .45rem .8rem;
-  border-radius: .5rem;
+  border-radius: var(--r-md);
   border: 1px solid var(--divider);
   text-decoration: none;
   color: inherit;
-  font-size: .9rem;
+  font-size: var(--text-base);
 
   &:hover { border-color: var(--primary); }
 }
@@ -175,7 +175,7 @@
 
 .al-place {
   color: var(--text-muted);
-  font-size: .9rem;
+  font-size: var(--text-base);
 }
 
 .al-grid {
@@ -191,26 +191,26 @@
 }
 
 .al-label {
-  font-size: .78rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--text-muted);
 }
 
 .al-value {
-  font-size: .95rem;
+  font-size: var(--text-base);
 }
 
 .al-muted {
   color: var(--text-muted);
-  font-size: .85rem;
+  font-size: var(--text-sm);
 }
 
 .al-chosen {
   margin-top: .9rem;
   padding-top: .8rem;
   border-top: 1px solid var(--divider);
-  font-size: .95rem;
+  font-size: var(--text-base);
 }
 
 .al-chosen-none {

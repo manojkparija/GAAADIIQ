@@ -14,14 +14,14 @@
   gap: 1rem;
   flex-wrap: wrap;
 
-  h1 { font-size: 1.75rem; margin: 0 0 .35rem; }
+  h1 { font-size: var(--text-3xl); margin: 0 0 .35rem; }
 }
 
 .am-sub {
   margin: 0;
   max-width: 60ch;
   color: var(--text-muted);
-  font-size: .9rem;
+  font-size: var(--text-base);
   line-height: 1.5;
 }
 
@@ -31,7 +31,7 @@
   gap: .35rem;
   color: var(--primary);
   text-decoration: none;
-  font-size: .875rem;
+  font-size: var(--text-sm);
   white-space: nowrap;
 
   &:hover { text-decoration: underline; }
@@ -51,7 +51,7 @@
   border-bottom: 2px solid transparent;
   padding: .6rem .9rem;
   font: inherit;
-  font-size: .9rem;
+  font-size: var(--text-base);
   color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
@@ -66,9 +66,9 @@
 .am-count {
   margin-left: .4rem;
   padding: .05rem .4rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--fill-dim);
-  font-size: .78rem;
+  font-size: var(--text-xs);
 }
 
 .am-search {
@@ -77,7 +77,7 @@
   gap: .5rem;
   padding: .5rem .75rem;
   border: 1px solid var(--divider);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   margin-bottom: 1.25rem;
   color: var(--text-muted);
 
@@ -94,7 +94,7 @@
 .am-error, .am-loading, .am-empty {
   padding: 1rem 0;
   color: var(--text-muted);
-  font-size: .9rem;
+  font-size: var(--text-base);
 }
 .am-error { color: var(--danger-ink, #B42318); }
 
@@ -102,7 +102,7 @@
 
 .am-card {
   border: 1px solid var(--divider);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 1rem 1.15rem;
 }
 
@@ -113,15 +113,15 @@
   gap: .75rem;
 }
 
-.am-name { font-size: 1.05rem; margin: 0; }
-.am-shop { margin: .15rem 0 0; color: var(--text-muted); font-size: .875rem; }
+.am-name { font-size: var(--text-md); margin: 0; }
+.am-shop { margin: .15rem 0 0; color: var(--text-muted); font-size: var(--text-sm); }
 
 // Text on a tint uses the -ink tokens, not the brand colour: the same hue at
 // this size measures below AA over --navy.
 .am-status {
   padding: .2rem .55rem;
-  border-radius: 999px;
-  font-size: .75rem;
+  border-radius: var(--r-pill);
+  font-size: var(--text-2xs);
   font-weight: 600;
   white-space: nowrap;
 
@@ -134,7 +134,7 @@
   margin: .9rem 0 0;
   display: grid;
   gap: .4rem;
-  font-size: .875rem;
+  font-size: var(--text-sm);
 
   > div { display: flex; gap: .5rem; }
   dt { min-width: 8.5rem; color: var(--text-muted); margin: 0; }
@@ -149,7 +149,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: .5rem 1.25rem;
-  font-size: .82rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 .am-kyc-label { font-weight: 600; color: var(--info-ink); }
@@ -161,10 +161,10 @@
   align-items: center;
   gap: .35rem;
   padding: .5rem .9rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid transparent;
   font: inherit;
-  font-size: .875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
 
@@ -178,15 +178,15 @@
 .am-reject {
   margin-top: 1rem;
 
-  label { display: block; font-size: .85rem; margin-bottom: .35rem; }
+  label { display: block; font-size: var(--text-sm); margin-bottom: .35rem; }
 
   textarea {
     width: 100%;
     padding: .5rem .65rem;
     border: 1px solid var(--divider);
-    border-radius: 8px;
+    border-radius: var(--r-md);
     font: inherit;
-    font-size: .875rem;
+    font-size: var(--text-sm);
     resize: vertical;
   }
 }
@@ -199,7 +199,7 @@
   background: var(--navy, #0B1A33);
   color: #fff;
   padding: .65rem 1rem;
-  border-radius: 8px;
-  font-size: .875rem;
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
   z-index: 60;
 }

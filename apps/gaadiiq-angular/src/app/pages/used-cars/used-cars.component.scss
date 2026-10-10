@@ -4,7 +4,7 @@
 
 /* ── HERO ── */
 .uc-hero {
-  background: linear-gradient(135deg, #1e40af 0%, var(--teal) 100%);
+  background: linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%);
   /* LAY-007: the navbar is fixed and its height changes with the bar's contents
      (176px on a phone since the nav strip). max() keeps the designed spacing
      wherever it is the larger, and clears the bar when it is not. */
@@ -32,8 +32,8 @@
   border: 1px solid rgba(255,255,255,0.3);
   backdrop-filter: blur(8px);
   padding: 0.35rem 1rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
+  border-radius: var(--r-xl);
+  font-size: var(--text-sm);
   font-weight: 600;
   letter-spacing: 0.5px;
   margin-bottom: 1rem;
@@ -47,14 +47,14 @@
 }
 
 .hero-sub {
-  font-size: 1rem;
+  font-size: var(--text-md);
   opacity: 0.88;
   margin-bottom: 2rem;
 }
 
 // Hero text needs light gradient on dark blue background
 .uc-hero .gradient-text {
-  background: linear-gradient(135deg, #ffffff, #C4B5FD);
+  background: linear-gradient(135deg, #ffffff, #DDD6FE);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -86,7 +86,7 @@
 }
 
 .search-field-label {
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   color: rgba(255,255,255,0.8);
   text-transform: uppercase;
@@ -97,9 +97,9 @@
   padding: 0.55rem 0.75rem;
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   color: #fff;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 
@@ -136,8 +136,8 @@
     // the text inputs beside it — which is the row misalignment the component's
     // own --cs-min-h comment records being reported from UAT.
     border-width: 1px;
-    border-radius: 8px;
-    font-size: 0.9rem;
+    border-radius: var(--r-md);
+    font-size: var(--text-base);
     box-shadow: none;
     // Matches .search-input exactly. Both are 0.9rem text with the same
     // padding and border, so both come out the same height.
@@ -150,9 +150,9 @@
   padding: 0.55rem 0.75rem;
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   color: #fff;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   line-height: 1.5;
   appearance: none;
 
@@ -185,14 +185,14 @@
   // Stating the height matches the row instead of approximating it.
   height: 41px;
   font-weight: 700;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: #fff;
   // White button in both themes; --primary brightens for dark backgrounds and
   // would sit on this at 3.08:1. See --ink-on-white.
   color: var(--ink-on-white);
   border: none;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   transition: all 0.2s;
 
   &:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
@@ -219,10 +219,10 @@
   min-width: 140px;
 }
 
-.stat-icon { font-size: 1.8rem; margin-bottom: 0.3rem; }
+.stat-icon { font-size: var(--text-3xl); margin-bottom: 0.3rem; }
 
 .stat-value {
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
   font-weight: 800;
   color: var(--text);
   background: linear-gradient(135deg, #2563EB, var(--teal));
@@ -232,7 +232,7 @@
 }
 
 .stat-label {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   font-weight: 500;
 }
@@ -258,7 +258,7 @@
   position: sticky;
   top: 80px;
   padding: 1.5rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   max-height: calc(100vh - 100px);
   overflow-y: auto;
   scrollbar-width: thin;
@@ -274,7 +274,7 @@
     top: auto;
     z-index: 200;
     max-height: 90vh;
-    border-radius: 20px 20px 0 0;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
     padding: 1.25rem 1.25rem calc(1.25rem + var(--safe-bottom, 0px));
     background: var(--navy);
     border-top: 1px solid var(--border-soft);
@@ -320,7 +320,7 @@
     display: block;
     width: 40px;
     height: 4px;
-    border-radius: 2px;
+    border-radius: var(--r-sm);
     background: var(--muted);
     opacity: 0.4;
     margin: 0 auto 1rem;
@@ -345,7 +345,7 @@
     border: 1px solid var(--border-soft);
     cursor: pointer;
     color: var(--text);
-    font-size: 1rem;
+    font-size: var(--text-md);
     line-height: 1;
   }
 }
@@ -360,14 +360,14 @@
 }
 
 .sidebar-title {
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 700;
   color: var(--text);
   margin: 0;
 }
 
 .clear-all-btn {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--primary);
   background: none;
   border: none;
@@ -387,7 +387,7 @@
 
 .filter-group-label {
   display: block;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 0.65rem;
@@ -397,7 +397,7 @@
 
 /* Budget Range */
 .range-display {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--primary);
   margin-bottom: 0.5rem;
@@ -417,7 +417,7 @@
     transform: translateY(-50%);
     height: 4px;
     background: var(--border, rgba(0,0,0,0.12));
-    border-radius: 2px;
+    border-radius: var(--r-sm);
     pointer-events: none;
   }
 
@@ -426,8 +426,8 @@
     top: 50%;
     transform: translateY(-50%);
     height: 4px;
-    background: var(--primary, #2563EB);
-    border-radius: 2px;
+    background: var(--primary);
+    border-radius: var(--r-sm);
     pointer-events: none;
   }
 
@@ -497,7 +497,7 @@
 .range-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--muted);
   margin-top: 0.2rem;
 }
@@ -514,16 +514,16 @@
   min-width: 0;
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--surface);
   color: var(--text);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   cursor: pointer;
   appearance: auto;
 }
 
 .year-sep {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--muted);
 }
 
@@ -532,7 +532,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.83rem;
+  font-size: var(--text-sm);
   color: var(--text);
   margin-bottom: 0.35rem;
   cursor: pointer;
@@ -553,11 +553,11 @@
 
 .chip-filter {
   padding: 0.3rem 0.7rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1px solid var(--border, rgba(0,0,0,0.12));
   background: transparent;
   color: var(--text);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   cursor: pointer;
   transition: all 0.15s;
 
@@ -587,7 +587,7 @@
   width: 38px;
   height: 20px;
   background: var(--border, #ccc);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   position: relative;
   transition: background 0.2s;
   flex-shrink: 0;
@@ -614,7 +614,7 @@
 }
 
 .toggle-text {
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   color: var(--text);
 }
 
@@ -654,10 +654,10 @@
 }
 
 .car-count {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   color: var(--muted);
 
-  strong { color: var(--text); font-size: 1rem; }
+  strong { color: var(--text); font-size: var(--text-md); }
 }
 
 .sort-area {
@@ -668,18 +668,18 @@
 
 .sort-select {
   padding: 0.4rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   border: 1px solid var(--border, rgba(0,0,0,0.12));
   background: var(--navy);
   color: var(--text);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
 // LAY-006: Filter button always reachable — sticky bar on mobile
 .filter-toggle-btn {
   display: none;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   padding: 0.4rem 0.9rem;
   align-items: center;
   gap: 0.4rem;
@@ -709,7 +709,7 @@
   border-radius: 50%;
   width: 18px;
   height: 18px;
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -729,12 +729,12 @@
 .all-india-banner {
   display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
   background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
-  border-radius: 10px; padding: 10px 16px; margin: 0 auto; max-width: 900px;
-  font-size: 0.85rem; color: var(--text, #1e293b);
-  .banner-icon { font-size: 1.1rem; }
+  border-radius: var(--r-md); padding: 10px 16px; margin: 0 auto; max-width: 900px;
+  font-size: var(--text-sm); color: var(--text, #1e293b);
+  .banner-icon { font-size: var(--text-lg); }
   .banner-link {
-    background: none; border: none; cursor: pointer; color: #2563eb;
-    font-weight: 700; font-size: 0.85rem; text-decoration: underline; padding: 0;
+    background: none; border: none; cursor: pointer; color: var(--primary);
+    font-weight: 700; font-size: var(--text-sm); text-decoration: underline; padding: 0;
     &:hover { color: var(--info-ink); }
   }
 }
@@ -753,8 +753,8 @@
   padding: 0.28rem 0.7rem;
   background: rgba(37,99,235,0.1);
   border: 1px solid rgba(37,99,235,0.2);
-  border-radius: 20px;
-  font-size: 0.78rem;
+  border-radius: var(--r-xl);
+  font-size: var(--text-xs);
   color: var(--primary);
   font-weight: 600;
 
@@ -763,7 +763,7 @@
     border: none;
     cursor: pointer;
     color: var(--primary);
-    font-size: 0.9rem;
+    font-size: var(--text-base);
     line-height: 1;
     padding: 0;
 
@@ -772,7 +772,7 @@
 }
 
 .clear-strip-btn {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--danger-ink);
   background: none;
   border: none;
@@ -805,19 +805,19 @@
 .empty-state {
   text-align: center;
   padding: 3.5rem 2rem;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
 
-  .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
-  h3 { font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
+  .empty-icon { font-size: var(--text-5xl); margin-bottom: 0.75rem; }
+  h3 { font-size: var(--text-xl); color: var(--text); margin-bottom: 0.5rem; }
   p { color: var(--muted); margin-bottom: 1.25rem; }
 
   .btn-gradient {
-    background: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+    background: var(--gradient-cta);
     color: #fff;
     border: none;
     padding: 0.75rem 1.75rem;
-    border-radius: 10px;
-    font-size: 0.95rem;
+    border-radius: var(--r-md);
+    font-size: var(--text-base);
     font-weight: 700;
     cursor: pointer;
     display: inline-block;
@@ -830,14 +830,14 @@
   .btn-outline {
     display: inline-block;
     padding: 0.75rem 1.75rem;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     // Transparent background means this text lands on the page, which does
     // flip — so the token that flips is the right one here. Was #2563EB,
     // measured 3.15:1 on the dark page.
     border: 1.5px solid var(--primary);
     color: var(--primary);
     background: transparent;
-    font-size: 0.95rem;
+    font-size: var(--text-base);
     font-weight: 700;
     cursor: pointer;
     text-decoration: none;
@@ -855,7 +855,7 @@
 }
 
 .car-card {
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   overflow: hidden;
   transition: all 0.25s;
 
@@ -891,10 +891,10 @@
   // dark mode, which as a *background* under white text would fail again.
   background: #0B855C;
   color: #fff;
-  font-size: 0.68rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   padding: 0.22rem 0.55rem;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   letter-spacing: 0.3px;
 }
 
@@ -907,7 +907,7 @@
   border-radius: 50%;
   width: 32px;
   height: 32px;
-  font-size: 1rem;
+  font-size: var(--text-md);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -931,25 +931,25 @@
 }
 
 .car-year {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   color: var(--muted);
   background: rgba(0,0,0,0.06);
   padding: 0.15rem 0.45rem;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 
 .car-badge {
-  font-size: 0.68rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   padding: 0.15rem 0.45rem;
   background: linear-gradient(135deg, #2563EB, var(--teal));
   color: #fff;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 
 .car-name {
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 700;
   color: var(--text);
   margin: 0 0 0.5rem;
@@ -960,7 +960,7 @@
 }
 
 .car-variant {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 500;
   color: var(--muted);
 }
@@ -975,7 +975,7 @@
 }
 
 .car-price {
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
   font-weight: 800;
   background: linear-gradient(135deg, #2563EB, var(--teal));
   -webkit-background-clip: text;
@@ -984,7 +984,7 @@
 }
 
 .car-emi {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   font-weight: 500;
 }
@@ -995,10 +995,10 @@
 }
 
 .price-verdict {
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   padding: 0.22rem 0.6rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   display: inline-block;
 }
 
@@ -1035,10 +1035,10 @@
 }
 
 .detail-pill {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--text);
   background: rgba(0,0,0,0.05);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   padding: 0.18rem 0.45rem;
   font-weight: 500;
 }
@@ -1052,10 +1052,10 @@
 }
 
 .meta-pill {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--primary);
   background: rgba(37,99,235,0.07);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 0.18rem 0.55rem;
   font-weight: 600;
 }
@@ -1068,7 +1068,7 @@
 }
 
 .btn-sm {
-  font-size: 0.82rem !important;
+  font-size: var(--text-xs) !important;
   padding: 0.42rem 0.9rem !important;
 }
 
@@ -1080,7 +1080,7 @@
 
 .load-more-btn {
   padding: 0.7rem 2.5rem;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 700;
 }
 
@@ -1092,7 +1092,7 @@
 }
 
 .rv-title {
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 1rem;
@@ -1109,7 +1109,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   cursor: pointer;
   transition: all 0.2s;
   flex: 0 0 auto;
@@ -1124,27 +1124,27 @@
   width: 80px;
   height: 55px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   flex-shrink: 0;
 }
 
 .rv-info {}
 
 .rv-name {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 0.15rem;
 }
 
 .rv-price {
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   font-weight: 800;
   color: var(--primary);
 }
 
 .rv-km {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--muted);
 }
 
@@ -1183,7 +1183,7 @@
    wider than its column on a narrow screen. */
 .uc-failure-detail {
   margin: 0.75rem auto 0;
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   line-height: 1.4;
   color: var(--muted);
   word-break: break-word;

@@ -8,7 +8,7 @@
 .page-header {
   text-align: center; margin-bottom: 2.5rem;
   h1 { font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 900; margin: 0.5rem 0; }
-  .hero-sub { color: var(--muted); font-size: 1.05rem; }
+  .hero-sub { color: var(--muted); font-size: var(--text-md); }
 }
 
 .calc-grid {
@@ -20,33 +20,33 @@
 
 .input-card {
   padding: 1.5rem;
-  h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; }
+  h3 { font-size: var(--text-lg); font-weight: 700; margin-bottom: 1.25rem; }
   label {
     display: block; margin-bottom: 1.1rem;
-    span { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 0.35rem; }
+    span { font-size: var(--text-sm); color: var(--muted); display: block; margin-bottom: 0.35rem; }
     input[type=range] { width: 100%; }
     input[type=number] {
-      flex: 1; border: 1px solid var(--border); border-radius: 0.5rem;
-      padding: 0.4rem 0.6rem; background: var(--bg); color: var(--text); font-size: 0.9rem;
+      flex: 1; border: 1px solid var(--border); border-radius: var(--r-md);
+      padding: 0.4rem 0.6rem; background: var(--bg); color: var(--text); font-size: var(--text-base);
       width: 100%;
     }
-    small { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; display: block; }
+    small { font-size: var(--text-xs); color: var(--muted); margin-top: 0.2rem; display: block; }
   }
 }
 
 .input-wrap { display: flex; align-items: center; gap: 0.5rem; }
-.rupee { font-weight: 700; color: var(--primary, #2B6BFF); font-size: 1rem; }
+.rupee { font-weight: 700; color: var(--primary, #2B6BFF); font-size: var(--text-md); }
 
 .subsidy-badge {
   background: rgba(16,185,129,0.12); color: var(--success-ink);
-  border-radius: 0.5rem; padding: 0.4rem 0.75rem; font-size: 0.85rem;
+  border-radius: var(--r-md); padding: 0.4rem 0.75rem; font-size: var(--text-sm);
   margin: 0.5rem 0;
 }
-.effective-price { font-size: 0.9rem; color: var(--muted); strong { color: var(--text); } }
+.effective-price { font-size: var(--text-base); color: var(--muted); strong { color: var(--text); } }
 
 .results-section {
   padding: 2rem; margin-bottom: 2rem;
-  h2 { text-align: center; margin-bottom: 1.5rem; font-size: 1.4rem; }
+  h2 { text-align: center; margin-bottom: 1.5rem; font-size: var(--text-2xl); }
 }
 
 .result-grid {
@@ -54,20 +54,20 @@
   margin-bottom: 1.5rem; flex-wrap: wrap;
 }
 .result-col { text-align: center; }
-.result-label { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.5rem; }
+.result-label { font-size: var(--text-base); color: var(--muted); margin-bottom: 0.5rem; }
 .result-val {
-  font-size: 2rem; font-weight: 900; margin-bottom: 0.25rem;
+  font-size: var(--text-3xl); font-weight: 900; margin-bottom: 0.25rem;
   &.ev     { color: var(--success-ink); }
-  &.petrol { color: #f59e0b; }
+  &.petrol { color: var(--warning-ink); }
 }
-.result-sub { font-size: 0.8rem; color: var(--muted); }
-.vs-divider { font-weight: 900; font-size: 1.2rem; color: var(--muted); }
+.result-sub { font-size: var(--text-xs); color: var(--muted); }
+.vs-divider { font-weight: 900; font-size: var(--text-xl); color: var(--muted); }
 
 .verdict {
-  text-align: center; padding: 1rem 1.5rem; border-radius: 0.75rem;
-  font-size: 1rem; margin-bottom: 1.5rem;
+  text-align: center; padding: 1rem 1.5rem; border-radius: var(--r-lg);
+  font-size: var(--text-md); margin-bottom: 1.5rem;
   &.ev-wins     { background: rgba(16,185,129,0.1);  color: var(--success-ink); }
-  &.petrol-wins { background: rgba(245,158,11,0.1); color: #f59e0b; }
+  &.petrol-wins { background: rgba(245,158,11,0.1); color: var(--warning-ink); }
   strong { font-weight: 800; }
 }
 
@@ -76,8 +76,8 @@
 }
 .breakdown-item {
   display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.85rem; padding: 0.5rem 0.75rem;
-  background: var(--glass-bg); border-radius: 0.5rem;
+  font-size: var(--text-sm); padding: 0.5rem 0.75rem;
+  background: var(--glass-bg); border-radius: var(--r-md);
   span { color: var(--muted); }
   strong { font-weight: 700; }
 }
@@ -87,7 +87,7 @@
   margin-bottom: 1.5rem;
 }
 .disclaimer {
-  text-align: center; font-size: 0.8rem; color: var(--muted);
+  text-align: center; font-size: var(--text-xs); color: var(--muted);
   max-width: 600px; margin: 0 auto;
 }
 

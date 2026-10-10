@@ -1,7 +1,7 @@
 .vs-card {
   background: var(--card-bg, #fff);
   border: 1px solid var(--divider);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   padding: 1.25rem;
 }
 
@@ -16,15 +16,15 @@
 
 .vs-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--text-md);
   font-weight: 700;
 }
 
 .vs-grade {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 800;
   padding: 0.3rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: #E8EDFB;
   color: #1D4ED8;
 
@@ -85,8 +85,8 @@
   line-height: 1;
 }
 
-.vs-score { font-size: 1.9rem; font-weight: 800; }
-.vs-outof { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
+.vs-score { font-size: var(--text-3xl); font-weight: 800; }
+.vs-outof { font-size: var(--text-2xs); color: var(--text-muted); margin-top: 0.2rem; }
 
 // ── Factors ─────────────────────────────────────────────────────────────────
 
@@ -105,14 +105,14 @@
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 700;
 }
 
 .vs-bar {
   margin: 0.25rem 0 0.2rem;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--fill-dim);
   overflow: hidden;
 }
@@ -120,7 +120,7 @@
 .vs-bar-fill {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 
 .vs-bar-good { background: #047857; }
@@ -128,7 +128,7 @@
 .vs-bar-low  { background: #B02121; }
 
 .vs-factor-detail {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   line-height: 1.45;
 }
@@ -137,7 +137,7 @@
   margin: 1.1rem 0 0;
   padding-top: 0.9rem;
   border-top: 1px solid var(--divider);
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   line-height: 1.6;
   color: var(--text-muted);
 

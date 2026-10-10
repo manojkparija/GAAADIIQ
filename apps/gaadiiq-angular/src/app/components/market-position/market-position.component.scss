@@ -1,7 +1,7 @@
 .mp-card {
   background: var(--card-bg, #fff);
   border: 1px solid var(--divider);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   padding: 1.25rem;
 }
 
@@ -16,15 +16,15 @@
 
 .mp-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--text-md);
   font-weight: 700;
 }
 
 .mp-verdict {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 800;
   padding: 0.3rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   // Opaque, and each pair measured on its own background rather than tinted
   // over whatever card is behind — the same thing that put the lender marks
   // below AA on one page and above it on another.
@@ -43,7 +43,7 @@
 .mp-track {
   display: flex;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   overflow: hidden;
 }
 
@@ -76,7 +76,7 @@
 
 .mp-needle-price {
   margin-top: 0.35rem;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   font-weight: 800;
   white-space: nowrap;
   color: var(--text);
@@ -86,7 +86,7 @@
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
 }
 
@@ -98,13 +98,13 @@
 
 .mp-detail {
   margin: 1rem 0 0;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   line-height: 1.6;
 }
 
 .mp-basis {
   margin: 0.75rem 0 0;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   line-height: 1.55;
   color: var(--text-muted);
 }
@@ -117,6 +117,6 @@
 }
 
 @media (max-width: 480px) {
-  .mp-scale { font-size: 0.66rem; }
+  .mp-scale { font-size: var(--text-2xs); }
   .mp-scale-mid { flex: 0 0 40%; }
 }

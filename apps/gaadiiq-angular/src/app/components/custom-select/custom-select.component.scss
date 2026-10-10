@@ -28,9 +28,9 @@
   //
   // A custom property inherits, so it does not enter that contest at all.
   padding: var(--cs-pad, 10px 14px);
-  border: 1.5px solid var(--cs-border, var(--border, #e5e7eb));
-  border-radius: 10px;
-  font-size: 14px;
+  border: 1.5px solid var(--cs-border, var(--border));
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
   background: var(--cs-bg, var(--bg, #fff));
   color: var(--cs-color, var(--text, #111));
   cursor: pointer; text-align: left; gap: 8px;
@@ -73,13 +73,13 @@
   // the component and :host-context() cannot reach it. A custom property
   // defined on :root still cascades to it wherever it is parked.
   background: var(--nav-panel, #fff); border: 1.5px solid var(--teal);
-  border-radius: 10px; overflow: hidden;
+  border-radius: var(--r-md); overflow: hidden;
   box-shadow: 0 8px 28px rgba(20,184,166,0.18), 0 2px 8px rgba(0,0,0,0.08);
   max-height: 260px; overflow-y: auto;
 }
 
 .cs-option {
-  padding: 10px 14px; font-size: 14px; cursor: pointer; transition: background 0.12s, color 0.12s;
+  padding: 10px 14px; font-size: var(--text-sm); cursor: pointer; transition: background 0.12s, color 0.12s;
   color: var(--text, #111);
 
   &.placeholder-opt { color: var(--text-muted); }
@@ -96,7 +96,7 @@
   // is the same trade every primary button in the app already makes — the row
   // now matches them rather than being the one place that diverges. Revisit by
   // narrowing the ramp, not by re-darkening it.
-  $cs-highlight: linear-gradient(90deg, #2563EB 0%, #06B6D4 55%, #14B8A6 100%);
+  $cs-highlight: var(--gradient-cta);
 
   &:hover {
     background: $cs-highlight;

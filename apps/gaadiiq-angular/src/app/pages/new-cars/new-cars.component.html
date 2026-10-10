@@ -297,9 +297,15 @@
                     @if (model.bodyType) {
                       <span class="model-bt-badge">{{ model.bodyType }}</span>
                     }
-                    <div class="model-rating">
-                      ⭐ {{ model.rating.toFixed(1) }} <span class="model-reviews">({{ model.reviews }})</span>
-                    </div>
+                    <!-- Only when somebody has actually reviewed it. With no
+                         reviews this rendered "⭐ 0.0 (0)", which does not read
+                         as "not yet rated" — it reads as rated, and rated
+                         worst possible. Absent is the honest empty state. -->
+                    @if (model.reviews > 0) {
+                      <div class="model-rating">
+                        ⭐ {{ model.rating.toFixed(1) }} <span class="model-reviews">({{ model.reviews }})</span>
+                      </div>
+                    }
                   </div>
                   <h3 class="model-name">{{ model.make }} {{ model.model }}</h3>
                   <div class="model-price-range">
