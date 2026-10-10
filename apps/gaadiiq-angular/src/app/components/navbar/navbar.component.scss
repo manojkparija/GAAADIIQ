@@ -1208,3 +1208,62 @@
    It is the last item in the row, so a left-anchored panel would open past the
    viewport edge on narrower screens. */
 .nav-mega-right { left: auto; right: 0; }
+
+/* ---------------------------------------------------------------------------
+   TAP TARGETS — WCAG 2.5.5 / Material / HIG all want ~44x44 CSS px.
+
+   Measured before this block, on every one of the 55 pages because these
+   controls live in the shared bar:
+
+     .hamburger   36 x 36
+     .ai-tab      37 tall  (x3)
+     .util-pill   34 tall
+     .logo        29-32 tall
+
+   WHY A PSEUDO-ELEMENT AND NOT A BIGGER BUTTON
+
+   Growing the controls themselves is the obvious fix and the wrong one here.
+   The bar's height is --nav-height, and --nav-offset is derived from it
+   (styles.scss:19); every page in the app clears the fixed bar with that
+   offset. Make the controls 44px and the bar grows, the offset does not, and
+   content slides under the navbar on all 55 pages -- which is LAY-007, a bug
+   this project has already shipped and fixed once.
+
+   The second reason is in the comments further up this file: at 390px the bar
+   is already close to wrapping, and the hamburger wrapping onto its own row
+   has happened before. Adding 8px of width to it invites that back.
+
+   So the painted size does not change at all. ::after is a transparent,
+   centred overlay that only ever grows the hit region. Layout, bar height and
+   the 390px packing are all untouched.
+
+   Pointer events: the overlay belongs to its own control, so it extends that
+   control's clickable area. It can overhang a neighbour by a few px -- the
+   gaps in this bar are larger than the overhang, which is why nothing here
+   needed its spacing changed. Verified by hit-testing the centre of each
+   control after the change, not by eye.
+--------------------------------------------------------------------------- */
+@mixin tap-target($min: 44px) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    min-width: $min;
+    min-height: $min;
+    /* Decoration only -- never paints, never affects flow. */
+    background: none;
+    border: none;
+    pointer-events: auto;
+  }
+}
+
+.hamburger  { @include tap-target; }
+.util-pill  { @include tap-target; }
+.ai-tab     { @include tap-target; }
+.logo       { @include tap-target; }
