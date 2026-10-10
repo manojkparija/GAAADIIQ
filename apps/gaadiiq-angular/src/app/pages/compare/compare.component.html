@@ -100,7 +100,7 @@
       </div>
 
       <!-- Spec rows -->
-      <div class="comp-row" *ngFor="let row of specRows" [class.alt]="specRows.indexOf(row) % 2 === 0">
+      <div class="comp-row" *ngFor="let row of visibleSpecRows(); let i = index" [class.alt]="i % 2 === 0">
         <div class="comp-label">{{ row.label }}</div>
         <div class="comp-val" *ngFor="let e of activeEntries()"
              [class.winner]="isEntryWinner(row.key, e, row.higher)">
@@ -121,10 +121,17 @@
       <!-- Features comparison -->
       <div class="features-comp">
         <h3>{{ 'Features Comparison' | t }}</h3>
+        <!-- Says what a dash means, so it is not read as a cross with better
+             manners. The table can confirm a feature; it cannot rule one out. -->
+        <p class="feat-note">{{ 'A tick means the feature is listed for that car. A dash means it is not listed — which is not the same as the car not having it.' | t }}</p>
         <div class="feat-row" *ngFor="let f of ['Sunroof','ADAS','360 Camera','Wireless Charging','Ventilated Seats','6 Airbags']">
           <div class="feat-label">{{ f }}</div>
-          <div class="feat-val" *ngFor="let e of activeEntries()">
-            {{ entryHasFeature(e, f) ? '✓' : '✗' }}
+          <!-- A dash, not a cross, where the feature is simply not recorded.
+               See entryFeatureState: a miss means no string matched, which is
+               not the same as the car lacking the feature. -->
+          <div class="feat-val" *ngFor="let e of activeEntries()"
+               [class.feat-unknown]="entryFeatureState(e, f) === 'unknown'">
+            {{ entryFeatureState(e, f) === 'yes' ? '✓' : '—' }}
           </div>
         </div>
       </div>

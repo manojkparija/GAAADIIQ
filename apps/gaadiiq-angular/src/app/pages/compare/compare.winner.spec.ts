@@ -256,4 +256,58 @@ describe('CompareComponent — a missing value reads as a dash', () => {
     expect(row(c, 'Rating').format(0)).toBe('0 ★');
     expect(row(c, 'Price').format(470000)).toBe('₹4.7L');
   });
+
+  // ── Reported against the live compare table: every column read "0 ★" and
+  //    "0", on cars nobody has rated. The formatters above are right to pass
+  //    a real zero through; the fault is showing the rows at all when there
+  //    is nothing to show.
+  it('hides Rating and Reviews while nothing has been reviewed', () => {
+    const c = mount([car({ id: 'a' }), car({ id: 'b' })]);
+
+    const labels = c.visibleSpecRows().map((r: any) => r.label);
+    expect(labels).not.toContain('Rating');
+    expect(labels).not.toContain('Reviews');
+    // The other rows are untouched.
+    expect(labels).toContain('Price');
+    expect(labels).toContain('Fuel Type');
+  });
+
+  it('brings both rows back as soon as one car has a review', () => {
+    const c = mount([car({ id: 'a' }), car({ id: 'b', reviews: 12, rating: 4.3 })]);
+
+    const labels = c.visibleSpecRows().map((r: any) => r.label);
+    expect(labels).toContain('Rating');
+    expect(labels).toContain('Reviews');
+  });
+
+  // ── Reported with the Creta and Verna columns circled: both ship six
+  //    airbags as standard and both were marked with a cross. The cross was
+  //    never about the car -- `features` is free text from
+  //    variant_research.py, so an unmatched substring meant "not listed",
+  //    and the table printed that as "does not have".
+  it('answers unknown, not no, for a feature that is not listed', () => {
+    const c = mount([
+      car({ id: 'a', features: ['6 Airbags', 'Sunroof'] }),
+      car({ id: 'b', features: ['Ventilated Seats'] }),
+    ]);
+    const [a, b] = c.activeEntries();
+
+    expect(c.entryFeatureState(a, '6 Airbags')).toBe('yes');
+    // b very likely has airbags; nothing recorded says so either way.
+    expect(c.entryFeatureState(b, '6 Airbags')).toBe('unknown');
+    expect(c.entryFeatureState(b, 'Ventilated Seats')).toBe('yes');
+  });
+
+  it('never answers no, so the table cannot claim a car lacks a feature', () => {
+    const c = mount([car({ id: 'a', features: [] }), car({ id: 'b' })]);
+
+    for (const e of c.activeEntries()) {
+      for (const f of ['Sunroof', 'ADAS', '360 Camera',
+                       'Wireless Charging', 'Ventilated Seats', '6 Airbags']) {
+        expect(['yes', 'unknown'])
+          .withContext(`${f} must not resolve to a cross`)
+          .toContain(c.entryFeatureState(e, f));
+      }
+    }
+  });
 });

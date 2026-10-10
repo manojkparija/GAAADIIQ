@@ -106,6 +106,30 @@ export class CompareComponent implements OnInit {
     { label: 'City', key: 'city', format: (v: any) => CompareComponent.dash(v, String), higher: null },
   ];
 
+  /**
+   * specRows minus the ones that would only state a zero.
+   *
+   * Rating and Reviews rendered "0 ★" and "0" for every car on the page.
+   * dash() turns null and '' into an em dash but 0 is a number, so it passed
+   * straight through and the table asserted a rating of zero on cars nobody
+   * has rated.
+   *
+   * The card grids stopped doing this when the guard went into
+   * new-cars.component.html and car-card.component.html; the comparison
+   * table was the one place still doing it, which is the place a reader is
+   * most likely to be weighing one car against another.
+   *
+   * Both mappers in cars-data.service.ts hardcode `reviews: 0`, so today this
+   * hides the rows everywhere. That is the honest result while no rating data
+   * exists, and the rows come back on their own the day the API sends any.
+   */
+  visibleSpecRows() {
+    const anyReviewed = this.activeEntries()
+      .some(e => Number(this.getEntryVal(e, 'reviews')) > 0);
+    if (anyReviewed) return this.specRows;
+    return this.specRows.filter(r => r.key !== 'rating' && r.key !== 'reviews');
+  }
+
   constructor(
     public carsData: CarsDataService,
     private seo: SeoService,
@@ -445,8 +469,43 @@ export class CompareComponent implements OnInit {
     return e.variant?.features?.length ? e.variant.features : (e.car.features || []);
   }
 
-  entryHasFeature(e: CompareEntry, feature: string): boolean {
-    return this.entryFeatures(e).some(f => f.toLowerCase().includes(feature.toLowerCase()));
+  /**
+   * Three answers, not two: yes, unknown, and — only where we can honestly
+   * say so — no.
+   *
+   * WHY A CROSS WAS WRONG
+   *
+   * Reported against the Creta and the Verna, both of which ship six airbags
+   * as standard and both of which this table marked with a cross.
+   *
+   * The cross was never a statement about the car. The six labels below are
+   * matched as substrings against `features`, and `features` is free text:
+   * services/variant_research.py has a model write it, with "6 Airbags" and
+   * "Touchscreen infotainment" as examples rather than as a vocabulary.
+   * Nothing constrains it to these spellings, so "Six airbags" or "Airbags
+   * (6)" miss, and a miss rendered as a cross. The table was reporting
+   * whether a string matched and presenting it as whether a car has a
+   * feature.
+   *
+   * That is the same fault as the Creta's "Hybrid Option" highlight removed
+   * in #303 — a specific, checkable claim the page could not source — and it
+   * is worse here, because a buyer comparing safety kit is exactly who should
+   * not be told a car lacks airbags it has.
+   *
+   * A car with NO recorded features at all is the one case where absence is
+   * itself informative: nothing is known about any of them, so every row is
+   * unknown. Where some features are recorded, a miss still cannot be read as
+   * absence, because the list is a highlights list rather than a full
+   * inventory — nothing promises the Creta's entry names every feature it has.
+   *
+   * So there is no case here where a cross is justified, and it is gone. A
+   * dash matches what the rows above already do for an unknown owner count or
+   * city.
+   */
+  entryFeatureState(e: CompareEntry, feature: string): 'yes' | 'unknown' {
+    const has = this.entryFeatures(e)
+      .some(f => f.toLowerCase().includes(feature.toLowerCase()));
+    return has ? 'yes' : 'unknown';
   }
 
   getEntryVal(e: CompareEntry, key: string): any {
