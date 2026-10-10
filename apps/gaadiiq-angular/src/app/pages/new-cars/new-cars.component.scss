@@ -358,49 +358,97 @@
 /* ── BODY TYPE GRID ── */
 .bodytype-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  // Six across, fixed. auto-fill resolved to seven columns at 1440 — measured —
+  // which is why the cards were 162px wide and the icon inside them 38px.
+  grid-template-columns: repeat(6, 1fr);
   gap: 1rem;
 }
+@media (max-width: 1100px) { .bodytype-grid { grid-template-columns: repeat(3, 1fr); } }
 
 .bodytype-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
-  padding: 1.5rem 1rem;
-  border-radius: 14px;
-  border: 1px solid var(--border, rgba(0,0,0,0.08));
+  gap: 0.3rem;
+  padding: 1.6rem 1rem 1.4rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
   cursor: pointer;
-  transition: all 0.2s;
   text-align: center;
-  background: none;
   color: var(--text);
+  position: relative;
 
-  &:hover {
-    border-color: var(--primary);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(37,99,235,0.12);
+  // A wash rather than a flat fill, so the icon has a surface to sit on
+  // instead of floating. 5% keeps it a surface and not a colour.
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--primary) 5%, var(--card-bg)) 0%,
+      var(--card-bg) 64%);
+
+  // Two shadows: a tight contact one and a wide soft one. A single large blur
+  // reads as a glow; the near shadow is what makes it sit on the page.
+  box-shadow: 0 1px 2px rgba(15,23,42,0.05), 0 6px 18px rgba(15,23,42,0.06);
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+
+  &:hover, &:focus-visible {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+    box-shadow: 0 2px 4px rgba(15,23,42,0.06), 0 16px 34px rgba(15,23,42,0.13);
+  }
+  &:hover .bt-icon, &:focus-visible .bt-icon { transform: scale(1.08); }
+
+  // The lift and the scale are decoration. Someone who has asked the system to
+  // stop moving things keeps the shadow and border change and loses the rest.
+  @media (prefers-reduced-motion: reduce) {
+    transition: box-shadow 0.24s ease, border-color 0.24s ease;
+    &:hover, &:focus-visible { transform: none; }
+    &:hover .bt-icon, &:focus-visible .bt-icon { transform: none; }
+    .bt-icon { transition: none; }
   }
 }
 
-// Was `font-size: 2.2rem` when the icon was an emoji character. Now it sizes
-// the SVG and supplies the colour the paths inherit via currentColor.
+// THE ICONS WERE NEVER WRONG, THEY WERE TOO SMALL.
+//
+// 38px is where the hatchback and the sedan stop being distinguishable, and so
+// do the SUV and the MUV — which is what "the cards look generic" actually
+// was. The line art holds up perfectly at this size; it had simply never been
+// given it. 2.4rem -> 4.25rem.
+//
+// font-size and NOT a width on the svg: the icon is a child component with
+// emulated encapsulation, so `.bt-icon svg` compiles to a selector carrying
+// THIS component's attribute, which that svg does not have. The component
+// sizes itself in em, so the parent's font-size is the supported way in.
 .bt-icon {
   color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 2.4rem;
-  transition: color 0.2s ease, transform 0.2s ease;
+  font-size: 4.25rem;
+  height: 4.25rem;
+  margin-bottom: 0.35rem;
+  transform-origin: 50% 70%;
+  transition: transform 0.24s ease;
+}
 
-  // font-size, NOT a width on the svg. The icon lives inside a child component
-  // with emulated encapsulation, so `.bt-icon svg` here is compiled to a
-  // selector carrying THIS component's _ngcontent attribute — which that svg
-  // does not have, so the rule never applies and the icon rendered at its
-  // inherited size (about 13px, which is what "too small to see" looked like).
-  // The component sizes itself in `em`, so the parent's font-size is the
-  // supported way in, and it crosses the boundary because inheritance does.
-  font-size: 2.4rem;
+.bt-name {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+// The count, not the caption, is what this card is for. --ink-on-white rather
+// than --primary: this card stays light in both themes, and --primary
+// brightens to #5B8FFF for dark backgrounds, where it measures about 3.1:1 on
+// a light surface.
+.bt-count {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-on-white);
+}
+.bt-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.35;
 }
 
 .bodytype-card:hover .bt-icon {
@@ -1116,8 +1164,11 @@
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   }
 
+  // Two across, not three. At three on a 390px phone the icon drops back to
+  // roughly the size this change exists to escape.
   .bodytype-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 
   .budget-grid {
