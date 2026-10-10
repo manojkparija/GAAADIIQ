@@ -743,6 +743,89 @@ body::before {
   > * { position: relative; z-index: 1; }
 }
 
+
+// ── The hero band, dark theme only ───────────────────────────────────────────
+//
+// Each of the 19 heroes paints its own
+// `linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%)`.
+// Against the old near-black navy that band read as the brand. Against the
+// teal-black the page became, it reads as a bright rectangle stuck on top of a
+// darker one -- reported with the seam circled.
+//
+// So in dark the band comes off and the hero shows the page beneath it.
+//
+// DARK ONLY, AND THAT IS NOT A HALF-MEASURE
+//
+// Hero text is white -- there are about 160 hardcoded `color: #fff`
+// declarations across the page stylesheets. In light the page is #F4F7FB, so
+// dropping the band there would put white text on near-white and the headings
+// would vanish. Removing it in light is a real piece of work (new text colours
+// for 19 heroes, each one a contrast decision), not another line here.
+//
+// THE LATTICE IS UNAFFECTED
+//
+// It is painted by the ::after above, not by the background this clears, so
+// the diamonds stay exactly as they are. Verified in the browser rather than
+// assumed.
+//
+// No !important. `:root[data-theme="dark"] .nc-hero` is (0,3,0) against the
+// component rule's (0,2,0) once Angular's encapsulation attribute is counted,
+// so it wins on specificity alone.
+//
+// Both signals, as everywhere else in this file: the media query covers a
+// reader on "system", the attribute covers one who has chosen. The media
+// query is guarded so it does not override someone who explicitly picked
+// light while their OS is dark.
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .nc-hero,
+  :root:not([data-theme="light"]) .uc-hero,
+  :root:not([data-theme="light"]) .emi-hero,
+  :root:not([data-theme="light"]) .ap-hero,
+  :root:not([data-theme="light"]) .ins-hero,
+  :root:not([data-theme="light"]) .ms-hero,
+  :root:not([data-theme="light"]) .tco-hero,
+  :root:not([data-theme="light"]) .md-hero,
+  :root:not([data-theme="light"]) .rn-hero,
+  :root:not([data-theme="light"]) .evc-hero,
+  :root:not([data-theme="light"]) .compare-hero,
+  :root:not([data-theme="light"]) .diag-hero,
+  :root:not([data-theme="light"]) .advisor-hero,
+  :root:not([data-theme="light"]) .results-hero,
+  :root:not([data-theme="light"]) .bj-hero,
+  :root:not([data-theme="light"]) .vr-hero,
+  :root:not([data-theme="light"]) .chl-hero,
+  :root:not([data-theme="light"]) .val-hero,
+  :root:not([data-theme="light"]) .about-hero,
+  :root:not([data-theme="light"]) .pricing-hero,
+  :root:not([data-theme="light"]) .fm-hero {
+    background: none;
+  }
+}
+
+:root[data-theme="dark"] .nc-hero,
+:root[data-theme="dark"] .uc-hero,
+:root[data-theme="dark"] .emi-hero,
+:root[data-theme="dark"] .ap-hero,
+:root[data-theme="dark"] .ins-hero,
+:root[data-theme="dark"] .ms-hero,
+:root[data-theme="dark"] .tco-hero,
+:root[data-theme="dark"] .md-hero,
+:root[data-theme="dark"] .rn-hero,
+:root[data-theme="dark"] .evc-hero,
+:root[data-theme="dark"] .compare-hero,
+:root[data-theme="dark"] .diag-hero,
+:root[data-theme="dark"] .advisor-hero,
+:root[data-theme="dark"] .results-hero,
+:root[data-theme="dark"] .bj-hero,
+:root[data-theme="dark"] .vr-hero,
+:root[data-theme="dark"] .chl-hero,
+:root[data-theme="dark"] .val-hero,
+:root[data-theme="dark"] .about-hero,
+:root[data-theme="dark"] .pricing-hero,
+:root[data-theme="dark"] .fm-hero {
+  background: none;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Outfit', sans-serif;
   line-height: 1.15;
