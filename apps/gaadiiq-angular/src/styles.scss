@@ -102,6 +102,97 @@
   --glow:           0 4px 32px rgba(47,107,255,0.18);
   --card-shadow:    0 1px 3px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06);
 
+  /* =======================================================================
+     SCALES -- phase 1 of the token consolidation.
+
+     NOTHING CONSUMES THESE YET. This block only defines them, deliberately,
+     so that the substitutions that follow are reviewable as substitutions
+     rather than as a redesign hidden inside a refactor. Adding an unused
+     custom property changes no rendering at all.
+
+     The steps were not chosen from a style guide. They were derived by
+     counting every value the app already uses and picking the steps that the
+     most declarations already sit on, so the eventual diff moves as little as
+     possible.
+     ======================================================================= */
+
+  /* -- Type ---------------------------------------------------------------
+     Measured today: 1,498 font-size declarations across 77 distinct values,
+     including 0.73 / 0.74 / 0.76 / 0.78 / 0.82 / 0.83 / 0.84 / 0.86 / 0.87rem
+     -- differences of a third of a pixel, invisible one at a time and the
+     reason no two cards in this app set text quite the same way.
+
+     12 steps. 724 of the 1,498 declarations (48%) already sit exactly on one.
+
+     The floor is 12px ON PURPOSE. 188 declarations are currently below it
+     (down to 0.55rem = 8.8px), which is the "text under 12px" finding from
+     the audit -- 37 to 41 instances on every mobile page. Snapping the floor
+     up fixes that population in the same pass. It is a real pixel change but
+     a small one: 130 of the 188 move less than a pixel, because the cluster
+     was already bunched just under the line (90 sit at 0.72rem and move
+     0.5px). Twelve move more than 2px and want looking at on screen -- small
+     text is badge and chip text, and those are the tightest layouts here. */
+  --text-2xs:   0.75rem;   /* 12.0px -- floor; absorbs everything 0.55-0.74 */
+  --text-xs:    0.80rem;   /* 12.8px */
+  --text-sm:    0.85rem;   /* 13.6px -- the most used size in the app today */
+  --text-base:  0.90rem;   /* 14.4px */
+  --text-md:    1.00rem;   /* 16.0px */
+  --text-lg:    1.10rem;   /* 17.6px */
+  --text-xl:    1.25rem;   /* 20.0px */
+  --text-2xl:   1.50rem;   /* 24.0px */
+  --text-3xl:   1.80rem;   /* 28.8px */
+  --text-4xl:   2.25rem;   /* 36.0px */
+  --text-5xl:   3.00rem;   /* 48.0px */
+  --text-6xl:   4.00rem;   /* 64.0px */
+
+  /* -- Radius -------------------------------------------------------------
+     Measured today: 734 declarations, 21 distinct values. A single page
+     renders up to 15 different corner radii, which is most of why the UI
+     reads as unfinished.
+
+     57% of declarations already match one of these, once the two spellings of
+     a pill (50px and 999px) are counted as the same intent. The largest single
+     move will be 10px -> 8px, 114 times: 2px, invisible alone, and the main
+     source of the spread. */
+  --r-sm:    4px;    /* absorbs 2, 3, 5, 6 */
+  --r-md:    8px;    /* absorbs 10 */
+  --r-lg:   12px;    /* absorbs 14 */
+  --r-xl:   16px;    /* absorbs 20 */
+  --r-2xl:  24px;    /* absorbs 32 (2rem) */
+  --r-pill: 999px;   /* absorbs 50px */
+
+  /* -- Colour -------------------------------------------------------------
+     Only values that have no name yet. --primary, --teal, --warning,
+     --divider and the -ink family already exist and are untouched.
+
+     THE DECISION THIS RECORDS: #2563EB appears 98 times and is NOT --primary,
+     which is #295EE0. They are about 4% apart -- indistinguishable side by
+     side, entirely different to a stylesheet. #295EE0 wins, and the 98 become
+     var(--primary) in a later phase.
+
+     The reason is not that the diff is smaller; it is larger. It is that every
+     contrast figure this project has measured -- including those written into
+     comments in this file and in navbar, reviews-news and new-cars -- was
+     measured against #295EE0. Promoting #2563EB would silently invalidate all
+     of them. It is deliberately NOT given a token name here, so that nothing
+     can start depending on it in the meantime.
+
+     These two do get names, because they are structural rather than strays. */
+  --brand-blue-deep: #1E40AF;  /* 59 uses, every one a hero gradient's start */
+  --brand-cyan:      #06B6D4;  /* the midpoint of --gradient-cta */
+
+  /* The hero band, currently written out by hand as
+     `linear-gradient(135deg, #1e40af 0%, var(--teal) 100%)` in page after
+     page. One name, so the next hero cannot drift from the others.
+
+     NO DARK-MODE OVERRIDE, deliberately. The hardcoded original has no dark
+     variant either, so defining one here would change how heroes render in
+     dark mode -- and this phase is supposed to change nothing. What dark mode
+     should do with it belongs to the colour phase, when contrast can actually
+     be measured. */
+  --gradient-hero: linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%);
+
+
   --divider:        rgba(15,23,42,0.07);
   --border-soft:    rgba(15,23,42,0.09);
   --border-strong:  rgba(15,23,42,0.16);
