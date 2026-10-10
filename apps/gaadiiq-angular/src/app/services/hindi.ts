@@ -962,8 +962,15 @@ export const HINDI: Record<string, string> = {
     '(वैकल्पिक)',
   'Choose from the list instead':
     'इसकी जगह सूची में से चुनें',
-  'Find Your Perfect Car':
-    'अपनी सही कार खोजें',
+  // Split for the two-tone heading. 'अपनी' + ' ' + 'सही कार खोजें' is the
+  // sentence that was here before, character for character -- only the
+  // point where the colour changes is new. The halves do not mean the same
+  // as the English halves, because Hindi orders the sentence differently;
+  // the colour is decoration and the sentence is what has to stay right.
+  'Find Your':
+    'अपनी',
+  'Perfect Car':
+    'सही कार खोजें',
   'Answer a few quick questions to get your personalized recommendation.':
     'कुछ आसान सवालों के जवाब दें और अपनी निजी सिफारिश पाएं।',
   'Your Personalized Journey':
@@ -1759,8 +1766,12 @@ export const HINDI: Record<string, string> = {
     'IDV क्या है?',
   'Add-ons Explained':
     'ऐड-ऑन की जानकारी',
-  'Understand your cover before you buy it':
-    'खरीदने से पहले अपना कवर समझें',
+  // Same split, same property: 'खरीदने से पहले' + ' ' + 'अपना कवर समझें' is
+  // exactly the sentence that was here.
+  'Understand your cover':
+    'खरीदने से पहले',
+  'before you buy it':
+    'अपना कवर समझें',
   'What IDV, NCB and each add-on actually mean for what you pay and what you get back.':
     'IDV, NCB और हर ऐड-ऑन का आपके भुगतान और आपको मिलने वाली रकम पर क्या असर पड़ता है।',
   'Tell us when your policy expires':

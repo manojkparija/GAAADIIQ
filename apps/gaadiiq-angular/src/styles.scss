@@ -836,10 +836,18 @@ $heroes: '.nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-her
     opacity: 1;
   }
 
-  // Back to the brand accent the class means everywhere else. The white ->
-  // lavender fill exists only because the hero used to be dark.
+  // Blue to teal, but the INK variants of both.
+  //
+  // --gradient ends at --teal (#14B8A6), and the spec measured that end at
+  // 2.32:1 on the light page against the 3:1 a 44px heading needs. It is a
+  // fill colour, drawn to sit behind white text, and it was never meant to BE
+  // text on white. --teal-ink (#0F766E) is the text-on-light counterpart the
+  // project already defines for exactly this, and measures 5.09:1.
+  //
+  // The reader still sees blue running into teal; the teal is simply deep
+  // enough to be read.
   .gradient-text {
-    background: var(--gradient);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--teal-ink) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

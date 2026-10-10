@@ -112,10 +112,14 @@ async function openHero(page: Page, width: number, theme: 'light' | 'dark') {
  * badge measurable — it is a translucent scrim over the hero's gradient, so it
  * has as many backdrops as the gradient has colours.
  */
-async function backdrop(page: Page, selector: string): Promise<{ fills: string[]; gradient: string }> {
+async function backdrop(
+  page: Page,
+  selector: string,
+): Promise<{ fills: string[]; gradient: string; pageColour: string }> {
   return page.evaluate(sel => {
     const fills: string[] = [];
     let gradient = '';
+    let pageColour = '';
     for (let n: Element | null = document.querySelector(sel); n; n = n.parentElement) {
       const cs = getComputedStyle(n);
       // A background clipped to the text IS the text — it paints the glyphs,
@@ -131,7 +135,11 @@ async function backdrop(page: Page, selector: string): Promise<{ fills: string[]
       const bg = cs.backgroundColor;
       if (bg && !/rgba\(0,\s*0,\s*0,\s*0\)/.test(bg)) fills.push(bg);
     }
-    return { fills, gradient };
+    // The hero no longer paints a band of its own, so on some themes the walk
+    // reaches the top without finding a gradient. The page's own colour is
+    // then what the text sits on, and it is just as measurable.
+    if (!gradient) pageColour = getComputedStyle(document.body).backgroundColor;
+    return { fills, gradient, pageColour };
   }, selector);
 }
 
@@ -164,8 +172,16 @@ for (const theme of ['light', 'dark'] as const) {
       await openHero(page, 1400, theme);
 
       const ink = await inkOf(page, band.selector);
-      const { fills, gradient } = await backdrop(page, band.selector);
-      expect(gradient, `${band.selector} is not over the hero gradient any more`).toContain('gradient');
+      const { fills, gradient, pageColour } = await backdrop(page, band.selector);
+
+      // The hero band was removed in both themes, so this no longer asserts
+      // that a gradient is there. What it still asserts, and what it was
+      // always for, is that every colour the hero text is drawn over clears
+      // AA -- a ramp of colours where there is a gradient, one colour where
+      // the page is flat.
+      const bases = gradient
+        ? ramp(gradientStops(gradient))
+        : [parseColour(pageColour) ?? ([255, 255, 255, 1] as RGB)];
 
       // WCAG "large text": >=24px, or >=18.66px when bold. 3.0 rather than 4.5.
       const large = ink.px >= 24 || (ink.px >= 18.66 && ink.weight >= 700);
@@ -173,7 +189,7 @@ for (const theme of ['light', 'dark'] as const) {
 
       // Every colour the backdrop takes, with the element's own translucent
       // fills (the badge's scrim) painted on top of each.
-      const backdrops = ramp(gradientStops(gradient)).map(base => {
+      const backdrops = bases.map(base => {
         let composed = base;
         for (const fill of [...fills].reverse()) {
           const c = parseColour(fill);
@@ -181,7 +197,8 @@ for (const theme of ['light', 'dark'] as const) {
         }
         return composed;
       });
-      expect(backdrops.length).toBeGreaterThan(1);
+      // Only a gradient has more than one point to sample.
+      if (gradient) expect(backdrops.length).toBeGreaterThan(1);
 
       // The ink. Normally one colour; for the gradient-filled word it is the
       // ramp of its own background, every point of which is drawn as text.
