@@ -296,17 +296,29 @@
     --danger:         #F87171;
     --ink:            #0B1220;
 
-    --navy:           #0B1220;
+    // Teal-black rather than navy-black. Sampled from the reference this was
+    // asked against: its nav bar is #011318 and its page falls from #0F444E at
+    // the lighter centre-left to #002029 at the edges.
+    //
+    // --navy stays the FLAT fallback -- anything painting a solid page colour,
+    // and the first paint before the gradient resolves. --page-gradient is the
+    // gradient itself. The cube lattice is a separate background-image layer
+    // (--page-pattern) and is deliberately untouched by any of this.
+    --navy:           #06222A;
+    --page-gradient:  radial-gradient(1400px 900px at 22% 38%,
+                        #0F444E 0%, #08343E 38%, #002029 78%, #011318 100%);
     // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
-    --nav-bg:         #0B1220;
-    --nav-panel:      #131C2F;
+    --nav-bg:         #011318;
+    --nav-panel:      #0A2A31;
     // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
     --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
     --dark:           #111827;
     --card-bg:        rgba(255,255,255,0.04);
     // See the note in the light block. Opaque, and lighter than --navy so an
     // input or panel reads as sitting above the page rather than cut into it.
-    --bg:             #131C2F;
+    // Teal-tinted to match the page: a blue-grey panel on a teal page reads as
+    // a mistake rather than as depth.
+    --bg:             #0C2C33;
     --glass:          rgba(255,255,255,0.06);
     --glass-border:   rgba(255,255,255,0.10);
     --text:           #F1F5F9;
@@ -356,17 +368,29 @@
   --warning:        #FBBF24;
   --danger:         #F87171;
   --ink:            #0B1220;
-  --navy:           #0B1220;
+  // Teal-black rather than navy-black. Sampled from the reference this was
+  // asked against: its nav bar is #011318 and its page falls from #0F444E at
+  // the lighter centre-left to #002029 at the edges.
+  //
+  // --navy stays the FLAT fallback -- anything painting a solid page colour,
+  // and the first paint before the gradient resolves. --page-gradient is the
+  // gradient itself. The cube lattice is a separate background-image layer
+  // (--page-pattern) and is deliberately untouched by any of this.
+  --navy:           #06222A;
+  --page-gradient:  radial-gradient(1400px 900px at 22% 38%,
+                      #0F444E 0%, #08343E 38%, #002029 78%, #011318 100%);
   // Navigation surfaces. Opaque on purpose — see components/navbar/navbar.component.scss.
-  --nav-bg:         #0B1220;
-  --nav-panel:      #131C2F;
+  --nav-bg:         #011318;
+  --nav-panel:      #0A2A31;
   // Blue-teal, in stops dark enough to carry white text (5.47:1 at the lightest).
   --gradient-ai:    linear-gradient(100deg, #1D4ED8 0%, #1668B8 55%, #0F766E 100%);
   --dark:           #111827;
   --card-bg:        rgba(255,255,255,0.04);
   // See the note in the light block. Opaque, and lighter than --navy so an
   // input or panel reads as sitting above the page rather than cut into it.
-  --bg:             #131C2F;
+  // Teal-tinted to match the page: a blue-grey panel on a teal page reads as
+  // a mistake rather than as depth.
+  --bg:             #0C2C33;
   --glass:          rgba(255,255,255,0.06);
   --glass-border:   rgba(255,255,255,0.10);
   --text:           #F1F5F9;
@@ -599,6 +623,20 @@ body {
   background: var(--navy);
   color: var(--text);
   min-height: 100vh;
+
+  // The teal wash, dark theme only. --page-gradient is defined only in the
+  // dark blocks, so in light the declaration is invalid and `background`
+  // above stands -- no light-theme change, and no second rule to keep in step.
+  //
+  // background-image, not background: the shorthand would reset the colour
+  // set above, and --navy is what shows through before this paints and
+  // wherever the gradient is transparent.
+  //
+  // Fixed, so the wash belongs to the viewport rather than scrolling away on
+  // a 12,000px page and leaving the lower half flat.
+  background-image: var(--page-gradient);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   // Manrope and Outfit are drawn for screens and rendered too heavily without
   // this on macOS/iOS, which reads as generic rather than as either typeface.
   -webkit-font-smoothing: antialiased;
