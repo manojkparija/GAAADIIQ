@@ -14,10 +14,10 @@
   margin-bottom: 1rem;
 }
 
-.ps-title { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.ps-title { margin: 0; font-size: var(--text-md); font-weight: 700; }
 
 .ps-spread {
-  font-size: 0.76rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   color: var(--text-muted);
 }
@@ -46,10 +46,10 @@
   flex-wrap: wrap;
 }
 
-.ps-option-title { font-size: 0.85rem; font-weight: 700; }
+.ps-option-title { font-size: var(--text-sm); font-weight: 700; }
 
 .ps-timing {
-  font-size: 0.68rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   padding: 0.15rem 0.45rem;
   border-radius: var(--r-pill);
@@ -62,14 +62,14 @@
 
 .ps-price {
   margin: 0.45rem 0 0.35rem;
-  font-size: 1.45rem;
+  font-size: var(--text-2xl);
   font-weight: 800;
   line-height: 1;
 }
 
 .ps-detail {
   margin: 0;
-  font-size: 0.74rem;
+  font-size: var(--text-2xs);
   line-height: 1.55;
   color: var(--text-muted);
 }
@@ -78,7 +78,7 @@
   margin: 1rem 0 0;
   padding-top: 0.85rem;
   border-top: 1px solid var(--divider);
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   line-height: 1.6;
   color: var(--text-muted);
 }

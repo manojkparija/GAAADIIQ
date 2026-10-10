@@ -45,7 +45,7 @@
   backdrop-filter: blur(8px);
   padding: 0.35rem 1rem;
   border-radius: var(--r-xl);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   letter-spacing: 0.5px;
   margin-bottom: 1rem;
@@ -59,7 +59,7 @@
 }
 
 .hero-sub {
-  font-size: 1.05rem;
+  font-size: var(--text-md);
   opacity: 0.88;
   margin-bottom: 2rem;
 }
@@ -96,7 +96,7 @@
   border: 1px solid rgba(255,255,255,0.25);
   background: transparent;
   color: rgba(255,255,255,0.8);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -142,14 +142,14 @@
   border: 1px solid rgba(255,255,255,0.3);
   background: rgba(255,255,255,0.1);
   color: #fff;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover { background: rgba(255,255,255,0.25); }
 }
 
-.brand-icon { font-size: 1rem; }
+.brand-icon { font-size: var(--text-md); }
 
 .budget-quick-grid,
 .bodytype-quick-grid {
@@ -166,7 +166,7 @@
   border: 1px solid rgba(255,255,255,0.3);
   background: rgba(255,255,255,0.1);
   color: #fff;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -181,7 +181,7 @@
   text-align: center;
   margin-top: 0.75rem;
   color: rgba(255,255,255,0.8);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   text-decoration: none;
 
   &:hover { color: #fff; }
@@ -232,12 +232,12 @@
 
 .section-sub {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 
 .see-all-link {
   color: var(--primary);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   text-decoration: none;
   font-weight: 600;
   white-space: nowrap;
@@ -350,7 +350,7 @@
 }
 
 .brand-name {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text);
 }
@@ -400,7 +400,7 @@
   // inherited size (about 13px, which is what "too small to see" looked like).
   // The component sizes itself in `em`, so the parent's font-size is the
   // supported way in, and it crosses the boundary because inheritance does.
-  font-size: 2.4rem;
+  font-size: var(--text-4xl);
 }
 
 .bodytype-card:hover .bt-icon {
@@ -414,8 +414,8 @@
   .bt-icon { transition: none; }
   .bodytype-card:hover .bt-icon { transform: none; }
 }
-.bt-name { font-size: 0.95rem; font-weight: 700; color: var(--text); }
-.bt-desc { font-size: 0.78rem; color: var(--muted); }
+.bt-name { font-size: var(--text-base); font-weight: 700; color: var(--text); }
+.bt-desc { font-size: var(--text-xs); color: var(--muted); }
 
 /* ── BUDGET GRID ── */
 .budget-grid {
@@ -449,8 +449,8 @@
   }
 }
 
-.budget-label { font-weight: 600; font-size: 0.9rem; }
-.budget-arrow { color: var(--primary); font-size: 1.1rem; }
+.budget-label { font-weight: 600; font-size: var(--text-base); }
+.budget-arrow { color: var(--primary); font-size: var(--text-lg); }
 
 /* ── MODELS LAYOUT ── */
 .models-layout {
@@ -485,14 +485,14 @@
 }
 
 .sidebar-title {
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 700;
   color: var(--text);
   margin: 0;
 }
 
 .clear-btn {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--primary);
   background: none;
   border: none;
@@ -512,7 +512,7 @@
 
 .filter-group-label {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 0.75rem;
@@ -522,7 +522,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text);
   margin-bottom: 0.4rem;
   cursor: pointer;
@@ -543,7 +543,7 @@
 .slider-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   color: var(--muted);
   margin-top: 0.25rem;
 }
@@ -557,7 +557,7 @@
 }
 
 .sort-label {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 
@@ -567,13 +567,13 @@
   border: 1px solid var(--border, rgba(0,0,0,0.12));
   background: var(--navy);
   color: var(--text);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
 .filter-toggle-btn {
   display: none;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   padding: 0.4rem 0.9rem;
   position: relative;
 
@@ -586,7 +586,7 @@
   border-radius: 50%;
   width: 18px;
   height: 18px;
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -609,7 +609,7 @@
   background: rgba(37,99,235,0.1);
   border: 1px solid rgba(37,99,235,0.2);
   border-radius: var(--r-xl);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--primary);
   font-weight: 600;
 
@@ -618,7 +618,7 @@
     border: none;
     cursor: pointer;
     color: var(--primary);
-    font-size: 0.9rem;
+    font-size: var(--text-base);
     line-height: 1;
     padding: 0;
     margin-left: 2px;
@@ -629,7 +629,7 @@
 
 /* ── MODELS COUNT ── */
 .models-count {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   color: var(--muted);
   margin-bottom: 1rem;
   font-weight: 500;
@@ -675,7 +675,7 @@
   left: 0.6rem;
   padding: 0.25rem 0.65rem;
   border-radius: var(--r-sm);
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.3px;
 }
@@ -694,7 +694,7 @@
   border-radius: 50%;
   width: 32px;
   height: 32px;
-  font-size: 1rem;
+  font-size: var(--text-md);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -717,7 +717,7 @@
 }
 
 .model-bt-badge {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   color: var(--teal-ink);
   background: rgba(20,184,166,0.1);
@@ -726,7 +726,7 @@
 }
 
 .model-rating {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--text);
   display: flex;
   align-items: center;
@@ -736,14 +736,14 @@
 .model-reviews { color: var(--muted); }
 
 .model-name {
-  font-size: 1.05rem;
+  font-size: var(--text-md);
   font-weight: 700;
   color: var(--text);
   margin: 0 0 0.3rem;
 }
 
 .model-price-range {
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 800;
   background: linear-gradient(135deg, #2563EB, var(--teal));
   -webkit-background-clip: text;
@@ -756,7 +756,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   margin-bottom: 0.75rem;
 }
@@ -777,7 +777,7 @@
 
 /* ── BTN SIZES ── */
 .btn-sm {
-  font-size: 0.82rem !important;
+  font-size: var(--text-xs) !important;
   padding: 0.4rem 0.9rem !important;
 }
 
@@ -804,8 +804,8 @@
   text-align: center;
   padding: 3rem 2rem;
 
-  .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
-  h3 { font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
+  .empty-icon { font-size: var(--text-5xl); margin-bottom: 0.75rem; }
+  h3 { font-size: var(--text-xl); color: var(--text); margin-bottom: 0.5rem; }
   p { color: var(--muted); margin-bottom: 1.25rem; }
 }
 
@@ -846,7 +846,7 @@
   left: 0.5rem;
   background: #10B981;
   color: #fff;
-  font-size: 0.65rem;
+  font-size: var(--text-2xs);
   font-weight: 800;
   padding: 0.2rem 0.5rem;
   border-radius: var(--r-sm);
@@ -859,7 +859,7 @@
   right: 0.5rem;
   background: rgba(0,0,0,0.65);
   color: #fff;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   padding: 0.2rem 0.5rem;
   border-radius: var(--r-sm);
   backdrop-filter: blur(4px);
@@ -874,20 +874,20 @@
 }
 
 .launch-bt {
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   color: var(--muted);
   margin-bottom: 0.25rem;
 }
 
 .launch-name {
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 700;
   color: var(--text);
   margin: 0 0 0.25rem;
 }
 
 .launch-price {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--primary);
   margin-bottom: 0.75rem;
@@ -946,7 +946,7 @@
 }
 
 .upcoming-expected {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   color: var(--teal-ink);
   background: rgba(20,184,166,0.1);
@@ -957,20 +957,20 @@
 }
 
 .upcoming-name {
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 700;
   color: var(--text);
   margin: 0 0 0.2rem;
 }
 
 .upcoming-meta {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   margin-bottom: 0.2rem;
 }
 
 .upcoming-price {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--primary);
 }
@@ -982,7 +982,7 @@
   border: none;
   background: linear-gradient(90deg, #2563EB, #14B8A6);
   color: #fff;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -1025,7 +1025,7 @@
   }
 }
 
-.expert-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.expert-icon { font-size: var(--text-4xl); margin-bottom: 0.5rem; }
 
 .expert-badge {
   display: inline-block;
@@ -1033,13 +1033,13 @@
   background: linear-gradient(135deg, #2563EB, var(--teal));
   color: #fff;
   border-radius: var(--r-xl);
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
 .expert-category {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -1048,21 +1048,21 @@
 }
 
 .expert-name {
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
   font-weight: 800;
   color: var(--text);
   margin: 0 0 0.25rem;
 }
 
 .expert-price {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 700;
   color: var(--primary);
   margin-bottom: 0.75rem;
 }
 
 .expert-reason {
-  font-size: 0.83rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   line-height: 1.5;
   margin-bottom: 1.25rem;
@@ -1078,14 +1078,14 @@
   color: #fff;
   padding: 0.75rem 1.25rem;
   border-radius: var(--r-pill);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .filter-hint {
   margin: 0.35rem 0 0;
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   color: var(--muted);
 }
 
@@ -1106,7 +1106,7 @@
 
 .expert-note {
   margin: -0.5rem 0 1.25rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 
@@ -1152,7 +1152,7 @@
 */
 .nc-failure-detail {
   margin: 0.75rem 0 0;
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   line-height: 1.4;
   color: var(--muted);
   word-break: break-word;
@@ -1192,15 +1192,15 @@
   right: 0.9rem;
   background: none;
   border: 0;
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   line-height: 1;
   cursor: pointer;
   color: var(--text-muted);
 }
 
-.notify-title { margin: 0 0 0.2rem; font-size: 1.15rem; }
+.notify-title { margin: 0 0 0.2rem; font-size: var(--text-lg); }
 .notify-sub { margin: 0 0 0.75rem; color: var(--primary); font-weight: 600; }
-.notify-copy { margin: 0 0 1.15rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+.notify-copy { margin: 0 0 1.15rem; font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; }
 
 .notify-fields { display: flex; flex-direction: column; gap: 0.7rem; }
 
@@ -1208,7 +1208,7 @@
   width: 100%;
   padding: 0.75rem 1rem;
   border-radius: var(--r-md);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   border: 1px solid var(--divider);
   background: var(--fill-dim);
   color: var(--text);
@@ -1232,7 +1232,7 @@
   flex: 0 0 auto;
   white-space: nowrap;
   padding: 0.75rem 1rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 
   &:disabled { opacity: 0.55; cursor: not-allowed; }
 }
@@ -1241,7 +1241,7 @@
   display: flex;
   gap: 0.55rem;
   align-items: flex-start;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   line-height: 1.45;
   /* --text-muted rather than the brand colour: small text on a tint, and
      contrast is measured on the page, not on a swatch (CLAUDE.md). */
@@ -1253,7 +1253,7 @@
 
 .notify-error {
   margin: 0.75rem 0 0;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   /* --warning-ink, not the bright warning colour: this is small text on the
      panel's tint, and the -ink tokens are the text-only counterparts. */
   color: var(--warning-ink, #b3261e);
@@ -1262,4 +1262,4 @@
 .notify-submit { width: 100%; margin-top: 1rem; padding: 0.9rem; }
 
 .notify-done { text-align: center; padding: 1rem 0; }
-.notify-tick { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.notify-tick { font-size: var(--text-4xl); margin-bottom: 0.5rem; }

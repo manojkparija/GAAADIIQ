@@ -9,7 +9,7 @@
   padding-inline: 1rem;
 }
 
-.au-title { font-size: 1.6rem; margin-bottom: .25rem; }
+.au-title { font-size: var(--text-2xl); margin-bottom: .25rem; }
 .au-sub { color: var(--text-muted); margin-bottom: 1.5rem; }
 
 .au-error {
@@ -23,7 +23,7 @@
   padding: .75rem 1rem; margin-bottom: 1rem;
 }
 
-.au-section-title { font-size: 1.05rem; margin: 2rem 0 .75rem; }
+.au-section-title { font-size: var(--text-md); margin: 2rem 0 .75rem; }
 
 .au-row {
   display: flex; align-items: center; gap: 1rem;
@@ -32,9 +32,9 @@
 }
 .au-row-main { flex: 1; min-width: 0; }
 .au-row-name { font-weight: 600; }
-.au-row-meta { color: var(--text-muted); font-size: .85rem; }
+.au-row-meta { color: var(--text-muted); font-size: var(--text-sm); }
 .au-badge {
-  font-size: .75rem; padding: .15rem .5rem; border-radius: var(--r-xl);
+  font-size: var(--text-2xs); padding: .15rem .5rem; border-radius: var(--r-xl);
   background: color-mix(in srgb, var(--primary) 12%, transparent);
   color: var(--info-ink);
 }
@@ -43,12 +43,12 @@
 .au-form { display: grid; gap: .75rem; margin: 1rem 0; }
 .au-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .75rem; }
 .au-field { display: flex; flex-direction: column; gap: .25rem; }
-.au-field label { font-size: .8rem; color: var(--text-muted); }
+.au-field label { font-size: var(--text-xs); color: var(--text-muted); }
 .au-field input {
   padding: .5rem .6rem; border: 1px solid var(--divider);
   border-radius: var(--r-md); background: var(--surface, #fff); color: inherit;
 }
-.au-hint { font-size: .78rem; color: var(--text-muted); }
+.au-hint { font-size: var(--text-xs); color: var(--text-muted); }
 .au-empty { color: var(--text-muted); }
 
 /* The upload control is a <label> wrapping a hidden file input, so the button

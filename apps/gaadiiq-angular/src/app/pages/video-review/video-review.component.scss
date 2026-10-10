@@ -15,7 +15,7 @@
 
   .eyebrow {
     display: inline-block;
-    font-size: 0.75rem;
+    font-size: var(--text-2xs);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     // 0.86, not 0.7: below that this falls under AA on the gradient's darkest
@@ -35,7 +35,7 @@
   .sub {
     max-width: 44rem;
     margin: 0 auto;
-    font-size: 1.02rem;
+    font-size: var(--text-md);
     line-height: 1.6;
     color: rgba(255, 255, 255, 0.92);
   }
@@ -51,7 +51,7 @@
 
   h2 {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.2rem;
+    font-size: var(--text-xl);
     font-weight: 800;
     margin: 0 0 0.6rem;
     color: var(--text);
@@ -80,7 +80,7 @@
   margin-bottom: 1.1rem;
 
   > span {
-    font-size: 0.82rem;
+    font-size: var(--text-xs);
     font-weight: 700;
     color: var(--text);
   }
@@ -111,7 +111,7 @@
   .picked-name { font-weight: 700; color: var(--text); }
   .picked-clear {
     border: 0; background: none; cursor: pointer;
-    font-size: 1.3rem; line-height: 1; color: var(--text-muted);
+    font-size: var(--text-xl); line-height: 1; color: var(--text-muted);
     &:hover { color: var(--danger); }
     &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   }
@@ -155,7 +155,7 @@
     padding: 0 0.1rem;
     border: 0;
     background: none;
-    font-size: 2rem;
+    font-size: var(--text-3xl);
     line-height: 1;
     cursor: pointer;
     color: var(--text-muted);
@@ -181,8 +181,8 @@
   transition: border-color .2s ease, color .2s ease;
 
   app-icon { color: var(--primary); }
-  strong { color: var(--text); font-size: 0.95rem; }
-  small { font-size: 0.8rem; }
+  strong { color: var(--text); font-size: var(--text-base); }
+  small { font-size: var(--text-xs); }
 
   &:hover { border-color: var(--primary); }
   &:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -202,7 +202,7 @@
     justify-content: space-between;
     gap: 0.75rem;
     margin-top: 0.5rem;
-    font-size: 0.83rem;
+    font-size: var(--text-sm);
     color: var(--text-muted);
   }
 }
@@ -231,13 +231,13 @@
   border-radius: var(--r-md);
   background: var(--fill-dim);
   color: var(--text);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   line-height: 1.5;
 
   app-icon { color: var(--info-ink, var(--primary)); flex-shrink: 0; margin-top: 0.1rem; }
 }
 
-.err { color: var(--danger); font-size: 0.9rem; margin: 0 0 0.75rem; }
+.err { color: var(--danger); font-size: var(--text-base); margin: 0 0 0.75rem; }
 
 .vr-submit {
   width: 100%;
@@ -270,7 +270,7 @@
 .mine-status {
   padding: 0.15rem 0.6rem;
   border-radius: var(--r-pill);
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -285,7 +285,7 @@
 
 .mine-note {
   margin: 0.4rem 0 0;
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   line-height: 1.55;
   color: var(--text-muted);
 }

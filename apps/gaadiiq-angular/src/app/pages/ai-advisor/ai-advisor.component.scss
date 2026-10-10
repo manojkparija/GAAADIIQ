@@ -15,7 +15,7 @@
   padding: 0.75rem 1.75rem;
   font-weight: 700;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   transition: opacity 0.2s, transform 0.15s;
   &:hover { opacity: 0.9; transform: translateY(-1px); }
   &:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
@@ -29,7 +29,7 @@
   padding: 0.75rem 1.75rem;
   font-weight: 700;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   transition: border-color 0.2s, background 0.2s;
   &:hover { border-color: #1e40af; background: rgba(30,64,175,0.08); }
 }
@@ -66,7 +66,7 @@
 
   // The icon draws in currentColor, which inherits body text — so it came out
   // near-black on a saturated gradient. Everything else in this hero is white.
-  .hero-icon { font-size: 3rem; margin-bottom: 1rem; color: #fff; }
+  .hero-icon { font-size: var(--text-5xl); margin-bottom: 1rem; color: #fff; }
 
   h1 { font-size: clamp(1.9rem, 3.6vw, 2.75rem); font-weight: 800; margin-bottom: 0.75rem; color: #fff; }
 
@@ -78,7 +78,7 @@
     background-clip: text;
   }
 
-  .hero-sub { color: rgba(255,255,255,0.75); font-size: 1rem; max-width: 520px; margin: 0 auto; }
+  .hero-sub { color: rgba(255,255,255,0.75); font-size: var(--text-md); max-width: 520px; margin: 0 auto; }
 }
 
 .quiz-container {
@@ -103,7 +103,7 @@
   border: 1px solid rgba(30,64,175,0.3);
   border-radius: var(--r-xl);
   padding: 0.25rem 0.75rem;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -111,7 +111,7 @@
 
 .step-count {
   color: var(--muted, #8892b0);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 
 .progress-bar-track {
@@ -134,7 +134,7 @@
   margin-bottom: 1.5rem;
   text-align: center;
 
-  .step-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .step-icon { font-size: var(--text-4xl); margin-bottom: 1rem; }
 
   .step-title {
     font-size: clamp(1.2rem, 2.2vw, 1.5rem);
@@ -145,7 +145,7 @@
 
   .step-sub {
     color: var(--muted, #8892b0);
-    font-size: 0.9rem;
+    font-size: var(--text-base);
     margin-bottom: 1.5rem;
   }
 
@@ -156,7 +156,7 @@
       color: var(--teal-ink);
       border-radius: var(--r-xl);
       padding: 0.2rem 0.8rem;
-      font-size: 0.78rem;
+      font-size: var(--text-xs);
       font-weight: 600;
     }
   }
@@ -210,19 +210,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: var(--text-2xs);
     font-weight: 900;
     color: var(--input-color);
   }
 
   .opt-label {
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: var(--text-base);
     margin-bottom: 0.2rem;
   }
 
   .opt-sub {
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     color: var(--muted, #8892b0);
   }
 }
@@ -292,13 +292,13 @@
   text-align: center;
 
   .analyze-icon {
-    font-size: 4rem;
+    font-size: var(--text-6xl);
     margin-bottom: 1.5rem;
     animation: bounce 1s infinite ease-in-out;
   }
 
   h2 {
-    font-size: 1.6rem;
+    font-size: var(--text-2xl);
     font-weight: 800;
     color: var(--text);
     margin-bottom: 0.75rem;
@@ -306,7 +306,7 @@
 
   .analyze-msg {
     color: var(--muted, #8892b0);
-    font-size: 1rem;
+    font-size: var(--text-md);
     min-height: 1.5em;
     margin-bottom: 2rem;
     transition: opacity 0.3s;
@@ -329,7 +329,7 @@
 }
 
 .analyze-pct {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   font-weight: 900;
   margin-bottom: 1.5rem;
 }
@@ -368,7 +368,7 @@
   text-align: center;
   padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 1rem 3rem;
 
-  .results-hero-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .results-hero-icon { font-size: var(--text-5xl); margin-bottom: 1rem; }
 
   h1 {
     font-family: 'Outfit', sans-serif;
@@ -386,7 +386,7 @@
 
   .hero-sub {
     color: rgba(255,255,255,0.75);
-    font-size: 1rem;
+    font-size: var(--text-md);
     margin-bottom: 1.5rem;
   }
 
@@ -418,7 +418,7 @@
   margin-bottom: 2rem;
 
   h3 {
-    font-size: 1.2rem;
+    font-size: var(--text-xl);
     font-weight: 800;
     color: var(--text);
     margin-bottom: 1.5rem;
@@ -435,20 +435,20 @@
   th, td {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--divider);
-    font-size: 0.88rem;
+    font-size: var(--text-base);
     color: var(--text);
   }
 
   th {
     color: var(--muted, #8892b0);
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
     text-align: center;
   }
 
   td:first-child {
     color: var(--muted, #8892b0);
-    font-size: 0.82rem;
+    font-size: var(--text-xs);
     white-space: nowrap;
   }
 
@@ -472,7 +472,7 @@
 
   .cmp-name {
     font-weight: 700;
-    font-size: 0.82rem;
+    font-size: var(--text-xs);
     color: var(--text);
   }
 }
@@ -482,7 +482,7 @@
   color: #1e40af;
   border-radius: var(--r-xl);
   padding: 0.2rem 0.6rem;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
 
   &.high {
@@ -513,7 +513,7 @@
 }
 
 .rank-badge {
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 900;
   padding: 0.35rem 0.8rem;
   border-radius: var(--r-md);
@@ -539,7 +539,7 @@
   color: var(--teal-ink);
   border-radius: var(--r-xl);
   padding: 0.25rem 0.65rem;
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
 }
 
@@ -570,19 +570,19 @@
 .score-inner { text-align: center; line-height: 1; }
 
 .score-num {
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   font-weight: 900;
   color: #1e40af;
 }
 
 .score-pct {
-  font-size: 0.65rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   color: #1e40af;
 }
 
 .score-label {
-  font-size: 0.55rem;
+  font-size: var(--text-2xs);
   color: var(--muted, #8892b0);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -611,7 +611,7 @@
 
 .rec-car-meta {
   h3 {
-    font-size: 1.3rem;
+    font-size: var(--text-xl);
     font-weight: 800;
     color: var(--text);
     margin-bottom: 0.25rem;
@@ -619,12 +619,12 @@
 
   .rec-sub {
     color: var(--muted, #8892b0);
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     margin-bottom: 0.5rem;
   }
 
   .big-price {
-    font-size: 1.6rem;
+    font-size: var(--text-2xl);
     font-weight: 900;
     margin-bottom: 0.1rem;
   }
@@ -633,13 +633,13 @@
   // cheapest trim, and the card's EMI and five-year cost are worked out from
   // it, so it has to say which number it is.
   .price-basis {
-    font-size: 0.72rem;
+    font-size: var(--text-2xs);
     color: var(--text-muted);
     margin-bottom: 0.25rem;
   }
 
   .rec-rating {
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     color: var(--muted, #8892b0);
   }
 }
@@ -649,7 +649,7 @@
   margin-bottom: 1.25rem;
 
   .why-label {
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     font-weight: 700;
     color: var(--muted, #8892b0);
     text-transform: uppercase;
@@ -670,7 +670,7 @@
   color: var(--success-ink);
   border-radius: var(--r-xl);
   padding: 0.25rem 0.75rem;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 600;
 }
 
@@ -703,13 +703,13 @@
 }
 
 .fin-val {
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 800;
   margin-bottom: 0.2rem;
 }
 
 .fin-label {
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   color: var(--muted, #8892b0);
 }
 
@@ -732,7 +732,7 @@
 }
 
 .pc-head {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -742,7 +742,7 @@
 }
 
 .pc-item {
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   margin-bottom: 0.3rem;
   padding-left: 0.25rem;
@@ -754,7 +754,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   flex-wrap: wrap;
   margin-bottom: 1.25rem;
 
@@ -772,7 +772,7 @@
 }
 
 .confidence-pill {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   padding: 0.3rem 0.8rem;
   border-radius: var(--r-xl);
@@ -794,7 +794,7 @@
   margin: 3rem auto;
   padding: 3rem 2rem;
   text-align: center;
-  h3 { font-size: 1.4rem; margin: 1rem 0 0.5rem; }
+  h3 { font-size: var(--text-2xl); margin: 1rem 0 0.5rem; }
   p { color: var(--muted); margin-bottom: 1.5rem; }
 }
 
@@ -803,7 +803,7 @@
   position: fixed; bottom: 2rem; right: 2rem;
   background: var(--primary, #2B6BFF); color: #fff;
   border: none; border-radius: var(--r-2xl); padding: 0.75rem 1.5rem;
-  font-weight: 700; font-size: 1rem; cursor: pointer;
+  font-weight: 700; font-size: var(--text-md); cursor: pointer;
   box-shadow: 0 4px 16px rgba(43,107,255,0.4);
   z-index: 200;
   &:hover { filter: brightness(1.1); }
@@ -821,7 +821,7 @@
   display: flex; justify-content: space-between; align-items: center;
   padding: 0.75rem 1rem;
   background: var(--primary, #2B6BFF); color: #fff;
-  button { background: none; border: none; color: #fff; font-size: 1.1rem; cursor: pointer; }
+  button { background: none; border: none; color: #fff; font-size: var(--text-lg); cursor: pointer; }
 }
 
 .chat-messages {
@@ -830,14 +830,14 @@
   background: var(--surface, #fff);
 }
 
-.chat-welcome { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 1rem; }
+.chat-welcome { color: var(--muted); font-size: var(--text-base); text-align: center; padding: 1rem; }
 
 .chat-msg {
   display: flex;
   &.user { justify-content: flex-end; }
   .msg-bubble {
     max-width: 85%; padding: 0.6rem 0.9rem; border-radius: var(--r-xl);
-    font-size: 0.9rem; line-height: 1.5;
+    font-size: var(--text-base); line-height: 1.5;
   }
   &.user .msg-bubble { background: var(--primary, #2B6BFF); color: #fff; border-bottom-right-radius: 0.25rem; }
   &.ai  .msg-bubble { background: var(--glass-bg, rgba(255,255,255,0.08)); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 0.25rem; }
@@ -852,7 +852,7 @@
 }
 .chat-input {
   flex: 1; border: 1px solid var(--border); border-radius: var(--r-md);
-  padding: 0.5rem 0.75rem; font-size: 0.9rem; background: var(--bg);
+  padding: 0.5rem 0.75rem; font-size: var(--text-base); background: var(--bg);
   color: var(--text);
   &:focus { outline: 2px solid var(--primary); }
 }
@@ -871,7 +871,7 @@
   max-width: 900px;
   margin: 0 auto 1.5rem;
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 
   &::before,
   &::after {

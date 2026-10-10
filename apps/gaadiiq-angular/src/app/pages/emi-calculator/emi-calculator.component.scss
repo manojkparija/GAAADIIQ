@@ -29,39 +29,39 @@
   background: var(--fill-soft); backdrop-filter: blur(20px);
   border: 1px solid var(--border-soft); border-radius: var(--r-xl); padding: 1.75rem;
   h2, h3 { font-family: 'Outfit', sans-serif; margin-bottom: 1.5rem; }
-  h3 { font-size: 1.1rem; }
+  h3 { font-size: var(--text-lg); }
 }
 
 .results-col { display: flex; flex-direction: column; gap: 1.5rem; }
 
 .slider-group {
   margin-bottom: 1.5rem;
-  .slider-label { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary);
+  .slider-label { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: var(--text-base); color: var(--text-secondary);
     strong { color: var(--text); }
   }
   input[type=range] { width: 100%; }
-  .range-ends { display: flex; justify-content: space-between; margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-tertiary); }
+  .range-ends { display: flex; justify-content: space-between; margin-top: 0.25rem; font-size: var(--text-2xs); color: var(--text-tertiary); }
 }
 
 .loan-summary {
   background: rgba(30,64,175,0.1); border: 1px solid rgba(30,64,175,0.2);
   border-radius: var(--r-lg); padding: 1.25rem; margin-top: 1rem;
 }
-.sum-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.9rem; color: var(--text-secondary);
+.sum-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: var(--text-base); color: var(--text-secondary);
   strong { color: var(--text); }
   &.highlight { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 0.5rem; padding-top: 0.75rem; }
 }
-.emi-amount { font-size: 1.3rem; background: linear-gradient(135deg, #1e40af, var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.emi-amount { font-size: var(--text-xl); background: linear-gradient(135deg, #1e40af, var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
 .donut-wrap { position: relative; width: 180px; height: 180px; margin: 0 auto 1.5rem; }
 .donut-svg { width: 100%; height: 100%; }
 .donut-seg { transition: stroke-dasharray 0.5s ease; }
 .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.donut-emi { font-size: 1.1rem; font-weight: 700; }
-.donut-label { font-size: 0.7rem; color: var(--text-tertiary); }
+.donut-emi { font-size: var(--text-lg); font-weight: 700; }
+.donut-label { font-size: var(--text-2xs); color: var(--text-tertiary); }
 
 .chart-legend { display: flex; gap: 1.5rem; justify-content: center; }
-.legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); }
+.legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: var(--text-sm); color: var(--text-secondary); }
 .dot { width: 10px; height: 10px; border-radius: 50%; &.principal { background: #1e40af; } &.interest { background: var(--teal); } }
 
 .banks-list { display: flex; flex-direction: column; gap: 0.75rem; }
@@ -74,28 +74,28 @@
   &:hover { border-color: var(--text-tertiary); background: var(--fill-soft); }
 }
 .bank-info { display: flex; align-items: center; gap: 0.75rem; }
-.bank-name { font-size: 0.9rem; font-weight: 600; }
-.bank-rate { font-size: 0.8rem; color: var(--text-tertiary); }
+.bank-name { font-size: var(--text-base); font-weight: 600; }
+.bank-rate { font-size: var(--text-xs); color: var(--text-tertiary); }
 .bank-emi { text-align: right; }
 // Was #1e40af — a light-theme blue that measured 1.58:1 against the dark
 // panel it sits on, the worst reading on the site.
-.emi-val { font-size: 1rem; font-weight: 700; color: var(--primary-ink); }
-.emi-label { font-size: 0.7rem; color: var(--text-tertiary); }
+.emi-val { font-size: var(--text-md); font-weight: 700; color: var(--primary-ink); }
+.emi-label { font-size: var(--text-2xs); color: var(--text-tertiary); }
 // Both badges were 0.65rem — 10.4px, under the 11px floor. 0.72rem is the meta
 // size used across the app. Only .selected-badge was on screen during the
 // audit; .best-badge shares the rule shape and the same defect, so it moves
 // with it rather than being left as the one 10.4px badge on the page.
-.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #1e40af, var(--teal)); color: var(--text); font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: var(--r-md); font-weight: 700; }
-.selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: var(--r-md); font-weight: 700; }
+.best-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #1e40af, var(--teal)); color: var(--text); font-size: var(--text-2xs); padding: 0.2rem 0.5rem; border-radius: var(--r-md); font-weight: 700; }
+.selected-badge { position: absolute; top: -8px; right: 0.75rem; background: linear-gradient(135deg, #43E97B, #00C9FF); color: #0A0E1A; font-size: var(--text-2xs); padding: 0.2rem 0.5rem; border-radius: var(--r-md); font-weight: 700; }
 
 /* Affordability section */
 .afford-card {
   background: var(--fill-soft); backdrop-filter: blur(20px);
   border: 1px solid var(--border-soft); border-radius: var(--r-xl); padding: 1.75rem;
   margin-bottom: 1.5rem;
-  h3 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 0.25rem; }
+  h3 { font-family: 'Outfit', sans-serif; font-size: var(--text-lg); margin-bottom: 0.25rem; }
 }
-.afford-header { margin-bottom: 1.5rem; .afford-sub { font-size: 0.85rem; color: var(--muted); } }
+.afford-header { margin-bottom: 1.5rem; .afford-sub { font-size: var(--text-sm); color: var(--muted); } }
 .afford-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
   @media(max-width:768px) { grid-template-columns: 1fr; }
 }
@@ -107,8 +107,8 @@
 .gauge-svg { width: 180px; height: 90px; }
 .gauge-center {
   position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-  .gauge-score { font-size: 2rem; font-weight: 800; line-height: 1; }
-  .gauge-label { font-size: 0.8rem; font-weight: 700; margin-top: 0.1rem; }
+  .gauge-score { font-size: var(--text-3xl); font-weight: 800; line-height: 1; }
+  .gauge-label { font-size: var(--text-xs); font-weight: 700; margin-top: 0.1rem; }
 }
 
 /* DTI */
@@ -117,12 +117,12 @@
   padding: 1rem; background: rgba(30,64,175,0.08); border-radius: var(--r-lg);
   border: 1px solid rgba(30,64,175,0.15);
   .dti-item { text-align: center; }
-  .dti-val { font-size: 1.4rem; font-weight: 800; &.warn { color: var(--danger); } }
-  .dti-label { font-size: 0.72rem; color: var(--muted); }
-  .dti-arrow { font-size: 1.25rem; color: var(--muted); }
+  .dti-val { font-size: var(--text-2xl); font-weight: 800; &.warn { color: var(--danger); } }
+  .dti-label { font-size: var(--text-2xs); color: var(--muted); }
+  .dti-arrow { font-size: var(--text-xl); color: var(--muted); }
   .dti-ideal { flex: 1; }
   .ideal-badge {
-    font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: var(--r-pill); display: inline-block;
+    font-size: var(--text-2xs); font-weight: 600; padding: 0.25rem 0.6rem; border-radius: var(--r-pill); display: inline-block;
     &.ok { background: rgba(67,233,123,0.15); color: var(--success-ink); }
     &.over { background: rgba(239,68,68,0.15); color: var(--danger); }
   }
@@ -133,21 +133,21 @@
 .am-item {
   flex: 1; text-align: center; padding: 1rem 0.5rem; background: var(--fill-dim);
   border: 1px solid var(--divider); border-radius: var(--r-lg);
-  .am-icon { font-size: 1.25rem; margin-bottom: 0.4rem; }
-  .am-val { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem;
+  .am-icon { font-size: var(--text-xl); margin-bottom: 0.4rem; }
+  .am-val { font-size: var(--text-md); font-weight: 700; margin-bottom: 0.2rem;
     // Both use the -ink tokens. `.good` already did; `.bad` used raw --danger,
     // which measures 3.14:1 on this tile's tint — below AA, and caught by
     // e2e/contrast.spec.ts the moment a tile started using it by default.
     &.good { color: var(--success-ink); } &.bad { color: var(--danger-ink); }
   }
-  .am-label { font-size: 0.72rem; color: var(--muted); }
+  .am-label { font-size: var(--text-2xs); color: var(--muted); }
 }
 
 .amort-card { margin-top: 0; }
-.amort-sub { font-size: 0.75rem; color: var(--text-tertiary); font-weight: 400; }
+.amort-sub { font-size: var(--text-2xs); color: var(--text-tertiary); font-weight: 400; }
 .table-wrap { overflow-x: auto; }
 .amort-table {
-  width: 100%; border-collapse: collapse; font-size: 0.875rem;
+  width: 100%; border-collapse: collapse; font-size: var(--text-sm);
   th { padding: 0.75rem 1rem; text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--divider); }
   td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
   tr:hover td { background: rgba(255,255,255,0.02); }
@@ -157,7 +157,7 @@
 
 .slider-hint {
   font-weight: 500;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -172,7 +172,7 @@
 .rule-head {
   font-family: 'Outfit', sans-serif;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   margin-bottom: 0.5rem;
 }
 
@@ -182,7 +182,7 @@
   padding: 0;
   display: grid;
   gap: 0.4rem;
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   line-height: 1.45;
 
   li { display: flex; gap: 0.5rem; align-items: baseline; }
@@ -198,7 +198,7 @@
 
 .rule-foot {
   margin: 0.7rem 0 0;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--text-muted);
 }
@@ -206,7 +206,7 @@
 /* What the compared rates actually are — see the note in the component. */
 .banks-note {
   margin: 0 0 1rem;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--text-muted);
 }

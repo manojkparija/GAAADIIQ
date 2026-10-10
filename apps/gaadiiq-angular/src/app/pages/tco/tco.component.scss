@@ -19,7 +19,7 @@
 
   .eyebrow {
     display: inline-block;
-    font-size: 0.75rem;
+    font-size: var(--text-2xs);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.7);
@@ -75,7 +75,7 @@
 
   h2 {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.1rem;
+    font-size: var(--text-lg);
     margin: 0;
   }
 
@@ -92,7 +92,7 @@
 }
 
 .field-label {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -111,7 +111,7 @@
     border: 1px solid var(--border-soft);
     background: rgba(255, 255, 255, 0.04);
     color: inherit;
-    font-size: 0.95rem;
+    font-size: var(--text-base);
 
     &:focus {
       outline: none;
@@ -121,7 +121,7 @@
 }
 
 .affix {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   color: var(--text-muted);
   flex-shrink: 0;
 }
@@ -141,7 +141,7 @@
 .chip {
   padding: 0.45rem 0.85rem;
   border-radius: var(--r-md);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   border: 1px solid var(--border-soft);
   background: transparent;
   color: inherit;
@@ -188,13 +188,13 @@
 }
 
 .summary-label {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   margin: 0 0 0.25rem;
 }
 
 .summary-value {
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   font-weight: 700;
   margin: 0;
 }
@@ -207,7 +207,7 @@
 }
 
 .resale-value {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin: 0.15rem 0 0;
 }
@@ -221,7 +221,7 @@
   background: color-mix(in srgb, var(--teal) 12%, transparent);
   color: var(--teal-ink);
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
 }
 
 .breakdown-card {
@@ -232,7 +232,7 @@
 
   h2 {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.1rem;
+    font-size: var(--text-lg);
     margin: 0;
   }
 }
@@ -241,7 +241,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   margin-bottom: 0.4rem;
 }
 
@@ -256,7 +256,7 @@
 }
 
 .bar-pct {
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
 }
 
@@ -289,12 +289,12 @@
   font-weight: 600;
 
   strong {
-    font-size: 1.2rem;
+    font-size: var(--text-xl);
   }
 }
 
 .disclaimer {
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   padding: 0 0.25rem;
   margin: 0;
@@ -316,7 +316,7 @@
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 
@@ -361,7 +361,7 @@
 // rupee amount appeared twice under two labels and read as two costs.
 .resale-sum {
   margin: 0.4rem 0 0;
-  font-size: 0.76rem;
+  font-size: var(--text-2xs);
   line-height: 1.6;
   color: var(--text-muted);
 

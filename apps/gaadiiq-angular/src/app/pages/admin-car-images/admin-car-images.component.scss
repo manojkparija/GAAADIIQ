@@ -32,17 +32,17 @@
 }
 
 .aci-brand-icon {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
 }
 
 .aci-brand-name {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   font-weight: 600;
   color: var(--text);
 }
 
 .aci-brand-sub {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
@@ -68,7 +68,7 @@
 }
 
 .aci-section-title {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   font-weight: 600;
   margin: 0 0 0.5rem 0;
   color: var(--text);
@@ -77,7 +77,7 @@
 .aci-section-sub {
   color: var(--text-muted);
   margin: 0 0 1.5rem 0;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 
 .drop-zone {
@@ -102,22 +102,22 @@
 }
 
 .drop-icon {
-  font-size: 3rem;
+  font-size: var(--text-5xl);
 }
 
 .drop-heading {
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 600;
   color: var(--text);
 }
 
 .drop-sub {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 
 .drop-limits {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
@@ -246,7 +246,7 @@
 
 .aci-files-title .btn-add-more {
   padding: 0.35rem 0.75rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 
 .aci-file-clear {
@@ -288,7 +288,7 @@
   background: var(--card-bg);
   border-radius: var(--r-sm);
   border: 1px solid var(--divider);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 
 .aci-file-name {
@@ -337,19 +337,19 @@
 }
 
 .size-label {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   font-weight: 500;
 }
 
 .size-warning {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--warning);
   padding: 0.5rem 0;
 }
 
 .size-error {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--danger-ink);
   padding: 0.5rem 0;
   font-weight: 500;
@@ -363,7 +363,7 @@
 }
 
 .aci-subsection-title {
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   font-weight: 600;
   margin: 0 0 1rem 0;
   color: var(--text);
@@ -388,7 +388,7 @@
 }
 
 .aci-label {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--text);
 }
@@ -397,7 +397,7 @@
 // the label alone — "Show On" decides which customer-facing pages the image
 // reaches, which is worth stating.
 .aci-hint {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   margin-top: 0.25rem;
 }
@@ -406,7 +406,7 @@
   padding: 0.75rem;
   border: 1px solid var(--border-soft);
   border-radius: var(--r-sm);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-family: inherit;
   transition: all 0.2s;
 
@@ -433,7 +433,7 @@
 .aci-hint-filename {
   font-weight: 600;
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   margin-bottom: 0.75rem;
   word-break: break-word;
 }
@@ -449,7 +449,7 @@
   color: var(--info-ink);
   padding: 0.25rem 0.75rem;
   border-radius: var(--r-sm);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 500;
 }
 
@@ -511,7 +511,7 @@
 }
 
 .aci-result-label {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -519,7 +519,7 @@
 }
 
 .aci-result-value {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
   color: var(--success-ink);
   margin-bottom: 0.5rem;
@@ -530,7 +530,7 @@
 }
 
 .aci-result-desc {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
@@ -553,7 +553,7 @@
 
     li {
       color: var(--danger-ink);
-      font-size: 0.9rem;
+      font-size: var(--text-base);
       padding: 0.25rem 0;
     }
   }
@@ -601,12 +601,12 @@
 .aci-image-name {
   font-weight: 600;
   color: var(--text);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   word-break: break-word;
 }
 
 .aci-image-meta {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   margin-top: 0.25rem;
 }
@@ -617,7 +617,7 @@
   color: var(--warning-ink);
   padding: 0.25rem 0.5rem;
   border-radius: var(--r-sm);
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   font-weight: 600;
   margin-top: 0.5rem;
 }
@@ -652,7 +652,7 @@
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   border-top: 1px solid var(--divider);
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
 }
 
 .aci-ml-block {
@@ -683,7 +683,7 @@
 .aci-ml-confidence {
   display: block;
   color: var(--text-muted);
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   margin-left: 3rem;
 }
 
@@ -742,7 +742,7 @@
 }
 
 .aci-existing-name {
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text);
   overflow: hidden;
@@ -751,7 +751,7 @@
 }
 
 .aci-existing-tags {
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
 }
 
@@ -759,7 +759,7 @@
   margin: 0 0.6rem 0.6rem;
   padding: 0.4rem 0;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   border-radius: var(--r-md);
   border: 1px solid rgba(239, 68, 68, 0.35);
@@ -807,7 +807,7 @@
 .aci-badge-draft,
 .aci-badge-live,
 .aci-badge-ai {
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   padding: 0.1rem 0.45rem;
   border-radius: var(--r-pill);
@@ -870,7 +870,7 @@
   padding: 0.35rem 0.6rem 0;
 }
 .aci-order-n {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   min-width: 1.15rem;
@@ -882,7 +882,7 @@
   color: var(--text-muted);
 }
 .aci-order-cover {
-  font-size: 0.68rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--teal-ink);
@@ -898,7 +898,7 @@
   display: grid;
   place-items: center;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   line-height: 1;
   border-radius: var(--r-sm);
   border: 1px solid var(--divider);
@@ -911,7 +911,7 @@
 
 .aci-existing-surface {
   display: block;
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 0.15rem;
@@ -934,7 +934,7 @@
   padding-left: 1.1rem;
   columns: 2;
   column-gap: 2rem;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   line-height: 1.75;
   color: var(--text);
 }

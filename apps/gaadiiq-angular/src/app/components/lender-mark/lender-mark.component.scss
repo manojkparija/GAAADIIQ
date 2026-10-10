@@ -14,7 +14,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 800;
   letter-spacing: 0.02em;
   // The tint and ink come from the component, paired so the text stays above
@@ -37,7 +37,7 @@
 // wider tile, which moves the row layout — a design decision rather than a
 // defect fix, so it is left alone and recorded here.
 .lm-mark.lm-long {
-  font-size: 0.62rem;
+  font-size: var(--text-2xs);
   letter-spacing: 0;
 }
 

@@ -16,7 +16,7 @@
 
   h2 {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.05rem;
+    font-size: var(--text-md);
     margin: 2rem 0 1rem;
   }
 }
@@ -26,13 +26,13 @@
 
   h1 {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.6rem;
+    font-size: var(--text-2xl);
     font-weight: 700;
     margin: 0 0 0.25rem;
   }
 
   p {
-    font-size: 0.9rem;
+    font-size: var(--text-base);
     color: var(--text-muted);
     margin: 0;
   }
@@ -42,7 +42,7 @@
   text-align: center;
   padding: 4rem 0;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 
 .empty {
@@ -51,7 +51,7 @@
   border-radius: var(--r-xl);
   padding: 3rem;
   text-align: center;
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   color: var(--text-muted);
 
   a {
@@ -78,7 +78,7 @@
 }
 
 .stat-label {
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -87,7 +87,7 @@
 }
 
 .stat-value {
-  font-size: 1.85rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
   margin: 0.25rem 0 0;
   // Figures line up across cards when they change.
@@ -95,7 +95,7 @@
 }
 
 .stat-sub {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   margin: 0.15rem 0 0;
 }
@@ -111,7 +111,7 @@
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.87rem;
+  font-size: var(--text-sm);
   min-width: 46rem;
 }
 
@@ -178,7 +178,7 @@ td {
 }
 
 .review-count {
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   margin-left: 0.35rem;
 }
@@ -187,7 +187,7 @@ td {
   display: inline-block;
   padding: 0.15rem 0.6rem;
   border-radius: var(--r-pill);
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   font-weight: 500;
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-muted);
@@ -215,7 +215,7 @@ td {
   padding: 0.55rem 0.7rem;
   border-radius: var(--r-md);
   margin-bottom: 0.4rem;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   line-height: 1.5;
   // Opaque backgrounds with their ink measured on them, not tints picking up
   // whatever the table is sitting on.
@@ -231,7 +231,7 @@ td {
 .insight-evidence {
   flex: 0 0 auto;
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--text-2xs);
   opacity: 0.85;
 }
 
@@ -252,33 +252,33 @@ td {
 
   h3 {
     margin: 0 0 0.75rem;
-    font-size: 0.9rem;
+    font-size: var(--text-base);
     font-weight: 700;
   }
 }
 
 .demand-figure {
   margin: 0;
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   font-weight: 800;
   line-height: 1;
   color: var(--primary-ink);
 
-  span { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+  span { font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); }
 }
 
 // The empty state is the common one on a new marketplace, so it is styled to
 // be read rather than to look like a broken panel.
 .demand-empty {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   line-height: 1.6;
   color: var(--text-muted);
 }
 
 .demand-note {
   margin: 0.75rem 0 0;
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   line-height: 1.5;
   color: var(--text-muted);
 }
@@ -296,7 +296,7 @@ td {
     align-items: baseline;
     gap: 0.5rem;
     flex-wrap: wrap;
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
   }
 }
 
@@ -304,7 +304,7 @@ td {
 .dl-val { font-weight: 600; }
 
 .dl-gap {
-  font-size: 0.68rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   padding: 0.1rem 0.4rem;
   border-radius: var(--r-pill);

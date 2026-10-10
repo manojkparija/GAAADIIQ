@@ -30,7 +30,7 @@
   padding: var(--cs-pad, 10px 14px);
   border: 1.5px solid var(--cs-border, var(--border, #e5e7eb));
   border-radius: var(--r-md);
-  font-size: 14px;
+  font-size: var(--text-sm);
   background: var(--cs-bg, var(--bg, #fff));
   color: var(--cs-color, var(--text, #111));
   cursor: pointer; text-align: left; gap: 8px;
@@ -79,7 +79,7 @@
 }
 
 .cs-option {
-  padding: 10px 14px; font-size: 14px; cursor: pointer; transition: background 0.12s, color 0.12s;
+  padding: 10px 14px; font-size: var(--text-sm); cursor: pointer; transition: background 0.12s, color 0.12s;
   color: var(--text, #111);
 
   &.placeholder-opt { color: var(--text-muted); }
