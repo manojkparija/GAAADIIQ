@@ -903,8 +903,16 @@ $heroes: '.nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-her
     color: var(--input-color);
     &::placeholder { color: var(--text-tertiary); opacity: 1; }
   }
+  // The custom-select's own variables, which pages set to white-on-gradient
+  // values. All four, and by their real names: the component reads --cs-color,
+  // not --cs-text. The first attempt set --cs-text, which matches nothing and
+  // silently did nothing -- the Make and Max Budget controls stayed a white
+  // fill on a white card while the plain inputs beside them were fixed, which
+  // is what made the row look half-broken.
+  --cs-bg: var(--fill-soft);
+  --cs-border: var(--border-soft);
+  --cs-color: var(--input-color);
   --cs-placeholder: var(--text-tertiary);
-  --cs-text: var(--input-color);
 
   // The selected tab has to stay distinguishable from its neighbours once
   // they all have a fill.
