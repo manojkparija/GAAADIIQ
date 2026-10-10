@@ -759,7 +759,15 @@
   &.listening { background: #EF4444; color: #fff; animation: mic-pulse 1.4s ease infinite; }
   &.listening:hover { background: #DC2626; }
   &.processing { opacity: 0.65; cursor: default; }
-  &.error { background: #F59E0B; color: #fff; }
+  // White on this amber is 2.15:1 -- on a control whose whole job is to say
+  // something went wrong, which is the worst place to put unreadable text.
+  // Dark ink instead of a darker fill, so the button stays the amber that
+  // distinguishes it from the red .listening state above: 8.31:1 light,
+  // 10.69:1 on the #FBBF24 it becomes in dark.
+  &.error { background: var(--warning); color: var(--ink-on-bright); }
+  // The hover inherits the dark ink too. White was kept here at first on the
+  // assumption that #D97706 is dark enough to carry it; computing it says
+  // 3.19:1, which fails. The dark ink gives 5.6:1.
   &.error:hover { background: #D97706; }
 }
 @keyframes mic-pulse {

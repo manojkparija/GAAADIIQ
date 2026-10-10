@@ -322,7 +322,13 @@
   color: var(--muted); transition: all 0.2s;
   &.active, &:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
   &.gf-a.active { background: #EF4444; border-color: var(--danger-ink); }
-  &.gf-b.active { background: #F59E0B; border-color: #F59E0B; }
+  // Dark text, not the white inherited from .active above: white on this
+  // amber measures 2.15:1. The chip stays amber so it still reads as the B
+  // grade beside its red and blue neighbours -- it is the TEXT that changes.
+  // #0F172A measures 8.31:1 on the light-theme amber and 10.69:1 on the
+  // #FBBF24 it becomes in dark, so --warning is safe to use for the fill
+  // here even though it flips. See --ink-on-bright in styles.scss.
+  &.gf-b.active { background: var(--warning); border-color: var(--warning); color: var(--ink-on-bright); }
   &.gf-c.active { background: #3B82F6; border-color: #3B82F6; }
   &.gf-d.active { background: #6B7280; border-color: #6B7280; }
 }

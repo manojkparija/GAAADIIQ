@@ -253,6 +253,24 @@
   // surface underneath it never flips either.
   --ink-on-white:   #295EE0;
 
+  // The same idea for the other direction: text on a BRIGHT fill that stays
+  // bright in both themes. Amber is the case that forced it. #F59E0B is a
+  // light colour -- white on it measures 2.15:1, nowhere near the 4.5:1 floor
+  // -- and the usual escapes do not work:
+  //
+  //   var(--text) flips to near-white in dark, which is the original bug back
+  //   again, because the amber underneath is a literal and does not flip.
+  //
+  //   Darkening the fill to --warning-ink (#B45309) does carry white, at
+  //   5.02:1, but it changes a colour somebody chose, and in a row of
+  //   coloured chips it would make the amber one look broken next to its
+  //   bright neighbours.
+  //
+  // So the fill keeps its colour and the text goes dark. #0F172A on #F59E0B
+  // measures 8.31:1. Non-flipping for exactly the reason --ink-on-white is:
+  // the surface underneath it does not flip either.
+  --ink-on-bright:  #0F172A;
+
   --text-tertiary:  #475569;
   --text-secondary: #1E293B;
   --text-muted:     #334155;
