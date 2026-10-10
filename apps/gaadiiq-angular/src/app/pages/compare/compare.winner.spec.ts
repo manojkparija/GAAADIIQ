@@ -298,6 +298,60 @@ describe('CompareComponent — a missing value reads as a dash', () => {
     expect(c.entryFeatureState(b, 'Ventilated Seats')).toBe('yes');
   });
 
+  // ── Reported with the Brezza column circled: its detail page lists
+  //    "6 standard airbags", "Single-pane sunroof" and "360-degree camera",
+  //    and the comparison table showed a dash for all three. Two causes --
+  //    the model's list was discarded whenever the trim had any list of its
+  //    own, and the match was a raw substring test that "6 standard airbags"
+  //    fails against "6 Airbags". These are the verbatim strings.
+  const BREZZA = [
+    '6 standard airbags,', '5-star Bharat NCAP safety rating',
+    'Single-pane sunroof', '360-degree camera', 'Automatic climate control',
+    'Electronic Stability Program (ESP) with Hill Hold Assist',
+    '10.1-inch touchscreen infotainment system with wireless Android Auto and Apple C',
+    'Ventilated front seats', 'Head-up display (HUD)', 'LED projector headlamps',
+  ];
+
+  it('matches the wording the catalogue actually uses', () => {
+    const c = mount([car({ id: 'a', features: BREZZA }), car({ id: 'b' })]);
+    const [a] = c.activeEntries();
+
+    expect(c.entryFeatureState(a, '6 Airbags')).toBe('yes');        // "6 standard airbags,"
+    expect(c.entryFeatureState(a, '360 Camera')).toBe('yes');       // "360-degree camera"
+    expect(c.entryFeatureState(a, 'Ventilated Seats')).toBe('yes'); // "Ventilated front seats"
+    expect(c.entryFeatureState(a, 'Sunroof')).toBe('yes');          // "Single-pane sunroof"
+  });
+
+  it('still refuses a feature the car does not have', () => {
+    const c = mount([car({ id: 'a', features: BREZZA }), car({ id: 'b' })]);
+    const [a] = c.activeEntries();
+
+    // "wireless Android Auto" has the word wireless and is not wireless
+    // charging. Requiring EVERY word of the label is what keeps this honest.
+    expect(c.entryFeatureState(a, 'Wireless Charging')).toBe('unknown');
+    // "Bharat NCAP safety rating" is not ADAS.
+    expect(c.entryFeatureState(a, 'ADAS')).toBe('unknown');
+  });
+
+  it('does not read 2 airbags as 6', () => {
+    const c = mount([car({ id: 'a', features: ['2 airbags'] }), car({ id: 'b' })]);
+    const [a] = c.activeEntries();
+    expect(c.entryFeatureState(a, '6 Airbags')).toBe('unknown');
+  });
+
+  it('keeps the model\'s features when a trim has its own', () => {
+    // The trim list is not a replacement for the model list; it is a second
+    // partial list. Preferring it discarded everything the model knew.
+    const c = mount([car({ id: 'a', features: ['Single-pane sunroof', '6 standard airbags'] }),
+                     car({ id: 'b' })]);
+    const [a] = c.activeEntries();
+    a.variant = { features: ['Ventilated front seats'] };
+
+    expect(c.entryFeatureState(a, 'Ventilated Seats')).toBe('yes'); // from the trim
+    expect(c.entryFeatureState(a, 'Sunroof')).toBe('yes');          // from the model
+    expect(c.entryFeatureState(a, '6 Airbags')).toBe('yes');        // from the model
+  });
+
   it('never answers no, so the table cannot claim a car lacks a feature', () => {
     const c = mount([car({ id: 'a', features: [] }), car({ id: 'b' })]);
 
