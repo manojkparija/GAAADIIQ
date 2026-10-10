@@ -4,8 +4,8 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
-from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import bindparam, func, select, text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependencies import get_admin_user, get_current_user
@@ -78,12 +78,14 @@ async def list_cars(
     # One query for the page's images rather than one per car.
     images = await media_library.urls_for_cars(db, cars, bucket=bucket)
     summaries = await _variant_summaries(db, [c.id for c in cars])
+    ratings = await _rating_summaries(db, [c.id for c in cars])
 
     items = []
     for car in cars:
         out = CarOut.model_validate(car)
         out.image_urls = images.get(car.id, [])
         _apply_variant_summary(out, summaries.get(car.id))
+        _apply_rating_summary(out, ratings.get(car.id))
         items.append(out)
 
     return CarListOut(items=items, total=total, page=page, page_size=page_size)
@@ -192,6 +194,107 @@ async def _variant_summaries(
         summaries[car_id] = summary
 
     return summaries
+
+
+class _RatingSummary(BaseModel):
+    """What buyers have said about one model."""
+
+    average: float
+    count: int
+
+
+async def _rating_summaries(
+    db: AsyncSession, car_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, _RatingSummary]:
+    """
+    Buyer ratings per car, in one query rather than one per row.
+
+    WHY RAW SQL AGAINST A TABLE WITH NO MODEL
+
+    car_reviews is created and owned by supabase/migrations, not by Alembic,
+    and the Angular app writes to it directly through supabase-js. It is in
+    the same database this service connects to -- services/enquiry_alerts.py
+    already reads public.user_profiles the same way -- but it has no
+    SQLAlchemy model, and inventing one would put a third copy of the schema
+    in a repo that already keeps two.
+
+    No "public." prefix: the default search_path finds it on Postgres, and
+    leaving it off means the statement is at least well-formed anywhere else.
+
+    car_id is `text` there and `uuid` here, so the ids go down as strings and
+    no cast is needed on either side.
+
+    SIBLINGS, FOR THE SAME REASON THE PRICE BAND USES THEM
+
+    A model owns more than one catalogue row, and a review is written against
+    whichever row the reader happened to open. Counting only the requested row
+    would let a card and the detail page it opens disagree about how many
+    people have reviewed the same car -- the exact fault _variant_summaries
+    describes for the price band.
+
+    WHEN THE TABLE IS NOT THERE
+
+    The test database is built from Base.metadata, which does not include
+    car_reviews, and a deployment that has not run the Supabase migration will
+    not have it either. Both must degrade to "nobody has reviewed anything"
+    rather than failing the catalogue.
+
+    The savepoint is not decoration. On Postgres a failed statement aborts the
+    whole transaction, so catching the error and carrying on with the same
+    session yields an InFailedSqlTransaction on the next query -- the trap
+    CLAUDE.md records for tests that provoke an error and reuse the session.
+    Rolling back to a savepoint leaves the outer transaction usable.
+    """
+    if not car_ids:
+        return {}
+
+    siblings = await _sibling_ids_for_cars(db, car_ids)
+    every_id = {i for ids, _ in siblings.values() for i in ids} or set(car_ids)
+
+    stmt = text(
+        "SELECT car_id, AVG(rating) AS avg_rating, COUNT(*) AS n "
+        "FROM car_reviews WHERE car_id IN :ids GROUP BY car_id"
+    ).bindparams(bindparam("ids", expanding=True))
+
+    try:
+        async with db.begin_nested():
+            rows = (
+                await db.execute(stmt, {"ids": [str(i) for i in every_id]})
+            ).all()
+    except SQLAlchemyError:
+        logger.info("car_reviews unavailable; catalogue served without ratings")
+        return {}
+
+    by_id: dict[str, tuple[float, int]] = {
+        str(r[0]): (float(r[1] or 0), int(r[2] or 0)) for r in rows
+    }
+
+    out: dict[uuid.UUID, _RatingSummary] = {}
+    for car_id in car_ids:
+        sibling_ids, _ = siblings.get(car_id, ([car_id], set()))
+        total = 0
+        weighted = 0.0
+        for sid in sibling_ids:
+            avg, n = by_id.get(str(sid), (0.0, 0))
+            # Weighted by count: a sibling with 40 reviews must not be averaged
+            # flat against one with 2, which would let a single stray review
+            # move the model's rating as much as forty.
+            weighted += avg * n
+            total += n
+        if total:
+            out[car_id] = _RatingSummary(
+                average=round(weighted / total, 1), count=total
+            )
+    return out
+
+
+def _apply_rating_summary(out: CarOut, summary: _RatingSummary | None) -> CarOut:
+    """Leave rating None and the count 0 when nobody has reviewed the car."""
+    if summary is None:
+        return out
+    out.rating = summary.average
+    out.review_count = summary.count
+    return out
 
 
 def _apply_variant_summary(out: CarOut, summary: _VariantSummary | None) -> CarOut:
@@ -372,6 +475,7 @@ async def get_car(car_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     out.image_urls = images.get(car.id, [])
     out.spin_urls = await media_library.spin_urls_for_car(db, car)
     _apply_variant_summary(out, (await _variant_summaries(db, [car.id])).get(car.id))
+    _apply_rating_summary(out, (await _rating_summaries(db, [car.id])).get(car.id))
     return out
 
 
@@ -414,6 +518,7 @@ async def update_car(
     )
     out.image_urls = images.get(car.id, [])
     _apply_variant_summary(out, (await _variant_summaries(db, [car.id])).get(car.id))
+    _apply_rating_summary(out, (await _rating_summaries(db, [car.id])).get(car.id))
     return out
 
 
@@ -1096,6 +1201,7 @@ async def research_car_details(
     if car.specs and car.features:
         out = CarOut.model_validate(car)
         _apply_variant_summary(out, (await _variant_summaries(db, [car.id])).get(car.id))
+        _apply_rating_summary(out, (await _rating_summaries(db, [car.id])).get(car.id))
         return out
 
     details = await variant_research.research_model_details(
@@ -1110,4 +1216,5 @@ async def research_car_details(
 
     out = CarOut.model_validate(car)
     _apply_variant_summary(out, (await _variant_summaries(db, [car.id])).get(car.id))
+    _apply_rating_summary(out, (await _rating_summaries(db, [car.id])).get(car.id))
     return out

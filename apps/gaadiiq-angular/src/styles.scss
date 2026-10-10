@@ -743,6 +743,217 @@ body::before {
   > * { position: relative; z-index: 1; }
 }
 
+
+// One list, used by every rule below. Spelled out 21 times per rule it cost
+// 24kB of CSS and broke the 1MB bundle budget; :is() has the same
+// specificity as a bare class, so nothing about the cascade changes.
+$heroes: '.nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-hero, .md-hero, .rn-hero, .evc-hero, .compare-hero, .diag-hero, .advisor-hero, .results-hero, .bj-hero, .vr-hero, .chl-hero, .val-hero, .about-hero, .pricing-hero, .fm-hero';
+
+// ── The hero band, dark theme only ───────────────────────────────────────────
+//
+// Each of the 19 heroes paints its own
+// `linear-gradient(135deg, var(--brand-blue-deep) 0%, var(--teal) 100%)`.
+// Against the old near-black navy that band read as the brand. Against the
+// teal-black the page became, it reads as a bright rectangle stuck on top of a
+// darker one -- reported with the seam circled.
+//
+// So in dark the band comes off and the hero shows the page beneath it.
+//
+// DARK ONLY, AND THAT IS NOT A HALF-MEASURE
+//
+// Hero text is white -- there are about 160 hardcoded `color: #fff`
+// declarations across the page stylesheets. In light the page is #F4F7FB, so
+// dropping the band there would put white text on near-white and the headings
+// would vanish. Removing it in light is a real piece of work (new text colours
+// for 19 heroes, each one a contrast decision), not another line here.
+//
+// THE LATTICE IS UNAFFECTED
+//
+// It is painted by the ::after above, not by the background this clears, so
+// the diamonds stay exactly as they are. Verified in the browser rather than
+// assumed.
+//
+// No !important. `:root[data-theme="dark"] .nc-hero` is (0,3,0) against the
+// component rule's (0,2,0) once Angular's encapsulation attribute is counted,
+// so it wins on specificity alone.
+//
+// Both signals, as everywhere else in this file: the media query covers a
+// reader on "system", the attribute covers one who has chosen. The media
+// query is guarded so it does not override someone who explicitly picked
+// light while their OS is dark.
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(#{$heroes}) {
+    background: none;
+  }
+}
+
+:root[data-theme="dark"] :is(#{$heroes}) {
+  background: none;
+}
+
+
+// ── The hero band, light theme ───────────────────────────────────────────────
+//
+// The same removal as dark, which is harder here and needs more than clearing
+// a background. On a near-white page every piece of hero furniture drawn to
+// sit on a saturated gradient stops working:
+//
+//   white headings             invisible
+//   white -> #DDD6FE accent    invisible
+//   rgba(255,255,255,.75) sub  invisible
+//   the white lattice          invisible
+//
+// TWO THINGS THIS GOT WRONG FIRST, BOTH CAUGHT BY MEASURING
+//
+// 1. `body` is in the selector for specificity, not decoration. Without it
+//    `:root[data-theme="light"] .nc-hero .gradient-text` is (0,4,0) and the
+//    component's own `.nc-hero .gradient-text` is (0,4,0) too once Angular's
+//    encapsulation attributes count -- a tie, which the component wins by
+//    coming later. The accent word stayed white and invisible. The extra
+//    element lifts these to (0,4,1) and they win outright. Checked in the
+//    browser, not reasoned about.
+//
+// 2. The first version keyed only on [data-theme="light"], which is the
+//    attribute set when a reader has EXPLICITLY chosen light. A reader on a
+//    light OS who has never touched the toggle has no attribute at all, so
+//    none of this applied to them -- which is most people. The structure now
+//    mirrors the dark block: a media query for the default, the attribute for
+//    the explicit choice, each excluding the other theme.
+@mixin hero-light {
+  background: none;
+
+  // The lattice stroke is white (--hero-pattern) and paints nothing on a light
+  // page. --page-pattern is the same geometry in brand blue at 7%, which the
+  // rest of the light page already uses. The diamonds were the condition on
+  // this request, so they have to stay VISIBLE, not merely stay defined.
+  &::after { background-image: var(--page-pattern); }
+
+  h1, h2, .hero-title, .hero-heading { color: var(--text); }
+
+  // Was rgba(255,255,255,0.75), sometimes with opacity on top. Nothing on white.
+  .hero-sub, .hero-content p, > .container > p {
+    color: var(--text-secondary);
+    opacity: 1;
+  }
+
+  // Blue to teal, but the INK variants of both.
+  //
+  // --gradient ends at --teal (#14B8A6), and the spec measured that end at
+  // 2.32:1 on the light page against the 3:1 a 44px heading needs. It is a
+  // fill colour, drawn to sit behind white text, and it was never meant to BE
+  // text on white. --teal-ink (#0F766E) is the text-on-light counterpart the
+  // project already defines for exactly this, and measures 5.09:1.
+  //
+  // The reader still sees blue running into teal; the teal is simply deep
+  // enough to be read.
+  .gradient-text {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--teal-ink) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  // A white pill reads as a hole in a white page. A brand tint with
+  // --primary-ink on it is what the light theme gives every other badge, and
+  // --primary-ink exists because --primary alone missed AA on a tint.
+  .hero-badge, .eyebrow, .ai-badge, .save-chip {
+    background: rgba(41, 94, 224, 0.10);
+    color: var(--primary-ink);
+    border: 1px solid rgba(41, 94, 224, 0.18);
+  }
+
+  // THE REST OF THE HERO'S FURNITURE
+  //
+  // Everything below was found by contrast.spec.ts, not by reading the
+  // templates. The first version of this block handled the heading, the sub
+  // and the badge and looked finished; the suite then listed eight more
+  // selectors rendering white on white -- tabs, the View All link, the search
+  // field labels and the brand chips. Worth recording, because "the hero
+  // looks right" and "nothing in the hero is invisible" are different claims
+  // and only one of them can be checked by eye.
+  .hero-tab, .view-all-link, .search-field-label { color: var(--text); }
+
+  // The last two the suite found: /ai-valuation's trust row and
+  // /pricing-plans' billing toggle. Both are plain spans and buttons with no
+  // class of their own worth targeting, so they are reached through their
+  // container.
+  .trust-row, .billing-toggle {
+    color: var(--text-secondary);
+    span, button { color: var(--text-secondary); }
+    button.active { color: var(--text); }
+  }
+
+  // Pills and inputs drawn for the gradient: a 10%-white fill inside a
+  // 30%-white border. Both vanish on a white card, so the brand chips became
+  // floating text with no edges -- reported with every chip circled. They
+  // need a real surface, not just dark text.
+  .brand-quick-pill, .bodytype-pill, .hero-tab, .city-display,
+  .search-input, .bj-badge, .chip, .cat-chip, .category-chip,
+  // The billing toggle's own container, and the TCO hero's help link. Both
+  // are translucent-white surfaces rather than pills, and both were found by
+  // the sweep rather than by reading templates.
+  .billing-toggle, .tco-help {
+    background: var(--fill-soft);
+    border-color: var(--border-soft);
+    color: var(--text);
+  }
+
+  // Text INSIDE the fields, which the surface fix above does not reach and
+  // which neither contrast.spec.ts nor a surface check would have caught:
+  // the spec does not walk ::placeholder, and a field can have a perfectly
+  // visible border while its own text is white on white. Reported as
+  // "letters are not visible" against the Used Cars city and model fields.
+  //
+  // --cs-placeholder is the custom-select component's own variable; it is set
+  // to 60% white for the gradient and has to be re-pointed here too, or the
+  // dropdown's placeholder stays invisible while the plain input's is fixed.
+  input, select, textarea {
+    color: var(--input-color);
+    &::placeholder { color: var(--text-tertiary); opacity: 1; }
+  }
+  // The custom-select's own variables, which pages set to white-on-gradient
+  // values. All four, and by their real names: the component reads --cs-color,
+  // not --cs-text. The first attempt set --cs-text, which matches nothing and
+  // silently did nothing -- the Make and Max Budget controls stayed a white
+  // fill on a white card while the plain inputs beside them were fixed, which
+  // is what made the row look half-broken.
+  --cs-bg: var(--fill-soft);
+  --cs-border: var(--border-soft);
+  --cs-color: var(--input-color);
+  --cs-placeholder: var(--text-tertiary);
+
+  // The selected tab has to stay distinguishable from its neighbours once
+  // they all have a fill.
+  .hero-tab.active {
+    background: var(--card-bg);
+    border-color: var(--border-strong);
+    box-shadow: var(--card-shadow);
+  }
+
+  // The panels were translucent white on a saturated gradient, which is a
+  // hole on a white page -- and every chip inside them inherited white text.
+  // Giving them a real card surface fixes the container and its contents in
+  // one move, rather than recolouring each chip.
+  .hero-search-card, .hero-tab-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--card-shadow);
+    color: var(--text);
+
+    .chip, .cat-chip, .category-chip, button, span, a { color: var(--text); }
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) body :is(#{$heroes}) {
+    @include hero-light;
+  }
+}
+
+:root[data-theme="light"] body :is(#{$heroes}) {
+  @include hero-light;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Outfit', sans-serif;
   line-height: 1.15;

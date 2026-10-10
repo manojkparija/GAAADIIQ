@@ -93,6 +93,14 @@ interface ApiCar {
   variant_price_max?: string | null;
   specs?: { label: string; value: string }[] | null;
   features?: string[] | null;
+  /**
+   * Buyer ratings for the MODEL, aggregated by the API from car_reviews.
+   *
+   * rating is null, not 0, when nobody has reviewed the car — the two are
+   * different facts and 0 was being read as a rating of zero.
+   */
+  rating?: number | null;
+  review_count?: number;
 }
 
 interface ApiListing {
@@ -520,8 +528,9 @@ function mapListing(lst: ApiListing): Car {
     badgeType: badge ? 'featured' : '',
     image,
     images,
-    rating: 0,
-    reviews: 0,
+    // The advert's own car row carries the model's rating; see mapCatalogueCar.
+    rating: car.rating ?? 0,
+    reviews: car.review_count ?? 0,
     verified: true,
     city: lst.city ?? undefined,
     bodyType: BODY_LABEL[car.body_type ?? ''] ?? car.body_type ?? '',
@@ -634,8 +643,11 @@ function mapCatalogueCar(car: ApiCar): Car {
     badgeType: badge ? 'featured' : '',
     image: images[0],
     images,
-    rating: 0,
-    reviews: 0,
+    // Was hardcoded to 0, so every catalogue card rendered "0.0 (0)" —
+    // indistinguishable from a car rated worst. The API aggregates
+    // car_reviews now and sends null when there is nothing to report.
+    rating: car.rating ?? 0,
+    reviews: car.review_count ?? 0,
     verified: true,
     bodyType: BODY_LABEL[car.body_type ?? ''] ?? car.body_type ?? '',
     isSellerListing: false,
