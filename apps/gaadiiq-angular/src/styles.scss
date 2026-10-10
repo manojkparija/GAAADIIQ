@@ -875,6 +875,45 @@ $heroes: '.nc-hero, .uc-hero, .emi-hero, .ap-hero, .ins-hero, .ms-hero, .tco-her
     button.active { color: var(--text); }
   }
 
+  // Pills and inputs drawn for the gradient: a 10%-white fill inside a
+  // 30%-white border. Both vanish on a white card, so the brand chips became
+  // floating text with no edges -- reported with every chip circled. They
+  // need a real surface, not just dark text.
+  .brand-quick-pill, .bodytype-pill, .hero-tab, .city-display,
+  .search-input, .bj-badge, .chip, .cat-chip, .category-chip,
+  // The billing toggle's own container, and the TCO hero's help link. Both
+  // are translucent-white surfaces rather than pills, and both were found by
+  // the sweep rather than by reading templates.
+  .billing-toggle, .tco-help {
+    background: var(--fill-soft);
+    border-color: var(--border-soft);
+    color: var(--text);
+  }
+
+  // Text INSIDE the fields, which the surface fix above does not reach and
+  // which neither contrast.spec.ts nor a surface check would have caught:
+  // the spec does not walk ::placeholder, and a field can have a perfectly
+  // visible border while its own text is white on white. Reported as
+  // "letters are not visible" against the Used Cars city and model fields.
+  //
+  // --cs-placeholder is the custom-select component's own variable; it is set
+  // to 60% white for the gradient and has to be re-pointed here too, or the
+  // dropdown's placeholder stays invisible while the plain input's is fixed.
+  input, select, textarea {
+    color: var(--input-color);
+    &::placeholder { color: var(--text-tertiary); opacity: 1; }
+  }
+  --cs-placeholder: var(--text-tertiary);
+  --cs-text: var(--input-color);
+
+  // The selected tab has to stay distinguishable from its neighbours once
+  // they all have a fill.
+  .hero-tab.active {
+    background: var(--card-bg);
+    border-color: var(--border-strong);
+    box-shadow: var(--card-shadow);
+  }
+
   // The panels were translucent white on a saturated gradient, which is a
   // hole on a white page -- and every chip inside them inherited white text.
   // Giving them a real card surface fixes the container and its contents in
