@@ -21,11 +21,15 @@
         <h3>{{ car.make }} {{ car.model }}</h3>
         <div class="year-chip">{{ car.year }}</div>
       </div>
-      <div class="rating">
-        <app-icon name="star" [size]="12" class="star-icon"></app-icon>
-        <span class="rating-val">{{ car.rating }}</span>
-        <span class="reviews">({{ car.reviews }})</span>
-      </div>
+      <!-- See new-cars.component.html: a card with no reviews showed "0 (0)",
+           which reads as a bad rating rather than as no rating at all. -->
+      @if (car.reviews > 0) {
+        <div class="rating">
+          <app-icon name="star" [size]="12" class="star-icon"></app-icon>
+          <span class="rating-val">{{ car.rating }}</span>
+          <span class="reviews">({{ car.reviews }})</span>
+        </div>
+      }
     </div>
     <!-- Where the model has published trims, the card quotes what they span,
          the same figures the model card and the detail page quote. A used car
