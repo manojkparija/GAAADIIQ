@@ -57,6 +57,7 @@ interface NewLaunch {
 
 
 import { BodyTypeIconComponent } from '../../components/body-type-icon/body-type-icon.component';
+import { BodyTypeArtComponent, BodyShape } from '../../components/body-type-art/body-type-art.component';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -69,7 +70,7 @@ interface BudgetRange {
 @Component({
   selector: 'app-new-cars',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, BodyTypeIconComponent, CustomSelectComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, RouterLink, BodyTypeIconComponent, BodyTypeArtComponent, CustomSelectComponent, TranslatePipe],
   templateUrl: './new-cars.component.html',
   styleUrl: './new-cars.component.scss'
 })
@@ -187,13 +188,25 @@ export class NewCarsComponent implements OnInit {
   // of them GAADIIQ's. Worse, 🚗 and 🚘 are near-identical at 2.2rem on Windows,
   // so Hatchback and Sedan were not visually distinguishable at all. Inline SVG
   // renders identically everywhere and inherits the brand colour.
-  bodyTypeCards = [
-    { name: 'Hatchback', shape: 'hatchback', desc: 'Compact & city-friendly' },
-    { name: 'Sedan',     shape: 'sedan',     desc: 'Comfortable & stylish' },
-    { name: 'SUV',       shape: 'suv',       desc: 'Powerful & versatile' },
-    { name: 'MUV',       shape: 'muv',       desc: 'Space for the family' },
-    { name: 'Electric',  shape: 'electric',  desc: 'Future-ready EVs' },
-    { name: 'Luxury',    shape: 'luxury',    desc: 'Premium experience' },
+  /**
+   * c1/c2 are the two stops of each vehicle's body gradient, read by
+   * body-type-art through the --veh-1 / --veh-2 custom properties the template
+   * sets on the card.
+   *
+   * Six finishes rather than six copies of --primary: the cards sit in one row
+   * and a row of identical blue cars is the problem this section already had.
+   * Each is a paint colour a real car of that type is sold in, and none of them
+   * is a manufacturer's trademarked shade — these carry no marque.
+   */
+  bodyTypeCards: {
+    name: string; shape: BodyShape; desc: string; c1: string; c2: string;
+  }[] = [
+    { name: 'Hatchback', shape: 'hatchback', desc: 'Compact & city-friendly', c1: '#E8443A', c2: '#B32B23' },
+    { name: 'Sedan',     shape: 'sedan',     desc: 'Comfortable & stylish',   c1: '#C3CBD6', c2: '#8B96A6' },
+    { name: 'SUV',       shape: 'suv',       desc: 'Powerful & versatile',    c1: '#3A4454', c2: '#1B212C' },
+    { name: 'MUV',       shape: 'muv',       desc: 'Space for the family',    c1: '#F4F6F9', c2: '#CBD3DE' },
+    { name: 'Electric',  shape: 'electric',  desc: 'Future-ready EVs',        c1: '#2E8BE6', c2: '#1559A8' },
+    { name: 'Luxury',    shape: 'luxury',    desc: 'Premium experience',      c1: '#2B3038', c2: '#0D1014' },
   ];
 
   budgetRanges: BudgetRange[] = [
