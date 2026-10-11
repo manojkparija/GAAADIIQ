@@ -1,9 +1,11 @@
 import { Component, signal, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { SeoService } from '../../services/seo.service';
 import { NewsService } from '../../services/news.service';
 import { VideoReview, VideoReviewService } from '../../services/video-review.service';
+import { VideosService, youtubeEmbedUrl, youtubeThumbnailUrl } from '../../services/videos.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -71,12 +73,13 @@ export const ARTICLES: Article[] = [];
 // News stays because a wire feed is a normal utility nobody mistakes for our
 // own reporting. User Review stays because it is the one section GAADIIQ can
 // actually own: reviews written by the people who bought the cars listed here.
-const TABS = ['All', 'News', 'User Review'] as const;
+const TABS = ['All', 'News', 'User Review', 'Videos'] as const;
 type Tab = typeof TABS[number];
 
 const CATEGORY_SLUGS: Record<string, Tab> = {
   'news': 'News',
   'user-reviews': 'User Review',
+  'videos': 'Videos',
 };
 
 /**
@@ -104,6 +107,15 @@ export const CATEGORY_META = [
     // car, which is the one thing an aggregator cannot reproduce. Until the
     // submission flow exists it shows an honest empty state, not other
     // publications' ownership columns dressed up as ours.
+    query: '',
+    live: false,
+  },
+  {
+    slug: 'videos', label: 'GAADIIQ Videos', icon: 'video', color: 'teal',
+    desc: 'Road tests and buying guides from the GAADIIQ channel',
+    // Not a feed, for the same reason Owner Reviews is not one: this section
+    // holds OUR videos, published deliberately by an admin. Pointing it at an
+    // aggregator would be the substitution the section above warns about.
     query: '',
     live: false,
   },
@@ -178,6 +190,53 @@ export class ReviewsNewsComponent implements OnDestroy {
    * on a page that looked deliberate.
    */
   unknownSlug = signal<string | null>(null);
+
+  // ── GAADIIQ videos ────────────────────────────────────────────────────────
+  //
+  // CLICK TO LOAD, deliberately.
+  //
+  // A grid of iframes loads a YouTube player per card before anyone has asked
+  // for one -- a few hundred kB each, and a request to Google from a reader
+  // who only came to look at a list. Each card is a still image until it is
+  // clicked, and only then does an iframe exist.
+  //
+  // The still comes from i.ytimg.com, so that one request is still made; the
+  // player, its scripts and its storage are not.
+  playingVideoId = signal<string | null>(null);
+
+  /** Memoised: bypassSecurityTrustResourceUrl returns a new object each call,
+   *  and a fresh object from a template getter re-renders the iframe on every
+   *  change detection pass -- which restarts the video the reader is watching. */
+  private embedCache = new Map<string, SafeResourceUrl>();
+
+  /**
+   * The embed URL, as something Angular will put in an iframe src.
+   *
+   * bypassSecurityTrust* is the one call in this file that disables a
+   * protection, so it is worth saying exactly why it is safe here: the value
+   * is not user input reaching a sink. youtubeEmbedUrl builds the string
+   * itself and returns null unless the id is eleven characters of
+   * [A-Za-z0-9_-]; the API refuses anything else on the way in; and the
+   * Postgres column has a CHECK on the same shape. Nothing that reaches this
+   * point can carry a scheme, a host or a quote.
+   */
+  embedFor(youtubeId: string): SafeResourceUrl | null {
+    const cached = this.embedCache.get(youtubeId);
+    if (cached) return cached;
+    const url = youtubeEmbedUrl(youtubeId);
+    if (!url) return null;
+    const safe = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    this.embedCache.set(youtubeId, safe);
+    return safe;
+  }
+
+  thumbFor(youtubeId: string): string | null {
+    return youtubeThumbnailUrl(youtubeId);
+  }
+
+  playVideo(youtubeId: string): void {
+    this.playingVideoId.set(youtubeId);
+  }
 
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
@@ -326,6 +385,8 @@ export class ReviewsNewsComponent implements OnDestroy {
     route: ActivatedRoute,
     public news: NewsService,
     private videoReviews: VideoReviewService,
+    public videos: VideosService,
+    private sanitizer: DomSanitizer,
   ) {
     route.params.subscribe(params => {
       const slug = params['category'];
@@ -345,6 +406,9 @@ export class ReviewsNewsComponent implements OnDestroy {
         // this section exists to avoid — it reads our reviews API instead.
         if (meta?.live) {
           this.news.fetchNews(this.categoryQuery());
+        } else if (slug === 'videos') {
+          this.news.articles.set([]);
+          void this.videos.load();
         } else {
           this.news.articles.set([]);
           this.loadOwnerReviews();

@@ -90,6 +90,7 @@ from routers import (  # noqa: E402
     upload,
     valuation,
     video_reviews,
+    videos,
 )
 from services.scheduler import start_scheduler, stop_scheduler  # noqa: E402
 
@@ -841,6 +842,7 @@ app.include_router(insurance.router)
 app.include_router(ev_charging.router)
 app.include_router(video_reviews.router)
 app.include_router(upcoming_cars.router)
+app.include_router(videos.router)
 app.include_router(resale.router)
 app.include_router(valuation.router)
 app.include_router(mechanics.router)

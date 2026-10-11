@@ -217,5 +217,60 @@
         <a routerLink="/listings" class="btn-gradient">{{ 'Pick a car to review →' | t }}</a>
       </div>
     </ng-container>
+
+    <!-- ── GAADIIQ VIDEOS ─────────────────────────────────────────────────
+         Ours, published by an admin, hosted on YouTube. Each card is a still
+         until it is clicked: a grid of iframes would load a player per card,
+         and make a request to Google, for a reader who only came to browse. -->
+    <ng-container *ngIf="categorySlug() === 'videos'">
+
+      <div class="live-grid" *ngIf="videos.loading()">
+        <div class="live-card glass-card skeleton" *ngFor="let i of [1,2,3]">
+          <div class="lc-thumb sk-block"></div>
+          <div class="lc-body"><div class="sk-line"></div><div class="sk-line sk-line-med"></div></div>
+        </div>
+      </div>
+
+      <!-- Could not ask, as distinct from nothing to show. The two render the
+           same and mean opposite things. -->
+      <div class="own-empty" *ngIf="!videos.loading() && videos.failed()">
+        <div class="nr-icon"><app-icon name="video" [size]="34"></app-icon></div>
+        <h2>{{ 'Could not load the videos' | t }}</h2>
+        <p>{{ 'The list is there; we could not reach it just now.' | t }}</p>
+      </div>
+
+      <div class="video-grid" *ngIf="!videos.loading() && !videos.failed() && videos.videos().length">
+        <article class="video-card glass-card" *ngFor="let v of videos.videos()">
+
+          <div class="vc-frame" *ngIf="playingVideoId() === v.youtube_id; else stillImage">
+            <iframe [src]="embedFor(v.youtube_id)" [title]="v.title"
+                    frameborder="0" allowfullscreen loading="lazy"
+                    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"></iframe>
+          </div>
+
+          <ng-template #stillImage>
+            <button type="button" class="vc-still" (click)="playVideo(v.youtube_id)"
+                    [attr.aria-label]="'Play: ' + v.title">
+              <img [src]="thumbFor(v.youtube_id)" [alt]="''" loading="lazy" decoding="async">
+              <span class="vc-play" aria-hidden="true">▶</span>
+            </button>
+          </ng-template>
+
+          <div class="vc-body">
+            <span class="vc-car" *ngIf="v.car_label">{{ v.car_label }}</span>
+            <h3 class="vc-title">{{ v.title }}</h3>
+            <p class="vc-desc" *ngIf="v.description">{{ v.description }}</p>
+          </div>
+        </article>
+      </div>
+
+      <!-- Genuinely none published yet. -->
+      <div class="own-empty"
+           *ngIf="!videos.loading() && !videos.failed() && !videos.videos().length">
+        <div class="nr-icon"><app-icon name="video" [size]="34"></app-icon></div>
+        <h2>{{ 'No videos yet' | t }}</h2>
+        <p>{{ 'Road tests and buying guides from the GAADIIQ channel will appear here.' | t }}</p>
+      </div>
+    </ng-container>
   </section>
 </ng-container>

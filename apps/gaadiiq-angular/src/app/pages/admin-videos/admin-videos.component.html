@@ -1,0 +1,73 @@
+<!-- LAY-007: clears the fixed navbar. Both admin screens once rendered their
+     titles underneath it, unnoticed because they sit behind adminGuard and
+     nobody had opened them in a browser. -->
+<section class="av-page">
+  <div class="container">
+    <h1 class="av-title">GAADIIQ Videos</h1>
+    <p class="av-sub">
+      Paste a YouTube link. It appears under Reviews &amp; News → GAADIIQ Videos.
+    </p>
+
+    <form class="av-form glass-card" (ngSubmit)="add()">
+      <label class="av-field">
+        <span>YouTube link</span>
+        <input type="text" [ngModel]="url()" (ngModelChange)="url.set($event)"
+               name="url" placeholder="https://youtu.be/… or https://www.youtube.com/watch?v=…"
+               autocomplete="off">
+      </label>
+
+      <label class="av-field">
+        <span>Title</span>
+        <input type="text" [ngModel]="title()" (ngModelChange)="title.set($event)"
+               name="title" placeholder="GAADIIQ road tests the Hyundai Creta" autocomplete="off">
+      </label>
+
+      <label class="av-field">
+        <span>Car <em>(optional)</em></span>
+        <input type="text" [ngModel]="carLabel()" (ngModelChange)="carLabel.set($event)"
+               name="carLabel" placeholder="Hyundai Creta" autocomplete="off">
+      </label>
+
+      <label class="av-field av-field-wide">
+        <span>Description <em>(optional)</em></span>
+        <textarea rows="2" [ngModel]="description()" (ngModelChange)="description.set($event)"
+                  name="description" placeholder="What the video covers"></textarea>
+      </label>
+
+      <!-- The server's own words, not "Failed": it names which part of the
+           link was wrong, and a generic message throws that away. -->
+      <p class="av-error" *ngIf="error()">{{ error() }}</p>
+
+      <button type="submit" class="btn-gradient av-submit" [disabled]="!canSubmit()">
+        {{ saving() ? 'Adding…' : 'Add video' }}
+      </button>
+    </form>
+
+    <div class="av-list">
+      <p class="av-empty" *ngIf="!videos.loading() && !videos.videos().length">
+        Nothing published yet.
+      </p>
+
+      <article class="av-row glass-card" *ngFor="let v of videos.videos()"
+               [class.av-unpublished]="!v.is_published">
+        <img class="av-thumb" [src]="thumb(v.youtube_id)" [alt]="''" loading="lazy">
+        <div class="av-meta">
+          <h3>{{ v.title }}</h3>
+          <p class="av-car" *ngIf="v.car_label">{{ v.car_label }}</p>
+          <p class="av-id">{{ v.youtube_id }}</p>
+        </div>
+        <div class="av-actions">
+          <span class="av-state" [class.on]="v.is_published">
+            {{ v.is_published ? 'Published' : 'Hidden' }}
+          </span>
+          <button type="button" class="btn-outline" (click)="togglePublished(v)">
+            {{ v.is_published ? 'Unpublish' : 'Publish' }}
+          </button>
+          <button type="button" class="btn-outline av-danger" (click)="remove(v)">
+            <app-icon name="trash-2" [size]="15"></app-icon> Remove
+          </button>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

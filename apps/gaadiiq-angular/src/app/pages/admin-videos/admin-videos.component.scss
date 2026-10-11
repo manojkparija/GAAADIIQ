@@ -1,0 +1,86 @@
+.av-page {
+  /* LAY-007 — --nav-offset IS the bar's height, so the +1.5rem is the
+     clearance, not decoration. */
+  padding: max(7rem, calc(var(--nav-offset) + 1.5rem)) 0 4rem;
+  min-height: 100vh;
+}
+
+.av-title { font-size: var(--text-3xl); font-weight: 800; margin-bottom: 0.35rem; }
+.av-sub { color: var(--text-secondary); margin-bottom: 1.75rem; }
+
+.av-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: var(--r-xl);
+  margin-bottom: 2rem;
+}
+
+.av-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  span { font-size: var(--text-xs); font-weight: 700; color: var(--text-secondary); }
+  em { font-weight: 500; font-style: normal; color: var(--text-tertiary); }
+
+  input, textarea {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--r-md);
+    background: var(--input-bg);
+    color: var(--input-color);
+    font: inherit;
+    font-size: var(--text-sm);
+    &::placeholder { color: var(--text-tertiary); }
+  }
+}
+
+.av-field-wide { grid-column: 1 / -1; }
+.av-error { grid-column: 1 / -1; color: var(--danger-ink); font-size: var(--text-sm); margin: 0; }
+.av-submit { grid-column: 1 / -1; justify-self: start; }
+
+.av-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.av-empty { color: var(--text-secondary); }
+
+.av-row {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem;
+  border-radius: var(--r-lg);
+}
+
+/* Hidden rows stay legible — dimming them to the point of unreadability is
+   how a row gets forgotten rather than noticed. */
+.av-unpublished { opacity: 0.72; }
+
+.av-thumb { width: 120px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--r-md); }
+
+.av-meta {
+  h3 { font-size: var(--text-md); font-weight: 700; margin: 0 0 0.2rem; }
+  .av-car { font-size: var(--text-xs); color: var(--primary-ink); margin: 0 0 0.2rem; }
+  .av-id { font-size: var(--text-2xs); color: var(--text-tertiary); font-family: monospace; margin: 0; }
+}
+
+.av-actions { display: flex; align-items: center; gap: 0.5rem; }
+
+.av-state {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--r-pill);
+  background: var(--fill-soft);
+  color: var(--text-tertiary);
+  &.on { background: rgba(16,185,129,0.12); color: var(--success-ink); }
+}
+
+.av-danger { color: var(--danger-ink); border-color: color-mix(in srgb, var(--danger-ink) 35%, transparent); }
+
+@media (max-width: 760px) {
+  .av-form { grid-template-columns: 1fr; }
+  .av-row { grid-template-columns: 1fr; }
+  .av-actions { flex-wrap: wrap; }
+}
