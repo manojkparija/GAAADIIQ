@@ -1,0 +1,44 @@
+GAADIIQ — Proprietary Software Licence
+Copyright (c) 2026 Manoj Kumar Parija. All rights reserved.
+
+This software and its source code, including the contents of this repository
+and any build output produced from it, are proprietary and confidential.
+
+NO LICENCE IS GRANTED.
+
+Absent a separate written agreement signed by the copyright holder, no person
+or organisation is permitted to:
+
+  - copy, reproduce or redistribute this software, in source or binary form;
+  - modify it, or create derivative works from it;
+  - use it, in whole or in part, in any product or service;
+  - publish, sublicense, sell or otherwise transfer it;
+  - reverse engineer, decompile or disassemble any compiled form of it, except
+    to the extent that restriction is void under applicable law.
+
+The absence of a licence file is not permission. The presence of this one is a
+statement of what has always been the default: unlicensed work is protected by
+copyright from the moment it is written.
+
+WHAT THIS FILE DOES AND DOES NOT DO
+
+It does not prevent copying, and nobody should treat it as a technical
+control. A web application serves its own markup, styles and client-side code
+to every visitor by necessity; anyone can read them. This file does not change
+that and is not intended to.
+
+What it does is remove the ambiguity. A repository with no licence invites the
+argument that its author did not mind. This one says plainly that permission
+was never given, which is what matters if the question is ever put to anyone
+other than a developer.
+
+THIRD-PARTY COMPONENTS
+
+This repository depends on open-source packages, each governed by its own
+licence as declared by that package. Nothing here alters those terms, and
+nothing here claims ownership of them. The dependencies are listed in
+apps/gaadiiq-angular/package.json and apps/api/requirements.txt.
+
+CONTACT
+
+Permission enquiries: manojkparija@gmail.com
